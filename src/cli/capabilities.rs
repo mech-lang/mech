@@ -1,10 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::{LoadedMechConfig, resolve_config_path};
 use clap::{Arg, ArgAction, Command};
-use colored::*;
 use mech_core::*;
 use mech_runtime::{
     ConfigCapabilityKind, DefaultIdGenerator, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
@@ -58,6 +56,32 @@ pub fn add_filesystem_capability_args(command: Command) -> Command {
                     "Disable the default recursive current-directory filesystem capability grant.",
                 ),
         )
+}
+
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct FilesystemCapabilityArgs {
+    pub cap_roots: Vec<PathBuf>,
+    pub allow_read: Vec<PathBuf>,
+    pub allow_watch: Vec<PathBuf>,
+    pub allow_serve: Vec<PathBuf>,
+    pub no_default_capabilities: bool,
+}
+
+impl FilesystemCapabilityArgs {
+    pub(crate) fn from_matches(matches: &clap::ArgMatches) -> Self {
+        Self {
+            cap_roots: collect_capability_paths(matches, "cap_root"),
+            allow_read: collect_capability_paths(matches, "allow_read"),
+            allow_watch: collect_capability_paths(matches, "allow_watch"),
+            allow_serve: collect_capability_paths(matches, "allow_serve"),
+            no_default_capabilities: matches.get_flag("no_default_capabilities"),
+        }
+    }
+}
+
+fn validation_error(msg: impl Into<String>) -> MechError {
+    MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
 }
 
 fn collect_capability_paths(matches: &clap::ArgMatches, id: &str) -> Vec<PathBuf> {
@@ -133,7 +157,6 @@ fn add_capability_grant(
 fn grant_mech_filesystem_path(
     authority: &mut HostFilesystemAuthority,
     id_generator: &mut DefaultIdGenerator,
-    _badge: &ColoredString,
     path: &Path,
     recursive: bool,
     operations: &[&'static str],
@@ -152,14 +175,10 @@ fn add_config_capability_grant(
     match grant.kind {
         ConfigCapabilityKind::CapRoot => {
             if !path.is_dir() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!(
-                        "config cap-root path must be an existing directory: {}",
-                        path.display()
-                    ),
-                )
-                .into());
+                return Err(validation_error(format!(
+                    "config cap-root path must be an existing directory: {}",
+                    path.display()
+                )));
             }
             add_capability_grant(
                 grants,
@@ -199,10 +218,9 @@ fn add_config_capability_grant(
     Ok(())
 }
 
-pub fn build_mech_filesystem_authority(
-    matches: &clap::ArgMatches,
+pub(crate) fn build_mech_filesystem_authority(
+    args: &FilesystemCapabilityArgs,
     config: Option<&LoadedMechConfig>,
-    badge: &ColoredString,
 ) -> MResult<FilesystemAuthorityBuild> {
     let mut id_generator = DefaultIdGenerator::new();
     let kernel = SharedCapabilityKernel::new();
@@ -210,11 +228,11 @@ pub fn build_mech_filesystem_authority(
     let mut grants = BTreeMap::<CapabilityGrantKey, BTreeSet<&'static str>>::new();
     let mut events = Vec::new();
 
-    let cap_roots = collect_capability_paths(matches, "cap_root");
-    let allow_read = collect_capability_paths(matches, "allow_read");
-    let allow_watch = collect_capability_paths(matches, "allow_watch");
-    let allow_serve = collect_capability_paths(matches, "allow_serve");
-    let no_default = matches.get_flag("no_default_capabilities");
+    let cap_roots = args.cap_roots.clone();
+    let allow_read = args.allow_read.clone();
+    let allow_watch = args.allow_watch.clone();
+    let allow_serve = args.allow_serve.clone();
+    let no_default = args.no_default_capabilities;
     let has_config_capabilities =
         config.is_some_and(|loaded| !loaded.document.capabilities.is_empty());
     let explicit = no_default
@@ -242,14 +260,10 @@ pub fn build_mech_filesystem_authority(
     for path in cap_roots {
         let path = resolve_capability_path(&path)?;
         if !path.is_dir() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!(
-                    "--cap-root path must be an existing directory: {}",
-                    path.display()
-                ),
-            )
-            .into());
+            return Err(validation_error(format!(
+                "--cap-root path must be an existing directory: {}",
+                path.display()
+            )));
         }
         add_capability_grant(
             &mut grants,
@@ -346,7 +360,6 @@ pub fn build_mech_filesystem_authority(
         grant_mech_filesystem_path(
             &mut authority,
             &mut id_generator,
-            badge,
             &key.path,
             key.recursive,
             &operations,
@@ -452,8 +465,7 @@ mod filesystem_capability_tests {
             );
             let matches = cli(&["mech", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, Some(&config), &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config))
                 .unwrap()
                 .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
@@ -474,8 +486,7 @@ mod filesystem_capability_tests {
             );
             let matches = cli(&["mech", "--no-default-capabilities", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, Some(&config), &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config))
                 .unwrap()
                 .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
@@ -498,8 +509,7 @@ mod filesystem_capability_tests {
                 "allowed",
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, None, &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), None)
                 .unwrap()
                 .authority;
             assert!(delegate_all(&authority, &allowed).is_err());
@@ -525,8 +535,7 @@ mod filesystem_capability_tests {
                 "serve",
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, Some(&config), &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config))
                 .unwrap()
                 .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
@@ -545,8 +554,7 @@ mod filesystem_capability_tests {
                 parse_config(r#"config := {capabilities: [{allow: "cap-root", path: "missing"}]}"#);
             let matches = cli(&["mech", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let badge = "[test]".normal();
-            assert!(build_mech_filesystem_authority(serve_matches, Some(&config), &badge).is_err());
+            assert!(build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config)).is_err());
         }
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -580,8 +588,7 @@ mod filesystem_capability_tests {
             let loaded = crate::cli::config::load_cli_config(serve_matches)
                 .unwrap()
                 .unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, Some(&loaded), &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&loaded))
                 .unwrap()
                 .authority;
             assert!(delegate_all(&authority, &config_allowed).is_ok());
@@ -609,8 +616,7 @@ mod filesystem_capability_tests {
             let loaded = crate::cli::config::load_cli_config(serve_matches)
                 .unwrap()
                 .unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, Some(&loaded), &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&loaded))
                 .unwrap()
                 .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
@@ -649,8 +655,7 @@ mod filesystem_capability_tests {
             let loaded = crate::cli::config::load_cli_config(serve_matches)
                 .unwrap()
                 .unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, Some(&loaded), &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&loaded))
                 .unwrap()
                 .authority;
 
@@ -709,8 +714,7 @@ mod filesystem_capability_tests {
                 "main.mec",
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let badge = "[test]".normal();
-            let authority = build_mech_filesystem_authority(serve_matches, None, &badge)
+            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), None)
                 .unwrap()
                 .authority;
             let mut ids = DefaultIdGenerator::new();
@@ -738,11 +742,10 @@ pub(crate) struct FilesystemRuntimeAccess {
 
 #[cfg(feature = "run")]
 pub(crate) fn build_filesystem_runtime_access(
-    matches: &clap::ArgMatches,
+    args: &FilesystemCapabilityArgs,
     loaded_config: Option<&LoadedMechConfig>,
-    badge: &ColoredString,
 ) -> MResult<FilesystemRuntimeAccess> {
-    let build = build_mech_filesystem_authority(matches, loaded_config, badge)?;
+    let build = build_mech_filesystem_authority(args, loaded_config)?;
     let kernel = build.authority.kernel().clone();
     Ok(FilesystemRuntimeAccess {
         authority: build.authority,

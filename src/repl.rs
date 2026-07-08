@@ -33,6 +33,11 @@ pub struct MechRepl {
   pub programs: HashMap<u64,MechProgram>,
 }
 
+
+fn repl_error(msg: impl Into<String>) -> MechError {
+  MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
+}
+
 impl MechRepl {
 
   pub fn new() -> MechRepl {
@@ -72,7 +77,10 @@ impl MechRepl {
 
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
-    let mut prgrm = self.programs.get_mut(&self.active).unwrap();
+    let prgrm = self
+      .programs
+      .get_mut(&self.active)
+      .ok_or_else(|| repl_error(format!("active REPL program not found: {}", self.active)))?;
 
     match repl_cmd {
       ReplCommand::Help => {
@@ -84,8 +92,11 @@ impl MechRepl {
       ReplCommand::Docs(name) => {
         if let Some(name) = name {
           let glob = format!("*{}*",name);
-          for entry in self.docs.find(&glob).unwrap() {
-            println!("Found {}", entry.path().display());
+          let entries = self
+            .docs
+            .find(&glob)
+            .map_err(|error| repl_error(format!("failed to search documentation: {error}")))?;
+          for entry in entries {
             // print out hte contents of hte file
             match entry.as_file() {
               Some(file) => {
@@ -166,8 +177,12 @@ impl MechRepl {
       #[cfg(feature = "serde")]
       ReplCommand::Save(path) => {
         let path = PathBuf::from(path);
-        let intrp = self.programs.get(&self.active).unwrap();
-        let encoded = encode_to_vec(&MechSourceCode::String(format!("{:#?}", intrp.interpreter().plan())), standard()).unwrap();
+        let intrp = self
+          .programs
+          .get(&self.active)
+          .ok_or_else(|| repl_error(format!("active REPL program not found: {}", self.active)))?;
+        let encoded = encode_to_vec(&MechSourceCode::String(format!("{:#?}", intrp.interpreter().plan())), standard())
+          .map_err(|error| repl_error(format!("failed to encode REPL program state: {error}")))?;
         let mut file = File::create(&path)?;
         file.write_all(&encoded)?;
         return Ok(format!("Saved program state to {}", path.display()));

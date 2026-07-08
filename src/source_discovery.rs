@@ -25,6 +25,7 @@ pub(crate) struct SourceDiscoveryResult {
 pub(crate) enum SourceDiscoveryEvent {
     SkippedBrokenSymlink { path: PathBuf },
     SkippedSymlinkedDirectory { path: PathBuf },
+    SkippedFileSymlink { path: PathBuf },
     SkippedUnsupportedExtension { path: PathBuf },
     SkippedDirectory { path: PathBuf, reason: SkipReason },
 }
@@ -108,12 +109,18 @@ fn collect_one(
 ) -> MResult<()> {
     let metadata = match fs::symlink_metadata(read_path) {
         Ok(metadata) => metadata,
-        Err(_error)
+        Err(error)
             if matches!(
                 options.missing_path_policy,
                 MissingPathPolicy::SkipBrokenSymlink
             ) =>
         {
+            if explicit {
+                return Err(error.into());
+            }
+            events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                path: read_path.to_path_buf(),
+            });
             return Ok(());
         }
         Err(error) => return Err(error.into()),
@@ -121,17 +128,18 @@ fn collect_one(
     if metadata.file_type().is_symlink() {
         let canonical = match canonicalize_for_read(read_path) {
             Ok(path) => path,
-            Err(_)
+            Err(error)
                 if matches!(
                     options.missing_path_policy,
                     MissingPathPolicy::SkipBrokenSymlink
                 ) =>
             {
-                if !explicit {
-                    events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
-                        path: read_path.to_path_buf(),
-                    });
+                if explicit {
+                    return Err(error);
                 }
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                    path: read_path.to_path_buf(),
+                });
                 return Ok(());
             }
             Err(error) => return Err(error),
@@ -156,6 +164,9 @@ fn collect_one(
             );
         }
         if !options.follow_file_symlinks {
+            events.push(SourceDiscoveryEvent::SkippedFileSymlink {
+                path: logical_path.to_path_buf(),
+            });
             return Ok(());
         }
         return collect_file(
@@ -222,20 +233,38 @@ fn collect_dir(
         let entry = entry?;
         let logical_path = logical_dir.join(entry.file_name());
         let read_path = entry.path();
-        if is_directory_symlink(&read_path).unwrap_or(false) && !options.follow_dir_symlinks {
+        let is_directory_symlink = match is_directory_symlink(&read_path) {
+            Ok(value) => value,
+            Err(_error) if matches!(options.missing_path_policy, MissingPathPolicy::SkipBrokenSymlink) => {
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink { path: read_path.clone() });
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
+        if is_directory_symlink && !options.follow_dir_symlinks {
+            events.push(SourceDiscoveryEvent::SkippedSymlinkedDirectory {
+                path: logical_path.clone(),
+            });
             continue;
         }
-        if read_path.is_dir()
-            || read_path
-                .canonicalize()
-                .map(|p| p.is_dir())
-                .unwrap_or(false)
-        {
+        let is_dir = match read_path.canonicalize() {
+            Ok(path) => path.is_dir(),
+            Err(_error) if matches!(options.missing_path_policy, MissingPathPolicy::SkipBrokenSymlink) => {
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink { path: read_path.clone() });
+                continue;
+            }
+            Err(error) => return Err(error.into()),
+        };
+        if read_path.is_dir() || is_dir {
             if options
                 .skip_dir_names
                 .iter()
                 .any(|name| read_path.file_name().and_then(|n| n.to_str()) == Some(*name))
             {
+                events.push(SourceDiscoveryEvent::SkippedDirectory {
+                    path: logical_path.clone(),
+                    reason: SkipReason::SkippedByName,
+                });
                 continue;
             }
             collect_one(

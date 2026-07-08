@@ -15,7 +15,7 @@ pub(crate) fn terminate_process(code: i32) -> ! {
     std::process::exit(code)
 }
 
-pub fn run() -> Result<(), MechError> {
+pub fn run() -> MResult<()> {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
@@ -121,7 +121,7 @@ fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
     }
 }
 
-async fn async_main() -> Result<(), MechError> {
+async fn async_main() -> MResult<()> {
     let cli_matches = build_cli().get_matches();
     let outcome = dispatch(cli_matches).await?;
     apply_outcome(outcome)
@@ -206,7 +206,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     Ok(CliOutcome::success())
 }
 
-fn apply_outcome(outcome: CliOutcome) -> Result<(), MechError> {
+fn apply_outcome(outcome: CliOutcome) -> MResult<()> {
     match outcome {
         CliOutcome::Success => Ok(()),
         CliOutcome::Exit(code) => terminate_process(code),

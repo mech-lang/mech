@@ -113,9 +113,10 @@ pub(crate) enum ResourceSource {
 pub(crate) struct LoadedResource {
     pub bytes: Vec<u8>,
     pub source: ResourceSource,
+    pub events: Vec<ResourceEvent>,
 }
 
-fn utf8(bytes: Vec<u8>) -> Result<String, MechError> {
+fn utf8(bytes: Vec<u8>) -> MResult<String> {
     String::from_utf8(bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
@@ -137,16 +138,37 @@ pub(crate) async fn load_resource(
         if Path::new(path).is_file() {
             return Ok(LoadedResource {
                 bytes: std::fs::read(path)?,
-                source: ResourceSource::LocalPath(path_buf),
+                source: ResourceSource::LocalPath(path_buf.clone()),
+                events: vec![ResourceEvent::LoadedLocal { path: path_buf }],
             });
         }
         let bytes = read_or_download("", fallback_url, embedded).await?;
-        let source = if embedded.is_some() {
-            ResourceSource::EmbeddedDefault
+        let (source, fallback, loaded_event) = if embedded.is_some() {
+            (
+                ResourceSource::EmbeddedDefault,
+                ResourceFallback::EmbeddedDefault,
+                ResourceEvent::LoadedEmbeddedDefault,
+            )
         } else {
-            ResourceSource::RemoteUrl(fallback_url.to_string())
+            (
+                ResourceSource::RemoteUrl(fallback_url.to_string()),
+                ResourceFallback::RemoteUrl(fallback_url.to_string()),
+                ResourceEvent::LoadedRemoteFallback {
+                    url: fallback_url.to_string(),
+                },
+            )
         };
-        return Ok(LoadedResource { bytes, source });
+        return Ok(LoadedResource {
+            bytes,
+            source,
+            events: vec![
+                ResourceEvent::MissingLocalUsedFallback {
+                    path: path_buf,
+                    fallback,
+                },
+                loaded_event,
+            ],
+        });
     }
 
     let bytes = read_or_download("", fallback_url, embedded).await?;
@@ -155,13 +177,23 @@ pub(crate) async fn load_resource(
     } else {
         ResourceSource::RemoteUrl(fallback_url.to_string())
     };
-    Ok(LoadedResource { bytes, source })
+    Ok(LoadedResource {
+        bytes,
+        source,
+        events: vec![if embedded.is_some() {
+            ResourceEvent::LoadedEmbeddedDefault
+        } else {
+            ResourceEvent::LoadedRemoteFallback {
+                url: fallback_url.to_string(),
+            }
+        }],
+    })
 }
 
 pub(crate) async fn load_stylesheets(
     paths: &[String],
     fallback_url: &str,
-) -> Result<LoadedStylesheets, MechError> {
+) -> MResult<LoadedStylesheets> {
     let mut events = Vec::new();
     if paths.is_empty() {
         let loaded = load_resource("", fallback_url, Some(STYLESHEET.as_bytes())).await?;

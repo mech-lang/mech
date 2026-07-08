@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, Command};
-use colored::*;
 use mech_core::*;
 use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 
@@ -111,6 +110,9 @@ fn render_discovery_events(events: &[SourceDiscoveryEvent]) {
             }
             SourceDiscoveryEvent::SkippedSymlinkedDirectory { path } => {
                 println!("[Mech Run] Skipped symlinked directory: {}", path.display())
+            }
+            SourceDiscoveryEvent::SkippedFileSymlink { path } => {
+                println!("[Mech Run] Skipped file symlink: {}", path.display())
             }
             SourceDiscoveryEvent::SkippedUnsupportedExtension { path } => {
                 println!("[Mech Run] Skipped unsupported source: {}", path.display())
@@ -234,10 +236,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                 print_value(&value);
                 return Ok(CliOutcome::exit(0));
             }
-            Err(err) => {
-                println!("{} {:#?}", "[Error]".truecolor(246, 98, 78), err);
-                return Ok(CliOutcome::exit(1));
-            }
+            Err(err) => return Err(err),
         }
     }
 
@@ -262,7 +261,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     };
 
     let repl_flag = plan.repl_requested || plan.missing_run_options;
-    match &result {
+    match result {
         Ok(value) if repl_flag => {
             #[cfg(all(feature = "run", feature = "repl"))]
             {
@@ -275,18 +274,15 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
             }
             #[cfg(not(feature = "repl"))]
             {
-                print_value(value);
+                print_value(&value);
                 return Ok(CliOutcome::exit(0));
             }
         }
         Ok(value) => {
-            print_value(value);
+            print_value(&value);
             Ok(CliOutcome::exit(0))
         }
-        Err(err) => {
-            crate::cli::diagnostics::print_mech_error(err);
-            Ok(CliOutcome::exit(1))
-        }
+        Err(err) => Err(err),
     }
 }
 

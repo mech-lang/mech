@@ -1,5 +1,4 @@
 use mech_core::*;
-use std::io;
 use std::path::{Component, Path, PathBuf};
 
 pub(crate) fn source_extension(path: &Path) -> Option<String> {
@@ -91,12 +90,11 @@ pub(crate) fn relative_to_base(
     Ok(relative.to_path_buf())
 }
 
-pub(crate) fn is_directory_symlink(path: &Path) -> io::Result<bool> {
-    Ok(std::fs::symlink_metadata(path)?.file_type().is_symlink()
-        && path
-            .canonicalize()
-            .map(|target| target.is_dir())
-            .unwrap_or(false))
+pub(crate) fn is_directory_symlink(path: &Path) -> MResult<bool> {
+    if !std::fs::symlink_metadata(path)?.file_type().is_symlink() {
+        return Ok(false);
+    }
+    Ok(path.canonicalize()?.is_dir())
 }
 
 pub(crate) fn canonicalize_for_read(path: &Path) -> MResult<PathBuf> {

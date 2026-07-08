@@ -1,5 +1,4 @@
 use clap::ArgMatches;
-use colored::*;
 use mech_core::*;
 
 use crate::cli::outcome::RootFlags;
@@ -78,12 +77,9 @@ pub(crate) fn prepare_run_options(
     };
     let loaded = config::load_cli_config_report_with_inputs(config_matches, &config_inputs)?;
     let loaded_config = loaded.config;
-    let badge = "[Mech Run]".truecolor(34, 204, 187);
-    let filesystem_access = capabilities::build_filesystem_runtime_access(
-        config_matches,
-        loaded_config.as_ref(),
-        &badge,
-    )?;
+    let capability_args = capabilities::FilesystemCapabilityArgs::from_matches(config_matches);
+    let filesystem_access =
+        capabilities::build_filesystem_runtime_access(&capability_args, loaded_config.as_ref())?;
     Ok(PreparedRunOptions {
         input_mode: args.input_mode,
         explicit_run_command: args.explicit_run_command,

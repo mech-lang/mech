@@ -43,7 +43,7 @@ mod filesystem_capability_cli_tests {
     fn default_grants_current_directory_when_no_capability_options_are_present() {
         let matches = capability_matches(&["mech", "serve", "."]);
         let authority =
-            capabilities::build_mech_filesystem_authority(&matches, None, &test_badge())
+            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
                 .unwrap()
                 .authority;
         let mut ids = DefaultIdGenerator::new();
@@ -70,7 +70,7 @@ mod filesystem_capability_cli_tests {
         let matches =
             capability_matches(&["mech", "--cap-root", &allowed_arg, "serve", &outside_arg]);
         let authority =
-            capabilities::build_mech_filesystem_authority(&matches, None, &test_badge())
+            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
                 .unwrap()
                 .authority;
         let mut ids = DefaultIdGenerator::new();
@@ -101,7 +101,7 @@ mod filesystem_capability_cli_tests {
             root.to_str().unwrap(),
         ]);
         let authority =
-            capabilities::build_mech_filesystem_authority(&matches, None, &test_badge())
+            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
                 .unwrap()
                 .authority;
         let mut ids = DefaultIdGenerator::new();
@@ -124,7 +124,7 @@ mod filesystem_capability_cli_tests {
             root.to_str().unwrap(),
         ]);
         let authority =
-            capabilities::build_mech_filesystem_authority(&matches, None, &test_badge())
+            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
                 .unwrap()
                 .authority;
         let mut ids = DefaultIdGenerator::new();
@@ -157,7 +157,7 @@ mod filesystem_capability_cli_tests {
             &allowed_arg,
         ]);
         let authority =
-            capabilities::build_mech_filesystem_authority(&matches, None, &test_badge())
+            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
                 .unwrap()
                 .authority;
         assert_eq!(authority.source_capabilities().len(), 1);
@@ -185,7 +185,7 @@ mod filesystem_capability_cli_tests {
             root.to_str().unwrap(),
         ]);
         let authority =
-            capabilities::build_mech_filesystem_authority(&matches, None, &test_badge())
+            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
                 .unwrap()
                 .authority;
         let mut ids = DefaultIdGenerator::new();

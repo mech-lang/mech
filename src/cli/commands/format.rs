@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ops::{Deref, DerefMut};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -10,7 +11,7 @@ use mech_syntax::parser;
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
-    LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    LoadedStylesheets, ResourceEvent, ResourceFallback,
     Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
 };
 use crate::fs_paths::{
@@ -74,6 +75,9 @@ fn render_discovery_events(badge: &str, events: &[SourceDiscoveryEvent]) {
             SourceDiscoveryEvent::SkippedSymlinkedDirectory { path } => {
                 println!("{badge} Skipped symlinked directory: {}", path.display())
             }
+            SourceDiscoveryEvent::SkippedFileSymlink { path } => {
+                println!("{badge} Skipped file symlink: {}", path.display())
+            }
             SourceDiscoveryEvent::SkippedUnsupportedExtension { path } => {
                 println!("{badge} Skipped unsupported source: {}", path.display())
             }
@@ -90,40 +94,32 @@ fn render_discovery_events(badge: &str, events: &[SourceDiscoveryEvent]) {
     }
 }
 
-fn render_resource_events(badge: &str, events: &[ResourceEvent]) {
+fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
     for event in events {
         match event {
             ResourceEvent::LoadedLocal { path } => {
-                println!("{badge} Loaded stylesheet: {}", path.display())
+                println!("{badge} Loaded {name}: {}", path.display())
             }
             ResourceEvent::MissingLocalUsedFallback { path, fallback } => match fallback {
                 ResourceFallback::EmbeddedDefault => println!(
-                    "{badge} Stylesheet not found: {}; using embedded default",
+                    "{badge} {name} not found: {}; using embedded default",
                     path.display()
                 ),
                 ResourceFallback::RemoteUrl(url) => println!(
-                    "{badge} Stylesheet not found: {}; using fallback {url}",
+                    "{badge} {name} not found: {}; using fallback {url}",
                     path.display()
                 ),
             },
             ResourceEvent::LoadedEmbeddedDefault => {
-                println!("{badge} Using embedded default stylesheet")
+                println!("{badge} Using embedded default {name}")
             }
             ResourceEvent::LoadedRemoteFallback { url } => {
-                println!("{badge} Downloaded fallback stylesheet: {url}")
+                println!("{badge} Downloaded fallback {name}: {url}")
             }
         }
     }
 }
 
-fn render_loaded_resource(badge: &str, name: &str, resource: &LoadedResource) {
-    match &resource.source {
-        ResourceSource::LocalPath(path) => println!("{badge} Loaded {name}: {}", path.display()),
-        ResourceSource::RemoteUrl(url) => println!("{badge} Downloaded fallback {name}: {url}"),
-        ResourceSource::EmbeddedDefault => println!("{badge} Using embedded default {name}"),
-        ResourceSource::EmptyPathFallback => println!("{badge} Using default {name}"),
-    }
-}
 
 const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
@@ -134,6 +130,42 @@ struct CollectedSourceTarget {
     path: PathBuf,
     relative_path: PathBuf,
     default_output_path: PathBuf,
+}
+
+#[derive(Clone, Debug, Default)]
+struct CollectedFormatTargets {
+    targets: Vec<CollectedSourceTarget>,
+    events: Vec<SourceDiscoveryEvent>,
+}
+
+impl Deref for CollectedFormatTargets {
+    type Target = [CollectedSourceTarget];
+
+    fn deref(&self) -> &Self::Target {
+        &self.targets
+    }
+}
+
+impl DerefMut for CollectedFormatTargets {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.targets
+    }
+}
+
+impl CollectedFormatTargets {
+    fn extend(&mut self, other: CollectedFormatTargets) {
+        self.targets.extend(other.targets);
+        self.events.extend(other.events);
+    }
+}
+
+impl IntoIterator for CollectedFormatTargets {
+    type Item = CollectedSourceTarget;
+    type IntoIter = std::vec::IntoIter<CollectedSourceTarget>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.targets.into_iter()
+    }
 }
 
 fn normalize_output_exclusion(
@@ -288,19 +320,22 @@ fn collect_format_targets(
     output_exclusion: Option<&Path>,
     html: bool,
     writes_in_place: bool,
-) -> MResult<Vec<CollectedSourceTarget>> {
+) -> MResult<CollectedFormatTargets> {
     if path.is_file() {
         if !extension_allowed(path, FORMAT_EXTENSIONS) {
             return Err(unsupported_source_path_error(path, FORMAT_EXTENSIONS));
         }
         let default_output_path = path.to_path_buf();
         let relative_path = safe_output_relative_path(path)?;
-        return Ok(vec![CollectedSourceTarget {
-            input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
-            path: path.to_path_buf(),
-            relative_path,
-            default_output_path,
-        }]);
+        return Ok(CollectedFormatTargets {
+            targets: vec![CollectedSourceTarget {
+                input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
+                path: path.to_path_buf(),
+                relative_path,
+                default_output_path,
+            }],
+            events: Vec::new(),
+        });
     }
 
     if !path.exists() {
@@ -339,7 +374,7 @@ fn collect_format_targets(
             dedupe_policy: DedupePolicy::LogicalPath,
         },
     )?;
-    render_discovery_events("[Mech Formatter]", &discovery.events);
+    let events = discovery.events;
     let mut out = discovery
         .entries
         .into_iter()
@@ -364,7 +399,7 @@ fn collect_format_targets(
             .cmp(&b.relative_path)
             .then_with(|| a.path.cmp(&b.path))
     });
-    Ok(out)
+    Ok(CollectedFormatTargets { targets: out, events })
 }
 fn format_output_matches_input_dir(
     mech_paths: &[String],
@@ -553,7 +588,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         css: stylesheet_str,
         events,
     } = load_stylesheets(&stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
-    render_resource_events(&badge.to_string(), &events);
+    render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     // Load shim HTML
     print!("{} Loading HTML shim…", badge);
@@ -563,7 +598,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         Some(options.resources.shim_html.as_bytes()),
     )
     .await?;
-    render_loaded_resource(&badge.to_string(), "HTML shim", &shim);
+    render_resource_events(&badge.to_string(), "HTML shim", &shim.events);
     let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
@@ -581,12 +616,14 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     };
     let mut loaded_sources: Vec<(CollectedSourceTarget, MechSourceCode)> = Vec::new();
     for path in mech_paths {
-        for target in collect_format_targets(
+        let targets = collect_format_targets(
             Path::new(&path),
             output_exclusion.as_deref(),
             html_flag,
             writes_in_place,
-        )? {
+        )?;
+        render_discovery_events("[Mech Formatter]", &targets.events);
+        for target in targets {
             let code = read_format_source(&target.path)?;
             loaded_sources.push((target, code));
         }

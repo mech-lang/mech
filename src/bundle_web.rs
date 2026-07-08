@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
 use mech_core::*;
@@ -9,6 +8,10 @@ use mech_syntax::parser;
 
 use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig};
+
+fn validation_error(msg: impl Into<String>) -> MechError {
+  MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
+}
 
 #[derive(Clone, Debug)]
 pub struct BundleWebOptions {
@@ -31,11 +34,7 @@ pub struct BundleWebResult {
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
   if options.source_paths.is_empty() {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      "bundle-web requires serve.paths in the project config",
-    )
-    .into());
+    return Err(validation_error("bundle-web requires serve.paths in the project config"));
   }
 
   let project_dir = options.project_dir.canonicalize()?;
@@ -44,24 +43,16 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   fs::create_dir_all(&options.output_dir)?;
   let output_dir = options.output_dir.canonicalize()?;
   if output_dir == project_dir {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!(
-        "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
-        output_dir.display(),
-      ),
-    )
-    .into());
+    return Err(validation_error(format!(
+      "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
+      output_dir.display(),
+    )));
   }
   if output_dir == base_dir {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!(
-        "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
-        output_dir.display(),
-      ),
-    )
-    .into());
+    return Err(validation_error(format!(
+      "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
+      output_dir.display(),
+    )));
   }
   let stylesheet_string = read_stylesheets(&options.stylesheet_paths)?;
   let shim_string = read_shim(&options.shim_path)?;
@@ -100,7 +91,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
     let encoded = compress_and_encode(&tree)
-      .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
+      .map_err(|error| std::io::Error::other(error.to_string()))?;
     write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
 
     let html_relative = relative.with_extension("html");
@@ -165,13 +156,9 @@ fn validate_static_web_shim(shim: &str) -> MResult<()> {
     ("`/_mech/", "/_mech/", "./pkg/mech_wasm.js"),
   ] {
     if shim.contains(pattern) {
-      return Err(Error::new(
-        ErrorKind::InvalidInput,
-        format!(
-          "bundle-web shim contains server-root Mech URL `{url}`.\nUse a relative URL such as `{fix}` or `./pkg/mech_wasm.js`.",
-        ),
-      )
-      .into());
+      return Err(validation_error(format!(
+        "bundle-web shim contains server-root Mech URL `{url}`.\nUse a relative URL such as `{fix}` or `./pkg/mech_wasm.js`.",
+      )));
     }
   }
 
@@ -237,20 +224,14 @@ fn copy_project_static_assets_inner(
     }
 
     if !canonical_path.starts_with(project_dir) {
-      return Err(Error::new(
-        ErrorKind::InvalidInput,
-        format!(
-          "bundle-web static asset target is outside project root: {}",
-          canonical_path.display()
-        ),
-      ).into());
+      return Err(validation_error(format!(
+        "bundle-web static asset target is outside project root: {}",
+        canonical_path.display()
+      )));
     }
 
     let relative = logical_path.strip_prefix(project_dir).map_err(|error| {
-      Error::new(
-        ErrorKind::InvalidInput,
-        format!("bundle-web static asset path is outside project root: {error}"),
-      )
+      validation_error(format!("bundle-web static asset path is outside project root: {error}"))
     })?;
     validate_safe_relative_path(relative)?;
 
@@ -321,11 +302,7 @@ fn relative_source_path(source: &Path, base_dir: &Path, project_dir: &Path) -> M
   } else if let Ok(relative) = source.strip_prefix(project_dir) {
     relative
   } else {
-    return Err(Error::new(
-      ErrorKind::InvalidInput,
-      format!("bundle-web source is outside project/config root: {}", source.display()),
-    )
-    .into());
+    return Err(validation_error(format!("bundle-web source is outside project/config root: {}", source.display())));
   };
 
   validate_safe_relative_path(relative)?;

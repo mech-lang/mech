@@ -4,7 +4,7 @@ use mech_core::*;
 
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
-    LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    LoadedStylesheets, ResourceEvent, ResourceFallback,
     Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
 };
 use crate::cli::{capabilities, config, serve_options};
@@ -57,40 +57,32 @@ fn render_config_event(badge: &str, event: &config::ConfigLoadEvent) {
     }
 }
 
-fn render_resource_events(badge: &str, events: &[ResourceEvent]) {
+fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
     for event in events {
         match event {
             ResourceEvent::LoadedLocal { path } => {
-                println!("{badge} Loaded stylesheet: {}", path.display())
+                println!("{badge} Loaded {name}: {}", path.display())
             }
             ResourceEvent::MissingLocalUsedFallback { path, fallback } => match fallback {
                 ResourceFallback::EmbeddedDefault => println!(
-                    "{badge} Stylesheet not found: {}; using embedded default",
+                    "{badge} {name} not found: {}; using embedded default",
                     path.display()
                 ),
                 ResourceFallback::RemoteUrl(url) => println!(
-                    "{badge} Stylesheet not found: {}; using fallback {url}",
+                    "{badge} {name} not found: {}; using fallback {url}",
                     path.display()
                 ),
             },
             ResourceEvent::LoadedEmbeddedDefault => {
-                println!("{badge} Using embedded default stylesheet")
+                println!("{badge} Using embedded default {name}")
             }
             ResourceEvent::LoadedRemoteFallback { url } => {
-                println!("{badge} Downloaded fallback stylesheet: {url}")
+                println!("{badge} Downloaded fallback {name}: {url}")
             }
         }
     }
 }
 
-fn render_loaded_resource(badge: &str, name: &str, resource: &LoadedResource) {
-    match &resource.source {
-        ResourceSource::LocalPath(path) => println!("{badge} Loaded {name}: {}", path.display()),
-        ResourceSource::RemoteUrl(url) => println!("{badge} Downloaded fallback {name}: {url}"),
-        ResourceSource::EmbeddedDefault => println!("{badge} Using embedded default {name}"),
-        ResourceSource::EmptyPathFallback => println!("{badge} Using default {name}"),
-    }
-}
 
 pub(crate) fn command() -> Command {
     Command::new("serve")
@@ -203,7 +195,6 @@ pub(crate) fn prepare(
     matches: &ArgMatches,
     resources: WebResourceDefaults,
 ) -> MResult<ServePlan> {
-    let badge = "[Mech Server]".truecolor(34, 204, 187);
     let loaded = config::load_cli_config_report_with_inputs(matches, &args.paths)?;
     let loaded_config = loaded.config;
     let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
@@ -245,8 +236,9 @@ pub(crate) fn prepare(
     #[cfg(not(feature = "host_delegation_signing"))]
     let host_config_injection = None;
 
+    let capability_args = capabilities::FilesystemCapabilityArgs::from_matches(matches);
     let authority_build =
-        capabilities::build_mech_filesystem_authority(matches, loaded_config.as_ref(), &badge)?;
+        capabilities::build_mech_filesystem_authority(&capability_args, loaded_config.as_ref())?;
 
     Ok(ServePlan {
         paths: effective.paths,
@@ -269,7 +261,6 @@ pub(crate) fn prepare(
 
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
-    let error_badge = "[Error]".truecolor(246, 98, 78);
     let resources = &options.resources;
 
     if let Some(loaded) = options.loaded_config.as_ref() {
@@ -295,7 +286,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         css: stylesheet_str,
         events,
     } = load_stylesheets(&options.stylesheet_paths, &resources.stylesheet_backup_url).await?;
-    render_resource_events(&badge.to_string(), &events);
+    render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     print!("{badge} Loading HTML shim…");
     let shim = load_resource(
@@ -304,7 +295,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         Some(resources.shim_html.as_bytes()),
     )
     .await?;
-    render_loaded_resource(&badge.to_string(), "HTML shim", &shim);
+    render_resource_events(&badge.to_string(), "HTML shim", &shim.events);
     let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
@@ -322,11 +313,11 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         Some(resources.mech_wasm),
     )
     .await?;
-    render_loaded_resource(&badge.to_string(), "WASM", &wasm);
+    render_resource_events(&badge.to_string(), "WASM", &wasm.events);
 
     print!("{badge} Loading JS…");
     let js = load_resource(&js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
-    render_loaded_resource(&badge.to_string(), "JS", &js);
+    render_resource_events(&badge.to_string(), "JS", &js.events);
 
     let mut server = MechServer::new_with_runtime_config_and_host_config(
         "Mech Server".to_string(),
@@ -344,10 +335,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
 
     server.init().await?;
 
-    if let Err(err) = server.load_workspace(&options.paths) {
-        println!("{error_badge} {err:#?}");
-        return Ok(CliOutcome::exit(1));
-    }
+    server.load_workspace(&options.paths)?;
 
     println!("{badge} Sources loaded.");
 
@@ -370,18 +358,11 @@ fn serve_host_delegation_injection(
     let public_key = matches
         .get_one::<String>("host_delegation_public_key")
         .ok_or_else(|| {
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "--host-delegation-public-key is required with --host-delegation-key",
-            )
+            MechError::new(GenericError { msg: "--host-delegation-public-key is required with --host-delegation-key".to_string() }, None).with_compiler_loc()
         })?;
 
     let Some(loaded_config) = loaded_config else {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "host delegation signing requires a loaded config",
-        )
-        .into());
+        return Err(MechError::new(GenericError { msg: "host delegation signing requires a loaded config".to_string() }, None).with_compiler_loc());
     };
 
     let current_dir = std::env::current_dir()?;
@@ -410,10 +391,7 @@ fn serve_host_delegation_injection(
             .map(|value| value.parse())
             .transpose()
             .map_err(|_| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "--host-delegation-expires-ms must be an integer",
-                )
+                MechError::new(GenericError { msg: "--host-delegation-expires-ms must be an integer".to_string() }, None).with_compiler_loc()
             })?,
     };
 

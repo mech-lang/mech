@@ -42,7 +42,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     let mika_close = "⸥".bright_yellow();
 
     #[cfg(windows)]
-    control::set_virtual_terminal(true).unwrap();
+    control::set_virtual_terminal(true)?;
     clc();
     let mut stdo = std::io::stdout();
     stdo.execute(Print(text_logo))?;
@@ -64,12 +64,15 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     let exit_requested_for_handler = exit_requested.clone();
     ctrlc::set_handler(move || {
         println!("{}", ctrlc_cmd);
-        let mut caught_interrupts = ci.lock().unwrap();
+        let Ok(mut caught_interrupts) = ci.lock() else {
+            exit_requested_for_handler.store(true, Ordering::SeqCst);
+            return;
+        };
         *caught_interrupts += 1;
         if *caught_interrupts >= 3 {
             let final_state = ProgressBar::new_spinner();
             let completed_style = ProgressStyle::with_template("\n{spinner:.yellow} {msg}")
-                .unwrap()
+                .unwrap_or_else(|_| ProgressStyle::default_spinner())
                 .tick_strings(MICROMIKA_WAVE);
             final_state.set_style(completed_style);
             final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
@@ -86,7 +89,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         );
         print_prompt();
     })
-    .expect("Error setting Ctrl+C handler");
+    .map_err(|error| MechError::new(GenericError { msg: format!("Error setting Ctrl+C handler: {error}") }, None).with_compiler_loc())?;
 
     #[cfg(all(feature = "repl", feature = "run"))]
     let mut repl = {
@@ -121,12 +124,13 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
             return Ok(CliOutcome::exit(0));
         }
         {
-            let mut ci = caught_interrupts.lock().unwrap();
-            *ci = 0;
+            if let Ok(mut ci) = caught_interrupts.lock() {
+                *ci = 0;
+            }
         }
         print_prompt();
         let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+        io::stdin().read_line(&mut input)?;
 
         if input.chars().next() == Some(':') {
             match parse_repl_command(input.as_str()) {
