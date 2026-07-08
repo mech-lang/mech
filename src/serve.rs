@@ -545,7 +545,7 @@ impl MechServer {
         format!("[{}] Server", server_name).truecolor(34, 204, 187)
       };
       println!("{} Server received shutdown signal. Process terminating.", badge);
-      std::process::exit(0);
+      return;
     }).expect("Error setting Ctrl-C handler");
 
     let root = self.workspace_root.clone();

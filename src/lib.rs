@@ -1,4 +1,3 @@
-#![allow(warnings)]
 // Mech
 //=============================================================================
 
@@ -56,9 +55,12 @@ use std::collections::HashSet;
 
 #[cfg(feature = "repl")]
 mod repl;
-#[cfg(feature = "cli")]
+#[cfg(feature = "cli_core")]
 pub mod cli;
-#[cfg(feature = "bundle_web")]
+pub mod fs_paths;
+#[cfg(any(feature = "cli_core", feature = "bundle_web_core"))]
+pub mod source_discovery;
+#[cfg(feature = "bundle_web_core")]
 mod bundle_web;
 #[cfg(feature = "project")]
 mod project;
@@ -71,7 +73,7 @@ mod test;
 
 #[cfg(feature = "repl")]
 pub use self::repl::*;
-#[cfg(feature = "bundle_web")]
+#[cfg(feature = "bundle_web_core")]
 pub use self::bundle_web::*;
 #[cfg(feature = "project")]
 pub use self::project::*;
@@ -88,9 +90,9 @@ pub use mech_syntax::*;
 // Print a prompt 
 // 4, 8, 15, 16, 23, 42
 pub fn print_prompt() {
-  stdout().flush();
-  print!("{}", ">: ".truecolor(246,192,78));
-  stdout().flush();
+  let mut out = stdout();
+  let _ = write!(out, "{}", ">: ".truecolor(246,192,78));
+  let _ = out.flush();
 }
 
 // Generate a new id for creating unique owner ids
@@ -212,7 +214,6 @@ pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
     path.push("output.html");
   }
 
-  print!("{} Saving file to {}…", "[Save]".truecolor(153,221,85), path.display());
   stdout().flush()?;
 
   if let Some(parent) = path.parent() {
@@ -222,7 +223,6 @@ pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
   let mut file = fs::File::create(&path)?;
   file.write_all(content.as_bytes())?;
 
-  println!("Done.");
   Ok(())
 }
 
@@ -340,7 +340,6 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   // 1. User-supplied path always wins
   match std::fs::read(path) {
     Ok(content) => {
-      println!("Using user-supplied resource: {}", path);
       return Ok(content);
     }
     Err(_) => { /* continue to embedded / download */ }
@@ -349,13 +348,11 @@ pub async fn read_or_download(path: &str,backup_url: &str, embedded: Option<&[u8
   // 2. Embedded bytes (included via include_bytes!)
   if let Some(bytes) = embedded {
     if !bytes.is_empty() {
-      println!("Using embedded resource");
       return Ok(bytes.to_vec());
     }
   }
 
   // 3. Fallback: Download from remote URL
-  println!("Downloading from {}", backup_url);
 
   let response = reqwest::get(backup_url).await.map_err(|e| {
     MechError::new(
