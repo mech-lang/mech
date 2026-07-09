@@ -9,7 +9,7 @@ pub(crate) fn command() -> Command {
         .about("Validate program invariants.")
         .arg(
             Arg::new("mech_test_file_paths")
-                .help("Source .mec and .mecb files or directories")
+                .help("Source .mec/.🤖 files or directories. Explicit .mecb inputs are rejected because bytecode lacks invariant metadata.")
                 .required(false)
                 .action(ArgAction::Append),
         )

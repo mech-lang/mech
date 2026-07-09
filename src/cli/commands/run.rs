@@ -10,7 +10,7 @@ use crate::cli::outcome::CliOutcome;
 use crate::cli::run::{
     RunInputMode, new_cli_runtime, run_cli_source_code_with_events, run_cli_source_with_events,
 };
-use crate::cli::runtime_plan::{RunExecutionPlan, RunPlanEvent};
+use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
     collect_sources_with_events,
@@ -181,20 +181,6 @@ fn render_config_event(event: &config::ConfigLoadEvent) {
     }
 }
 
-fn render_plan_events(events: &[RunPlanEvent]) {
-    for event in events {
-        match event {
-            RunPlanEvent::AddedDefaultPathGrant {
-                path: _,
-                operations,
-            } => println!(
-                "[Mech Run] Added run path filesystem grant ({})",
-                operations.join(",")
-            ),
-        }
-    }
-}
-
 fn print_value(value: &Value) {
     println!("{}", value.kind());
     #[cfg(feature = "pretty_print")]
@@ -214,7 +200,6 @@ fn print_run_runtime_events(events: &[RuntimeEvent]) {
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
-    render_plan_events(&plan.events);
     #[cfg(feature = "repl")]
     let repl_runtime_config = Some(plan.runtime_config.clone());
     let mut runtime = new_cli_runtime(

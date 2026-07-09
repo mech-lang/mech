@@ -2,49 +2,90 @@ use crate::*;
 use mech_core::*;
 use mech_program::*;
 use serde::Serialize;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
-fn collect_test_targets(path: &Path) -> io::Result<Vec<PathBuf>> {
-  let mut visited = BTreeSet::new();
-  collect_test_targets_inner(path, &mut visited)
-}
+use crate::fs_paths::{extension_allowed, unsupported_source_path_error};
+use crate::source_discovery::{
+  collect_sources_with_events,
+  DedupePolicy,
+  DiscoveryOptions,
+  MissingPathPolicy,
+};
 
-fn collect_test_targets_inner(path: &Path, visited: &mut BTreeSet<PathBuf>) -> io::Result<Vec<PathBuf>> {
-  let metadata = std::fs::symlink_metadata(path)?;
-  if !metadata.is_dir() { return Ok(vec![path.to_path_buf()]); }
-  if metadata.file_type().is_symlink() { return Ok(Vec::new()); }
-  let canonical = path.canonicalize()?;
-  if !visited.insert(canonical) { return Ok(Vec::new()); }
+const TEST_EXPLICIT_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
+const TEST_RECURSIVE_EXTENSIONS: &[&str] = &["mec", "🤖"];
+const TEST_SKIP_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
-  let mut files = Vec::new();
-  for entry in std::fs::read_dir(path)? {
-    let entry = entry?;
-    let entry_path = entry.path();
-    let file_type = entry.file_type()?;
-    if file_type.is_symlink() {
-      continue;
-    } else if file_type.is_dir() {
-      files.extend(collect_test_targets_inner(&entry_path, visited)?);
-    } else if matches!(
-      entry_path.extension().and_then(OsStr::to_str),
-      Some("mec" | "🤖")
-    ) {
-      files.push(entry_path);
+fn collect_test_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  if let Ok(metadata) = std::fs::symlink_metadata(path) {
+    if metadata.file_type().is_symlink() {
+      let canonical = path.canonicalize()?;
+      if canonical.is_file() {
+        if extension_allowed(path, TEST_EXPLICIT_EXTENSIONS) {
+          return Ok(vec![path.to_path_buf()]);
+        }
+        return Err(unsupported_source_path_error(path, TEST_EXPLICIT_EXTENSIONS));
+      }
+      if canonical.is_dir() {
+        return Err(MechError::new(
+          GenericError {
+            msg: format!(
+              "Explicit symlinked test directory `{}` is not followed for test discovery.",
+              path.display()
+            ),
+          },
+          None,
+        )
+        .with_compiler_loc());
+      }
+      return Err(MechError::new(
+        GenericError {
+          msg: format!(
+            "Explicit symlinked test input `{}` does not resolve to a file or directory.",
+            path.display()
+          ),
+        },
+        None,
+      )
+      .with_compiler_loc());
     }
   }
-  files.sort();
-  Ok(files)
+
+  let base_dir = if path.is_dir() {
+    path
+  } else {
+    path.parent().unwrap_or_else(|| Path::new(""))
+  };
+
+  let discovery = collect_sources_with_events(
+    &[path.to_path_buf()],
+    base_dir,
+    DiscoveryOptions {
+      allowed_file_extensions: TEST_EXPLICIT_EXTENSIONS,
+      recursive_file_extensions: TEST_RECURSIVE_EXTENSIONS,
+      skip_dir_names: TEST_SKIP_DIRS,
+      follow_file_symlinks: false,
+      follow_dir_symlinks: false,
+      missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
+      dedupe_policy: DedupePolicy::CanonicalPath,
+    },
+  )?;
+
+  let mut targets = discovery
+    .entries
+    .into_iter()
+    .map(|entry| entry.logical_path)
+    .collect::<Vec<_>>();
+
+  targets.sort();
+  Ok(targets)
 }
 
-fn is_bytecode_test_path(path: &str) -> bool {
-  Path::new(path)
-    .extension()
-    .and_then(|extension| extension.to_str())
-    .map(|extension| extension.eq_ignore_ascii_case("mecb"))
-    .unwrap_or(false)
+fn is_bytecode_test_path(path: &Path) -> bool {
+  matches!(mech_runtime::SourceKind::from_path(path), mech_runtime::SourceKind::MechBytecode)
 }
 
 fn bytecode_test_unsupported_error(path: &str) -> MechError {
@@ -110,6 +151,28 @@ struct SummaryResult {
 struct TestReport {
   result: SummaryResult,
   files: Vec<FileReport>,
+}
+
+impl FileReport {
+  fn failed_file(&self) -> bool {
+    self.run_error.is_some() || self.result.failed > 0
+  }
+}
+
+impl SummaryResult {
+  fn failed_run(&self) -> bool {
+    self.files_failed > 0 || self.tests_failed > 0
+  }
+}
+
+impl TestReport {
+  fn status_label(&self) -> &'static str {
+    if self.result.failed_run() { "FAILED" } else { "SUCCESS" }
+  }
+
+  fn exit_code(&self) -> i32 {
+    if self.result.failed_run() { 1 } else { 0 }
+  }
 }
 #[derive(Debug, Serialize)]
 struct NamedCase {
@@ -206,22 +269,22 @@ pub fn run_mech_tests(
   let mut expanded_paths = Vec::new();
   for input in mech_paths {
     let input_path = Path::new(&input);
-    let targets = collect_test_targets(input_path).map_err(|e| {
-      MechError::new(
-        GenericError {
-          msg: format!("Unable to collect test targets for `{}`: {}", input, e),
-        },
-        None,
-      )
-      .with_compiler_loc()
-    })?;
+    let targets = collect_test_targets(input_path)?;
     for target in targets {
       expanded_paths.push(target.display().to_string());
     }
   }
 
-  let mut any_failed = false;
-  let mut run_errors = false;
+  if expanded_paths.is_empty() {
+    return Err(MechError::new(
+      GenericError {
+        msg: "No test targets were found.".to_string(),
+      },
+      None,
+    )
+    .with_compiler_loc());
+  }
+
   let mut file_reports = Vec::new();
   println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
   for path in &expanded_paths {
@@ -232,11 +295,9 @@ pub fn run_mech_tests(
     });
     let _ = tree_flag;
     program.configure(debug_flag, trace_flag, time_flag, 10_000);
-    if is_bytecode_test_path(path) {
+    if is_bytecode_test_path(Path::new(path)) {
       let err = bytecode_test_unsupported_error(path);
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      run_errors = true;
-      any_failed = true;
       file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
       continue;
     }
@@ -251,16 +312,12 @@ pub fn run_mech_tests(
         )
         .with_compiler_loc();
         eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-        run_errors = true;
-        any_failed = true;
         file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
         continue;
       }
     };
     if let Err(err) = program.run_source(&source) {
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      run_errors = true;
-      any_failed = true;
       file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
       continue;
     }
@@ -329,7 +386,6 @@ pub fn run_mech_tests(
         println!();
       }
     } else {
-      any_failed = true;
       println!("\n{} FAILURE: {} total | {} passed | {} failed\n", "[Test]".truecolor(153, 221, 85), total, passed, failed);
       println!("failures:\n");
       for f in &failed_cases {
@@ -354,7 +410,7 @@ pub fn run_mech_tests(
     file_reports.push(FileReport { path: path.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_cases, run_error: None });
   }
 
-  let files_passed = file_reports.iter().filter(|f| f.run_error.is_none() && f.result.failed == 0).count();
+  let files_passed = file_reports.iter().filter(|f| !f.failed_file()).count();
   let files_failed = file_reports.len().saturating_sub(files_passed);
   let tests_total = file_reports.iter().map(|f| f.result.total).sum();
   let tests_passed = file_reports.iter().map(|f| f.result.passed).sum();
@@ -365,7 +421,7 @@ pub fn run_mech_tests(
   };
 
   if expanded_paths.len() > 1 {
-    let summary_status = if report.result.tests_failed == 0 { "SUCCESS" } else { "FAILED" };
+    let summary_status = report.status_label();
     println!(
       "\n{} {}: files {} total | {} passed | {} failed || tests {} total | {} passed | {} failed",
       "[Test]".truecolor(153, 221, 85),
@@ -381,7 +437,7 @@ pub fn run_mech_tests(
     let failing_files = report
       .files
       .iter()
-      .filter(|f| f.run_error.is_some() || f.result.failed > 0)
+      .filter(|f| f.failed_file())
       .collect::<Vec<_>>();
 
     if !failing_files.is_empty() {
@@ -402,7 +458,7 @@ pub fn run_mech_tests(
       let passing_files = report
         .files
         .iter()
-        .filter(|f| f.run_error.is_none() && f.result.failed == 0)
+        .filter(|f| !f.failed_file())
         .map(|f| f.path.clone())
         .collect::<Vec<_>>();
       if !passing_files.is_empty() {
@@ -414,28 +470,190 @@ pub fn run_mech_tests(
     }
     println!();
 
-    if let Some(output_path) = output_path {
-      let path = PathBuf::from(&output_path);
-      let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
-      match extension {
-        "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
-        "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
-        _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
-      }
+  }
+
+  if let Some(output_path) = output_path {
+    let path = PathBuf::from(&output_path);
+    let extension = path.extension().and_then(OsStr::to_str).unwrap_or("");
+    match extension {
+      "json" => save_to_file(path, &report_to_json(&report, verbose)?)?,
+      "mec" => save_to_file(path, &report_to_mech(&report, verbose))?,
+      _ => { eprintln!("{} Unsupported --out extension `.{}`. Use .json or .mec.", "[Error]".truecolor(246,98,78), extension); return Ok(1); }
     }
   }
-  Ok(if any_failed { 1 } else { 0 })
+
+  Ok(report.exit_code())
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
 
+  fn temp_test_root(label: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+      "mech-test-{label}-{}",
+      std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    root
+  }
+
+  #[test]
+  fn test_out_writes_json_for_single_file() {
+    let root = std::env::temp_dir().join(format!("mech-test-out-json-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(&source, "x := 1\n").unwrap();
+
+    let exit_code = run_mech_tests(vec![source.display().to_string()], false, false, false, false, Some(output.display().to_string()), false).unwrap();
+
+    assert_eq!(exit_code, 0);
+    assert!(output.metadata().unwrap().len() > 0);
+    assert!(std::fs::read_to_string(&output).unwrap().contains("files-total"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_out_writes_mec_for_single_file() {
+    let root = std::env::temp_dir().join(format!("mech-test-out-mec-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("main.mec");
+    let output = root.join("report.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+
+    let exit_code = run_mech_tests(vec![source.display().to_string()], false, false, false, false, Some(output.display().to_string()), false).unwrap();
+
+    assert_eq!(exit_code, 0);
+    assert!(output.metadata().unwrap().len() > 0);
+    assert!(std::fs::read_to_string(&output).unwrap().contains("files-total"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn test_report_status_fails_when_file_has_run_error_without_failed_tests() {
+    let report = TestReport {
+      result: SummaryResult { files_total: 1, files_passed: 0, files_failed: 1, tests_total: 0, tests_passed: 0, tests_failed: 0 },
+      files: vec![FileReport { path: "broken.mec".to_string(), result: FileResult { total: 0, passed: 0, failed: 0 }, failed: vec![], passed: vec![], run_error: Some("boom".to_string()) }],
+    };
+
+    assert_eq!(report.status_label(), "FAILED");
+    assert_eq!(report.exit_code(), 1);
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn test_directory_discovery_skips_broken_symlink() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("broken-symlink");
+    let source = root.join("main.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    symlink(root.join("missing.mec"), root.join("broken.mec")).unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn test_explicit_broken_symlink_errors() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("explicit-broken-symlink");
+    let broken = root.join("broken.mec");
+    symlink(root.join("missing.mec"), &broken).unwrap();
+
+    let result = collect_test_targets(&broken);
+
+    assert!(result.is_err());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn explicit_symlinked_test_file_is_collected() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("explicit-file-symlink");
+    let source = root.join("main.mec");
+    let link = root.join("linked.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    symlink(&source, &link).unwrap();
+
+    let targets = collect_test_targets(&link).unwrap();
+
+    assert_eq!(targets, vec![link]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn explicit_symlinked_mecb_input_is_collected_for_rejection() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("explicit-mecb-symlink");
+    let bytecode = root.join("compiled.mecb");
+    let link = root.join("linked.mecb");
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
+    symlink(&bytecode, &link).unwrap();
+
+    let targets = collect_test_targets(&link).unwrap();
+
+    assert_eq!(targets, vec![link]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn directory_discovery_skips_file_symlink() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("directory-file-symlink");
+    let outside = temp_test_root("directory-file-symlink-target");
+    let source = root.join("main.mec");
+    let linked_target = outside.join("linked-target.mec");
+    let link = root.join("linked.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    std::fs::write(&linked_target, "y := 2\n").unwrap();
+    symlink(&linked_target, &link).unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+    std::fs::remove_dir_all(outside).unwrap();
+  }
+
+  #[test]
+  fn run_mech_tests_errors_when_no_targets_are_found() {
+    let root = temp_test_root("empty-directory");
+
+    let result = run_mech_tests(
+      vec![root.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      None,
+      false,
+    );
+
+    let error = result.unwrap_err().display_message();
+    assert!(error.contains("No test targets were found"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
   #[test]
   fn bytecode_test_path_detection_is_case_insensitive() {
-    assert!(is_bytecode_test_path("compiled.mecb"));
-    assert!(is_bytecode_test_path("compiled.MECB"));
-    assert!(!is_bytecode_test_path("source.mec"));
+    assert!(is_bytecode_test_path(Path::new("compiled.mecb")));
+    assert!(is_bytecode_test_path(Path::new("compiled.MECB")));
+    assert!(!is_bytecode_test_path(Path::new("source.mec")));
   }
 
   #[test]

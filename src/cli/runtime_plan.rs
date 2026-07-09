@@ -1,18 +1,10 @@
 use mech_core::*;
-use mech_runtime::{FS_LIST, FS_READ, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
 use crate::cli::host_grants;
 use crate::cli::run::{RunInputMode, effective_run_runtime_config};
 use crate::cli::run_options::PreparedRunOptions;
 use crate::generate_uuid;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum RunPlanEvent {
-    AddedDefaultPathGrant {
-        path: std::path::PathBuf,
-        operations: Vec<&'static str>,
-    },
-}
 
 pub(crate) struct RunExecutionPlan {
     pub runtime_config: RuntimeConfig,
@@ -26,7 +18,6 @@ pub(crate) struct RunExecutionPlan {
     pub configured_run_grants: Vec<RunResourceGrantConfig>,
     pub filesystem_access: crate::cli::capabilities::FilesystemRuntimeAccess,
     pub config_event: crate::cli::config::ConfigLoadEvent,
-    pub events: Vec<RunPlanEvent>,
 }
 
 pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<RunExecutionPlan> {
@@ -78,35 +69,6 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         .map(|options| options.paths)
         .unwrap_or_default();
 
-    let mut events = Vec::new();
-
-    if !options.no_default_capabilities {
-        let mut ids = mech_runtime::DefaultIdGenerator::new();
-        for p in &run_paths {
-            let path = std::path::Path::new(p);
-            let grant_path = if path.is_dir() {
-                path
-            } else {
-                path.parent().unwrap_or_else(|| std::path::Path::new("."))
-            };
-            let operations = vec![
-                FS_READ,
-                FS_LIST,
-                mech_runtime::FS_RESOLVE,
-                mech_runtime::FS_IMPORT,
-            ];
-            filesystem_access.authority.grant_path(
-                &mut ids,
-                grant_path,
-                true,
-                operations.iter().copied(),
-            )?;
-            events.push(RunPlanEvent::AddedDefaultPathGrant {
-                path: grant_path.to_path_buf(),
-                operations,
-            });
-        }
-    }
     filesystem_access.kernel = filesystem_access.authority.kernel().clone();
 
     Ok(RunExecutionPlan {
@@ -121,6 +83,98 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         configured_run_grants,
         filesystem_access,
         config_event,
-        events,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cli::capabilities::{FilesystemCapabilityArgs, build_filesystem_runtime_access};
+    use crate::cli::config::ConfigLoadEvent;
+    use crate::cli::host_grants::CliHostCapabilitySelection;
+    use mech_runtime::{FS_IMPORT, FS_READ, FS_RESOLVE, MECH_TOOL_SUBJECT, check_fs_capability};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    struct CurrentDirGuard {
+        previous: std::path::PathBuf,
+        _lock: std::sync::MutexGuard<'static, ()>,
+    }
+
+    impl CurrentDirGuard {
+        fn enter(path: &std::path::Path) -> Self {
+            let lock = CURRENT_DIR_LOCK.lock().unwrap();
+            let previous = std::env::current_dir().unwrap();
+            std::env::set_current_dir(path).unwrap();
+            Self {
+                previous,
+                _lock: lock,
+            }
+        }
+    }
+
+    impl Drop for CurrentDirGuard {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.previous).unwrap();
+        }
+    }
+
+    fn temp_root(label: &str) -> std::path::PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "mech-runtime-plan-{label}-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        root.canonicalize().unwrap()
+    }
+
+    #[test]
+    fn explicit_cap_root_does_not_gain_run_input_parent_grant() {
+        let root = temp_root("explicit-cap-root");
+        let allowed = root.join("allowed");
+        let outside = root.join("outside");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        let run_input = outside.join("main.mec");
+        std::fs::write(&run_input, "x := 1\n").unwrap();
+        let guard = CurrentDirGuard::enter(&root);
+
+        let filesystem_access = build_filesystem_runtime_access(
+            &FilesystemCapabilityArgs {
+                cap_roots: vec![std::path::PathBuf::from("allowed")],
+                ..FilesystemCapabilityArgs::default()
+            },
+            None,
+        )
+        .unwrap();
+
+        let plan = build_run_execution_plan(PreparedRunOptions {
+            input_mode: RunInputMode::Paths(vec!["outside/main.mec".to_string()]),
+            explicit_run_command: true,
+            debug: false,
+            trace: false,
+            time: false,
+            repl: false,
+            rounds_per_step: None,
+            loaded_config: None,
+            config_event: ConfigLoadEvent::NotFound,
+            cli_capability_selection: CliHostCapabilitySelection::default(),
+            filesystem_access,
+        })
+        .unwrap();
+
+        for operation in [FS_READ, FS_RESOLVE, FS_IMPORT] {
+            let mut kernel = plan.filesystem_access.kernel.clone();
+            assert!(
+                check_fs_capability(&mut kernel, MECH_TOOL_SUBJECT, operation, &run_input).is_err()
+            );
+        }
+
+        drop(guard);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

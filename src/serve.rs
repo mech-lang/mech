@@ -12,8 +12,8 @@ use mech_host_browser::BrowserRuntimeInjectionConfig;
 use mech_runtime::{
   EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
-  ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, IdGenerator, SERVE_HOST_SUBJECT,
-  FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, check_fs_capability,
+  ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, SERVE_HOST_SUBJECT,
+  FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, SourceKind, check_fs_capability,
 };
 use warp::{Filter, Reply};
 
@@ -214,7 +214,7 @@ impl ServerSourceRegistry {
   }
 
   fn reload_static_path(&mut self, root: &Path, path: &Path) -> MResult<bool> {
-    if is_mech_source(path) {
+    if is_workspace_target_source(path) {
       return Ok(false);
     }
     let Some(key) = static_key_for_path(root, path) else {
@@ -250,7 +250,7 @@ impl ServerSourceRegistry {
 
     for source in snapshot.sources.values() {
       let Some(path) = source.path.as_ref() else { continue; };
-      if !is_mech_source(path) {
+      if !is_renderable_mech_text_source(path) {
         continue;
       }
       let relative = path.strip_prefix(root).map_err(|error| {
@@ -537,16 +537,40 @@ impl MechServer {
     if !self.init {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
+
+    let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
     let server_name = self.name.clone();
+
     ctrlc::set_handler(move || {
       let badge = if server_name.ends_with(" Server") {
         format!("[{}]", server_name).truecolor(34, 204, 187)
       } else {
         format!("[{}] Server", server_name).truecolor(34, 204, 187)
       };
-      println!("{} Server received shutdown signal. Process terminating.", badge);
-      return;
-    }).expect("Error setting Ctrl-C handler");
+
+      let _ = shutdown_tx.send(true);
+      println!("{} Server received shutdown signal.", badge);
+    })
+    .map_err(|error| {
+      MechError::new(
+        GenericError {
+          msg: format!("Error setting Ctrl-C handler: {}", error),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+
+    self.serve_until_shutdown(shutdown_rx).await
+  }
+
+  async fn serve_until_shutdown(
+    &self,
+    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+  ) -> MResult<()> {
+    if !self.init {
+      return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
+    }
 
     let root = self.workspace_root.clone();
     let registry = self.registry.clone();
@@ -575,7 +599,12 @@ impl MechServer {
     });
     println!("{} Awaiting connections at {}", self.badge(), self.full_address);
     let socket_address: SocketAddr = self.full_address.parse().unwrap();
-    let server = warp::serve(routes).run(socket_address);
+    let mut server_shutdown_rx = shutdown_rx.clone();
+    let (_addr, server) = warp::serve(routes).bind_with_graceful_shutdown(socket_address, async move {
+      if !*server_shutdown_rx.borrow() {
+        let _ = server_shutdown_rx.changed().await;
+      }
+    });
     if let (Some(session), Some(root)) = (&self.workspace_session, &root) {
       let html_shim = self.injected_html_shim()?;
       let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
@@ -585,11 +614,21 @@ impl MechServer {
           _ = interval.tick() => {
             let _ = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim);
           }
+          _ = shutdown_rx.changed() => {
+            let _ = (&mut server).await;
+            break;
+          }
           _ = &mut server => break,
         }
       }
     } else {
-      server.await;
+      tokio::pin!(server);
+      tokio::select! {
+        _ = &mut server => {}
+        _ = shutdown_rx.changed() => {
+          let _ = (&mut server).await;
+        }
+      }
     }
     println!("{} Closing server.", self.badge());
     Ok(())
@@ -697,7 +736,7 @@ fn plan_serve_inputs(paths: &[String]) -> MResult<ServeInputPlan> {
         root_paths.push(parent.to_path_buf());
       }
       resolved.push(canonical);
-    } else if is_mech_source(&candidate) {
+    } else if is_workspace_target_source(&candidate) {
       let parent = candidate.parent().ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("Mech target `{}` has no parent directory", input)))?;
       let parent = parent.canonicalize().unwrap_or_else(|_| parent.to_path_buf());
       root_paths.push(parent.clone());
@@ -717,7 +756,7 @@ fn plan_serve_inputs(paths: &[String]) -> MResult<ServeInputPlan> {
       let specifier = relative_specifier(&root, &path).ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("serve directory `{}` is outside workspace root", path.display())))?;
       folders.push(RuntimeWorkspaceFolder { specifier: specifier.clone(), recursive: true });
       static_paths.push(specifier);
-    } else if is_mech_source(&path) {
+    } else if is_workspace_target_source(&path) {
       let specifier = relative_specifier(&root, &path).ok_or_else(|| Error::new(ErrorKind::InvalidInput, format!("Mech target `{}` is outside workspace root", path.display())))?;
       preferred_index_source.get_or_insert_with(|| specifier.clone());
       targets.push(RuntimeWorkspaceTarget { name: target_name(&specifier), specifier });
@@ -755,9 +794,9 @@ fn log_skipped_serve_inputs(paths: &[String]) -> MResult<()> {
   for input in paths {
     let path = Path::new(input);
     let path = if path.is_absolute() { path.to_path_buf() } else { current_dir.join(path) };
-    if !path.exists() && !is_mech_source(&path) {
+    if !path.exists() && !is_workspace_target_source(&path) {
       println!("[Mech Server] Warning: skipped missing non-Mech input `{}`.", input);
-    } else if path.is_file() && !is_mech_source(&path) && !is_allowed_static_file(&path) {
+    } else if path.is_file() && !is_workspace_target_source(&path) && !is_allowed_static_file(&path) {
       println!("[Mech Server] Warning: skipped unsupported file `{}`.", input);
     }
   }
@@ -768,13 +807,13 @@ fn load_static_assets_from_paths(registry: &mut ServerSourceRegistry, root: &Pat
   for input in paths {
     let path = root.join(input);
     if path.is_file() {
-      if !is_mech_source(&path) {
+      if !is_workspace_target_source(&path) {
         registry.insert_static_file(root, &path)?;
       }
     } else if path.is_dir() {
       for entry in WalkBuilder::new(&path).build() {
         let entry = entry.map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
-        if entry.file_type().map(|kind| kind.is_file()).unwrap_or(false) && !is_mech_source(entry.path()) {
+        if entry.file_type().map(|kind| kind.is_file()).unwrap_or(false) && !is_workspace_target_source(entry.path()) {
           registry.insert_static_file(root, entry.path())?;
         }
       }
@@ -852,8 +891,12 @@ fn content_type_for_path(path: &str) -> &'static str {
   }
 }
 
-fn is_mech_source(path: &Path) -> bool {
-  matches!(path.extension().and_then(|ext| ext.to_str()), Some("mec") | Some("🤖"))
+fn is_workspace_target_source(path: &Path) -> bool {
+  SourceKind::from_path(path).is_executable_mech()
+}
+
+fn is_renderable_mech_text_source(path: &Path) -> bool {
+  matches!(SourceKind::from_path(path), SourceKind::Mech)
 }
 
 fn is_allowed_static_file(path: &Path) -> bool {
@@ -982,6 +1025,80 @@ mod tests {
   }
 
 
+
+  #[test]
+  fn plan_serve_inputs_accepts_explicit_mecb_target() {
+    let root = temp_root("explicit-mecb-target");
+    std::fs::write(root.join("main.mecb"), b"bytecode").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+
+    let plan = plan_serve_inputs(&vec!["main.mecb".to_string()]).unwrap();
+
+    assert_eq!(plan.targets.len(), 1);
+    assert_eq!(plan.static_paths.len(), 0);
+    assert_eq!(plan.targets[0].specifier, "main.mecb");
+
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn plan_serve_inputs_keeps_mecb_out_of_static_paths() {
+    let root = temp_root("mecb-not-static");
+    std::fs::write(root.join("main.mecb"), b"bytecode").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+
+    let plan = plan_serve_inputs(&vec!["main.mecb".to_string()]).unwrap();
+
+    assert!(plan.static_paths.is_empty());
+    assert_eq!(plan.targets.iter().map(|target| target.specifier.as_str()).collect::<Vec<_>>(), vec!["main.mecb"]);
+
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn renderable_source_predicate_excludes_mecb() {
+    assert!(is_workspace_target_source(Path::new("main.mecb")));
+    assert!(!is_renderable_mech_text_source(Path::new("main.mecb")));
+    assert!(is_renderable_mech_text_source(Path::new("main.mec")));
+  }
+
+
+  #[test]
+  fn serve_until_shutdown_rejects_uninitialized_server() {
+    let server = test_server();
+    let (_shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+
+    let result = tokio::runtime::Runtime::new()
+      .unwrap()
+      .block_on(server.serve_until_shutdown(shutdown_rx));
+
+    assert!(result.is_err());
+  }
+
+  #[test]
+  fn serve_until_shutdown_exits_when_shutdown_signal_changes() {
+    let mut server = test_server();
+    server.init = true;
+    let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+
+    tokio::runtime::Runtime::new().unwrap().block_on(async move {
+      let server_future = server.serve_until_shutdown(shutdown_rx);
+      let shutdown_future = async move {
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        let _ = shutdown_tx.send(true);
+      };
+
+      tokio::time::timeout(std::time::Duration::from_secs(2), async move {
+        let (result, _) = tokio::join!(server_future, shutdown_future);
+        result
+      })
+      .await
+      .expect("server did not shut down")
+      .unwrap();
+    });
+  }
 
   #[test]
   fn server_init_does_not_mutate_html_shim_with_host_config() {
