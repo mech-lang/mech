@@ -29,8 +29,9 @@ use crate::id::{
   ObjectId, TaskId, TransactionId,
 };
 use crate::resolver::{
-  ModuleScopeMetadata, SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration,
-  SourceImportAlias, SourceImportDeclaration, SourceScope,
+  import_requires_source_dependency, ModuleScopeMetadata, SourceAddressReference,
+  SourceContextDeclaration, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
+  SourceScope,
 };
 
 // -----------------------------------------------------------------------------
@@ -208,7 +209,7 @@ pub struct ModuleVersionRecord {
 }
 
 fn import_requires_edge(import: &SourceImportDeclaration) -> bool {
-  !matches!(import.alias, Some(SourceImportAlias::Context(_)))
+  import_requires_source_dependency(import)
 }
 
 impl ModuleVersionRecord {
