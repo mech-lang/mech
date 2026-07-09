@@ -7,6 +7,7 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use crate::fs_paths::{extension_allowed, unsupported_source_path_error};
 use crate::source_discovery::{
   collect_sources_with_events,
   DedupePolicy,
@@ -19,6 +20,40 @@ const TEST_RECURSIVE_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const TEST_SKIP_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
 fn collect_test_targets(path: &Path) -> MResult<Vec<PathBuf>> {
+  if let Ok(metadata) = std::fs::symlink_metadata(path) {
+    if metadata.file_type().is_symlink() {
+      let canonical = path.canonicalize()?;
+      if canonical.is_file() {
+        if extension_allowed(path, TEST_EXPLICIT_EXTENSIONS) {
+          return Ok(vec![path.to_path_buf()]);
+        }
+        return Err(unsupported_source_path_error(path, TEST_EXPLICIT_EXTENSIONS));
+      }
+      if canonical.is_dir() {
+        return Err(MechError::new(
+          GenericError {
+            msg: format!(
+              "Explicit symlinked test directory `{}` is not followed for test discovery.",
+              path.display()
+            ),
+          },
+          None,
+        )
+        .with_compiler_loc());
+      }
+      return Err(MechError::new(
+        GenericError {
+          msg: format!(
+            "Explicit symlinked test input `{}` does not resolve to a file or directory.",
+            path.display()
+          ),
+        },
+        None,
+      )
+      .with_compiler_loc());
+    }
+  }
+
   let base_dir = if path.is_dir() {
     path
   } else {
@@ -238,6 +273,16 @@ pub fn run_mech_tests(
     for target in targets {
       expanded_paths.push(target.display().to_string());
     }
+  }
+
+  if expanded_paths.is_empty() {
+    return Err(MechError::new(
+      GenericError {
+        msg: "No test targets were found.".to_string(),
+      },
+      None,
+    )
+    .with_compiler_loc());
   }
 
   let mut file_reports = Vec::new();
@@ -527,6 +572,80 @@ mod tests {
     let result = collect_test_targets(&broken);
 
     assert!(result.is_err());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn explicit_symlinked_test_file_is_collected() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("explicit-file-symlink");
+    let source = root.join("main.mec");
+    let link = root.join("linked.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    symlink(&source, &link).unwrap();
+
+    let targets = collect_test_targets(&link).unwrap();
+
+    assert_eq!(targets, vec![link]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn explicit_symlinked_mecb_input_is_collected_for_rejection() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("explicit-mecb-symlink");
+    let bytecode = root.join("compiled.mecb");
+    let link = root.join("linked.mecb");
+    std::fs::write(&bytecode, b"not valid bytecode").unwrap();
+    symlink(&bytecode, &link).unwrap();
+
+    let targets = collect_test_targets(&link).unwrap();
+
+    assert_eq!(targets, vec![link]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn directory_discovery_skips_file_symlink() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("directory-file-symlink");
+    let outside = temp_test_root("directory-file-symlink-target");
+    let source = root.join("main.mec");
+    let linked_target = outside.join("linked-target.mec");
+    let link = root.join("linked.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    std::fs::write(&linked_target, "y := 2\n").unwrap();
+    symlink(&linked_target, &link).unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+    std::fs::remove_dir_all(outside).unwrap();
+  }
+
+  #[test]
+  fn run_mech_tests_errors_when_no_targets_are_found() {
+    let root = temp_test_root("empty-directory");
+
+    let result = run_mech_tests(
+      vec![root.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      None,
+      false,
+    );
+
+    let error = result.unwrap_err().display_message();
+    assert!(error.contains("No test targets were found"));
     std::fs::remove_dir_all(root).unwrap();
   }
 
