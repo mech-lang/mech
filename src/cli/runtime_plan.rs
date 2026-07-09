@@ -141,7 +141,7 @@ mod tests {
         std::fs::create_dir_all(&outside).unwrap();
         let run_input = outside.join("main.mec");
         std::fs::write(&run_input, "x := 1\n").unwrap();
-        let _guard = CurrentDirGuard::enter(&root);
+        let guard = CurrentDirGuard::enter(&root);
 
         let filesystem_access = build_filesystem_runtime_access(
             &FilesystemCapabilityArgs {
@@ -174,6 +174,7 @@ mod tests {
             );
         }
 
+        drop(guard);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

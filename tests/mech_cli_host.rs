@@ -81,6 +81,7 @@ fn mech_file_execution_loads_cli_host_provider() {
 
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg(&source_path)
+    .current_dir(&root)
     .env("MECH_CLI_HOST_TEST", "mech-cli-host-ok")
     .output()
     .unwrap();
@@ -97,6 +98,7 @@ fn mech_run_subcommand_loads_cli_host_provider() {
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
     .arg(&source_path)
+    .current_dir(&root)
     .env("MECH_CLI_HOST_TEST", "mech-cli-host-ok")
     .output()
     .unwrap();
@@ -296,6 +298,7 @@ fn mech_run_explicit_loader_supported_text_file_still_runs() {
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
     .arg(&source)
+    .current_dir(&root)
     .output()
     .unwrap();
 
@@ -388,6 +391,8 @@ fn mech_run_explicit_stdout_profile_permits_stdout() {
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
+    .arg("--allow-read")
+    .arg(&source)
     .arg(&source)
     .output()
     .unwrap();
@@ -415,6 +420,8 @@ fn mech_run_capability_passthrough_file_runs_once() {
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
+    .arg("--allow-read")
+    .arg(&source)
     .arg(&source)
     .output()
     .unwrap();
@@ -427,7 +434,7 @@ fn mech_run_capability_passthrough_file_runs_once() {
   );
 
   let combined = combined_output(&output);
-  let count = combined.matches("cap-passthrough-once").count();
+  let count = combined.lines().filter(|line| *line == "cap-passthrough-once").count();
   assert_eq!(
     count, 1,
     "source file should execute exactly once, got {count} occurrences:
@@ -458,6 +465,8 @@ fn mech_run_single_capabilities_arg_accepts_stdout_and_env_profiles() {
     .arg(":cli/stdout")
     .arg("--capabilities")
     .arg(":cli/env")
+    .arg("--allow-read")
+    .arg(&source)
     .arg(&source)
     .env("MECH_CLI_HOST_TEST", "stdout-env-profile-ok")
     .output()
@@ -514,6 +523,8 @@ x := @env/HOME
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
+    .arg("--allow-read")
+    .arg(&source)
     .arg(&source)
     .output()
     .unwrap();
@@ -799,6 +810,7 @@ pick(x<string>) => <string>
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
     .arg(&source)
+    .current_dir(&root)
     .env("MECH_FUNCTION_PATTERN_TEST", "secret")
     .output()
     .unwrap();
@@ -844,6 +856,8 @@ ys := { "hit" | @env/HOME <- ["anything"] }
     .arg("--deny-default-capabilities")
     .arg("--capabilities")
     .arg(":cli/stdout")
+    .arg("--allow-read")
+    .arg(&source)
     .arg(&source)
     .output()
     .unwrap();
@@ -876,6 +890,7 @@ ys := { x | (x, @env/MECH_GENERATOR_PATTERN_TEST) <- [("keep", "secret") ("drop"
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
     .arg(&source)
+    .current_dir(&root)
     .env("MECH_GENERATOR_PATTERN_TEST", "secret")
     .output()
     .unwrap();
@@ -915,6 +930,7 @@ x := @missing/HOME
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
     .arg(&source)
+    .current_dir(&root)
     .output()
     .unwrap();
 
@@ -955,6 +971,7 @@ fn mech_run_fsm_arm_context_pattern_is_literal_not_capture() {
   let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
     .arg("run")
     .arg(&source)
+    .current_dir(&root)
     .env("MECH_FSM_PATTERN_TEST", "secret")
     .output()
     .unwrap();

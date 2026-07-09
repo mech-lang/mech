@@ -534,6 +534,10 @@ impl MechServer {
   }
 
   pub async fn serve(&self) -> MResult<()> {
+    if !self.init {
+      return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
+    }
+
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
     let server_name = self.name.clone();
 
@@ -1058,6 +1062,19 @@ mod tests {
     assert!(is_workspace_target_source(Path::new("main.mecb")));
     assert!(!is_renderable_mech_text_source(Path::new("main.mecb")));
     assert!(is_renderable_mech_text_source(Path::new("main.mec")));
+  }
+
+
+  #[test]
+  fn serve_until_shutdown_rejects_uninitialized_server() {
+    let server = test_server();
+    let (_shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+
+    let result = tokio::runtime::Runtime::new()
+      .unwrap()
+      .block_on(server.serve_until_shutdown(shutdown_rx));
+
+    assert!(result.is_err());
   }
 
   #[test]

@@ -34,7 +34,7 @@ fn collect_test_targets(path: &Path) -> MResult<Vec<PathBuf>> {
       skip_dir_names: TEST_SKIP_DIRS,
       follow_file_symlinks: false,
       follow_dir_symlinks: false,
-      missing_path_policy: MissingPathPolicy::Error,
+      missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
       dedupe_policy: DedupePolicy::CanonicalPath,
     },
   )?;
@@ -444,6 +444,18 @@ pub fn run_mech_tests(
 mod tests {
   use super::*;
 
+  fn temp_test_root(label: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+      "mech-test-{label}-{}",
+      std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    root
+  }
+
   #[test]
   fn test_out_writes_json_for_single_file() {
     let root = std::env::temp_dir().join(format!("mech-test-out-json-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -485,6 +497,37 @@ mod tests {
 
     assert_eq!(report.status_label(), "FAILED");
     assert_eq!(report.exit_code(), 1);
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn test_directory_discovery_skips_broken_symlink() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("broken-symlink");
+    let source = root.join("main.mec");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    symlink(root.join("missing.mec"), root.join("broken.mec")).unwrap();
+
+    let targets = collect_test_targets(&root).unwrap();
+
+    assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  #[cfg(unix)]
+  fn test_explicit_broken_symlink_errors() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_test_root("explicit-broken-symlink");
+    let broken = root.join("broken.mec");
+    symlink(root.join("missing.mec"), &broken).unwrap();
+
+    let result = collect_test_targets(&broken);
+
+    assert!(result.is_err());
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
