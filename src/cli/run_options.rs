@@ -15,7 +15,6 @@ pub(crate) struct RunCliArgs {
     pub time: bool,
     pub repl: bool,
     pub rounds_per_step: Option<usize>,
-    pub no_default_capabilities: bool,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
 }
 
@@ -34,7 +33,6 @@ impl RunCliArgs {
         } else {
             vec![]
         };
-        let config_matches = run_matches.unwrap_or(root_matches);
         Ok(Self {
             input_mode: classify_run_inputs(inputs),
             explicit_run_command: run_matches.is_some(),
@@ -46,7 +44,6 @@ impl RunCliArgs {
                 .and_then(|m| m.get_one::<String>("rounds-per-step"))
                 .and_then(|s| s.parse::<usize>().ok())
                 .or(root.rounds_per_step),
-            no_default_capabilities: config_matches.get_flag("no_default_capabilities"),
             cli_capability_selection: cli_host_capability_selection(root_matches, run_matches),
         })
     }
@@ -60,7 +57,6 @@ pub(crate) struct PreparedRunOptions {
     pub time: bool,
     pub repl: bool,
     pub rounds_per_step: Option<usize>,
-    pub no_default_capabilities: bool,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub config_event: config::ConfigLoadEvent,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
@@ -88,7 +84,6 @@ pub(crate) fn prepare_run_options(
         time: args.time,
         repl: args.repl,
         rounds_per_step: args.rounds_per_step,
-        no_default_capabilities: args.no_default_capabilities,
         loaded_config,
         config_event: loaded.event,
         cli_capability_selection: args.cli_capability_selection,
