@@ -300,7 +300,7 @@ impl MechRuntime {
       let mut flat_import_dependencies = Vec::new();
 
       for import in &resolved.imports {
-        if !crate::resolver::import_requires_source_dependency(import) {
+        if !crate::resolver::import_may_resolve_source_dependency(import) {
           continue;
         }
         let dependency_request = crate::resolver::source_request_for_import(import, Some(&canonical_uri));
@@ -310,17 +310,20 @@ impl MechRuntime {
             dependency_request.clone(),
             options,
             dependency_graph,
-          )?
-          .ok_or_else(|| {
-            MechError::new(
+          )?;
+        let Some(dependency_version) = dependency_version else {
+          if crate::resolver::import_requires_source_dependency(import) {
+            return Err(MechError::new(
               RuntimeModuleDependencyMissingError {
                 module: canonical_uri.clone(),
                 specifier: dependency_request.specifier.clone(),
                 referrer: dependency_request.referrer.clone(),
               },
               None,
-            )
-          })?;
+            ));
+          }
+          continue;
+        };
         dependency_versions.push(dependency_version);
         flat_import_dependencies.push((import.clone(), dependency_version));
       }
@@ -329,7 +332,7 @@ impl MechRuntime {
       let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
       for scope_metadata in &resolved.scopes {
         for import in &scope_metadata.imports {
-          if !crate::resolver::import_requires_source_dependency(import) {
+          if !crate::resolver::import_may_resolve_source_dependency(import) {
             continue;
           }
           let Some((index, (_, dependency_version))) = flat_import_dependencies
@@ -338,7 +341,10 @@ impl MechRuntime {
             .find(|(index, (flat_import, _))| {
               !matched_flat_imports[*index] && flat_import == import
             }) else {
-              return Err(MechError::new(RuntimeInvalidOperationError { operation: "resolve_and_store_module_source", reason: format!("scoped import `{}` was not found in flat imports", import.specifier) }, None));
+              if crate::resolver::import_requires_source_dependency(import) {
+                return Err(MechError::new(RuntimeInvalidOperationError { operation: "resolve_and_store_module_source", reason: format!("scoped import `{}` was not found in flat imports", import.specifier) }, None));
+              }
+              continue;
             };
           matched_flat_imports[index] = true;
           import_edges.push(ModuleImportEdge {

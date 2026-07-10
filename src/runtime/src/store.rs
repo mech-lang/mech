@@ -29,8 +29,9 @@ use crate::id::{
   ObjectId, TaskId, TransactionId,
 };
 use crate::resolver::{
-  ModuleScopeMetadata, SourceAddressReference, SourceContextDeclaration, SourceExportDeclaration,
-  SourceImportAlias, SourceImportDeclaration, SourceScope,
+  import_requires_source_dependency, ModuleScopeMetadata, SourceAddressReference,
+  SourceContextDeclaration, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
+  SourceScope,
 };
 
 // -----------------------------------------------------------------------------
@@ -208,7 +209,7 @@ pub struct ModuleVersionRecord {
 }
 
 fn import_requires_edge(import: &SourceImportDeclaration) -> bool {
-  !matches!(import.alias, Some(SourceImportAlias::Context(_)))
+  import_requires_source_dependency(import)
 }
 
 impl ModuleVersionRecord {
@@ -297,19 +298,22 @@ impl ModuleVersionRecord {
   }
 
   pub fn validate_import_edges(&self) -> MResult<()> {
-    let expected_edges = self.imports.iter().filter(|import| import_requires_edge(import)).count();
-    if self.import_edges.len() != expected_edges {
-      return Err(MechError::new(
-        InvalidModuleImportEdgesError {
-          module: self.id,
-          reason: format!(
-            "import edge count {} does not match source dependency imports count {}",
-            self.import_edges.len(),
-            expected_edges
-          ),
-        },
-        None,
-      ));
+    let mut matched_edges = vec![false; self.import_edges.len()];
+    for import in self.imports.iter().filter(|import| import_requires_edge(import)) {
+      let Some((index, _)) = self
+        .import_edges
+        .iter()
+        .enumerate()
+        .find(|(index, edge)| !matched_edges[*index] && &edge.import == import) else {
+          return Err(MechError::new(
+            InvalidModuleImportEdgesError {
+              module: self.id,
+              reason: format!("required source dependency import `{}` has no import edge", import.specifier),
+            },
+            None,
+          ));
+        };
+      matched_edges[index] = true;
     }
 
     for edge in &self.import_edges {

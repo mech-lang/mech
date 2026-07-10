@@ -13,7 +13,12 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
   std::fs::write(root.join("main.mec"), main_source).unwrap();
   root
 }
-
+fn setup_main_only_module(name: &str, main_source: &str) -> std::path::PathBuf {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{name}-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  std::fs::write(root.join("main.mec"), main_source).unwrap();
+  root
+}
 
 
 fn browser_dom_manifest() -> ModuleManifestConfig {
@@ -2466,6 +2471,71 @@ fn direct_runtime_normal_import_is_not_dropped() {
     Value::F64(value) => assert_eq!(*value.borrow(), 0.0),
     other => panic!("expected sin(0) to return 0.0, got {other:?}"),
   }
+}
+
+
+#[test]
+fn workspace_module_build_allows_linked_stdlib_namespace_import_without_source_file() {
+  let root = setup_main_only_module("stdlib-namespace-import", "+> math\nx := 1\n");
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap();
+
+  let version = version.unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert!(record.dependencies.is_empty());
+  assert!(record.import_edges.is_empty());
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn workspace_module_build_allows_linked_stdlib_item_import_without_source_file() {
+  let root = setup_main_only_module("stdlib-item-import", "+> math/sin\nx := 1\n");
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap();
+
+  let version = version.unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert!(record.dependencies.is_empty());
+  assert!(record.import_edges.is_empty());
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn workspace_module_build_uses_local_namespace_import_when_source_file_exists() {
+  let root = setup_modules("+> math
+ok := math/tau > 6.0
+");
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(record.dependencies.len(), 1);
+  assert_eq!(record.import_edges.len(), 1);
+
+  assert_bool_true(runtime.run_module(version).unwrap(), "local namespace import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn workspace_module_build_uses_local_item_import_when_source_file_exists() {
+  let root = setup_modules("+> math/tau
+ok := tau > 6.0
+");
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(record.dependencies.len(), 1);
+  assert_eq!(record.import_edges.len(), 1);
+
+  assert_bool_true(runtime.run_module(version).unwrap(), "local item import");
+  std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

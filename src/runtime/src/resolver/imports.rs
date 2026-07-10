@@ -129,6 +129,14 @@ pub(crate) fn module_import_declarations(import: &mech_core::ModuleImport) -> Ve
 }
 
 pub fn import_requires_source_dependency(import: &SourceImportDeclaration) -> bool {
+  if matches!(import.alias, Some(SourceImportAlias::Context(_))) {
+    return false;
+  }
+
+  matches!(import.kind, SourceImportKind::DependencyOnly)
+}
+
+pub fn import_may_resolve_source_dependency(import: &SourceImportDeclaration) -> bool {
   !matches!(import.alias, Some(SourceImportAlias::Context(_)))
 }
 
@@ -186,6 +194,82 @@ mod tests {
     let fenced = parse_fenced("~~~mech\n+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n");
     let imports = imports_from_fenced_code(&fenced);
     assert!(imports.iter().all(|imp| imp.kind == SourceImportKind::DependencyOnly));
+  }
+
+
+  #[test]
+  fn namespace_import_does_not_require_source_dependency() {
+    let import = classify_import_specifier("math");
+    assert_eq!(import.kind, SourceImportKind::Namespace);
+    assert!(!import_requires_source_dependency(&import));
+  }
+
+  #[test]
+  fn single_item_import_does_not_require_source_dependency() {
+    let import = classify_import_specifier("math/sin");
+    assert!(matches!(import.kind, SourceImportKind::Single { .. }));
+    assert!(!import_requires_source_dependency(&import));
+  }
+
+  #[test]
+  fn wildcard_import_does_not_require_source_dependency() {
+    let import = classify_import_specifier("math/*");
+    assert_eq!(import.kind, SourceImportKind::Wildcard);
+    assert!(!import_requires_source_dependency(&import));
+  }
+
+  #[test]
+  fn relative_file_import_requires_source_dependency() {
+    let import = classify_import_specifier("./dep.mec");
+    assert_eq!(import.kind, SourceImportKind::DependencyOnly);
+    assert!(import_requires_source_dependency(&import));
+  }
+
+  #[test]
+  fn parent_relative_file_import_requires_source_dependency() {
+    let import = classify_import_specifier("../lib/dep.mec");
+    assert_eq!(import.kind, SourceImportKind::DependencyOnly);
+    assert!(import_requires_source_dependency(&import));
+  }
+
+  #[test]
+  fn uri_import_requires_source_dependency() {
+    let import = classify_import_specifier("file:///tmp/dep.mec");
+    assert_eq!(import.kind, SourceImportKind::DependencyOnly);
+    assert!(import_requires_source_dependency(&import));
+  }
+
+  #[test]
+  fn context_import_does_not_require_source_dependency_even_if_dependency_like() {
+    let mut import = classify_import_specifier("./host.mec");
+    import.alias = Some(SourceImportAlias::Context("host".to_string()));
+    assert!(!import_requires_source_dependency(&import));
+  }
+
+
+  #[test]
+  fn namespace_import_may_resolve_source_dependency() {
+    let import = classify_import_specifier("math");
+    assert!(import_may_resolve_source_dependency(&import));
+  }
+
+  #[test]
+  fn single_item_import_may_resolve_source_dependency() {
+    let import = classify_import_specifier("math/sin");
+    assert!(import_may_resolve_source_dependency(&import));
+  }
+
+  #[test]
+  fn wildcard_import_may_resolve_source_dependency() {
+    let import = classify_import_specifier("math/*");
+    assert!(import_may_resolve_source_dependency(&import));
+  }
+
+  #[test]
+  fn context_import_may_not_resolve_source_dependency() {
+    let mut import = classify_import_specifier("./host.mec");
+    import.alias = Some(SourceImportAlias::Context("host".to_string()));
+    assert!(!import_may_resolve_source_dependency(&import));
   }
 
   #[test]
