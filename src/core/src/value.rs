@@ -115,7 +115,6 @@ impl Display for ValueKind {
   }
 }
 
-#[cfg(feature = "pretty_print")]
 pub fn escape_html_text(input: &str) -> String {
   input
     .replace('&', "&amp;")

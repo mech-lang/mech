@@ -71,7 +71,7 @@ impl MechStrV1 {
 /// Scalar kernel shape exported by a dynamic module.
 ///
 /// V1 supports scalar typed function pointers through `MechKernelFnV1`, a
-/// tagged union keyed by this enum. The host must read only the union field
+/// tagged union keyed by this raw integer newtype. The host must read only the union field
 /// corresponding to `kind`.
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -231,4 +231,23 @@ macro_rules! mech_dynamic_module_v1 {
             },
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dynamic_abi_constants_retain_numeric_values() {
+        assert_eq!(MechStatusV1::Ok.0, 0);
+        assert_eq!(MechStatusV1::InvalidIndex.0, 1);
+        assert_eq!(MechStatusV1::NullPointer.0, 2);
+        assert_eq!(MechStatusV1::WrongType.0, 3);
+        assert_eq!(MechStatusV1::WrongShape.0, 4);
+        assert_eq!(MechStatusV1::Unsupported.0, 5);
+        assert_eq!(MechStatusV1::Panic.0, 6);
+        assert_eq!(MechKernelKindV1::UnaryF64ToF64.0, 1);
+        assert_eq!(MechKernelKindV1::BinaryF64F64ToF64.0, 2);
+        assert_eq!(MechKernelKindV1::UnaryF64ViewToF64View.0, 3);
+    }
 }
