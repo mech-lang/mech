@@ -2483,7 +2483,10 @@ fn workspace_module_build_allows_linked_stdlib_namespace_import_without_source_f
     .resolve_and_store_module_source("main.mec", module_options())
     .unwrap();
 
-  assert!(version.is_some());
+  let version = version.unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert!(record.dependencies.is_empty());
+  assert!(record.import_edges.is_empty());
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -2496,7 +2499,42 @@ fn workspace_module_build_allows_linked_stdlib_item_import_without_source_file()
     .resolve_and_store_module_source("main.mec", module_options())
     .unwrap();
 
-  assert!(version.is_some());
+  let version = version.unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert!(record.dependencies.is_empty());
+  assert!(record.import_edges.is_empty());
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn workspace_module_build_uses_local_namespace_import_when_source_file_exists() {
+  let root = setup_modules("+> math
+ok := math/tau > 6.0
+");
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(record.dependencies.len(), 1);
+  assert_eq!(record.import_edges.len(), 1);
+
+  assert_bool_true(runtime.run_module(version).unwrap(), "local namespace import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn workspace_module_build_uses_local_item_import_when_source_file_exists() {
+  let root = setup_modules("+> math/tau
+ok := tau > 6.0
+");
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(record.dependencies.len(), 1);
+  assert_eq!(record.import_edges.len(), 1);
+
+  assert_bool_true(runtime.run_module(version).unwrap(), "local item import");
   std::fs::remove_dir_all(root).unwrap();
 }
 

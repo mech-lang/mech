@@ -136,6 +136,10 @@ pub fn import_requires_source_dependency(import: &SourceImportDeclaration) -> bo
   matches!(import.kind, SourceImportKind::DependencyOnly)
 }
 
+pub fn import_may_resolve_source_dependency(import: &SourceImportDeclaration) -> bool {
+  !matches!(import.alias, Some(SourceImportAlias::Context(_)))
+}
+
 pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceRequest> {
   imports
     .iter()
@@ -240,6 +244,32 @@ mod tests {
     let mut import = classify_import_specifier("./host.mec");
     import.alias = Some(SourceImportAlias::Context("host".to_string()));
     assert!(!import_requires_source_dependency(&import));
+  }
+
+
+  #[test]
+  fn namespace_import_may_resolve_source_dependency() {
+    let import = classify_import_specifier("math");
+    assert!(import_may_resolve_source_dependency(&import));
+  }
+
+  #[test]
+  fn single_item_import_may_resolve_source_dependency() {
+    let import = classify_import_specifier("math/sin");
+    assert!(import_may_resolve_source_dependency(&import));
+  }
+
+  #[test]
+  fn wildcard_import_may_resolve_source_dependency() {
+    let import = classify_import_specifier("math/*");
+    assert!(import_may_resolve_source_dependency(&import));
+  }
+
+  #[test]
+  fn context_import_may_not_resolve_source_dependency() {
+    let mut import = classify_import_specifier("./host.mec");
+    import.alias = Some(SourceImportAlias::Context("host".to_string()));
+    assert!(!import_may_resolve_source_dependency(&import));
   }
 
   #[test]
