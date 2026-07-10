@@ -1,18 +1,21 @@
 use std::collections::BTreeMap;
-use std::ops::{Deref, DerefMut};
 use std::fs;
+use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
+use mech_runtime::{
+    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
+};
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
-    LoadedStylesheets, ResourceEvent, ResourceFallback,
-    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
+    LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
+    load_resource, load_stylesheets,
 };
 use crate::fs_paths::{
     absolute_path, extension_allowed, paths_equivalent, source_extension,
@@ -119,7 +122,6 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
         }
     }
 }
-
 
 const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
@@ -399,7 +401,10 @@ fn collect_format_targets(
             .cmp(&b.relative_path)
             .then_with(|| a.path.cmp(&b.path))
     });
-    Ok(CollectedFormatTargets { targets: out, events })
+    Ok(CollectedFormatTargets {
+        targets: out,
+        events,
+    })
 }
 fn format_output_matches_input_dir(
     mech_paths: &[String],
@@ -582,17 +587,29 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     }
     println!("{} Loading resources…", badge);
 
+    let mut resource_ids = DefaultIdGenerator::new();
+    let mut resource_authority =
+        HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+    resource_authority.grant_path(&mut resource_ids, Path::new("/"), true, [FS_READ])?;
+
     // Load stylesheet
     print!("{} Loading stylesheet…", badge);
     let LoadedStylesheets {
         css: stylesheet_str,
         events,
-    } = load_stylesheets(&stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
+        ..
+    } = load_stylesheets(
+        &resource_authority,
+        &stylesheet_paths,
+        &options.resources.stylesheet_backup_url,
+    )
+    .await?;
     render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     // Load shim HTML
     print!("{} Loading HTML shim…", badge);
     let shim = load_resource(
+        &resource_authority,
         &shim_path,
         &options.resources.shim_backup_url,
         Some(options.resources.shim_html.as_bytes()),
