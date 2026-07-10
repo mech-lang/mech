@@ -1,8 +1,6 @@
 use crate::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
-
 // Mechdown
 // ----------------------------------------------------------------------------
 
@@ -203,16 +201,7 @@ fn eval_fenced_code_block(
       Ok(value) => out = value,
       Err(err) => {
         if isolate_errors {
-          #[cfg(feature = "pretty_print")]
-          return Ok(Value::String(Ref::new(format!(
-            "{MECH_ERROR_HTML_PREFIX}{}",
-            err.to_html()
-          ))));
-          #[cfg(not(feature = "pretty_print"))]
-          return Ok(Value::String(Ref::new(format!(
-            "{MECH_ERROR_HTML_PREFIX}{}",
-            err.full_chain_message()
-          ))));
+          return Ok(Value::String(Ref::new(err.full_chain_message())));
         }
         return Err(err);
       }
@@ -222,16 +211,7 @@ fn eval_fenced_code_block(
         Ok(_) => {}
         Err(err) => {
           if isolate_errors {
-            #[cfg(feature = "pretty_print")]
-            return Ok(Value::String(Ref::new(format!(
-              "{MECH_ERROR_HTML_PREFIX}{}",
-              err.to_html()
-            ))));
-            #[cfg(not(feature = "pretty_print"))]
-            return Ok(Value::String(Ref::new(format!(
-              "{MECH_ERROR_HTML_PREFIX}{}",
-              err.full_chain_message()
-            ))));
+            return Ok(Value::String(Ref::new(err.full_chain_message())));
           }
           return Err(err);
         }

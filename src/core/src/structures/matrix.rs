@@ -365,7 +365,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 fn quoted<T: Display + Any>(val: &T) -> String {
   if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
-    format!("<div class='mech-string'>\"{}\"</div>", s)
+    format!("<div class='mech-string'>\"{}\"</div>", crate::escape_html_text(s))
   } else if let Some(s) = (val as &dyn Any).downcast_ref::<bool>() {
     format!("<div class='mech-boolean'>{}</div<", s)
   } else {

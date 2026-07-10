@@ -119,9 +119,23 @@ impl DynamicModuleLoader {
             Ok(())
         } else {
             Err(Self::dynamic_error(format!(
-                "{} returned status {:?}",
+                "{} returned status {}",
                 context.into(),
-                status
+                status.0
+            )))
+        }
+    }
+
+    fn validate_dynamic_kernel_kind(kind: mech_abi::MechKernelKindV1) -> MResult<mech_abi::MechKernelKindV1> {
+        if kind == mech_abi::MechKernelKindV1::BinaryF64F64ToF64
+            || kind == mech_abi::MechKernelKindV1::UnaryF64ToF64
+            || kind == mech_abi::MechKernelKindV1::UnaryF64ViewToF64View
+        {
+            Ok(kind)
+        } else {
+            Err(Self::dynamic_error(format!(
+                "dynamic module exported unsupported kernel kind {}",
+                kind.0
             )))
         }
     }
@@ -260,7 +274,7 @@ impl ModuleLoader for DynamicModuleLoader {
 
             let item = item.to_string();
 
-            match export.kind {
+            match Self::validate_dynamic_kernel_kind(export.kind)? {
                 mech_abi::MechKernelKindV1::BinaryF64F64ToF64 => {
                     let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
                     let compiler_name = export_name.clone();

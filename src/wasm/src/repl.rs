@@ -221,8 +221,5 @@ fn append_row(html: &mut String, name: &str, value: &Value) {
 }
 
 pub fn html_escape(input: &str) -> String {
-  input
-    .replace('&', "&amp;")
-    .replace('<', "&lt;")
-    .replace('>', "&gt;")
+  mech_core::escape_html_text(input)
 }

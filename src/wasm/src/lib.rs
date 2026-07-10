@@ -49,8 +49,6 @@ thread_local! {
   pub static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
 
-const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
-
 #[macro_export]
 macro_rules! log {
   ( $( $t:tt )* ) => {
@@ -111,15 +109,6 @@ fn browser_storage_for_backend(backend: &str) -> Result<web_sys::Storage, JsValu
 
 
 fn format_output_value_html(output: &Value) -> String {
-  #[cfg(any(feature = "string", feature = "variable_define"))]
-  if let Value::String(text) = output {
-    if let Some(error_html) = text.borrow().strip_prefix(MECH_ERROR_HTML_PREFIX) {
-      return format!(
-        "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
-        error_html
-      );
-    }
-  }
   let kind_str = html_escape(&format!("{}",output.kind()));
   format!(
     "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
