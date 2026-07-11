@@ -993,6 +993,53 @@ impl MechRuntime {
       .build()
   }
 
+  fn validate_context_for_runtime(
+    &self,
+    context: &RuntimeContext,
+  ) -> MResult<()> {
+    context.validate()?;
+
+    if context.runtime != self.id {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "validate_context_for_runtime",
+          reason: format!(
+            "runtime context mismatch: expected runtime {}, supplied runtime {}",
+            self.id, context.runtime,
+          ),
+        },
+        None,
+      ));
+    }
+
+    if let Some(transaction_id) = context.transaction {
+      let transaction = self
+        .active_transactions
+        .get(&transaction_id)
+        .ok_or_else(|| {
+          MechError::new(
+            RuntimeTransactionNotFoundError { transaction_id },
+            None,
+          )
+        })?;
+
+      if transaction.subject != context.subject {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "validate_context_for_runtime",
+            reason: format!(
+              "transaction {} subject mismatch: transaction owner subject `{}`, supplied context subject `{}`",
+              transaction_id, transaction.subject, context.subject,
+            ),
+          },
+          None,
+        ));
+      }
+    }
+
+    Ok(())
+  }
+
   // ---------------------------------------------------------------------------
   // Event helpers
   // ---------------------------------------------------------------------------
@@ -1016,7 +1063,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     kind: RuntimeEventKind,
   ) -> MResult<EventId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
     let event = self.make_event(kind);
     let id = event.id;
@@ -1040,7 +1087,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     kind: RuntimeEventKind,
   ) -> MResult<EventId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
     let event = self.make_event(kind);
     let id = event.id;

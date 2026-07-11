@@ -6,24 +6,34 @@
 
 use super::*;
 
+enum VisibleTransactionMessage {
+  Durable(MessageRecord),
+  Staged(MessageRecord),
+}
+
 impl MechRuntime {
 
   fn first_visible_transaction_message(
     &self,
     transaction_id: TransactionId,
     actor: ActorId,
-  ) -> MResult<Option<MessageRecord>> {
-    let Some(transaction) = self.active_transactions.get(&transaction_id) else {
-      return Ok(None);
-    };
+  ) -> MResult<Option<VisibleTransactionMessage>> {
+    let transaction = self.active_transactions.get(&transaction_id).ok_or_else(|| {
+      MechError::new(
+        RuntimeTransactionNotFoundError { transaction_id },
+        None,
+      )
+    })?;
 
     for message in self.store.list_mailbox(actor)? {
       if !transaction.is_message_ack_staged(actor, message.id) {
-        return Ok(Some(message));
+        return Ok(Some(VisibleTransactionMessage::Durable(message)));
       }
     }
 
-    Ok(transaction.peek_staged_enqueued_message(actor))
+    Ok(transaction
+      .peek_staged_enqueued_message(actor)
+      .map(VisibleTransactionMessage::Staged))
   }
 
   pub fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
@@ -36,7 +46,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     if self.store.get_actor(actor.id)?.is_none() {
@@ -111,7 +121,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     id: ActorId,
   ) -> MResult<Option<ActorRecord>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
@@ -133,10 +143,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
-    if self.has_active_context_transaction(context) {
-      let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(transaction_id) = context.transaction {
       let id = actor.id;
 
       self
@@ -176,7 +185,7 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_messages(1)?;
     context.charge_bytes(payload.len() as u64)?;
 
@@ -185,8 +194,7 @@ impl MechRuntime {
     let id = self.next_message_id();
     let message = MessageRecord::new(id, actor, kind, payload);
 
-    if self.has_active_context_transaction(context) {
-      let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(transaction_id) = context.transaction {
 
       self
         .active_transaction_mut(transaction_id)?
@@ -292,35 +300,27 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorId,
   ) -> MResult<Option<MessageRecord>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
-    if self.has_active_context_transaction(context) {
-      let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(transaction_id) = context.transaction {
 
-      let Some(message) = self.first_visible_transaction_message(transaction_id, actor)? else {
-        return Ok(None);
-      };
-
-      let is_staged_enqueue = self
-        .active_transactions
-        .get(&transaction_id)
-        .and_then(|transaction| transaction.peek_staged_enqueued_message(actor))
-        .map(|staged| staged.id == message.id)
-        .unwrap_or(false);
-
-      if is_staged_enqueue {
-        return Ok(
+      return match self.first_visible_transaction_message(transaction_id, actor)? {
+        Some(VisibleTransactionMessage::Durable(message)) => {
           self
             .active_transaction_mut(transaction_id)?
-            .pop_staged_enqueued_message(actor),
-        );
-      } else {
-        self
-          .active_transaction_mut(transaction_id)?
-          .stage_message_ack(actor, message.id)?;
+            .stage_message_ack(actor, message.id)?;
 
-        return Ok(Some(message));
-      }
+          Ok(Some(message))
+        }
+        Some(VisibleTransactionMessage::Staged(_)) => {
+          Ok(
+            self
+              .active_transaction_mut(transaction_id)?
+              .pop_staged_enqueued_message(actor),
+          )
+        }
+        None => Ok(None),
+      };
     }
 
     self.store.pop_message(actor)
@@ -335,12 +335,14 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorId,
   ) -> MResult<Option<MessageRecord>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
-      if self.active_transactions.contains_key(&transaction_id) {
-        return self.first_visible_transaction_message(transaction_id, actor);
-      }
+      return match self.first_visible_transaction_message(transaction_id, actor)? {
+        Some(VisibleTransactionMessage::Durable(message))
+        | Some(VisibleTransactionMessage::Staged(message)) => Ok(Some(message)),
+        None => Ok(None),
+      };
     }
 
     self.store.peek_message(actor)
@@ -351,7 +353,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor_id: ActorId,
   ) -> MResult<Option<ActorTurn>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
     let Some(actor) = self.get_actor_with_context(context, actor_id)? else {
       return Err(MechError::new(
@@ -376,7 +378,7 @@ impl MechRuntime {
     turn: &ActorTurn,
   ) -> MResult<()> {
     let turn_started = std::time::Instant::now();
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     turn.validate()?;
 
     context.bind_actor_turn(turn);
@@ -429,6 +431,7 @@ impl ActorBehaviorRuntime for MechRuntime {
 mod tests {
   use super::*;
   use crate::actor_behavior::{ActorBehaviorDriver, ActorBehaviorRuntime};
+  use crate::id::SequentialIdGenerator;
 
   fn runtime_with_actor_and_messages(
     payloads: &[&[u8]],
@@ -706,6 +709,53 @@ mod tests {
 
     assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"one");
     assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"two");
+    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
+  }
+
+  #[test]
+  fn transactional_pop_preserves_provenance_when_durable_and_staged_ids_collide() {
+    let mut store = InMemoryStore::new();
+    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
+    store
+      .enqueue_message(
+        ActorId(1),
+        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable".to_vec()),
+      )
+      .unwrap();
+
+    let mut runtime = MechRuntime::builder()
+      .store(store)
+      .id_generator(SequentialIdGenerator::starting_at(1))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let staged_id = runtime
+      .send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec())
+      .unwrap();
+
+    assert_eq!(staged_id, MessageId(5));
+
+    let first = runtime
+      .pop_message_with_context(&mut context, ActorId(1))
+      .unwrap()
+      .unwrap();
+    let second = runtime
+      .pop_message_with_context(&mut context, ActorId(1))
+      .unwrap()
+      .unwrap();
+    let third = runtime
+      .pop_message_with_context(&mut context, ActorId(1))
+      .unwrap();
+
+    assert_eq!(first.id, MessageId(5));
+    assert_eq!(second.id, MessageId(5));
+    assert_eq!(first.payload, b"durable".to_vec());
+    assert_eq!(second.payload, b"staged".to_vec());
+    assert!(third.is_none());
+
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
     assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
   }
 

@@ -185,7 +185,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
   ) -> MResult<Option<ResolvedSource>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     let request = request.into();
@@ -250,7 +250,7 @@ impl MechRuntime {
     options: ModuleBuildOptions<'_>,
     dependency_graph: &mut ModuleDependencyGraph,
   ) -> MResult<ModuleVersionId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     self.enforce_source_limits(context, &resolved.source)?;
 
@@ -531,7 +531,7 @@ impl MechRuntime {
     module: ModuleId,
     version: ModuleVersionId,
   ) -> MResult<()> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     self.store.set_active_module_version(module, version)?;

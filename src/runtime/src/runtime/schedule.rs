@@ -29,7 +29,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     work: ScheduledWork,
   ) -> MResult<()> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     work.validate()?;
 
@@ -56,7 +56,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<SchedulerTick> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     let tick = collect_tick(
@@ -84,7 +84,7 @@ impl MechRuntime {
     work: ScheduledWork,
     outcome: RuntimeTurnOutcome,
   ) -> MResult<()> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     work.validate()?;
 
@@ -109,7 +109,7 @@ impl MechRuntime {
     work: ScheduledWork,
     message: impl Into<String>,
   ) -> MResult<()> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     work.validate()?;
 

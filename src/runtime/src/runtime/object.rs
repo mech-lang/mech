@@ -23,11 +23,10 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     object: ObjectRecord,
   ) -> MResult<ObjectId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_bytes(object.data.len() as u64)?;
 
-    if self.has_active_context_transaction(context) {
-      let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(transaction_id) = context.transaction {
       let id = object.id;
 
       self
@@ -68,7 +67,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     id: ObjectId,
   ) -> MResult<Option<ObjectRecord>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.record_read(id);
 
     if let Some(transaction_id) = context.transaction {
@@ -92,11 +91,10 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     object: ObjectRecord,
   ) -> MResult<ObjectId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_bytes(object.data.len() as u64)?;
 
-    if self.has_active_context_transaction(context) {
-      let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(transaction_id) = context.transaction {
       let id = object.id;
 
       self

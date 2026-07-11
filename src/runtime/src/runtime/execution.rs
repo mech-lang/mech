@@ -2449,7 +2449,7 @@ impl MechRuntime {
     source: &str,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
       MechError::new(
         ResourceBudgetExceededError {
@@ -2471,7 +2471,7 @@ impl MechRuntime {
     source: &str,
     turn_started: Instant,
   ) -> MResult<Value> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
 
@@ -2559,7 +2559,7 @@ impl MechRuntime {
     bytecode: &[u8],
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
       MechError::new(
         ResourceBudgetExceededError {
@@ -2581,7 +2581,7 @@ impl MechRuntime {
     bytecode: &[u8],
     turn_started: Instant,
   ) -> MResult<Value> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
 
@@ -2666,7 +2666,7 @@ impl MechRuntime {
     source: &MechSourceCode,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     self.enforce_source_limits(context, source)?;
     self.run_source_with_context_inner(context, source, turn_started)
   }
@@ -2712,7 +2712,7 @@ impl MechRuntime {
     tree: &mech_core::Program,
     turn_started: Instant,
   ) -> MResult<Value> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
 
@@ -2858,7 +2858,7 @@ impl MechRuntime {
     count: u64,
   ) -> MResult<()> {
     let turn_started = Instant::now();
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     let program_config = self.program.config.clone();
@@ -2936,7 +2936,7 @@ impl MechRuntime {
     scope: &SourceScope,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
   ) -> MResult<()> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     let instance_key = (version, scope.clone());
     if !seen.insert(instance_key) {
       return Ok(());
@@ -3035,7 +3035,7 @@ impl MechRuntime {
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<ModuleInstance> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     let instance_key = (version, scope.clone());
