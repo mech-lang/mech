@@ -8,6 +8,24 @@ use super::*;
 
 impl MechRuntime {
 
+  fn first_visible_transaction_message(
+    &self,
+    transaction_id: TransactionId,
+    actor: ActorId,
+  ) -> MResult<Option<MessageRecord>> {
+    let Some(transaction) = self.active_transactions.get(&transaction_id) else {
+      return Ok(None);
+    };
+
+    for message in self.store.list_mailbox(actor)? {
+      if !transaction.is_message_ack_staged(actor, message.id) {
+        return Ok(Some(message));
+      }
+    }
+
+    Ok(transaction.peek_staged_enqueued_message(actor))
+  }
+
   pub fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
     let mut context = self.context_for_actor(&actor)?;
     self.put_actor_with_context(&mut context, actor)
@@ -279,22 +297,30 @@ impl MechRuntime {
     if self.has_active_context_transaction(context) {
       let transaction_id = Self::context_transaction_id(context)?;
 
-      if let Some(message) = self
-        .active_transaction_mut(transaction_id)?
-        .pop_staged_enqueued_message(actor)
-      {
-        return Ok(Some(message));
-      }
-
-      let Some(message) = self.store.peek_message(actor)? else {
+      let Some(message) = self.first_visible_transaction_message(transaction_id, actor)? else {
         return Ok(None);
       };
 
-      self
-        .active_transaction_mut(transaction_id)?
-        .stage_message_ack(actor, message.id)?;
+      let is_staged_enqueue = self
+        .active_transactions
+        .get(&transaction_id)
+        .and_then(|transaction| transaction.peek_staged_enqueued_message(actor))
+        .map(|staged| staged.id == message.id)
+        .unwrap_or(false);
 
-      return Ok(Some(message));
+      if is_staged_enqueue {
+        return Ok(
+          self
+            .active_transaction_mut(transaction_id)?
+            .pop_staged_enqueued_message(actor),
+        );
+      } else {
+        self
+          .active_transaction_mut(transaction_id)?
+          .stage_message_ack(actor, message.id)?;
+
+        return Ok(Some(message));
+      }
     }
 
     self.store.pop_message(actor)
@@ -312,10 +338,8 @@ impl MechRuntime {
     context.validate()?;
 
     if let Some(transaction_id) = context.transaction {
-      if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        if let Some(message) = transaction.peek_staged_enqueued_message(actor) {
-          return Ok(Some(message));
-        }
+      if self.active_transactions.contains_key(&transaction_id) {
+        return self.first_visible_transaction_message(transaction_id, actor);
       }
     }
 
@@ -405,6 +429,23 @@ impl ActorBehaviorRuntime for MechRuntime {
 mod tests {
   use super::*;
   use crate::actor_behavior::{ActorBehaviorDriver, ActorBehaviorRuntime};
+
+  fn runtime_with_actor_and_messages(
+    payloads: &[&[u8]],
+  ) -> MechRuntime {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime
+      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
+      .unwrap();
+
+    for payload in payloads {
+      runtime
+        .send_message(ActorId(1), "ping", payload.to_vec())
+        .unwrap();
+    }
+
+    runtime
+  }
 
   #[derive(Debug)]
   struct SleepingActorBehaviorDriver;
@@ -551,4 +592,121 @@ mod tests {
     );
     assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
   }
+
+  #[test]
+  fn transactional_pops_return_distinct_durable_messages_in_fifo_order() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    assert_eq!(
+      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
+      b"one",
+    );
+    assert_eq!(
+      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
+      b"two",
+    );
+  }
+
+  #[test]
+  fn transactional_pops_three_durable_messages_without_repetition() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two", b"three"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    let payloads: Vec<Vec<u8>> = (0..3)
+      .map(|_| {
+        runtime
+          .pop_message_with_context(&mut context, ActorId(1))
+          .unwrap()
+          .unwrap()
+          .payload
+      })
+      .collect();
+
+    assert_eq!(payloads, vec![b"one".to_vec(), b"two".to_vec(), b"three".to_vec()]);
+  }
+
+  #[test]
+  fn transactional_mailbox_returns_durable_before_staged_enqueue() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"durable"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec())
+      .unwrap();
+
+    assert_eq!(
+      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
+      b"durable",
+    );
+    assert_eq!(
+      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
+      b"staged",
+    );
+  }
+
+  #[test]
+  fn transactional_peek_then_pop_returns_same_effective_head() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    let peeked = runtime.peek_message_with_context(&mut context, ActorId(1)).unwrap().unwrap();
+    let popped = runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap();
+    assert_eq!(peeked.id, popped.id);
+    assert_eq!(popped.payload, b"one");
+  }
+
+  #[test]
+  fn transactional_staged_enqueues_fifo_after_durable_exhausted_then_none() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"durable"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime.send_message_with_context(&mut context, ActorId(1), "ping", b"staged-one".to_vec()).unwrap();
+    runtime.send_message_with_context(&mut context, ActorId(1), "ping", b"staged-two".to_vec()).unwrap();
+
+    let payloads: Vec<Option<Vec<u8>>> = (0..4)
+      .map(|_| runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().map(|m| m.payload))
+      .collect();
+
+    assert_eq!(
+      payloads,
+      vec![
+        Some(b"durable".to_vec()),
+        Some(b"staged-one".to_vec()),
+        Some(b"staged-two".to_vec()),
+        None,
+      ],
+    );
+  }
+
+  #[test]
+  fn commit_removes_acknowledged_durable_messages_once() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two", b"three"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap();
+    runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap();
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"three");
+    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
+  }
+
+  #[test]
+  fn abort_leaves_durable_messages_and_discards_staged_enqueues() {
+    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two"]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap();
+    runtime.send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec()).unwrap();
+    runtime.abort_runtime_transaction(&mut context, "rollback").unwrap();
+
+    assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"one");
+    assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"two");
+    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
+  }
+
 }

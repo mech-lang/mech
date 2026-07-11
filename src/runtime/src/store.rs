@@ -99,6 +99,8 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
 
+  fn list_mailbox(&self, actor: ActorId) -> MResult<Vec<MessageRecord>>;
+
   fn ack_message(
     &mut self,
     actor: ActorId,
@@ -1189,6 +1191,18 @@ impl MechStore for InMemoryStore {
         .mailboxes
         .get(&actor)
         .and_then(|mailbox| mailbox.front().cloned()),
+    )
+  }
+
+  fn list_mailbox(&self, actor: ActorId) -> MResult<Vec<MessageRecord>> {
+    self.ensure_actor_exists(actor)?;
+
+    Ok(
+      self
+        .mailboxes
+        .get(&actor)
+        .map(|mailbox| mailbox.iter().cloned().collect())
+        .unwrap_or_default(),
     )
   }
 
