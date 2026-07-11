@@ -25,10 +25,19 @@ impl MechRuntime {
       )
     })?;
 
+    let mut skipped_occurrences: HashMap<MessageId, usize> = HashMap::new();
+
     for message in self.store.list_mailbox(actor)? {
-      if !transaction.is_message_ack_staged(actor, message.id) {
-        return Ok(Some(VisibleTransactionMessage::Durable(message)));
+      let acknowledged =
+        transaction.staged_message_ack_occurrences(actor, message.id);
+      let skipped = skipped_occurrences.entry(message.id).or_insert(0);
+
+      if *skipped < acknowledged {
+        *skipped += 1;
+        continue;
       }
+
+      return Ok(Some(VisibleTransactionMessage::Durable(message)));
     }
 
     Ok(transaction
@@ -381,6 +390,19 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
     turn.validate()?;
 
+    if context.transaction.is_some() && context.subject != turn.subject {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "run_actor_turn_envelope",
+          reason: format!(
+            "cannot bind actor turn subject `{}` to active transaction owned by subject `{}`",
+            turn.subject, context.subject,
+          ),
+        },
+        None,
+      ));
+    }
+
     context.bind_actor_turn(turn);
 
     self.emit_event_to_context(
@@ -509,6 +531,95 @@ mod tests {
     assert!(budget.requested > 5);
     assert_eq!(budget.max, Some(5));
     assert!(!context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ActorTurnCompleted { .. })));
+  }
+
+  #[test]
+  fn transactional_actor_turn_subject_mismatch_is_rejected_before_context_mutation() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    context.subject = "owner".to_string();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let actor = ActorRecord::new(ActorId(1), "other");
+    let message = MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new());
+    let turn = ActorTurn::new(actor, message).unwrap();
+
+    let subject_before = context.subject.clone();
+    let actor_before = context.actor;
+    let actor_message_before = context.actor_message.clone();
+    let actor_state_before = context.actor_state;
+    let context_event_ids_before: Vec<EventId> =
+      context.events.iter().map(|event| event.id).collect();
+    let runtime_events_before = runtime.list_events(None).unwrap();
+    let staged_event_ids_before = runtime
+      .active_transactions
+      .get(&transaction_id)
+      .unwrap()
+      .staged_event_ids();
+    let staged_put_count_before = runtime
+      .active_transactions
+      .get(&transaction_id)
+      .unwrap()
+      .staged_puts()
+      .count();
+
+    let error = runtime
+      .run_actor_turn_envelope(&mut context, &turn)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
+    assert_eq!(context.subject, subject_before);
+    assert_eq!(context.actor, actor_before);
+    assert_eq!(context.actor_message, actor_message_before);
+    assert_eq!(context.actor_state, actor_state_before);
+    assert_eq!(
+      context.events.iter().map(|event| event.id).collect::<Vec<_>>(),
+      context_event_ids_before,
+    );
+    assert_eq!(runtime.list_events(None).unwrap(), runtime_events_before);
+    assert_eq!(
+      runtime
+        .active_transactions
+        .get(&transaction_id)
+        .unwrap()
+        .staged_event_ids(),
+      staged_event_ids_before,
+    );
+    assert_eq!(
+      runtime
+        .active_transactions
+        .get(&transaction_id)
+        .unwrap()
+        .staged_puts()
+        .count(),
+      staged_put_count_before,
+    );
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+
+    runtime.abort_runtime_transaction(&mut context, "rollback").unwrap();
+  }
+
+  #[test]
+  fn transactional_actor_turn_succeeds_when_subject_matches_owner() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    context.subject = "owner".to_string();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let actor = ActorRecord::new(ActorId(1), "owner");
+    let message = MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new());
+    let turn = ActorTurn::new(actor, message).unwrap();
+
+    runtime.run_actor_turn_envelope(&mut context, &turn).unwrap();
+
+    assert_eq!(context.subject, "owner");
+    assert_eq!(context.actor, Some(ActorId(1)));
+    assert!(context.events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::ActorTurnStarted { actor_id: ActorId(1) })
+    }));
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+
+    runtime.abort_runtime_transaction(&mut context, "rollback").unwrap();
   }
 
   #[test]
@@ -709,6 +820,126 @@ mod tests {
 
     assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"one");
     assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"two");
+    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
+  }
+
+  #[test]
+  fn duplicate_durable_message_ids_are_consumed_by_occurrence() {
+    let mut store = InMemoryStore::new();
+    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
+    store
+      .enqueue_message(
+        ActorId(1),
+        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable-one".to_vec()),
+      )
+      .unwrap();
+    store
+      .enqueue_message(
+        ActorId(1),
+        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable-two".to_vec()),
+      )
+      .unwrap();
+
+    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    assert_eq!(
+      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
+      b"durable-one",
+    );
+    assert_eq!(
+      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
+      b"durable-two",
+    );
+    assert!(runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().is_none());
+    assert_eq!(
+      runtime
+        .active_transactions
+        .get(&transaction_id)
+        .unwrap()
+        .staged_message_ack_occurrences(ActorId(1), MessageId(5)),
+      2,
+    );
+
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
+    assert_eq!(
+      runtime.get_transaction(transaction_id).unwrap().unwrap().message_acks,
+      vec![MessageId(5), MessageId(5)],
+    );
+  }
+
+  #[test]
+  fn duplicate_durable_message_ids_mixed_with_other_ids_preserve_fifo() {
+    let mut store = InMemoryStore::new();
+    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
+    for (id, payload) in [
+      (MessageId(5), b"one".to_vec()),
+      (MessageId(6), b"two".to_vec()),
+      (MessageId(5), b"three".to_vec()),
+    ] {
+      store
+        .enqueue_message(ActorId(1), MessageRecord::new(id, ActorId(1), "ping", payload))
+        .unwrap();
+    }
+
+    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    let payloads: Vec<Vec<u8>> = (0..3)
+      .map(|_| {
+        runtime
+          .pop_message_with_context(&mut context, ActorId(1))
+          .unwrap()
+          .unwrap()
+          .payload
+      })
+      .collect();
+
+    assert_eq!(
+      payloads,
+      vec![b"one".to_vec(), b"two".to_vec(), b"three".to_vec()],
+    );
+    assert!(runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().is_none());
+  }
+
+  #[test]
+  fn durable_staged_id_collision_commit_keeps_unpopped_staged_message() {
+    let mut store = InMemoryStore::new();
+    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
+    store
+      .enqueue_message(
+        ActorId(1),
+        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable".to_vec()),
+      )
+      .unwrap();
+
+    let mut runtime = MechRuntime::builder()
+      .store(store)
+      .id_generator(SequentialIdGenerator::starting_at(1))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let staged_id = runtime
+      .send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec())
+      .unwrap();
+    assert_eq!(staged_id, MessageId(5));
+
+    let popped = runtime
+      .pop_message_with_context(&mut context, ActorId(1))
+      .unwrap()
+      .unwrap();
+    assert_eq!(popped.payload, b"durable".to_vec());
+
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    let remaining = runtime.pop_message(ActorId(1)).unwrap().unwrap();
+    assert_eq!(remaining.id, MessageId(5));
+    assert_eq!(remaining.payload, b"staged".to_vec());
     assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
   }
 

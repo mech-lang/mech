@@ -982,13 +982,37 @@ impl MechRuntime {
     builder.build()
   }
 
+  /// Build a subject context from a persisted transaction record.
+  ///
+  /// Transaction records are historical metadata; this does not reopen or
+  /// resume the committed transaction and therefore leaves `transaction` unset.
   pub fn context_for_transaction(
     &self,
     transaction: &TransactionRecord,
   ) -> MResult<RuntimeContext> {
     RuntimeContextBuilder::new(self.id)
       .subject(transaction.subject.clone())
-      .transaction(transaction.id)
+      .budget(self.default_budget())
+      .build()
+  }
+
+  pub fn context_for_active_transaction(
+    &self,
+    transaction_id: TransactionId,
+  ) -> MResult<RuntimeContext> {
+    let transaction = self
+      .active_transactions
+      .get(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })?;
+
+    RuntimeContextBuilder::new(self.id)
+      .subject(transaction.subject.clone())
+      .transaction(transaction_id)
       .budget(self.default_budget())
       .build()
   }

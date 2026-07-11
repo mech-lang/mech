@@ -654,4 +654,60 @@ mod tests {
     assert!(context.events.is_empty());
   }
 
+  #[test]
+  fn historical_transaction_record_context_is_valid_without_active_transaction() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+    context.subject = "historical-owner".to_string();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    let record = runtime.get_transaction(transaction_id).unwrap().unwrap();
+    let mut record_context = runtime.context_for_transaction(&record).unwrap();
+
+    assert_eq!(record_context.runtime, runtime.id);
+    assert_eq!(record_context.subject, record.subject);
+    assert_eq!(record_context.transaction, None);
+    assert!(runtime.get_object_with_context(&mut record_context, ObjectId(404)).unwrap().is_none());
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+  }
+
+  #[test]
+  fn active_transaction_context_is_valid_and_can_finish_transaction() {
+    let mut runtime = new_runtime();
+    let mut owner_context = runtime.runtime_context().unwrap();
+    owner_context.subject = "active-owner".to_string();
+    let transaction_id = runtime.begin_transaction(&mut owner_context).unwrap();
+
+    let mut active_context = runtime
+      .context_for_active_transaction(transaction_id)
+      .unwrap();
+
+    assert_eq!(active_context.subject, "active-owner");
+    assert_eq!(active_context.transaction, Some(transaction_id));
+    runtime
+      .put_object_with_context(
+        &mut active_context,
+        ObjectRecord::text(ObjectId(904), "note", "active"),
+      )
+      .unwrap();
+    assert!(runtime.get_object(ObjectId(904)).unwrap().is_none());
+
+    assert_eq!(
+      runtime.commit_runtime_transaction(&mut active_context).unwrap(),
+      transaction_id,
+    );
+    assert!(runtime.get_object(ObjectId(904)).unwrap().is_some());
+  }
+
+  #[test]
+  fn missing_active_transaction_context_is_rejected_immediately() {
+    let runtime = new_runtime();
+    let error = runtime
+      .context_for_active_transaction(TransactionId(404))
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeTransactionNotFound");
+  }
+
 }
