@@ -49,8 +49,6 @@ thread_local! {
   pub static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
 
-const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
-
 #[macro_export]
 macro_rules! log {
   ( $( $t:tt )* ) => {
@@ -111,15 +109,6 @@ fn browser_storage_for_backend(backend: &str) -> Result<web_sys::Storage, JsValu
 
 
 fn format_output_value_html(output: &Value) -> String {
-  #[cfg(any(feature = "string", feature = "variable_define"))]
-  if let Value::String(text) = output {
-    if let Some(error_html) = text.borrow().strip_prefix(MECH_ERROR_HTML_PREFIX) {
-      return format!(
-        "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
-        error_html
-      );
-    }
-  }
   let kind_str = html_escape(&format!("{}",output.kind()));
   format!(
     "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
@@ -1775,6 +1764,18 @@ async fn fetch_docs(doc: &str) -> String {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  const RC4_HTML_PAYLOAD: &str = "</span><img src=x onerror=\"window.pwned=1\">&\"'\n__MECH_ERROR_HTML__:";
+
+  #[test]
+  fn wasm_output_does_not_trust_error_html_prefix() {
+    let value = Value::String(Ref::new(RC4_HTML_PAYLOAD.to_string()));
+    let html = format_output_value_html(&value);
+    assert!(html.contains("&lt;/span&gt;&lt;img src=x onerror=&quot;window.pwned=1&quot;&gt;&amp;&quot;&#39;"), "{html}");
+    assert!(html.contains("__MECH_ERROR_HTML__:"), "{html}");
+    assert!(!html.contains("<img"), "{html}");
+    assert!(!html.contains("onerror=\""), "{html}");
+  }
 
   const CLIPBOARD_WRITE_CONFIG: &str = r#"config := {
   browser: {

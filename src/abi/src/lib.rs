@@ -2,16 +2,19 @@
 
 pub const MECH_MODULE_ABI_VERSION_V1: u32 = 1;
 
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MechStatusV1 {
-    Ok = 0,
-    InvalidIndex = 1,
-    NullPointer = 2,
-    WrongType = 3,
-    WrongShape = 4,
-    Unsupported = 5,
-    Panic = 6,
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct MechStatusV1(pub i32);
+
+#[allow(non_upper_case_globals)]
+impl MechStatusV1 {
+    pub const Ok: Self = Self(0);
+    pub const InvalidIndex: Self = Self(1);
+    pub const NullPointer: Self = Self(2);
+    pub const WrongType: Self = Self(3);
+    pub const WrongShape: Self = Self(4);
+    pub const Unsupported: Self = Self(5);
+    pub const Panic: Self = Self(6);
 }
 
 /// Borrowed UTF-8 string view owned by the dynamic module.
@@ -68,14 +71,17 @@ impl MechStrV1 {
 /// Scalar kernel shape exported by a dynamic module.
 ///
 /// V1 supports scalar typed function pointers through `MechKernelFnV1`, a
-/// tagged union keyed by this enum. The host must read only the union field
+/// tagged union keyed by this raw integer newtype. The host must read only the union field
 /// corresponding to `kind`.
-#[repr(u32)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum MechKernelKindV1 {
-    UnaryF64ToF64 = 1,
-    BinaryF64F64ToF64 = 2,
-    UnaryF64ViewToF64View = 3,
+pub struct MechKernelKindV1(pub u32);
+
+#[allow(non_upper_case_globals)]
+impl MechKernelKindV1 {
+    pub const UnaryF64ToF64: Self = Self(1);
+    pub const BinaryF64F64ToF64: Self = Self(2);
+    pub const UnaryF64ViewToF64View: Self = Self(3);
 }
 
 /// Kernel for a unary scalar f64 function.
@@ -225,4 +231,23 @@ macro_rules! mech_dynamic_module_v1 {
             },
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dynamic_abi_constants_retain_numeric_values() {
+        assert_eq!(MechStatusV1::Ok.0, 0);
+        assert_eq!(MechStatusV1::InvalidIndex.0, 1);
+        assert_eq!(MechStatusV1::NullPointer.0, 2);
+        assert_eq!(MechStatusV1::WrongType.0, 3);
+        assert_eq!(MechStatusV1::WrongShape.0, 4);
+        assert_eq!(MechStatusV1::Unsupported.0, 5);
+        assert_eq!(MechStatusV1::Panic.0, 6);
+        assert_eq!(MechKernelKindV1::UnaryF64ToF64.0, 1);
+        assert_eq!(MechKernelKindV1::BinaryF64F64ToF64.0, 2);
+        assert_eq!(MechKernelKindV1::UnaryF64ViewToF64View.0, 3);
+    }
 }

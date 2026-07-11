@@ -115,6 +115,15 @@ impl Display for ValueKind {
   }
 }
 
+pub fn escape_html_text(input: &str) -> String {
+  input
+    .replace('&', "&amp;")
+    .replace('<', "&lt;")
+    .replace('>', "&gt;")
+    .replace('"', "&quot;")
+    .replace('\'', "&#39;")
+}
+
 impl ValueKind {
 
   #[cfg(feature = "compiler")]
@@ -1433,7 +1442,7 @@ impl Value {
       #[cfg(feature = "f64")]
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       #[cfg(any(feature = "string", feature = "variable_define"))]
-      Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
+      Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", escape_html_text(&s.borrow())),
       #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
       #[cfg(feature = "complex")]

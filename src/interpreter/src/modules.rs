@@ -80,6 +80,14 @@ impl ModuleLoader for LinkedModuleLoader {
 }
 
 #[cfg(feature = "dynamic-modules")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ValidatedDynamicKernelKind {
+    UnaryF64ToF64,
+    BinaryF64F64ToF64,
+    UnaryF64ViewToF64View,
+}
+
+#[cfg(feature = "dynamic-modules")]
 #[derive(Default)]
 pub struct DynamicModuleLoader;
 
@@ -119,10 +127,21 @@ impl DynamicModuleLoader {
             Ok(())
         } else {
             Err(Self::dynamic_error(format!(
-                "{} returned status {:?}",
+                "{} returned status {}",
                 context.into(),
-                status
+                status.0
             )))
+        }
+    }
+
+    fn validate_dynamic_kernel_kind(kind: mech_abi::MechKernelKindV1) -> MResult<ValidatedDynamicKernelKind> {
+        match kind.0 {
+            1 => Ok(ValidatedDynamicKernelKind::UnaryF64ToF64),
+            2 => Ok(ValidatedDynamicKernelKind::BinaryF64F64ToF64),
+            3 => Ok(ValidatedDynamicKernelKind::UnaryF64ViewToF64View),
+            other => Err(Self::dynamic_error(format!(
+                "dynamic module exported unsupported kernel kind {other}"
+            ))),
         }
     }
 }
@@ -260,8 +279,8 @@ impl ModuleLoader for DynamicModuleLoader {
 
             let item = item.to_string();
 
-            match export.kind {
-                mech_abi::MechKernelKindV1::BinaryF64F64ToF64 => {
+            match Self::validate_dynamic_kernel_kind(export.kind)? {
+                ValidatedDynamicKernelKind::BinaryF64F64ToF64 => {
                     let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
                     let compiler_name = export_name.clone();
 
@@ -283,7 +302,7 @@ impl ModuleLoader for DynamicModuleLoader {
                         items.push(item);
                     }
                 }
-                mech_abi::MechKernelKindV1::UnaryF64ToF64 => {
+                ValidatedDynamicKernelKind::UnaryF64ToF64 => {
                     let kernel = unsafe { export.function.unary_f64_to_f64 };
                     let compiler_name = export_name.clone();
 
@@ -305,7 +324,7 @@ impl ModuleLoader for DynamicModuleLoader {
                         items.push(item);
                     }
                 }
-                mech_abi::MechKernelKindV1::UnaryF64ViewToF64View => {
+                ValidatedDynamicKernelKind::UnaryF64ViewToF64View => {
                     let kernel = unsafe { export.function.unary_f64_view_to_f64_view };
                     let compiler_name = export_name.clone();
 
@@ -1233,5 +1252,24 @@ mod dynamic_binary_broadcast_tests {
         let rhs = scalar(2.0);
 
         assert!(dynamic_binary_broadcast_plan(&lhs, &rhs, "test").is_err());
+    }
+}
+
+#[cfg(all(test, feature = "dynamic-modules"))]
+mod rc4_dynamic_abi_tests {
+    use super::*;
+
+    #[test]
+    fn unknown_dynamic_status_is_rejected() {
+        let err = DynamicModuleLoader::call_status(mech_abi::MechStatusV1(99), "test status")
+            .expect_err("unknown status should be rejected");
+        assert!(err.full_chain_message().contains("99"));
+    }
+
+    #[test]
+    fn unknown_dynamic_kernel_kind_is_rejected() {
+        let err = DynamicModuleLoader::validate_dynamic_kernel_kind(mech_abi::MechKernelKindV1(99))
+            .expect_err("unknown kernel kind should be rejected");
+        assert!(err.full_chain_message().contains("99"));
     }
 }

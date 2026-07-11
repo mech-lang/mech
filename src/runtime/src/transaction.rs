@@ -22,6 +22,7 @@ use crate::id::{
 use crate::store::{
   ActorRecord, MessageRecord, ObjectRecord, TaskRecord, TransactionRecord,
 };
+use crate::event::RuntimeEvent;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -61,6 +62,7 @@ pub struct RuntimeTransaction {
   pub staged_actor_updates: HashMap<ActorId, ActorRecord>,
   pub staged_message_enqueues: HashMap<ActorId, Vec<MessageRecord>>,
   pub staged_message_acks: HashMap<ActorId, Vec<MessageId>>,
+  pub staged_events: Vec<RuntimeEvent>,
   pub message_acks: Vec<MessageId>,
   pub message_sends: Vec<MessageId>,
   pub task_updates: Vec<TaskId>,
@@ -85,6 +87,7 @@ impl RuntimeTransaction {
       staged_actor_updates: HashMap::new(),
       staged_message_enqueues: HashMap::new(),
       staged_message_acks: HashMap::new(),
+      staged_events: Vec::new(),
       message_acks: Vec::new(),
       message_sends: Vec::new(),
       task_updates: Vec::new(),
@@ -227,6 +230,33 @@ impl RuntimeTransaction {
     Ok(())
   }
 
+  pub fn stage_event(
+    &mut self,
+    event: RuntimeEvent,
+  ) -> MResult<EventId> {
+    self.ensure_open()?;
+    event.validate()?;
+
+    let id = event.id;
+
+    if self.staged_events.iter().any(|staged| staged.id == id) {
+      return invalid_runtime_transaction("event", "duplicate staged event id");
+    }
+
+    self.record_event(id)?;
+    self.staged_events.push(event);
+
+    Ok(id)
+  }
+
+  pub fn staged_events(&self) -> impl Iterator<Item = &RuntimeEvent> {
+    self.staged_events.iter()
+  }
+
+  pub fn staged_event_ids(&self) -> Vec<EventId> {
+    self.staged_events.iter().map(|event| event.id).collect()
+  }
+
   pub fn stage_put_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
     self.ensure_open()?;
 
@@ -336,6 +366,7 @@ impl RuntimeTransaction {
     self.staged_actor_updates.clear();
     self.staged_message_enqueues.clear();
     self.staged_message_acks.clear();
+    self.staged_events.clear();
     Ok(self)
   }
 
@@ -489,6 +520,36 @@ impl RuntimeTransaction {
     self.staged_message_enqueues.iter()
   }
 
+  pub fn staged_message_enqueue_count(&self, actor: ActorId) -> MResult<u64> {
+    self
+      .staged_message_enqueues
+      .get(&actor)
+      .map(|messages| staged_mailbox_count(messages.len()))
+      .unwrap_or(Ok(0))
+  }
+
+  pub fn staged_message_ack_count(&self, actor: ActorId) -> MResult<u64> {
+    self
+      .staged_message_acks
+      .get(&actor)
+      .map(|messages| staged_mailbox_count(messages.len()))
+      .unwrap_or(Ok(0))
+  }
+
+}
+
+fn staged_mailbox_count(len: usize) -> MResult<u64> {
+  u64::try_from(len).map_err(|_| {
+    MechError::new(
+      crate::context::ResourceBudgetExceededError {
+        resource: "actor_mailbox",
+        used: u64::MAX,
+        requested: 1,
+        max: None,
+      },
+      None,
+    )
+  })
 }
 
 #[derive(Debug, Clone)]
@@ -554,6 +615,7 @@ impl MechErrorKind for RuntimeTransactionNotFoundError {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::event::RuntimeEventKind;
 
   #[test]
   fn transaction_records_read_write_and_event_sets() {
@@ -567,6 +629,24 @@ mod tests {
     assert_eq!(tx.read_set, vec![ObjectId(1)]);
     assert_eq!(tx.write_set, vec![ObjectId(2)]);
     assert_eq!(tx.events, vec![EventId(3)]);
+  }
+
+  #[test]
+  fn stage_event_records_full_event_and_id() {
+    let mut tx = RuntimeTransaction::new(TransactionId(1), "task:1");
+    let event = RuntimeEvent::new(
+      EventId(3),
+      0,
+      RuntimeEventKind::ObjectCreated {
+        object_id: ObjectId(7),
+      },
+    );
+
+    assert_eq!(tx.stage_event(event.clone()).unwrap(), EventId(3));
+    assert_eq!(tx.events, vec![EventId(3)]);
+    assert_eq!(tx.staged_event_ids(), vec![EventId(3)]);
+    assert_eq!(tx.staged_events().next(), Some(&event));
+    assert!(tx.stage_event(event).is_err());
   }
 
   #[test]
@@ -627,5 +707,42 @@ mod tests {
 
     assert!(tx.status.is_aborted());
     assert!(!tx.has_staged_writes());
+  }
+
+  #[test]
+  fn abort_clears_staged_events() {
+    let mut tx = RuntimeTransaction::new(TransactionId(1), "task:1");
+
+    tx.stage_event(RuntimeEvent::new(
+      EventId(3),
+      0,
+      RuntimeEventKind::ObjectCreated {
+        object_id: ObjectId(7),
+      },
+    ))
+    .unwrap();
+
+    let tx = tx.abort("boom").unwrap();
+
+    assert!(tx.status.is_aborted());
+    assert!(tx.staged_events().next().is_none());
+  }
+
+  #[test]
+  fn staged_mailbox_count_helpers_return_results() {
+    let mut tx = RuntimeTransaction::new(TransactionId(1), "task:1");
+
+    assert_eq!(tx.staged_message_enqueue_count(ActorId(1)).unwrap(), 0);
+    assert_eq!(tx.staged_message_ack_count(ActorId(1)).unwrap(), 0);
+
+    tx.stage_message_enqueue(
+      ActorId(1),
+      MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new()),
+    )
+    .unwrap();
+    tx.stage_message_ack(ActorId(1), MessageId(2)).unwrap();
+
+    assert_eq!(tx.staged_message_enqueue_count(ActorId(1)).unwrap(), 1);
+    assert_eq!(tx.staged_message_ack_count(ActorId(1)).unwrap(), 1);
   }
 }

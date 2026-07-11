@@ -252,6 +252,7 @@ impl MechRuntime {
   ) -> MResult<ModuleVersionId> {
     context.validate()?;
     context.charge_step()?;
+    self.enforce_source_limits(context, &resolved.source)?;
 
     let canonical_uri = resolved.canonical_uri.clone();
 
@@ -563,4 +564,47 @@ impl MechRuntime {
     Ok(Some((module_record, version_record)))
   }
 
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::SourceKind;
+
+  #[test]
+  fn max_source_bytes_rejects_module_source() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let canonical_uri = "memory://big-module.mec";
+    let resolved = ResolvedSource::new(
+      "big-module",
+      canonical_uri,
+      MechSourceCode::String("1234".to_string()),
+    )
+    .with_kind(SourceKind::Mech);
+
+    let error = runtime
+      .build_module_from_resolved_source_with_context(
+        &mut context,
+        resolved,
+        ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
+      )
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+    assert!(runtime
+      .store
+      .find_module_by_name(canonical_uri)
+      .unwrap()
+      .is_none());
+    assert!(runtime
+      .list_events(None)
+      .unwrap()
+      .iter()
+      .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. })));
+  }
 }

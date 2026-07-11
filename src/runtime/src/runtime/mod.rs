@@ -35,6 +35,7 @@ use crate::runtime::host::*;
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value,
@@ -55,7 +56,8 @@ use crate::config::RuntimeConfig;
 
 use crate::context::{
   ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
-  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope
+  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope,
+  ResourceBudgetExceededError,
 };
 
 use crate::event::{
@@ -87,6 +89,7 @@ use crate::scheduler::{
 use crate::store::{
   ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
   ModuleImportEdge, ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
+  RuntimeStoreCommit,
 };
 
 use crate::transaction::{
@@ -331,6 +334,10 @@ impl RuntimeBuilder {
       host_interfaces.register(installation.interface)?;
       self.resource_providers.extend(installation.resource_providers);
     }
+
+    let max_events = self.config.limits.max_in_memory_events
+      .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
+    self.store.configure_event_retention(max_events)?;
 
     let mut runtime = MechRuntime {
       id: runtime_id,
@@ -824,11 +831,121 @@ impl MechRuntime {
       budget = budget.with_max_bytes(max_bytes);
     }
 
-    if let Some(max_messages) = self.config.limits.max_actor_mailbox_len {
-      budget = budget.with_max_messages(max_messages);
+    budget
+  }
+
+  fn known_source_bytes(source: &MechSourceCode) -> MResult<Option<u64>> {
+    match source {
+      MechSourceCode::String(source) | MechSourceCode::Html(source) => {
+        Ok(Some(u64::try_from(source.as_bytes().len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?))
+      }
+      MechSourceCode::ByteCode(bytes) => {
+        Ok(Some(u64::try_from(bytes.len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?))
+      }
+      MechSourceCode::Image(_, bytes) => {
+        Ok(Some(u64::try_from(bytes.len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?))
+      }
+      MechSourceCode::Program(sources) => {
+        let mut total = 0u64;
+        for source in sources {
+          let Some(bytes) = Self::known_source_bytes(source)? else {
+            return Ok(None);
+          };
+          total = total.checked_add(bytes).ok_or_else(|| {
+            MechError::new(
+              ResourceBudgetExceededError {
+                resource: "source_bytes",
+                used: total,
+                requested: bytes,
+                max: None,
+              },
+              None,
+            )
+          })?;
+        }
+        Ok(Some(total))
+      }
+      MechSourceCode::Tree(_) => Ok(None),
+    }
+  }
+
+  fn enforce_source_limits(
+    &self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+  ) -> MResult<()> {
+    let Some(source_bytes) = Self::known_source_bytes(source)? else {
+      return Ok(());
+    };
+
+    self.enforce_source_byte_count(context, source_bytes)
+  }
+
+  fn enforce_source_byte_count(
+    &self,
+    context: &mut RuntimeContext,
+    source_bytes: u64,
+  ) -> MResult<()> {
+    if let Some(max) = self.config.limits.max_source_bytes {
+      if source_bytes > max {
+        return Err(MechError::new(
+          ResourceBudgetExceededError {
+            resource: "source_bytes",
+            used: 0,
+            requested: source_bytes,
+            max: Some(max),
+          },
+          None,
+        ));
+      }
     }
 
-    budget
+    context.charge_bytes(source_bytes)
+  }
+
+  fn trim_events_to_retention(&self, events: &mut Vec<RuntimeEvent>) {
+    let Some(max_events) = self.config.limits.max_in_memory_events else { return; };
+    let max_events = usize::try_from(max_events).unwrap_or(usize::MAX);
+    if events.len() > max_events { events.drain(0..(events.len() - max_events)); }
+  }
+
+  fn enforce_turn_duration(&self, started: Instant) -> MResult<()> {
+    let Some(max) = self.config.limits.max_turn_duration_ms else { return Ok(()); };
+    let requested = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+    if requested > max {
+      return Err(MechError::new(ResourceBudgetExceededError { resource: "turn_duration_ms", used: 0, requested, max: Some(max) }, None));
+    }
+    Ok(())
   }
 
   pub fn runtime_context(&self) -> MResult<RuntimeContext> {
@@ -905,6 +1022,31 @@ impl MechRuntime {
     let id = event.id;
 
     context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
+        transaction.stage_event(event)?;
+        return Ok(id);
+      }
+    }
+
+    self.append_event(event)?;
+
+    Ok(id)
+  }
+
+  fn emit_event_immediate_to_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    context.validate()?;
+
+    let event = self.make_event(kind);
+    let id = event.id;
+
+    context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
     self.append_event(event)?;
 
     Ok(id)

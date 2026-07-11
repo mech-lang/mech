@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::{Deref, DerefMut};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -8,6 +8,7 @@ use colored::*;
 use mech_core::*;
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
+use mech_runtime::{DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel};
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
@@ -548,6 +549,27 @@ impl FormatOptions {
     }
 }
 
+fn build_format_resource_authority(
+    stylesheet_paths: &[String],
+    shim_path: &str,
+) -> MResult<HostFilesystemAuthority> {
+    let mut ids = DefaultIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+    let mut paths = BTreeSet::<PathBuf>::new();
+    for path in stylesheet_paths {
+        if !path.is_empty() {
+            paths.insert(PathBuf::from(path));
+        }
+    }
+    if !shim_path.is_empty() {
+        paths.insert(PathBuf::from(shim_path));
+    }
+    for path in paths {
+        authority.grant_path(&mut ids, &path, false, [FS_READ])?;
+    }
+    Ok(authority)
+}
+
 pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     let badge = "[Mech Formatter]".truecolor(34, 204, 187);
     let html_flag = options.html;
@@ -581,18 +603,21 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         }
     }
     println!("{} Loading resources…", badge);
+    let resource_authority = build_format_resource_authority(&stylesheet_paths, &shim_path)?;
 
     // Load stylesheet
     print!("{} Loading stylesheet…", badge);
     let LoadedStylesheets {
         css: stylesheet_str,
         events,
-    } = load_stylesheets(&stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
+        ..
+    } = load_stylesheets(&resource_authority, &stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
     render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     // Load shim HTML
     print!("{} Loading HTML shim…", badge);
     let shim = load_resource(
+        &resource_authority,
         &shim_path,
         &options.resources.shim_backup_url,
         Some(options.resources.shim_html.as_bytes()),

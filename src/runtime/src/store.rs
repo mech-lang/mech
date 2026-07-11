@@ -23,6 +23,7 @@ use std::sync::Arc;
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::{Capability, CapabilityRequest};
+use crate::context::ResourceBudgetExceededError;
 use crate::event::RuntimeEvent;
 use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
@@ -78,17 +79,23 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn update_task(&mut self, task: TaskRecord) -> MResult<TaskId>;
 
+  fn task_count(&self) -> MResult<u64>;
+
   fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId>;
 
   fn get_actor(&self, id: ActorId) -> MResult<Option<ActorRecord>>;
 
   fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId>;
 
+  fn actor_count(&self) -> MResult<u64>;
+
   fn enqueue_message(
     &mut self,
     actor: ActorId,
     message: MessageRecord,
   ) -> MResult<MessageId>;
+
+  fn mailbox_len(&self, actor: ActorId) -> MResult<u64>;
 
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
 
@@ -135,6 +142,19 @@ pub trait MechStore: std::fmt::Debug + Send {
   fn get_event(&self, id: EventId) -> MResult<Option<RuntimeEvent>>;
 
   fn list_events(&self, limit: Option<usize>) -> MResult<Vec<RuntimeEvent>>;
+
+  fn configure_event_retention(
+    &mut self,
+    max_events: Option<usize>,
+  ) -> MResult<()> {
+    let _ = max_events;
+    Ok(())
+  }
+
+  fn commit_runtime(
+    &mut self,
+    commit: RuntimeStoreCommit,
+  ) -> MResult<TransactionId>;
 
   fn commit_transaction(&mut self, tx: TransactionRecord) -> MResult<TransactionId>;
 
@@ -210,6 +230,20 @@ pub struct ModuleVersionRecord {
 
 fn import_requires_edge(import: &SourceImportDeclaration) -> bool {
   import_requires_source_dependency(import)
+}
+
+fn collection_len_u64(resource: &'static str, len: usize) -> MResult<u64> {
+  u64::try_from(len).map_err(|_| {
+    MechError::new(
+      ResourceBudgetExceededError {
+        resource,
+        used: u64::MAX,
+        requested: 1,
+        max: None,
+      },
+      None,
+    )
+  })
 }
 
 impl ModuleVersionRecord {
@@ -783,6 +817,18 @@ impl TransactionRecord {
   }
 }
 
+#[derive(Clone, Debug)]
+pub struct RuntimeStoreCommit {
+  pub transaction: TransactionRecord,
+  pub object_puts: Vec<ObjectRecord>,
+  pub object_updates: Vec<ObjectRecord>,
+  pub task_updates: Vec<TaskRecord>,
+  pub actor_updates: Vec<ActorRecord>,
+  pub message_acks: Vec<(ActorId, MessageId)>,
+  pub message_enqueues: Vec<(ActorId, MessageRecord)>,
+  pub events: Vec<RuntimeEvent>,
+}
+
 // -----------------------------------------------------------------------------
 // In-Memory Store
 // -----------------------------------------------------------------------------
@@ -807,6 +853,7 @@ pub struct InMemoryStore {
 
   events: HashMap<EventId, RuntimeEvent>,
   event_order: Vec<EventId>,
+  max_events: Option<usize>,
 
   transactions: HashMap<TransactionId, TransactionRecord>,
   transaction_order: Vec<TransactionId>,
@@ -815,6 +862,17 @@ pub struct InMemoryStore {
 impl InMemoryStore {
   pub fn new() -> Self {
     Self::default()
+  }
+
+  fn prune_events(&mut self) {
+    if let Some(max_events) = self.max_events {
+      while self.event_order.len() > max_events {
+        if let Some(removed) = self.event_order.first().copied() {
+          self.event_order.remove(0);
+          self.events.remove(&removed);
+        }
+      }
+    }
   }
 
   fn ensure_module_exists(&self, module: ModuleId) -> MResult<()> {
@@ -1042,6 +1100,10 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
+  fn task_count(&self) -> MResult<u64> {
+    collection_len_u64("tasks", self.tasks.len())
+  }
+
   fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
     actor.validate()?;
 
@@ -1084,6 +1146,10 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
+  fn actor_count(&self) -> MResult<u64> {
+    collection_len_u64("actors", self.actors.len())
+  }
+
   fn enqueue_message(
     &mut self,
     actor: ActorId,
@@ -1105,6 +1171,14 @@ impl MechStore for InMemoryStore {
     let id = message.id;
     self.mailboxes.entry(actor).or_default().push_back(message);
     Ok(id)
+  }
+
+  fn mailbox_len(&self, actor: ActorId) -> MResult<u64> {
+    self.ensure_actor_exists(actor)?;
+    collection_len_u64(
+      "actor_mailbox",
+      self.mailboxes.get(&actor).map(|mailbox| mailbox.len()).unwrap_or(0),
+    )
   }
 
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
@@ -1253,6 +1327,7 @@ impl MechStore for InMemoryStore {
     let id = event.id;
     self.events.insert(id, event);
     self.event_order.push(id);
+    self.prune_events();
     Ok(id)
   }
 
@@ -1275,6 +1350,56 @@ impl MechStore for InMemoryStore {
         .filter_map(|id| self.events.get(&id).cloned())
         .collect(),
     )
+  }
+
+  fn configure_event_retention(
+    &mut self,
+    max_events: Option<usize>,
+  ) -> MResult<()> {
+    self.max_events = max_events;
+    self.prune_events();
+    Ok(())
+  }
+
+  fn commit_runtime(
+    &mut self,
+    commit: RuntimeStoreCommit,
+  ) -> MResult<TransactionId> {
+    let id = commit.transaction.id;
+    let mut temporary = self.clone();
+
+    for object in commit.object_puts {
+      temporary.put_object(object)?;
+    }
+
+    for object in commit.object_updates {
+      temporary.update_object(object)?;
+    }
+
+    for task in commit.task_updates {
+      temporary.update_task(task)?;
+    }
+
+    for actor in commit.actor_updates {
+      temporary.update_actor(actor)?;
+    }
+
+    for (actor, message) in commit.message_acks {
+      temporary.ack_message(actor, message)?;
+    }
+
+    for (actor, message) in commit.message_enqueues {
+      temporary.enqueue_message(actor, message)?;
+    }
+
+    for event in commit.events {
+      temporary.append_event(event)?;
+    }
+
+    temporary.commit_transaction(commit.transaction)?;
+    *self = temporary;
+
+    Ok(id)
   }
 
   fn commit_transaction(&mut self, tx: TransactionRecord) -> MResult<TransactionId> {
@@ -1644,6 +1769,18 @@ mod tests {
   }
 
   #[test]
+  fn in_memory_event_retention_keeps_newest_events() {
+    let mut store = InMemoryStore::new();
+    store.configure_event_retention(Some(2)).unwrap();
+    for id in 1u64..=3 {
+      store.append_event(RuntimeEvent::new(EventId(id as u128), id, RuntimeEventKind::RuntimeError { message: format!("event {id}") })).unwrap();
+    }
+    assert!(store.get_event(EventId(1)).unwrap().is_none());
+    let events = store.list_events(None).unwrap();
+    assert_eq!(events.iter().map(|event| event.id).collect::<Vec<_>>(), vec![EventId(2), EventId(3)]);
+  }
+
+  #[test]
   fn transaction_round_trip() {
     let mut store = InMemoryStore::new();
 
@@ -1672,6 +1809,41 @@ mod tests {
     assert_eq!(loaded.actor_updates, vec![ActorId(6)]);
     assert_eq!(loaded.events, vec![EventId(7)]);
   }
+
+  #[test]
+  fn in_memory_store_batch_failure_does_not_mutate_store() {
+    let mut store = InMemoryStore::new();
+
+    let event = RuntimeEvent::new(
+      EventId(1),
+      0,
+      RuntimeEventKind::ObjectCreated {
+        object_id: ObjectId(1),
+      },
+    );
+
+    let commit = RuntimeStoreCommit {
+      transaction: TransactionRecord::new(TransactionId(1), "task:1")
+        .with_write_set(vec![ObjectId(1), ObjectId(2)])
+        .with_events(vec![EventId(1)]),
+      object_puts: vec![ObjectRecord::text(ObjectId(1), "note", "hello")],
+      object_updates: vec![ObjectRecord::text(ObjectId(2), "note", "missing")],
+      task_updates: Vec::new(),
+      actor_updates: Vec::new(),
+      message_acks: Vec::new(),
+      message_enqueues: Vec::new(),
+      events: vec![event],
+    };
+
+    assert!(store.commit_runtime(commit).is_err());
+    assert!(store.get_object(ObjectId(1)).unwrap().is_none());
+    assert!(store.get_object(ObjectId(2)).unwrap().is_none());
+    assert!(store.get_event(EventId(1)).unwrap().is_none());
+    assert!(store.get_transaction(TransactionId(1)).unwrap().is_none());
+    assert!(store.list_events(None).unwrap().is_empty());
+    assert!(store.list_transactions(None).unwrap().is_empty());
+  }
+
   #[test]
   fn context_import_without_import_edge_validates() {
     let import = SourceImportDeclaration {

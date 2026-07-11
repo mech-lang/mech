@@ -13,7 +13,7 @@ use mech_runtime::{
   EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, SERVE_HOST_SUBJECT,
-  FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, MECH_TOOL_SUBJECT, SourceKind, check_fs_capability,
+  FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, SourceKind, check_fs_capability,
 };
 use warp::{Filter, Reply};
 
@@ -24,7 +24,16 @@ struct ServerAsset {
   bytes: Vec<u8>,
   content_type: &'static str,
   content_encoding: Option<&'static str>,
-  backing_path: Option<PathBuf>,
+  backing_paths: Vec<PathBuf>,
+}
+
+fn dedupe_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
+  let mut seen = HashSet::new();
+  let mut deduped = Vec::new();
+  for path in paths {
+    if seen.insert(path.clone()) { deduped.push(path); }
+  }
+  deduped
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -36,7 +45,7 @@ struct ServerRegistrySummary {
   static_assets: usize,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct ServerSourceRegistry {
   assets: HashMap<String, ServerAsset>,
   raw_sources: HashMap<String, ServerAsset>,
@@ -117,7 +126,7 @@ impl ServerSourceRegistry {
       html.push_str("</li>\n");
     }
     html.push_str("  </ul>\n</body>\n</html>\n");
-    self.listing_asset = Some(ServerAsset { bytes: html.into_bytes(), content_type: "text/html", content_encoding: None, backing_path: None });
+    self.listing_asset = Some(ServerAsset { bytes: html.into_bytes(), content_type: "text/html", content_encoding: None, backing_paths: Vec::new() });
   }
 
   fn get_route_with_trace(&self, path: &str) -> Option<(ServerAsset, String)> {
@@ -207,7 +216,7 @@ impl ServerSourceRegistry {
       bytes: std::fs::read(&path)?,
       content_type: content_type_for_path(&key),
       content_encoding: content_encoding_for_path(&key),
-      backing_path: Some(path.clone()),
+      backing_paths: vec![path.clone()],
     });
     self.static_asset_paths.insert(key, path);
     Ok(())
@@ -239,6 +248,7 @@ impl ServerSourceRegistry {
     snapshot: &RuntimeWorkspaceSnapshot,
     stylesheet: &str,
     shim: &str,
+    generated_html_backing_paths: &[PathBuf],
   ) -> MResult<()> {
     for key in self.workspace_keys.drain() {
       self.raw_sources.remove(&key);
@@ -263,24 +273,26 @@ impl ServerSourceRegistry {
         bytes: source.as_bytes().to_vec(),
         content_type: "text/x-mech",
         content_encoding: None,
-        backing_path: Some(path.clone()),
+        backing_paths: vec![path.clone()],
       });
       match parser::parse(&source) {
         Ok(tree) => {
           let mut formatter = Formatter::new();
           let html = formatter.format_html(&tree, stylesheet.to_string(), shim.to_string());
+          let mut backing_paths = vec![path.clone()];
+          backing_paths.extend_from_slice(generated_html_backing_paths);
           self.html_sources.insert(key.clone(), ServerAsset {
             bytes: html.into_bytes(),
             content_type: "text/html",
             content_encoding: None,
-            backing_path: Some(path.clone()),
+            backing_paths: dedupe_paths(backing_paths),
           });
           #[cfg(feature = "serde")]
           self.code_sources.insert(key.clone(), ServerAsset {
             bytes: compress_and_encode(&tree).map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?.into_bytes(),
             content_type: "text/plain",
             content_encoding: None,
-            backing_path: Some(path.clone()),
+            backing_paths: vec![path.clone()],
           });
         }
         Err(error) => {
@@ -289,7 +301,7 @@ impl ServerSourceRegistry {
             bytes: html.into_bytes(),
             content_type: "text/html",
             content_encoding: None,
-            backing_path: Some(path.clone()),
+            backing_paths: vec![path.clone()],
           });
         }
       }
@@ -347,6 +359,10 @@ pub struct MechServer {
   workspace_root: Option<PathBuf>,
   js: Vec<u8>,
   wasm: Vec<u8>,
+  html_shim_backing_paths: Vec<PathBuf>,
+  stylesheet_backing_paths: Vec<PathBuf>,
+  wasm_backing_paths: Vec<PathBuf>,
+  js_backing_paths: Vec<PathBuf>,
   authority: HostFilesystemAuthority,
   serve_subject: String,
   runtime_config: RuntimeConfig,
@@ -401,10 +417,35 @@ impl MechServer {
       workspace_root: None,
       js,
       wasm,
+      html_shim_backing_paths: Vec::new(),
+      stylesheet_backing_paths: Vec::new(),
+      wasm_backing_paths: Vec::new(),
+      js_backing_paths: Vec::new(),
       authority,
       serve_subject: SERVE_HOST_SUBJECT.to_string(),
       runtime_config,
     }
+  }
+
+  pub fn set_resource_backing_paths(&mut self, html_shim: Vec<PathBuf>, stylesheets: Vec<PathBuf>, wasm: Vec<PathBuf>, js: Vec<PathBuf>) {
+    self.html_shim_backing_paths = dedupe_paths(html_shim);
+    self.stylesheet_backing_paths = dedupe_paths(stylesheets);
+    self.wasm_backing_paths = dedupe_paths(wasm);
+    self.js_backing_paths = dedupe_paths(js);
+  }
+
+  fn generated_html_backing_paths(&self) -> Vec<PathBuf> {
+    let mut paths = self.html_shim_backing_paths.clone();
+    paths.extend(self.stylesheet_backing_paths.clone());
+    dedupe_paths(paths)
+  }
+
+  fn configured_resource_backing_paths(&self) -> Vec<PathBuf> {
+    let mut paths = self.html_shim_backing_paths.clone();
+    paths.extend(self.stylesheet_backing_paths.clone());
+    paths.extend(self.wasm_backing_paths.clone());
+    paths.extend(self.js_backing_paths.clone());
+    dedupe_paths(paths)
   }
 
   fn injected_html_shim(&self) -> MResult<String> {
@@ -418,12 +459,17 @@ impl MechServer {
   }
 
   pub async fn init(&mut self) -> MResult<()> {
+    let configured_paths = self.configured_resource_backing_paths();
+    let mut ids = DefaultIdGenerator::new();
+    for path in configured_paths {
+      self.authority.delegate_path_to(&mut ids, &self.serve_subject, &path, false, [FS_SERVE])?;
+    }
     let html_shim = self.injected_html_shim()?;
     let mut registry = self.registry.write().unwrap();
-    let html = asset(html_shim.as_bytes(), "text/html", None);
-    let css = asset(self.stylesheet.as_bytes(), "text/css", None);
-    let js = asset(&self.js, "application/javascript", None);
-    let wasm = asset(&self.wasm, "application/wasm", Some("br"));
+    let html = asset(html_shim.as_bytes(), "text/html", None, self.html_shim_backing_paths.clone());
+    let css = asset(self.stylesheet.as_bytes(), "text/css", None, self.stylesheet_backing_paths.clone());
+    let js = asset(&self.js, "application/javascript", None, self.js_backing_paths.clone());
+    let wasm = asset(&self.wasm, "application/wasm", Some("br"), self.wasm_backing_paths.clone());
     if self.serve_configured_shim_at_root {
       registry.insert_user_asset("index.html", html.clone());
     } else {
@@ -504,7 +550,7 @@ impl MechServer {
     if let Some(source) = plan.preferred_index_source { registry.set_preferred_index_source(source); }
     drop(registry);
     println!("{} Emitting initial workspace events…", self.badge());
-    let mut sink = ServerEventSink { events: self.events.clone() };
+    let mut sink = ServerEventSink { events: self.events.clone(), max_events: server_event_retention(&self.runtime_config) };
     session.emit_initial_events(&mut sink)?;
     let sync_started = Instant::now();
     println!("{} Building served source registry views…", self.badge());
@@ -516,7 +562,8 @@ impl MechServer {
         }
       }
       let html_shim = self.injected_html_shim()?;
-      self.registry.write().unwrap().sync_workspace_snapshot(&root, snapshot, &self.stylesheet, &html_shim)?;
+      let generated_html_backing_paths = self.generated_html_backing_paths();
+      self.registry.write().unwrap().sync_workspace_snapshot(&root, snapshot, &self.stylesheet, &html_shim, &generated_html_backing_paths)?;
     }
     let registry = self.registry.read().unwrap();
     for key in registry.source_keys() {
@@ -598,7 +645,9 @@ impl MechServer {
       }
     });
     println!("{} Awaiting connections at {}", self.badge(), self.full_address);
-    let socket_address: SocketAddr = self.full_address.parse().unwrap();
+    let socket_address: SocketAddr = self.full_address.parse().map_err(|error| {
+      MechError::new(GenericError { msg: format!("invalid server address `{}`: {}", self.full_address, error) }, None).with_compiler_loc()
+    })?;
     let mut server_shutdown_rx = shutdown_rx.clone();
     let (_addr, server) = warp::serve(routes).bind_with_graceful_shutdown(socket_address, async move {
       if !*server_shutdown_rx.borrow() {
@@ -607,12 +656,15 @@ impl MechServer {
     });
     if let (Some(session), Some(root)) = (&self.workspace_session, &root) {
       let html_shim = self.injected_html_shim()?;
+      let generated_html_backing_paths = self.generated_html_backing_paths();
       let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
       tokio::pin!(server);
       loop {
         tokio::select! {
           _ = interval.tick() => {
-            let _ = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim);
+            if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim, &generated_html_backing_paths, server_event_retention(&self.runtime_config)) {
+              eprintln!("[Mech Server] Workspace poll failed: {:?}", error);
+            }
           }
           _ = shutdown_rx.changed() => {
             let _ = (&mut server).await;
@@ -638,14 +690,26 @@ impl MechServer {
 #[derive(Debug)]
 struct ServerEventSink {
   events: Arc<RwLock<Vec<RuntimeEvent>>>,
+  max_events: Option<usize>,
 }
 
 impl EventSink for ServerEventSink {
   fn emit(&mut self, event: RuntimeEvent) -> MResult<EventId> {
     let id = event.id;
-    self.events.write().unwrap().push(event);
+    let mut events = self.events.write().unwrap();
+    events.push(event);
+    if let Some(max_events) = self.max_events {
+      if events.len() > max_events {
+        let remove_count = events.len() - max_events;
+        events.drain(0..remove_count);
+      }
+    }
     Ok(id)
   }
+}
+
+fn server_event_retention(config: &RuntimeConfig) -> Option<usize> {
+  config.limits.max_in_memory_events.map(|value| usize::try_from(value).unwrap_or(usize::MAX))
 }
 
 fn poll_workspace_once(
@@ -655,9 +719,11 @@ fn poll_workspace_once(
   root: &Path,
   stylesheet: &str,
   shim: &str,
+  generated_html_backing_paths: &[PathBuf],
+  max_events: Option<usize>,
 ) -> MResult<()> {
   let mut session = session.lock().unwrap();
-  let mut sink = ServerEventSink { events: events.clone() };
+  let mut sink = ServerEventSink { events: events.clone(), max_events };
   let poll = session.poll_and_emit(module_options(), &mut sink)?;
   if !poll.events.is_empty() {
     println!("[Mech Server] Watch events: {}", poll.events.len());
@@ -675,15 +741,16 @@ fn poll_workspace_once(
     }
   }
   {
-    let mut registry = registry.write().unwrap();
-    if sync_static_assets_from_watch_events(&mut registry, root, &poll.events)? {
+    let mut candidate = registry.read().unwrap().clone();
+    if sync_static_assets_from_watch_events(&mut candidate, root, &poll.events)? {
       println!("[Mech Server] Static assets updated from watch events.");
     }
     if poll.refresh.is_some() {
       if let Some(snapshot) = session.snapshot() {
-        registry.sync_workspace_snapshot(root, snapshot, stylesheet, shim)?;
+        candidate.sync_workspace_snapshot(root, snapshot, stylesheet, shim, generated_html_backing_paths)?;
       }
     }
+    *registry.write().unwrap() = candidate;
   }
   Ok(())
 }
@@ -913,13 +980,13 @@ fn module_options() -> ModuleBuildOptions<'static> {
   ModuleBuildOptions::new("serve", "v0.3", "native", &[], &[])
 }
 
-fn asset(bytes: &[u8], content_type: &'static str, content_encoding: Option<&'static str>) -> ServerAsset {
-  ServerAsset { bytes: bytes.to_vec(), content_type, content_encoding, backing_path: None }
+fn asset(bytes: &[u8], content_type: &'static str, content_encoding: Option<&'static str>, backing_paths: Vec<PathBuf>) -> ServerAsset {
+  ServerAsset { bytes: bytes.to_vec(), content_type, content_encoding, backing_paths: dedupe_paths(backing_paths) }
 }
 
 
 fn authorize_server_asset(kernel: &mech_runtime::SharedCapabilityKernel, subject: &str, asset: &ServerAsset) -> MResult<()> {
-  if let Some(path) = &asset.backing_path { check_fs_capability(&mut kernel.clone(), subject, FS_SERVE, path)?; }
+  for path in &asset.backing_paths { check_fs_capability(&mut kernel.clone(), subject, FS_SERVE, path)?; }
   Ok(())
 }
 
@@ -955,6 +1022,7 @@ impl MechErrorKind for Utf8ConversionError {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use mech_runtime::MECH_TOOL_SUBJECT;
   use std::time::{SystemTime, UNIX_EPOCH};
 
   static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
@@ -997,7 +1065,7 @@ mod tests {
 
   fn synced_registry(root: &Path, file: &str) -> ServerSourceRegistry {
     let mut registry = ServerSourceRegistry::default();
-    registry.sync_workspace_snapshot(root, &snapshot(root, file), "", "").unwrap();
+    registry.sync_workspace_snapshot(root, &snapshot(root, file), "", "", &[]).unwrap();
     registry
   }
 
@@ -1244,7 +1312,7 @@ mod tests {
 
   #[test]
   fn user_backed_asset_requires_serve_capability() {
-    let root = temp_root("serve-denied"); let file = root.join("index.html"); std::fs::write(&file, "secret").unwrap(); let mut ids = DefaultIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new()); authority.grant_path(&mut ids, &root, true, [FS_READ]).unwrap(); authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_READ]).unwrap(); let asset = ServerAsset { bytes: b"secret".to_vec(), content_type: "text/html", content_encoding: None, backing_path: Some(file) }; assert!(authorize_server_asset(&authority.kernel(), SERVE_HOST_SUBJECT, &asset).is_err()); std::fs::remove_dir_all(root).unwrap();
+    let root = temp_root("serve-denied"); let file = root.join("index.html"); std::fs::write(&file, "secret").unwrap(); let mut ids = DefaultIdGenerator::new(); let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new()); authority.grant_path(&mut ids, &root, true, [FS_READ]).unwrap(); authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_READ]).unwrap(); let asset = ServerAsset { bytes: b"secret".to_vec(), content_type: "text/html", content_encoding: None, backing_paths: vec![file] }; assert!(authorize_server_asset(&authority.kernel(), SERVE_HOST_SUBJECT, &asset).is_err()); std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
@@ -1272,9 +1340,9 @@ mod tests {
     let root = temp_root("index-generated");
     std::fs::write(root.join("index.mec"), "x := 1\n").unwrap();
     let mut registry = ServerSourceRegistry::default();
-    registry.insert_asset("index.html", asset(b"bundled", "text/html", None));
-    registry.insert_asset("_mech/index.html", asset(b"bundled", "text/html", None));
-    registry.sync_workspace_snapshot(&root, &snapshot(&root, "index.mec"), "", "").unwrap();
+    registry.insert_asset("index.html", asset(b"bundled", "text/html", None, Vec::new()));
+    registry.insert_asset("_mech/index.html", asset(b"bundled", "text/html", None, Vec::new()));
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "index.mec"), "", "", &[]).unwrap();
     let served = registry.get_route("/").unwrap();
     assert_ne!(served.bytes, b"bundled");
     assert_eq!(served.content_type, "text/html");
@@ -1287,9 +1355,9 @@ mod tests {
     std::fs::write(root.join("index.mec"), "x := 1\n").unwrap();
     std::fs::write(root.join("index.html"), "user index").unwrap();
     let mut registry = ServerSourceRegistry::default();
-    registry.insert_asset("_mech/index.html", asset(b"bundled", "text/html", None));
+    registry.insert_asset("_mech/index.html", asset(b"bundled", "text/html", None, Vec::new()));
     registry.insert_static_file(&root, &root.join("index.html")).unwrap();
-    registry.sync_workspace_snapshot(&root, &snapshot(&root, "index.mec"), "", "").unwrap();
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "index.mec"), "", "", &[]).unwrap();
     let served = registry.get_route("/").unwrap();
     assert_eq!(served.bytes, b"user index");
     std::fs::remove_dir_all(root).unwrap();
@@ -1397,7 +1465,7 @@ mod tests {
     let root = temp_root("exact");
     std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();
     let mut registry = synced_registry(&root, "main.mec");
-    registry.insert_asset("main.html", asset(b"explicit", "text/html", None));
+    registry.insert_asset("main.html", asset(b"explicit", "text/html", None, Vec::new()));
     assert_eq!(registry.get_route("main.html").unwrap().bytes, b"explicit");
     std::fs::remove_dir_all(root).unwrap();
   }
@@ -1408,8 +1476,8 @@ mod tests {
     std::fs::write(root.join("a.mec"), "a := 1\n").unwrap();
     std::fs::write(root.join("b.mec"), "b := 2\n").unwrap();
     let mut registry = ServerSourceRegistry::default();
-    registry.sync_workspace_snapshot(&root, &snapshot(&root, "a.mec"), "", "").unwrap();
-    registry.sync_workspace_snapshot(&root, &snapshot(&root, "b.mec"), "", "").unwrap();
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "a.mec"), "", "", &[]).unwrap();
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "b.mec"), "", "", &[]).unwrap();
     assert!(registry.get_route("source/a.mec").is_none());
     assert!(registry.get_route("source/b.mec").is_some());
     std::fs::remove_dir_all(root).unwrap();
@@ -1521,6 +1589,7 @@ mod tests {
       session.snapshot().unwrap(),
       &server.stylesheet,
       &html_shim,
+      &server.generated_html_backing_paths(),
     ).unwrap();
     drop(session);
     let registry = server.registry.read().unwrap();
@@ -1672,28 +1741,132 @@ mod tests {
 
 
   #[test]
+  fn server_init_requires_fs_serve_for_local_resource() {
+    let root = temp_root("configured-init-denied");
+    let shim = root.join("shim.html");
+    std::fs::write(&shim, "shim").unwrap();
+    let mut ids = DefaultIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
+    authority.grant_path(&mut ids, &shim, false, [FS_READ]).unwrap();
+    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), vec![], vec![], authority);
+    server.set_resource_backing_paths(vec![shim.clone()], Vec::new(), Vec::new(), Vec::new());
+    assert!(tokio::runtime::Runtime::new().unwrap().block_on(server.init()).is_err());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_init_accepts_authorized_local_resource() {
+    let root = temp_root("configured-init-allowed");
+    let shim = root.join("shim.html");
+    std::fs::write(&shim, "shim").unwrap();
+    let mut ids = DefaultIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
+    authority.grant_path(&mut ids, &shim, false, [FS_READ, FS_SERVE]).unwrap();
+    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), vec![], vec![], authority);
+    server.set_resource_backing_paths(vec![shim.clone()], Vec::new(), Vec::new(), Vec::new());
+    assert!(tokio::runtime::Runtime::new().unwrap().block_on(server.init()).is_ok());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn server_asset_requires_all_backing_paths() {
+    let root = temp_root("asset-all-paths");
+    let one = root.join("one.html");
+    let two = root.join("two.html");
+    std::fs::write(&one, "one").unwrap();
+    std::fs::write(&two, "two").unwrap();
+    let mut ids = DefaultIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
+    authority.grant_path(&mut ids, &one, false, [FS_SERVE]).unwrap();
+    authority.grant_path(&mut ids, &two, false, [FS_SERVE]).unwrap();
+    authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &one, false, [FS_SERVE]).unwrap();
+    let asset = ServerAsset { bytes: Vec::new(), content_type: "text/html", content_encoding: None, backing_paths: vec![one.clone(), two.clone()] };
+    assert!(authorize_server_asset(&authority.kernel(), SERVE_HOST_SUBJECT, &asset).is_err());
+    authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &two, false, [FS_SERVE]).unwrap();
+    assert!(authorize_server_asset(&authority.kernel(), SERVE_HOST_SUBJECT, &asset).is_ok());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn generated_source_html_tracks_shim_and_stylesheet_paths() {
+    let root = temp_root("generated-html-backing");
+    let source = root.join("main.mec");
+    let shim = root.join("shim.html");
+    let style = root.join("style.css");
+    std::fs::write(&source, "x := 1\n").unwrap();
+    std::fs::write(&shim, "shim").unwrap();
+    std::fs::write(&style, "style").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.sync_workspace_snapshot(&root, &snapshot(&root, "main.mec"), "", "", &[shim.clone(), style.clone(), shim.clone()]).unwrap();
+    let asset = registry.html_sources.get("main.mec").unwrap();
+    assert_eq!(asset.backing_paths, vec![source.canonicalize().unwrap(), shim, style]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn registry_root_serves_listing_for_multiple_sources_without_index() {
     let root = temp_root("listing-multiple"); std::fs::write(root.join("bubble-sort.mec"), "x := 1\n").unwrap(); std::fs::write(root.join("fizzbuzz.mec"), "y := 2\n").unwrap();
-    let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot_for_sources(&root, &["bubble-sort.mec", "fizzbuzz.mec"]), "", "").unwrap();
+    let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot_for_sources(&root, &["bubble-sort.mec", "fizzbuzz.mec"]), "", "", &[]).unwrap();
     let (asset, trace) = registry.get_route_with_trace("/").unwrap(); assert!(trace.contains("listing")); let html = String::from_utf8(asset.bytes).unwrap(); assert!(html.contains("bubble-sort.mec")); assert!(html.contains("fizzbuzz.mec")); std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
   fn registry_root_serves_index_mec_when_present() {
     let root = temp_root("listing-index"); std::fs::write(root.join("index.mec"), "x := 1\n").unwrap(); std::fs::write(root.join("other.mec"), "y := 2\n").unwrap();
-    let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot_for_sources(&root, &["index.mec", "other.mec"]), "", "").unwrap(); assert!(registry.get_route_with_trace("/").unwrap().1.contains("index.mec")); std::fs::remove_dir_all(root).unwrap();
+    let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot_for_sources(&root, &["index.mec", "other.mec"]), "", "", &[]).unwrap(); assert!(registry.get_route_with_trace("/").unwrap().1.contains("index.mec")); std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
-  fn registry_root_serves_single_source_when_only_one_exists() { let root = temp_root("listing-single"); std::fs::write(root.join("fizzbuzz.mec"), "x := 1\n").unwrap(); let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot(&root, "fizzbuzz.mec"), "", "").unwrap(); assert!(registry.get_route_with_trace("/").unwrap().1.contains("fizzbuzz.mec")); std::fs::remove_dir_all(root).unwrap(); }
+  fn registry_root_serves_single_source_when_only_one_exists() { let root = temp_root("listing-single"); std::fs::write(root.join("fizzbuzz.mec"), "x := 1\n").unwrap(); let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot(&root, "fizzbuzz.mec"), "", "", &[]).unwrap(); assert!(registry.get_route_with_trace("/").unwrap().1.contains("fizzbuzz.mec")); std::fs::remove_dir_all(root).unwrap(); }
 
   #[test]
-  fn registry_code_root_alias_requires_effective_index_source() { let root = temp_root("code-root-alias"); std::fs::write(root.join("a.mec"), "a := 1\n").unwrap(); std::fs::write(root.join("b.mec"), "b := 2\n").unwrap(); let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot_for_sources(&root, &["a.mec", "b.mec"]), "", "").unwrap(); assert!(registry.get_route_with_trace("/code/").is_none()); registry.set_preferred_index_source("a.mec"); assert!(registry.get_route_with_trace("/code/").unwrap().1.contains("a.mec")); std::fs::remove_dir_all(root).unwrap(); }
+  fn registry_code_root_alias_requires_effective_index_source() { let root = temp_root("code-root-alias"); std::fs::write(root.join("a.mec"), "a := 1\n").unwrap(); std::fs::write(root.join("b.mec"), "b := 2\n").unwrap(); let mut registry = ServerSourceRegistry::default(); registry.sync_workspace_snapshot(&root, &snapshot_for_sources(&root, &["a.mec", "b.mec"]), "", "", &[]).unwrap(); assert!(registry.get_route_with_trace("/code/").is_none()); registry.set_preferred_index_source("a.mec"); assert!(registry.get_route_with_trace("/code/").unwrap().1.contains("a.mec")); std::fs::remove_dir_all(root).unwrap(); }
 
   #[test]
   fn planned_directory_delegation_is_deduplicated() { let root = temp_root("delegation-dedupe"); let plan = ServeInputPlan { root: root.clone(), targets: vec![], folders: vec![RuntimeWorkspaceFolder { specifier: ".".into(), recursive: true }], static_paths: vec![".".into()], preferred_index_source: None }; let delegations = planned_delegations(&plan); assert_eq!(delegations.len(), 1); assert_eq!(delegations.values().next().unwrap().len(), 6); std::fs::remove_dir_all(root).unwrap(); }
 
   #[test]
   fn display_fs_resource_is_normalized() { let root = temp_root("display-fs-resource"); let resource = display_fs_resource(&root); assert!(resource.starts_with("fs://")); assert!(!resource.contains(r"\\?\")); assert!(!resource.contains('\\')); std::fs::remove_dir_all(root).unwrap(); }
+
+  #[test]
+  fn server_event_retention_is_bounded() {
+    let events = Arc::new(RwLock::new(Vec::new()));
+    let mut sink = ServerEventSink { events: events.clone(), max_events: Some(2) };
+    for id in 1u64..=3 {
+      sink.emit(RuntimeEvent::new(EventId(id as u128), id, mech_runtime::RuntimeEventKind::RuntimeError { message: format!("event {id}") })).unwrap();
+    }
+    let ids = events.read().unwrap().iter().map(|event| event.id).collect::<Vec<_>>();
+    assert_eq!(ids, vec![EventId(2), EventId(3)]);
+  }
+
+  #[test]
+  fn invalid_server_address_returns_error() {
+    let mut server = test_server();
+    server.full_address = "not a socket address".to_string();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    let (_tx, rx) = tokio::sync::watch::channel(false);
+    let error = tokio::runtime::Runtime::new().unwrap().block_on(server.serve_until_shutdown(rx)).unwrap_err();
+    assert!(error.full_chain_message().contains("not a socket address"));
+  }
+
+  #[test]
+  fn poll_workspace_error_preserves_last_known_good_registry() {
+    let root = temp_root("poll-preserve");
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_asset("known.txt", asset(b"known", "text/plain", None, Vec::new()));
+    let before = registry.clone();
+    let mut candidate = registry.clone();
+    let bad_snapshot = RuntimeWorkspaceSnapshot {
+      root: root.clone(),
+      sources: std::iter::once(("missing".to_string(), mech_runtime::RuntimeWorkspaceSourceSnapshot {
+        canonical_uri: "missing".to_string(), path: Some(root.join("missing.mec")), module_version: None, content_hash: 0, modified_time: None,
+      })).collect(),
+      ..RuntimeWorkspaceSnapshot::default()
+    };
+    let result = candidate.sync_workspace_snapshot(&root, &bad_snapshot, "", "", &[]);
+    assert!(result.is_err());
+    assert_eq!(registry.get_route("known.txt").unwrap().bytes, before.get_route("known.txt").unwrap().bytes);
+    std::fs::remove_dir_all(root).unwrap();
+  }
 
 }
