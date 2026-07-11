@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use crate::{LoadedMechConfig, resolve_config_path};
 use clap::{Arg, ArgAction, Command};
+use clap::parser::ValueSource;
 use mech_core::*;
 use mech_runtime::{
     ConfigCapabilityKind, DefaultIdGenerator, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
@@ -56,6 +57,12 @@ pub fn add_filesystem_capability_args(command: Command) -> Command {
                     "Disable the default recursive current-directory filesystem capability grant.",
                 ),
         )
+}
+
+pub(crate) fn filesystem_capability_args_present(matches: &clap::ArgMatches) -> bool {
+    ["cap_root", "allow_read", "allow_watch", "allow_serve", "no_default_capabilities"]
+        .iter()
+        .any(|id| matches.value_source(id) == Some(ValueSource::CommandLine))
 }
 
 

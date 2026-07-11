@@ -351,6 +351,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     turn: &ActorTurn,
   ) -> MResult<()> {
+    let turn_started = std::time::Instant::now();
     context.validate()?;
     turn.validate()?;
 
@@ -377,6 +378,7 @@ impl MechRuntime {
     self.actor_behavior_driver = driver;
 
     driver_result?;
+    self.enforce_turn_duration(turn_started)?;
 
     self.emit_event_to_context(
       context,
@@ -402,6 +404,22 @@ impl ActorBehaviorRuntime for MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::actor_behavior::{ActorBehaviorDriver, ActorBehaviorRuntime};
+
+  #[derive(Debug)]
+  struct SleepingActorBehaviorDriver;
+
+  impl ActorBehaviorDriver for SleepingActorBehaviorDriver {
+    fn run_actor_turn(
+      &mut self,
+      _runtime: &mut dyn ActorBehaviorRuntime,
+      _context: &mut RuntimeContext,
+      _turn: &ActorTurn,
+    ) -> MResult<()> {
+      std::thread::sleep(std::time::Duration::from_millis(30));
+      Ok(())
+    }
+  }
 
   #[test]
   fn max_actors_is_enforced() {
@@ -426,6 +444,27 @@ mod tests {
       .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
       .unwrap_err();
     assert_eq!(duplicate.kind_name(), "StoreRecordAlreadyExists");
+  }
+
+  #[test]
+  fn turn_duration_limit_reports_overrun() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_turn_duration_ms = Some(5);
+    let mut runtime = RuntimeBuilder::new()
+      .config(config)
+      .actor_behavior_driver(SleepingActorBehaviorDriver)
+      .build()
+      .unwrap();
+    let actor = ActorRecord::new(ActorId(1), "actor:1");
+    let message = MessageRecord::new(MessageId(1), ActorId(1), "tick", Vec::new());
+    let turn = ActorTurn::new(actor, message).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let error = runtime.run_actor_turn_envelope(&mut context, &turn).unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "turn_duration_ms");
+    assert!(budget.requested > 5);
+    assert_eq!(budget.max, Some(5));
+    assert!(!context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ActorTurnCompleted { .. })));
   }
 
   #[test]

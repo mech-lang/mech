@@ -10,6 +10,8 @@ use crate::cli::resources::WebResourceDefaults;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ROOT_LOGO: &str = "Mech";
+const FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED: &str =
+    "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
 
 pub(crate) fn terminate_process(code: i32) -> ! {
     std::process::exit(code)
@@ -133,6 +135,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 
     #[cfg(feature = "bundle_web")]
     if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
+        reject_filesystem_capability_args(bundle_matches)?;
         let args = crate::cli::commands::bundle_web::BundleWebCliArgs::from_matches(bundle_matches)?;
         let plan = crate::cli::commands::bundle_web::prepare(args)?;
         return crate::cli::commands::bundle_web::run(plan);
@@ -147,12 +150,14 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 
     #[cfg(feature = "test")]
     if let Some(matches) = cli_matches.subcommand_matches("test") {
+        reject_filesystem_capability_args(matches)?;
         let options = crate::cli::commands::test::TestOptions::from_matches(flags, matches)?;
         return crate::cli::commands::test::run(options);
     }
 
     #[cfg(feature = "build")]
     if let Some(matches) = cli_matches.subcommand_matches("build") {
+        reject_filesystem_capability_args(matches)?;
         let options =
             crate::cli::commands::build::BuildOptions::from_matches(flags, &cli_matches, matches)?;
         return crate::cli::commands::build::run(options);
@@ -160,6 +165,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 
     #[cfg(feature = "formatter")]
     if let Some(matches) = cli_matches.subcommand_matches("format") {
+        reject_filesystem_capability_args(matches)?;
         let options = crate::cli::commands::format::FormatOptions::from_matches(
             flags,
             &cli_matches,
@@ -205,6 +211,17 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 
     Ok(CliOutcome::success())
 }
+
+#[cfg(any(feature = "serve", feature = "run"))]
+fn reject_filesystem_capability_args(matches: &ArgMatches) -> MResult<()> {
+    if capabilities::filesystem_capability_args_present(matches) {
+        return Err(MechError::new(GenericError { msg: FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED.to_string() }, None));
+    }
+    Ok(())
+}
+
+#[cfg(not(any(feature = "serve", feature = "run")))]
+fn reject_filesystem_capability_args(_matches: &ArgMatches) -> MResult<()> { Ok(()) }
 
 fn apply_outcome(outcome: CliOutcome) -> MResult<()> {
     match outcome {

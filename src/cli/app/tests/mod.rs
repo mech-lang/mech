@@ -466,3 +466,39 @@ fn root_command_parses_available_subcommands() {
         .try_get_matches_from(["mech", "bundle-web", "--help"])
         .unwrap_err();
 }
+
+#[cfg(all(test, feature = "build", feature = "test", feature = "formatter", feature = "bundle_web", feature = "run", feature = "serve"))]
+mod filesystem_flag_dispatch_tests {
+    const MESSAGE: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
+
+    fn dispatch_error(args: &[&str]) -> String {
+        let matches = super::build_cli().try_get_matches_from(args).unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let error = match runtime.block_on(super::dispatch(matches)) {
+            Ok(_) => panic!("dispatch unexpectedly succeeded"),
+            Err(error) => error,
+        };
+        error.full_chain_message()
+    }
+
+    #[test]
+    fn filesystem_flags_rejected_for_build() { assert!(dispatch_error(&["mech", "build", "--allow-read", "."]).contains(MESSAGE)); }
+
+    #[test]
+    fn filesystem_flags_rejected_for_test() { assert!(dispatch_error(&["mech", "test", "--allow-read", "."]).contains(MESSAGE)); }
+
+    #[test]
+    fn filesystem_flags_rejected_for_format() { assert!(dispatch_error(&["mech", "format", "--allow-read", "."]).contains(MESSAGE)); }
+
+    #[test]
+    fn filesystem_flags_rejected_for_bundle_web() { assert!(dispatch_error(&["mech", "bundle-web", "--allow-read", ".", ".", "--out", "out"]).contains(MESSAGE)); }
+
+    #[test]
+    fn filesystem_flags_accepted_for_run() { super::build_cli().try_get_matches_from(["mech", "run", "--allow-read", "."]).unwrap(); }
+
+    #[test]
+    fn filesystem_flags_accepted_for_bare_run() { super::build_cli().try_get_matches_from(["mech", "--allow-read", "."]).unwrap(); }
+
+    #[test]
+    fn filesystem_flags_accepted_for_serve() { super::build_cli().try_get_matches_from(["mech", "serve", "--allow-read", "."]).unwrap(); }
+}

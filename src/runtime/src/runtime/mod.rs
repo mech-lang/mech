@@ -35,6 +35,7 @@ use crate::runtime::host::*;
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value,
@@ -333,6 +334,10 @@ impl RuntimeBuilder {
       host_interfaces.register(installation.interface)?;
       self.resource_providers.extend(installation.resource_providers);
     }
+
+    let max_events = self.config.limits.max_in_memory_events
+      .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
+    self.store.configure_event_retention(max_events)?;
 
     let mut runtime = MechRuntime {
       id: runtime_id,
@@ -928,6 +933,21 @@ impl MechRuntime {
     context.charge_bytes(source_bytes)
   }
 
+  fn trim_events_to_retention(&self, events: &mut Vec<RuntimeEvent>) {
+    let Some(max_events) = self.config.limits.max_in_memory_events else { return; };
+    let max_events = usize::try_from(max_events).unwrap_or(usize::MAX);
+    if events.len() > max_events { events.drain(0..(events.len() - max_events)); }
+  }
+
+  fn enforce_turn_duration(&self, started: Instant) -> MResult<()> {
+    let Some(max) = self.config.limits.max_turn_duration_ms else { return Ok(()); };
+    let requested = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+    if requested > max {
+      return Err(MechError::new(ResourceBudgetExceededError { resource: "turn_duration_ms", used: 0, requested, max: Some(max) }, None));
+    }
+    Ok(())
+  }
+
   pub fn runtime_context(&self) -> MResult<RuntimeContext> {
     RuntimeContextBuilder::new(self.id)
       .budget(self.default_budget())
@@ -1002,6 +1022,7 @@ impl MechRuntime {
     let id = event.id;
 
     context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
         transaction.stage_event(event)?;
@@ -1025,6 +1046,7 @@ impl MechRuntime {
     let id = event.id;
 
     context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
     self.append_event(event)?;
 
     Ok(id)

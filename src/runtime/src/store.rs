@@ -143,6 +143,14 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn list_events(&self, limit: Option<usize>) -> MResult<Vec<RuntimeEvent>>;
 
+  fn configure_event_retention(
+    &mut self,
+    max_events: Option<usize>,
+  ) -> MResult<()> {
+    let _ = max_events;
+    Ok(())
+  }
+
   fn commit_runtime(
     &mut self,
     commit: RuntimeStoreCommit,
@@ -845,6 +853,7 @@ pub struct InMemoryStore {
 
   events: HashMap<EventId, RuntimeEvent>,
   event_order: Vec<EventId>,
+  max_events: Option<usize>,
 
   transactions: HashMap<TransactionId, TransactionRecord>,
   transaction_order: Vec<TransactionId>,
@@ -853,6 +862,17 @@ pub struct InMemoryStore {
 impl InMemoryStore {
   pub fn new() -> Self {
     Self::default()
+  }
+
+  fn prune_events(&mut self) {
+    if let Some(max_events) = self.max_events {
+      while self.event_order.len() > max_events {
+        if let Some(removed) = self.event_order.first().copied() {
+          self.event_order.remove(0);
+          self.events.remove(&removed);
+        }
+      }
+    }
   }
 
   fn ensure_module_exists(&self, module: ModuleId) -> MResult<()> {
@@ -1307,6 +1327,7 @@ impl MechStore for InMemoryStore {
     let id = event.id;
     self.events.insert(id, event);
     self.event_order.push(id);
+    self.prune_events();
     Ok(id)
   }
 
@@ -1329,6 +1350,15 @@ impl MechStore for InMemoryStore {
         .filter_map(|id| self.events.get(&id).cloned())
         .collect(),
     )
+  }
+
+  fn configure_event_retention(
+    &mut self,
+    max_events: Option<usize>,
+  ) -> MResult<()> {
+    self.max_events = max_events;
+    self.prune_events();
+    Ok(())
   }
 
   fn commit_runtime(
@@ -1736,6 +1766,18 @@ mod tests {
     assert_eq!(events[1].id, EventId(3));
     assert_eq!(events[0].sequence, 1);
     assert_eq!(events[1].sequence, 2);
+  }
+
+  #[test]
+  fn in_memory_event_retention_keeps_newest_events() {
+    let mut store = InMemoryStore::new();
+    store.configure_event_retention(Some(2)).unwrap();
+    for id in 1u64..=3 {
+      store.append_event(RuntimeEvent::new(EventId(id as u128), id, RuntimeEventKind::RuntimeError { message: format!("event {id}") })).unwrap();
+    }
+    assert!(store.get_event(EventId(1)).unwrap().is_none());
+    let events = store.list_events(None).unwrap();
+    assert_eq!(events.iter().map(|event| event.id).collect::<Vec<_>>(), vec![EventId(2), EventId(3)]);
   }
 
   #[test]

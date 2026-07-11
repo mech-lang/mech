@@ -45,7 +45,7 @@ struct ServerRegistrySummary {
   static_assets: usize,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct ServerSourceRegistry {
   assets: HashMap<String, ServerAsset>,
   raw_sources: HashMap<String, ServerAsset>,
@@ -550,7 +550,7 @@ impl MechServer {
     if let Some(source) = plan.preferred_index_source { registry.set_preferred_index_source(source); }
     drop(registry);
     println!("{} Emitting initial workspace events…", self.badge());
-    let mut sink = ServerEventSink { events: self.events.clone() };
+    let mut sink = ServerEventSink { events: self.events.clone(), max_events: server_event_retention(&self.runtime_config) };
     session.emit_initial_events(&mut sink)?;
     let sync_started = Instant::now();
     println!("{} Building served source registry views…", self.badge());
@@ -645,7 +645,9 @@ impl MechServer {
       }
     });
     println!("{} Awaiting connections at {}", self.badge(), self.full_address);
-    let socket_address: SocketAddr = self.full_address.parse().unwrap();
+    let socket_address: SocketAddr = self.full_address.parse().map_err(|error| {
+      MechError::new(GenericError { msg: format!("invalid server address `{}`: {}", self.full_address, error) }, None).with_compiler_loc()
+    })?;
     let mut server_shutdown_rx = shutdown_rx.clone();
     let (_addr, server) = warp::serve(routes).bind_with_graceful_shutdown(socket_address, async move {
       if !*server_shutdown_rx.borrow() {
@@ -660,7 +662,9 @@ impl MechServer {
       loop {
         tokio::select! {
           _ = interval.tick() => {
-            let _ = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim, &generated_html_backing_paths);
+            if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim, &generated_html_backing_paths, server_event_retention(&self.runtime_config)) {
+              eprintln!("[Mech Server] Workspace poll failed: {:?}", error);
+            }
           }
           _ = shutdown_rx.changed() => {
             let _ = (&mut server).await;
@@ -686,14 +690,26 @@ impl MechServer {
 #[derive(Debug)]
 struct ServerEventSink {
   events: Arc<RwLock<Vec<RuntimeEvent>>>,
+  max_events: Option<usize>,
 }
 
 impl EventSink for ServerEventSink {
   fn emit(&mut self, event: RuntimeEvent) -> MResult<EventId> {
     let id = event.id;
-    self.events.write().unwrap().push(event);
+    let mut events = self.events.write().unwrap();
+    events.push(event);
+    if let Some(max_events) = self.max_events {
+      if events.len() > max_events {
+        let remove_count = events.len() - max_events;
+        events.drain(0..remove_count);
+      }
+    }
     Ok(id)
   }
+}
+
+fn server_event_retention(config: &RuntimeConfig) -> Option<usize> {
+  config.limits.max_in_memory_events.map(|value| usize::try_from(value).unwrap_or(usize::MAX))
 }
 
 fn poll_workspace_once(
@@ -704,9 +720,10 @@ fn poll_workspace_once(
   stylesheet: &str,
   shim: &str,
   generated_html_backing_paths: &[PathBuf],
+  max_events: Option<usize>,
 ) -> MResult<()> {
   let mut session = session.lock().unwrap();
-  let mut sink = ServerEventSink { events: events.clone() };
+  let mut sink = ServerEventSink { events: events.clone(), max_events };
   let poll = session.poll_and_emit(module_options(), &mut sink)?;
   if !poll.events.is_empty() {
     println!("[Mech Server] Watch events: {}", poll.events.len());
@@ -724,15 +741,16 @@ fn poll_workspace_once(
     }
   }
   {
-    let mut registry = registry.write().unwrap();
-    if sync_static_assets_from_watch_events(&mut registry, root, &poll.events)? {
+    let mut candidate = registry.read().unwrap().clone();
+    if sync_static_assets_from_watch_events(&mut candidate, root, &poll.events)? {
       println!("[Mech Server] Static assets updated from watch events.");
     }
     if poll.refresh.is_some() {
       if let Some(snapshot) = session.snapshot() {
-        registry.sync_workspace_snapshot(root, snapshot, stylesheet, shim, generated_html_backing_paths)?;
+        candidate.sync_workspace_snapshot(root, snapshot, stylesheet, shim, generated_html_backing_paths)?;
       }
     }
+    *registry.write().unwrap() = candidate;
   }
   Ok(())
 }
@@ -1809,5 +1827,46 @@ mod tests {
 
   #[test]
   fn display_fs_resource_is_normalized() { let root = temp_root("display-fs-resource"); let resource = display_fs_resource(&root); assert!(resource.starts_with("fs://")); assert!(!resource.contains(r"\\?\")); assert!(!resource.contains('\\')); std::fs::remove_dir_all(root).unwrap(); }
+
+  #[test]
+  fn server_event_retention_is_bounded() {
+    let events = Arc::new(RwLock::new(Vec::new()));
+    let mut sink = ServerEventSink { events: events.clone(), max_events: Some(2) };
+    for id in 1u64..=3 {
+      sink.emit(RuntimeEvent::new(EventId(id as u128), id, mech_runtime::RuntimeEventKind::RuntimeError { message: format!("event {id}") })).unwrap();
+    }
+    let ids = events.read().unwrap().iter().map(|event| event.id).collect::<Vec<_>>();
+    assert_eq!(ids, vec![EventId(2), EventId(3)]);
+  }
+
+  #[test]
+  fn invalid_server_address_returns_error() {
+    let mut server = test_server();
+    server.full_address = "not a socket address".to_string();
+    tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
+    let (_tx, rx) = tokio::sync::watch::channel(false);
+    let error = tokio::runtime::Runtime::new().unwrap().block_on(server.serve_until_shutdown(rx)).unwrap_err();
+    assert!(error.full_chain_message().contains("not a socket address"));
+  }
+
+  #[test]
+  fn poll_workspace_error_preserves_last_known_good_registry() {
+    let root = temp_root("poll-preserve");
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_asset("known.txt", asset(b"known", "text/plain", None, Vec::new()));
+    let before = registry.clone();
+    let mut candidate = registry.clone();
+    let bad_snapshot = RuntimeWorkspaceSnapshot {
+      root: root.clone(),
+      sources: std::iter::once(("missing".to_string(), mech_runtime::RuntimeWorkspaceSourceSnapshot {
+        canonical_uri: "missing".to_string(), path: Some(root.join("missing.mec")), module_version: None, content_hash: 0, modified_time: None,
+      })).collect(),
+      ..RuntimeWorkspaceSnapshot::default()
+    };
+    let result = candidate.sync_workspace_snapshot(&root, &bad_snapshot, "", "", &[]);
+    assert!(result.is_err());
+    assert_eq!(registry.get_route("known.txt").unwrap().bytes, before.get_route("known.txt").unwrap().bytes);
+    std::fs::remove_dir_all(root).unwrap();
+  }
 
 }
