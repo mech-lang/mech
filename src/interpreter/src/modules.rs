@@ -4,6 +4,8 @@ use std::collections::{HashMap, HashSet};
 #[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
 use std::sync::Arc;
+#[cfg(feature = "dynamic-modules")]
+use nalgebra::DMatrix;
 
 #[derive(Clone, Debug)]
 pub struct ModuleManifest {
@@ -562,14 +564,13 @@ impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
 
             _ => {
                 let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, &self.name)?;
-                let out = plan.new_output_matrix();
+                let out = Ref::new(DMatrix::from_vec(plan.rows, plan.cols, vec![0.0; plan.len]));
 
                 Ok(Box::new(DynamicBinaryF64F64BroadcastFunction {
                     name: self.name.clone(),
                     lhs,
                     rhs,
                     out,
-                    plan,
                     kernel: self.kernel,
                     _library: self._library.clone(),
                 }))
@@ -636,15 +637,12 @@ impl NativeFunctionCompiler for DynamicUnaryF64ViewToF64ViewCompiler {
         let rows = input.rows();
         let cols = input.cols();
         let len = rows * cols;
-        let out = Matrix::from_vec(vec![0.0; len], rows, cols);
+        let out = Ref::new(DMatrix::from_vec(rows, cols, vec![0.0; len]));
 
         Ok(Box::new(DynamicUnaryF64ViewToF64ViewFunction {
             name: self.name.clone(),
             input,
             out,
-            len,
-            rows,
-            cols,
             kernel: self.kernel,
             _library: self._library.clone(),
         }))
@@ -858,40 +856,43 @@ struct DynamicBinaryF64F64BroadcastFunction {
     name: String,
     lhs: DynamicF64Arg,
     rhs: DynamicF64Arg,
-    out: Matrix<f64>,
-    plan: DynamicF64BinaryBroadcastPlan,
+    out: Ref<DMatrix<f64>>,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn solve_dynamic_binary_broadcast(
+    lhs: &DynamicF64Arg,
+    rhs: &DynamicF64Arg,
+    out: &Ref<DMatrix<f64>>,
+    kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
+    name: &str,
+) -> MResult<()> {
+    let plan = dynamic_binary_broadcast_plan(lhs, rhs, name)?;
+    let mut out_vec = Vec::with_capacity(plan.len);
+    for index in 1..=plan.len {
+        let mut value = 0.0;
+        let status = unsafe { (kernel)(lhs.value_at(index), rhs.value_at(index), &mut value as *mut f64) };
+        if status != mech_abi::MechStatusV1::Ok {
+            return Err(MechError::new(GenericError { msg: format!("dynamic kernel `{}` returned status {:?}", name, status) }, None).with_compiler_loc());
+        }
+        out_vec.push(value);
+    }
+    *out.borrow_mut() = DMatrix::from_vec(plan.rows, plan.cols, out_vec);
+    Ok(())
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn solve(&self) {
-        let mut out_vec = Vec::with_capacity(self.plan.len);
-
-        for index in 1..=self.plan.len {
-            let lhs = self.lhs.value_at(index);
-            let rhs = self.rhs.value_at(index);
-            let mut out = 0.0;
-
-            let status = unsafe { (self.kernel)(lhs, rhs, &mut out as *mut f64) };
-
-            if status != mech_abi::MechStatusV1::Ok {
-                dynamic_trace(format!(
-                    "dynamic kernel `{}` returned status {:?}",
-                    self.name, status
-                ));
-                return;
-            }
-
-            out_vec.push(out);
+        if let Err(err) = solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name) {
+            dynamic_trace(err.full_chain_message());
         }
-
-        self.out.set(out_vec);
     }
 
     fn out(&self) -> Value {
-        Value::MatrixF64(self.out.clone())
+        Value::MatrixF64(Matrix::DMatrix(self.out.clone()))
     }
 
     fn to_string(&self) -> String {
@@ -966,53 +967,37 @@ impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
 struct DynamicUnaryF64ViewToF64ViewFunction {
     name: String,
     input: Matrix<f64>,
-    out: Matrix<f64>,
-    len: usize,
-    rows: usize,
-    cols: usize,
+    out: Ref<DMatrix<f64>>,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn solve_dynamic_unary_view(input: &Matrix<f64>, out: &Ref<DMatrix<f64>>, kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1, name: &str) -> MResult<()> {
+    let rows = input.rows();
+    let cols = input.cols();
+    let len = rows.checked_mul(cols).ok_or_else(|| MechError::new(GenericError { msg: format!("dynamic function `{}` matrix shape overflows", name) }, None).with_compiler_loc())?;
+    let mut input_vec = Vec::with_capacity(len);
+    for index in 1..=len { input_vec.push(input.index1d(index)); }
+    let mut out_vec = vec![0.0; len];
+    let status = unsafe { (kernel)(mech_abi::MechF64ViewV1 { ptr: input_vec.as_ptr(), len, rows, cols }, mech_abi::MechF64ViewMutV1 { ptr: out_vec.as_mut_ptr(), len, rows, cols }) };
+    if status != mech_abi::MechStatusV1::Ok {
+        return Err(MechError::new(GenericError { msg: format!("dynamic kernel `{}` returned status {:?}", name, status) }, None).with_compiler_loc());
+    }
+    *out.borrow_mut() = DMatrix::from_vec(rows, cols, out_vec);
+    Ok(())
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn solve(&self) {
-        let mut input_vec = Vec::with_capacity(self.len);
-        for index in 1..=self.len {
-            input_vec.push(self.input.index1d(index));
-        }
-
-        let mut out_vec = vec![0.0; self.len];
-
-        let status = unsafe {
-            (self.kernel)(
-                mech_abi::MechF64ViewV1 {
-                    ptr: input_vec.as_ptr(),
-                    len: input_vec.len(),
-                    rows: self.rows,
-                    cols: self.cols,
-                },
-                mech_abi::MechF64ViewMutV1 {
-                    ptr: out_vec.as_mut_ptr(),
-                    len: out_vec.len(),
-                    rows: self.rows,
-                    cols: self.cols,
-                },
-            )
-        };
-
-        if status == mech_abi::MechStatusV1::Ok {
-            self.out.set(out_vec);
-        } else {
-            dynamic_trace(format!(
-                "dynamic kernel `{}` returned status {:?}",
-                self.name, status
-            ));
+        if let Err(err) = solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name) {
+            dynamic_trace(err.full_chain_message());
         }
     }
 
     fn out(&self) -> Value {
-        Value::MatrixF64(self.out.clone())
+        Value::MatrixF64(Matrix::DMatrix(self.out.clone()))
     }
 
     fn to_string(&self) -> String {

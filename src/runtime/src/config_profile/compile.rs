@@ -185,7 +185,7 @@ impl ConfigCompiler {
             Literal::Atom(atom) => Ok(ConfigExpr::Atom(atom.name.to_string())),
             Literal::Boolean(token) => Ok(ConfigExpr::Bool(matches!(
                 token.to_string().as_str(),
-                "true" | "True" | "TRUE"
+                "true" | "True" | "TRUE" | "✓"
             ))),
             Literal::Empty(_) => Ok(ConfigExpr::Null),
             Literal::Number(number) => self.compile_number(number),

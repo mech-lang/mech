@@ -2612,9 +2612,13 @@ impl MechRuntime {
       bytecode_program.run_bytecode(bytecode)
     })();
 
-    self.program = previous_program;
-
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+
+    if result.is_ok() {
+      self.program = bytecode_program;
+    } else {
+      self.program = previous_program;
+    }
     match &result {
       Ok(_) => {
         self.emit_event_to_context(
