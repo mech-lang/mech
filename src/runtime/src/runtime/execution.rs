@@ -2448,6 +2448,18 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &str,
   ) -> MResult<Value> {
+    self.enforce_source_limits(
+      context,
+      &MechSourceCode::String(source.to_string()),
+    )?;
+    self.run_string_with_context_inner(context, source)
+  }
+
+  fn run_string_with_context_inner(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
     context.validate()?;
     context.charge_step()?;
     let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
@@ -2534,6 +2546,18 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     bytecode: &[u8],
   ) -> MResult<Value> {
+    self.enforce_source_limits(
+      context,
+      &MechSourceCode::ByteCode(bytecode.to_vec()),
+    )?;
+    self.run_bytecode_with_context_inner(context, bytecode)
+  }
+
+  fn run_bytecode_with_context_inner(
+    &mut self,
+    context: &mut RuntimeContext,
+    bytecode: &[u8],
+  ) -> MResult<Value> {
     context.validate()?;
     context.charge_step()?;
     let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
@@ -2613,14 +2637,23 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &MechSourceCode,
   ) -> MResult<Value> {
+    self.enforce_source_limits(context, source)?;
+    self.run_source_with_context_inner(context, source)
+  }
+
+  fn run_source_with_context_inner(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
     match source {
-      MechSourceCode::String(source) => self.run_string_with_context(context, source),
+      MechSourceCode::String(source) => self.run_string_with_context_inner(context, source),
       MechSourceCode::Tree(tree) => self.run_tree_with_context(context, tree),
-      MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context(context, bytes),
+      MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context_inner(context, bytes),
       MechSourceCode::Program(sources) => {
         let mut value = Value::Empty;
         for source in sources {
-          value = self.run_source_with_context(context, source)?;
+          value = self.run_source_with_context_inner(context, source)?;
         }
         Ok(value)
       }
@@ -3502,6 +3535,74 @@ mod tests {
         RuntimeEventKind::ProgramProfiled { duration_ns, .. } if duration_ns > 0
       )
     }));
+  }
+
+  #[test]
+  fn max_source_bytes_rejects_string_source() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(&mut context, "1234")
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.used, 0);
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn max_source_bytes_rejects_program_aggregate() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let source = MechSourceCode::Program(vec![
+      MechSourceCode::String("1".to_string()),
+      MechSourceCode::String("22".to_string()),
+      MechSourceCode::String("3".to_string()),
+    ]);
+
+    let error = runtime
+      .run_source_with_context(&mut context, &source)
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn max_memory_bytes_rejects_large_source_buffer() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(100);
+    config.limits.max_memory_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(&mut context, "1234")
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "bytes");
+    assert_eq!(budget.used, 0);
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn tree_source_without_known_size_is_not_rejected_by_source_byte_limit() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(1);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let tree = mech_syntax::parser::parse("1 + 1").unwrap();
+    let source = MechSourceCode::Tree(tree);
+
+    runtime.run_source_with_context(&mut context, &source).unwrap();
   }
 
   #[test]

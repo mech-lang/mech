@@ -520,6 +520,22 @@ impl RuntimeTransaction {
     self.staged_message_enqueues.iter()
   }
 
+  pub fn staged_message_enqueue_count(&self, actor: ActorId) -> u64 {
+    self
+      .staged_message_enqueues
+      .get(&actor)
+      .map(|messages| u64::try_from(messages.len()).unwrap_or(u64::MAX))
+      .unwrap_or(0)
+  }
+
+  pub fn staged_message_ack_count(&self, actor: ActorId) -> u64 {
+    self
+      .staged_message_acks
+      .get(&actor)
+      .map(|messages| u64::try_from(messages.len()).unwrap_or(u64::MAX))
+      .unwrap_or(0)
+  }
+
 }
 
 #[derive(Debug, Clone)]

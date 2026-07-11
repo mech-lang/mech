@@ -34,6 +34,23 @@ impl MechRuntime {
     context.validate()?;
     context.charge_step()?;
 
+    if self.store.get_task(task.id)?.is_none() {
+      if let Some(max) = self.config.limits.max_tasks {
+        let used = self.store.task_count()?;
+        if used.saturating_add(1) > max {
+          return Err(MechError::new(
+            ResourceBudgetExceededError {
+              resource: "tasks",
+              used,
+              requested: 1,
+              max: Some(max),
+            },
+            None,
+          ));
+        }
+      }
+    }
+
     let id = self.store.put_task(task)?;
 
     self.emit_event_to_context(
@@ -216,4 +233,34 @@ impl MechRuntime {
     Ok(())
   }
 
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn max_tasks_is_enforced() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_tasks = Some(1);
+    let mut runtime = MechRuntime::new(config).unwrap();
+
+    runtime
+      .put_task(TaskRecord::new(TaskId(1), "task:1"))
+      .unwrap();
+
+    let error = runtime
+      .put_task(TaskRecord::new(TaskId(2), "task:2"))
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "tasks");
+    assert_eq!(budget.used, 1);
+    assert_eq!(budget.requested, 1);
+    assert_eq!(budget.max, Some(1));
+
+    let duplicate = runtime
+      .put_task(TaskRecord::new(TaskId(1), "task:1"))
+      .unwrap_err();
+    assert_eq!(duplicate.kind_name(), "StoreRecordAlreadyExists");
+  }
 }

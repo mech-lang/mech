@@ -55,7 +55,8 @@ use crate::config::RuntimeConfig;
 
 use crate::context::{
   ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
-  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope
+  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope,
+  ResourceBudgetExceededError,
 };
 
 use crate::event::{
@@ -825,11 +826,98 @@ impl MechRuntime {
       budget = budget.with_max_bytes(max_bytes);
     }
 
-    if let Some(max_messages) = self.config.limits.max_actor_mailbox_len {
-      budget = budget.with_max_messages(max_messages);
+    budget
+  }
+
+  fn known_source_bytes(source: &MechSourceCode) -> MResult<Option<u64>> {
+    match source {
+      MechSourceCode::String(source) | MechSourceCode::Html(source) => {
+        Ok(Some(u64::try_from(source.as_bytes().len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?))
+      }
+      MechSourceCode::ByteCode(bytes) => {
+        Ok(Some(u64::try_from(bytes.len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?))
+      }
+      MechSourceCode::Image(_, bytes) => {
+        Ok(Some(u64::try_from(bytes.len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?))
+      }
+      MechSourceCode::Program(sources) => {
+        let mut total = 0u64;
+        for source in sources {
+          let Some(bytes) = Self::known_source_bytes(source)? else {
+            return Ok(None);
+          };
+          total = total.checked_add(bytes).ok_or_else(|| {
+            MechError::new(
+              ResourceBudgetExceededError {
+                resource: "source_bytes",
+                used: total,
+                requested: bytes,
+                max: None,
+              },
+              None,
+            )
+          })?;
+        }
+        Ok(Some(total))
+      }
+      MechSourceCode::Tree(_) => Ok(None),
+    }
+  }
+
+  fn enforce_source_limits(
+    &self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+  ) -> MResult<()> {
+    let Some(source_bytes) = Self::known_source_bytes(source)? else {
+      return Ok(());
+    };
+
+    if let Some(max) = self.config.limits.max_source_bytes {
+      if source_bytes > max {
+        return Err(MechError::new(
+          ResourceBudgetExceededError {
+            resource: "source_bytes",
+            used: 0,
+            requested: source_bytes,
+            max: Some(max),
+          },
+          None,
+        ));
+      }
     }
 
-    budget
+    context.charge_bytes(source_bytes)
   }
 
   pub fn runtime_context(&self) -> MResult<RuntimeContext> {

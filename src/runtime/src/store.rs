@@ -23,6 +23,7 @@ use std::sync::Arc;
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::{Capability, CapabilityRequest};
+use crate::context::ResourceBudgetExceededError;
 use crate::event::RuntimeEvent;
 use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
@@ -78,17 +79,23 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn update_task(&mut self, task: TaskRecord) -> MResult<TaskId>;
 
+  fn task_count(&self) -> MResult<u64>;
+
   fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId>;
 
   fn get_actor(&self, id: ActorId) -> MResult<Option<ActorRecord>>;
 
   fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId>;
 
+  fn actor_count(&self) -> MResult<u64>;
+
   fn enqueue_message(
     &mut self,
     actor: ActorId,
     message: MessageRecord,
   ) -> MResult<MessageId>;
+
+  fn mailbox_len(&self, actor: ActorId) -> MResult<u64>;
 
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>>;
 
@@ -215,6 +222,20 @@ pub struct ModuleVersionRecord {
 
 fn import_requires_edge(import: &SourceImportDeclaration) -> bool {
   import_requires_source_dependency(import)
+}
+
+fn collection_len_u64(resource: &'static str, len: usize) -> MResult<u64> {
+  u64::try_from(len).map_err(|_| {
+    MechError::new(
+      ResourceBudgetExceededError {
+        resource,
+        used: u64::MAX,
+        requested: 1,
+        max: None,
+      },
+      None,
+    )
+  })
 }
 
 impl ModuleVersionRecord {
@@ -1059,6 +1080,10 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
+  fn task_count(&self) -> MResult<u64> {
+    collection_len_u64("tasks", self.tasks.len())
+  }
+
   fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
     actor.validate()?;
 
@@ -1101,6 +1126,10 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
+  fn actor_count(&self) -> MResult<u64> {
+    collection_len_u64("actors", self.actors.len())
+  }
+
   fn enqueue_message(
     &mut self,
     actor: ActorId,
@@ -1122,6 +1151,14 @@ impl MechStore for InMemoryStore {
     let id = message.id;
     self.mailboxes.entry(actor).or_default().push_back(message);
     Ok(id)
+  }
+
+  fn mailbox_len(&self, actor: ActorId) -> MResult<u64> {
+    self.ensure_actor_exists(actor)?;
+    collection_len_u64(
+      "actor_mailbox",
+      self.mailboxes.get(&actor).map(|mailbox| mailbox.len()).unwrap_or(0),
+    )
   }
 
   fn peek_message(&self, actor: ActorId) -> MResult<Option<MessageRecord>> {
