@@ -37,7 +37,18 @@ impl MechRuntime {
     if self.store.get_task(task.id)?.is_none() {
       if let Some(max) = self.config.limits.max_tasks {
         let used = self.store.task_count()?;
-        if used.saturating_add(1) > max {
+        let next = used.checked_add(1).ok_or_else(|| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "tasks",
+              used,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?;
+        if next > max {
           return Err(MechError::new(
             ResourceBudgetExceededError {
               resource: "tasks",

@@ -2448,10 +2448,19 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &str,
   ) -> MResult<Value> {
-    self.enforce_source_limits(
-      context,
-      &MechSourceCode::String(source.to_string()),
-    )?;
+    context.validate()?;
+    let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
+      MechError::new(
+        ResourceBudgetExceededError {
+          resource: "source_bytes",
+          used: u64::MAX,
+          requested: 1,
+          max: None,
+        },
+        None,
+      )
+    })?;
+    self.enforce_source_byte_count(context, source_bytes)?;
     self.run_string_with_context_inner(context, source)
   }
 
@@ -2546,10 +2555,19 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     bytecode: &[u8],
   ) -> MResult<Value> {
-    self.enforce_source_limits(
-      context,
-      &MechSourceCode::ByteCode(bytecode.to_vec()),
-    )?;
+    context.validate()?;
+    let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
+      MechError::new(
+        ResourceBudgetExceededError {
+          resource: "source_bytes",
+          used: u64::MAX,
+          requested: 1,
+          max: None,
+        },
+        None,
+      )
+    })?;
+    self.enforce_source_byte_count(context, source_bytes)?;
     self.run_bytecode_with_context_inner(context, bytecode)
   }
 
@@ -2637,6 +2655,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &MechSourceCode,
   ) -> MResult<Value> {
+    context.validate()?;
     self.enforce_source_limits(context, source)?;
     self.run_source_with_context_inner(context, source)
   }
@@ -3552,6 +3571,40 @@ mod tests {
     assert_eq!(budget.used, 0);
     assert_eq!(budget.requested, 4);
     assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn direct_string_source_limit_uses_borrowed_length() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let source = String::from("1234");
+
+    let error = runtime
+      .run_string_with_context(&mut context, &source)
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(source, "1234");
+  }
+
+  #[test]
+  fn direct_bytecode_source_limit_uses_borrowed_length() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let bytecode = vec![1, 2, 3, 4];
+
+    let error = runtime
+      .run_bytecode_with_context(&mut context, &bytecode)
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(bytecode, vec![1, 2, 3, 4]);
   }
 
   #[test]

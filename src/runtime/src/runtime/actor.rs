@@ -24,7 +24,18 @@ impl MechRuntime {
     if self.store.get_actor(actor.id)?.is_none() {
       if let Some(max) = self.config.limits.max_actors {
         let used = self.store.actor_count()?;
-        if used.saturating_add(1) > max {
+        let next = used.checked_add(1).ok_or_else(|| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "actors",
+              used,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?;
+        if next > max {
           return Err(MechError::new(
             ResourceBudgetExceededError {
               resource: "actors",
@@ -201,7 +212,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        let ack_count = transaction.staged_message_ack_count(actor);
+        let ack_count = transaction.staged_message_ack_count(actor)?;
         effective_len = effective_len.checked_sub(ack_count).ok_or_else(|| {
           MechError::new(
             RuntimeInvalidOperationError {
@@ -212,7 +223,7 @@ impl MechRuntime {
           )
         })?;
         effective_len = effective_len
-          .checked_add(transaction.staged_message_enqueue_count(actor))
+          .checked_add(transaction.staged_message_enqueue_count(actor)?)
           .ok_or_else(|| {
             MechError::new(
               ResourceBudgetExceededError {

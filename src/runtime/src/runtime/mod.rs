@@ -903,6 +903,14 @@ impl MechRuntime {
       return Ok(());
     };
 
+    self.enforce_source_byte_count(context, source_bytes)
+  }
+
+  fn enforce_source_byte_count(
+    &self,
+    context: &mut RuntimeContext,
+    source_bytes: u64,
+  ) -> MResult<()> {
     if let Some(max) = self.config.limits.max_source_bytes {
       if source_bytes > max {
         return Err(MechError::new(

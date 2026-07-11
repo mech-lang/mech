@@ -520,22 +520,36 @@ impl RuntimeTransaction {
     self.staged_message_enqueues.iter()
   }
 
-  pub fn staged_message_enqueue_count(&self, actor: ActorId) -> u64 {
+  pub fn staged_message_enqueue_count(&self, actor: ActorId) -> MResult<u64> {
     self
       .staged_message_enqueues
       .get(&actor)
-      .map(|messages| u64::try_from(messages.len()).unwrap_or(u64::MAX))
-      .unwrap_or(0)
+      .map(|messages| staged_mailbox_count(messages.len()))
+      .unwrap_or(Ok(0))
   }
 
-  pub fn staged_message_ack_count(&self, actor: ActorId) -> u64 {
+  pub fn staged_message_ack_count(&self, actor: ActorId) -> MResult<u64> {
     self
       .staged_message_acks
       .get(&actor)
-      .map(|messages| u64::try_from(messages.len()).unwrap_or(u64::MAX))
-      .unwrap_or(0)
+      .map(|messages| staged_mailbox_count(messages.len()))
+      .unwrap_or(Ok(0))
   }
 
+}
+
+fn staged_mailbox_count(len: usize) -> MResult<u64> {
+  u64::try_from(len).map_err(|_| {
+    MechError::new(
+      crate::context::ResourceBudgetExceededError {
+        resource: "actor_mailbox",
+        used: u64::MAX,
+        requested: 1,
+        max: None,
+      },
+      None,
+    )
+  })
 }
 
 #[derive(Debug, Clone)]
@@ -712,5 +726,23 @@ mod tests {
 
     assert!(tx.status.is_aborted());
     assert!(tx.staged_events().next().is_none());
+  }
+
+  #[test]
+  fn staged_mailbox_count_helpers_return_results() {
+    let mut tx = RuntimeTransaction::new(TransactionId(1), "task:1");
+
+    assert_eq!(tx.staged_message_enqueue_count(ActorId(1)).unwrap(), 0);
+    assert_eq!(tx.staged_message_ack_count(ActorId(1)).unwrap(), 0);
+
+    tx.stage_message_enqueue(
+      ActorId(1),
+      MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new()),
+    )
+    .unwrap();
+    tx.stage_message_ack(ActorId(1), MessageId(2)).unwrap();
+
+    assert_eq!(tx.staged_message_enqueue_count(ActorId(1)).unwrap(), 1);
+    assert_eq!(tx.staged_message_ack_count(ActorId(1)).unwrap(), 1);
   }
 }
