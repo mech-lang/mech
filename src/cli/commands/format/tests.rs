@@ -648,3 +648,22 @@ fn format_explicit_absolute_file_html_out_directory_stays_inside_out() {
     )));
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn format_resource_authority_is_limited_to_configured_paths() {
+    let root = temp_root("resource-authority");
+    let configured_dir = root.join("configured");
+    let unrelated_dir = root.join("unrelated");
+    std::fs::create_dir_all(&configured_dir).unwrap();
+    std::fs::create_dir_all(&unrelated_dir).unwrap();
+    let configured = configured_dir.join("style.css");
+    let unrelated = unrelated_dir.join("style.css");
+    std::fs::write(&configured, "body{}").unwrap();
+    std::fs::write(&unrelated, "body{}").unwrap();
+    let authority = build_format_resource_authority(&[configured.to_string_lossy().to_string()], "").unwrap();
+    let mut kernel = authority.kernel().clone();
+    mech_runtime::check_fs_capability(&mut kernel, authority.subject(), FS_READ, &configured.canonicalize().unwrap()).unwrap();
+    let mut kernel = authority.kernel().clone();
+    assert!(mech_runtime::check_fs_capability(&mut kernel, authority.subject(), FS_READ, &unrelated.canonicalize().unwrap()).is_err());
+    std::fs::remove_dir_all(root).unwrap();
+}

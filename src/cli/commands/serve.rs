@@ -4,8 +4,8 @@ use mech_core::*;
 
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
-    LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource, Utf8ConversionError,
-    WebResourceDefaults, load_resource, load_stylesheets,
+    LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
 };
 use crate::cli::{capabilities, config, serve_options};
 use crate::{MechError, MechServer};
@@ -82,6 +82,7 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
         }
     }
 }
+
 
 pub(crate) fn command() -> Command {
     Command::new("serve")
@@ -285,12 +286,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         css: stylesheet_str,
         events,
         local_paths: stylesheet_backing_paths,
-    } = load_stylesheets(
-        &options.authority,
-        &options.stylesheet_paths,
-        &resources.stylesheet_backup_url,
-    )
-    .await?;
+    } = load_stylesheets(&options.authority, &options.stylesheet_paths, &resources.stylesheet_backup_url).await?;
     render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     print!("{badge} Loading HTML shim…");
@@ -331,13 +327,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     };
 
     print!("{badge} Loading JS…");
-    let js = load_resource(
-        &options.authority,
-        &js_path,
-        &resources.js_backup_url,
-        Some(resources.mech_js),
-    )
-    .await?;
+    let js = load_resource(&options.authority, &js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
     render_resource_events(&badge.to_string(), "JS", &js.events);
     let js_backing_paths = match &js.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -357,13 +347,13 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         options.host_config_injection,
         options.config_shim_at_root,
     );
+
     server.set_resource_backing_paths(
         html_shim_backing_paths,
         stylesheet_backing_paths,
         wasm_backing_paths,
         js_backing_paths,
     );
-
     server.init().await?;
 
     server.load_workspace(&options.paths)?;
@@ -389,24 +379,11 @@ fn serve_host_delegation_injection(
     let public_key = matches
         .get_one::<String>("host_delegation_public_key")
         .ok_or_else(|| {
-            MechError::new(
-                GenericError {
-                    msg: "--host-delegation-public-key is required with --host-delegation-key"
-                        .to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
+            MechError::new(GenericError { msg: "--host-delegation-public-key is required with --host-delegation-key".to_string() }, None).with_compiler_loc()
         })?;
 
     let Some(loaded_config) = loaded_config else {
-        return Err(MechError::new(
-            GenericError {
-                msg: "host delegation signing requires a loaded config".to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc());
+        return Err(MechError::new(GenericError { msg: "host delegation signing requires a loaded config".to_string() }, None).with_compiler_loc());
     };
 
     let current_dir = std::env::current_dir()?;
@@ -435,13 +412,7 @@ fn serve_host_delegation_injection(
             .map(|value| value.parse())
             .transpose()
             .map_err(|_| {
-                MechError::new(
-                    GenericError {
-                        msg: "--host-delegation-expires-ms must be an integer".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
+                MechError::new(GenericError { msg: "--host-delegation-expires-ms must be an integer".to_string() }, None).with_compiler_loc()
             })?,
     };
 

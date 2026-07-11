@@ -149,7 +149,7 @@ pub(crate) async fn load_resource(
 ) -> MResult<LoadedResource> {
     if !path.is_empty() {
         let path_buf = PathBuf::from(path);
-        if Path::new(path).is_file() {
+        if Path::new(path).exists() {
             let (canonical_path, bytes) = read_authorized_local_file(authority, Path::new(path))?;
             return Ok(LoadedResource {
                 bytes,
@@ -231,7 +231,7 @@ pub(crate) async fn load_stylesheets(
     let mut local_paths = Vec::new();
     for path in paths {
         let path_buf = PathBuf::from(path);
-        let (stylesheet, event) = if Path::new(path).is_file() {
+        let (stylesheet, event) = if Path::new(path).exists() {
             let (canonical_path, content) = read_authorized_local_file(authority, Path::new(path))?;
             local_paths.push(canonical_path.clone());
             (
@@ -342,6 +342,26 @@ mod tests {
             Some(b"fallback"),
         ));
         assert!(result.is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn existing_local_directory_does_not_use_fallback() {
+        let root = temp_root("resource-directory");
+        let directory = root.join("shim-dir");
+        std::fs::create_dir_all(&directory).unwrap();
+        let authority = authority_for(&root, true, [FS_READ]);
+        let result = block_on(load_resource(
+            &authority,
+            directory.to_str().unwrap(),
+            "unused",
+            Some(b"fallback"),
+        ));
+        assert!(result.is_err());
+        assert!(!result
+            .as_ref()
+            .map(|loaded| loaded.bytes.as_slice() == b"fallback")
+            .unwrap_or(false));
         std::fs::remove_dir_all(root).unwrap();
     }
 

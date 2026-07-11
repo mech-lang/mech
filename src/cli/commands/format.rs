@@ -1,21 +1,19 @@
-use std::collections::BTreeMap;
-use std::fs;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::{Deref, DerefMut};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
-use mech_runtime::{
-    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
-};
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
+use mech_runtime::{DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel};
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
-    LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
-    load_resource, load_stylesheets,
+    LoadedStylesheets, ResourceEvent, ResourceFallback,
+    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
 };
 use crate::fs_paths::{
     absolute_path, extension_allowed, paths_equivalent, source_extension,
@@ -122,6 +120,7 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
         }
     }
 }
+
 
 const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
@@ -401,10 +400,7 @@ fn collect_format_targets(
             .cmp(&b.relative_path)
             .then_with(|| a.path.cmp(&b.path))
     });
-    Ok(CollectedFormatTargets {
-        targets: out,
-        events,
-    })
+    Ok(CollectedFormatTargets { targets: out, events })
 }
 fn format_output_matches_input_dir(
     mech_paths: &[String],
@@ -553,6 +549,27 @@ impl FormatOptions {
     }
 }
 
+fn build_format_resource_authority(
+    stylesheet_paths: &[String],
+    shim_path: &str,
+) -> MResult<HostFilesystemAuthority> {
+    let mut ids = DefaultIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+    let mut paths = BTreeSet::<PathBuf>::new();
+    for path in stylesheet_paths {
+        if !path.is_empty() {
+            paths.insert(PathBuf::from(path));
+        }
+    }
+    if !shim_path.is_empty() {
+        paths.insert(PathBuf::from(shim_path));
+    }
+    for path in paths {
+        authority.grant_path(&mut ids, &path, false, [FS_READ])?;
+    }
+    Ok(authority)
+}
+
 pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     let badge = "[Mech Formatter]".truecolor(34, 204, 187);
     let html_flag = options.html;
@@ -586,11 +603,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         }
     }
     println!("{} Loading resources…", badge);
-
-    let mut resource_ids = DefaultIdGenerator::new();
-    let mut resource_authority =
-        HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
-    resource_authority.grant_path(&mut resource_ids, Path::new("/"), true, [FS_READ])?;
+    let resource_authority = build_format_resource_authority(&stylesheet_paths, &shim_path)?;
 
     // Load stylesheet
     print!("{} Loading stylesheet…", badge);
@@ -598,12 +611,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         css: stylesheet_str,
         events,
         ..
-    } = load_stylesheets(
-        &resource_authority,
-        &stylesheet_paths,
-        &options.resources.stylesheet_backup_url,
-    )
-    .await?;
+    } = load_stylesheets(&resource_authority, &stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
     render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     // Load shim HTML
