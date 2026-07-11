@@ -92,17 +92,32 @@ impl MechRuntime {
     }
 
     let id = self.next_transaction_id();
-    context.transaction = Some(id);
-
     let transaction = RuntimeTransaction::new(id, context.subject.clone());
     self.active_transactions.insert(id, transaction);
+    context.transaction = Some(id);
 
-    self.emit_event_to_context(
+    let started_event = match self.emit_event_immediate_to_context(
       context,
       RuntimeEventKind::TransactionStarted {
         transaction_id: id,
       },
-    )?;
+    ) {
+      Ok(event) => event,
+      Err(error) => {
+        self.active_transactions.remove(&id);
+        context.transaction = None;
+        return Err(error);
+      }
+    };
+
+    if let Err(error) = self
+      .active_transaction_mut(id)?
+      .record_event(started_event)
+    {
+      self.active_transactions.remove(&id);
+      context.transaction = None;
+      return Err(error);
+    }
 
     Ok(id)
   }
@@ -115,83 +130,72 @@ impl MechRuntime {
 
     let transaction_id = Self::context_transaction_id(context)?;
 
-    let mut transaction = self
-      .active_transactions
-      .remove(&transaction_id)
-      .ok_or_else(|| {
-        MechError::new(
-          RuntimeTransactionNotFoundError { transaction_id },
-          None,
-        )
-      })?;
+    let commit = {
+      let transaction = self
+        .active_transactions
+        .get_mut(&transaction_id)
+        .ok_or_else(|| {
+          MechError::new(
+            RuntimeTransactionNotFoundError { transaction_id },
+            None,
+          )
+        })?;
 
-    transaction.merge_read_set(&context.access.reads)?;
-    transaction.merge_write_set(&context.access.writes)?;
-    transaction.merge_events(&context.emitted_event_ids())?;
+      transaction.merge_read_set(&context.access.reads)?;
+      transaction.merge_write_set(&context.access.writes)?;
 
-    let staged_puts: Vec<ObjectRecord> =
-      transaction.staged_puts().cloned().collect();
+      let staged_puts: Vec<ObjectRecord> =
+        transaction.staged_puts().cloned().collect();
 
-    let staged_updates: Vec<ObjectRecord> =
-      transaction.staged_updates().cloned().collect();
+      let staged_updates: Vec<ObjectRecord> =
+        transaction.staged_updates().cloned().collect();
 
-    let staged_task_updates: Vec<TaskRecord> =
-      transaction.staged_task_updates().cloned().collect();
+      let staged_task_updates: Vec<TaskRecord> =
+        transaction.staged_task_updates().cloned().collect();
 
-    let staged_actor_updates: Vec<ActorRecord> =
-      transaction.staged_actor_updates().cloned().collect();
+      let staged_actor_updates: Vec<ActorRecord> =
+        transaction.staged_actor_updates().cloned().collect();
 
-    let staged_message_acks: Vec<(ActorId, Vec<MessageId>)> = transaction
-      .staged_message_acks()
-      .map(|(actor, messages)| (*actor, messages.clone()))
-      .collect();
+      let staged_message_acks: Vec<(ActorId, MessageId)> = transaction
+        .staged_message_acks()
+        .flat_map(|(actor, messages)| {
+          messages.iter().map(move |message| (*actor, *message))
+        })
+        .collect();
 
-    let staged_message_enqueues: Vec<(ActorId, Vec<MessageRecord>)> = transaction
-      .staged_message_enqueues()
-      .map(|(actor, messages)| (*actor, messages.clone()))
-      .collect();    
+      let staged_message_enqueues: Vec<(ActorId, MessageRecord)> = transaction
+        .staged_message_enqueues()
+        .flat_map(|(actor, messages)| {
+          messages.iter().cloned().map(move |message| (*actor, message))
+        })
+        .collect();
 
-    for object in staged_puts {
-      self.store.put_object(object)?;
-    }
+      let staged_events = transaction.staged_events().cloned().collect();
+      let transaction_record = transaction.clone().into_record()?;
 
-    for object in staged_updates {
-      self.store.update_object(object)?;
-    }
-
-    for task in staged_task_updates {
-      self.store.update_task(task)?;
-    }
-
-    for actor in staged_actor_updates {
-      self.store.update_actor(actor)?;
-    }
-
-    for (actor, messages) in staged_message_acks {
-      for message in messages {
-        self.store.ack_message(actor, message)?;
+      RuntimeStoreCommit {
+        transaction: transaction_record,
+        object_puts: staged_puts,
+        object_updates: staged_updates,
+        task_updates: staged_task_updates,
+        actor_updates: staged_actor_updates,
+        message_acks: staged_message_acks,
+        message_enqueues: staged_message_enqueues,
+        events: staged_events,
       }
-    }
+    };
 
-    for (actor, messages) in staged_message_enqueues {
-      for message in messages {
-        self.store.enqueue_message(actor, message)?;
-      }
-    }
+    let id = self.store.commit_runtime(commit)?;
 
-    let record = transaction.into_record()?;
-    let id = record.id;
+    self.active_transactions.remove(&transaction_id);
+    context.transaction = None;
 
-    self.store.commit_transaction(record)?;
-
-    self.emit_event_to_context(
+    self.emit_event_immediate_to_context(
       context,
       RuntimeEventKind::TransactionCommitted {
         transaction_id: id,
       },
     )?;
-
-    context.transaction = None;
 
     Ok(id)
   }
@@ -206,6 +210,17 @@ impl MechRuntime {
     let transaction_id = Self::context_transaction_id(context)?;
     let reason = reason.into();
 
+    let staged_event_ids = self
+      .active_transactions
+      .get(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })?
+      .staged_event_ids();
+
     let transaction = self
       .active_transactions
       .remove(&transaction_id)
@@ -218,15 +233,19 @@ impl MechRuntime {
 
     let _ = transaction.abort(reason.clone())?;
 
-    self.emit_event_to_context(
+    context
+      .events
+      .retain(|event| !staged_event_ids.contains(&event.id));
+
+    context.transaction = None;
+
+    self.emit_event_immediate_to_context(
       context,
       RuntimeEventKind::TransactionAborted {
         transaction_id,
         message: reason,
       },
     )?;
-
-    context.transaction = None;
 
     Ok(())
   }
@@ -263,5 +282,244 @@ impl MechRuntime {
       .transaction
       .map(|id| self.active_transactions.contains_key(&id))
       .unwrap_or(false)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn event_count(
+    events: &[RuntimeEvent],
+    kind: RuntimeEventKind,
+  ) -> usize {
+    events.iter().filter(|event| event.kind == kind).count()
+  }
+
+  fn new_runtime() -> MechRuntime {
+    MechRuntime::builder().build().unwrap()
+  }
+
+  #[test]
+  fn transaction_commit_failure_is_atomic() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .put_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(100), "note", "hello"),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(200), "note", "missing"),
+      )
+      .unwrap();
+
+    assert!(runtime.commit_runtime_transaction(&mut context).is_err());
+
+    assert!(runtime.get_object(ObjectId(100)).unwrap().is_none());
+    assert!(runtime.get_object(ObjectId(200)).unwrap().is_none());
+    assert!(runtime.get_transaction(TransactionId(1)).unwrap().is_none());
+
+    let events = runtime.list_events(None).unwrap();
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::ObjectCreated {
+          object_id: ObjectId(100),
+        },
+      ),
+      0,
+    );
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::ObjectUpdated {
+          object_id: ObjectId(200),
+        },
+      ),
+      0,
+    );
+  }
+
+  #[test]
+  fn transaction_commit_failure_keeps_transaction_active() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .put_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(100), "note", "hello"),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(200), "note", "missing"),
+      )
+      .unwrap();
+
+    assert!(runtime.commit_runtime_transaction(&mut context).is_err());
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+
+    runtime
+      .abort_runtime_transaction(&mut context, "failed commit")
+      .unwrap();
+    assert_eq!(context.transaction, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+  }
+
+  #[test]
+  fn transaction_abort_discards_staged_events() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .put_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(100), "note", "hello"),
+      )
+      .unwrap();
+
+    let staged_event_id = context
+      .events
+      .iter()
+      .find(|event| {
+        event.kind == (RuntimeEventKind::ObjectCreated {
+          object_id: ObjectId(100),
+        })
+      })
+      .map(|event| event.id)
+      .unwrap();
+
+    runtime
+      .abort_runtime_transaction(&mut context, "abort")
+      .unwrap();
+
+    assert!(!context.events.iter().any(|event| event.id == staged_event_id));
+    assert!(runtime.get_event(staged_event_id).unwrap().is_none());
+    assert!(runtime.get_object(ObjectId(100)).unwrap().is_none());
+    assert!(runtime.get_transaction(transaction_id).unwrap().is_none());
+
+    let events = runtime.list_events(None).unwrap();
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::TransactionStarted { transaction_id },
+      ),
+      1,
+    );
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::TransactionAborted {
+          transaction_id,
+          message: "abort".to_string(),
+        },
+      ),
+      1,
+    );
+  }
+
+  #[test]
+  fn transaction_commit_persists_staged_events_once() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    let started_id = context
+      .events
+      .iter()
+      .find(|event| {
+        event.kind == (RuntimeEventKind::TransactionStarted { transaction_id })
+      })
+      .map(|event| event.id)
+      .unwrap();
+
+    runtime
+      .put_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(100), "note", "hello"),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(100), "note", "updated"),
+      )
+      .unwrap();
+
+    let staged_event_ids: Vec<EventId> = context
+      .events
+      .iter()
+      .filter(|event| {
+        matches!(
+          event.kind,
+          RuntimeEventKind::ObjectCreated { .. }
+            | RuntimeEventKind::ObjectUpdated { .. }
+        )
+      })
+      .map(|event| event.id)
+      .collect();
+
+    assert_eq!(
+      runtime.commit_runtime_transaction(&mut context).unwrap(),
+      transaction_id,
+    );
+
+    let object = runtime.get_object(ObjectId(100)).unwrap().unwrap();
+    assert_eq!(object.data, b"updated");
+
+    let events = runtime.list_events(None).unwrap();
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::ObjectCreated {
+          object_id: ObjectId(100),
+        },
+      ),
+      1,
+    );
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::ObjectUpdated {
+          object_id: ObjectId(100),
+        },
+      ),
+      1,
+    );
+    assert_eq!(
+      event_count(
+        &events,
+        RuntimeEventKind::TransactionCommitted { transaction_id },
+      ),
+      1,
+    );
+
+    let record = runtime.get_transaction(transaction_id).unwrap().unwrap();
+    assert!(record.events.contains(&started_id));
+    for event_id in &staged_event_ids {
+      assert!(record.events.contains(event_id));
+      assert_eq!(
+        events.iter().filter(|event| event.id == *event_id).count(),
+        1,
+      );
+    }
+
+    let mut unique = record.events.clone();
+    unique.sort_by_key(|id| id.as_u128());
+    unique.dedup();
+    assert_eq!(unique.len(), record.events.len());
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(context.transaction, None);
   }
 }

@@ -87,6 +87,7 @@ use crate::scheduler::{
 use crate::store::{
   ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
   ModuleImportEdge, ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
+  RuntimeStoreCommit,
 };
 
 use crate::transaction::{
@@ -895,6 +896,29 @@ impl MechRuntime {
   }
 
   fn emit_event_to_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    context.validate()?;
+
+    let event = self.make_event(kind);
+    let id = event.id;
+
+    context.push_event(event.clone());
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
+        transaction.stage_event(event)?;
+        return Ok(id);
+      }
+    }
+
+    self.append_event(event)?;
+
+    Ok(id)
+  }
+
+  fn emit_event_immediate_to_context(
     &mut self,
     context: &mut RuntimeContext,
     kind: RuntimeEventKind,

@@ -136,6 +136,11 @@ pub trait MechStore: std::fmt::Debug + Send {
 
   fn list_events(&self, limit: Option<usize>) -> MResult<Vec<RuntimeEvent>>;
 
+  fn commit_runtime(
+    &mut self,
+    commit: RuntimeStoreCommit,
+  ) -> MResult<TransactionId>;
+
   fn commit_transaction(&mut self, tx: TransactionRecord) -> MResult<TransactionId>;
 
   fn get_transaction(&self, id: TransactionId) -> MResult<Option<TransactionRecord>>;
@@ -783,6 +788,18 @@ impl TransactionRecord {
   }
 }
 
+#[derive(Clone, Debug)]
+pub struct RuntimeStoreCommit {
+  pub transaction: TransactionRecord,
+  pub object_puts: Vec<ObjectRecord>,
+  pub object_updates: Vec<ObjectRecord>,
+  pub task_updates: Vec<TaskRecord>,
+  pub actor_updates: Vec<ActorRecord>,
+  pub message_acks: Vec<(ActorId, MessageId)>,
+  pub message_enqueues: Vec<(ActorId, MessageRecord)>,
+  pub events: Vec<RuntimeEvent>,
+}
+
 // -----------------------------------------------------------------------------
 // In-Memory Store
 // -----------------------------------------------------------------------------
@@ -1277,6 +1294,47 @@ impl MechStore for InMemoryStore {
     )
   }
 
+  fn commit_runtime(
+    &mut self,
+    commit: RuntimeStoreCommit,
+  ) -> MResult<TransactionId> {
+    let id = commit.transaction.id;
+    let mut temporary = self.clone();
+
+    for object in commit.object_puts {
+      temporary.put_object(object)?;
+    }
+
+    for object in commit.object_updates {
+      temporary.update_object(object)?;
+    }
+
+    for task in commit.task_updates {
+      temporary.update_task(task)?;
+    }
+
+    for actor in commit.actor_updates {
+      temporary.update_actor(actor)?;
+    }
+
+    for (actor, message) in commit.message_acks {
+      temporary.ack_message(actor, message)?;
+    }
+
+    for (actor, message) in commit.message_enqueues {
+      temporary.enqueue_message(actor, message)?;
+    }
+
+    for event in commit.events {
+      temporary.append_event(event)?;
+    }
+
+    temporary.commit_transaction(commit.transaction)?;
+    *self = temporary;
+
+    Ok(id)
+  }
+
   fn commit_transaction(&mut self, tx: TransactionRecord) -> MResult<TransactionId> {
     tx.validate()?;
 
@@ -1672,6 +1730,41 @@ mod tests {
     assert_eq!(loaded.actor_updates, vec![ActorId(6)]);
     assert_eq!(loaded.events, vec![EventId(7)]);
   }
+
+  #[test]
+  fn in_memory_store_batch_failure_does_not_mutate_store() {
+    let mut store = InMemoryStore::new();
+
+    let event = RuntimeEvent::new(
+      EventId(1),
+      0,
+      RuntimeEventKind::ObjectCreated {
+        object_id: ObjectId(1),
+      },
+    );
+
+    let commit = RuntimeStoreCommit {
+      transaction: TransactionRecord::new(TransactionId(1), "task:1")
+        .with_write_set(vec![ObjectId(1), ObjectId(2)])
+        .with_events(vec![EventId(1)]),
+      object_puts: vec![ObjectRecord::text(ObjectId(1), "note", "hello")],
+      object_updates: vec![ObjectRecord::text(ObjectId(2), "note", "missing")],
+      task_updates: Vec::new(),
+      actor_updates: Vec::new(),
+      message_acks: Vec::new(),
+      message_enqueues: Vec::new(),
+      events: vec![event],
+    };
+
+    assert!(store.commit_runtime(commit).is_err());
+    assert!(store.get_object(ObjectId(1)).unwrap().is_none());
+    assert!(store.get_object(ObjectId(2)).unwrap().is_none());
+    assert!(store.get_event(EventId(1)).unwrap().is_none());
+    assert!(store.get_transaction(TransactionId(1)).unwrap().is_none());
+    assert!(store.list_events(None).unwrap().is_empty());
+    assert!(store.list_transactions(None).unwrap().is_empty());
+  }
+
   #[test]
   fn context_import_without_import_edge_validates() {
     let import = SourceImportDeclaration {
