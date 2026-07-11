@@ -835,6 +835,7 @@ fn replace_dynamic_matrix_output(
     }
 }
 
+#[cfg(feature = "dynamic-modules")]
 fn dynamic_binary_broadcast_plan(
     lhs: &DynamicF64Arg,
     rhs: &DynamicF64Arg,
