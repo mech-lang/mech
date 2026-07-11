@@ -1056,14 +1056,11 @@ impl MechRuntime {
     &self,
     context: &mut RuntimeContext,
     event: RuntimeEvent,
-  ) -> MResult<EventId> {
-    context.validate()?;
-
+  ) -> EventId {
     let id = event.id;
     context.push_event(event);
     self.trim_events_to_retention(&mut context.events);
-
-    Ok(id)
+    id
   }
 
   // ---------------------------------------------------------------------------

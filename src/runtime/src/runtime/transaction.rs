@@ -199,7 +199,7 @@ impl MechRuntime {
     self.active_transactions.remove(&transaction_id);
     context.transaction = None;
 
-    self.push_persisted_event_to_context(context, commit_event)?;
+    self.push_persisted_event_to_context(context, commit_event);
 
     Ok(id)
   }

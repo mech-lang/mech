@@ -7,6 +7,7 @@
 use super::*;
 
 impl MechRuntime {
+
   fn first_visible_transaction_message(
     &self,
     transaction_id: TransactionId,
@@ -707,4 +708,5 @@ mod tests {
     assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"two");
     assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
   }
+
 }
