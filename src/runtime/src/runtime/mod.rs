@@ -1052,6 +1052,20 @@ impl MechRuntime {
     Ok(id)
   }
 
+  fn push_persisted_event_to_context(
+    &self,
+    context: &mut RuntimeContext,
+    event: RuntimeEvent,
+  ) -> MResult<EventId> {
+    context.validate()?;
+
+    let id = event.id;
+    context.push_event(event);
+    self.trim_events_to_retention(&mut context.events);
+
+    Ok(id)
+  }
+
   // ---------------------------------------------------------------------------
   // Shutdown
   // ---------------------------------------------------------------------------

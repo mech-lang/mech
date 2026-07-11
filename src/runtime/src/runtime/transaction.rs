@@ -130,6 +130,10 @@ impl MechRuntime {
 
     let transaction_id = Self::context_transaction_id(context)?;
 
+    let commit_event = self.make_event(RuntimeEventKind::TransactionCommitted {
+      transaction_id,
+    });
+
     let commit = {
       let transaction = self
         .active_transactions
@@ -170,8 +174,13 @@ impl MechRuntime {
         })
         .collect();
 
-      let staged_events = transaction.staged_events().cloned().collect();
-      let transaction_record = transaction.clone().into_record()?;
+      let mut staged_events: Vec<RuntimeEvent> =
+        transaction.staged_events().cloned().collect();
+      staged_events.push(commit_event.clone());
+
+      let mut transaction_snapshot = transaction.clone();
+      transaction_snapshot.record_event(commit_event.id)?;
+      let transaction_record = transaction_snapshot.into_record()?;
 
       RuntimeStoreCommit {
         transaction: transaction_record,
@@ -190,12 +199,7 @@ impl MechRuntime {
     self.active_transactions.remove(&transaction_id);
     context.transaction = None;
 
-    self.emit_event_immediate_to_context(
-      context,
-      RuntimeEventKind::TransactionCommitted {
-        transaction_id: id,
-      },
-    )?;
+    self.push_persisted_event_to_context(context, commit_event)?;
 
     Ok(id)
   }
@@ -504,9 +508,25 @@ mod tests {
       ),
       1,
     );
+    let commit_event_id = context
+      .events
+      .iter()
+      .find(|event| {
+        event.kind == (RuntimeEventKind::TransactionCommitted { transaction_id })
+      })
+      .map(|event| event.id)
+      .unwrap();
+    assert_eq!(
+      events
+        .iter()
+        .filter(|event| event.id == commit_event_id)
+        .count(),
+      1,
+    );
 
     let record = runtime.get_transaction(transaction_id).unwrap().unwrap();
     assert!(record.events.contains(&started_id));
+    assert!(record.events.contains(&commit_event_id));
     for event_id in &staged_event_ids {
       assert!(record.events.contains(event_id));
       assert_eq!(
