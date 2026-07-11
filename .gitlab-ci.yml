@@ -6,7 +6,7 @@ test:cargo:
   - rustup show
   - rustup default nightly-2026-03-03
   - cargo clean
-  - cargo build --bin mech --release
+  - cargo build --bin mech --release --features linked_stdlib
   - ./target/release/mech test docs
   - ./target/release/mech test examples/working
   - cargo build --no-default-features

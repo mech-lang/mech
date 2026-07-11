@@ -128,6 +128,7 @@ impl MechProgram {
   }
 
   fn apply_environment(&mut self) {
+    self.interpreter.max_steps = self.config.environment.rounds_per_step;
     self
       .interpreter
       .set_trace_enabled(self.config.environment.trace_enabled);

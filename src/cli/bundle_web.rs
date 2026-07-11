@@ -84,13 +84,13 @@ impl BundleWebHostDelegationArgs {
   }
 }
 
-fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf]) -> MResult<Vec<PathBuf>> {
+fn expand_serve_source_paths(base_dir: &Path, paths: &[PathBuf], allowed_roots: &[PathBuf]) -> MResult<Vec<PathBuf>> {
   let mut visited_dirs = BTreeSet::new();
   let mut seen_files = BTreeSet::new();
   let mut out = Vec::new();
   for path in paths {
     let resolved = resolve_config_path(base_dir, path);
-    collect_serve_source_path(&resolved, &mut visited_dirs, &mut seen_files, &mut out)?;
+    collect_serve_source_path(&resolved, allowed_roots, &mut visited_dirs, &mut seen_files, &mut out)?;
   }
   Ok(out)
 }
@@ -115,6 +115,7 @@ fn normalize_link_logical_path(path: &Path) -> MResult<PathBuf> {
 
 fn collect_serve_source_path(
   path: &Path,
+  allowed_roots: &[PathBuf],
   visited_dirs: &mut BTreeSet<PathBuf>,
   seen_files: &mut BTreeSet<PathBuf>,
   out: &mut Vec<PathBuf>,
@@ -137,6 +138,9 @@ fn collect_serve_source_path(
       require_file("serve.paths", &target)?;
       if is_mech_source(&target) {
         let logical = normalize_link_logical_path(path)?;
+        if !allowed_roots.iter().any(|root| target.starts_with(root)) {
+          return Err(validation_error(format!("serve.paths symlink {} targets {} outside allowed roots", logical.display(), target.display())).into());
+        }
         push_serve_source_file(&logical, &target, seen_files, out)?;
       }
     }
@@ -155,7 +159,7 @@ fn collect_serve_source_path(
   if !visited_dirs.insert(canonical.clone()) { return Ok(()); }
   let mut entries = std::fs::read_dir(&canonical)?.collect::<Result<Vec<_>, _>>()?;
   entries.sort_by_key(|entry| entry.path());
-  for entry in entries { collect_serve_source_path(&entry.path(), visited_dirs, seen_files, out)?; }
+  for entry in entries { collect_serve_source_path(&entry.path(), allowed_roots, visited_dirs, seen_files, out)?; }
   Ok(())
 }
 
@@ -311,7 +315,7 @@ pub(crate) fn effective_bundle_web_options_from_args(
 
   let serve_config = loaded.document.serve.as_ref();
   let source_paths = serve_config
-    .map(|serve| expand_serve_source_paths(&loaded.base_dir, &serve.paths))
+    .map(|serve| { let allowed_roots = vec![project_dir.clone(), loaded.base_dir.canonicalize()?]; expand_serve_source_paths(&loaded.base_dir, &serve.paths, &allowed_roots) })
     .transpose()?
     .unwrap_or_default();
   if source_paths.is_empty() {
@@ -400,7 +404,7 @@ pub fn effective_bundle_web_options(
 
   let serve_config = loaded.document.serve.as_ref();
   let source_paths = serve_config
-    .map(|serve| expand_serve_source_paths(&loaded.base_dir, &serve.paths))
+    .map(|serve| { let allowed_roots = vec![project_dir.clone(), loaded.base_dir.canonicalize()?]; expand_serve_source_paths(&loaded.base_dir, &serve.paths, &allowed_roots) })
     .transpose()?
     .unwrap_or_default();
   if source_paths.is_empty() {
@@ -728,7 +732,7 @@ mod tests {
   #[test]
   fn source_collection_errors_for_missing_serve_path() {
     let root = temp_root("missing-serve-path");
-    let error = format!("{:?}", expand_serve_source_paths(&root, &[PathBuf::from("missing.mec")]).unwrap_err());
+    let error = format!("{:?}", expand_serve_source_paths(&root, &[PathBuf::from("missing.mec")], &[root.canonicalize().unwrap()]).unwrap_err());
 
     assert!(error.contains("serve.paths entry does not exist"));
     assert!(error.contains("missing.mec"));
@@ -741,7 +745,7 @@ mod tests {
     std::fs::create_dir_all(root.join("src")).unwrap();
     std::fs::write(root.join("src/demo.mec"), "x := 1\n").unwrap();
 
-    let error = format!("{:?}", expand_serve_source_paths(&root, &[PathBuf::from("src"), PathBuf::from("missing.mec")]).unwrap_err());
+    let error = format!("{:?}", expand_serve_source_paths(&root, &[PathBuf::from("src"), PathBuf::from("missing.mec")], &[root.canonicalize().unwrap()]).unwrap_err());
 
     assert!(error.contains("serve.paths entry does not exist"));
     assert!(error.contains("missing.mec"));
@@ -757,7 +761,7 @@ mod tests {
     std::fs::create_dir_all(&config).unwrap();
     std::fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
 
-    let paths = expand_serve_source_paths(&config, &[PathBuf::from("../app/demo.mec")]).unwrap();
+    let paths = expand_serve_source_paths(&config, &[PathBuf::from("../app/demo.mec")], &[app.canonicalize().unwrap(), config.canonicalize().unwrap()]).unwrap();
 
     assert_eq!(paths, vec![app.join("demo.mec").canonicalize().unwrap()]);
     std::fs::remove_dir_all(root).unwrap();
@@ -772,7 +776,7 @@ mod tests {
     std::fs::create_dir_all(&config).unwrap();
     std::fs::write(app.join("src/demo.mec"), "x := 1\n").unwrap();
 
-    let paths = expand_serve_source_paths(&config, &[PathBuf::from("../app/src")]).unwrap();
+    let paths = expand_serve_source_paths(&config, &[PathBuf::from("../app/src")], &[app.canonicalize().unwrap(), config.canonicalize().unwrap()]).unwrap();
 
     assert_eq!(paths, vec![app.join("src/demo.mec").canonicalize().unwrap()]);
     std::fs::remove_dir_all(root).unwrap();
@@ -873,7 +877,7 @@ mod tests {
     unix_fs::symlink(&src, src.join("cycle/dir-link")).unwrap();
     unix_fs::symlink(src.join("missing.mec"), src.join("broken.mec")).unwrap();
 
-    let paths = expand_serve_source_paths(&project, &[PathBuf::from("src/link.mec"), PathBuf::from("src")]).unwrap();
+    let paths = expand_serve_source_paths(&project, &[PathBuf::from("src/link.mec"), PathBuf::from("src")], &[project.canonicalize().unwrap()]).unwrap();
 
     assert_eq!(paths, vec![src.join("link.mec")]);
     std::fs::remove_dir_all(root).unwrap();
@@ -894,7 +898,7 @@ mod tests {
     unix_fs::symlink("../shared/lib.mec", src.join("link-a.mec")).unwrap();
     unix_fs::symlink("../shared/lib.mec", src.join("link-b.mec")).unwrap();
 
-    let paths = expand_serve_source_paths(&project, &[PathBuf::from("src")]).unwrap();
+    let paths = expand_serve_source_paths(&project, &[PathBuf::from("src")], &[root.canonicalize().unwrap()]).unwrap();
 
     assert_eq!(paths, vec![src.join("link-a.mec")]);
     std::fs::remove_dir_all(root).unwrap();

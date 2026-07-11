@@ -417,21 +417,15 @@ impl BrowserDomPath {
     }
 
     pub fn without_property_suffix(&self) -> &str {
-        let Some((base, leaf)) = self.path.rsplit_once('/') else {
-            return &self.path;
-        };
-        if leaf.starts_with('_') {
-            base
-        } else {
-            &self.path
+        match self.path.rsplit_once('/') {
+            Some((base, leaf)) if leaf.starts_with('_') => base,
+            None if self.path.starts_with('_') => "",
+            _ => &self.path,
         }
     }
 
     pub fn dom_property(&self) -> BrowserDomProperty {
-        let Some((_, leaf)) = self.path.rsplit_once('/') else {
-            return BrowserDomProperty::Text;
-        };
-
+        let leaf = self.path.rsplit_once('/').map_or(self.path.as_str(), |(_, leaf)| leaf);
         BrowserDomProperty::from_path_segment(leaf)
     }
 }

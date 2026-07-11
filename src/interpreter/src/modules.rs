@@ -1,5 +1,7 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
+use nalgebra::{DMatrix, DVector, RowDVector};
+#[cfg(feature = "dynamic-modules")]
 use std::collections::{HashMap, HashSet};
 #[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
@@ -134,7 +136,9 @@ impl DynamicModuleLoader {
         }
     }
 
-    fn validate_dynamic_kernel_kind(kind: mech_abi::MechKernelKindV1) -> MResult<ValidatedDynamicKernelKind> {
+    fn validate_dynamic_kernel_kind(
+        kind: mech_abi::MechKernelKindV1,
+    ) -> MResult<ValidatedDynamicKernelKind> {
         match kind.0 {
             1 => Ok(ValidatedDynamicKernelKind::UnaryF64ToF64),
             2 => Ok(ValidatedDynamicKernelKind::BinaryF64F64ToF64),
@@ -562,14 +566,13 @@ impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
 
             _ => {
                 let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, &self.name)?;
-                let out = plan.new_output_matrix();
+                let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
 
                 Ok(Box::new(DynamicBinaryF64F64BroadcastFunction {
                     name: self.name.clone(),
                     lhs,
                     rhs,
                     out,
-                    plan,
                     kernel: self.kernel,
                     _library: self._library.clone(),
                 }))
@@ -636,15 +639,12 @@ impl NativeFunctionCompiler for DynamicUnaryF64ViewToF64ViewCompiler {
         let rows = input.rows();
         let cols = input.cols();
         let len = rows * cols;
-        let out = Matrix::from_vec(vec![0.0; len], rows, cols);
+        let out = initial_dynamic_unary_output(&input, rows, cols, len);
 
         Ok(Box::new(DynamicUnaryF64ViewToF64ViewFunction {
             name: self.name.clone(),
             input,
             out,
-            len,
-            rows,
-            cols,
             kernel: self.kernel,
             _library: self._library.clone(),
         }))
@@ -717,6 +717,121 @@ fn dynamic_arg_as_f64_scalar_or_matrix(value: &Value, fxn_name: &str) -> MResult
             None,
         )
         .with_compiler_loc()),
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn matrix_is_dmatrix(matrix: &Matrix<f64>) -> bool {
+    matches!(matrix, Matrix::DMatrix(_))
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_arg_has_dmatrix(arg: &DynamicF64Arg) -> bool {
+    matches!(arg, DynamicF64Arg::Matrix(matrix) if matrix_is_dmatrix(matrix))
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn initial_dynamic_binary_output(
+    lhs: &DynamicF64Arg,
+    rhs: &DynamicF64Arg,
+    plan: &DynamicF64BinaryBroadcastPlan,
+) -> Matrix<f64> {
+    if dynamic_arg_has_dmatrix(lhs) || dynamic_arg_has_dmatrix(rhs) {
+        Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+            plan.rows,
+            plan.cols,
+            vec![0.0; plan.len],
+        )))
+    } else {
+        Matrix::from_vec(vec![0.0; plan.len], plan.rows, plan.cols)
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn initial_dynamic_unary_output(
+    input: &Matrix<f64>,
+    rows: usize,
+    cols: usize,
+    len: usize,
+) -> Matrix<f64> {
+    if matrix_is_dmatrix(input) {
+        Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, vec![0.0; len])))
+    } else {
+        Matrix::from_vec(vec![0.0; len], rows, cols)
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn replace_dynamic_matrix_output(
+    output: &Matrix<f64>,
+    rows: usize,
+    cols: usize,
+    values: Vec<f64>,
+    function_name: &str,
+) -> MResult<()> {
+    let expected_len = rows.checked_mul(cols).ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: format!(
+                    "dynamic function `{}` matrix shape overflows",
+                    function_name
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    if values.len() != expected_len {
+        return Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "dynamic function `{}` produced {} values for shape {}x{}",
+                    function_name,
+                    values.len(),
+                    rows,
+                    cols
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+
+    match output {
+        Matrix::DMatrix(matrix) => {
+            *matrix.borrow_mut() = DMatrix::from_vec(rows, cols, values);
+            Ok(())
+        }
+        Matrix::DVector(vector) => {
+            if cols != 1 {
+                return Err(MechError::new(GenericError { msg: format!("dynamic function `{}` output cannot represent shape {}x{} as a column vector", function_name, rows, cols) }, None).with_compiler_loc());
+            }
+            *vector.borrow_mut() = DVector::from_vec(values);
+            Ok(())
+        }
+        Matrix::RowDVector(vector) => {
+            if rows != 1 {
+                return Err(MechError::new(GenericError { msg: format!("dynamic function `{}` output cannot represent shape {}x{} as a row vector", function_name, rows, cols) }, None).with_compiler_loc());
+            }
+            *vector.borrow_mut() = RowDVector::from_vec(values);
+            Ok(())
+        }
+        _ => {
+            if output.rows() != rows || output.cols() != cols {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "dynamic function `{}` output cannot represent changed shape {}x{}",
+                            function_name, rows, cols
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            output.set(values);
+            Ok(())
+        }
     }
 }
 
@@ -859,35 +974,51 @@ struct DynamicBinaryF64F64BroadcastFunction {
     lhs: DynamicF64Arg,
     rhs: DynamicF64Arg,
     out: Matrix<f64>,
-    plan: DynamicF64BinaryBroadcastPlan,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn solve_dynamic_binary_broadcast(
+    lhs: &DynamicF64Arg,
+    rhs: &DynamicF64Arg,
+    out: &Matrix<f64>,
+    kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
+    name: &str,
+) -> MResult<()> {
+    let plan = dynamic_binary_broadcast_plan(lhs, rhs, name)?;
+    let mut out_vec = Vec::with_capacity(plan.len);
+    for index in 1..=plan.len {
+        let mut value = 0.0;
+        let status = unsafe {
+            (kernel)(
+                lhs.value_at(index),
+                rhs.value_at(index),
+                &mut value as *mut f64,
+            )
+        };
+        if status != mech_abi::MechStatusV1::Ok {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!("dynamic kernel `{}` returned status {:?}", name, status),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        out_vec.push(value);
+    }
+    replace_dynamic_matrix_output(out, plan.rows, plan.cols, out_vec, name)
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn solve(&self) {
-        let mut out_vec = Vec::with_capacity(self.plan.len);
-
-        for index in 1..=self.plan.len {
-            let lhs = self.lhs.value_at(index);
-            let rhs = self.rhs.value_at(index);
-            let mut out = 0.0;
-
-            let status = unsafe { (self.kernel)(lhs, rhs, &mut out as *mut f64) };
-
-            if status != mech_abi::MechStatusV1::Ok {
-                dynamic_trace(format!(
-                    "dynamic kernel `{}` returned status {:?}",
-                    self.name, status
-                ));
-                return;
-            }
-
-            out_vec.push(out);
+        if let Err(err) =
+            solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name)
+        {
+            dynamic_trace(err.full_chain_message());
         }
-
-        self.out.set(out_vec);
     }
 
     fn out(&self) -> Value {
@@ -967,47 +1098,67 @@ struct DynamicUnaryF64ViewToF64ViewFunction {
     name: String,
     input: Matrix<f64>,
     out: Matrix<f64>,
-    len: usize,
-    rows: usize,
-    cols: usize,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn solve_dynamic_unary_view(
+    input: &Matrix<f64>,
+    out: &Matrix<f64>,
+    kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
+    name: &str,
+) -> MResult<()> {
+    let rows = input.rows();
+    let cols = input.cols();
+    let len = rows.checked_mul(cols).ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: format!("dynamic function `{}` matrix shape overflows", name),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    let mut input_vec = Vec::with_capacity(len);
+    for index in 1..=len {
+        input_vec.push(input.index1d(index));
+    }
+    let mut out_vec = vec![0.0; len];
+    let status = unsafe {
+        (kernel)(
+            mech_abi::MechF64ViewV1 {
+                ptr: input_vec.as_ptr(),
+                len,
+                rows,
+                cols,
+            },
+            mech_abi::MechF64ViewMutV1 {
+                ptr: out_vec.as_mut_ptr(),
+                len,
+                rows,
+                cols,
+            },
+        )
+    };
+    if status != mech_abi::MechStatusV1::Ok {
+        return Err(MechError::new(
+            GenericError {
+                msg: format!("dynamic kernel `{}` returned status {:?}", name, status),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    replace_dynamic_matrix_output(out, rows, cols, out_vec, name)
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn solve(&self) {
-        let mut input_vec = Vec::with_capacity(self.len);
-        for index in 1..=self.len {
-            input_vec.push(self.input.index1d(index));
-        }
-
-        let mut out_vec = vec![0.0; self.len];
-
-        let status = unsafe {
-            (self.kernel)(
-                mech_abi::MechF64ViewV1 {
-                    ptr: input_vec.as_ptr(),
-                    len: input_vec.len(),
-                    rows: self.rows,
-                    cols: self.cols,
-                },
-                mech_abi::MechF64ViewMutV1 {
-                    ptr: out_vec.as_mut_ptr(),
-                    len: out_vec.len(),
-                    rows: self.rows,
-                    cols: self.cols,
-                },
-            )
-        };
-
-        if status == mech_abi::MechStatusV1::Ok {
-            self.out.set(out_vec);
-        } else {
-            dynamic_trace(format!(
-                "dynamic kernel `{}` returned status {:?}",
-                self.name, status
-            ));
+        if let Err(err) = solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name)
+        {
+            dynamic_trace(err.full_chain_message());
         }
     }
 
@@ -1271,5 +1422,182 @@ mod rc4_dynamic_abi_tests {
         let err = DynamicModuleLoader::validate_dynamic_kernel_kind(mech_abi::MechKernelKindV1(99))
             .expect_err("unknown kernel kind should be rejected");
         assert!(err.full_chain_message().contains("99"));
+    }
+}
+
+#[cfg(all(test, feature = "dynamic-modules"))]
+mod dynamic_live_shape_solve_tests {
+    use super::*;
+
+    extern "C" fn add_kernel(lhs: f64, rhs: f64, out: *mut f64) -> mech_abi::MechStatusV1 {
+        unsafe {
+            *out = lhs + rhs;
+        }
+        mech_abi::MechStatusV1::Ok
+    }
+
+    extern "C" fn double_view_kernel(
+        input: mech_abi::MechF64ViewV1,
+        mut out: mech_abi::MechF64ViewMutV1,
+    ) -> mech_abi::MechStatusV1 {
+        for index in 0..input.len {
+            unsafe {
+                *out.ptr.add(index) = *input.ptr.add(index) * 2.0;
+            }
+        }
+        mech_abi::MechStatusV1::Ok
+    }
+
+    fn dmatrix(values: Vec<f64>, rows: usize, cols: usize) -> Matrix<f64> {
+        Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, values)))
+    }
+
+    fn set_dmatrix(matrix: &Matrix<f64>, values: Vec<f64>, rows: usize, cols: usize) {
+        match matrix {
+            Matrix::DMatrix(inner) => *inner.borrow_mut() = DMatrix::from_vec(rows, cols, values),
+            _ => panic!("expected DMatrix"),
+        }
+    }
+
+    fn values(matrix: &Matrix<f64>) -> Vec<f64> {
+        (1..=matrix.rows() * matrix.cols())
+            .map(|index| matrix.index1d(index))
+            .collect()
+    }
+
+    fn ref_id(matrix: &Matrix<f64>) -> u64 {
+        match matrix {
+            Matrix::DMatrix(inner) => inner.id(),
+            Matrix::DVector(inner) => inner.id(),
+            Matrix::RowDVector(inner) => inner.id(),
+            _ => 0,
+        }
+    }
+
+    #[test]
+    fn dynamic_binary_broadcast_recomputes_shape_on_solve() {
+        let lhs_matrix = dmatrix(vec![1.0, 2.0], 1, 2);
+        let rhs = DynamicF64Arg::Scalar(Ref::new(10.0));
+        let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+        solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
+        set_dmatrix(&lhs_matrix, vec![3.0, 4.0, 5.0, 6.0], 2, 2);
+        solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (2, 2, vec![13.0, 14.0, 15.0, 16.0])
+        );
+    }
+
+    #[test]
+    fn dynamic_binary_broadcast_handles_growth_without_truncation() {
+        let lhs_matrix = dmatrix(vec![1.0], 1, 1);
+        let rhs = DynamicF64Arg::Scalar(Ref::new(1.0));
+        let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+        set_dmatrix(&lhs_matrix, vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (2, 2, vec![2.0, 3.0, 4.0, 5.0])
+        );
+    }
+
+    #[test]
+    fn dynamic_binary_broadcast_handles_shrink_without_out_of_bounds() {
+        let lhs_matrix = dmatrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        let rhs = DynamicF64Arg::Scalar(Ref::new(1.0));
+        let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+        set_dmatrix(&lhs_matrix, vec![9.0], 1, 1);
+        solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
+        assert_eq!((out.rows(), out.cols(), values(&out)), (1, 1, vec![10.0]));
+    }
+
+    #[test]
+    fn dynamic_binary_shape_mismatch_preserves_last_successful_output() {
+        let lhs_matrix = dmatrix(vec![1.0, 2.0], 1, 2);
+        let rhs_matrix = dmatrix(vec![3.0, 4.0], 1, 2);
+        let lhs = DynamicF64Arg::Matrix(lhs_matrix.clone());
+        let rhs = DynamicF64Arg::Matrix(rhs_matrix.clone());
+        let plan = dynamic_binary_broadcast_plan(&lhs, &rhs, "test").unwrap();
+        let out = initial_dynamic_binary_output(&lhs, &rhs, &plan);
+        solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").unwrap();
+        set_dmatrix(&rhs_matrix, vec![1.0, 2.0, 3.0], 1, 3);
+        assert!(solve_dynamic_binary_broadcast(&lhs, &rhs, &out, add_kernel, "test").is_err());
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (1, 2, vec![4.0, 6.0])
+        );
+    }
+
+    #[test]
+    fn dynamic_unary_view_recomputes_shape_on_solve() {
+        let input = dmatrix(vec![1.0, 2.0], 1, 2);
+        let out = initial_dynamic_unary_output(&input, 1, 2, 2);
+        set_dmatrix(&input, vec![3.0, 4.0, 5.0, 6.0], 2, 2);
+        solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (2, 2, vec![6.0, 8.0, 10.0, 12.0])
+        );
+    }
+
+    #[test]
+    fn dynamic_unary_view_handles_growth_without_truncation() {
+        let input = dmatrix(vec![1.0], 1, 1);
+        let out = initial_dynamic_unary_output(&input, 1, 1, 1);
+        set_dmatrix(&input, vec![1.0, 2.0, 3.0], 3, 1);
+        solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (3, 1, vec![2.0, 4.0, 6.0])
+        );
+    }
+
+    #[test]
+    fn dynamic_unary_view_handles_shrink_without_out_of_bounds() {
+        let input = dmatrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        let out = initial_dynamic_unary_output(&input, 2, 2, 4);
+        set_dmatrix(&input, vec![7.0], 1, 1);
+        solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
+        assert_eq!((out.rows(), out.cols(), values(&out)), (1, 1, vec![14.0]));
+    }
+
+    #[test]
+    fn dynamic_matrix_output_retains_reference_identity() {
+        let input = dmatrix(vec![1.0], 1, 1);
+        let out = initial_dynamic_unary_output(&input, 1, 1, 1);
+        let before = ref_id(&out);
+        set_dmatrix(&input, vec![1.0, 2.0], 2, 1);
+        solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
+        assert_eq!(before, ref_id(&out));
+    }
+
+    #[test]
+    fn dynamic_row_vector_output_preserves_row_vector_representation() {
+        let input = Matrix::from_vec(vec![1.0, 2.0], 1, 2);
+        let out = initial_dynamic_unary_output(&input, 1, 2, 2);
+        solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
+        assert!(matches!(out, Matrix::RowDVector(_)));
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (1, 2, vec![2.0, 4.0])
+        );
+    }
+
+    #[test]
+    fn dynamic_column_vector_output_preserves_column_vector_representation() {
+        let input = Matrix::from_vec(vec![1.0, 2.0], 2, 1);
+        let out = initial_dynamic_unary_output(&input, 2, 1, 2);
+        solve_dynamic_unary_view(&input, &out, double_view_kernel, "test").unwrap();
+        assert!(matches!(out, Matrix::DVector(_)));
+        assert_eq!(
+            (out.rows(), out.cols(), values(&out)),
+            (2, 1, vec![2.0, 4.0])
+        );
     }
 }
