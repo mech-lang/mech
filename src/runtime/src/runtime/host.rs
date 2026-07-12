@@ -87,7 +87,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     call.validate()?;
 
     let name = call.name.clone();

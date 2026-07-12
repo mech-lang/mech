@@ -20,7 +20,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     capability: Arc<dyn Capability>,
   ) -> MResult<CapabilityId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     capability.validate()?;
 
@@ -53,7 +53,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     capability: CapabilityId,
   ) -> MResult<()> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     self
@@ -85,7 +85,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     self.capability_kernel.check(request)
   }

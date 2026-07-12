@@ -102,9 +102,7 @@ impl RuntimeTransaction {
     return invalid_runtime_transaction("message", "must not be zero");
   }
 
-  if !self.message_acks.contains(&message) {
-    self.message_acks.push(message);
-  }
+  self.message_acks.push(message);
 
   Ok(())
 }
@@ -453,28 +451,30 @@ impl RuntimeTransaction {
 
     self.record_message_ack(message)?;
 
-    let messages = self
+    self
       .staged_message_acks
       .entry(actor)
-      .or_default();
-
-    if !messages.contains(&message) {
-      messages.push(message);
-    }
+      .or_default()
+      .push(message);
 
     Ok(())
   }
 
-  pub fn is_message_ack_staged(
+  pub fn staged_message_ack_occurrences(
     &self,
     actor: ActorId,
     message: MessageId,
-  ) -> bool {
+  ) -> usize {
     self
       .staged_message_acks
       .get(&actor)
-      .map(|messages| messages.contains(&message))
-      .unwrap_or(false)
+      .map(|messages| {
+        messages
+          .iter()
+          .filter(|candidate| **candidate == message)
+          .count()
+      })
+      .unwrap_or(0)
   }
 
   pub fn staged_message_acks(

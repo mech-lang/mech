@@ -31,7 +31,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     task: TaskRecord,
   ) -> MResult<TaskId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     if self.store.get_task(task.id)?.is_none() {
@@ -112,7 +112,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     id: TaskId,
   ) -> MResult<Option<TaskRecord>> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
@@ -134,10 +134,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     task: TaskRecord,
   ) -> MResult<TaskId> {
-    context.validate()?;
+    self.validate_context_for_runtime(context)?;
 
-    if self.has_active_context_transaction(context) {
-      let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(transaction_id) = context.transaction {
       let id = task.id;
 
       self
