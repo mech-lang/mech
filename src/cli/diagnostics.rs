@@ -36,7 +36,7 @@ fn source_range_to_offset_range(file_content: &str, range: &SourceRange) -> (usi
     (start_offset, end_offset)
 }
 
-pub(crate) fn print_mech_error(err: &MechError) {
+pub fn print_mech_error(err: &MechError) -> std::io::Result<()> {
     if let Some(watch_error) = err.kind_as::<WatchPathFailed>() {
         let src_file_path = watch_error.file_path.to_string();
         match &err.source {
@@ -89,21 +89,17 @@ pub(crate) fn print_mech_error(err: &MechError) {
                         }
                     }
                     let cache = sources([(src_file_path.clone(), report.0.clone())]);
-                    error_report.finish().print(cache).unwrap_or_else(|e| {
-                        println!("Error printing report: {:?}", e);
-                    });
+                    error_report.finish().print(cache)?;
                 } else {
-                    println!("Error:");
-                    println!("{:#?}", err);
+                    eprintln!("Error:\n{:#?}", err);
                 }
             }
             None => {
-                println!("Error:");
-                println!("{:#?}", err);
+                eprintln!("Error:\n{:#?}", err);
             }
         }
     } else {
-        println!("Error:");
-        println!("{:#?}", err);
+        eprintln!("Error:\n{:#?}", err);
     }
+  Ok(())
 }

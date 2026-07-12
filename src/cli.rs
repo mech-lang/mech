@@ -9,7 +9,7 @@ pub mod commands;
 #[cfg(any(feature = "serve", feature = "run"))]
 pub mod config;
 #[cfg(feature = "cli_core")]
-pub(crate) mod diagnostics;
+pub mod diagnostics;
 #[cfg(feature = "run")]
 pub mod host_factories;
 #[cfg(feature = "run")]

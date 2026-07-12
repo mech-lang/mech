@@ -21,6 +21,7 @@ jobs:
           rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
+          rustup component add clippy
 
       - name: Build and test
         run: |
@@ -84,6 +85,7 @@ jobs:
           rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
+          rustup component add clippy
 
       - name: Build run-only CLI
         run: cargo build --bin mech --no-default-features --features run
@@ -106,6 +108,7 @@ jobs:
           rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
+          rustup component add clippy
 
       - name: Build default Windows CLI
         run: cargo build --bin mech

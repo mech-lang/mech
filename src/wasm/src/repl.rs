@@ -7,7 +7,7 @@ use crate::CURRENT_MECH;
 pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
   match repl_cmd {
     #[cfg(feature = "clear")]
-    ReplCommand::Clear(_) => {
+    ReplCommand::Clear => {
       CURRENT_MECH.with(|mech_ref| {
         if let Some(ptr) = *mech_ref.borrow() {
           unsafe {

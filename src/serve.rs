@@ -9,13 +9,14 @@ use colored::*;
 use ignore::WalkBuilder;
 use mech_core::*;
 use mech_host_browser::BrowserRuntimeInjectionConfig;
+use mech_syntax::{parser, Formatter};
 use mech_runtime::{
   EventId, EventSink, ModuleBuildOptions, RuntimeConfig, RuntimeEvent, RuntimeWorkspaceFolder,
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, SourceKind, check_fs_capability,
 };
-use warp::{Filter, Reply};
+use warp::Filter;
 
 use crate::*;
 
@@ -98,6 +99,7 @@ impl ServerSourceRegistry {
     self.static_asset_paths.keys().cloned().collect()
   }
 
+  #[cfg(test)]
   fn get_route(&self, path: &str) -> Option<ServerAsset> {
     self.get_route_with_trace(path).map(|(asset, _)| asset)
   }

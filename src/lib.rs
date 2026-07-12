@@ -11,46 +11,25 @@ pub extern crate mech_program as program;
 pub use mech_core::*;
 pub use mech_program::*;
 
-use mech_core::nodes::Program;
-
 extern crate colored;
 use colored::*;
 
 extern crate bincode;
-use std::io::{Write, BufReader, BufWriter, stdout};
-use std::fs::{OpenOptions, File, canonicalize, create_dir};
-use crossterm::{
-  ExecutableCommand, QueueableCommand,
-  terminal, cursor, style::Print,
-};
+use std::io::{Write, stdout};
+use std::fs::File;
+use crossterm::{ExecutableCommand, terminal, cursor};
 
 use tabled::{
   builder::Builder,
   grid::config::HorizontalLine,
-  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
-  Tabled,
+  settings::{Panel, Style},
 };
-use std::path::{Path, PathBuf};
-use std::io;
-use std::io::prelude::*;
-use std::time::{Duration, Instant, SystemTime};
-use std::thread::{self, JoinHandle};
-use std::sync::Mutex;
-use std::sync::RwLock;
-//use websocket::sync::Server;
-use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
-use std::collections::HashMap;
-use crossbeam_channel::Sender;
-use crossbeam_channel::{unbounded, Receiver};
+use std::path::PathBuf;
 use std::{fs,env};
 
-#[cfg(feature = "wasm")]
-use web_sys::{Crypto, Window, console};
-use rand::rngs::OsRng;
+#[cfg(target_arch = "wasm32")]
+use web_sys::{Crypto, Window};
 use rand::Rng;
-use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watcher};
-use std::sync::mpsc;
-use std::sync::Arc;
 use std::collections::HashSet;
 
 #[cfg(feature = "repl")]
@@ -84,24 +63,22 @@ pub use self::web_host::*;
 #[cfg(feature = "test")]
 pub use self::test::*;
 
-pub use mech_core::*;
-pub use mech_syntax::*;
-
 // Print a prompt 
 // 4, 8, 15, 16, 23, 42
-pub fn print_prompt() {
-  stdout().flush();
+pub fn print_prompt() -> MResult<()> {
+  stdout().flush()?;
   print!("{}", ">: ".truecolor(246,192,78));
-  stdout().flush();
+  stdout().flush()?;
+  Ok(())
 }
 
 // Generate a new id for creating unique owner ids
-#[cfg(not(feature = "wasm"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn generate_uuid() -> u64 {
   rand::rng().random()
 }
 
-#[cfg(feature = "wasm")]
+#[cfg(target_arch = "wasm32")]
 pub fn generate_uuid() -> u64 {
   let mut rng = WebCryptoRng{};
   rng.next_u64()
@@ -249,19 +226,6 @@ pub fn ls() -> String {
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
-#[cfg(feature = "pretty_print")]
-fn pretty_print_tree(tree: &Program) -> String {
-  let tree_hash = hash_str(&format!("{:#?}", tree));
-  let formatted_tree = tree.pretty_print();
-  let mut builder = Builder::default();
-  builder.push_record(vec![format!("Hash: {}", tree_hash)]);
-  builder.push_record(vec![format!("{}", formatted_tree)]);
-  let mut table = builder.build();
-  table.with(Style::modern_rounded())
-       .with(Panel::header("Syntax Tree"));
-  format!("{table}")
-}
-
 #[cfg(feature = "whos")]
 pub fn whos(program: &MechProgram, names: Vec<String>) -> String {
   let mut builder = Builder::default();
@@ -311,24 +275,11 @@ pub fn whos(program: &MechProgram, names: Vec<String>) -> String {
   format!("\n{table}\n")
 }
 
-#[cfg(feature = "pretty_print")]            
-fn pretty_print_symbols(program: &MechProgram) -> String {
-  let mut builder = Builder::default();
-  let symbol_table = program.interpreter().pretty_print_symbols();
-  builder.push_record(vec![
-    format!("{}",symbol_table),
-  ]);
-
-  let mut table = builder.build();
-  table.with(mech_table_style())   
-        .with(Panel::header(format!("{}","Symbols".yellow())));
-  format!("\n{table}\n")
-}
-
-pub fn clc() {
+pub fn clc() -> MResult<()> {
   let mut stdo = stdout();
-  stdo.execute(terminal::Clear(terminal::ClearType::All));
-  stdo.execute(cursor::MoveTo(0,0));
+  stdo.execute(terminal::Clear(terminal::ClearType::All))?;
+  stdo.execute(cursor::MoveTo(0,0))?;
+  Ok(())
 }
 
 pub enum Source<'a> {

@@ -36,7 +36,6 @@ fn collect_format_targets_preserves_duplicate_basenames_under_directory() {
         relatives,
         vec![PathBuf::from("a/index.mec"), PathBuf::from("b/index.mec")]
     );
-    assert!(targets.iter().all(|target| target.input_root == docs));
     ensure_unique_format_outputs(&targets, &root.join("out"), false, false, true).unwrap();
     ensure_unique_format_outputs(&targets, &root.join("out"), false, false, false).unwrap();
     assert_eq!(

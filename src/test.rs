@@ -1,6 +1,4 @@
 use crate::*;
-use mech_core::*;
-use mech_program::*;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -193,7 +191,6 @@ struct TestReportOut {
   files: Vec<FileReportOut>,
 }
 
-fn mech_bool(v: bool) -> &'static str { if v { "✓" } else { "✗" } }
 fn mech_str(v: &str) -> String { format!("{:?}", v) }
 fn mech_kind(v: &str) -> String { format!("<{}>", v) }
 fn indent_block(block: &str, spaces: usize) -> String {

@@ -10,8 +10,6 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug)]
 pub(crate) struct SourceEntry {
     pub logical_path: PathBuf,
-    pub read_path: PathBuf,
-    pub canonical_path: PathBuf,
     pub relative_path: PathBuf,
 }
 
@@ -49,7 +47,6 @@ pub(crate) struct DiscoveryOptions {
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum MissingPathPolicy {
-    Error,
     SkipBrokenSymlink,
 }
 
@@ -57,15 +54,6 @@ pub(crate) enum MissingPathPolicy {
 pub(crate) enum DedupePolicy {
     LogicalPath,
     CanonicalPath,
-    None,
-}
-
-pub(crate) fn collect_sources(
-    roots: &[PathBuf],
-    base_dir: &Path,
-    options: DiscoveryOptions,
-) -> MResult<Vec<SourceEntry>> {
-    Ok(collect_sources_with_events(roots, base_dir, options)?.entries)
 }
 
 pub(crate) fn collect_sources_with_events(
@@ -299,7 +287,7 @@ fn collect_dir(
 
 fn collect_file(
     logical_path: &Path,
-    read_path: &Path,
+    _read_path: &Path,
     canonical_path: &Path,
     base_dir: &Path,
     project_dir: &Path,
@@ -332,15 +320,12 @@ fn collect_file(
     let key = match options.dedupe_policy {
         DedupePolicy::LogicalPath => logical_path.to_path_buf(),
         DedupePolicy::CanonicalPath => canonical_path.to_path_buf(),
-        DedupePolicy::None => PathBuf::new(),
     };
-    if !matches!(options.dedupe_policy, DedupePolicy::None) && !seen.insert(key) {
+    if !seen.insert(key) {
         return Ok(());
     }
     entries.push(SourceEntry {
         logical_path: logical_path.to_path_buf(),
-        read_path: read_path.to_path_buf(),
-        canonical_path: canonical_path.to_path_buf(),
         relative_path,
     });
     Ok(())

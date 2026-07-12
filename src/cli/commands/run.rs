@@ -53,21 +53,6 @@ const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "c
 const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
-pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
-    let mut ids = mech_runtime::DefaultIdGenerator::new();
-    let mut authority = mech_runtime::HostFilesystemAuthority::new(
-        MECH_TOOL_SUBJECT,
-        mech_runtime::SharedCapabilityKernel::new(),
-    );
-    let root = if path.is_dir() {
-        path
-    } else {
-        path.parent().unwrap_or_else(|| Path::new("."))
-    };
-    authority.grant_path(&mut ids, root, true, [FS_READ, FS_LIST])?;
-    collect_run_targets_with_capabilities(path, authority.kernel())
-}
-
 fn collect_run_targets_with_capabilities(
     path: &Path,
     kernel: &mech_runtime::SharedCapabilityKernel,
@@ -247,7 +232,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 
     let repl_flag = plan.repl_requested || plan.missing_run_options;
     match result {
-        Ok(value) if repl_flag => {
+        Ok(_) if repl_flag => {
             #[cfg(all(feature = "run", feature = "repl"))]
             {
                 return Ok(CliOutcome::EnterRepl(

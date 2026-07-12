@@ -29,7 +29,7 @@ pub enum ReplCommand {
   Whos(Vec<String>),
   Plan,
   Symbols(Option<String>),
-  Clear(Option<String>),
+  Clear,
   Clc,
   //Error(String),
   //Empty,
@@ -134,7 +134,7 @@ fn whos_rpl(input: &str) -> IResult<&str, ReplCommand> {
 
 fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag("clear")(input)?;
-  Ok((input, ReplCommand::Clear(None)))
+  Ok((input, ReplCommand::Clear))
 }
 
 fn clc_rpl(input: &str) -> IResult<&str, ReplCommand> {

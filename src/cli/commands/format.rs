@@ -127,7 +127,6 @@ const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
 #[derive(Clone, Debug)]
 struct CollectedSourceTarget {
-    input_root: PathBuf,
     path: PathBuf,
     relative_path: PathBuf,
     default_output_path: PathBuf,
@@ -150,13 +149,6 @@ impl Deref for CollectedFormatTargets {
 impl DerefMut for CollectedFormatTargets {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.targets
-    }
-}
-
-impl CollectedFormatTargets {
-    fn extend(&mut self, other: CollectedFormatTargets) {
-        self.targets.extend(other.targets);
-        self.events.extend(other.events);
     }
 }
 
@@ -330,7 +322,6 @@ fn collect_format_targets(
         let relative_path = safe_output_relative_path(path)?;
         return Ok(CollectedFormatTargets {
             targets: vec![CollectedSourceTarget {
-                input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
                 path: path.to_path_buf(),
                 relative_path,
                 default_output_path,
@@ -388,7 +379,6 @@ fn collect_format_targets(
         .map(|entry| {
             let default_output_path = default_output_relative_path(path, &entry.logical_path)?;
             Ok(CollectedSourceTarget {
-                input_root: path.to_path_buf(),
                 path: entry.logical_path,
                 relative_path: entry.relative_path,
                 default_output_path,
