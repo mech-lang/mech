@@ -4,18 +4,14 @@ use mech_core::MResult;
 
 use super::{
     ConfigEffectfulFunctionNotAllowed, ConfigExpr, ConfigFunction, ConfigItem,
-    ConfigProfileOptions, ConfigProfileViolation, ConfigProgram, ConfigRecursionNotAllowed,
-    ConfigUnknownFunction,
+    ConfigProfileViolation, ConfigProgram, ConfigRecursionNotAllowed, ConfigUnknownFunction,
 };
 
-pub struct ConfigAnalyzer {
-    #[allow(dead_code)]
-    options: ConfigProfileOptions,
-}
+pub struct ConfigAnalyzer;
 
 impl ConfigAnalyzer {
-    pub fn new(options: ConfigProfileOptions) -> Self {
-        Self { options }
+    pub fn new() -> Self {
+        Self
     }
 
     pub fn analyze(&self, program: &ConfigProgram) -> MResult<()> {
