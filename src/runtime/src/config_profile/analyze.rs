@@ -4,21 +4,17 @@ use mech_core::MResult;
 
 use super::{
     ConfigEffectfulFunctionNotAllowed, ConfigExpr, ConfigFunction, ConfigItem,
-    ConfigProfileOptions, ConfigProfileViolation, ConfigProgram, ConfigRecursionNotAllowed,
-    ConfigUnknownFunction,
+    ConfigProfileViolation, ConfigProgram, ConfigRecursionNotAllowed, ConfigUnknownFunction,
 };
 
-pub struct ConfigAnalyzer {
-    #[allow(dead_code)]
-    options: ConfigProfileOptions,
-}
+pub(super) struct ConfigAnalyzer;
 
 impl ConfigAnalyzer {
-    pub fn new(options: ConfigProfileOptions) -> Self {
-        Self { options }
+    pub(super) fn new() -> Self {
+        Self
     }
 
-    pub fn analyze(&self, program: &ConfigProgram) -> MResult<()> {
+    pub(super) fn analyze(&self, program: &ConfigProgram) -> MResult<()> {
         let mut functions: BTreeMap<String, &ConfigFunction> = BTreeMap::new();
         let mut lets = BTreeSet::new();
 

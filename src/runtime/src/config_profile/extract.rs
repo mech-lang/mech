@@ -3,20 +3,20 @@ use mech_core::{Comment, MResult, MechCode, Program, SectionElement};
 use super::{ConfigProfileOptions, ConfigProfileViolation};
 
 #[derive(Clone, Debug)]
-pub struct ExtractedConfigProgram {
-    pub code: Vec<(MechCode, Option<Comment>)>,
+pub(super) struct ExtractedConfigProgram {
+    pub(super) code: Vec<(MechCode, Option<Comment>)>,
 }
 
-pub struct ConfigExtractor {
+pub(super) struct ConfigExtractor {
     options: ConfigProfileOptions,
 }
 
 impl ConfigExtractor {
-    pub fn new(options: ConfigProfileOptions) -> Self {
+    pub(super) fn new(options: ConfigProfileOptions) -> Self {
         Self { options }
     }
 
-    pub fn extract(&self, program: &Program) -> MResult<ExtractedConfigProgram> {
+    pub(super) fn extract(&self, program: &Program) -> MResult<ExtractedConfigProgram> {
         let mut code = Vec::new();
         for section in &program.body.sections {
             for element in &section.elements {

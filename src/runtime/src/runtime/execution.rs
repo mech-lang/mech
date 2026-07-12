@@ -201,7 +201,6 @@ fn runtime_context_allows_read(
   runtime_context_allows_operation(binding, "read", path)
 }
 
-#[allow(dead_code)]
 fn runtime_context_allows_write(
   binding: &RuntimeContextBinding,
   path: &str,

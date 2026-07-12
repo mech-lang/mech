@@ -13,7 +13,6 @@ use self::load::*;
 pub use self::snapshot::*;
 pub use self::refresh::*;
 pub use self::workspace::*;
-pub use self::discovery::*;
 pub use self::watch::*;
 
 use std::{

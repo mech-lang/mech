@@ -6,13 +6,21 @@ mod extract;
 mod ir;
 mod lower;
 
-pub use analyze::*;
-pub use compile::*;
-pub use error::*;
-pub use eval::*;
-pub use extract::*;
-pub use ir::*;
-pub use lower::*;
+use self::analyze::ConfigAnalyzer;
+use self::compile::ConfigCompiler;
+use self::error::*;
+pub use self::error::InvalidConfigField;
+use self::eval::ConfigEvaluator;
+pub use self::eval::ConfigValue;
+use self::extract::{ConfigExtractor, ExtractedConfigProgram};
+use self::ir::{
+    ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram,
+};
+use self::lower::ConfigLowerer;
+pub use self::lower::{
+    ConfigCapabilityGrant, ConfigCapabilityKind, DiagnosticsConfigPatch, MechConfigDocument,
+    RunHostConfig, RuntimeConfigPatch, RuntimeLimitsPatch, ServeHostConfig,
+};
 
 use mech_core::MResult;
 
@@ -46,8 +54,8 @@ pub fn parse_config_document(
 ) -> MResult<MechConfigDocument> {
     let program = mech_syntax::parser::parse(source)?;
     let extracted = ConfigExtractor::new(options.clone()).extract(&program)?;
-    let ir = ConfigCompiler::new(options.clone()).compile(&extracted)?;
-    ConfigAnalyzer::new(options.clone()).analyze(&ir)?;
+    let ir = ConfigCompiler::new().compile(&extracted)?;
+    ConfigAnalyzer::new().analyze(&ir)?;
     let value = ConfigEvaluator::new(options).evaluate(&ir)?;
     ConfigLowerer::new().lower(source_name.into(), value)
 }

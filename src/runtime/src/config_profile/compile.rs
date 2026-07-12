@@ -1,21 +1,18 @@
 use mech_core::*;
 
 use super::{
-    ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProfileOptions,
-    ConfigProfileViolation, ConfigProgram, ExtractedConfigProgram,
+    ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProfileViolation, ConfigProgram,
+    ExtractedConfigProgram,
 };
 
-pub struct ConfigCompiler {
-    #[allow(dead_code)]
-    options: ConfigProfileOptions,
-}
+pub(super) struct ConfigCompiler;
 
 impl ConfigCompiler {
-    pub fn new(options: ConfigProfileOptions) -> Self {
-        Self { options }
+    pub(super) fn new() -> Self {
+        Self
     }
 
-    pub fn compile(&self, extracted: &ExtractedConfigProgram) -> MResult<ConfigProgram> {
+    pub(super) fn compile(&self, extracted: &ExtractedConfigProgram) -> MResult<ConfigProgram> {
         let mut items = Vec::new();
         for (code, _) in &extracted.code {
             match code {
