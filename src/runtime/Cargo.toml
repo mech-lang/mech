@@ -1,0 +1,272 @@
+[package]
+name = "mech-runtime"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Runtime abstraction layer for Mech execution backends."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+no_std = ["mech-core/no_std", "mech-program/no_std"]
+
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64",
+      "statements_default", "subscript_default", "state_machines",
+      "watcher",
+      "mech-core/default", "mech-program/default"
+      ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
+      "statements_default", "subscript_default", "state_machines",
+      "watcher",
+      "mech-core/base", "mech-program/base"
+      ]
+
+async = ["mech-program/async"]
+watcher = ["ignore", "notify"]
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string", 
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+      "row_vector2", "row_vector3", "row_vector4",
+      "vector2", "vector3", "vector4",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", "swizzle",
+      "subscript_formula", "dot_indexing",
+      "variable_define", "variable_assign", "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+    ]
+
+compiler = ["mech-program/compiler"]
+program = ["mech-program/program"]
+pretty_print = ["mech-program/pretty_print"]
+serde = ["dep:serde", "dep:serde_derive", "mech-program/serde"]
+mika = ["mech-program/mika"]
+linked_stdlib = ["mech-program/linked_stdlib"]
+
+statements = ["mech-core/statements", "mech-program/statements"]
+variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-program/variables"]
+variable_define = ["statements", "functions", "mech-core/variable_define", "mech-program/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define", "mech-program/invariant_define"]
+variable_assign = ["statements", "mech-core/variable_assign", "mech-program/variable_assign"]
+kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-program/kind_define"]
+kind_annotation = ["functions", "mech-core/kind_annotation", "mech-program/kind_annotation"]
+formulas = ["mech-core/formulas", "mech-program/formulas"]
+functions = ["symbol_table", "mech-core/functions", "mech-program/functions"]
+state_machines = ["functions", "mech-program/state_machines"]
+symbol_table = ["mech-core/symbol_table", "mech-program/symbol_table"]
+
+bool = ["mech-core/bool", "mech-program/bool"]
+string = ["mech-core/string", "mech-program/string"]
+      
+# Numbers
+numbers = ["mech-core/numbers", "mech-program/numbers"]
+complex = ["f64", "numbers", "mech-core/complex", "mech-program/complex"]
+rational = ["i64", "numbers", "mech-core/rational", "mech-program/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints", "mech-program/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-program/unsigned_ints"]
+floats = ["numbers", "mech-core/floats", "mech-program/floats"]
+u8 = ["unsigned_ints", "mech-core/u8", "mech-program/u8"]
+u16 = ["unsigned_ints", "mech-core/u16", "mech-program/u16"]
+u32 = ["unsigned_ints", "mech-core/u32", "mech-program/u32"]
+u64 = ["unsigned_ints", "mech-core/u64", "mech-program/u64"]
+u128 = ["unsigned_ints", "mech-core/u128", "mech-program/u128"]
+i8 = ["signed_ints", "mech-core/i8", "mech-program/i8"]
+i16 = ["signed_ints", "mech-core/i16", "mech-program/i16"]
+i32 = ["signed_ints", "mech-core/i32", "mech-program/i32"]
+i64 = ["signed_ints", "mech-core/i64", "mech-program/i64"]
+i128 = ["signed_ints", "mech-core/i128", "mech-program/i128"]
+f32 = ["floats", "mech-core/f32", "mech-program/f32"]
+f64 = ["floats", "mech-core/f64", "mech-program/f64"]
+c64 = ["complex", "mech-core/c64", "mech-program/c64"]
+r64 = ["rational", "mech-core/r64", "mech-program/r64"]
+
+# Structs
+set = ["mech-core/set", "mech-program/set"]
+map = ["mech-core/map", "mech-program/map"]
+table = ["vectord", "record", "kind_annotation", "mech-core/table", "mech-program/table"]
+tuple = ["mech-core/tuple", "mech-program/tuple"]
+enum = ["mech-core/enum", "mech-program/enum"]
+record = ["tuple", "kind_annotation", "mech-core/record", "mech-program/record"]
+atom = ["mech-core/atom", "mech-program/atom"]
+
+# Matrix
+matrix = ["mech-core/matrix", "mech-program/matrix"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-program/fixed_row_vector"]
+fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-program/fixed_vector"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-program/fixed_matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-program/dynamic_matrix"]
+row_vector4 = ["matrix", "mech-core/row_vector4", "mech-program/row_vector4"]
+row_vector3 = ["matrix", "mech-core/row_vector3", "mech-program/row_vector3"]
+row_vector2 = ["matrix", "mech-core/row_vector2", "mech-program/row_vector2"]
+vector4 = ["matrix", "mech-core/vector4", "mech-program/vector4"]
+vector3 = ["matrix", "mech-core/vector3", "mech-program/vector3"]
+vector2 = ["matrix", "mech-core/vector2", "mech-program/vector2"]
+matrix4 = ["matrix", "mech-core/matrix4", "mech-program/matrix4"]
+matrix3 = ["matrix", "mech-core/matrix3", "mech-program/matrix3"]
+matrix2 = ["matrix", "mech-core/matrix2", "mech-program/matrix2"]
+matrix1 = ["matrix", "mech-core/matrix1", "mech-program/matrix1"]
+matrix2x3 = ["matrix", "mech-core/matrix2x3", "mech-program/matrix2x3"]
+matrix3x2 = ["matrix", "mech-core/matrix3x2", "mech-program/matrix3x2"]
+row_vectord =["matrix", "mech-core/row_vectord", "mech-program/row_vectord"]
+vectord = ["matrix", "mech-core/vectord", "mech-program/vectord"]
+matrixd = ["matrix", "mech-core/matrixd", "mech-program/matrixd"]
+
+# Subscripts
+subscript = ["mech-core/subscript", "mech-program/subscript"]
+subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice", "mech-program/subscript_slice"]
+subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range", "mech-program/subscript_range"]
+subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula", "mech-program/subscript_formula"]
+logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", "mech-program/logical_indexing"]
+dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-program/dot_indexing"]
+swizzle = ["subscript", "mech-core/swizzle", "mech-program/swizzle"]
+notify = ["dep:notify"]
+host_delegation = ["serde"]
+host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_core"]
+
+[dev-dependencies]
+mech-host-cli = { path = "../../hosts/cli", features = ["provider"] }
+serde_json = "1.0.150"
+
+[dependencies]
+blake3 = "1.8.5"
+mech-program = { version = "0.3.5", default-features = false }
+mech-core = { version = "0.3.5", default-features = false }
+mech-syntax = { version = "0.3.5", default-features = false }
+serde = { version = "1.0.228", optional = true }
+serde_derive = { version = "1.0.228", optional = true }
+tracing = { version = "0.1.41", optional = true }
+ignore = {version = "0.4.24", optional = true }
+uuid = { version = "1.23.1", features = ["v7", "serde"] }
+notify = { version = "8.2.0", optional = true }
+ed25519-dalek = { version = "2.2.0", default-features = false, features = ["alloc", "fast", "zeroize"], optional = true }
+rand_core = { version = "0.6.4", optional = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+uuid = { version = "1.23.1", features = ["js"] }
+
+[[bin]]
+name = "address_target_diagnostics"
+path = "src/bin/address_target_diagnostics.rs"
+required-features = ["program"]
+
+[[bin]]
+name = "module_smoke"
+path = "src/bin/module_smoke.rs"
+required-features = ["program"]
+
+[[example]]
+name = "actor_context_host"
+path = "examples/actor_context_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "actor_state_host"
+path = "examples/actor_state_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "arbitrary_rust_host_function"
+path = "examples/arbitrary_rust_host_function.rs"
+required-features = ["program"]
+
+[[example]]
+name = "arbitrary_rust_host_functions2"
+path = "examples/arbitrary_rust_host_functions2.rs"
+required-features = ["program"]
+
+[[example]]
+name = "basic_runtime"
+path = "examples/basic_runtime.rs"
+required-features = ["program"]
+
+[[example]]
+name = "dep_cycle"
+path = "examples/dep_cycle.rs"
+required-features = ["program"]
+
+[[example]]
+name = "dep_diamond"
+path = "examples/dep_diamond.rs"
+required-features = ["program"]
+
+[[example]]
+name = "host_value_roundtrip"
+path = "examples/host_value_roundtrip.rs"
+required-features = ["program"]
+
+[[example]]
+name = "matrix_multiply"
+path = "examples/matrix_multiply.rs"
+required-features = ["program"]
+
+[[example]]
+name = "runtime_dep_src"
+path = "examples/runtime_dep_src.rs"
+required-features = ["program"]
+
+[[example]]
+name = "runtime_services_host"
+path = "examples/runtime_services_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "scheduled_actor_native_functions"
+path = "examples/scheduled_actor_native_functions.rs"
+required-features = ["program"]
+
+[[example]]
+name = "scheduled_actor_state_host"
+path = "examples/scheduled_actor_state_host.rs"
+required-features = ["program"]
+
+[[example]]
+name = "scheduled_runtime"
+path = "examples/scheduled_runtime.rs"
+required-features = ["program"]
+
+[[example]]
+name = "source_import_dependency"
+path = "examples/source_import_dependency.rs"
+required-features = ["program"]
+
+[[example]]
+name = "transactional_runtime"
+path = "examples/transactional_runtime.rs"
+required-features = ["program"]
+
+[[test]]
+name = "config_profile"
+path = "tests/config_profile.rs"
+required-features = ["program"]
+
+[[test]]
+name = "module_smoke"
+path = "tests/module_smoke.rs"
+required-features = ["program"]

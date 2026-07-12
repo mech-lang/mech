@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mech Browser DOM Resource Demo</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+      }
+
+      #mech-sandbox {
+        border: 1px solid #ccc;
+        padding: 1rem;
+        max-width: 620px;
+      }
+
+      label {
+        display: block;
+        margin: 0.75rem 0;
+      }
+
+      input {
+        min-width: 24rem;
+      }
+
+      #status {
+        margin-top: 1rem;
+        padding: 0.5rem;
+      }
+
+      #status.ready {
+        border: 1px solid green;
+      }
+
+      #status.error {
+        border: 1px solid red;
+      }
+
+      pre {
+        background: #f6f6f6;
+        padding: 1rem;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Mech Browser DOM Resource Demo</h1>
+
+    <section id="mech-sandbox">
+      <label>
+        Source DOM input:
+        <input id="name-input" value="Ada" />
+      </label>
+
+      <label>
+        Computed DOM output:
+        <input id="roundtrip-output" readonly value="Not updated yet" />
+      </label>
+
+      <h2 id="title">Not updated yet</h2>
+
+      <div id="status" class="idle">Idle</div>
+    </section>
+
+    <p>
+      <button id="run-ok">Run round trip</button>
+      <button id="run-denied">Run denied write</button>
+    </p>
+
+    <h3>Log</h3>
+    <pre id="log"></pre>
+
+    <script type="module">
+      import init, { WasmMech } from "./pkg/mech_wasm.js";
+
+      const logEl = document.getElementById("log");
+
+      function log(line) {
+        logEl.textContent += `${line}\n`;
+      }
+
+      async function loadText(path) {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`Failed to load ${path}: ${response.status}`);
+        }
+        return response.text();
+      }
+
+      async function main() {
+        await init();
+
+        const demoCode = await loadText("./code/demo.mec");
+        const deniedCode = await loadText("./code/denied.mec");
+
+        let mech;
+        if (globalThis.__MECH_TRUSTED_HOST_KEYS) {
+          if (typeof WasmMech.fromDelegatedHostConfig !== "function") {
+            throw new Error("Signed host delegation was injected, but this WASM package was built without host delegation verification support.");
+          }
+          mech = WasmMech.fromDelegatedHostConfig(globalThis.__MECH_HOST_DELEGATION_AUDIENCE);
+        } else {
+          mech = WasmMech.fromHostConfig();
+        }
+
+        log(`browser grants: ${mech.browserGrantCount()}`);
+        log(`can read source input: ${mech.canReadDom("#name-input")}`);
+        log(`can write source input: ${mech.canWriteDom("#name-input")}`);
+        log(`can write computed output: ${mech.canWriteDom("#roundtrip-output")}`);
+        log(`can write title: ${mech.canWriteDom("#title")}`);
+        log("");
+
+        document.getElementById("run-ok").addEventListener("click", () => {
+          try {
+            const sourceValue = document.getElementById("name-input").value;
+            const outputHtml = mech.evalCompiled(demoCode);
+            log("round trip program ran");
+            log(`DOM -> Mech source value: ${sourceValue}`);
+            log(`Mech -> DOM computed output: ${document.getElementById("roundtrip-output").value}`);
+            log(`title text: ${document.getElementById("title").textContent}`);
+            log(`status text: ${document.getElementById("status").textContent}`);
+            log(`status class: ${document.getElementById("status").getAttribute("class")}`);
+            log(`runtime output: ${outputHtml}`);
+            log("");
+          } catch (error) {
+            log(`unexpected error: ${error}`);
+          }
+        });
+
+        document.getElementById("run-denied").addEventListener("click", () => {
+          try {
+            const outputHtml = mech.evalCompiled(deniedCode);
+            if (outputHtml.includes('<div class="mech-output-kind">Error</div>')) {
+              log("denied as expected");
+              log(outputHtml);
+            } else {
+              log("unexpected success");
+              log(outputHtml);
+            }
+          } catch (error) {
+            log(`denied as expected: ${error}`);
+          }
+
+          log(`source input value is still: ${document.getElementById("name-input").value}`);
+          log("");
+        });
+      }
+
+      main().catch((error) => {
+        log(`fatal: ${error}`);
+      });
+    </script>
+  </body>
+</html>

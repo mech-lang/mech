@@ -15,12 +15,13 @@ use tabled::{
   Tabled,
 };
 use std::fmt;
+use std::sync::Arc;
 
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
-pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
+pub type FunctionCompilerTable = HashMap<u64, Arc<dyn NativeFunctionCompiler>>;
 pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
 
 #[derive(Clone,Debug)]
@@ -75,12 +76,25 @@ impl Debug for FunctionCompilerDescriptor {
 
 unsafe impl Sync for FunctionCompilerDescriptor {}
 
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct ModuleItemDescriptor {
+  pub module: &'static str,
+  pub item: &'static str,
+}
+
+unsafe impl Sync for ModuleItemDescriptor {}
+
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 }
 
 pub trait MechFunctionImpl {
   fn solve(&self);
+  fn solve_result(&self) -> MResult<()> {
+    self.solve();
+    Ok(())
+  }
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
 }
@@ -102,6 +116,21 @@ impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
+}
+
+
+pub struct StaticNativeFunctionCompiler {
+  inner: &'static dyn NativeFunctionCompiler,
+}
+
+impl StaticNativeFunctionCompiler {
+  pub fn new(inner: &'static dyn NativeFunctionCompiler) -> Self { Self { inner } }
+}
+
+impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    self.inner.compile(arguments)
+  }
 }
 
 #[derive(Clone)]
@@ -126,6 +155,13 @@ impl Functions {
     let id = hash_str(&fxn.name);
     self.functions.insert(id.clone(), fxn.ptr);
     self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
+  }
+
+  pub fn insert_function_compiler(&mut self, name: impl Into<String>, compiler: Arc<dyn NativeFunctionCompiler>) {
+    let name = name.into();
+    let id = hash_str(&name);
+    self.function_compilers.insert(id, compiler);
+    self.dictionary.borrow_mut().insert(id, name);
   }
 
   #[cfg(feature = "pretty_print")]
@@ -207,11 +243,16 @@ impl FunctionDefinition {
     }
   }
 
-  pub fn solve(&self) -> ValRef {
+  pub fn solve_result(&self) -> MResult<ValRef> {
     let plan_brrw = self.plan.borrow();
     for step in plan_brrw.iter() {
-      let result = step.solve();
+      step.solve_result()?;
     }
+    Ok(self.out.clone())
+  }
+
+  pub fn solve(&self) -> ValRef {
+    let _ = self.solve_result();
     self.out.clone()
   }
 
@@ -228,7 +269,11 @@ pub struct UserFunction {
 
 impl MechFunctionImpl for UserFunction {
   fn solve(&self) {
-    self.fxn.solve();
+    let _ = self.solve_result();
+  }
+  fn solve_result(&self) -> MResult<()> {
+    self.fxn.solve_result()?;
+    Ok(())
   }
   fn out(&self) -> Value {
     self.fxn.out.borrow().clone()

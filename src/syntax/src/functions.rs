@@ -37,7 +37,10 @@ fn function_define_statements(
   let ((input, _)) = whitespace0(input)?;
   let ((input, output)) = alt((function_out_args,function_out_arg))(input)?;
   let ((input, _)) = define_operator(input)?;
-  let ((input, statements)) = separated_list1(alt((whitespace1,statement_separator)), statement)(input)?;
+  let ((input, statements)) = separated_list1(
+    alt((whitespace1, statement_separator)),
+    statement,
+  )(input)?;
   let ((input, _)) = period(input)?;
   Ok((input,FunctionDefine{name,input: input_args,output,statements,match_arms: vec![]}))
 }

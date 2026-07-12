@@ -325,6 +325,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
     ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
     ("fsm_implementation", Box::new(|i| fsm_implementation(i).map(|(i, v)| (i, MechCode::FsmImplementation(v))))),
     ("function_define", Box::new(|i| function_define(i).map(|(i, v)| (i, MechCode::FunctionDefine(v))))),
+    ("module_import", Box::new(|i| module_import(i).map(|(i, v)| (i, MechCode::Import(v))))),
     ("statement",   Box::new(|i| statement(i).map(|(i, v)| (i, MechCode::Statement(v))))),
     ("expression",  Box::new(|i| expression(i).map(|(i, v)| (i, MechCode::Expression(v))))),
     ("comment",     Box::new(|i| comment(i).map(|(i, v)| (i, MechCode::Comment(v))))),
@@ -354,14 +355,16 @@ pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
 }
 
 // mech-code-block := +(mech-code, code-terminal) ;
-pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment>)>> {
-  let mut output = vec![];
+pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
+  let mut lines = vec![];
+  let mut imports = vec![];
+  let mut exports = vec![];
   let mut new_input = input.clone();
   loop {
 
     if peek(not_mech_code)(new_input.clone()).is_ok() {
-      if output.len() > 0 {
-        return Ok((new_input, output));
+      if lines.len() > 0 {
+        return Ok((new_input, ParsedMechCode { code: lines, imports, exports }));
       } else {
         let e = ParseError::new(new_input, "Unexpected character");
         return Err(Err::Error(e));
@@ -374,8 +377,8 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
       Err(Err::Error(mut e)) => {
         // if the error is just "Unexpected character", we will just fail.
         if e.error_detail.message == "Unexpected character" {
-          if output.len() > 0 {
-            return Ok((new_input, output));
+          if lines.len() > 0 {
+            return Ok((new_input, ParsedMechCode { code: lines, imports, exports }));
           } else {
             return Err(Err::Error(e));
           }
@@ -400,8 +403,8 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
         match subtitle(new_input.clone()) {
           Ok((_, _)) => {
             // if it does, and we have already parsed something, return what we have.
-            if output.len() > 0 {
-              return Ok((new_input, output));
+            if lines.len() > 0 {
+              return Ok((new_input, ParsedMechCode { code: lines, imports, exports }));
             } else {
               return Err(Err::Failure(e));
             }
@@ -429,20 +432,25 @@ pub fn mech_code(input: ParseString) -> ParseResult<Vec<(MechCode,Option<Comment
       Ok((input, cmmt)) => (input, cmmt),
       Err(e) => {
         // if we didn't parse a terminal, just return what we've got so far.
-        if output.len() > 0 {
-          return Ok((new_input, output));
+        if lines.len() > 0 {
+          return Ok((new_input, ParsedMechCode { code: lines, imports, exports }));
         }
         // otherwise, return the error.
         return Err(e);
       }
     };
-    output.push((code, cmmt));
+    match &code {
+      MechCode::Statement(Statement::ImportDeclaration(import)) => imports.push(import.clone()),
+      MechCode::Statement(Statement::ExportDeclaration(export)) => exports.push(export.clone()),
+      _ => {}
+    }
+    lines.push((code, cmmt));
     new_input = input;
     if new_input.is_empty() {
       break;
     }
   }
-  Ok((new_input, output))
+  Ok((new_input, ParsedMechCode { code: lines, imports, exports }))
 }
 
 // program := ws0, ?title, body, ws0 ;

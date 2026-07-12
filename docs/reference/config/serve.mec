@@ -1,0 +1,41 @@
+Serve Config
+===============================================================================
+
+The `serve` section configures `mech serve` and browser-oriented project serving.
+
+```mech
+config := {
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["demo.mec"]
+    shim: "index.html"
+    wasm: "../../src/wasm/pkg"
+    stylesheets: ["style.css"]
+  }
+}
+```
+
+1. Fields
+-------------------------------------------------------------------------------
+
+| Field | Description |
+|-------|-------------|
+| `address` | Server bind address. Defaults to `127.0.0.1`. |
+| `port` | Server port. Defaults to `8081`. |
+| `paths` | Source files served and compiled by the project. |
+| `shim` | HTML shim used for the served root page. |
+| `wasm` | Path to a wasm package directory. |
+| `stylesheets` | Stylesheets to include with formatted output. |
+
+2. Browser host config injection
+-------------------------------------------------------------------------------
+
+When browser host settings or run grants are configured, `mech serve` derives a browser host config projection and injects it into the served shim.
+
+Browser pages can initialize from that projection with `WasmMech.fromHostConfig()`.
+
+3. Static bundling
+-------------------------------------------------------------------------------
+
+`bundle-web` reads the same `serve` section to determine project sources, shim, wasm package, and stylesheets. Static bundles require relative browser URLs; server-root URLs such as `/code/demo.mec` are not portable in static output.

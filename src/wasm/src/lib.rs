@@ -1,9 +1,25 @@
 #![allow(warnings)]
 
+pub mod host;
+
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
-use mech_interpreter::*;
+use mech_host_browser::{
+  BrowserHostFactory, BrowserRuntimeInjectionConfig,
+};
+#[cfg(feature = "host_delegation_signing")]
+use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
+use mech_runtime::{
+  ConfigProfileOptions, ConfigValue, HostInstanceConfig, MechConfigDocument, MechRuntime, RuntimeBuilder, RuntimeConfig, parse_config_document,
+};
+#[cfg(feature = "host_delegation_signing")]
+use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
+use crate::host::{
+  BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError,
+  BrowserNetworkScope, BrowserOperation, BrowserStorageBackend, BrowserStorageScope,
+  WasmBrowserDomBackend,
+};
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element, HashChangeEvent, HtmlTextAreaElement, Url};
 use js_sys::decode_uri_component;
@@ -11,11 +27,17 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use gloo_net::http::Request;
+use std::sync::Arc;
+use gloo_net::http::{Method, Request, RequestBuilder};
 use wasm_bindgen_futures::spawn_local;
+#[cfg(feature = "host_delegation_signing")]
+use base64::Engine;
+#[cfg(feature = "host_delegation_signing")]
+use serde::Deserialize;
 
 #[cfg(feature = "repl")]
 pub mod repl;
+
 
 #[cfg(feature = "repl")]
 pub use crate::repl::*;
@@ -27,8 +49,6 @@ thread_local! {
   pub static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
 
-const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
-
 #[macro_export]
 macro_rules! log {
   ( $( $t:tt )* ) => {
@@ -37,191 +57,58 @@ macro_rules! log {
 }
 
 
-fn new_interpreter(id: u64) -> Interpreter {
-
-  let mut intrp = Interpreter::new(id);
-
-  let fxns_ref = intrp.functions();
-  let mut fxns = fxns_ref.borrow_mut();
-      
-  // Preload combinatorics functions
-  #[cfg(feature = "combinatorics_n_choose_k")]
-  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), &CombinatoricsNChooseK{});
-
-  
-  // Preload stats functions
-  #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/row"), &StatsSumRow{});
-  #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/column"), &StatsSumColumn{});
-
-  // Preload ops functions
-  #[cfg(feature = "math_add")]
-  fxns.function_compilers.insert(hash_str("math/add"), &MathAdd{});
-  #[cfg(feature = "math_sub")]
-  fxns.function_compilers.insert(hash_str("math/sub"), &MathSub{});
-  #[cfg(feature = "math_mul")]
-  fxns.function_compilers.insert(hash_str("math/mul"), &MathMul{});
-  #[cfg(feature = "math_div")]
-  fxns.function_compilers.insert(hash_str("math/div"), &MathDiv{});
-  #[cfg(feature = "math_mod")]
-  fxns.function_compilers.insert(hash_str("math/mod"), &MathMod{});
-  #[cfg(feature = "math_pow")]
-  fxns.function_compilers.insert(hash_str("math/pow"), &MathPow{});
-  #[cfg(feature = "math_neg")]
-  fxns.function_compilers.insert(hash_str("math/neg"), &MathNegate{});
-  
-  // Preload math functions
-  #[cfg(feature = "math_sqrt")]
-  fxns.function_compilers.insert(hash_str("math/sqrt"), &MathSqrt{});
-  
-  // Preload trig functions
-  #[cfg(feature = "math_sin")]
-  fxns.function_compilers.insert(hash_str("math/sin"), &MathSin{});
-  #[cfg(feature = "math_cos")]
-  fxns.function_compilers.insert(hash_str("math/cos"), &MathCos{});
-  #[cfg(feature = "math_atan2")]
-  fxns.function_compilers.insert(hash_str("math/atan2"), &MathAtan2{});
-  #[cfg(feature = "math_atan")]
-  fxns.function_compilers.insert(hash_str("math/atan"), &MathAtan{});
-  #[cfg(feature = "math_acos")]
-  fxns.function_compilers.insert(hash_str("math/acos"), &MathAcos{});
-  #[cfg(feature = "math_acosh")]
-  fxns.function_compilers.insert(hash_str("math/acosh"), &MathAcosh{});
-  #[cfg(feature = "math_acot")]
-  fxns.function_compilers.insert(hash_str("math/acot"), &MathAcot{});
-  #[cfg(feature = "math_acsc")]
-  fxns.function_compilers.insert(hash_str("math/acsc"), &MathAcsc{});
-  #[cfg(feature = "math_asec")]
-  fxns.function_compilers.insert(hash_str("math/asec"), &MathAsec{});
-  #[cfg(feature = "math_asin")]
-  fxns.function_compilers.insert(hash_str("math/asin"), &MathAsin{});
-  #[cfg(feature = "math_sinh")]
-  fxns.function_compilers.insert(hash_str("math/sinh"), &MathSinh{});
-  #[cfg(feature = "math_cosh")]
-  fxns.function_compilers.insert(hash_str("math/cosh"), &MathCosh{});
-  #[cfg(feature = "math_tanh")]
-  fxns.function_compilers.insert(hash_str("math/tanh"), &MathTanh{});
-  #[cfg(feature = "math_atanh")]
-  fxns.function_compilers.insert(hash_str("math/atanh"), &MathAtanh{});
-  #[cfg(feature = "math_cot")]
-  fxns.function_compilers.insert(hash_str("math/cot"), &MathCot{});
-  #[cfg(feature = "math_csc")]
-  fxns.function_compilers.insert(hash_str("math/csc"), &MathCsc{});
-  #[cfg(feature = "math_sec")]
-  fxns.function_compilers.insert(hash_str("math/sec"), &MathSec{});
-  #[cfg(feature = "math_tan")]
-  fxns.function_compilers.insert(hash_str("math/tan"), &MathTan{});
-
-  // Preload io functions
-  //#[cfg(feature = "io_print")]
-  //fxns.function_compilers.insert(hash_str("io/print"), &IoPrint{});
-  //#[cfg(feature = "io_println")]
-  //fxns.function_compilers.insert(hash_str("io/println"), &IoPrintln{});
-
-  // Matrix functions
-  #[cfg(feature = "matrix_horzcat")]
-  fxns.function_compilers.insert(hash_str("matrix/horzcat"), &MatrixHorzCat{});
-  #[cfg(feature = "matrix_vertcat")]
-  fxns.function_compilers.insert(hash_str("matrix/vertcat"), &MatrixVertCat{});
-  #[cfg(feature = "matrix_transpose")]
-  fxns.function_compilers.insert(hash_str("matrix/transpose"), &MatrixTranspose{});
-  #[cfg(feature = "matrix_matmul")]
-  fxns.function_compilers.insert(hash_str("matrix/matmul"), &MatrixMatMul{});
-  #[cfg(feature = "matrix_dot")]
-  fxns.function_compilers.insert(hash_str("matrix/dot"), &MatrixDot{});
-  #[cfg(feature = "matrix_solve")]
-  fxns.function_compilers.insert(hash_str("matrix/solve"), &MatrixSolve{});
-  #[cfg(feature = "matrix_comprehensions")]
-  fxns.function_compilers.insert(hash_str("matrix/comprehension"), &MatrixComprehensionDefine{});
-
-  // Compare functions
-  #[cfg(feature = "compare_eq")]
-  fxns.function_compilers.insert(hash_str("compare/eq"), &CompareEqual{});
-  #[cfg(feature = "compare_neq")]
-  fxns.function_compilers.insert(hash_str("compare/neq"), &CompareNotEqual{});
-  #[cfg(feature = "compare_lte")]
-  fxns.function_compilers.insert(hash_str("compare/lte"), &CompareLessThanEqual{});
-  #[cfg(feature = "compare_gte")]
-  fxns.function_compilers.insert(hash_str("compare/gte"), &CompareGreaterThanEqual{});
-  #[cfg(feature = "compare_lt")]
-  fxns.function_compilers.insert(hash_str("compare/lt"), &CompareLessThan{});
-  #[cfg(feature = "compare_gt")]
-  fxns.function_compilers.insert(hash_str("compare/gt"), &CompareGreaterThan{});
-
-  // Logic functions
-  #[cfg(feature = "logic_and")]
-  fxns.function_compilers.insert(hash_str("logic/and"), &LogicAnd{});
-  #[cfg(feature = "logic_or")]
-  fxns.function_compilers.insert(hash_str("logic/or"), &LogicOr{});
-  #[cfg(feature = "logic_not")]
-  fxns.function_compilers.insert(hash_str("logic/not"), &LogicNot{});
-  #[cfg(feature = "logic_xor")]
-  fxns.function_compilers.insert(hash_str("logic/xor"), &LogicXor{});
-
-  // Set Functions
-  #[cfg(feature = "set_union")]
-  fxns.function_compilers.insert(hash_str("set/union"), &SetUnion{});
-  #[cfg(feature = "set_intersection")]
-  fxns.function_compilers.insert(hash_str("set/intersection"), &SetIntersection{});
-  #[cfg(feature = "set_difference")]
-  fxns.function_compilers.insert(hash_str("set/difference"), &SetDifference{});
-  #[cfg(feature = "set_subset")]
-  fxns.function_compilers.insert(hash_str("set/subset"), &SetSubset{});
-  #[cfg(feature = "set_superset")]
-  fxns.function_compilers.insert(hash_str("set/superset"), &SetSuperset{});
-  #[cfg(feature = "set_proper_subset")]
-  fxns.function_compilers.insert(hash_str("set/proper-subset"), &SetProperSubset{});
-  #[cfg(feature = "set_proper_superset")]
-  fxns.function_compilers.insert(hash_str("set/proper-superset"), &SetProperSuperset{});
-  #[cfg(feature = "set_element_of")]
-  fxns.function_compilers.insert(hash_str("set/element-of"), &SetElementOf{});
-  #[cfg(feature = "set_not_element_of")]
-  fxns.function_compilers.insert(hash_str("set/not-element-of"), &SetNotElementOf{});
-  #[cfg(feature = "set_comprehensions")]
-  fxns.function_compilers.insert(hash_str("set/comprehension"), &SetComprehensionDefine{});
-
-  intrp
-
+fn js_error(message: impl Into<String>) -> JsValue {
+  JsValue::from_str(&message.into())
 }
 
-fn find_out_values(interpreter: &Interpreter, interpreter_id: u64) -> Option<Ref<HashMap<u64, Value>>> {
-  if interpreter.id == interpreter_id {
-    return Some(interpreter.out_values.clone());
-  }
-  let sub_interpreters = interpreter.sub_interpreters.borrow();
-  for sub_interpreter in sub_interpreters.values() {
-    if let Some(out_values) = find_out_values(sub_interpreter, interpreter_id) {
-      return Some(out_values);
-    }
-  }
-  None
+fn browser_host_error_to_js(error: BrowserHostError) -> JsValue {
+  js_error(error.to_string())
 }
 
-#[cfg(feature = "symbol_table")]
-fn find_symbols(interpreter: &Interpreter, interpreter_id: u64) -> Option<SymbolTableRef> {
-  if interpreter.id == interpreter_id {
-    return Some(interpreter.symbols());
+fn browser_origin_for_url(url: &str) -> Result<String, JsValue> {
+  let parsed = web_sys::Url::new(url)
+    .map_err(|error| js_error(format!("invalid URL `{url}`: {:?}", error)))?;
+
+  let protocol = parsed.protocol();
+  if protocol != "http:" && protocol != "https:" {
+    return Err(js_error(format!(
+      "network URLs must use http or https, got `{protocol}`"
+    )));
   }
-  let sub_interpreters = interpreter.sub_interpreters.borrow();
-  for sub_interpreter in sub_interpreters.values() {
-    if let Some(symbols) = find_symbols(sub_interpreter, interpreter_id) {
-      return Some(symbols);
-    }
+
+  let host = parsed.host();
+  if host.is_empty() {
+    return Err(js_error(format!("network URL `{url}` has no host")));
   }
-  None
+
+  Ok(format!("{}//{}", protocol, host))
 }
+
+fn browser_storage_for_backend(backend: &str) -> Result<web_sys::Storage, JsValue> {
+  let window = web_sys::window()
+    .ok_or_else(|| js_error("global window does not exist"))?;
+
+  match BrowserStorageBackend::parse(backend) {
+    Some(BrowserStorageBackend::LocalStorage) => window
+      .local_storage()
+      .map_err(|error| js_error(format!("localStorage unavailable: {:?}", error)))?
+      .ok_or_else(|| js_error("localStorage is not available")),
+    Some(BrowserStorageBackend::SessionStorage) => window
+      .session_storage()
+      .map_err(|error| js_error(format!("sessionStorage unavailable: {:?}", error)))?
+      .ok_or_else(|| js_error("sessionStorage is not available")),
+    Some(BrowserStorageBackend::IndexedDb) => Err(js_error(
+      "indexed-db storage backend is configured but not implemented yet",
+    )),
+    Some(BrowserStorageBackend::Opfs) => Err(js_error(
+      "opfs storage backend is configured but not implemented yet",
+    )),
+    None => Err(js_error(format!("unknown storage backend `{backend}`"))),
+  }
+}
+
 
 fn format_output_value_html(output: &Value) -> String {
-  #[cfg(any(feature = "string", feature = "variable_define"))]
-  if let Value::String(text) = output {
-    if let Some(error_html) = text.borrow().strip_prefix(MECH_ERROR_HTML_PREFIX) {
-      return format!(
-        "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
-        error_html
-      );
-    }
-  }
   let kind_str = html_escape(&format!("{}",output.kind()));
   format!(
     "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
@@ -238,32 +125,152 @@ pub fn main() -> Result<(), JsValue> {
   Ok(())
 }
 
-#[cfg(feature = "eval")]
-fn run_mech_code(intrp: &mut Interpreter, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
-  for (file, source) in code {
-    match source {
-      MechSourceCode::String(s) => {
-        let parse_result = parser::parse(&s.trim());
-        match parse_result {
-          Ok(tree) => { 
-            let result = intrp.interpret(&tree);
-            return result;
-          },
-          Err(err) => return Err(err),
-        }
-      }
-      x => {
-        log!("Unsupported source code type: {:?}", x);
-        todo!();
-      },
+
+
+struct WasmRuntimeParts {
+  runtime: MechRuntime,
+  browser_host: BrowserHost,
+  runtime_injection: BrowserRuntimeInjectionConfig,
+}
+
+fn wasm_parts_from_config_document(
+  document: Option<&MechConfigDocument>,
+) -> MResult<WasmRuntimeParts> {
+  let injected = match document {
+    Some(document) => {
+      let config = RuntimeConfig::default().apply_patch(&document.runtime)?;
+      wasm_runtime_injection_config_from_document(document, &config)?
     }
+    None => default_browser_runtime_injection_config(),
+  };
+  wasm_parts_from_runtime_injection_config_result(injected)
+}
+
+fn default_browser_runtime_injection_config() -> BrowserRuntimeInjectionConfig {
+  BrowserRuntimeInjectionConfig {
+    runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+    hosts: vec![HostInstanceConfig {
+      name: "browser".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    }],
+    run_grants: Vec::new(),
   }
-  Ok(Value::Empty)
+}
+
+fn wasm_runtime_injection_config_from_document(
+  document: &MechConfigDocument,
+  runtime_config: &RuntimeConfig,
+) -> MResult<BrowserRuntimeInjectionConfig> {
+  BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)
+}
+
+#[cfg(feature = "host_delegation_signing")]
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsTrustedHostKey {
+  issuer: String,
+  key_id: String,
+  algorithm: String,
+  public_key: String,
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn trusted_host_key_store_from_js(value: JsValue) -> Result<HostDelegationKeyStore, JsValue> {
+  let keys: Vec<JsTrustedHostKey> = serde_wasm_bindgen::from_value(value)
+    .map_err(|error| js_error(format!("failed to deserialize trusted host keys: {error}")))?;
+  let mut decoded = Vec::with_capacity(keys.len());
+  for key in keys {
+    let public_key = base64::engine::general_purpose::STANDARD
+      .decode(key.public_key.as_bytes())
+      .map_err(|error| js_error(format!("failed to decode trusted host key `{}`: {error}", key.key_id)))?;
+    decoded.push(HostDelegationPublicKey {
+      issuer: key.issuer,
+      key_id: key.key_id,
+      algorithm: key.algorithm,
+      public_key,
+    });
+  }
+  Ok(HostDelegationKeyStore::new(decoded))
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn wasm_parts_from_delegated_host_config(
+  config: JsValue,
+  trusted_keys: JsValue,
+  expected_audience: String,
+) -> Result<WasmRuntimeParts, JsValue> {
+  let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(config)
+    .map_err(|error| js_error(format!("failed to deserialize host delegation envelope: {error}")))?;
+  let trusted_keys = trusted_host_key_store_from_js(trusted_keys)?;
+  let now_ms = js_sys::Date::now() as u64;
+  let request = HostDelegationVerificationRequest {
+    now_ms,
+    expected_audience,
+    trusted_keys,
+    max_clock_skew_ms: 60_000,
+  };
+  let verified = verify_browser_host_delegation(&envelope, request)
+    .map_err(|error| js_error(format!("host delegation verification failed: {error:?}")))?;
+  wasm_parts_from_runtime_injection_config(verified.authority.runtime_injection)
+}
+
+fn wasm_parts_from_host_config(config: JsValue) -> Result<WasmRuntimeParts, JsValue> {
+  let injected: BrowserRuntimeInjectionConfig = serde_wasm_bindgen::from_value(config)
+    .map_err(|error| js_error(format!("failed to deserialize host config: {error}")))?;
+  wasm_parts_from_runtime_injection_config(injected)
+}
+
+fn wasm_parts_from_runtime_injection_config(
+  injected: BrowserRuntimeInjectionConfig,
+) -> Result<WasmRuntimeParts, JsValue> {
+  wasm_parts_from_runtime_injection_config_result(injected)
+    .map_err(|error| js_error(format!("invalid host config: {error:?}")))
+}
+
+fn wasm_parts_from_runtime_injection_config_result(
+  injected: BrowserRuntimeInjectionConfig,
+) -> MResult<WasmRuntimeParts> {
+  let runtime_config = injected.into_runtime_config()?;
+  let mut builder = RuntimeBuilder::new()
+    .config(runtime_config)
+    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new())?))?;
+  let mut saw_default_browser_instance = false;
+  for host in &injected.hosts {
+    if host.provider == "browser" {
+      if host.name == "browser" {
+        saw_default_browser_instance = true;
+      }
+    }
+    builder = builder.host_instance(host.clone());
+  }
+  if !saw_default_browser_instance {
+    builder = builder.host_instance(HostInstanceConfig {
+      name: "browser".to_string(),
+      provider: "browser".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    });
+  }
+  for grant in &injected.run_grants {
+    builder = builder.run_resource_grant(grant.clone());
+  }
+  let mut runtime = builder.build()?;
+  runtime.bind_resource_root("browser", "browser://dom/")?;
+  let authority = injected
+    .browser_host_config()
+    .and_then(|host_config| host_config.into_browser_authority())?;
+  Ok(WasmRuntimeParts {
+    runtime,
+    browser_host: BrowserHost::new(authority),
+    runtime_injection: injected,
+  })
 }
 
 #[wasm_bindgen]
 pub struct WasmMech {
-  interpreter: Interpreter,
+  runtime: MechRuntime,
+  browser_host: BrowserHost,
+  runtime_injection: BrowserRuntimeInjectionConfig,
   repl_history: Vec<String>,
   repl_history_index: Option<usize>,
   repl_id: Option<String>,
@@ -274,9 +281,99 @@ impl WasmMech {
 
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {
-    Self { 
-      interpreter: new_interpreter(0),
-      repl_history: Vec::new(), 
+    Self::with_default_runtime()
+  }
+
+  #[wasm_bindgen(js_name = "fromConfig")]
+  pub fn from_config(source: &str) -> Result<WasmMech, JsValue> {
+    Self::try_from_config("wasm://mech.mcfg", source)
+      .map_err(|error| js_error(format!("{error:?}")))
+  }
+
+  #[wasm_bindgen(js_name = "fromHostConfig")]
+  pub fn from_host_config() -> Result<WasmMech, JsValue> {
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_CONFIG"))
+      .map_err(|error| js_error(format!("failed to read host config: {error:?}")))?;
+    if config.is_undefined() || config.is_null() {
+      return Err(js_error("host config was not provided by mech serve"));
+    }
+    let parts = wasm_parts_from_host_config(config)?;
+    Ok(Self {
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
+  }
+
+
+  #[cfg(feature = "host_delegation_signing")]
+  #[wasm_bindgen(js_name = "fromDelegatedHostConfig")]
+  pub fn from_delegated_host_config(expected_audience: Option<String>) -> Result<WasmMech, JsValue> {
+    let config = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_CONFIG"))
+      .map_err(|error| js_error(format!("failed to read delegated host config: {error:?}")))?;
+    if config.is_undefined() || config.is_null() {
+      return Err(js_error("delegated host config was not provided by mech serve"));
+    }
+    let trusted_keys = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_TRUSTED_HOST_KEYS"))
+      .map_err(|error| js_error(format!("failed to read trusted host keys: {error:?}")))?;
+    if trusted_keys.is_undefined() || trusted_keys.is_null() {
+      return Err(js_error("trusted host keys were not provided for delegated host config"));
+    }
+    let expected_audience = match expected_audience {
+      Some(value) if !value.is_empty() => value,
+      _ => {
+        let value = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__MECH_HOST_DELEGATION_AUDIENCE"))
+          .map_err(|error| js_error(format!("failed to read host delegation audience: {error:?}")))?;
+        value
+          .as_string()
+          .filter(|value| !value.is_empty())
+          .ok_or_else(|| js_error("host delegation audience was not provided"))?
+      }
+    };
+    let parts = wasm_parts_from_delegated_host_config(config, trusted_keys, expected_audience)?;
+    Ok(Self {
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
+  }
+
+  fn try_from_config(
+    source_name: &str,
+    source: &str,
+  ) -> MResult<Self> {
+    let document = parse_config_document(
+      source_name,
+      source,
+      ConfigProfileOptions::default(),
+    )?;
+    let parts = wasm_parts_from_config_document(Some(&document))?;
+
+    Ok(Self {
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
+      repl_history: Vec::new(),
+      repl_history_index: None,
+      repl_id: None,
+    })
+  }
+
+  fn with_default_runtime() -> Self {
+    let parts = wasm_parts_from_config_document(None)
+      .expect("default wasm runtime config should be valid");
+
+    Self {
+      runtime: parts.runtime,
+      browser_host: parts.browser_host,
+      runtime_injection: parts.runtime_injection,
+      repl_history: Vec::new(),
       repl_history_index: None,
       repl_id: None,
     }
@@ -284,28 +381,287 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn out_string(&self) -> String {
-    self.interpreter.out.to_string()
+    self.runtime.out_string()
   }
 
   #[wasm_bindgen]
   pub fn clear(&mut self) {
-    self.interpreter = new_interpreter(0);
+    let parts = wasm_parts_from_runtime_injection_config_result(self.runtime_injection.clone())
+      .expect("failed to reset wasm runtime from injected host config");
+    self.runtime = parts.runtime;
+    self.browser_host = parts.browser_host;
+    self.runtime_injection = parts.runtime_injection;
   }
 
-  fn bind_ans_symbol_for_interpreter(&mut self, interpreter_id: u64, value: &Value) {
-    #[cfg(feature = "symbol_table")]
-    {
-      let resolved_value = match value {
-        Value::MutableReference(reference) => reference.borrow().clone(),
-        _ => value.clone(),
-      };
-      let ans_id = hash_str("ans");
-      let symbols = self.interpreter.symbols();
-      let mut symbols_brrw = symbols.borrow_mut();
-      symbols_brrw.insert(ans_id, resolved_value, false);
-      symbols_brrw.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
-      self.interpreter.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
-    }
+  #[wasm_bindgen(js_name = "readDomText")]
+  pub fn read_dom_text(&self, selector: &str) -> Result<String, JsValue> {
+    self
+      .check_dom(selector, BrowserOperation::Read)
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let document = window
+      .document()
+      .ok_or_else(|| js_error("document is not available"))?;
+
+    let element = document
+      .query_selector(selector)
+      .map_err(|error| js_error(format!("failed to query selector `{selector}`: {:?}", error)))?
+      .ok_or_else(|| js_error(format!("DOM selector `{selector}` did not match an element")))?;
+
+    Ok(element.text_content().unwrap_or_default())
+  }
+
+  #[wasm_bindgen(js_name = "writeDomText")]
+  pub fn write_dom_text(&self, selector: &str, text: &str) -> Result<(), JsValue> {
+    self
+      .check_dom(selector, BrowserOperation::Write)
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let document = window
+      .document()
+      .ok_or_else(|| js_error("document is not available"))?;
+
+    let element = document
+      .query_selector(selector)
+      .map_err(|error| js_error(format!("failed to query selector `{selector}`: {:?}", error)))?
+      .ok_or_else(|| js_error(format!("DOM selector `{selector}` did not match an element")))?;
+
+    element.set_text_content(Some(text));
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "readClipboardText")]
+  pub async fn read_clipboard_text(&self) -> Result<String, JsValue> {
+    self
+      .browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Read,
+      })
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let clipboard = window.navigator().clipboard();
+
+    let promise = clipboard.read_text();
+    let value = wasm_bindgen_futures::JsFuture::from(promise)
+      .await
+      .map_err(|error| js_error(format!("clipboard read failed: {:?}", error)))?;
+
+    Ok(value.as_string().unwrap_or_default())
+  }
+
+  #[wasm_bindgen(js_name = "writeClipboardText")]
+  pub async fn write_clipboard_text(&self, text: &str) -> Result<(), JsValue> {
+    self
+      .browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Write,
+      })
+      .map_err(browser_host_error_to_js)?;
+
+    let window = web_sys::window()
+      .ok_or_else(|| js_error("global window does not exist"))?;
+    let clipboard = window.navigator().clipboard();
+
+    let promise = clipboard.write_text(text);
+    wasm_bindgen_futures::JsFuture::from(promise)
+      .await
+      .map_err(|error| js_error(format!("clipboard write failed: {:?}", error)))?;
+
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "fetchText")]
+  pub async fn fetch_text(&self, url: &str, method: Option<String>) -> Result<String, JsValue> {
+    let method = method.unwrap_or_else(|| "GET".to_string());
+    let origin = browser_origin_for_url(url)?;
+
+    self
+      .check_network(&origin, Some(&method), BrowserOperation::Read)
+      .map_err(browser_host_error_to_js)?;
+
+    let method = method
+      .parse::<Method>()
+      .map_err(|error| js_error(format!("invalid HTTP method `{method}`: {error}")))?;
+    let response = RequestBuilder::new(url)
+      .method(method)
+      .send()
+      .await
+      .map_err(|error| js_error(format!("browser fetch failed: {error}")))?;
+
+    response
+      .text()
+      .await
+      .map_err(|error| js_error(format!("failed to read fetch response text: {error}")))
+  }
+
+  #[wasm_bindgen(js_name = "readStorageText")]
+  pub fn read_storage_text(
+    &self,
+    backend: &str,
+    scope: &str,
+  ) -> Result<Option<String>, JsValue> {
+    self
+      .check_storage(backend, scope, BrowserOperation::Read)
+      .map_err(browser_host_error_to_js)?;
+
+    let storage = browser_storage_for_backend(backend)?;
+    Ok(storage
+      .get_item(scope)
+      .map_err(|error| js_error(format!("storage read failed: {:?}", error)))?)
+  }
+
+  #[wasm_bindgen(js_name = "writeStorageText")]
+  pub fn write_storage_text(
+    &self,
+    backend: &str,
+    scope: &str,
+    value: &str,
+  ) -> Result<(), JsValue> {
+    self
+      .check_storage(backend, scope, BrowserOperation::Write)
+      .map_err(browser_host_error_to_js)?;
+
+    let storage = browser_storage_for_backend(backend)?;
+    storage
+      .set_item(scope, value)
+      .map_err(|error| js_error(format!("storage write failed: {:?}", error)))?;
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "removeStorageItem")]
+  pub fn remove_storage_item(
+    &self,
+    backend: &str,
+    scope: &str,
+  ) -> Result<(), JsValue> {
+    self
+      .check_storage(backend, scope, BrowserOperation::Write)
+      .map_err(browser_host_error_to_js)?;
+
+    let storage = browser_storage_for_backend(backend)?;
+    storage
+      .remove_item(scope)
+      .map_err(|error| js_error(format!("storage remove failed: {:?}", error)))?;
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "canReadClipboard")]
+  pub fn can_read_clipboard(&self) -> bool {
+    self.browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Read,
+      })
+      .is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canWriteClipboard")]
+  pub fn can_write_clipboard(&self) -> bool {
+    self.browser_host
+      .check(BrowserCapabilityRequest::Clipboard {
+        operation: BrowserOperation::Write,
+      })
+      .is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canReadDom")]
+  pub fn can_read_dom(&self, selector: &str) -> bool {
+    self.check_dom(selector, BrowserOperation::Read).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canWriteDom")]
+  pub fn can_write_dom(&self, selector: &str) -> bool {
+    self.check_dom(selector, BrowserOperation::Write).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canReadNetwork")]
+  pub fn can_read_network(&self, origin: &str, method: Option<String>) -> bool {
+    self.check_network(origin, method.as_deref(), BrowserOperation::Read)
+      .is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canReadStorage")]
+  pub fn can_read_storage(&self, backend: &str, scope: &str) -> bool {
+    self.check_storage(backend, scope, BrowserOperation::Read).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canWriteStorage")]
+  pub fn can_write_storage(&self, backend: &str, scope: &str) -> bool {
+    self.check_storage(backend, scope, BrowserOperation::Write).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "canListStorage")]
+  pub fn can_list_storage(&self, backend: &str, scope: &str) -> bool {
+    self.check_storage(backend, scope, BrowserOperation::List).is_ok()
+  }
+
+  #[wasm_bindgen(js_name = "browserGrantCount")]
+  pub fn browser_grant_count(&self) -> usize {
+    self.browser_host.authority().grants().len()
+  }
+
+  fn check_dom(
+    &self,
+    selector: &str,
+    operation: BrowserOperation,
+  ) -> Result<(), BrowserHostError> {
+    BrowserDomScope::new(selector.to_string())
+      .map_err(|error| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: error.to_string(),
+      })?;
+    self.browser_host.check(BrowserCapabilityRequest::Dom {
+      selector: selector.to_string(),
+      operation,
+    })
+  }
+
+  fn check_network(
+    &self,
+    origin: &str,
+    method: Option<&str>,
+    operation: BrowserOperation,
+  ) -> Result<(), BrowserHostError> {
+    let methods = method.map(|method| vec![method.to_string()]);
+    BrowserNetworkScope::new(origin.to_string(), methods)
+      .map_err(|error| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: error.to_string(),
+      })?;
+    self.browser_host.check(BrowserCapabilityRequest::Network {
+      origin: origin.to_string(),
+      method: method.map(str::to_string),
+      operation,
+    })
+  }
+
+  fn check_storage(
+    &self,
+    backend: &str,
+    scope: &str,
+    operation: BrowserOperation,
+  ) -> Result<(), BrowserHostError> {
+    let parsed_backend = BrowserStorageBackend::parse(backend)
+      .ok_or_else(|| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: format!("unknown storage backend `{backend}`"),
+      })?;
+    BrowserStorageScope::new(parsed_backend, scope.to_string())
+      .map_err(|error| BrowserHostError::BrowserDeniedOrUnavailable {
+        reason: error.to_string(),
+      })?;
+    self.browser_host.check(BrowserCapabilityRequest::Storage {
+      backend: parsed_backend,
+      scope: scope.to_string(),
+      operation,
+    })
+  }
+
+  #[cfg(test)]
+  fn runtime_config_for_test(&self) -> &RuntimeConfig {
+    self.runtime.config()
   }
 
 #[cfg(feature = "repl")]
@@ -631,6 +987,30 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
 
   #[cfg(feature = "eval")]
+  fn format_eval_error_html(error: impl std::fmt::Display) -> String {
+    format!(
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+      html_escape(&error.to_string())
+    )
+  }
+
+  #[cfg(feature = "eval")]
+  fn format_eval_mech_error_html(error: &MechError) -> String {
+    format!(
+      "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
+      error.to_html()
+    )
+  }
+
+  #[cfg(feature = "eval")]
+  fn eval_tree(&mut self, tree: &Program) -> String {
+    match self.runtime.run_tree(tree) {
+      Ok(output) => format_output_value_html(&output),
+      Err(err) => Self::format_eval_mech_error_html(&err),
+    }
+  }
+
+  #[cfg(feature = "eval")]
   pub fn eval(&mut self, input: &str) -> String {
     if input.chars().nth(0) == Some(':') {
       #[cfg(feature = "repl")]
@@ -659,27 +1039,19 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         "REPL commands not supported. Rebuild with the 'repl' feature.".to_string()
       }
     } else {
-      let cmd = vec![("repl".to_string(),MechSourceCode::String(input.to_string()))];
-      CURRENT_MECH.with(|mech_ref| {
-        if let Some(ptr) = *mech_ref.borrow() {
-          unsafe {
-            let mut mech = &mut *ptr;
-            match run_mech_code(&mut mech.interpreter, &cmd)  {
-              Ok(output) => { 
-                let kind_str = html_escape(&format!("{}",output.kind()));
-                return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
-              },
-              Err(err) => {
-                return format!(
-                  "<div class=\"mech-output-kind\">Error</div><div class=\"mech-output-value\">{}</div>",
-                  err.to_html()
-                );
-              }
-            }
-          }
-        }
-        "Error: No interpreter found.".to_string()
-      })
+      match self.runtime.run_string(input) {
+        Ok(output) => format_output_value_html(&output),
+        Err(err) => Self::format_eval_mech_error_html(&err),
+      }
+    }
+  }
+
+  #[cfg(feature = "eval")]
+  #[wasm_bindgen(js_name = "evalCompiled")]
+  pub fn eval_compiled(&mut self, input: &str) -> String {
+    match decode_and_decompress::<Program>(input) {
+      Ok(tree) => self.eval_tree(&tree),
+      Err(err) => Self::format_eval_error_html(format!("failed to decode compiled Mech code: {err}")),
     }
   }
 
@@ -733,14 +1105,6 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         .get_attribute("data-var")
         .unwrap_or_else(|| symbol_text.clone());
 
-      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
-        Some(symbols) => symbols,
-        None => {
-          log!("No sub interpreter found for id: {}", interpreter_id);
-          continue;
-        }
-      };
-
       // Create click closure
       let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
         let window = web_sys::window().unwrap();
@@ -748,17 +1112,38 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         let mech_output = document.get_element_by_id("mech-output").unwrap();
         let last_child = mech_output.last_child();
 
-        let output = {
-          let symbols_brrw = symbols.borrow();
-          symbols_brrw.get(element_id).map(|output| output.borrow().clone())
-        };
-        match output {
-          Some(output) => {
-            let symbol_name = if symbol_text.trim().is_empty() {
-              {
-                let symbols_brrw = symbols.borrow();
-                symbols_brrw.get_symbol_name_by_id(element_id)
+        CURRENT_MECH.with(|mech_ref| {
+          let Some(ptr) = *mech_ref.borrow() else {
+            log!("Clickable click: no current mech instance");
+            return;
+          };
+          unsafe {
+            let mech = &mut *ptr;
+            let output = match mech.runtime.output_value_for_interpreter(interpreter_id, element_id) {
+              Some(value) => value,
+              None => {
+                let error_message = format!("No value found for element id: {}", element_id);
+                log!(
+                  "Clickable click: missing symbol output for element_id={} interpreter_id={} id='{}'",
+                  element_id,
+                  interpreter_id,
+                  id
+                );
+                let result_line = document.create_element("div").unwrap();
+                result_line.set_class_name("repl-result");
+                result_line.set_inner_html(&error_message);
+                if let Some(last_child) = last_child {
+                  mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+                } else {
+                  mech_output.append_child(&result_line).unwrap();
+                }
+                return;
               }
+            };
+            let symbol_name = if symbol_text.trim().is_empty() {
+              mech
+                .runtime
+                .symbol_name_for_interpreter_output(interpreter_id, element_id)
                 .or_else(|| {
                   let trimmed = symbol_name_hint.trim();
                   if trimmed.is_empty() {
@@ -831,38 +1216,12 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             }
 
             // Update REPL history
-            CURRENT_MECH.with(|mech_ref| {
-              if let Some(ptr) = *mech_ref.borrow() {
-                unsafe { (*ptr).repl_history.push(symbol_name.clone()); }
-              }
-            });
+            mech.repl_history.push(symbol_name.clone());
 
             // Update variable "ans" with the value of the clicked symbol
-            CURRENT_MECH.with(|mech_ref| {
-              if let Some(ptr) = *mech_ref.borrow() {
-                unsafe { (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output); }
-              }
-            });
-
-          },
-          None => {
-            let error_message = format!("No value found for element id: {}", element_id);
-            log!(
-              "Clickable click: missing symbol output for element_id={} interpreter_id={} id='{}'",
-              element_id,
-              interpreter_id,
-              id
-            );
-            let result_line = document.create_element("div").unwrap();
-            result_line.set_class_name("repl-result");
-            result_line.set_inner_html(&error_message);
-            if let Some(last_child) = last_child {
-              mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
-            } else {
-              mech_output.append_child(&result_line).unwrap();
-            }
+            let _ = mech.runtime.bind_ans_for_interpreter(interpreter_id, &output);
           }
-        }
+        });
 
         mech_output.set_scroll_top(mech_output.scroll_height());
       }) as Box<dyn FnMut(_)>);
@@ -871,7 +1230,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
       closure.forget();
     }
   }
-  
+
   #[wasm_bindgen]
   pub fn init(&self) {
     #[cfg(feature = "clickable_symbol_listeners")]
@@ -891,8 +1250,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   #[cfg(feature = "codeblock_output_values")]
   #[wasm_bindgen]
   pub fn render_codeblock_output_values(&mut self) {
-    let window = web_sys::window().expect("global window does not exists");    
-		let document = window.document().expect("expecting a document on window"); 
+    let window = web_sys::window().expect("global window does not exists");
+    let document = window.document().expect("expecting a document on window");
     // Get all elements with an attribute of "mech-interpreter-id"
     let programs = document.query_selector_all("[mech-interpreter-id]");
     if let Ok(programs) = programs {
@@ -905,12 +1264,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         // Get the mech-interpreter-id attribute from the element
         let interpreter_id: String = program_el.get_attribute("mech-interpreter-id").unwrap();
         let interpreter_id: u64 = interpreter_id.parse().unwrap();
-        let root_interpreter_id = if interpreter_id == 0 {
-          self.interpreter.id
-        } else {
-          interpreter_id
-        };
-        if find_out_values(&self.interpreter, root_interpreter_id).is_none() {
+        let root_interpreter_id = interpreter_id;
+        if !self.runtime.has_interpreter(root_interpreter_id) {
           log!("No sub interpreter found for id: {}", root_interpreter_id);
           continue;
         }
@@ -937,17 +1292,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
             } else {
               interpreter_id
             };
-            let out_values = match find_out_values(&self.interpreter, effective_interpreter_id) {
-              Some(out_values) => out_values,
-              None => {
-                log!("No sub interpreter found for id: {}", effective_interpreter_id);
-                continue;
-              }
-            };
-
-            // get the output id from the block id
-            let out_value_brrw = out_values.borrow();
-            let output = match out_value_brrw.get(&output_id) {
+            let output = match self.runtime.output_value_for_interpreter(effective_interpreter_id, output_id) {
               Some(value) => value,
               None => {
                 log!("No value found for output id: {}", output_id);
@@ -955,7 +1300,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
               }
             };
             // set the inner html of the block to the output value html
-            block.set_inner_html(&format_output_value_html(output));
+            block.set_inner_html(&format_output_value_html(&output));
           }
         }
       }
@@ -965,8 +1310,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   #[cfg(feature = "inline_output_values")]
   #[wasm_bindgen]
   pub fn render_inline_values(&mut self) {
-    let window = web_sys::window().expect("global window does not exists");    
-		let document = window.document().expect("expecting a document on window"); 
+    let window = web_sys::window().expect("global window does not exists");
+    let document = window.document().expect("expecting a document on window");
     let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
     for j in 0..inline_elements.length() {
       let inline_block = inline_elements.get_with_index(j).unwrap();
@@ -996,16 +1341,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           continue;
         }
       };
-      let out_values = match find_out_values(&self.interpreter, inline_interpreter_id) {
-        Some(out_values) => out_values,
-        None => {
-          log!("No sub interpreter found for inline id: {}", inline_interpreter_id);
-          continue;
-        }
-      };
-      let out_values_brrw = out_values.borrow();
-
-      let inline_output = match out_values_brrw.get(&inline_output_id) {
+      let inline_output = match self.runtime.output_value_for_interpreter(inline_interpreter_id, inline_output_id) {
         Some(value) => value,
         None => {
           log!(
@@ -1073,23 +1409,11 @@ pub fn attach_repl(&mut self, repl_id: &str) {
         Some(value) => hash_str(&value),
         None => match var_element.get_attribute("data-interpreter-id") {
           Some(value) => value.parse::<u64>().unwrap_or(0),
-          None => self.interpreter.id,
+          None => 0,
         },
       };
-      let symbols = match find_symbols(&self.interpreter, interpreter_id) {
-        Some(symbols) => symbols,
-        None => {
-          log!(
-            "VAR placeholder unresolved interpreter: {} (variable: {})",
-            interpreter_id,
-            var_name
-          );
-          continue;
-        }
-      };
-      let symbols_brrw = symbols.borrow();
-      let output = match symbols_brrw.get(var_id) {
-        Some(value) => value.borrow().clone(),
+      let output = match self.runtime.output_value_for_interpreter(interpreter_id, var_id) {
+        Some(value) => value,
         None => {
           log!(
             "VAR placeholder unresolved variable (yet?): {} (hash: {}, interpreter: {})",
@@ -1151,11 +1475,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           if let Some(ptr) = *mech_ref.borrow() {
             unsafe {
               let mech = &*ptr;
-              let out_values = match find_out_values(&mech.interpreter, interpreter_id) {
-                Some(out_values) => out_values,
-                None => return None,
-              };
-              return out_values.borrow().get(&output_id).cloned();
+              return mech.runtime.output_value_for_interpreter(interpreter_id, output_id);
             }
           }
           None
@@ -1168,7 +1488,8 @@ pub fn attach_repl(&mut self, repl_id: &str) {
           CURRENT_MECH.with(|mech_ref| {
             if let Some(ptr) = *mech_ref.borrow() {
               unsafe {
-                (*ptr).bind_ans_symbol_for_interpreter(interpreter_id, &output_value);
+                let mech = &mut *ptr;
+                let _ = mech.runtime.bind_ans_for_interpreter(interpreter_id, &output_value);
               }
             }
           });
@@ -1276,7 +1597,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
   #[cfg(feature = "run_program")]
   fn interpret_with_runtime_error_handling(&mut self, tree: &Program) {
-    match catch_unwind(AssertUnwindSafe(|| self.interpreter.interpret(tree))) {
+    match catch_unwind(AssertUnwindSafe(|| self.runtime.run_tree(tree))) {
       Ok(Ok(result)) => {
         log!("{}", result.pretty_print());
       }
@@ -1300,7 +1621,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
   #[cfg(feature = "run_program")]
   #[wasm_bindgen]
-  pub fn run_program(&mut self, src: &str) { 
+  pub fn run_program(&mut self, src: &str) {
     // Decompress the string into a Program
     match decode_and_decompress(&src) {
       Ok(tree) => {
@@ -1326,6 +1647,39 @@ pub fn attach_repl(&mut self, repl_id: &str) {
   }
 }
 
+#[cfg(all(test, feature = "eval", feature = "serde"))]
+mod eval_tests {
+  use super::*;
+
+  #[test]
+  fn eval_is_source_only_and_compiled_eval_decodes_payload() {
+    let source = "x := 1";
+    let tree = parse(source).unwrap();
+    let encoded = compress_and_encode(&tree).unwrap();
+    assert_ne!(encoded, source);
+
+    let mut source_mech = WasmMech::new();
+    let source_output = source_mech.eval(source);
+    assert!(!source_output.contains("ParserErrorContext"));
+
+    let mut encoded_as_source_mech = WasmMech::new();
+    let encoded_as_source_output = encoded_as_source_mech.eval(&encoded);
+    assert!(encoded_as_source_output.contains("<div class=\"mech-output-kind\">Error</div>"));
+
+    let mut compiled_mech = WasmMech::new();
+    let compiled_output = compiled_mech.eval_compiled(&encoded);
+    assert!(!compiled_output.contains("ParserErrorContext"));
+  }
+
+  #[test]
+  fn eval_compiled_reports_decode_errors_without_parsing_input() {
+    let mut mech = WasmMech::new();
+    let output = mech.eval_compiled("x := 1");
+    assert!(output.contains("failed to decode compiled Mech code"));
+    assert!(!output.contains("ParserErrorContext"));
+  }
+}
+
 #[cfg(feature = "docs")]
 pub fn load_doc(doc: &str, element_id: String) {
   let doc = doc.to_string();
@@ -1339,8 +1693,14 @@ pub fn load_doc(doc: &str, element_id: String) {
         let mut formatter = Formatter::new();
         formatter.html = true;
         let doc_html = formatter.program(&tree);
-        let mut doc_intrp = new_interpreter(doc_hash);
-        let doc_result = doc_intrp.interpret(&tree);
+        CURRENT_MECH.with(|mech_ref| {
+          if let Some(ptr) = *mech_ref.borrow() {
+            unsafe {
+              let mech = &mut *ptr;
+              let _ = mech.runtime.run_string(&doc_mec);
+            }
+          }
+        });
         let output_element = document.get_element_by_id(&element_id).expect("REPL output element not found");
         // Get the second to last element of mech-output. It should be a repl-result from when teh user pressed enter.
         // Set the inner html of the repl result element to be the formatted doc.
@@ -1348,15 +1708,14 @@ pub fn load_doc(doc: &str, element_id: String) {
         let len = children.length();
         if len >= 2 {
             let repl_result = children.item(len - 2).expect("Failed to get second-to-last child");
-            repl_result.set_attribute("mech-interpreter-id", &format!("{}",doc_hash)).unwrap();
+            repl_result.set_attribute("mech-interpreter-id", "0").unwrap();
             let repl_html = repl_result.dyn_ref::<HtmlElement>().expect("Expected an HtmlElement");
             repl_html.class_list().add_1("compact").unwrap();
             repl_html.set_inner_html(&doc_html);
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
                 unsafe {
-                  let mut mech = &mut *ptr;
-                  mech.interpreter.sub_interpreters.borrow_mut().insert(doc_hash, Box::new(doc_intrp));
+                  let mech = &mut *ptr;
                   #[cfg(feature = "codeblock_output_values")]
                   mech.render_codeblock_output_values();
                 }
@@ -1399,5 +1758,318 @@ async fn fetch_docs(doc: &str) -> String {
   } else {
     web_sys::console::log_1(&format!("Invalid doc format: {}", doc).into());
     "".to_string()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  const RC4_HTML_PAYLOAD: &str = "</span><img src=x onerror=\"window.pwned=1\">&\"'\n__MECH_ERROR_HTML__:";
+
+  #[test]
+  fn wasm_output_does_not_trust_error_html_prefix() {
+    let value = Value::String(Ref::new(RC4_HTML_PAYLOAD.to_string()));
+    let html = format_output_value_html(&value);
+    assert!(html.contains("&lt;/span&gt;&lt;img src=x onerror=&quot;window.pwned=1&quot;&gt;&amp;&quot;&#39;"), "{html}");
+    assert!(html.contains("__MECH_ERROR_HTML__:"), "{html}");
+    assert!(!html.contains("<img"), "{html}");
+    assert!(!html.contains("onerror=\""), "{html}");
+  }
+
+  const CLIPBOARD_WRITE_CONFIG: &str = r#"config := {
+  browser: {
+    clipboard: [
+      {allow: ["write"]}
+    ]
+  }
+}
+"#;
+
+  const DOM_WRITE_CONFIG: &str = r##"config := {
+  browser: {
+    dom: [
+      {selector: "#mech-output", allow: ["write"]}
+    ]
+  }
+}
+"##;
+
+
+  const DOM_READ_PATH_CONFIG: &str = r##"config := {
+  browser: {
+    dom: [
+      {path: "counter/_text", selector: "#counter", allow: ["read"]}
+    ]
+  }
+}
+"##;
+
+  const DOM_WRITE_PATH_CONFIG: &str = r##"config := {
+  browser: {
+    dom: [
+      {path: "counter/_text", selector: "#counter", allow: ["write"]}
+    ]
+  }
+}
+"##;
+
+  const NETWORK_GET_CONFIG: &str = r#"config := {
+  browser: {
+    network: [
+      {origin: "https://example.com", methods: ["GET"], allow: ["read"]}
+    ]
+  }
+}
+"#;
+
+  const STORAGE_EXACT_CONFIG: &str = r#"config := {
+  browser: {
+    storage: [
+      {backend: "opfs", scope: "/workspace", allow: ["read", "write", "list"]}
+    ]
+  }
+}
+"#;
+
+  const STORAGE_RECURSIVE_CONFIG: &str = r#"config := {
+  browser: {
+    storage: [
+      {backend: "opfs", scope: "/workspace", recursive: true, allow: ["read", "write", "list"]}
+    ]
+  }
+}
+"#;
+
+  #[test]
+  fn wasm_mech_default_browser_host_is_deny_by_default() {
+    let mech = WasmMech::new();
+
+    assert_eq!(mech.browser_grant_count(), 0);
+    assert!(!mech.can_read_clipboard());
+  }
+
+  #[test]
+  fn wasm_mech_from_config_loads_browser_grants() {
+    let mech = WasmMech::try_from_config("test.mcfg", CLIPBOARD_WRITE_CONFIG).unwrap();
+
+    assert!(mech.browser_grant_count() > 0);
+    assert!(mech.can_write_clipboard());
+    assert!(!mech.can_read_clipboard());
+  }
+
+  #[test]
+  fn wasm_mech_denies_dom_write_without_grant() {
+    let mech = WasmMech::new();
+
+    assert!(!mech.can_write_dom("#mech-output"));
+  }
+
+  #[test]
+  fn wasm_mech_allows_dom_write_with_grant() {
+    let mech = WasmMech::try_from_config("test.mcfg", DOM_WRITE_CONFIG).unwrap();
+
+    assert!(mech.can_write_dom("#mech-output"));
+  }
+
+
+  #[test]
+  fn browser_config_dom_read_installs_runtime_grant() {
+    let mut mech = WasmMech::try_from_config("test.mcfg", DOM_READ_PATH_CONFIG).unwrap();
+    let result = mech.runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+    if let Err(error) = result {
+      let error = format!("{error:?}");
+      assert!(!error.contains("RuntimeCapabilityGrantDenied"), "read should pass runtime grant preflight: {error}");
+    }
+  }
+
+  #[test]
+  fn browser_config_without_dom_read_runtime_grant_denies() {
+    let mut mech = WasmMech::try_from_config("test.mcfg", DOM_WRITE_PATH_CONFIG).unwrap();
+    let result = mech.runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+    let error = format!("{:?}", result.err().unwrap());
+    assert!(error.contains("RuntimeCapabilityGrantDenied"), "read should be denied without read grant: {error}");
+  }
+
+  #[test]
+  fn browser_config_dom_grants_are_operation_specific() {
+    let mut write_only = WasmMech::try_from_config("test.mcfg", DOM_WRITE_PATH_CONFIG).unwrap();
+    let read_result = write_only.runtime.run_string("+> @ui := browser/dom\ntitle := @ui/counter/_text\n");
+    let read_error = format!("{:?}", read_result.err().unwrap());
+    assert!(read_error.contains("RuntimeCapabilityGrantDenied"), "write-only grant must not allow reads: {read_error}");
+
+    let mut read_only = WasmMech::try_from_config("test.mcfg", DOM_READ_PATH_CONFIG).unwrap();
+    let write_result = read_only.runtime.run_string("+> @ui := browser/dom\n@ui/counter/_text = \"hello\"\n");
+    let write_error = format!("{:?}", write_result.err().unwrap());
+    assert!(write_error.contains("RuntimeCapabilityGrantDenied"), "read-only grant must not allow writes: {write_error}");
+  }
+
+  #[test]
+  fn wasm_mech_denies_network_method_not_granted() {
+    let mech = WasmMech::try_from_config("test.mcfg", NETWORK_GET_CONFIG).unwrap();
+
+    assert!(!mech.can_read_network("https://example.com", Some("POST".to_string())));
+  }
+
+  #[test]
+  fn wasm_mech_allows_network_method_granted() {
+    let mech = WasmMech::try_from_config("test.mcfg", NETWORK_GET_CONFIG).unwrap();
+
+    assert!(mech.can_read_network("https://example.com", Some("GET".to_string())));
+  }
+
+  #[test]
+  fn wasm_mech_denies_recursive_storage_child_without_recursive() {
+    let mech = WasmMech::try_from_config("test.mcfg", STORAGE_EXACT_CONFIG).unwrap();
+
+    assert!(!mech.can_read_storage("opfs", "/workspace/main.mec"));
+  }
+
+  #[test]
+  fn wasm_mech_allows_recursive_storage_child_with_recursive() {
+    let mech = WasmMech::try_from_config("test.mcfg", STORAGE_RECURSIVE_CONFIG).unwrap();
+
+    assert!(mech.can_read_storage("opfs", "/workspace/main.mec"));
+  }
+
+  #[test]
+  fn wasm_mech_from_config_applies_runtime_config() {
+    let source = r#"config := {
+  runtime: {
+    name: "wasm-test-runtime"
+    limits: {
+      max-steps-per-turn: 123
+    }
+  }
+}
+"#;
+    let mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+    let config = mech.runtime_config_for_test();
+
+    assert_eq!(config.name, "wasm-test-runtime");
+    assert_eq!(config.limits.max_steps_per_turn, Some(123));
+  }
+
+  #[test]
+  fn wasm_from_config_filters_non_browser_run_grants() {
+    let source = r#"config := {
+  hosts: [
+    {name: "browser", provider: "browser", settings: {}}
+    {name: "arm", provider: "fake-robot", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "browser/dom", operations: ["read"], paths: ["counter/_text"]}
+      {target: "arm/commands", operations: ["write"], paths: ["move"]}
+    ]
+  }
+}
+"#;
+    let mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+
+    assert_eq!(mech.runtime_injection.run_grants.len(), 1);
+    assert_eq!(mech.runtime_injection.run_grants[0].target, "browser/dom");
+    assert!(mech.runtime_injection.hosts.iter().all(|host| host.provider == "browser"));
+  }
+
+  #[test]
+  fn wasm_from_config_keeps_browser_alias_run_grant() {
+    let source = r#"config := {
+  hosts: [
+    {name: "ui", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"#;
+    let mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+
+    assert!(mech.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
+    assert_eq!(mech.runtime_injection.run_grants.len(), 1);
+    assert_eq!(mech.runtime_injection.run_grants[0].target, "ui/dom");
+  }
+
+  #[test]
+  fn clear_preserves_browser_alias() {
+    let source = r##"config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          {path: "counter/_text", selector: "#counter", property: "text", operations: ["read"]}
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"##;
+    let mut mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+    mech.clear();
+
+    assert!(mech.runtime_injection.hosts.iter().any(|host| host.name == "ui"));
+    let result = mech.runtime.run_string("+> @ui := ui/dom\ntitle := @ui/counter/_text\n");
+    if let Err(error) = result {
+      let error = format!("{error:?}");
+      assert!(!error.contains("HostInterfaceUnknownInstance"), "ui alias should survive clear: {error}");
+      assert!(!error.contains("RuntimeResourceProviderNotFound"), "ui provider should survive clear: {error}");
+      assert!(!error.contains("RuntimeCapabilityGrantDenied"), "ui read grant should survive clear: {error}");
+    }
+  }
+
+  #[test]
+  fn clear_preserves_narrowed_run_grants() {
+    let source = r##"config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        dom: [
+          {path: "counter/_text", selector: "#counter", property: "text", operations: ["read", "write"]}
+        ]
+      }
+    }
+  ]
+  run: {
+    grants: [
+      {target: "browser/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"##;
+    let mut mech = WasmMech::try_from_config("test.mcfg", source).unwrap();
+    mech.clear();
+
+    let write_result = mech.runtime.run_string("+> @ui := browser/dom\n@ui/counter/_text = \"hello\"\n");
+    let write_error = format!("{:?}", write_result.err().unwrap());
+    assert!(write_error.contains("RuntimeCapabilityGrantDenied"), "clear must preserve narrowed run grants: {write_error}");
+  }
+
+  #[test]
+  fn clear_default_runtime_still_works() {
+    let mut mech = WasmMech::new();
+    mech.clear();
+
+    assert_eq!(mech.browser_grant_count(), 0);
+    assert!(!mech.can_read_clipboard());
+  }
+
+  #[test]
+  fn wasm_mech_clear_preserves_browser_host() {
+    let mut mech = WasmMech::try_from_config("test.mcfg", CLIPBOARD_WRITE_CONFIG).unwrap();
+
+    mech.clear();
+
+    assert!(mech.can_write_clipboard());
   }
 }

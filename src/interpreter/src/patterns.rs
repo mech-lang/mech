@@ -21,6 +21,14 @@ pub enum PatternMatchSemantics {
 // multiple arguments, this wraps them as if they were a tuple and delegates 
 // to pattern_matches_value.
 pub fn pattern_matches_arguments(pattern: &Pattern, args: &Vec<Value>, env: &mut Environment, p: &Interpreter) -> MResult<bool> {
+  if args.is_empty() {
+    return match pattern {
+      Pattern::Wildcard => Ok(true),
+      #[cfg(feature = "tuple")]
+      Pattern::Tuple(pattern_tuple) => Ok(pattern_tuple.0.is_empty()),
+      _ => Ok(false),
+    };
+  }
   if args.len() == 1 {
     return pattern_matches_value(pattern, &args[0], env, p);
   }
@@ -139,6 +147,9 @@ pub fn pattern_matches_value_with_semantics(pattern: &Pattern, value: &Value, en
       if semantics == PatternMatchSemantics::OptionGuard {
         #[cfg(feature = "bool")]
         if let Value::Bool(flag) = &expected {
+          if matches!(expr, Expression::Literal(Literal::Boolean(_))) {
+            return Ok(values_match(&deep_detach_value(&expected), &detached_value));
+          }
           return Ok(*flag.borrow());
         }
       }

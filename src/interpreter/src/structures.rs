@@ -1,8 +1,83 @@
 use crate::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 // Structures
 // ----------------------------------------------------------------------------
+
+#[cfg(feature = "set")]
+fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<ValueKind> {
+  fn optionalize(kind: ValueKind) -> ValueKind {
+    match kind {
+      ValueKind::Empty => ValueKind::Empty,
+      ValueKind::Option(_) => kind,
+      other => ValueKind::Option(Box::new(other)),
+    }
+  }
+
+  fn join_set_element_kinds_inner(
+    expected: &ValueKind,
+    actual: &ValueKind,
+    seen: &mut HashSet<(ValueKind, ValueKind)>,
+  ) -> Option<ValueKind> {
+    // Guard against recursive/cyclic revisits for empty/optional normalization.
+    let key = (expected.clone(), actual.clone());
+    if !seen.insert(key.clone()) {
+      return if expected == actual { Some(expected.clone()) } else { None };
+    }
+
+    let out = match (expected, actual) {
+      (a, b) if a == b => Some(a.clone()),
+      (ValueKind::Empty, ValueKind::Empty) => Some(ValueKind::Empty),
+      (ValueKind::Empty, other) | (other, ValueKind::Empty) => Some(optionalize(other.clone())),
+      (ValueKind::Option(a), ValueKind::Option(b)) if a == b => Some(ValueKind::Option(a.clone())),
+      (ValueKind::Option(a), ValueKind::Option(b)) => join_set_element_kinds_inner(a, b, seen).map(optionalize),
+      (ValueKind::Option(a), ValueKind::Empty) | (ValueKind::Empty, ValueKind::Option(a)) => Some(ValueKind::Option(a.clone())),
+      (ValueKind::Option(a), b) | (b, ValueKind::Option(a)) => {
+        if a.as_ref() == b {
+          Some(ValueKind::Option(a.clone()))
+        } else if matches!(b, ValueKind::Empty) {
+          Some(ValueKind::Option(a.clone()))
+        } else {
+          join_set_element_kinds_inner(a, b, seen).map(optionalize)
+        }
+      }
+      (ValueKind::Set(a, _), ValueKind::Set(b, _)) => {
+        join_set_element_kinds_inner(a, b, seen).map(|k| ValueKind::Set(Box::new(k), None))
+      }
+      (ValueKind::Record(a_fields), ValueKind::Record(b_fields)) => {
+        let mut out = Vec::new();
+        let mut names: Vec<std::string::String> = a_fields.iter().map(|(n, _)| n.clone()).collect();
+        for (name, _) in b_fields.iter() {
+          if !names.contains(name) {
+            names.push(name.clone());
+          }
+        }
+        for name in names {
+          let a_kind = a_fields.iter().find(|(n, _)| n == &name).map(|(_, k)| k.clone()).unwrap_or(ValueKind::Empty);
+          let b_kind = b_fields.iter().find(|(n, _)| n == &name).map(|(_, k)| k.clone()).unwrap_or(ValueKind::Empty);
+          let joined = join_set_element_kinds_inner(&a_kind, &b_kind, seen)?;
+          out.push((name, joined));
+        }
+        Some(ValueKind::Record(out))
+      }
+      (ValueKind::Tuple(a), ValueKind::Tuple(b)) if a.len() == b.len() => {
+        let mut out = Vec::with_capacity(a.len());
+        for (ak, bk) in a.iter().zip(b.iter()) {
+          out.push(join_set_element_kinds_inner(ak, bk, seen)?);
+        }
+        Some(ValueKind::Tuple(out))
+      }
+      _ => None,
+    };
+
+    seen.remove(&key);
+    out
+  }
+
+  let mut seen: HashSet<(ValueKind, ValueKind)> = HashSet::new();
+  let out = join_set_element_kinds_inner(expected, actual, &mut seen);
+  out
+}
 
 pub fn structure(strct: &Structure, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   match strct {
@@ -206,13 +281,17 @@ register_descriptor!{
 }
 
 #[cfg(feature = "set")]
-pub struct SetDefine {}
+pub struct SetDefine {
+  pub kind: ValueKind,
+}
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
 impl NativeFunctionCompiler for SetDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    let mut set = MechSet::from_vec(arguments.clone());
+    set.kind = self.kind.clone();
     Ok(Box::new(ValueSet {
-      out: Ref::new(MechSet::from_vec(arguments.clone())),
+      out: Ref::new(set),
     }))
   }
 }
@@ -221,7 +300,7 @@ impl NativeFunctionCompiler for SetDefine {
 register_descriptor!{
   FunctionCompilerDescriptor {
     name: "set/define",
-    ptr: &SetDefine{},
+    ptr: &SetDefine{ kind: ValueKind::Empty },
   }
 }
 
@@ -232,23 +311,31 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
     let result = expression(el, env, p)?;
     elements.push(result.clone());
   }
-  let element_kind = if elements.len() > 0 {
+  let mut element_kind = if elements.len() > 0 {
     elements[0].kind()
   } else {
     ValueKind::Empty
   };
-  // Make sure all elements have the same kind
+  // Join element kinds so empty placeholders (`_`) can coexist with concrete values.
   for el in &elements {
-    if el.kind() != element_kind {
-      return Err(MechError::new(
-        SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind: el.kind().clone()},
-        None
-      ).with_compiler_loc());
+    let actual_kind = el.kind();
+    if actual_kind != element_kind {
+      match join_set_element_kinds(&element_kind, &actual_kind) {
+        Some(joined_kind) => {
+          element_kind = joined_kind
+        }
+        None => {
+          return Err(MechError::new(
+            SetKindMismatchError{expected_kind: element_kind.clone(), actual_kind},
+            None
+          ).with_compiler_loc());
+        }
+      }
     }
   }
   #[cfg(feature = "functions")]
   {
-    let new_fxn = SetDefine {}.compile(&elements)?;
+    let new_fxn = SetDefine { kind: element_kind.clone() }.compile(&elements)?;
     new_fxn.solve();
     let out = new_fxn.out();
     let plan = p.plan();
@@ -258,7 +345,9 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
   #[cfg(not(feature = "functions"))]
   {
-    Ok(Value::Set(Ref::new(MechSet::from_vec(elements))))
+    let mut set = MechSet::from_vec(elements);
+    set.kind = element_kind;
+    Ok(Value::Set(Ref::new(set)))
   }
 }
 
@@ -446,18 +535,34 @@ pub fn table_column(r: &TableColumn, env: Option<&Environment>, p: &Interpreter)
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "matrix")]
+fn is_composite_matrix_cell(value: &Value) -> bool {
+  match value {
+    #[cfg(feature = "record")]
+    Value::Record(_) => true,
+    #[cfg(feature = "map")]
+    Value::Map(_) => true,
+    #[cfg(feature = "tuple")]
+    Value::Tuple(_) => true,
+    #[cfg(feature = "set")]
+    Value::Set(_) => true,
+    #[cfg(feature = "table")]
+    Value::Table(_) => true,
+    Value::MatrixValue(_) => true,
+    _ => false,
+  }
+}
+
+#[cfg(feature = "matrix")]
 pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut shape = vec![0, 0];
   let mut col: Vec<Value> = Vec::new();
-  let mut kind = ValueKind::Empty;
   #[cfg(feature = "matrix_horzcat")]
   {
     for row in &m.rows {
       let result = matrix_row(row, env, p)?;
       if shape == vec![0,0] {
         shape = result.shape();
-        kind = result.kind();
         col.push(result);
       } else if shape[1] == result.shape()[1] {
         col.push(result);
@@ -477,6 +582,38 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
   }
   #[cfg(feature = "matrix_vertcat")]
   {
+    if col.iter().any(|value| matches!(value, Value::MatrixValue(_))) {
+      let mut values = Vec::new();
+      let mut expected_cols: Option<usize> = None;
+      let mut row_count = 0;
+
+      for row_value in col {
+        let row_matrix = match row_value {
+          Value::MatrixValue(matrix) => matrix,
+          other => Matrix::from_vec(vec![other], 1, 1),
+        };
+        let row_shape = row_matrix.shape();
+        let row_cols = row_shape[1];
+
+        match expected_cols {
+          Some(cols) if cols != row_cols => {
+            return Err(MechError::new(
+              DimensionMismatch { dims: vec![cols, row_cols] },
+              None
+            ).with_compiler_loc());
+          }
+          None => expected_cols = Some(row_cols),
+          _ => (),
+        }
+
+        row_count += row_shape[0];
+        values.extend(row_matrix.as_vec());
+      }
+
+      let cols = expected_cols.unwrap_or(0);
+      return Ok(Value::MatrixValue(Matrix::from_vec(values, row_count, cols)));
+    }
+
     let new_fxn = MatrixVertCat{}.compile(&col)?;
     new_fxn.solve();
     let out = new_fxn.out();
@@ -495,14 +632,12 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
-  let mut kind = ValueKind::Empty;
   let mut saw_empty = false;
   for col in &r.columns {
     let result = matrix_column(col, env, p)?;
     saw_empty |= matches!(result.kind(), ValueKind::Empty);
     if shape == vec![0,0] {
       shape = result.shape();
-      kind = result.kind();
       row.push(result);
     } else if shape[0] == result.shape()[0] {
       row.push(result);
@@ -513,6 +648,10 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
         ).with_compiler_loc()
       );
     }
+  }
+  if row.iter().any(is_composite_matrix_cell) {
+    let cols = row.len();
+    return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, cols)));
   }
   if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
     return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));

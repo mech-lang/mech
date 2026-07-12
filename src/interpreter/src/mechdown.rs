@@ -1,8 +1,6 @@
 use crate::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
-
 // Mechdown
 // ----------------------------------------------------------------------------
 
@@ -91,7 +89,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       } else {
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
-        let mut new_sub_interpreter =  Interpreter::new(code_id);
+        let mut new_sub_interpreter =  Interpreter::new(code_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
 
         let mut pp = sub_interpreters
@@ -171,7 +169,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       if let Some(mika_section) = s {
         let mika_interp_id = mika_interpreter_id(p.id, m, s);
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
-        let mut new_sub_interpreter = Interpreter::new(mika_interp_id);
+        let mut new_sub_interpreter = Interpreter::new(mika_interp_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
         let pp = sub_interpreters
           .entry(mika_interp_id)
@@ -203,16 +201,7 @@ fn eval_fenced_code_block(
       Ok(value) => out = value,
       Err(err) => {
         if isolate_errors {
-          #[cfg(feature = "pretty_print")]
-          return Ok(Value::String(Ref::new(format!(
-            "{MECH_ERROR_HTML_PREFIX}{}",
-            err.to_html()
-          ))));
-          #[cfg(not(feature = "pretty_print"))]
-          return Ok(Value::String(Ref::new(format!(
-            "{MECH_ERROR_HTML_PREFIX}{}",
-            err.full_chain_message()
-          ))));
+          return Ok(Value::String(Ref::new(err.full_chain_message())));
         }
         return Err(err);
       }
@@ -222,16 +211,7 @@ fn eval_fenced_code_block(
         Ok(_) => {}
         Err(err) => {
           if isolate_errors {
-            #[cfg(feature = "pretty_print")]
-            return Ok(Value::String(Ref::new(format!(
-              "{MECH_ERROR_HTML_PREFIX}{}",
-              err.to_html()
-            ))));
-            #[cfg(not(feature = "pretty_print"))]
-            return Ok(Value::String(Ref::new(format!(
-              "{MECH_ERROR_HTML_PREFIX}{}",
-              err.full_chain_message()
-            ))));
+            return Ok(Value::String(Ref::new(err.full_chain_message())));
           }
           return Err(err);
         }
@@ -288,10 +268,112 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Empty)
 }
 
+#[cfg(feature = "functions")]
+fn module_import_item_path(item: &ModuleImportPath) -> String {
+  item.to_string()
+}
+
+
+#[cfg(feature = "functions")]
+fn context_export_error(module: &str, item: &str) -> MechError {
+  MechError::new(
+    GenericError { msg: format!("Module export `{module}/{item}` is a context export; import it with `+> @name := {module}/{item}`") },
+    None,
+  ).with_compiler_loc()
+}
+
+#[cfg(feature = "functions")]
+fn is_context_export(p: &Interpreter, module: &str, item: &str) -> bool {
+  p.module_manifests
+    .borrow()
+    .export(module, item)
+    .is_some_and(|export| export.kind == ModuleManifestExportKind::Context)
+}
+
+#[cfg(feature = "functions")]
+pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<Value> {
+  let module = import.module.to_string();
+  match import.kind {
+    ModuleImportKind::Module => {
+      if import.alias.is_some() {
+        return Err(MechError::new(
+          GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      load_module(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Item => {
+      let item = import.item.as_ref().ok_or_else(|| {
+        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+      })?;
+      let item = module_import_item_path(item);
+      match &import.alias {
+        None => {
+          if is_context_export(p, &module, &item) {
+            return Err(context_export_error(&module, &item));
+          }
+          import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+        }
+        Some(ModuleImportAlias::Value(alias)) => {
+          if is_context_export(p, &module, &item) {
+            return Err(context_export_error(&module, &item));
+          }
+          import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
+        }
+        Some(ModuleImportAlias::Context(alias)) => {
+          p.bind_context_export(alias, &module, &item)?;
+        }
+      }
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Glob => {
+      if import.alias.is_some() {
+        return Err(MechError::new(
+          GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      if p.module_manifests.borrow().manifest(&module).is_some_and(|manifest| manifest.exports.iter().any(|export| export.kind == ModuleManifestExportKind::Context)) {
+        return Err(MechError::new(
+          GenericError { msg: "Glob imports do not support context exports; import context exports explicitly with `+> @name := module/item`".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      import_module_glob(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Group => {
+      let group_items = import.group_items.as_ref().ok_or_else(|| {
+        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+      })?;
+
+      for group_item in group_items {
+        let item = module_import_item_path(&group_item.item);
+        if is_context_export(p, &module, &item) {
+          return Err(MechError::new(
+            GenericError { msg: format!("Grouped imports do not support context exports; import `{module}/{item}` with `+> @name := {module}/{item}`") },
+            None,
+          ).with_compiler_loc());
+        }
+        import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      }
+      Ok(Value::Empty)
+    }
+  }
+}
+
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   let out = match &code {
     MechCode::Expression(expr) => expression(&expr, None, p),
-    MechCode::Statement(stmt) => statement(&stmt, None, p),
+    MechCode::Statement(stmt) => {
+      #[cfg(feature = "subscript_formula")]
+      reset_current_string_access_expression_live(p);
+      statement(&stmt, None, p)
+    },
+    #[cfg(feature = "functions")]
+    MechCode::Import(import) => module_import_runtime(import, p),
     #[cfg(feature = "state_machines")]
     MechCode::FsmSpecification(fsm_spec) => {
       crate::state_machines::register_fsm_specification(fsm_spec, p)?;

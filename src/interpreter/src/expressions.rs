@@ -36,7 +36,12 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environment) -> MResult<()> {
+pub fn pattern_match_value(
+    pattern: &Pattern,
+    value: &Value,
+    env: &mut Environment,
+    p: &Interpreter,
+) -> MResult<()> {
     match pattern {
         Pattern::Wildcard => Ok(()),
         Pattern::Expression(expr) => match expr {
@@ -59,7 +64,22 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
                     }
                 }
             }
-            _ => todo!("Unsupported expression in pattern"),
+            _ => {
+                let expected = expression(expr, Some(env), p)?;
+                if detach_comprehension_value(&expected) == detach_comprehension_value(value) {
+                    Ok(())
+                } else {
+                    Err(MechError::new(
+                        PatternMatchError {
+                            var: "<expression>".to_string(),
+                            expected: expected.to_string(),
+                            found: value.to_string(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc())
+                }
+            }
         },
         #[cfg(feature = "tuple")]
         Pattern::Tuple(pat_tuple) => match value {
@@ -76,7 +96,7 @@ pub fn pattern_match_value(pattern: &Pattern, value: &Value, env: &mut Environme
                     .with_compiler_loc());
                 }
                 for (pttrn, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
-                    pattern_match_value(pttrn, val, env)?;
+                    pattern_match_value(pttrn, val, env, p)?;
                 }
                 Ok(())
             }
@@ -113,7 +133,7 @@ fn comprehension_environments(
                     let collection = expression(expr, Some(env), &new_p)?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
-                        if pattern_match_value(pttrn, &elmnt, &mut new_env).is_ok() {
+                        if pattern_match_value(pttrn, &elmnt, &mut new_env, &new_p).is_ok() {
                             new_envs.push(new_env);
                         }
                     }
@@ -406,7 +426,7 @@ pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResul
             .borrow()
             .function_compilers
             .get(&set_define_id)
-            .copied()
+            .cloned()
     };
     match set_define {
         Some(compiler) => execute_native_function_compiler(compiler, &values, p),
@@ -435,7 +455,7 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) 
             .borrow()
             .function_compilers
             .get(&horzcat_id)
-            .copied()
+            .cloned()
     };
     match horzcat {
         Some(compiler) => execute_native_function_compiler(compiler, &values, p),
@@ -485,28 +505,55 @@ pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) 
     Ok(res)
 }
 
+fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
+    match context {
+        Some(context) => format!("@{}/{}", context.to_string(), name.to_string()),
+        None => name.to_string(),
+    }
+}
+
+fn addressed_identifier_hash(name: &Identifier, context: &Option<Identifier>) -> u64 {
+    match context {
+        Some(_) => hash_str(&addressed_identifier_name(name, context)),
+        None => name.hash(),
+    }
+}
+
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
 pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-    let id = slc.name.hash();
+    let id = addressed_identifier_hash(&slc.name, &slc.context);
+    let name = addressed_identifier_name(&slc.name, &slc.context);
     let val: Value = if let Some(env) = env {
         if let Some(val) = env.get(&id) {
             val.clone()
         } else {
             // fallback to global symbols
-            match p.symbols().borrow().get(id) {
-                Some(val) => Value::MutableReference(val.clone()),
-                None => {
-                    return Err(MechError::new(UndefinedVariableError { id }, None)
-                        .with_compiler_loc()
-                        .with_tokens(slc.tokens()));
+            {
+                let symbols = p.symbols();
+                let symbols_brrw = symbols.borrow();
+                match symbols_brrw.get(id) {
+                    Some(val) => match symbols_brrw.get_mutable(id) {
+                        Some(_) => Value::MutableReference(val.clone()),
+                        None => val.borrow().clone(),
+                    },
+                    None => {
+                        return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
+                            .with_compiler_loc()
+                            .with_tokens(slc.tokens()));
+                    }
                 }
             }
         }
     } else {
-        match p.symbols().borrow().get(id) {
-            Some(val) => Value::MutableReference(val.clone()),
+        let symbols = p.symbols();
+        let symbols_brrw = symbols.borrow();
+        match symbols_brrw.get(id) {
+            Some(val) => match symbols_brrw.get_mutable(id) {
+                Some(_) => Value::MutableReference(val.clone()),
+                None => val.borrow().clone(),
+            },
             None => {
-                return Err(MechError::new(UndefinedVariableError { id }, None)
+                return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()
                     .with_tokens(slc.tokens()));
             }
@@ -543,6 +590,173 @@ pub fn subscript_formula_ix(
             result.as_index()
         }
         _ => unreachable!(),
+    }
+}
+
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn reset_current_string_access_expression_live(p: &Interpreter) {
+    *p.current_string_access_expression_live.borrow_mut() = false;
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn current_string_access_expression_live(p: &Interpreter) -> bool {
+    *p.current_string_access_expression_live.borrow()
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn take_current_string_access_expression_live(p: &Interpreter) -> bool {
+    let value = *p.current_string_access_expression_live.borrow();
+    *p.current_string_access_expression_live.borrow_mut() = false;
+    value
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn mark_current_string_access_expression_live(p: &Interpreter) {
+    *p.current_string_access_expression_live.borrow_mut() = true;
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_scalar_addr(value: &Value) -> Option<usize> {
+    match value {
+        Value::MutableReference(reference) => string_access_scalar_addr(&reference.borrow()),
+        Value::Typed(value, _) => string_access_scalar_addr(value),
+        Value::String(value) => Some(value.addr()),
+        Value::Index(value) => Some(value.addr()),
+
+        #[cfg(feature = "u8")]
+        Value::U8(value) => Some(value.addr()),
+        #[cfg(feature = "u16")]
+        Value::U16(value) => Some(value.addr()),
+        #[cfg(feature = "u32")]
+        Value::U32(value) => Some(value.addr()),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Some(value.addr()),
+        #[cfg(feature = "u128")]
+        Value::U128(value) => Some(value.addr()),
+
+        #[cfg(feature = "i8")]
+        Value::I8(value) => Some(value.addr()),
+        #[cfg(feature = "i16")]
+        Value::I16(value) => Some(value.addr()),
+        #[cfg(feature = "i32")]
+        Value::I32(value) => Some(value.addr()),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => Some(value.addr()),
+        #[cfg(feature = "i128")]
+        Value::I128(value) => Some(value.addr()),
+
+        #[cfg(feature = "f32")]
+        Value::F32(value) => Some(value.addr()),
+        #[cfg(feature = "f64")]
+        Value::F64(value) => Some(value.addr()),
+
+        _ => None,
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn mark_string_access_value_live(p: &Interpreter, value: &Value) {
+    if let Some(addr) = string_access_scalar_addr(value) {
+        p.string_access_live_values.borrow_mut().insert(addr);
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn string_access_value_is_marked_live(p: &Interpreter, value: &Value) -> bool {
+    string_access_scalar_addr(value)
+        .map(|addr| p.string_access_live_values.borrow().contains(&addr))
+        .unwrap_or(false)
+}
+
+#[cfg(feature = "subscript_formula")]
+fn subscript_formula_is_mutable_symbol(
+    sbscrpt: &Subscript,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> bool {
+    if env.is_some() {
+        return false;
+    }
+    let Subscript::Formula(fctr) = sbscrpt else {
+        return false;
+    };
+    let Factor::Expression(expr) = fctr else {
+        return false;
+    };
+    let Expression::Var(var) = expr.as_ref() else {
+        return false;
+    };
+    let id = addressed_identifier_hash(&var.name, &var.context);
+    let state_brrw = p.state.borrow();
+    let symbols_brrw = state_brrw.symbol_table.borrow();
+    symbols_brrw.get_mutable(id).is_some()
+}
+
+#[cfg(feature = "subscript_formula")]
+fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &Interpreter) -> bool {
+    let state_brrw = p.state.borrow();
+    let symbols_brrw = state_brrw.symbol_table.borrow();
+    symbols_brrw
+        .mutable_variables
+        .values()
+        .any(|symbol| std::rc::Rc::ptr_eq(&symbol.0, &reference.0))
+}
+
+#[cfg(feature = "subscript_formula")]
+fn value_is_mutable_symbol_reference(value: &Value, p: &Interpreter) -> bool {
+    match value {
+        Value::MutableReference(reference) => mutable_reference_is_mutable_symbol(reference, p),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+fn mutable_reference_is_live_plan_output(reference: &MutableReference, p: &Interpreter) -> bool {
+    let current = reference.borrow();
+    string_access_value_is_marked_live(p, &current)
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_argument_is_live(value: &Value, p: &Interpreter) -> bool {
+    string_access_value_is_marked_live(p, value)
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn string_access_input_is_live(value: &Value, p: &Interpreter) -> bool {
+    value_is_mutable_symbol_reference(value, p) || string_access_argument_is_live(value, p)
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_source_argument(value: &Value, p: &Interpreter) -> Value {
+    match value {
+        Value::MutableReference(reference)
+            if matches!(value.deref_kind(), ValueKind::String)
+                && !mutable_reference_is_mutable_symbol(reference, p)
+                && !mutable_reference_is_live_plan_output(reference, p) =>
+        {
+            reference.borrow().clone()
+        }
+        _ => value.clone(),
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+fn string_access_index_argument(
+    raw_index: Value,
+    sbscrpt: &Subscript,
+    env: Option<&Environment>,
+    p: &Interpreter,
+) -> MResult<Value> {
+    match &raw_index {
+        Value::MutableReference(reference)
+            if subscript_formula_is_mutable_symbol(sbscrpt, env, p)
+                || mutable_reference_is_live_plan_output(reference, p) =>
+        {
+            reference.borrow().as_index()?;
+            Ok(raw_index)
+        }
+        _ => raw_index.as_index(),
     }
 }
 
@@ -675,13 +889,38 @@ pub fn subscript(
         }
         #[cfg(feature = "subscript_slice")]
         Subscript::Bracket(subs) => {
-            let mut fxn_input = vec![val.clone()];
+            let string_source_is_live = matches!(val.deref_kind(), ValueKind::String)
+                && string_access_argument_is_live(val, p);
+            let mut fxn_input = if matches!(val.deref_kind(), ValueKind::String) {
+                vec![string_access_source_argument(val, p)]
+            } else {
+                vec![val.clone()]
+            };
             match &subs[..] {
                 #[cfg(feature = "subscript_formula")]
                 [Subscript::Formula(ix)] => {
-                    let result = subscript_formula_ix(&subs[0], env, p)?;
-                    let shape = result.shape();
-                    fxn_input.push(result);
+                    let raw_index = subscript_formula(&subs[0], env, p)?;
+                    let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
+                        string_access_index_argument(raw_index, &subs[0], env, p)?
+                    } else {
+                        raw_index.as_index()?
+                    };
+                    if matches!(val.deref_kind(), ValueKind::String)
+                        && matches!(fxn_input.first(), Some(Value::String(_)))
+                        && matches!(&index_arg, Value::Index(_))
+                    {
+                        let mode = if current_string_access_expression_live(p)
+                            || string_source_is_live
+                            || string_access_argument_is_live(&index_arg, p)
+                        {
+                            StringAccessCompileMode::LiveDirect
+                        } else {
+                            StringAccessCompileMode::Constant
+                        };
+                        set_next_string_access_compile_mode(mode);
+                    }
+                    let shape = index_arg.shape();
+                    fxn_input.push(index_arg);
                     match shape[..] {
                         [1, 1] => plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?),
                         #[cfg(feature = "subscript_range")]
@@ -881,7 +1120,22 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
         }
     };
 
-    let id = v.name.hash();
+    let id = addressed_identifier_hash(&v.name, &v.context);
+    let name = addressed_identifier_name(&v.name, &v.context);
+    let mark_if_live_symbol = |value: &MutableReference| {
+        #[cfg(feature = "subscript_formula")]
+        {
+            let state_brrw = p.state.borrow();
+            let symbols_brrw = state_brrw.symbol_table.borrow();
+            if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(p, &value.borrow()) {
+                mark_current_string_access_expression_live(p);
+            }
+        }
+        #[cfg(not(feature = "subscript_formula"))]
+        {
+            let _ = value;
+        }
+    };
     match env {
         Some(env) => match env.get(&id) {
             Some(value) => maybe_cast_to_kind(value.clone()),
@@ -892,8 +1146,11 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                 drop(symbols_brrw);
                 drop(state_brrw);
                 match symbol_value {
-                    Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                    None => Err(MechError::new(UndefinedVariableError { id }, None)
+                    Some(value) => {
+                        mark_if_live_symbol(&value);
+                        maybe_cast_to_kind(Value::MutableReference(value))
+                    },
+                    None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                         .with_compiler_loc()
                         .with_tokens(v.tokens())),
                 }
@@ -906,8 +1163,11 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
             drop(symbols_brrw);
             drop(state_brrw);
             match symbol_value {
-                Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                None => Err(MechError::new(UndefinedVariableError { id }, None)
+                Some(value) => {
+                    mark_if_live_symbol(&value);
+                    maybe_cast_to_kind(Value::MutableReference(value))
+                },
+                None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()
                     .with_tokens(v.tokens())),
             }
@@ -1094,7 +1354,7 @@ fn infer_missing_enum_match_patterns(
         candidates[0]
     };
     let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
-    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
+    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).cloned().collect();
     let names_brrw = enum_def.names.borrow();
     let missing_patterns = enum_def
         .variants
@@ -1330,18 +1590,32 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
     #[cfg(feature = "math_neg")]
     Factor::Negate(neg) => {
       let value = factor(neg, env, p)?;
+      #[cfg(feature = "subscript_formula")]
+      let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
       let new_fxn = MathNegate {}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
+      #[cfg(feature = "subscript_formula")]
+      if value_is_live {
+        mark_current_string_access_expression_live(p);
+        mark_string_access_value_live(p, &out);
+      }
       p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     #[cfg(feature = "logic_not")]
     Factor::Not(neg) => {
       let value = factor(neg, env, p)?;
+      #[cfg(feature = "subscript_formula")]
+      let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
       let new_fxn = LogicNot {}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
+      #[cfg(feature = "subscript_formula")]
+      if value_is_live {
+        mark_current_string_access_expression_live(p);
+        mark_string_access_value_live(p, &out);
+      }
       p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
@@ -1349,9 +1623,16 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
     Factor::Transpose(fctr) => {
       use mech_matrix::MatrixTranspose;
       let value = factor(fctr, env, p)?;
+      #[cfg(feature = "subscript_formula")]
+      let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
       let new_fxn = MatrixTranspose {}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
+      #[cfg(feature = "subscript_formula")]
+      if value_is_live {
+        mark_current_string_access_expression_live(p);
+        mark_string_access_value_live(p, &out);
+      }
       p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
@@ -1366,6 +1647,10 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op, rhs) in &trm.rhs {
     let rhs = factor(&rhs, env, p)?;
+    #[cfg(feature = "subscript_formula")]
+    let new_fxn_is_live = current_string_access_expression_live(p)
+      || string_access_input_is_live(&lhs, p)
+      || string_access_input_is_live(&rhs, p);
     let new_fxn: Box<dyn MechFunction> = match op {
       // Math
       FormulaOperator::AddSub(AddSubOp::Add) => match (&lhs, &rhs) {
@@ -1401,11 +1686,11 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       #[cfg(feature = "compare_eq")]
       FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_seq")]
-      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => CompareStrictEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_neq")]
       FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_sneq")]
-      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => CompareStrictNotEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_lte")]
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_gte")]
@@ -1489,6 +1774,11 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
     };
     new_fxn.solve();
     let res = new_fxn.out();
+    #[cfg(feature = "subscript_formula")]
+    if new_fxn_is_live {
+      mark_current_string_access_expression_live(p);
+      mark_string_access_value_live(p, &res);
+    }
     term_plan.push(new_fxn);
     lhs = res;
   }
@@ -1620,6 +1910,7 @@ impl MechErrorKind for UnhandledFormulaOperatorError {
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64,
+  pub name: String,
 }
 impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str {
@@ -1627,7 +1918,7 @@ impl MechErrorKind for UndefinedVariableError {
   }
 
   fn message(&self) -> String {
-    format!("Undefined variable: {}", self.id)
+    format!("Undefined variable `{}` (id: {})", self.name, self.id)
   }
 }
 #[derive(Debug, Clone)]

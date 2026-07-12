@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathExp2{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "exp2",
+  }
+}

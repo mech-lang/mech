@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathCot{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "cot",
+  }
+}

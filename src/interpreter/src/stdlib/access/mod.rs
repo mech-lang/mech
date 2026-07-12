@@ -12,6 +12,8 @@ pub mod table;
 pub mod tuple;
 #[cfg(feature = "map")]
 pub mod map;
+#[cfg(feature = "string")]
+pub mod string;
 
 #[cfg(feature = "matrix")]
 pub use self::matrix::*;
@@ -23,6 +25,8 @@ pub use self::table::*;
 pub use self::tuple::*;
 #[cfg(feature = "map")]
 pub use self::map::*;
+#[cfg(feature = "string")]
+pub use self::string::*;
 
 #[macro_use]
 use crate::stdlib::*;
@@ -42,6 +46,8 @@ impl NativeFunctionCompiler for AccessScalar {
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
       #[cfg(feature = "map")]
       ValueKind::Map(..) => MapAccess{}.compile(&arguments),
+      #[cfg(feature = "string")]
+      ValueKind::String => StringAccessScalar{}.compile(&arguments),
       _ => Err(MechError::new(UnhandledFunctionArgumentKind2 { arg: (src.kind(), index.kind()), fxn_name: "access/scalar".to_string() }, None).with_compiler_loc()),
     }
   }

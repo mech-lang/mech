@@ -25,7 +25,106 @@ jobs:
       - name: Build and test
         run: |
           cargo clean
-          cargo build --bin mech
+
+          # Linked-stdlib CLI build for examples that import named modules.
+          cargo build --bin mech --features linked_stdlib
+          ./target/debug/mech test examples/working
+
+          # Prelude-only no-default feature checks.
           cargo build --no-default-features
-          cargo test interpret --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"
-          cargo test bytecode --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"
+          cargo build --no-default-features --features build
+          cargo build --no-default-features --features test
+          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+
+          # Direct package feature-boundary checks.
+          cargo check -p mech-core --no-default-features --features mika
+          cargo check -p mech-core --no-default-features --features "mika serde"
+          cargo check -p mech-syntax --no-default-features --features mika
+          cargo check -p mech-interpreter --no-default-features --features program
+          cargo check -p mech-program --no-default-features --features program
+
+          cargo test interpret
+          cargo test bytecode
+
+          # Narrow ABI dynamic module smoke test.
+          cargo test --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module"
+          cargo build --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir target/dynamic-modules
+          mkdir -p target/mech-modules
+          cp target/dynamic-modules/debug/libmech_combinatorics.so target/mech-modules/libmech_module_combinatorics.so
+          MECH_MODULE_PATH=target/mech-modules cargo test --test dynamic_combinatorics --no-default-features --features "base dynamic-modules f64"
+          cargo test --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module"
+          cargo build --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir target/dynamic-modules
+          cp target/dynamic-modules/debug/libmech_math.so target/mech-modules/libmech_module_math.so
+          MECH_MODULE_PATH=target/mech-modules cargo test --test dynamic_math --no-default-features --features "base dynamic-modules f64"
+
+          # Runtime package tests.
+          cargo test -p mech-runtime --lib --tests
+
+          # CLI host and context-send regression coverage.
+          cargo test -p mech-syntax --test context_parser
+          cargo test -p mech-runtime --test module_smoke
+          cargo test -p mech-host-cli --features provider --test provider
+          cargo test --features "run repl pretty_print" --test mech_cli_host
+          cargo test --features "run repl pretty_print" cli::run::tests
+          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
+          cargo check -p mech-host-cli --no-default-features
+
+  run-only:
+    name: Run-only CLI
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build run-only CLI
+        run: cargo build --bin mech --no-default-features --features run
+
+      - name: Build run-only CLI with pretty print
+        run: cargo build --bin mech --no-default-features --features "run pretty_print"
+
+  windows-cli:
+    name: Windows CLI
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build default Windows CLI
+        run: cargo build --bin mech
+
+      - name: Build REPL-only Windows CLI
+        run: cargo build --bin mech --no-default-features --features repl
+
+      - name: Build REPL-plus-Mika Windows CLI
+        run: cargo build --bin mech --no-default-features --features "repl mika"
+
+  dynamic-modules:
+    name: Dynamic modules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run dynamic module smoke path
+        run: bash scripts/test-dynamic-modules.sh

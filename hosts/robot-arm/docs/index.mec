@@ -1,0 +1,40 @@
+Robot Arm Host
+===============================================================================
+
+The robot arm host is a demo provider used to exercise non-browser host contexts.
+
+It is a mock/demo host, not a general robotics API.
+
+1. Contexts
+-------------------------------------------------------------------------------
+
+```text
+robot://{instance}/commands
+robot://{instance}/state
+```
+
+The command context supports provider-specific operations:
+
+- `move`
+- `grip`
+- `home`
+
+The state context supports `read`.
+
+2. Pages
+-------------------------------------------------------------------------------
+
+- [Manifest](manifest.html)
+- [Commands](commands.html)
+- [State](state.html)
+- [Examples](examples.html)
+
+3. Examples
+-------------------------------------------------------------------------------
+
+```text
+hosts/robot-arm/examples/robot-arm-demo/
+hosts/robot-arm/examples/browser-robot-arm-demo/
+```
+
+See [Robot Arm Demo](/guides/robot-arm-demo.html).

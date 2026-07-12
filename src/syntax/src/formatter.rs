@@ -11,6 +11,7 @@ struct TitleSlots {
   date: String,
   hero: String,
   kicker: String,
+  section: String,
   summary: String,
   next: String,
   previous: String,
@@ -199,6 +200,8 @@ impl Formatter {
         .replace("{{AUTHOR}}", &title_slots.author)
         .replace("{{DATE}}", &title_slots.date)
         .replace("{{KICKER}}", &title_slots.kicker)
+        .replace("{{SECTION}}", &title_slots.section)
+        .replace("{{VERSION}}", env!("CARGO_PKG_VERSION"))
         .replace("{{NEXT}}", &title_slots.next)
         .replace("{{PREVIOUS}}", &title_slots.previous)
         .replace("{{HERO}}", &title_slots.hero)
@@ -228,6 +231,7 @@ impl Formatter {
           date: title.date.as_ref().map(|p| self.inline_para_el(p, "mech-date")).unwrap_or_default(),
           hero: title.hero.as_ref().map(|h| self.hero_el(h)).unwrap_or_default(),
           kicker: title.kicker.as_ref().map(|p| self.inline_para_el(p, "hero-kicker")).unwrap_or_default(),
+          section: title.section.as_ref().map(|p| self.inline_para_el(p, "mech-section")).unwrap_or_default(),
           summary: title.summary.as_ref().map(|p| self.synopsis_el(p)).unwrap_or_default(),
           next: title.next.as_ref().map(|p| self.inline_para_el(p, "mech-next")).unwrap_or_default(),
           previous: title.previous.as_ref().map(|p| self.inline_para_el(p, "mech-previous")).unwrap_or_default(),
@@ -680,6 +684,7 @@ impl Formatter {
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::Import(import) => self.module_import(import),
         MechCode::Statement(stmt) => self.statement(stmt),
         x => format!("{{{:?}}}", x)
       };
@@ -1540,8 +1545,15 @@ impl Formatter {
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::Import(import) => self.module_import(import),
         MechCode::Statement(stmt) => self.statement(stmt),
-        x => todo!("Unhandled MechCode: {:#?}", x),
+        MechCode::Error(token, range) => {
+          if self.html {
+            format!("<span class=\"mech-error\" title=\"Error at {:?}\">{}</span>", range, token.to_string())
+          } else {
+            format!("{{ERROR: {} at {:?}}}", token.to_string(), range)
+          }
+        },
       };
       let formatted_comment = match cmmnt {
         Some(cmmt) => self.comment(cmmt),
@@ -1729,13 +1741,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-tuple-struct\">
-        <span class=\"mech-tuple-struct-sigil\">:</span>
-        <span class=\"mech-tuple-struct-name\">{}</span>
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-tuple-struct-patterns\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-      </span>",name,patterns)
+      format!(r#"<span class="mech-tuple-struct"><span class="mech-tuple-struct-sigil">:</span><span class="mech-tuple-struct-name">{}</span><span class="mech-left-paren">(</span><span class="mech-tuple-struct-patterns">{}</span><span class="mech-right-paren">)</span></span>"#,name,patterns)
     } else {
       format!(":{}({})", name, patterns)
     }
@@ -1752,11 +1758,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-pattern-tuple\">
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-patterns\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-      </span>",patterns)
+      format!(r#"<span class="mech-pattern-tuple"><span class="mech-left-paren">(</span><span class="mech-patterns">{}</span><span class="mech-right-paren">)</span></span>"#,patterns)
     } else {
       format!("({})", patterns)
     }
@@ -1840,20 +1842,40 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<div class=\"mech-fsm-specification\">
-      <div class=\"mech-fsm-specification-header\">
-        <span class=\"mech-fsm-sigil\">#</span>
-        <span class=\"mech-fsm-name\">{}</span>
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-fsm-input\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-        <span class=\"mech-fsm-output\">{}</span>
-        <span class=\"mech-fsm-define-op\">:=</span>
+      format!(r#"<div class="mech-fsm-specification">
+      <div class="mech-fsm-specification-header">
+        <span class="mech-fsm-sigil">#</span><span class="mech-fsm-name">{}</span><span class="mech-left-paren">(</span><span class="mech-fsm-input">{}</span><span class="mech-right-paren">)</span><span class="mech-fsm-output">{}</span><span class="mech-fsm-define-op">:=</span>
       </div>
-      <div class=\"mech-fsm-states\">{}</div>
-      </div>",name,input,output,states)
+      <div class="mech-fsm-states">{}</div>
+      </div>"#,name,input,output,states)
     } else {
       format!("#{}({}){} {}\n{}", name, input, output, ":=", states)
+    }
+  }
+
+  pub fn module_import(&mut self, node: &ModuleImport) -> String {
+    match node.kind {
+      ModuleImportKind::Module => format!("+> {}", node.module.to_string()),
+      ModuleImportKind::Item => {
+        let item = node.item.as_ref().map(|item| item.to_string()).unwrap_or_default();
+
+        if let Some(alias) = &node.alias {
+          format!("+> {} := {}/{}", alias.to_string(), node.module.to_string(), item)
+        } else {
+          format!("+> {}/{}", node.module.to_string(), item)
+        }
+      }
+      ModuleImportKind::Glob => format!("+> {}/*", node.module.to_string()),
+      ModuleImportKind::Group => {
+        let items = node.group_items.as_ref().map(|group_items| {
+          group_items.iter()
+            .map(|group_item| group_item.item.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
+        }).unwrap_or_default();
+
+        format!("+> {}/{{{}}}", node.module.to_string(), items)
+      }
     }
   }
 
@@ -1951,17 +1973,15 @@ impl Formatter {
       None => {}
     }
     if self.html {
-      format!("<div class=\"mech-state-definition\">
-      <span class=\"mech-state-name\"><span class=\"mech-state-name-sigil\">:</span>{}</span>
-      <span class=\"mech-left-paren\">(</span>
-      <span class=\"mech-state-variables\">{}</span>
-      <span class=\"mech-right-paren\">)</span>
-      </div>",name,state_variables)
+      format!(r#"<div class="mech-state-definition">
+        <span class="mech-state-name"><span class="mech-state-name-sigil">:</span>{}</span><span class="mech-left-paren">(</span><span class="mech-state-variables">{}</span><span class="mech-right-paren">)</span>
+      </div>"#,name,state_variables)
     } else {
       format!("{}({})", name, state_variables)
     }
   }
 
+  #[cfg(feature = "variable_define")]
   pub fn variable_define(&mut self, node: &VariableDefine) -> String {
     let mut mutable = if node.mutable {
       "~".to_string()
@@ -1971,27 +1991,136 @@ impl Formatter {
     let var = self.var(&node.var);
     let expression = self.expression(&node.expression);
     if self.html {
-      format!("<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-assign-op\">:=</span>{}</span>",mutable, var, expression)
+      format!("<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-define-op\">:=</span>{}</span>",mutable, var, expression)
     } else {
       format!("{}{} {} {}", mutable, var, ":=", expression)
     }
   }
 
+  #[cfg(feature = "invariant_define")]
+  pub fn invariant_define(&mut self, node: &InvariantDefine) -> String {
+    let name = node.name.to_string();
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!("<span class=\"mech-invariant-define\"><span class=\"mech-invariant-name\">{}</span><span class=\"mech-invariant-define-op\">:=</span><span class=\"mech-invariant-expression\">{}</span></span>", name, expression)
+    } else {
+      format!("{} {} {}", name, ":=", expression)
+    }
+  }
+
   pub fn statement(&mut self, node: &Statement) -> String {
     let s = match node {
+      Statement::ImportDeclaration(import) => format!("+> {}", import.specifier.to_string()),
+      Statement::ExportDeclaration(export) => format!("<+ {}", export.name.to_string()),
+      #[cfg(feature = "variable_define")]
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
+      #[cfg(feature = "invariant_define")]
+      Statement::InvariantDefine(inv_def) => self.invariant_define(inv_def),
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
+      Statement::ContextSend(send) => self.context_send(send),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       Statement::KindDefine(kind_def) => self.kind_define(kind_def),
       Statement::EnumDefine(enum_def) => self.enum_define(enum_def),
-      _ => todo!(),
-      //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
+      Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl),
+      Statement::SplitTable => self.split_table(),
+      Statement::FlattenTable => self.flatten_table(),
+      Statement::ContextDeclaration(context) => {
+        let base = match &context.base {
+          ContextBase::ResourceUri(uri) => uri.to_string(),
+          ContextBase::Context(name) => format!("@{}", name.to_string()),
+        };
+        let capabilities = context.capabilities.iter().map(|capability| {
+          let scope = match &capability.scope {
+            ContextCapabilityScope::Path(path) => path.to_string(),
+            ContextCapabilityScope::Wildcard(_) => "*".to_string(),
+          };
+          format!(":{}({})", capability.operation.to_string(), scope)
+        }).collect::<Vec<_>>().join(", ");
+        let capabilities = if capabilities.is_empty() {
+          String::new()
+        } else {
+          format!(" {{ {} }}", capabilities)
+        };
+        if self.html {
+          format!("<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span><span class=\"mech-context-capabilities\">{}</span></span>", context.name.to_string(), base, capabilities)
+        } else {
+          format!("@{} := {}{}", context.name.to_string(), base, capabilities)
+        }
+      },
     };
     if self.html {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn fsm_declare(&mut self, node: &FsmDeclare) -> String {
+    let fsm = self.fsm(&node.fsm);
+    let pipe = self.fsm_pipe(&node.pipe);
+    if self.html {
+      format!("<span class=\"mech-fsm-declare\"><span class=\"mech-fsm-declare-fsm\">{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-fsm-declare-pipe\">{}</span></span>", fsm, pipe)
+    } else {
+      format!("{} := {}", fsm, pipe)
+    }
+  }
+
+  pub fn fsm(&mut self, node: &Fsm) -> String {
+    let name = node.name.to_string();
+    let args = match &node.args {
+      Some(arguments) => {
+        let args = arguments
+          .iter()
+          .map(|(ident, expr)| {
+            let e = self.expression(expr);
+            match ident {
+              Some(id) => format!("{}: {}", id.to_string(), e),
+              None => e,
+            }
+          })
+          .collect::<Vec<_>>()
+          .join(", ");
+        if self.html {
+          format!("<span class=\"mech-left-paren\">(</span><span class=\"mech-fsm-args\">{}</span><span class=\"mech-right-paren\">)</span>", args)
+        } else {
+          format!("({})", args)
+        }
+      },
+      None => String::new(),
+    };
+    let kind = match &node.kind {
+      Some(kind) => {
+        let formatted = self.kind_annotation(&kind.kind);
+        if self.html {
+          format!("<span class=\"mech-fsm-kind\">{}</span>", formatted)
+        } else {
+          formatted
+        }
+      },
+      None => String::new(),
+    };
+
+    if self.html {
+      format!("<span class=\"mech-fsm\"><span class=\"mech-fsm-name\">#{}</span>{}{}</span>", name, args, kind)
+    } else {
+      format!("#{}{}{}", name, args, kind)
+    }
+  }
+
+  pub fn split_table(&mut self) -> String {
+    if self.html {
+      "<span class=\"mech-split-table\">&gt;-</span>".to_string()
+    } else {
+      ">-".to_string()
+    }
+  }
+
+  pub fn flatten_table(&mut self) -> String {
+    if self.html {
+      "<span class=\"mech-flatten-table\">-&lt;</span>".to_string()
+    } else {
+      "-<".to_string()
     }
   }
 
@@ -2014,9 +2143,9 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-enum-name\">{}</span>&gt;</span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
+      format!("<span class=\"mech-enum-define\"><span class=\"mech-kind-annotation\"><span class=\"mech-enum-name\">{}</span></span><span class=\"mech-enum-define-op\">:=</span><span class=\"mech-enum-variants\">{}</span></span>",name,variants)
     } else {
-      format!("<{}> := {}", name, variants)
+      format!("⟨{}⟩ := {}", name, variants)
     }
   }
 
@@ -2033,16 +2162,6 @@ impl Formatter {
       format!("<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",name,kind)
     } else {
       format!(":{}{}", name, kind)
-    }
-  }
-
-  pub fn kind_define(&mut self, node: &KindDefine) -> String {
-    let name = node.name.to_string();
-    let kind = self.kind_annotation(&node.kind.kind);
-    if self.html {
-      format!("<span class=\"mech-kind-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-kind\">{}</span>&gt;</span><span class=\"mech-kind-define-op\">:=</span><span class=\"mech-kind-annotation\">{}</span></span>",name,kind)
-    } else {
-      format!("<{}> := {}", name, kind)
     }
   }
 
@@ -2071,6 +2190,20 @@ impl Formatter {
       format!("<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\">({})</span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",vars,expression)
     } else {
       format!("({}) := {}", vars, expression)
+    }
+  }
+
+  pub fn context_send(&mut self, node: &ContextSend) -> String {
+    let target = if let Some(context) = &node.target.context {
+      format!("@{}/{}", context.to_string(), node.target.name.to_string())
+    } else {
+      node.target.name.to_string()
+    };
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!(r#"<span class="mech-context-send"><span class="mech-target">{}</span><span class="mech-send-op"><-</span><span class="mech-expression">{}</span></span>"#, target, expression)
+    } else {
+      format!("{} <- {}", target, expression)
     }
   }
 
@@ -2127,11 +2260,16 @@ impl Formatter {
       },
       None => {},
     }
+    let display_name = if let Some(context) = &node.context {
+      format!("@{}/{}", context.to_string(), name)
+    } else {
+      name.clone()
+    };
     let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,display_name,subscript)
     } else {
-      format!("{}{}", name, subscript)
+      format!("{}{}", display_name, subscript)
     }
   }
 
@@ -2148,7 +2286,6 @@ impl Formatter {
       Expression::MatrixComprehension(matrix_comp) => self.matrix_comprehension(matrix_comp),
       Expression::Match(match_expr) => self.match_expression(match_expr),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe),
-      x => todo!("Unhandled Expression: {:#?}", x),
     };
     if self.html {
       format!("<span class=\"mech-expression\">{}</span>",e)
@@ -2297,14 +2434,7 @@ impl Formatter {
       .join(", ");
 
     if self.html {
-      format!(
-        "<span class=\"mech-set-comprehension\">\
-          <span class=\"mech-set-open\">{{</span>\
-          <span class=\"mech-set-expression\">{}</span>\
-          <span class=\"mech-set-bar\"> | </span>\
-          <span class=\"mech-set-qualifiers\">{}</span>\
-          <span class=\"mech-set-close\">}}</span>\
-        </span>",
+      format!(r#"<span class="mech-set-comprehension"><span class="mech-set-open">{{</span><span class="mech-set-expression">{}</span><span class="mech-set-bar"> | </span><span class="mech-set-qualifiers">{}</span><span class="mech-set-close">}}</span></span>"#,
         expr, qualifiers
       )
     } else {
@@ -2322,13 +2452,7 @@ impl Formatter {
 
     if self.html {
       format!(
-        "<span class=\"mech-matrix-comprehension\">
-          <span class=\"mech-bracket start\">[</span>
-          <span class=\"mech-comp-expr\">{}</span>
-          <span class=\"mech-comp-bar\">|</span>
-          <span class=\"mech-comp-quals\">{}</span>
-          <span class=\"mech-bracket end\">]</span>
-        </span>",
+        r#"<span class="mech-matrix-comprehension"><span class="mech-bracket start">[</span><span class="mech-comp-expr">{}</span><span class="mech-comp-bar">|</span><span class="mech-comp-quals">{}</span><span class="mech-bracket end">]</span></span>"#,
         expr, quals
       )
     } else {
@@ -2355,12 +2479,7 @@ impl Formatter {
     let e = self.expression(expr);
 
     if self.html {
-      format!(
-        "<span class=\"mech-generator\">\
-          <span class=\"mech-generator-pattern\">{}</span>\
-          <span class=\"mech-generator-arrow\"> ← </span>\
-          <span class=\"mech-generator-expression\">{}</span>\
-        </span>",
+      format!(r#"<span class="mech-generator"><span class="mech-generator-pattern">{}</span><span class="mech-generator-arrow"> ← </span><span class="mech-generator-expression">{}</span></span>"#,
         p, e
       )
     } else {
@@ -2433,15 +2552,20 @@ impl Formatter {
   pub fn slice(&mut self, node: &Slice) -> String {
     let name = node.name.to_string();
     let mut subscript = "".to_string();
-    for (i, sub) in node.subscript.iter().enumerate() {
+    for sub in node.subscript.iter() {
       let s = self.subscript(sub);
       subscript = format!("{}{}", subscript, s);
     }
+    let display_name = if let Some(context) = &node.context {
+      format!("@{}/{}", context.to_string(), name)
+    } else {
+      name.clone()
+    };
     let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,display_name,subscript)
     } else {
-      format!("{}{}", name, subscript)
+      format!("{}{}", display_name, subscript)
     }
   }
 
@@ -2603,14 +2727,7 @@ impl Formatter {
     let name = node.name.to_string();
     let value = self.expression(&node.value);
     if self.html {
-      format!("
-        <span class=\"mech-tuple-struct\">
-        <span class=\"mech-tuple-struct-sigil\">:</span>
-        <span class=\"mech-tuple-struct-name\">{}</span>
-        <span class=\"mech-left-paren\">(</span>
-        <span class=\"mech-tuple-struct-value\">{}</span>
-        <span class=\"mech-right-paren\">)</span>
-      </span>", name, value)
+      format!(r#"<span class="mech-tuple-struct"><span class="mech-tuple-struct-sigil">:</span><span class="mech-tuple-struct-name">{}</span><span class="mech-left-paren">(</span><span class="mech-tuple-struct-value">{}</span><span class="mech-right-paren">)</span></span>"#, name, value)
     } else {
       format!("{}{}", name, value)
     }
@@ -2823,20 +2940,45 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       "".to_string()
     };
     let name = &node.name.to_string();
+    let display_name = if let Some(context) = &node.context {
+      format!("@{}/{}", context.to_string(), name)
+    } else {
+      node.name.to_string()
+    };
     let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}", id, node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}", id, display_name, annotation)
     } else {
-      format!("{}{}", node.name.to_string(), annotation)
+      format!("{}{}", display_name, annotation)
+    }
+  }
+
+  pub fn kind_define(&mut self, node: &KindDefine) -> String {
+    let name = node.name.to_string();
+    let kind = self.kind_annotation(&node.kind.kind);
+    if self.html {
+      format!("
+      <span class=\"mech-kind-define\">
+        <span class=\"mech-kind-annotation\">
+          <span class=\"mech-kind\">{}</span>
+        </span>
+        <span class=\"mech-kind-define-op\">:=</span>
+        <span class=\"mech-kind-annotation\">{}</span>
+      </span>",name,kind)
+    } else {
+      format!("⟨{}⟩ := {}", name, kind)
     }
   }
 
   pub fn kind_annotation(&mut self, node: &Kind) -> String {
     let kind = self.kind(node);
     if self.html {
-      format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind)
+      format!("
+      <span class=\"mech-kind-annotation\">
+        <span class=\"mech-kind\">{}</span>
+      </span>",kind)
     } else {
-      format!("<{}>", kind)
+      format!("⟨{}⟩", kind)
     }
   }
 
@@ -2845,9 +2987,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Kind(kind) => {
         let kind_kind = self.kind(kind);
         if self.html {
-          format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind_kind)
+          format!("<span class=\"mech-kind-annotation\">{}</span>",kind_kind)
         } else {
-          format!("<{}>", kind_kind)
+          format!("⟨{}⟩", kind_kind)
         }
       },
       Kind::Option(kind) => {
@@ -2863,16 +3005,48 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         let size_str = match size{
           Some(size) => {
             let size_ltrl = self.literal(size);
-            format!(":{}", size_ltrl)
+            if self.html {
+              format!("<span class=\"mech-set-size\">:{}</span>", size_ltrl)
+            } else {
+              format!(":{}", size_ltrl)
+            }
           }
           None => "".to_string(),
         };
-        format!("{{{}}}{}", k, size_str)
+        if self.html {
+          format!("<span class=\"mech-set-kind\"><span class=\"mech-set-kind-open\">{{</span><span class=\"mech-set-kind-inner\">{}</span><span class=\"mech-set-kind-close\">}}</span>{}</span>", k, size_str)
+        } else {
+          format!("{{{}}}{}", k, size_str)
+        }
       },
-      Kind::Any => "*".to_string(),
-      Kind::Scalar(ident) => ident.to_string(),
-      Kind::Empty => "_".to_string(),
-      Kind::Atom(ident) => format!(":{}",ident.to_string()),
+      Kind::Any => {
+        if self.html {
+          format!("<span class=\"mech-any-kind\">*</span>")
+        } else {
+          "*".to_string()
+        }
+      },
+      Kind::Scalar(ident) => {
+        if self.html {
+          format!("<span class=\"mech-scalar-kind\">{}</span>", ident.to_string())
+        } else {
+          ident.to_string()
+        }
+      }
+      Kind::Empty => {
+        if self.html {
+          format!("<span class=\"mech-empty-kind\">_</span>")
+        } else {
+          "_".to_string()
+        }
+      }
+      Kind::Atom(ident) => {
+        if self.html {
+          format!("<span class=\"mech-atom-kind\">{}</span>", ident.to_string())
+        } else {
+          format!(":{}",ident.to_string())
+        }
+      }
       Kind::Tuple(kinds) => {
         let mut src = "".to_string();
         for (i, kind) in kinds.iter().enumerate() {
@@ -2883,7 +3057,11 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
             src = format!("{},{}", src, k);
           }
         }
-        format!("({})", src)
+        if self.html {
+          format!("<span class=\"mech-tuple-kind\"><span class=\"mech-tuple-kind-open\">(</span><span class=\"mech-tuple-kind-inner\">{}</span><span class=\"mech-tuple-kind-close\">)</span></span>", src)
+        } else {
+          format!("({})", src)
+        }
       },
       Kind::Matrix((kind, literals)) => {
         let mut src = "".to_string();
@@ -2893,12 +3071,24 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
-            src2 = format!(":{}", l);
+            src2 = if self.html {
+              format!("<span class=\"mech-matrix-literal\">:{}</span>", l)
+            } else {
+              format!(":{}", l)
+            };
           } else {
-            src2 = format!("{},{}", src2, l);
+            src2 = if self.html {
+              format!("{}<span class=\"mech-matrix-literal\">:{}</span>", src2, l)
+            } else {
+              format!("{},:{}", src2, l)
+            };
           }
         }
-        format!("[{}]{}", src, src2)
+        if self.html {
+          format!("<span class=\"mech-matrix-kind\"><span class=\"mech-matrix-kind-open\">[</span><span class=\"mech-matrix-kind-inner\">{}</span><span class=\"mech-matrix-kind-close\">]</span>{}</span>", src, src2)
+        } else {
+          format!("[{}]{}", src, src2)
+        }
       },
       Kind::Record(kinds) => {
         let mut src = "".to_string();
@@ -2906,12 +3096,24 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           let k = self.kind(kind);
           let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}&lt;{}&gt;", ident_s, k);
+            if self.html {
+              src = format!("<span class=\"mech-record-field\"><span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\">{}</span></span>", ident_s, k);
+            } else {
+              src = format!("{}⟨{}⟩", ident_s, k);
+            }
           } else {
-            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+            if self.html {
+              src = format!("{}<span class=\"mech-record-field\"><span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\">{}</span></span>", src, ident_s, k);
+            } else {
+              src = format!("{},{}⟨{}⟩", src, ident_s, k);
+            }
           }
         }
-        format!("{{{}}}", src)
+        if self.html {
+          format!("<span class=\"mech-record-kind\"><span class=\"mech-record-kind-open\">{{</span>{}<span class=\"mech-record-kind-close\">}}</span></span>", src)
+        } else {
+          format!("{{{}}}", src)
+        }
       },
       Kind::Table((kinds, literal)) => {
         let mut src = "".to_string();
@@ -2919,22 +3121,41 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           let k = self.kind(kind);
           let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}&lt;{}&gt;", ident_s, k);
+            if self.html {
+              src = format!("<span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\"><span class=\"mech-record-field-kind-open\">&lt;</span>{}<span class=\"mech-record-field-kind-close\">&gt;</span></span>", ident_s, k);
+            } else {
+              src = format!("{}&lt;{}&gt;", ident_s, k);
+            }
           } else {
-            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+            if self.html {
+              src = format!("{},<span class=\"mech-record-field-name\">{}</span><span class=\"mech-record-field-kind\"><span class=\"mech-record-field-kind-open\">&lt;</span>{}<span class=\"mech-record-field-kind-close\">&gt;</span></span>", src, ident_s, k);
+            } else {
+              src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+            }
           }
         }
-        let mut src2 = "".to_string();
         let sz = match &**literal {
           Literal::Empty(_) => "".to_string(),
-          _ => format!(":{}", self.literal(literal)),
+          _ => if self.html {
+            format!("<span class=\"mech-table-kind-size\">:{}</span>", self.literal(literal))
+          } else {
+            format!(":{}", self.literal(literal))
+          },
         };
-        format!("|{}|{}", src, sz)
+        if self.html {
+          format!("<span class=\"mech-table-kind\"><span class=\"mech-table-kind-open\">|</span>{}<span class=\"mech-table-kind-close\">|</span>{}</span>", src, sz)
+        } else {
+          format!("|{}|{}", src, sz)
+        }
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);
         let k2 = self.kind(kind2);
-        format!("{{{}:{}}}", k1, k2)
+        if self.html {
+          format!("<span class=\"mech-map-kind\"><span class=\"mech-map-kind-open\">{{</span>{}<span class=\"mech-map-kind-sep\">:</span>{}<span class=\"mech-map-kind-close\">}}</span></span>", k1, k2)
+        } else {
+          format!("{{{}:{}}}", k1, k2)
+        }
       },
     };
     if self.html {
@@ -3076,8 +3297,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
     match node {
       ComparisonOp::Equal => "⩵".to_string(),
-      ComparisonOp::StrictEqual => "=:=".to_string(),
-      ComparisonOp::StrictNotEqual => "=/=".to_string(),
+      ComparisonOp::StrictEqual => "≡".to_string(),
+      ComparisonOp::StrictNotEqual => "¬≡".to_string(),
       ComparisonOp::NotEqual => "≠".to_string(),
       ComparisonOp::GreaterThan => ">".to_string(),
       ComparisonOp::GreaterThanEqual => "≥".to_string(),

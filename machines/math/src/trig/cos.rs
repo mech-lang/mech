@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathCos{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "cos",
+  }
+}

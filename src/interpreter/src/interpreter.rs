@@ -10,6 +10,12 @@ use std::time::Instant;
 // Interpreter
 // ----------------------------------------------------------------------------
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeContextBinding {
+  pub name: String,
+  pub base_uri: String,
+}
+
 pub struct Interpreter {
   pub id: u64,
   pub profile: bool,
@@ -31,7 +37,13 @@ pub struct Interpreter {
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
+  #[cfg(feature = "subscript_formula")]
+  pub string_access_live_values: Ref<std::collections::BTreeSet<usize>>,
+  #[cfg(feature = "subscript_formula")]
+  pub current_string_access_expression_live: Ref<bool>,
   pub inline_eval_counter: Ref<u64>,
+  pub context_bindings: Ref<HashMap<u64, RuntimeContextBinding>>,
+  pub module_manifests: Ref<ModuleManifestCatalog>,
   #[cfg(feature = "state_machines")]
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
   #[cfg(feature = "state_machines")]
@@ -62,7 +74,13 @@ impl Clone for Interpreter {
       code: self.code.clone(),
       out: self.out.clone(),
       out_values: self.out_values.clone(),
+      #[cfg(feature = "subscript_formula")]
+      string_access_live_values: Ref::new(self.string_access_live_values.borrow().clone()),
+      #[cfg(feature = "subscript_formula")]
+      current_string_access_expression_live: Ref::new(*self.current_string_access_expression_live.borrow()),
       inline_eval_counter: self.inline_eval_counter.clone(),
+      context_bindings: self.context_bindings.clone(),
+      module_manifests: self.module_manifests.clone(),
       #[cfg(feature = "state_machines")]
       user_state_machines: self.user_state_machines.clone(),
       #[cfg(feature = "state_machines")]
@@ -73,7 +91,7 @@ impl Clone for Interpreter {
 }
 
 impl Interpreter {
-  pub fn new(id: u64) -> Self {
+  pub fn new(id: u64, max_steps: usize) -> Self {
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
     #[cfg(feature = "symbol_table")]
@@ -92,12 +110,12 @@ impl Interpreter {
       state.dictionary.borrow_mut().insert(ans_id, "ans".to_string());
     }
     #[cfg(feature = "functions")]
-    load_stdlib(&mut state.functions.borrow_mut());
+    load_prelude(&mut state.functions.borrow_mut());
     Self {
       id,
       ip: 0,
       profile: false,
-      max_steps: 10_00000, // Default maximum steps
+      max_steps, // Default maximum steps
       #[cfg(feature = "trace")]
       trace: false,
       #[cfg(feature = "trace")]
@@ -112,7 +130,13 @@ impl Interpreter {
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
+      #[cfg(feature = "subscript_formula")]
+      string_access_live_values: Ref::new(std::collections::BTreeSet::new()),
+      #[cfg(feature = "subscript_formula")]
+      current_string_access_expression_live: Ref::new(false),
       inline_eval_counter: Ref::new(0),
+      context_bindings: Ref::new(HashMap::new()),
+      module_manifests: Ref::new(ModuleManifestCatalog::with_builtin_hosts()),
       #[cfg(feature = "state_machines")]
       user_state_machines: Ref::new(HashMap::new()),
       #[cfg(feature = "state_machines")]
@@ -121,6 +145,47 @@ impl Interpreter {
       #[cfg(feature = "compiler")]
       context: None,
     }
+  }
+
+  pub fn default() -> Self {
+    Self::new(0, 10_000)
+  }
+
+  pub fn bind_context(&self, name: &Identifier, base_uri: impl Into<String>) {
+    self.context_bindings.borrow_mut().insert(name.hash(), RuntimeContextBinding {
+      name: name.to_string(),
+      base_uri: base_uri.into(),
+    });
+  }
+
+  pub fn context_binding(&self, name: &Identifier) -> Option<RuntimeContextBinding> {
+    self.context_bindings.borrow().get(&name.hash()).cloned()
+  }
+
+  pub fn bind_context_export(
+    &self,
+    alias: &Identifier,
+    module: &str,
+    item: &str,
+  ) -> MResult<()> {
+    let base_uri = {
+      let manifests = self.module_manifests.borrow();
+      manifests.context_export(module, item)?.base_uri.clone()
+    };
+    self.bind_context(alias, base_uri);
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn new_with_full_stdlib(id: u64) -> Self {
+    Self::new_with_full_stdlib_steps(id, 10_000)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn new_with_full_stdlib_steps(id: u64, max_steps: usize) -> Self {
+    let intrp = Self::new(id, max_steps);
+    load_stdlib(&mut intrp.functions().borrow_mut());
+    intrp
   }
 
   #[cfg(feature = "symbol_table")]
@@ -169,7 +234,7 @@ impl Interpreter {
 
   pub fn clear(&mut self) {
     let id = self.id;
-    *self = Interpreter::new(id);
+    *self = Interpreter::new(id, self.max_steps);
   }
 
   pub fn set_trace_enabled(&mut self, enabled: bool) {
@@ -285,7 +350,7 @@ impl Interpreter {
         for _ in 0..step_count {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
-            fxn.solve();
+            fxn.solve_result()?;
             total_durations[idx] += start.elapsed();
           }
         }
@@ -307,7 +372,7 @@ impl Interpreter {
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
-            fxn.solve();
+            fxn.solve_result()?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
               let output = if output.chars().count() > 96 {
@@ -354,7 +419,7 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
-      fxn.solve();
+      fxn.solve_result()?;
     }
 
     Ok(fxn.out().clone())
@@ -402,7 +467,7 @@ impl Interpreter {
   }
     
 
-  #[cfg(feature = "program")]
+  #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
     // Reset the instruction pointer
     self.ip = 0;
@@ -589,13 +654,13 @@ impl Interpreter {
     Ok(self.out.clone())
   }
 
-  #[cfg(feature = "compiler")]
+  #[cfg(all(feature = "compiler", feature = "functions"))]
   pub fn compile(&mut self) -> MResult<Vec<u8>> {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut ctx = CompileCtx::new();
     for step in plan_brrw.iter() {
-        step.compile(&mut ctx)?;
+      step.compile(&mut ctx)?;
     }
     let bytes = ctx.compile()?;
     self.context = Some(ctx);

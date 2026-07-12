@@ -1,0 +1,39 @@
+Executable Build
+===============================================================================
+
+This guide shows the current `mechc` executable packaging flow.
+
+1. Source file
+-------------------------------------------------------------------------------
+
+Create `hello.mec`:
+
+```mech
+message := "Hello from an executable artifact"
+message
+```
+
+2. Build
+-------------------------------------------------------------------------------
+
+```sh
+mechc build hello.mec --out hello
+```
+
+For release mode:
+
+```sh
+mechc build hello.mec --release --out hello
+```
+
+3. Output
+-------------------------------------------------------------------------------
+
+The current output paths are:
+
+```text
+build/debug/hello.exe
+build/release/hello.exe
+```
+
+The executable packages a Rust shim with compiled Mech bytecode. This is current behavior, not a final cross-platform packaging specification.
