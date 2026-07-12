@@ -1,24 +1,25 @@
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+#[cfg(feature = "mika")]
 use std::thread;
+#[cfg(feature = "mika")]
 use std::time::Duration;
 
 use colored::*;
 use crossterm::{ExecutableCommand, cursor, style::Print};
+#[cfg(feature = "mika")]
 use indicatif::{ProgressBar, ProgressStyle};
 use mech_core::*;
 use mech_program::*;
 #[cfg(feature = "run")]
 use mech_runtime::RuntimeConfig;
+#[cfg(feature = "mika")]
+use mech_syntax::MICROMIKA_WAVE;
 use mech_syntax::{ReplCommand, parse_repl_command};
 
 use crate::cli::outcome::CliOutcome;
 use crate::{MechRepl, ReplExecution, clc, generate_uuid, print_prompt};
-
-const REPL_EXIT_SPINNER: &[&str] = &[
-    "╭◉╮", "╭◉─", "╭◉╯", "╭◉─", "╭◉╯", "╭◉─", "╭◉╮", " ",
-];
 
 pub(crate) const TEXT_LOGO: &str = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
@@ -46,9 +47,8 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     let mika_close = "⸥".bright_yellow();
 
     #[cfg(windows)]
-    control::set_virtual_terminal(true).map_err(|_| {
-        io::Error::other("failed to enable Windows virtual terminal processing")
-    })?;
+    control::set_virtual_terminal(true)
+        .map_err(|_| io::Error::other("failed to enable Windows virtual terminal processing"))?;
     clc();
     let mut stdo = std::io::stdout();
     stdo.execute(Print(text_logo))?;
@@ -76,16 +76,24 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         };
         *caught_interrupts += 1;
         if *caught_interrupts >= 3 {
-            let final_state = ProgressBar::new_spinner();
-            let completed_style = ProgressStyle::with_template("\n{spinner:.yellow} {msg}")
-                .unwrap_or_else(|_| ProgressStyle::default_spinner())
-                .tick_strings(REPL_EXIT_SPINNER);
-            final_state.set_style(completed_style);
-            final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
-            for _ in 0..REPL_EXIT_SPINNER.len() - 1 {
-                thread::sleep(Duration::from_millis(100));
-                final_state.tick();
+            #[cfg(feature = "mika")]
+            {
+                let final_state = ProgressBar::new_spinner();
+                let completed_style = ProgressStyle::with_template("\n{spinner:.yellow} {msg}")
+                    .unwrap_or_else(|_| ProgressStyle::default_spinner())
+                    .tick_strings(MICROMIKA_WAVE);
+                final_state.set_style(completed_style);
+                final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
+
+                for _ in 0..MICROMIKA_WAVE.len().saturating_sub(1) {
+                    thread::sleep(Duration::from_millis(100));
+                    final_state.tick();
+                }
             }
+
+            #[cfg(not(feature = "mika"))]
+            println!("Okay cya!");
+
             exit_requested_for_handler.store(true, Ordering::SeqCst);
             return;
         }
@@ -95,7 +103,15 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         );
         print_prompt();
     })
-    .map_err(|error| MechError::new(GenericError { msg: format!("Error setting Ctrl+C handler: {error}") }, None).with_compiler_loc())?;
+    .map_err(|error| {
+        MechError::new(
+            GenericError {
+                msg: format!("Error setting Ctrl+C handler: {error}"),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
 
     #[cfg(all(feature = "repl", feature = "run"))]
     let mut repl = {
