@@ -715,6 +715,7 @@ pub fn attach_repl(&mut self, repl_id: &str) {
     input.set_class_name("repl-input");
     input.set_id("repl-active-input");
     input.set_attribute("contenteditable", "true").unwrap();
+    let _ = input.set_attribute("contenteditable", "plaintext-only");
     input.set_attribute("spellcheck", "false").unwrap();
     input.set_attribute("autocomplete", "off").unwrap();
     input.set_autofocus(true);
@@ -894,6 +895,29 @@ pub fn attach_repl(&mut self, repl_id: &str) {
 
     input.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref()).unwrap();
     closure.forget();
+
+    // Paste handler to preserve plain text (including newlines) when users paste blocks.
+    let paste_input = input.clone();
+    let paste_closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+      event.prevent_default();
+      if let Ok(clipboard) = js_sys::Reflect::get(event.as_ref(), &JsValue::from_str("clipboardData")) {
+        if !clipboard.is_undefined() && !clipboard.is_null() {
+          if let Ok(get_data) = js_sys::Reflect::get(&clipboard, &JsValue::from_str("getData")) {
+            if let Ok(get_data_fn) = get_data.dyn_into::<js_sys::Function>() {
+              if let Ok(value) = get_data_fn.call1(&clipboard, &JsValue::from_str("text/plain")) {
+                if let Some(text) = value.as_string() {
+                  let mut existing = paste_input.text_content().unwrap_or_default();
+                  existing.push_str(&text);
+                  paste_input.set_text_content(Some(&existing));
+                }
+              }
+            }
+          }
+        }
+      }
+    }) as Box<dyn FnMut(_)>);
+    input.add_event_listener_with_callback("paste", paste_closure.as_ref().unchecked_ref()).unwrap();
+    paste_closure.forget();
   }));
 
   let intro_line = document.create_element("div").unwrap();
