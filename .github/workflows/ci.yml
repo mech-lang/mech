@@ -35,6 +35,14 @@ jobs:
           cargo build --no-default-features --features build
           cargo build --no-default-features --features test
           cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+
+          # Direct package feature-boundary checks.
+          cargo check -p mech-core --no-default-features --features mika
+          cargo check -p mech-core --no-default-features --features "mika serde"
+          cargo check -p mech-syntax --no-default-features --features mika
+          cargo check -p mech-interpreter --no-default-features --features program
+          cargo check -p mech-program --no-default-features --features program
+
           cargo test interpret
           cargo test bytecode
 
@@ -104,6 +112,9 @@ jobs:
 
       - name: Build REPL-only Windows CLI
         run: cargo build --bin mech --no-default-features --features repl
+
+      - name: Build REPL-plus-Mika Windows CLI
+        run: cargo build --bin mech --no-default-features --features "repl mika"
 
   dynamic-modules:
     name: Dynamic modules

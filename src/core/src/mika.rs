@@ -5,12 +5,14 @@ use crate::*;
 
 // Inline Mika lives in the terminal. She greets users when they start Mech, and provides a friendly face to interact with. She can be depicted in a variety of expressions, sizes, colors, and poses. 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MikaSection {
   pub elements: Section,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Mika {
   Mini(MiniMika),
   Micro(MicroMika),
@@ -36,7 +38,8 @@ impl Mika {
   }
 }
 
-#[derive(Clone, Copy,Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy,Debug, PartialEq, Eq, Hash)]
 pub struct MiniMika {
   pub expression: MikaExpression,
   pub left_arm: Option<MikaArm>,
@@ -55,7 +58,8 @@ impl MiniMika {
 // Parts
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MikaNose {
   Normal,      // ⦿
   Open,        // ◯
@@ -103,7 +107,8 @@ impl MikaNose {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MikaArm {
   BatWing,           // ᗑ
   BigGripperLeft,    // Ɔ∞
@@ -177,7 +182,8 @@ impl MikaArm {
 
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MikaEyeLeft {
   Content,       // ˆ
   Confused,      // ಠ 
@@ -244,7 +250,8 @@ impl MikaEyeLeft {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MikaEyeRight {
   Content,       // ˆ
   Confused,      // ಠ 
@@ -311,7 +318,8 @@ impl MikaEyeRight {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MikaExpression {
   Content,       // (ˆ◯ˆ)
   Confused,      // (ಠ◯ಠ) 
@@ -375,7 +383,8 @@ impl MikaExpression {
 // MicroMika
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct MicroMika {
   pub left_arm: MikaArm,
   pub nose: MikaNose,
@@ -388,7 +397,8 @@ impl MicroMika {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MicroMikaKind {
   Bat,            // ᗑ⦿ᗑ
   BigHug,         // ›⌣⦿⌣‹
@@ -472,7 +482,8 @@ static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─◉╮ -> -─◉╮"];
 
 // Mylo is a secondary character, he's under development right now on the basis of these faces. Maybe he's a villain? Maybe he's Mika's siblng? I don't know.
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MyloExpression {
   Eyes,       // (ᑕ⎔ᑐ)
   Focused,    // (ᕮ⎔ᕭ)
