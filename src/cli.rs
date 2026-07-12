@@ -18,7 +18,7 @@ pub mod host_grants;
 pub mod serve_options;
 #[cfg(feature = "cli_core")]
 pub(crate) mod outcome;
-#[cfg(feature = "cli_core")]
+#[cfg(any(feature = "formatter", feature = "serve"))]
 pub(crate) mod resources;
 #[cfg(feature = "run")]
 pub mod run;
