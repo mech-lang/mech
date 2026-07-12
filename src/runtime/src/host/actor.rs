@@ -34,7 +34,7 @@ impl HostFunction for ActorMessageKindHostFunction {
 
   fn call(
     &self,
-    services: &mut dyn RuntimeServices,
+    _services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     _args: Vec<Value>,
   ) -> MResult<Value> {
@@ -89,7 +89,7 @@ impl HostFunction for ActorMessagePayloadHostFunction {
 
   fn call(
     &self,
-    services: &mut dyn RuntimeServices,
+    _services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     _args: Vec<Value>,
   ) -> MResult<Value> {
@@ -144,7 +144,7 @@ impl HostFunction for ActorStateIdHostFunction {
 
   fn call(
     &self,
-    services: &mut dyn RuntimeServices,
+    _services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     _args: Vec<Value>,
   ) -> MResult<Value> {

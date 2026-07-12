@@ -479,3 +479,66 @@ fn browser_host_manifest_config_parses_and_lowers() {
     assert_eq!(host.contexts[0].base_uri_template, "browser://{instance}/dom");
     assert_eq!(host.contexts[0].operations, vec!["read".to_string(), "write".to_string()]);
 }
+
+#[test]
+fn config_profile_options_control_namespaces_and_limits() {
+    let mut options = ConfigProfileOptions::default();
+    options.executable_namespaces = vec!["custom-config".to_string()];
+    let doc = parse_config_document(
+        "custom.mcfg",
+        r#"~~~mech:ignored
+config := {serve: {port: 1000}}
+~~~
+
+~~~mech:custom-config
+config := {serve: {port: 2000}}
+~~~
+"#,
+        options,
+    )
+    .unwrap();
+    assert_eq!(doc.serve.unwrap().port, Some(2000));
+
+    let mut options = ConfigProfileOptions::default();
+    options.max_eval_steps = 1;
+    let error = parse_config_document("steps.mcfg", "config := {serve: {port: 2000}}\n", options)
+        .expect_err("expected max_eval_steps to be enforced");
+    assert!(format!("{} {}", error.kind_name(), error.kind_message())
+        .contains("maximum evaluation steps exceeded"));
+
+    let mut options = ConfigProfileOptions::default();
+    options.max_function_depth = 1;
+    let error = parse_config_document(
+        "depth.mcfg",
+        r#"wrap(x<string>) => <string>
+  | str(x).
+config := {serve: {paths: [wrap("docs")]}}
+"#,
+        options,
+    )
+    .expect_err("expected max_function_depth to be enforced");
+    assert!(format!("{} {}", error.kind_name(), error.kind_message())
+        .contains("maximum function depth exceeded"));
+
+    let mut options = ConfigProfileOptions::default();
+    options.max_collection_items = 1;
+    let error = parse_config_document(
+        "items.mcfg",
+        "config := {serve: {paths: [\"docs\", \"examples\"]}}\n",
+        options,
+    )
+    .expect_err("expected max_collection_items to be enforced");
+    assert!(format!("{} {}", error.kind_name(), error.kind_message())
+        .contains("maximum collection items exceeded"));
+
+    let mut options = ConfigProfileOptions::default();
+    options.max_string_bytes = 3;
+    let error = parse_config_document(
+        "strings.mcfg",
+        "config := {serve: {paths: [\"docs\"]}}\n",
+        options,
+    )
+    .expect_err("expected max_string_bytes to be enforced");
+    assert!(format!("{} {}", error.kind_name(), error.kind_message())
+        .contains("maximum string bytes exceeded"));
+}

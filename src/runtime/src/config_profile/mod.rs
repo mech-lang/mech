@@ -6,13 +6,21 @@ mod extract;
 mod ir;
 mod lower;
 
-pub use analyze::*;
-pub use compile::*;
-pub use error::*;
-pub use eval::*;
-pub use extract::*;
-pub use ir::*;
-pub use lower::*;
+use self::analyze::ConfigAnalyzer;
+use self::compile::ConfigCompiler;
+use self::error::*;
+pub use self::error::InvalidConfigField;
+use self::eval::ConfigEvaluator;
+pub use self::eval::ConfigValue;
+use self::extract::{ConfigExtractor, ExtractedConfigProgram};
+use self::ir::{
+    ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram,
+};
+use self::lower::ConfigLowerer;
+pub use self::lower::{
+    ConfigCapabilityGrant, ConfigCapabilityKind, DiagnosticsConfigPatch, MechConfigDocument,
+    RunHostConfig, RuntimeConfigPatch, RuntimeLimitsPatch, ServeHostConfig,
+};
 
 use mech_core::MResult;
 

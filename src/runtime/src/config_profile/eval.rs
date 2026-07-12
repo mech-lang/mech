@@ -19,7 +19,7 @@ pub enum ConfigValue {
     Map(BTreeMap<String, ConfigValue>),
 }
 
-pub struct ConfigEvaluator {
+pub(super) struct ConfigEvaluator {
     options: ConfigProfileOptions,
     steps: usize,
     collection_items: usize,
@@ -29,7 +29,7 @@ pub struct ConfigEvaluator {
 }
 
 impl ConfigEvaluator {
-    pub fn new(options: ConfigProfileOptions) -> Self {
+    pub(super) fn new(options: ConfigProfileOptions) -> Self {
         Self {
             options,
             steps: 0,
@@ -40,7 +40,7 @@ impl ConfigEvaluator {
         }
     }
 
-    pub fn evaluate(mut self, program: &ConfigProgram) -> MResult<ConfigValue> {
+    pub(super) fn evaluate(mut self, program: &ConfigProgram) -> MResult<ConfigValue> {
         for item in &program.items {
             if let ConfigItem::Function(function) = item {
                 self.functions

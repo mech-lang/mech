@@ -6,23 +6,41 @@ Captured after removing the crate-level `#![allow(warnings)]` from `src/runtime/
 cargo check -p mech-runtime --all-targets
 ```
 
-## Classification
+## Resolved warnings
 
-| Warning | Classification | Resolution direction |
+| Warning | Classification | Resolution |
 | --- | --- | --- |
-| `src/runtime/src/workspace/mod.rs`: `pub use self::discovery::*` reexports no public items | delete | Remove the public glob or make only supported discovery items public. |
-| `src/runtime/src/host/actor.rs`: unused `services` in actor host functions | behavioral bug exposed by warning | These functions currently validate arguments but do not use the service context; either connect them to real actor services or remove unsupported host calls. |
-| `src/runtime/src/host/arg.rs`: unused `value` in typed-value conversion placeholder | behavioral bug exposed by warning | Implement typed host argument conversion or reject typed values explicitly without binding an unused value. |
-| `src/runtime/src/runtime/errors.rs`: `RuntimeModuleExportLinkError` never constructed | delete | Remove the stale public error after repository caller verification. |
-| `src/runtime/src/runtime/errors.rs`: `ContextAddressReadUnsupported` never constructed | delete | Remove the stale public error after repository caller verification. |
-| `src/runtime/src/capability/kernel.rs`: `SharedCapabilityKernel::inner` never used | delete | Remove the internal accessor unless needed by a real caller. |
-| `src/runtime/src/workspace/watch.rs`: `local_workspace_target_watch` never used | delete | Remove the stale helper or connect it to workspace watch setup. |
-| `src/runtime/src/workspace/watch.rs`: `RuntimeWorkspaceWatcher::from_parts` never used in lib tests | move behind a test gate | Keep only if it supports tests; otherwise remove with the dead watch helper. |
+| `src/runtime/src/workspace/mod.rs`: `pub use self::discovery::*` re-exported no public items | resolved by removal of an empty re-export | Removed the empty public glob re-export. `mod discovery;` remains internal and workspace code continues to use the implementation. |
+| `src/runtime/src/host/actor.rs`: unused `services` in `ActorMessageKindHostFunction`, `ActorMessagePayloadHostFunction`, and `ActorStateIdHostFunction` | trait-required unused parameter | Renamed only those trait-required parameters to `_services`; these operations intentionally read actor-turn data from `RuntimeContext`. |
+| `src/runtime/src/host/arg.rs`: unused typed-value binding in `Value::Typed(value, _) => todo!()` | intentionally deferred typed-value behavior | Changed the pattern to `Value::Typed(..) => todo!()` without implementing typed host-argument conversion in this pass. |
+| `src/runtime/src/runtime/errors.rs`: `RuntimeModuleExportLinkError` never constructed | resolved by deletion | Repository search with `rg 'RuntimeModuleExportLinkError|ContextAddressReadUnsupported' .` found no live production caller for this error type, so the stale error and its `MechErrorKind` implementation were deleted. |
+| `src/runtime/src/runtime/errors.rs`: `ContextAddressReadUnsupported` never constructed | resolved by deletion | Repository search with `rg 'RuntimeModuleExportLinkError|ContextAddressReadUnsupported' .` found no live production caller for this error type, so the stale error and its `MechErrorKind` implementation were deleted. The existing smoke test that asserts this stale name is not surfaced remains valid. |
+| `src/runtime/src/capability/kernel.rs`: `SharedCapabilityKernel::inner` never used | resolved by deletion | Repository searches for `SharedCapabilityKernel::inner` and `.inner()` found no live caller of this accessor; the private `inner` field remains as the kernel state. |
+| `src/runtime/src/workspace/watch.rs`: `local_workspace_target_watch` never used by production code | resolved by deletion | Deleted the production singular wrapper and added a test-only `single_target_watch` helper that asserts exactly one watch before unwrapping. |
+| `src/runtime/src/workspace/watch.rs`: `RuntimeWorkspaceWatcher::from_parts` never used in tests | resolved by deletion | Deleted the unused private test constructor rather than preserving unused test scaffolding. |
 
-Additional suppression search:
+## Config-profile visibility cleanup
 
-```bash
-rg '#!\[allow|#\[allow' src/runtime
-```
+The broad public glob re-exports for config pipeline implementation phases were removed. The supported external entry point remains `parse_config_document(...)`.
 
-returned no remaining runtime warning allowances after this change.
+Public config-profile types intentionally retained through explicit re-exports:
+
+- `ConfigProfileOptions`
+- `ConfigValue`
+- `MechConfigDocument`
+- `RuntimeConfigPatch`
+- `RuntimeLimitsPatch`
+- `DiagnosticsConfigPatch`
+- `ServeHostConfig`
+- `RunHostConfig`
+- `ConfigCapabilityGrant`
+- `ConfigCapabilityKind`
+
+Pipeline implementation types such as `ConfigAnalyzer`, `ConfigCompiler`, `ConfigEvaluator`, `ConfigExtractor`, `ExtractedConfigProgram`, `ConfigProgram`, `ConfigItem`, `ConfigExpr`, `ConfigFunction`, `ConfigLet`, and `ConfigLowerer` are no longer publicly re-exported.
+
+## Final command summary
+
+- `rg '#!\[allow|#\[allow' src/runtime`: no matches.
+- `cargo check -p mech-runtime --all-targets`: finished with zero warnings.
+
+Final runtime warning count for `cargo check -p mech-runtime --all-targets`: **0**.

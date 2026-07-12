@@ -7,14 +7,14 @@ use super::{
     ConfigProfileViolation, ConfigProgram, ConfigRecursionNotAllowed, ConfigUnknownFunction,
 };
 
-pub struct ConfigAnalyzer;
+pub(super) struct ConfigAnalyzer;
 
 impl ConfigAnalyzer {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self
     }
 
-    pub fn analyze(&self, program: &ConfigProgram) -> MResult<()> {
+    pub(super) fn analyze(&self, program: &ConfigProgram) -> MResult<()> {
         let mut functions: BTreeMap<String, &ConfigFunction> = BTreeMap::new();
         let mut lets = BTreeSet::new();
 

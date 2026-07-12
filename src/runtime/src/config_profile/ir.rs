@@ -1,30 +1,30 @@
 #[derive(Clone, Debug, PartialEq)]
-pub struct ConfigProgram {
-    pub items: Vec<ConfigItem>,
+pub(super) struct ConfigProgram {
+    pub(super) items: Vec<ConfigItem>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ConfigItem {
+pub(super) enum ConfigItem {
     Let(ConfigLet),
     Function(ConfigFunction),
     Expr(ConfigExpr),
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ConfigLet {
-    pub name: String,
-    pub expr: ConfigExpr,
+pub(super) struct ConfigLet {
+    pub(super) name: String,
+    pub(super) expr: ConfigExpr,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ConfigFunction {
-    pub name: String,
-    pub params: Vec<String>,
-    pub body: ConfigExpr,
+pub(super) struct ConfigFunction {
+    pub(super) name: String,
+    pub(super) params: Vec<String>,
+    pub(super) body: ConfigExpr,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ConfigExpr {
+pub(super) enum ConfigExpr {
     Null,
     Bool(bool),
     Integer(i64),

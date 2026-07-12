@@ -181,19 +181,6 @@ impl RuntimeWorkspaceWatcher {
       .collect()
   }
 
-  #[cfg(test)]
-  fn from_parts(
-    watcher: RecommendedWatcher,
-    receiver: Receiver<notify::Result<Event>>,
-  ) -> Self {
-    Self {
-      watcher,
-      receiver,
-      watched_paths: BTreeSet::new(),
-      watched_keys: BTreeSet::new(),
-    }
-  }
-
 }
 
 fn desired_watch_paths(
@@ -240,13 +227,6 @@ fn local_workspace_path(
   };
 
   joined.canonicalize().ok()
-}
-
-fn local_workspace_target_watch(
-  root: &Path,
-  specifier: &str,
-) -> Option<RuntimeWorkspaceWatchedPath> {
-  local_workspace_target_watches(root, specifier).into_iter().next()
 }
 
 fn local_workspace_target_watches(
@@ -452,6 +432,19 @@ mod tests {
   use super::*;
   use crate::RuntimeBuilder;
 
+  fn single_target_watch(
+    root: &Path,
+    specifier: &str,
+  ) -> RuntimeWorkspaceWatchedPath {
+    let watches = local_workspace_target_watches(root, specifier);
+    assert_eq!(
+      watches.len(),
+      1,
+      "expected exactly one watch for `{specifier}`, got {watches:?}",
+    );
+    watches.into_iter().next().unwrap()
+  }
+
   #[test]
   fn watcher_rejects_path_without_watch_capability() {
     let root = std::env::temp_dir().join(format!("mech-watch-capability-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos())); std::fs::create_dir_all(&root).unwrap();
@@ -466,12 +459,12 @@ mod tests {
     std::fs::create_dir_all(&root).unwrap();
     let target = root.join("main.mec");
     std::fs::write(&target, "x := 1").unwrap();
-    let watch = local_workspace_target_watch(&root, "main.mec").unwrap();
+    let watch = single_target_watch(&root, "main.mec");
     assert_eq!(watch.watch_path, root.canonicalize().unwrap());
     assert_eq!(watch.authorized_path, target.canonicalize().unwrap());
     assert_eq!(watch.filter_paths, vec![target.clone()]);
     std::fs::remove_file(&target).unwrap();
-    let watch = local_workspace_target_watch(&root, "main.mec").unwrap();
+    let watch = single_target_watch(&root, "main.mec");
     assert_eq!(watch.watch_path, root.canonicalize().unwrap());
     assert_eq!(watch.authorized_path, target);
     assert_eq!(watch.filter_paths, vec![watch.authorized_path.clone()]);
@@ -481,7 +474,7 @@ mod tests {
   #[test]
   fn target_watch_ignores_non_local_specifiers() {
     let root = std::env::temp_dir();
-    assert!(local_workspace_target_watch(&root, "https://example.com/main.mec").is_none());
+    assert!(local_workspace_target_watches(&root, "https://example.com/main.mec").is_empty());
   }
   #[test]
   fn file_scoped_watch_grant_authorizes_parent_runtime_watch() {
@@ -510,7 +503,7 @@ mod tests {
     let sibling = root.join("sibling.mec");
     std::fs::write(&target, "x := 1").unwrap();
     std::fs::write(&sibling, "y := 2").unwrap();
-    let watch = local_workspace_target_watch(&root, "main.mec").unwrap();
+    let watch = single_target_watch(&root, "main.mec");
     let mut watches = BTreeSet::new();
     watches.insert(watch);
     assert!(event_allowed_by_watches(&watches, &target));
@@ -533,7 +526,7 @@ mod tests {
     std::fs::write(&sibling, "y := 2").unwrap();
     symlink(&real, &link).unwrap();
 
-    let watch = local_workspace_target_watch(&root, "link.mec").unwrap();
+    let watch = single_target_watch(&root, "link.mec");
     assert_eq!(watch.watch_path, root.canonicalize().unwrap());
     assert_eq!(watch.authorized_path, real.canonicalize().unwrap());
     assert!(watch.filter_paths.contains(&link));
@@ -562,7 +555,7 @@ mod tests {
     std::fs::write(&sibling, "y := 2").unwrap();
     symlink(&real, &link).unwrap();
 
-    let existing_watch = local_workspace_target_watch(&root, "link.mec").unwrap();
+    let existing_watch = single_target_watch(&root, "link.mec");
     let canonical_real = real.canonicalize().unwrap();
     assert_eq!(existing_watch.authorized_path, canonical_real);
     assert!(existing_watch.filter_paths.contains(&link));
@@ -572,7 +565,7 @@ mod tests {
     current.insert(existing_watch);
     std::fs::remove_file(&link).unwrap();
     let mut desired = BTreeSet::new();
-    desired.insert(local_workspace_target_watch(&root, "link.mec").unwrap());
+    desired.insert(single_target_watch(&root, "link.mec"));
     let reconciled = preserve_existing_watch_authorizations(&current, desired);
     let watch = reconciled.iter().next().unwrap();
 
@@ -798,7 +791,7 @@ mod tests {
     std::fs::create_dir_all(&root).unwrap();
     let target = root.join("main.mec");
     std::fs::write(&target, "x := 1").unwrap();
-    let watch = local_workspace_target_watch(&root, "main.mec").unwrap();
+    let watch = single_target_watch(&root, "main.mec");
     let watches = [watch].into_iter().collect::<BTreeSet<_>>();
     assert!(!event_allowed_by_watches(&watches, &root));
     assert!(event_allowed_by_watches(&watches, &target));
@@ -828,7 +821,7 @@ mod tests {
     let root = std::env::temp_dir().join(format!("mech-watch-regular-missing-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
     std::fs::create_dir_all(&root).unwrap();
     let missing = root.join("missing.mec");
-    let watch = local_workspace_target_watch(&root, "missing.mec").unwrap();
+    let watch = single_target_watch(&root, "missing.mec");
     assert_eq!(watch.authorized_path, missing);
     assert_eq!(watch.filter_paths, vec![watch.authorized_path.clone()]);
     std::fs::remove_dir_all(root).unwrap();

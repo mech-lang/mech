@@ -5,14 +5,14 @@ use super::{
     ExtractedConfigProgram,
 };
 
-pub struct ConfigCompiler;
+pub(super) struct ConfigCompiler;
 
 impl ConfigCompiler {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self
     }
 
-    pub fn compile(&self, extracted: &ExtractedConfigProgram) -> MResult<ConfigProgram> {
+    pub(super) fn compile(&self, extracted: &ExtractedConfigProgram) -> MResult<ConfigProgram> {
         let mut items = Vec::new();
         for (code, _) in &extracted.code {
             match code {

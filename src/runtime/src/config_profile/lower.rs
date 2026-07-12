@@ -78,14 +78,14 @@ pub enum ConfigCapabilityKind {
     Serve,
 }
 
-pub struct ConfigLowerer;
+pub(super) struct ConfigLowerer;
 
 impl ConfigLowerer {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self
     }
 
-    pub fn lower(&self, source_name: String, value: ConfigValue) -> MResult<MechConfigDocument> {
+    pub(super) fn lower(&self, source_name: String, value: ConfigValue) -> MResult<MechConfigDocument> {
         let map = expect_map("config", &value)?;
         let mut doc = MechConfigDocument {
             source_name,

@@ -115,7 +115,7 @@ pub fn host_arg_resolved(
 ) -> MResult<Value> {
   match host_arg(function, args, index)? {
     Value::MutableReference(value) => Ok(value.borrow().clone()),
-    Value::Typed(value, _) => todo!(),
+    Value::Typed(..) => todo!(),
     other => Ok(other.clone()),
   }
 }

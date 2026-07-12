@@ -59,28 +59,6 @@ impl MechErrorKind for RuntimeInvalidOperationError {
 }
 
 #[derive(Debug, Clone)]
-pub struct RuntimeModuleExportLinkError {
-  pub source: String,
-  pub alias: String,
-  pub reason: String,
-}
-
-impl MechErrorKind for RuntimeModuleExportLinkError {
-  fn name(&self) -> &str {
-    "RuntimeModuleExportLink"
-  }
-
-  fn message(&self) -> String {
-    format!(
-      "failed to link module export `{}` as `{}`: {}",
-      self.source,
-      self.alias,
-      self.reason,
-    )
-  }
-}
-
-#[derive(Debug, Clone)]
 pub struct RuntimeModuleExportNotFound {
   pub dependency: String,
   pub export: String,
@@ -108,28 +86,6 @@ impl MechErrorKind for UnknownAddressTarget {
 
   fn message(&self) -> String {
     format!("unknown address target `{}`", self.target)
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct ContextAddressReadUnsupported {
-  pub target: String,
-  pub name: String,
-  pub base: String,
-}
-
-impl MechErrorKind for ContextAddressReadUnsupported {
-  fn name(&self) -> &str {
-    "ContextAddressReadUnsupported"
-  }
-
-  fn message(&self) -> String {
-    format!(
-      "context-addressed read `@{}/{}` resolved to `{}`, but context reads are not supported yet",
-      self.name,
-      self.target,
-      self.base,
-    )
   }
 }
 
