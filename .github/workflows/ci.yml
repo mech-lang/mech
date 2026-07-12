@@ -83,6 +83,28 @@ jobs:
       - name: Build run-only CLI with pretty print
         run: cargo build --bin mech --no-default-features --features "run pretty_print"
 
+  windows-cli:
+    name: Windows CLI
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build default Windows CLI
+        run: cargo build --bin mech
+
+      - name: Build REPL-only Windows CLI
+        run: cargo build --bin mech --no-default-features --features repl
+
   dynamic-modules:
     name: Dynamic modules
     runs-on: ubuntu-latest
