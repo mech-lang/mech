@@ -668,46 +668,35 @@ mod tests {
     assert_eq!(record_context.runtime, runtime.id);
     assert_eq!(record_context.subject, record.subject);
     assert_eq!(record_context.transaction, None);
-    assert!(runtime.get_object_with_context(&mut record_context, ObjectId(404)).unwrap().is_none());
-    assert!(!runtime.active_transactions.contains_key(&transaction_id));
-  }
-
-  #[test]
-  fn active_transaction_context_is_valid_and_can_finish_transaction() {
-    let mut runtime = new_runtime();
-    let mut owner_context = runtime.runtime_context().unwrap();
-    owner_context.subject = "active-owner".to_string();
-    let transaction_id = runtime.begin_transaction(&mut owner_context).unwrap();
-
-    let mut active_context = runtime
-      .context_for_active_transaction(transaction_id)
-      .unwrap();
-
-    assert_eq!(active_context.subject, "active-owner");
-    assert_eq!(active_context.transaction, Some(transaction_id));
     runtime
       .put_object_with_context(
-        &mut active_context,
-        ObjectRecord::text(ObjectId(904), "note", "active"),
+        &mut record_context,
+        ObjectRecord::text(ObjectId(905), "note", "historical"),
       )
       .unwrap();
-    assert!(runtime.get_object(ObjectId(904)).unwrap().is_none());
-
-    assert_eq!(
-      runtime.commit_runtime_transaction(&mut active_context).unwrap(),
-      transaction_id,
-    );
-    assert!(runtime.get_object(ObjectId(904)).unwrap().is_some());
+    assert!(runtime.get_object(ObjectId(905)).unwrap().is_some());
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert!(runtime.get_transaction(transaction_id).unwrap().is_some());
   }
 
   #[test]
-  fn missing_active_transaction_context_is_rejected_immediately() {
-    let runtime = new_runtime();
-    let error = runtime
-      .context_for_active_transaction(TransactionId(404))
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "RuntimeTransactionNotFound");
+  fn active_transaction_must_continue_with_original_context() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+    context.subject = "owner".to_string();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .put_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(906), "note", "staged"),
+      )
+      .unwrap();
+    assert!(runtime.get_object(ObjectId(906)).unwrap().is_none());
+    assert_eq!(
+      runtime.commit_runtime_transaction(&mut context).unwrap(),
+      transaction_id,
+    );
+    assert!(runtime.get_object(ObjectId(906)).unwrap().is_some());
   }
 
 }
