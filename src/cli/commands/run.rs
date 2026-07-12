@@ -247,21 +247,19 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 
     let repl_flag = plan.repl_requested || plan.missing_run_options;
     match result {
+        #[cfg(feature = "repl")]
+        Ok(_) if repl_flag => {
+            return Ok(CliOutcome::EnterRepl(
+                crate::cli::commands::repl::ReplStartup {
+                    runtime_config: repl_runtime_config,
+                    seed_program: Some(runtime.take_program()),
+                },
+            ));
+        }
+        #[cfg(not(feature = "repl"))]
         Ok(value) if repl_flag => {
-            #[cfg(all(feature = "run", feature = "repl"))]
-            {
-                return Ok(CliOutcome::EnterRepl(
-                    crate::cli::commands::repl::ReplStartup {
-                        runtime_config: repl_runtime_config,
-                        seed_program: Some(runtime.take_program()),
-                    },
-                ));
-            }
-            #[cfg(not(feature = "repl"))]
-            {
-                print_value(&value);
-                return Ok(CliOutcome::exit(0));
-            }
+            print_value(&value);
+            return Ok(CliOutcome::exit(0));
         }
         Ok(value) => {
             print_value(&value);

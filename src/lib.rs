@@ -84,15 +84,15 @@ pub use self::web_host::*;
 #[cfg(feature = "test")]
 pub use self::test::*;
 
-pub use mech_core::*;
 pub use mech_syntax::*;
 
 // Print a prompt 
 // 4, 8, 15, 16, 23, 42
-pub fn print_prompt() {
-  stdout().flush();
+pub fn print_prompt() -> MResult<()> {
+  stdout().flush()?;
   print!("{}", ">: ".truecolor(246,192,78));
-  stdout().flush();
+  stdout().flush()?;
+  Ok(())
 }
 
 // Generate a new id for creating unique owner ids
@@ -325,10 +325,11 @@ fn pretty_print_symbols(program: &MechProgram) -> String {
   format!("\n{table}\n")
 }
 
-pub fn clc() {
+pub fn clc() -> MResult<()> {
   let mut stdo = stdout();
-  stdo.execute(terminal::Clear(terminal::ClearType::All));
-  stdo.execute(cursor::MoveTo(0,0));
+  stdo.execute(terminal::Clear(terminal::ClearType::All))?;
+  stdo.execute(cursor::MoveTo(0,0))?;
+  Ok(())
 }
 
 pub enum Source<'a> {

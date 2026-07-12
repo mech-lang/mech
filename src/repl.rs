@@ -12,7 +12,9 @@ use nom::{
   character::complete::{space0,space1,digit1},
 };
 
+#[cfg(feature = "serde")]
 use bincode::serde::encode_to_vec;
+#[cfg(feature = "serde")]
 use bincode::config::standard;
 use include_dir::{include_dir, Dir};
 use std::time::{Instant, Duration};
@@ -119,7 +121,7 @@ impl MechRepl {
           Ok("Enter a doc to search for.".to_string())
         }
       }
-      ReplCommand::Symbols(name) => {
+      ReplCommand::Symbols(_name) => {
         #[cfg(feature = "pretty_print")]
         let out = prgrm.interpreter().pretty_print_symbols();
         #[cfg(not(feature = "pretty_print"))]
@@ -144,7 +146,7 @@ impl MechRepl {
           return Ok("The :whos command requires the whos feature.".to_string());
         }
       }
-      ReplCommand::Clear(name) => {
+      ReplCommand::Clear(_name) => {
         // Drop the old program and replace it with a new one
         let id = self.active;
         *prgrm = MechProgram::new(MechProgramConfig{
@@ -164,12 +166,12 @@ impl MechRepl {
               Ok(current_path) => {
                 return Ok(format!("{}", current_path.display()));
               }
-              Err(e) => {
+              Err(_e) => {
                 return Err(MechError::new(PathNotFound{ file_path: path.display().to_string() }, None).with_compiler_loc());
               }
             }
           }
-          Err(e) => {
+          Err(_e) => {
             return Err(MechError::new(PathNotFound{ file_path: path.display().to_string() }, None).with_compiler_loc());
           }
         }
@@ -187,8 +189,12 @@ impl MechRepl {
         file.write_all(&encoded)?;
         return Ok(format!("Saved program state to {}", path.display()));
       }
+      #[cfg(not(feature = "serde"))]
+      ReplCommand::Save(_) => {
+        Ok("The :save command requires the `serde` feature.".to_string())
+      }
       ReplCommand::Clc => {
-        clc();
+        clc()?;
         Ok("".to_string())
       },
       ReplCommand::Load(paths) => {
@@ -202,7 +208,7 @@ impl MechRepl {
         let out = r.pretty_print();
         #[cfg(not(feature = "pretty_print"))]
         let out = format!("{:#?}", r);
-        return Ok(format!("\n{}\n{}\n", r.kind(), r));
+        return Ok(format!("\n{}\n{}\n", r.kind(), out));
       }
       ReplCommand::Code(code) => {
         let mut result = Value::Empty;
@@ -215,7 +221,7 @@ impl MechRepl {
         #[cfg(not(feature = "pretty_print"))]
         let out = format!("{:#?}", r);
         let kind_formatted = format!("{}", r.kind()).ansi_color(218);
-        return Ok(format!("\n{}\n{}\n", kind_formatted, r));
+        return Ok(format!("\n{}\n{}\n", kind_formatted, out));
       }
       ReplCommand::Profile(on) => {
         let _ = on;
@@ -234,9 +240,6 @@ impl MechRepl {
         let _ = (step_id, n);
         let elapsed_time = now.elapsed();
         return Ok(format!("Stepping is not currently supported in Program ({})", format_cycles(1, elapsed_time)));      
-      }
-      x => {
-        return Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc());
       }
     }
   }

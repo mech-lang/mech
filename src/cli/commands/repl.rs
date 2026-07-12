@@ -19,7 +19,9 @@ use mech_syntax::MICROMIKA_WAVE;
 use mech_syntax::{ReplCommand, parse_repl_command};
 
 use crate::cli::outcome::CliOutcome;
-use crate::{MechRepl, ReplExecution, clc, generate_uuid, print_prompt};
+#[cfg(all(feature = "repl", not(feature = "run")))]
+use crate::generate_uuid;
+use crate::{MechRepl, ReplExecution, clc, print_prompt};
 
 pub(crate) const TEXT_LOGO: &str = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
@@ -49,7 +51,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     #[cfg(windows)]
     control::set_virtual_terminal(true)
         .map_err(|_| io::Error::other("failed to enable Windows virtual terminal processing"))?;
-    clc();
+    clc()?;
     let mut stdo = std::io::stdout();
     stdo.execute(Print(text_logo))?;
     stdo.execute(cursor::MoveToNextLine(1))?;
@@ -101,7 +103,9 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
             "\n{} {}Enter {} to terminate this REPL session.{}\n",
             micromika_point, mika_open, quit_cmd, mika_close
         );
-        print_prompt();
+        if let Err(error) = print_prompt() {
+            eprintln!("failed to print prompt: {error:?}");
+        }
     })
     .map_err(|error| {
         MechError::new(
@@ -150,7 +154,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
                 *ci = 0;
             }
         }
-        print_prompt();
+        print_prompt()?;
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
 

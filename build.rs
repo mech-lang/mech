@@ -1,16 +1,18 @@
-#![allow(warnings)]
 use std::{
-  env,
   error::Error,
-  fs::{self, File},
-  io::Write,
   path::Path,
 };
 extern crate winres;
 
-const SOURCE_DIR: &str = r"project";
-
 fn main() -> Result<(), Box<dyn Error>> {
+  println!("cargo::rustc-check-cfg=cfg(has_file_wasm)");
+  println!("cargo::rustc-check-cfg=cfg(has_file_js)");
+  println!("cargo::rustc-check-cfg=cfg(has_file_shim)");
+  println!("cargo::rustc-check-cfg=cfg(has_file_stylesheet)");
+  println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm_bg.wasm.br");
+  println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm.js");
+  println!("cargo::rerun-if-changed=include/index.html");
+  println!("cargo::rerun-if-changed=include/style.css");
   
   if cfg!(target_os = "windows") {
     let mut res = winres::WindowsResource::new();

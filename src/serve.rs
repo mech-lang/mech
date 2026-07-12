@@ -15,7 +15,7 @@ use mech_runtime::{
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, SourceKind, check_fs_capability,
 };
-use warp::{Filter, Reply};
+use warp::Filter;
 
 use crate::*;
 
@@ -98,6 +98,7 @@ impl ServerSourceRegistry {
     self.static_asset_paths.keys().cloned().collect()
   }
 
+  #[cfg(test)]
   fn get_route(&self, path: &str) -> Option<ServerAsset> {
     self.get_route_with_trace(path).map(|(asset, _)| asset)
   }
