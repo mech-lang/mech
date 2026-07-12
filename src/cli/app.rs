@@ -6,6 +6,7 @@ use crate::cli::capabilities;
 #[cfg(any(feature = "serve", feature = "run"))]
 use crate::cli::config;
 use crate::cli::outcome::{CliOutcome, RootFlags};
+#[cfg(any(feature = "formatter", feature = "serve"))]
 use crate::cli::resources::WebResourceDefaults;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -131,6 +132,7 @@ async fn async_main() -> MResult<()> {
 
 pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     let flags = root_flags(&cli_matches);
+    #[cfg(any(feature = "formatter", feature = "serve"))]
     let resources = WebResourceDefaults::new(VERSION);
 
     #[cfg(feature = "bundle_web")]
