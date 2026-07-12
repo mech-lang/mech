@@ -14,7 +14,11 @@ use mech_runtime::RuntimeConfig;
 use mech_syntax::{ReplCommand, parse_repl_command};
 
 use crate::cli::outcome::CliOutcome;
-use crate::{MICROMIKA_WAVE, MechRepl, ReplExecution, clc, generate_uuid, print_prompt};
+use crate::{MechRepl, ReplExecution, clc, generate_uuid, print_prompt};
+
+const REPL_EXIT_SPINNER: &[&str] = &[
+    "╭◉╮", "╭◉─", "╭◉╯", "╭◉─", "╭◉╯", "╭◉─", "╭◉╮", " ",
+];
 
 pub(crate) const TEXT_LOGO: &str = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
@@ -75,10 +79,10 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
             let final_state = ProgressBar::new_spinner();
             let completed_style = ProgressStyle::with_template("\n{spinner:.yellow} {msg}")
                 .unwrap_or_else(|_| ProgressStyle::default_spinner())
-                .tick_strings(MICROMIKA_WAVE);
+                .tick_strings(REPL_EXIT_SPINNER);
             final_state.set_style(completed_style);
             final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
-            for _ in 0..MICROMIKA_WAVE.len() - 1 {
+            for _ in 0..REPL_EXIT_SPINNER.len() - 1 {
                 thread::sleep(Duration::from_millis(100));
                 final_state.tick();
             }
