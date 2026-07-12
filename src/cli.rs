@@ -14,6 +14,8 @@ pub(crate) mod diagnostics;
 pub mod host_factories;
 #[cfg(feature = "run")]
 pub mod host_grants;
+#[cfg(feature = "serve")]
+pub mod serve_options;
 #[cfg(feature = "cli_core")]
 pub(crate) mod outcome;
 #[cfg(any(feature = "formatter", feature = "serve"))]
@@ -24,8 +26,6 @@ pub mod run;
 pub mod run_options;
 #[cfg(feature = "run")]
 pub mod runtime_plan;
-#[cfg(feature = "serve")]
-pub mod serve_options;
 
 #[cfg(all(test, any(feature = "serve", feature = "bundle_web", feature = "run")))]
 pub(crate) static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());

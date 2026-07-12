@@ -11,7 +11,8 @@ use crate::cli::resources::WebResourceDefaults;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ROOT_LOGO: &str = "Mech";
-const FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
+const FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED: &str =
+    "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
 
 pub(crate) fn terminate_process(code: i32) -> ! {
     std::process::exit(code)
@@ -71,7 +72,8 @@ pub(crate) fn build_cli() -> Command {
                 .long("trace")
                 .help("Print trace output for state-machine arms and function calls")
                 .action(ArgAction::SetTrue),
-        );
+        )
+        ;
 
     #[cfg(feature = "repl")]
     let cli_command = cli_command.arg(
@@ -136,8 +138,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     #[cfg(feature = "bundle_web")]
     if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
         reject_filesystem_capability_args(bundle_matches)?;
-        let args =
-            crate::cli::commands::bundle_web::BundleWebCliArgs::from_matches(bundle_matches)?;
+        let args = crate::cli::commands::bundle_web::BundleWebCliArgs::from_matches(bundle_matches)?;
         let plan = crate::cli::commands::bundle_web::prepare(args)?;
         return crate::cli::commands::bundle_web::run(plan);
     }
@@ -185,9 +186,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
             &cli_matches,
             cli_matches.subcommand_matches("run"),
         )?;
-        let config_matches = cli_matches
-            .subcommand_matches("run")
-            .unwrap_or(&cli_matches);
+        let config_matches = cli_matches.subcommand_matches("run").unwrap_or(&cli_matches);
         let options = crate::cli::run_options::prepare_run_options(args, config_matches)?;
         let plan = crate::cli::runtime_plan::build_run_execution_plan(options)?;
         let outcome = crate::cli::commands::run::run(plan)?;
@@ -218,20 +217,13 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 #[cfg(any(feature = "serve", feature = "run"))]
 fn reject_filesystem_capability_args(matches: &ArgMatches) -> MResult<()> {
     if capabilities::filesystem_capability_args_present(matches) {
-        return Err(MechError::new(
-            GenericError {
-                msg: FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED.to_string(),
-            },
-            None,
-        ));
+        return Err(MechError::new(GenericError { msg: FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED.to_string() }, None));
     }
     Ok(())
 }
 
 #[cfg(not(any(feature = "serve", feature = "run")))]
-fn reject_filesystem_capability_args(_matches: &ArgMatches) -> MResult<()> {
-    Ok(())
-}
+fn reject_filesystem_capability_args(_matches: &ArgMatches) -> MResult<()> { Ok(()) }
 
 fn apply_outcome(outcome: CliOutcome) -> MResult<()> {
     match outcome {

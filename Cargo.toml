@@ -106,10 +106,10 @@ baselib = ["bool", "string",
     ]
 
 compiler = ["anyhow", "console", "tempfile", "zip", "mech-core/compiler", "mech-program/compiler", "mech-syntax/compiler"]
-program = ["string", "mech-core/program", "mech-program/program", "mech-syntax/program"]
+program = ["mech-core/program", "mech-program/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-program/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-program/serde", "mech-syntax/serde"]
-mika = ["serde", "mech-syntax/mika", "mech-core/mika"]
+mika = ["mech-syntax/mika", "mech-core/mika"]
 
 statements = ["mech-core/statements", "mech-program/statements", "mech-syntax/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-program/variables", "mech-syntax/variables"]
