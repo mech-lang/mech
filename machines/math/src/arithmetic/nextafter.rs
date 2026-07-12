@@ -245,10 +245,3 @@ register_descriptor! {
     ptr: &MathNextafter{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "nextafter",
-  }
-}

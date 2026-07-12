@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathAsec{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "asec",
-  }
-}

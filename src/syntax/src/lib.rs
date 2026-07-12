@@ -1,5 +1,4 @@
-// Syntax
-// =============================================================================
+// # Syntax
 
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
@@ -18,7 +17,6 @@ use mech_core::nodes::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use num_traits::*;
-use unicode_segmentation::UnicodeSegmentation;
 
 #[cfg(feature = "serde")] use serde::{Serialize, Deserialize};
 
@@ -41,7 +39,6 @@ use colored::*;
 
 //#[cfg(feature = "mechdown")]
 pub mod mechdown;
-pub mod imports;
 pub mod expressions;
 pub mod statements;
 pub mod structures;
@@ -58,7 +55,6 @@ pub mod state_machines;
 pub mod functions;
 pub mod repl;
 
-pub use crate::imports::*;
 pub use crate::parser::*;
 //#[cfg(feature = "mechdown")]
 pub use crate::mechdown::*;
@@ -185,16 +181,22 @@ impl<'a> ParseString<'a> {
     if self.is_empty() {
       return None;
     }
-    // Try to match the tag without allocating a temporary grapheme vector.
+    let current = self.graphemes[self.cursor];
+
+    let gs = graphemes::init_tag(tag); 
+    let gs_len = gs.len();
+
+    // Must have enough remaining characters
+    if self.len() < gs_len {
+      return None;
+    }
+
+    // Try to match the tag
     let mut tmp_location = self.location;
-    let mut matched_len = 0usize;
-    for (i, expected) in UnicodeSegmentation::graphemes(tag, true).enumerate() {
+    for i in 0..gs_len {
       let c = self.cursor + i;
-      let g = match self.graphemes.get(c) {
-        Some(g) => *g,
-        None => return None,
-      };
-      if g != expected {
+      let g = self.graphemes[c];
+      if g != gs[i] {
         return None;
       }
       if graphemes::is_new_line(g) {
@@ -205,13 +207,9 @@ impl<'a> ParseString<'a> {
       } else {
         tmp_location.col += graphemes::width(g);
       }
-      matched_len += 1;
-    }
-    if matched_len == 0 {
-      return None;
     }
     // Tag matched, commit change
-    self.cursor += matched_len;
+    self.cursor += gs_len;
     self.location = tmp_location;
     Some(tag.to_string())
   }

@@ -1,9 +1,0 @@
-config := {
-  host: {
-    provider: "robot-arm"
-    contexts: [
-      { name: "commands" base-uri: "robot://{instance}/commands" operations: ["move", "grip", "home"] }
-      { name: "state" base-uri: "robot://{instance}/state" operations: ["read"] }
-    ]
-  }
-}

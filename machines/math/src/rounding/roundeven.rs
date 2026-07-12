@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathRoundeven{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "roundeven",
-  }
-}

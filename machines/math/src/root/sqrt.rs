@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathSqrt{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "sqrt",
-  }
-}

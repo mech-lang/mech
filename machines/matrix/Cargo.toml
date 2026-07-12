@@ -49,10 +49,7 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-prelude = ["horzcat", "vertcat", "matmul", "solve", "dot", "transpose", "comprehensions"]
 matrix_default = ["matmul", "transpose", "dot", "solve", "comprehensions"]
-horzcat = ["matrix"]
-vertcat = ["matrix"]
 matmul = ["num-traits", "matrix"]
 transpose = ["num-traits", "matrix"]
 dot = ["num-traits", "matrix"]

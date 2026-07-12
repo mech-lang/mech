@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathTgamma{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "tgamma",
-  }
-}

@@ -268,10 +268,3 @@ register_descriptor! {
     ptr: &MathAtan2{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "atan2",
-  }
-}

@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathAcsc{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "acsc",
-  }
-}

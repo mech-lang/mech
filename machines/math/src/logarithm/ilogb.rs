@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathIlogb{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "ilogb",
-  }
-}

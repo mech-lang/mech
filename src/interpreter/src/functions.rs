@@ -9,7 +9,6 @@ use crate::tracing::{
 #[cfg(all(feature = "kind_annotation", feature = "enum"))]
 use std::collections::HashSet;
 use crate::*;
-use std::sync::Arc;
 
 // Functions
 // ============================================================================
@@ -98,16 +97,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
     for (_, arg_expr) in fxn_call.args.iter() {
       input_arg_values.push(expression(arg_expr, env, p)?);
     }
-    #[cfg(feature = "subscript_formula")]
-    let output_is_live = current_string_access_expression_live(p)
-      || input_arg_values.iter().any(|value| string_access_input_is_live(value, p));
-    let output = execute_user_function(&user_fxn, &input_arg_values, p)?;
-    #[cfg(feature = "subscript_formula")]
-    if output_is_live {
-      mark_current_string_access_expression_live(p);
-      mark_string_access_value_live(p, &output);
-    }
-    return Ok(output);
+    return execute_user_function(&user_fxn, &input_arg_values, p);
   }
 
   // Pre-compiled built-in functions.
@@ -122,7 +112,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
       .borrow()
       .function_compilers
       .get(&fxn_name_id)
-      .cloned()
+      .copied()
   };
   match fxn_compiler {
     Some(fxn_compiler) => {
@@ -160,7 +150,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
 // for the given argument types, runs it once to produce an initial value, then
 // pushes it onto the reactive plan so it re-runs when its inputs change.
 pub fn execute_native_function_compiler(
-  fxn_compiler: Arc<dyn NativeFunctionCompiler>,
+  fxn_compiler: &'static dyn NativeFunctionCompiler,
   input_arg_values: &Vec<Value>,
   p: &Interpreter,
 ) -> MResult<Value> {
@@ -705,10 +695,6 @@ fn bind_function_inputs(
         detach_value(input_value)
       }
     };
-    #[cfg(feature = "subscript_formula")]
-    if current_string_access_expression_live(p) || string_access_input_is_live(input_value, p) {
-      mark_string_access_value_live(p, &bound_value);
-    }
     scoped_state.save_symbol(*arg_id, arg_name, bound_value, false);
   }
   Ok(())

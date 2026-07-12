@@ -68,21 +68,27 @@ impl MechSet {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechSet {
   fn pretty_print(&self) -> String {
-    fn indent_multiline(value: &str, spaces: usize) -> String {
-      let pad = " ".repeat(spaces);
-      value.lines().map(|line| format!("{pad}{line}")).collect::<Vec<_>>().join("\n")
+    let mut builder = Builder::default();
+    let mut element_strings = vec![];
+    for x in self.set.iter() {
+      element_strings.push(x.pretty_print());
     }
+    builder.push_record(element_strings);
 
-    let mut lines = Vec::new();
-    for element in self.set.iter() {
-      lines.push(indent_multiline(&element.pretty_print(), 2));
-    }
-
-    if lines.is_empty() {
-      "{}".to_string()
-    } else {
-      format!("{{\n{}\n}}", lines.join(",\n"))
-    }
+    let style = Style::empty()
+      .top(' ')
+      .left('║')
+      .right('║')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left('╔')
+      .corner_top_right('╗')
+      .corner_bottom_left('╚')
+      .corner_bottom_right('╝');
+    let mut table = builder.build();
+    table.with(style);
+    format!("{table}")
   }
 }
 

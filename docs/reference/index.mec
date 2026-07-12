@@ -1,84 +1,50 @@
 Platform Reference
-================================================================================
+===============================================================================
 
-The reference is organized by stable concepts rather than by implementation crate.
-Concrete host provider behavior is documented in each host crate under `hosts/*/docs`.
-
-1. Language and Data
---------------------------------------------------------------------------------
+1. Data Model
+---------------------------------------------------------------------------
 
 - [Data Types](/reference/data.html)
-- [Data Structures](/reference/structures.html)
-- [Defining, Assigning, and Accessing Data](/reference/define.html) `todo`
-- [Indexing](/reference/indexing.html)
-- [Conversion](/reference/convert.html) `todo`
-- [Broadcasting](/reference/broadcasting.html)
-- [`comprehension`](/reference/comprehension.html)
-- [`function`](/reference/function.html)
-- [`match`](/reference/match.html)
-- [`pattern`](/reference/pattern.html)
-- [`state machine`](/reference/state-machine.html)
-- [Modules](/reference/modules.html)
-- [Validation](/reference/validation.html)
+    - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums
+    - [`bool`](/reference/bool.html) - logical values for true and false
+    - [`empty`](/reference/empty.html) - represents an absence of value
+    - [`kind`](/reference/kind.html) - a category of values
+    - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
+    - [`option`](/reference/option.html) - optional values that may be empty or present
+    - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
+- Data Structures
+    - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
+    - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
+    - [`record`](/reference/record.html) - groups related fields, usually for representing structured data
+    - [`set`](/reference/set.html) - unordered collection of unique values
+    - [`table`](/reference/table.html) - collection of heterogeneous data organized into rows and columns
+    - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
+- Statements and Expressions
+    - [Defining, Assigning, and Accessing Data](/reference/define.html) - create data and change it
+    - [Data Conversion](/reference/convert.html) - convert data from one kind to another
+    - [Expression Broadcasting](/reference/broadcasting.html) - apply operations over data structures
+    - [Operators](/reference/operators.html) - binary and assignment operator quick reference
+    - [Indexing](/reference/indexing.html) - access elements within data structures
 
-2. Runtime
---------------------------------------------------------------------------------
+2. Programming Model
+---------------------------------------------------------------------------
 
-- [Runtime Overview](/reference/runtime/index.html)
-- [Runtime Object](/reference/runtime/runtime.html)
-- [Runtime Builder](/reference/runtime/builder.html)
-- [Runtime Context](/reference/runtime/context.html)
-- [Runtime Events](/reference/runtime/events.html)
-- [Scheduler](/reference/runtime/scheduler.html)
-- [Store](/reference/runtime/store.html)
-- [Source Resolver](/reference/runtime/source-resolver.html)
-- [Module Manifests](/reference/runtime/module-manifests.html)
+(i)> Coming `v0.3`
 
-3. Project Configuration
---------------------------------------------------------------------------------
+- [Functions](/reference/functions.html)
+- [Patterns](/reference/patterns.html)
+- [Comprehensions](/reference/comprehensions.html)
+- Error Handling
+- State Machines
+- SynthAssign
+- Modules
+- Programs
 
-- [Configuration Overview](/reference/config/index.html)
-- [Config Files](/reference/config/config-files.html)
-- [Config Schema](/reference/config/schema.html)
-- [Runtime Config](/reference/config/runtime.html)
-- [Run Config](/reference/config/run.html)
-- [Serve Config](/reference/config/serve.html)
-- [Host Config](/reference/config/hosts.html)
-- [Grants](/reference/config/grants.html)
+3. System Model
+---------------------------------------------------------------------------
 
-4. Commands
---------------------------------------------------------------------------------
+(i)> Coming `v0.4`
 
-- [`mech`](/reference/commands/mech.html)
-- [`mechc`](/reference/commands/mechc.html)
-- [`mech run`](/reference/commands/run.html)
-- [`mech test`](/reference/commands/test.html)
-- [`mech serve`](/reference/commands/serve.html)
-- [`mech build`](/reference/commands/build.html)
-- [`mech format`](/reference/commands/format.html)
-- [`mech bundle-web`](/reference/commands/bundle-web.html)
-
-5. Contexts
---------------------------------------------------------------------------------
-
-- [Contexts Overview](/reference/contexts/index.html)
-- [Bindings](/reference/contexts/bindings.html)
-- [Capabilities](/reference/contexts/capabilities.html)
-- [Paths](/reference/contexts/paths.html)
-
-6. Build and Deployment
---------------------------------------------------------------------------------
-
-- [Deployment Overview](/reference/deployment/index.html)
-- [Command Line](/reference/deployment/command-line.html)
-- [Web Server](/reference/deployment/web-server.html)
-- [Static Web Bundles](/reference/deployment/static-web-bundles.html)
-- [Executables](/reference/deployment/executables.html)
-- [WASM](/reference/deployment/wasm.html)
-
-7. Host Providers
---------------------------------------------------------------------------------
-
-- [Browser Host](/hosts/browser/docs/index.html)
-- [CLI Host](/hosts/cli/docs/index.html)
-- [Robot Arm Host](/hosts/robot-arm/docs/index.html)
+- Capabilities
+- Distributed Computation
+- Concurrency and Parallelism

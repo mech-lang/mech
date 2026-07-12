@@ -80,10 +80,3 @@ register_descriptor! {
     ptr: &MathSinh{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "sinh",
-  }
-}

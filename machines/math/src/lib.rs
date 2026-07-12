@@ -1,14 +1,12 @@
-#![cfg_attr(not(test), no_main)]
+#![no_main]
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
-#[cfg(not(feature = "dynamic-module"))]
 use mech_core::*;
 
-#[cfg(all(not(feature = "dynamic-module"), feature = "functions"))]
 use paste::paste;
 
 #[cfg(feature = "vector2")]
@@ -45,12 +43,6 @@ use na::RowDVector;
 use std::ops::*;
 use std::fmt::{Display, Debug};
 use std::marker::PhantomData;
-
-#[cfg(any(feature = "round", feature = "dynamic-module"))]
-pub mod kernels;
-
-#[cfg(feature = "dynamic-module")]
-mod dynamic_module;
 
 #[cfg(feature = "arithmetic")]
 pub mod arithmetic;

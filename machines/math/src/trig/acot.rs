@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathAcot{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "acot",
-  }
-}

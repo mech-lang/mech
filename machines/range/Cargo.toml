@@ -49,13 +49,10 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-prelude = ["inclusive", "exclusive", "inclusive_increment", "exclusive_increment"]
 range_default = ["inclusive", "exclusive"]
 range = ["functions", "matrix", "formulas", "num-traits", "mech-core/range"]
 inclusive = ["range"]
 exclusive = ["range"]
-inclusive_increment = ["inclusive"]
-exclusive_increment = ["exclusive"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

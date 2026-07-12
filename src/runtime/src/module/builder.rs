@@ -117,7 +117,6 @@ impl ModuleBuilder {
       resolved.exports,
       resolved.imports,
       resolved.contexts,
-      resolved.address_references,
       resolved.scopes,
       dependency_versions.to_vec(),
       capability_requirements.to_vec(),
@@ -127,15 +126,12 @@ impl ModuleBuilder {
 }
 
 fn source_version_input(resolved: &ResolvedSource) -> String {
-  // For now this makes version identity depend on source content shape.
-  // Later this should probably become a ContentHash over normalized source bytes.
   format!(
-    "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}\naddress_references={:?}",
+    "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}",
     resolved.source,
     resolved.imports,
     resolved.exports,
     resolved.contexts,
-    resolved.address_references,
   )
 }
 
@@ -151,7 +147,7 @@ impl MechErrorKind for NonExecutableModuleSource {
 
   fn message(&self) -> String {
     format!(
-      "Resolved source `{}` is not an executable Mech module source",
+      "Resolved source is not an executable Mech module source: {}",
       self.canonical_uri,
     )
   }

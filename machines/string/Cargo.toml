@@ -48,7 +48,6 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-prelude = ["concat"]
 string_default = ["concat"]
 concat = ["string"]
 

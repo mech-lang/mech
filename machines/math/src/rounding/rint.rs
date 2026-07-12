@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathRint{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "rint",
-  }
-}

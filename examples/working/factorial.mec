@@ -1,6 +1,0 @@
-factorial(n<f64>) => <f64>
-  ├ 0 => 1
-  └ n => n * factorial(n - 1).
-
-n := 5
-res := factorial(n)

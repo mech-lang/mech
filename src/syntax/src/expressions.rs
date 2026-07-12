@@ -51,26 +51,16 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Ok((input, mc)) => (input, Expression::MatrixComprehension(Box::new(mc))),
         Err(_) => match range_expression(input.clone()) {
           Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
-          Err(_) => match formula(input.clone()) {
-            Ok((input, source_factor)) => {
-              let source_expression = match source_factor.clone() {
-                Factor::Expression(expr) => *expr,
-                fctr => Expression::Formula(fctr),
-              };
-              if let Ok((input, _)) = question(input.clone()) {
-                let (input, _) = whitespace0(input)?;
-                let (input, arms) = many1(match_arm)(input)?;
-                let (input, _) = opt(period)(input)?;
-                (input, Expression::Match(Box::new(MatchExpression { source: source_expression, arms })))
-              } else {
-                match source_factor {
-                  Factor::Expression(expr) => (input, *expr),
-                  fctr => (input, Expression::Formula(fctr)),
-                }
+          Err(_) => match match_expression(input.clone()) {
+            Ok((input, expr)) => (input, Expression::Match(Box::new(expr))),
+            Err(_) => match formula(input.clone()) {
+              Ok((input, Factor::Expression(expr))) => (input, *expr),
+              Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+              Err(err) => {
+                return Err(err);
               }
             }
-            Err(err) => return Err(err),
-          }
+          },
         }
       }
     }
@@ -174,28 +164,18 @@ pub fn l7(input: ParseString) -> ParseResult<Factor> {
 
 // factor := parenthetical-term | negate-factor | not-factor | structure | function-call | literal | slice | var ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  let (input, fctr) = if let Ok((input, fctr)) = parenthetical_term(input.clone()) {
-    (input, fctr)
-  } else if let Ok((input, fctr)) = negate_factor(input.clone()) {
-    (input, fctr)
-  } else if let Ok((input, fctr)) = not_factor(input.clone()) {
-    (input, fctr)
-  } else if let Ok((input, m)) = matrix_comprehension(input.clone()) {
-    (input, Factor::Expression(Box::new(Expression::MatrixComprehension(Box::new(m)))))
-  } else if let Ok((input, s)) = structure(input.clone()) {
-    (input, Factor::Expression(Box::new(Expression::Structure(s))))
-  } else if let Ok((input, f)) = function_call(input.clone()) {
-    (input, Factor::Expression(Box::new(Expression::FunctionCall(f))))
-  } else if let Ok((input, l)) = literal(input.clone()) {
-    (input, Factor::Expression(Box::new(Expression::Literal(l))))
-  } else if let Ok((input, s)) = slice(input.clone()) {
-    (input, Factor::Expression(Box::new(Expression::Slice(s))))
-  } else {
-    match var(input.clone()) {
-      Ok((input, v)) => (input, Factor::Expression(Box::new(Expression::Var(v)))),
-      Err(err) => return Err(err),
-    }
-  };
+  let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<Factor>>)> = vec![
+    ("parenthetical_term", Box::new(|i| parenthetical_term(i))),
+    ("negate_factor", Box::new(|i| negate_factor(i))),
+    ("not_factor", Box::new(|i| not_factor(i))),
+    ("matrix_comprehension", Box::new(|i| matrix_comprehension(i).map(|(i, m)| (i, Factor::Expression(Box::new(Expression::MatrixComprehension(Box::new(m)))))))),
+    ("structure", Box::new(|i| structure(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Structure(s))))))),
+    ("function_call", Box::new(|i| function_call(i).map(|(i, f)| (i, Factor::Expression(Box::new(Expression::FunctionCall(f))))))),
+    ("literal", Box::new(|i| literal(i).map(|(i, l)| (i, Factor::Expression(Box::new(Expression::Literal(l))))))),
+    ("slice", Box::new(|i| slice(i).map(|(i, s)| (i, Factor::Expression(Box::new(Expression::Slice(s))))))),
+    ("var", Box::new(|i| var(i).map(|(i, v)| (i, Factor::Expression(Box::new(Expression::Var(v))))))),
+  ];
+  let (input, fctr) = alt_best(input, &parsers)?;
   let (input, transpose) = opt(transpose)(input)?;
   let fctr = match transpose {
     Some(_) => Factor::Transpose(Box::new(fctr)),
@@ -216,34 +196,11 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
-fn context_address_path_token(input: ParseString) -> ParseResult<Token> {
-  alt((alpha_token, digit_token, dash, slash, underscore, period))(input)
-}
-
-fn context_address_path(input: ParseString) -> ParseResult<Identifier> {
-  let (input, mut tokens) = many1(context_address_path_token)(input)?;
-  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
-  merged.kind = TokenKind::Identifier;
-  Ok((input, Identifier { name: merged }))
-}
-
-fn prefixed_context_path(input: ParseString) -> ParseResult<(Identifier, Identifier)> {
-  let (input, _) = at(input)?;
-  let (input, context) = identifier_path_segment(input)?;
-  let (input, _) = slash(input)?;
-  let (input, name) = context_address_path(input)?;
-  Ok((input, (context, name)))
-}
-
-// var := ("@", identifier, "/", identifier), kind-annotation? | identifier, kind-annotation? ;
+// var := identifier, ?kind-annotation ;
 pub fn var(input: ParseString) -> ParseResult<Var> {
-  if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
-    let ((input, kind)) = opt(kind_annotation)(input)?;
-    return Ok((input, Var{ name, context: Some(context), kind }));
-  }
   let ((input, name)) = identifier(input)?;
   let ((input, kind)) = opt(kind_annotation)(input)?;
-  Ok((input, Var{ name, context: None, kind }))
+  Ok((input, Var{ name, kind }))
 }
 
 // statement-separator := ";" ;
@@ -452,18 +409,18 @@ pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::Equal))
 }
 
-// strict-not-equal := "!==" | "!≡" | "¬≡" | "¬==" ;
+// strict-not-equal := "=!=" | "=¬=" ;
 pub fn strict_not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = alt((tag("!=="),tag("!≡"),tag("¬≡"),tag("¬==")))(input)?;
+  let (input, _) = alt((tag("=!="),tag("=¬=")))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::StrictNotEqual))
 }
 
-// strict-equal := "===" | "≡" | "=:=" ;
+// strict-equal := "=:=" | "≡" ;
 pub fn strict_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
-  let (input, _) = alt((tag("==="),tag("≡")))(input)?;
+  let (input, _) = alt((tag("=:="),tag("≡")))(input)?;
   let (input, _) = ws0e(input)?;
   Ok((input, ComparisonOp::StrictEqual))
 }
@@ -765,26 +722,18 @@ pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   Ok((input, subscripts))
 }
 
-// slice := ("@", identifier, "/", identifier) | identifier, subscript ;
+// slice := identifier, subscript ;
 pub fn slice(input: ParseString) -> ParseResult<Slice> {
-  if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
-    let (input, ixes) = subscript(input)?;
-    return Ok((input, Slice{name, context: Some(context), subscript: ixes}));
-  }
   let (input, name) = identifier(input)?;
   let (input, ixes) = subscript(input)?;
-  Ok((input, Slice{name, context: None, subscript: ixes}))
+  Ok((input, Slice{name, subscript: ixes}))
 }
 
-// slice-ref := ("@", identifier, "/", identifier) | identifier, subscript? ;
+// slice-ref := identifier, subscript? ;
 pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
-  if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
-    let (input, ixes) = opt(subscript)(input)?;
-    return Ok((input, SliceRef{name, context: Some(context), subscript: ixes}));
-  }
   let (input, name) = identifier(input)?;
   let (input, ixes) = opt(subscript)(input)?;
-  Ok((input, SliceRef{name, context: None, subscript: ixes}))
+  Ok((input, SliceRef{name, subscript: ixes}))
 }
 
 // swizzle-subscript := ".", identifier, ",", list1(",", identifier) ;

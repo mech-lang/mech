@@ -94,10 +94,3 @@ register_descriptor! {
     ptr: &MathAtan{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "atan",
-  }
-}

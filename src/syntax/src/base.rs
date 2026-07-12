@@ -112,14 +112,12 @@ leaf!{tab, "\t", TokenKind::Tab}
 leaf!{left_bracket, "[", TokenKind::LeftBracket}
 leaf!{left_parenthesis, "(", TokenKind::LeftParenthesis}
 leaf!{left_brace, "{", TokenKind::LeftBrace}
-leaf!{left_angle1, "<", TokenKind::LeftAngle}
-leaf!{left_angle2, "⟨", TokenKind::LeftAngle}
+leaf!{left_angle, "<", TokenKind::LeftAngle}
 
 leaf!{right_bracket, "]", TokenKind::RightBracket}
 leaf!{right_parenthesis, ")", TokenKind::RightParenthesis}
 leaf!{right_brace, "}", TokenKind::RightBrace}
-leaf!{right_angle1, ">", TokenKind::RightAngle}
-leaf!{right_angle2, "⟩", TokenKind::RightAngle}
+leaf!{right_angle, ">", TokenKind::RightAngle}
 
 leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
 leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
@@ -172,8 +170,6 @@ leaf!(section_sigil, "§", TokenKind::SectionSigil);
 leaf!(mika_section_open, "⸢", TokenKind::MikaSectionOpen);
 leaf!(mika_section_close, "⸥", TokenKind::MikaSectionClose);
 leaf!(prompt_sigil, ">:", TokenKind::PromptSigil);
-leaf!(module_import_sigil, "+>", TokenKind::ModuleImportSigil);
-leaf!(module_export_sigil, "<+", TokenKind::ModuleExportSigil);
 
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
@@ -254,7 +250,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
 
 // forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_drawing_emoji, nbsp, thin_space, mika_section_open, mika_section_close, left_angle2, right_angle2))(input)
+  alt((box_drawing_emoji, nbsp, thin_space, mika_section_open, mika_section_close))(input)
 }
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
@@ -338,9 +334,9 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
+// identifier-symbol := ampersand | dollar | bar | percent | at | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, percent, at, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret))(input)?;
   Ok((input, symbol))
 }
 
@@ -444,36 +440,5 @@ pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
   tokens.append(&mut rest);
   let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Identifier; 
-  Ok((input, Identifier{name: merged}))
-}
-fn identifier_path_segment_emoji(input: ParseString) -> ParseResult<Token> {
-  let (input, _) = is_not(alt((
-    slash,
-    asterisk,
-    comma,
-    colon,
-    equal,
-    left_brace,
-    right_brace,
-    underscore,
-    space,
-    tab,
-    new_line,
-  )))(input)?;
-  emoji(input)
-}
-
-pub fn identifier_path_segment(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((
-    alt((alpha_token, identifier_path_segment_emoji)),
-    many0(alt((alpha_token, digit_token, dash, identifier_path_segment_emoji))),
-  ))(input)?;
-
-  let mut tokens = vec![first];
-  tokens.append(&mut rest);
-
-  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
-  merged.kind = TokenKind::Identifier;
-
   Ok((input, Identifier{name: merged}))
 }

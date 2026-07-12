@@ -140,10 +140,3 @@ register_descriptor! {
     ptr: &MathAbs{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "abs",
-  }
-}

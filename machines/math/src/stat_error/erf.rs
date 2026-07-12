@@ -75,10 +75,3 @@ register_descriptor! {
     ptr: &MathErf{},
   }
 }
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "erf",
-  }
-}

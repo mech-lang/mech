@@ -6,21 +6,19 @@ This document contains information about the Mech project structure.
 1. Repository Structure
 -------------------------------------------------------------------------------
 
-- Assets - Images, icons, and other static assets used in the project.
+- Assets
 
-- Docs - Documentation for the Mech project, including design documents, API references, and user guides.
-- Examples - Example Mech programs and usage examples for different features of the language.
+- Docs
 
-- Core - The core library that defines the fundamental data structures
-- Syntax - The syntax module that defines the syntax of the Mech language, including parsing and code generation.
-- Interpreter - The interpreter module that executes Mech code.
-- Wasm - The WebAssembly module that allows Mech to run in web environments.
-- Program - The program module that defines the structure of a Mech program, including modules, functions, and statements.
-- Mech - The main Mech crate that ties everything together and provides the command-line interface.
- 
-- Installer - An graphical installer for Mech that provides an easy way for (Windows) users to install Mech on their systems.
-- Mech Notebook - A notebook programming interface for Mech, allowing users to write and execute Mech code in a notebook environment.
-- Mech App - A desktop application for Mech using Tauri that provides a user-friendly interface for writing and executing Mech code.
+- Core
+- Syntax
+- Interpreter
+- Program
+- Mech
+- Utilities
+
+- Mech Notebook
+- Mech App
 
 - Machines
     - math
