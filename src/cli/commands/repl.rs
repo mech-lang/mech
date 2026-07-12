@@ -42,7 +42,9 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     let mika_close = "⸥".bright_yellow();
 
     #[cfg(windows)]
-    control::set_virtual_terminal(true)?;
+    control::set_virtual_terminal(true).map_err(|_| {
+        io::Error::other("failed to enable Windows virtual terminal processing")
+    })?;
     clc();
     let mut stdo = std::io::stdout();
     stdo.execute(Print(text_logo))?;
