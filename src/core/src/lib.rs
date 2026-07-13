@@ -105,8 +105,6 @@ pub mod structures;
 pub mod value;
 #[cfg(feature = "functions")]
 pub mod functions;
-#[cfg(feature = "functions")]
-pub mod plan;
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod program;
@@ -121,8 +119,6 @@ pub use self::structures::*;
 pub use self::value::*;
 #[cfg(feature = "functions")]
 pub use self::functions::*;
-#[cfg(feature = "functions")]
-pub use self::plan::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::program::*;

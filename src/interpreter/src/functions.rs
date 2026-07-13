@@ -156,26 +156,17 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
   }
 }
 
-pub(crate) fn retain_initialized_function(
-  p: &Interpreter,
-  function: Box<dyn MechFunction>,
-  spec: PlanNodeSpec,
-) {
-  if spec.has_activation_input() {
-    p.state.borrow().add_plan_node(function, spec);
-  }
-}
-
 // Asks a native function compiler to select the right concrete implementation
 // for the given argument types, runs it once to produce an initial value, then
-// retains it in the reactive plan when it has an activation input.
+// pushes it onto the reactive plan so it re-runs when its inputs change.
 pub fn execute_native_function_compiler(
   fxn_compiler: Arc<dyn NativeFunctionCompiler>,
   input_arg_values: &Vec<Value>,
   p: &Interpreter,
 ) -> MResult<Value> {
+  let plan = p.plan();
   match fxn_compiler.compile(input_arg_values) {
-    Ok(new_fxn) => {
+    Ok(mut new_fxn) => {
       trace_println!(
         p,
         "{}",
@@ -192,15 +183,15 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      new_fxn.solve_result()?;           // run the function once to initialise its output
+      let mut plan_brrw = plan.borrow_mut();
+      new_fxn.solve();                   // run the function once to initialise its output
       let result = new_fxn.out();
       trace_println!(
         p,
         "{}",
         format_trace("arm", format!("result {}", summarize_function_value(&result)))
       );
-      let spec = fxn_compiler.plan_spec(input_arg_values, &result)?;
-      retain_initialized_function(p, new_fxn, spec);
+      plan_brrw.push(new_fxn);          // keep it in the plan for reactive re-evaluation
       Ok(result)
     }
     Err(err) => Err(err),

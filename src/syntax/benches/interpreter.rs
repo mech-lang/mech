@@ -36,9 +36,9 @@ a[:,1] = 4"#;
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
-      let plan = intrp.plan.clone();
+      let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
-        let result = plan.solve_index(0);
+        let result = fxn.solve();
       });
     }
     _ => (),
@@ -54,9 +54,9 @@ c := a ** b"#;
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
-      let plan = intrp.plan.clone();
+      let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
-        let result = plan.solve_index(0);
+        let result = fxn.solve();
       });
     }
     _ => (),
@@ -70,9 +70,9 @@ fn add_scalar(b:&mut Bencher){
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
-      let plan = intrp.plan.clone();
+      let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
-        let result = plan.solve_index(0);
+        fxn.solve();
       });
     }
     _ => (),
@@ -88,9 +88,9 @@ c := a + b"#;
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
-      let plan = intrp.plan.clone();
+      let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
-        let result = plan.solve_index(0);
+        fxn.solve();
       });
     }
     _ => (),

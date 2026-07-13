@@ -155,13 +155,6 @@ impl NativeFunctionCompiler for AssignValue {
       }
     }
   }
-
-  fn plan_spec(&self, arguments: &[Value], _output: &Value) -> MResult<PlanNodeSpec> {
-    if arguments.len() != 2 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None));
-    }
-    PlanNodeSpec::assignment(&arguments[1], &arguments[0])
-  }
 }
 
 pub struct AssignColumn {}
@@ -182,13 +175,6 @@ impl NativeFunctionCompiler for AssignColumn {
         ).with_compiler_loc()
       ),
     }
-  }
-
-  fn plan_spec(&self, arguments: &[Value], _output: &Value) -> MResult<PlanNodeSpec> {
-    if arguments.len() < 2 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() }, None));
-    }
-    PlanNodeSpec::read_modify_write(&arguments[1..], &arguments[0])
   }
 }
 

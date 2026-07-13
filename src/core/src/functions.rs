@@ -116,10 +116,6 @@ impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
-
-  fn plan_spec(&self, arguments: &[Value], output: &Value) -> MResult<PlanNodeSpec> {
-    PlanNodeSpec::reactive(arguments, output)
-  }
 }
 
 
@@ -134,10 +130,6 @@ impl StaticNativeFunctionCompiler {
 impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     self.inner.compile(arguments)
-  }
-
-  fn plan_spec(&self, arguments: &[Value], output: &Value) -> MResult<PlanNodeSpec> {
-    self.inner.plan_spec(arguments, output)
   }
 }
 
@@ -221,8 +213,8 @@ impl PrettyPrint for FunctionDefinition {
     let output_str = format!("{:#?}", self.output);
     let symbols_str = format!("{:#?}", self.symbols);
     let mut plan_str = "".to_string();
-    for step in self.plan.descriptions() {
-      plan_str = format!("{}  - {}\n",plan_str,step);
+    for step in self.plan.borrow().iter() {
+      plan_str = format!("{}  - {}\n",plan_str,step.to_string());
     }
     let data = vec!["📥 Input", &input_str,
                     "📤 Output", &output_str,
@@ -252,7 +244,10 @@ impl FunctionDefinition {
   }
 
   pub fn solve_result(&self) -> MResult<ValRef> {
-    self.plan.solve_all()?;
+    let plan_brrw = self.plan.borrow();
+    for step in plan_brrw.iter() {
+      step.solve_result()?;
+    }
     Ok(self.out.clone())
   }
 
@@ -295,12 +290,7 @@ impl MechFunctionCompiler for UserFunction {
 // Plan
 // ----------------------------------------------------------------------------
 
-struct ExecutablePlanState {
-  functions: Vec<Box<dyn MechFunction>>,
-  graph: PlanGraph,
-}
-
-pub struct Plan(Ref<ExecutablePlanState>);
+pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
 
 impl Clone for Plan {
   fn clone(&self) -> Self { Plan(self.0.clone()) }
@@ -308,136 +298,33 @@ impl Clone for Plan {
 
 impl fmt::Debug for Plan {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    for description in self.descriptions() {
-      writeln!(f, "{}", description)?;
+    for p in &(*self.0.borrow()) {
+      writeln!(f, "{}", p.to_string())?;
     }
     Ok(())
   }
 }
 
 impl Plan {
-  pub fn new() -> Self {
-    Self(Ref::new(ExecutablePlanState {
-      functions: Vec::new(),
-      graph: PlanGraph::new(),
-    }))
-  }
-
-  pub fn add_node(&self, function: Box<dyn MechFunction>, spec: PlanNodeSpec) -> PlanNodeId {
-    let mut state = self.0.borrow_mut();
-    let expected_index = state.functions.len();
-    let node = state.graph.add_node(spec);
-    debug_assert_eq!(node.as_usize(), expected_index);
-    state.functions.push(function);
-    node
-  }
-
-  pub fn len(&self) -> usize { self.0.borrow().functions.len() }
-  pub fn is_empty(&self) -> bool { self.0.borrow().functions.is_empty() }
-
-  pub fn clear(&self) {
-    let mut state = self.0.borrow_mut();
-    state.functions.clear();
-    state.graph.clear();
-  }
-
-  pub fn descriptions(&self) -> Vec<String> {
-    self.0.borrow().functions.iter().map(|fxn| fxn.to_string()).collect()
-  }
-
-  pub fn node_description(&self, index: usize) -> Option<String> {
-    self.0.borrow().functions.get(index).map(|fxn| fxn.to_string())
-  }
-
-  pub fn node_output(&self, index: usize) -> Option<Value> {
-    self.0.borrow().functions.get(index).map(|fxn| fxn.out())
-  }
-
-  pub fn last_output(&self) -> Option<Value> {
-    self.0.borrow().functions.last().map(|fxn| fxn.out())
-  }
-
-  pub fn solve_node(&self, node: PlanNodeId) -> MResult<Value> {
-    self.solve_index(node.as_usize())
-  }
-
-  pub fn solve_index(&self, index: usize) -> MResult<Value> {
-    let length = self.len();
-    if index >= length {
-      return Err(MechError::new(
-        PlanNodeOutOfBounds {
-          node: index,
-          plan_length: length,
-        },
-        None,
-      ));
-    }
-    let state = self.0.borrow();
-    let function = &state.functions[index];
-    function.solve_result()?;
-    Ok(function.out())
-  }
-
-  pub fn solve_from(&self, invalidations: &[PlanInvalidation]) -> MResult<PlanSolveOutcome> {
-    let schedule = {
-      let state = self.0.borrow();
-      state.graph.schedule_from(invalidations)?
-    };
-
-    let mut executed_nodes = 0usize;
-    let mut value = Value::Empty;
-
-    for node in &schedule.ordered_nodes {
-      value = self.solve_node(*node)?;
-      executed_nodes += 1;
-    }
-
-    Ok(PlanSolveOutcome {
-      invalidated_cells: schedule.invalidated_cells,
-      scheduled_nodes: schedule.scheduled_nodes,
-      executed_nodes,
-      value,
-    })
-  }
-
-  pub fn solve_all(&self) -> MResult<PlanSolveOutcome> {
-    let scheduled_nodes = self.len();
-    let mut executed_nodes = 0usize;
-    let mut value = Value::Empty;
-
-    for index in 0..scheduled_nodes {
-      value = self.solve_index(index)?;
-      executed_nodes += 1;
-    }
-
-    Ok(PlanSolveOutcome {
-      invalidated_cells: 0,
-      scheduled_nodes,
-      executed_nodes,
-      value,
-    })
-  }
-
-  #[cfg(feature = "compiler")]
-  pub fn compile_into(&self, ctx: &mut CompileCtx) -> MResult<()> {
-    let state = self.0.borrow();
-    for step in &state.functions {
-      step.compile(ctx)?;
-    }
-    Ok(())
-  }
+  pub fn new() -> Self { Plan(Ref::new(vec![])) }
+  pub fn borrow(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow_mut() }
+  pub fn add_function(&self, func: Box<dyn MechFunction>) { self.0.borrow_mut().push(func); }
+  pub fn get_functions(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn len(&self) -> usize { self.0.borrow().len() }
+  pub fn is_empty(&self) -> bool { self.0.borrow().is_empty() }
 }
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for Plan {
   fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    let descriptions = self.descriptions();
+    let plan_brrw = self.0.borrow();
 
     if self.is_empty() {
       builder.push_record(vec!["".to_string()]);
     } else {
-      let total = descriptions.len();
+      let total = plan_brrw.len();
       let mut display_fxns: Vec<String> = Vec::new();
 
       // Determine which functions to display
@@ -448,7 +335,7 @@ impl PrettyPrint for Plan {
       };
 
       for &ix in &indices {
-        let fxn_str = descriptions[ix].clone();
+        let fxn_str = plan_brrw[ix].to_string();
         let lines: Vec<&str> = fxn_str.lines().collect();
 
         let truncated = if lines.len() > 20 {
@@ -602,277 +489,5 @@ impl MechErrorKind for IncorrectNumberOfArguments {
 
   fn message(&self) -> String {
     format!("Expected {} arguments, but found {}", self.expected, self.found)
-  }
-}
-
-#[cfg(test)]
-mod plan_execution_tests {
-  use super::*;
-
-  struct LoggedFunction {
-    id: usize,
-    log: Ref<Vec<usize>>,
-    output: Value,
-  }
-
-  impl MechFunctionImpl for LoggedFunction {
-    fn solve(&self) {
-      self.log.borrow_mut().push(self.id);
-    }
-
-    fn out(&self) -> Value {
-      self.output.clone()
-    }
-
-    fn to_string(&self) -> String {
-      format!("logged-function-{}", self.id)
-    }
-  }
-
-  #[cfg(feature = "compiler")]
-  impl MechFunctionCompiler for LoggedFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
-      unreachable!("test logged functions are never bytecode compiled")
-    }
-  }
-
-  fn value(index: usize) -> Value {
-    Value::Index(Ref::new(index))
-  }
-
-  fn cell(value: &Value) -> ValueCellId {
-    value_cell_id(value).unwrap()
-  }
-
-  fn input(value: &Value) -> PlanInput {
-    PlanInput {
-      cell: cell(value),
-      mode: PlanInputMode::Reactive,
-    }
-  }
-
-  fn invalidation(value: &Value) -> PlanInvalidation {
-    PlanInvalidation {
-      cell: cell(value),
-      kind: PlanInvalidationKind::Changed,
-    }
-  }
-
-  fn function(id: usize, log: &Ref<Vec<usize>>, output: &Value) -> Box<dyn MechFunction> {
-    Box::new(LoggedFunction {
-      id,
-      log: log.clone(),
-      output: output.clone(),
-    })
-  }
-
-  #[test]
-  fn add_node_keeps_function_and_graph_indexes_aligned() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    let c = value(3);
-
-    let node_0 = plan.add_node(function(0, &log, &a), PlanNodeSpec::default());
-    let node_1 = plan.add_node(function(1, &log, &b), PlanNodeSpec::default());
-    let node_2 = plan.add_node(function(2, &log, &c), PlanNodeSpec::default());
-
-    assert_eq!(node_0.as_usize(), 0);
-    assert_eq!(node_1.as_usize(), 1);
-    assert_eq!(node_2.as_usize(), 2);
-    assert_eq!(plan.len(), 3);
-  }
-
-  #[test]
-  fn solve_from_executes_scheduled_nodes_in_dependency_order() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    let c = value(3);
-    plan.add_node(
-      function(0, &log, &c),
-      PlanNodeSpec::explicit(vec![input(&b)], vec![cell(&c)]),
-    );
-    plan.add_node(
-      function(1, &log, &b),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&b)]),
-    );
-
-    let outcome = plan.solve_from(&[invalidation(&a)]).unwrap();
-
-    assert_eq!(*log.borrow(), vec![1, 0]);
-    assert_eq!(outcome.invalidated_cells, 1);
-    assert_eq!(outcome.scheduled_nodes, 2);
-    assert_eq!(outcome.executed_nodes, 2);
-  }
-
-  #[test]
-  fn solve_from_skips_unrelated_functions() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    let x = value(3);
-    let y = value(4);
-    plan.add_node(
-      function(0, &log, &b),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&b)]),
-    );
-    plan.add_node(
-      function(1, &log, &y),
-      PlanNodeSpec::explicit(vec![input(&x)], vec![cell(&y)]),
-    );
-
-    plan.solve_from(&[invalidation(&a)]).unwrap();
-
-    assert_eq!(*log.borrow(), vec![0]);
-  }
-
-  #[test]
-  fn solve_from_executes_diamond_join_once() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    let c = value(3);
-    let d = value(4);
-    plan.add_node(
-      function(0, &log, &b),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&b)]),
-    );
-    plan.add_node(
-      function(1, &log, &c),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&c)]),
-    );
-    plan.add_node(
-      function(2, &log, &d),
-      PlanNodeSpec::explicit(vec![input(&b), input(&c)], vec![cell(&d)]),
-    );
-
-    plan.solve_from(&[invalidation(&a)]).unwrap();
-
-    assert_eq!(*log.borrow(), vec![0, 1, 2]);
-    assert_eq!(log.borrow().iter().filter(|id| **id == 2).count(), 1);
-  }
-
-  #[test]
-  fn solve_from_rejects_cycle_before_execution() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    plan.add_node(
-      function(0, &log, &b),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&b)]),
-    );
-    plan.add_node(
-      function(1, &log, &a),
-      PlanNodeSpec::explicit(vec![input(&b)], vec![cell(&a)]),
-    );
-
-    let error = plan.solve_from(&[invalidation(&a)]).unwrap_err();
-
-    assert_eq!(error.kind_name(), "PlanDependencyCycle");
-    assert!(log.borrow().is_empty());
-  }
-
-  #[test]
-  fn solve_all_executes_every_function_in_registration_order() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    let c = value(3);
-    plan.add_node(function(0, &log, &a), PlanNodeSpec::default());
-    plan.add_node(
-      function(1, &log, &b),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&b)]),
-    );
-    plan.add_node(function(2, &log, &c), PlanNodeSpec::default());
-
-    let outcome = plan.solve_all().unwrap();
-
-    assert_eq!(*log.borrow(), vec![0, 1, 2]);
-    assert_eq!(outcome.invalidated_cells, 0);
-    assert_eq!(outcome.scheduled_nodes, 3);
-    assert_eq!(outcome.executed_nodes, 3);
-  }
-
-  #[test]
-  fn default_spec_nodes_are_full_solve_only() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    plan.add_node(function(0, &log, &a), PlanNodeSpec::default());
-
-    let incremental = plan.solve_from(&[]).unwrap();
-    assert_eq!(incremental.executed_nodes, 0);
-    assert!(log.borrow().is_empty());
-
-    let full = plan.solve_all().unwrap();
-    assert_eq!(full.executed_nodes, 1);
-    assert_eq!(*log.borrow(), vec![0]);
-  }
-
-  #[test]
-  fn solve_index_executes_only_selected_function() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    let c = value(3);
-    plan.add_node(function(0, &log, &a), PlanNodeSpec::default());
-    plan.add_node(function(1, &log, &b), PlanNodeSpec::default());
-    plan.add_node(function(2, &log, &c), PlanNodeSpec::default());
-
-    plan.solve_index(1).unwrap();
-
-    assert_eq!(*log.borrow(), vec![1]);
-  }
-
-  #[test]
-  fn solve_index_rejects_out_of_bounds() {
-    let plan = Plan::new();
-    let error = plan.solve_index(0).unwrap_err();
-
-    assert_eq!(error.kind_name(), "PlanNodeOutOfBounds");
-  }
-
-  #[test]
-  fn clear_removes_functions_and_dependency_indexes() {
-    let plan = Plan::new();
-    let log = Ref::new(Vec::new());
-    let a = value(1);
-    let b = value(2);
-    plan.add_node(
-      function(0, &log, &b),
-      PlanNodeSpec::explicit(vec![input(&a)], vec![cell(&b)]),
-    );
-    plan.clear();
-
-    assert_eq!(plan.len(), 0);
-    let full = plan.solve_all().unwrap();
-    let incremental = plan.solve_from(&[invalidation(&a)]).unwrap();
-    assert_eq!(full.scheduled_nodes, 0);
-    assert_eq!(full.executed_nodes, 0);
-    assert_eq!(incremental.scheduled_nodes, 0);
-    assert_eq!(incremental.executed_nodes, 0);
-  }
-
-  #[test]
-  fn empty_plan_returns_empty_outcomes() {
-    let plan = Plan::new();
-
-    let full = plan.solve_all().unwrap();
-    let incremental = plan.solve_from(&[]).unwrap();
-
-    assert_eq!(full.scheduled_nodes, 0);
-    assert_eq!(full.executed_nodes, 0);
-    assert_eq!(full.value, Value::Empty);
-    assert_eq!(incremental.scheduled_nodes, 0);
-    assert_eq!(incremental.executed_nodes, 0);
-    assert_eq!(incremental.value, Value::Empty);
   }
 }

@@ -3816,17 +3816,14 @@ impl MechRuntime {
       }
     }
 
-    let updates = self.program.update_inputs(&target_updates)?;
-    // Input mutation is complete before dependency scheduling. If the plan graph
-    // contains a dependency cycle, the error is reported without attempting to
-    // roll input cells back.
-    let mut solve = self.program.solve_invalidated(&updates.invalidations)?;
-    if solve.scheduled_nodes == 0 && !updates.invalidations.is_empty() {
-      solve = self.program.solve_all()?;
-    }
+    let updated_inputs = self.program.update_inputs(&target_updates)?;
+    // Updates are preflighted before mutation; after admitted mutation this
+    // ingress slice attempts one full persistent-plan solve and reports any
+    // solve error without claiming rollback of the accepted input values.
+    let solve = self.program.solve_plan()?;
     Ok(crate::RuntimeHostInputOutcome {
       update_count: input.updates.len(),
-      binding_count: updates.updated_inputs,
+      binding_count: updated_inputs,
       solve,
     })
   }

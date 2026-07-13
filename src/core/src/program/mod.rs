@@ -139,8 +139,8 @@ impl ProgramState {
     #[cfg(feature = "functions")]
     {
       output.push_str("Execution Plan:\n");
-      for (i, step) in self.plan.descriptions().iter().enumerate() {
-        output.push_str(&format!("  Step {}: {}\n", i, step));
+      for (i, step) in self.plan.borrow().iter().enumerate() {
+        output.push_str(&format!("  Step {}: {}\n", i, step.to_string()));
       }
     }
     output
@@ -197,16 +197,9 @@ impl ProgramState {
   }
       
   #[cfg(feature = "functions")]
-  pub fn add_plan_node(&self, step: Box<dyn MechFunction>, spec: PlanNodeSpec) -> PlanNodeId {
-    self.plan.add_node(step, spec)
-  }
-
-  #[cfg(feature = "functions")]
   pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
-    self.add_plan_node(
-      step,
-      PlanNodeSpec::default(),
-    );
+    let mut plan_brrw = self.plan.borrow_mut();
+    plan_brrw.push(step);
   }
 
   #[cfg(feature = "functions")]

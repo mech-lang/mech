@@ -157,7 +157,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       }
     }
     None => {
-      let args = vec![sink.clone(),source.clone()];
+      let args = vec![sink,source];
       let fxn: Box<dyn MechFunction> = match op_assgn.op {
         #[cfg(feature = "math_add_assign")]
         OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
@@ -169,10 +169,9 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
         OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
-      fxn.solve_result()?;
+      fxn.solve();
       let res = fxn.out();
-      let spec = PlanNodeSpec::read_modify_write(&[source.clone()], &sink)?;
-      retain_initialized_function(p, fxn, spec);
+      p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
   }
@@ -219,14 +218,11 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
     }
     #[cfg(feature = "assign")]
     None => {
-      let args = vec![sink.clone(),source.clone()];
+      let args = vec![sink,source];
       let fxn = AssignValue{}.compile(&args)?;
-      fxn.solve_result()?;
+      fxn.solve();
       let res = fxn.out();
-      if value_cell_id(&source).is_some() {
-        let spec = PlanNodeSpec::assignment(&source, &sink)?;
-        retain_initialized_function(p, fxn, spec);
-      }
+      p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
     _ => return Err(MechError::new(
@@ -303,6 +299,8 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
   {
     let mut state_brrw = p.state.borrow_mut();
     state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
+    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
+    state_brrw.add_plan_step(var_def_fxn);
   }
   p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
@@ -614,6 +612,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     }
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
+    // Add variable define step to plan
+    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+    state_brrw.add_plan_step(var_def_fxn);
     return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
@@ -624,6 +625,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   }
   // Save symbol to interpreter
   let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
+  // Add variable define step to plan
+  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
+  state_brrw.add_plan_step(var_def_fxn);
   return Ok(detached_result);
 }
 
@@ -673,9 +677,9 @@ macro_rules! op_assign {
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
-                  [1,1] => { plan.add_node(MatrixAssignScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
-                  [1,n] => { plan.add_node([<$op AssignRange>]{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
-                  [n,1] => { plan.add_node([<$op AssignRange>]{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+                  [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
+                  [1,n] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
+                  [n,1] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
                   _ => todo!(),
                 }
               },
@@ -686,9 +690,9 @@ macro_rules! op_assign {
                 fxn_input.push(ix);
                 fxn_input.push(Value::IndexAll);
                 match shape[..] {
-                  [1,1] => { plan.add_node(MatrixAssignScalarAll{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
-                  [1,n] => { plan.add_node([<$op AssignRangeAll>]{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
-                  [n,1] => { plan.add_node([<$op AssignRangeAll>]{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+                  [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
+                  [1,n] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
+                  [n,1] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
                   _ => todo!(),
                 }
               },
@@ -696,18 +700,21 @@ macro_rules! op_assign {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
-                plan.add_node([<$op AssignRange>]{}.compile(&fxn_input)?, PlanNodeSpec::default());
+                plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?);
               },
               [Subscript::Range(ix), Subscript::All] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
                 fxn_input.push(Value::IndexAll);
-                plan.add_node([<$op AssignRangeAll>]{}.compile(&fxn_input)?, PlanNodeSpec::default());
+                plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?);
               },
               x => todo!("{:?}", x),
             };
-            let res = plan.solve_index(plan.len() - 1)?;
+            let plan_brrw = plan.borrow();
+            let mut new_fxn = &plan_brrw.last().unwrap();
+            new_fxn.solve();
+            let res = new_fxn.out();
             return Ok(res);
           },
           Subscript::Brace(x) => todo!(),
@@ -741,7 +748,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
       let new_fxn = AssignColumn{}.compile(&fxn_input)?;
       new_fxn.solve();
       let res = new_fxn.out();
-      plan.add_node(new_fxn, PlanNodeSpec::default());
+      plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
     #[cfg(feature = "tuple")]
@@ -751,7 +758,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
       let new_fxn = TupleAssignScalar{}.compile(&fxn_input)?;
       new_fxn.solve();
       let res = new_fxn.out();
-      plan.add_node(new_fxn, PlanNodeSpec::default());
+      plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
     Subscript::Swizzle(x) => {
@@ -768,11 +775,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(ixes);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => { plan.add_node(MatrixAssignScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            [1,n] => { plan.add_node(MatrixAssignRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            [n,1] => { plan.add_node(MatrixAssignRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -781,13 +788,13 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(source.clone());
           let ixes = subscript_range(&subs[0], env, p)?;
           fxn_input.push(ixes);
-          plan.add_node(MatrixAssignRange{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?);
         },
         #[cfg(all(feature = "matrix", feature = "subscript_range"))]
         [Subscript::All] => {
           fxn_input.push(source.clone());
           fxn_input.push(Value::IndexAll);
-          plan.add_node(MatrixAssignAll{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
         #[cfg(feature = "subscript_formula")]
@@ -801,13 +808,13 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result2);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             #[cfg(feature = "matrix")]
-            ((1,1),(1,1)) => { plan.add_node(MatrixAssignScalarScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAssignScalarScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((1,1),(m,1)) => { plan.add_node(MatrixAssignScalarRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(1,1)) => { plan.add_node(MatrixAssignRangeScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(m,1)) => { plan.add_node(MatrixAssignRangeRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => unreachable!(),
           }          
         },
@@ -818,7 +825,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result);
           let result = subscript_range(&subs[1], env, p)?;
           fxn_input.push(result);
-          plan.add_node(MatrixAssignRangeRange{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?);
         },
         #[cfg(all(feature = "matrix", feature = "subscript_formula"))]
         [Subscript::All,Subscript::Formula(ix2)] => {
@@ -829,11 +836,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(ix);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => { plan.add_node(MatrixAssignAllScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,1] => plan.borrow_mut().push(MatrixAssignAllScalar{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [1,n] => { plan.add_node(MatrixAssignAllRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,n] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [n,1] => { plan.add_node(MatrixAssignAllRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [n,1] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         }
@@ -846,11 +853,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(Value::IndexAll);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => { plan.add_node(MatrixAssignScalarAll{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [1,n] => { plan.add_node(MatrixAssignRangeAll{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,n] => plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [n,1] => { plan.add_node(MatrixAssignRangeAll{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [n,1] => plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -864,11 +871,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => { plan.add_node(MatrixAssignRangeScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,1] => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [1,n] => { plan.add_node(MatrixAssignRangeRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [n,1] => { plan.add_node(MatrixAssignRangeRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -882,11 +889,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => { plan.add_node(MatrixAssignScalarRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,1] => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [1,n] => { plan.add_node(MatrixAssignRangeRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [n,1] => { plan.add_node(MatrixAssignRangeRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -896,7 +903,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(Value::IndexAll);
           let result = subscript_range(&subs[1], env, p)?;
           fxn_input.push(result);
-          plan.add_node(MatrixAssignAllRange{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?);
         },
         #[cfg(all(feature = "matrix", feature = "subscript_range"))]
         [Subscript::Range(ix1),Subscript::All] => {
@@ -904,11 +911,14 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           let result = subscript_range(&subs[0], env, p)?;
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
-          plan.add_node(MatrixAssignRangeAll{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?);
         },
         _ => unreachable!(),
       };
-      let res = plan.solve_index(plan.len() - 1)?;
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
       return Ok(res);
     },
     Subscript::Brace(subs) => {
@@ -922,11 +932,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(ixes);
           match shape[..] {
             #[cfg(feature = "map")]
-            [1,1] => { plan.add_node(MapAssignScalar{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            [1,1] => plan.borrow_mut().push(MapAssignScalar{}.compile(&fxn_input)?),
             //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            //[1,n] => { plan.add_node(MatrixAssignRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            //[1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
             //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            //[n,1] => { plan.add_node(MatrixAssignRange{}.compile(&fxn_input)?, PlanNodeSpec::default()); },
+            //[n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -936,18 +946,21 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           //fxn_input.push(source.clone());
           //let ixes = subscript_range(&subs[0], env, p)?;
           //fxn_input.push(ixes);
-          //plan.add_node(MatrixAssignRange{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          //plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?);
         },
         #[cfg(all(feature = "matrix", feature = "subscript_range"))]
         [Subscript::All] => {
           todo!();
           //fxn_input.push(source.clone());
           //fxn_input.push(Value::IndexAll);
-          //plan.add_node(MatrixAssignAll{}.compile(&fxn_input)?, PlanNodeSpec::default());
+          //plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
         },
         _ => unreachable!(),
       };
-      let res = plan.solve_index(plan.len() - 1)?;
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
       return Ok(res);      
     }
     _ => unreachable!(),
