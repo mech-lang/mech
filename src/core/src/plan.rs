@@ -606,6 +606,33 @@ pub struct PlanScheduleOutcome {
     pub ordered_nodes: Vec<PlanNodeId>,
 }
 
+#[derive(Clone, Debug)]
+pub struct PlanSolveOutcome {
+    pub invalidated_cells: usize,
+    pub scheduled_nodes: usize,
+    pub executed_nodes: usize,
+    pub value: Value,
+}
+
+#[derive(Clone, Debug)]
+pub struct PlanNodeOutOfBounds {
+    pub node: usize,
+    pub plan_length: usize,
+}
+
+impl MechErrorKind for PlanNodeOutOfBounds {
+    fn name(&self) -> &str {
+        "PlanNodeOutOfBounds"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "plan node {} is out of bounds for plan length {}",
+            self.node, self.plan_length,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

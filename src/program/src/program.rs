@@ -337,13 +337,11 @@ impl MechProgram {
   #[cfg(feature = "compiler")]
   pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
     let state_brrw = self.interpreter.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
+    let plan = state_brrw.plan.clone();
 
     let mut ctx = CompileCtx::new();
 
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
-    }
+    plan.compile_into(&mut ctx)?;
 
     let bytes = ctx.compile()?;
     self.interpreter.context = Some(ctx);

@@ -339,8 +339,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
     new_fxn.solve();
     let out = new_fxn.out();
     let plan = p.plan();
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.push(new_fxn);
+    plan.add_node(new_fxn, PlanNodeSpec::default());
     Ok(out)
   }
   #[cfg(not(feature = "functions"))]
@@ -617,8 +616,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
     let new_fxn = MatrixVertCat{}.compile(&col)?;
     new_fxn.solve();
     let out = new_fxn.out();
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.push(new_fxn);
+    plan.add_node(new_fxn, PlanNodeSpec::default());
     return Ok(out);
   }
   return Err(MechError::new(
@@ -659,8 +657,7 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   let new_fxn = MatrixHorzCat{}.compile(&row)?;
   new_fxn.solve();
   let out = new_fxn.out();
-  let mut plan_brrw = plan.borrow_mut();
-  plan_brrw.push(new_fxn);
+  plan.add_node(new_fxn, PlanNodeSpec::default());
   Ok(out)
 }
 

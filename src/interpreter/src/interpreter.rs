@@ -195,7 +195,7 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn clear_plan(&mut self) {
-    self.state.borrow_mut().plan.borrow_mut().clear();
+    self.state.borrow().plan.clear();
   }
 
   #[cfg(feature = "pretty_print")]
@@ -298,11 +298,11 @@ impl Interpreter {
   #[cfg(feature = "pretty_print")]
   pub fn pretty_print_plan(&self) -> String {
     let state_brrw = self.state.borrow();
-    let plan = state_brrw.plan.borrow();
+    let plan = state_brrw.plan.clone();
     let mut result = String::new();
-    for (i, step) in plan.iter().enumerate() {
+    for (i, step) in plan.descriptions().iter().enumerate() {
       result.push_str(&format!("Step {}:\n", i));
-      result.push_str(&format!("{}\n", step.to_string()));
+      result.push_str(&format!("{}\n", step));
     }
     result
   }
@@ -343,14 +343,13 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
-    let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
+    let plan = self.state.borrow().plan.clone();
 
-    if plan_brrw.is_empty() {
+    if plan.is_empty() {
       return Err(MechError::new(NoStepsInPlanError, None).with_compiler_loc());
     }
 
-    let len = plan_brrw.len();
+    let len = plan.len();
 
     // Case 1: step_id == 0, run entire plan step_count times
     if step_id == 0 {
@@ -358,9 +357,9 @@ impl Interpreter {
         // Initialize total durations per step
         let mut total_durations = vec![Duration::ZERO; len];
         for _ in 0..step_count {
-          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+          for idx in 0..plan.len() {
             let start = Instant::now();
-            fxn.solve_result()?;
+            plan.solve_index(idx)?;
             total_durations[idx] += start.elapsed();
           }
         }
@@ -369,22 +368,23 @@ impl Interpreter {
           println!("\nStep timing summary and histogram:");
           print_histogram(&total_durations);
         }
-        return Ok(plan_brrw[len - 1].out().clone());
+        return Ok(plan.last_output().unwrap_or(Value::Empty));
       } else {
         for _ in 0..step_count {
-          for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
+          for idx in 0..plan.len() {
             trace_println!(self, "{}", {
-              let fxn_header = fxn
-                .to_string()
+              let fxn_header = plan
+                .node_description(idx)
+                .unwrap_or_else(|| "<unknown-step>".to_string())
                 .lines()
                 .next()
                 .unwrap_or("<unknown-step>")
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
-            fxn.solve_result()?;
+            let value = plan.solve_index(idx)?;
             trace_println!(self, "{}", {
-              let output = fxn.out().to_string();
+              let output = value.to_string();
               let output = if output.chars().count() > 96 {
                   format!("{}…", output.chars().take(96).collect::<String>())
               } else {
@@ -394,7 +394,7 @@ impl Interpreter {
             });
           }
         }
-        return Ok(plan_brrw[len - 1].out().clone());
+        return Ok(plan.last_output().unwrap_or(Value::Empty));
       }
     }
 
@@ -411,9 +411,8 @@ impl Interpreter {
       .with_compiler_loc());
     }
 
-    let fxn = &mut plan_brrw[idx - 1];
-
-    let fxn_str = fxn.to_string();
+    let index = idx - 1;
+    let fxn_str = plan.node_description(index).unwrap_or_else(|| "<unknown-step>".to_string());
     if fxn_str.lines().count() > 30 {
       let lines: Vec<&str> = fxn_str.lines().collect();
       println!("Stepping function:");
@@ -429,10 +428,10 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
-      fxn.solve_result()?;
+      plan.solve_index(index)?;
     }
 
-    Ok(fxn.out().clone())
+    Ok(plan.node_output(index).unwrap_or(Value::Empty))
   }
 
   #[cfg(feature = "functions")]
@@ -440,8 +439,8 @@ impl Interpreter {
     self.code.push(MechSourceCode::Tree(tree.clone()));
     catch_unwind(AssertUnwindSafe(|| {
       let result = program(tree, &self);
-      match self.state.borrow().plan.borrow().last() {
-        Some(last_step) => self.out = last_step.out().clone(),
+      match self.state.borrow().plan.last_output() {
+        Some(value) => self.out = value,
         None => self.out = Value::Empty,
       }
       result
@@ -667,11 +666,9 @@ impl Interpreter {
   #[cfg(all(feature = "compiler", feature = "functions"))]
   pub fn compile(&mut self) -> MResult<Vec<u8>> {
     let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
+    let plan = state_brrw.plan.clone();
     let mut ctx = CompileCtx::new();
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
-    }
+    plan.compile_into(&mut ctx)?;
     let bytes = ctx.compile()?;
     self.context = Some(ctx);
     Ok(bytes)

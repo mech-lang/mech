@@ -183,7 +183,6 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      let mut plan_brrw = plan.borrow_mut();
       new_fxn.solve();                   // run the function once to initialise its output
       let result = new_fxn.out();
       trace_println!(
@@ -191,7 +190,7 @@ pub fn execute_native_function_compiler(
         "{}",
         format_trace("arm", format!("result {}", summarize_function_value(&result)))
       );
-      plan_brrw.push(new_fxn);          // keep it in the plan for reactive re-evaluation
+      p.state.borrow().add_plan_step(new_fxn);          // keep it in the plan for reactive re-evaluation
       Ok(result)
     }
     Err(err) => Err(err),
