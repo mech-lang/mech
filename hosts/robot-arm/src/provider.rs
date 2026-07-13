@@ -175,7 +175,8 @@ impl RuntimeHostFactory for RobotArmHostFactory {
         self.validate_settings(instance_name, settings)?;
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(RobotArmResourceProvider::new(instance_name))],
+            input_drivers: Vec::new(),
+      resource_providers: vec![Box::new(RobotArmResourceProvider::new(instance_name))],
         })
     }
 }

@@ -106,7 +106,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeLiveInputBinding, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -132,6 +132,7 @@ pub struct RuntimeBuilder {
   module_builder: ModuleBuilder,
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
   host_factories: RuntimeHostFactoryRegistry,
   host_instances: Vec<HostInstanceConfig>,
   run_grants: Vec<RunResourceGrantConfig>,
@@ -178,6 +179,7 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
+      input_drivers: Vec::new(),
       host_factories: RuntimeHostFactoryRegistry::new(),
       host_instances: Vec::new(),
       run_grants: Vec::new(),
@@ -333,6 +335,7 @@ impl RuntimeBuilder {
       let installation = self.host_factories.instantiate(host_instance)?;
       host_interfaces.register(installation.interface)?;
       self.resource_providers.extend(installation.resource_providers);
+      self.input_drivers.extend(installation.input_drivers);
     }
 
     let max_events = self.config.limits.max_in_memory_events
@@ -358,6 +361,9 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      live_input_bindings: HashMap::new(),
+      host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(Some(std::collections::VecDeque::new()))),
+      input_drivers: self.input_drivers,
       host_interfaces,
       module_manifests: self.module_manifests,
     };
@@ -369,6 +375,12 @@ impl RuntimeBuilder {
 
     for provider in self.resource_providers {
       runtime.register_resource_provider(provider)?;
+    }
+
+    let ingress = runtime.ingress();
+    for driver in &mut runtime.input_drivers {
+      driver.attach(ingress.clone())?;
+      driver.start()?;
     }
 
     for grant in &self.run_grants {
@@ -411,6 +423,9 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<RuntimeLiveInputBinding>>,
+  host_input_queue: RuntimeHostInputQueue,
+  input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
   host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
 }
@@ -436,6 +451,8 @@ impl std::fmt::Debug for MechRuntime {
       .field("resources", &self.resources)
       .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
+      .field("live_input_bindings", &self.live_input_bindings)
+      .field("input_drivers", &self.input_drivers.len())
       .field("host_interfaces", &self.host_interfaces)
       .field("module_manifests", &self.module_manifests)
       .finish()

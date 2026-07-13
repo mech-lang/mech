@@ -139,6 +139,7 @@ impl RuntimeHostFactory for RecordingCliHostFactory {
   fn instantiate(&self, instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<RuntimeHostInstallation> {
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, RecordingCliBackend { state: self.state.clone() }))],
     })
   }
@@ -2808,6 +2809,7 @@ impl<B: CliBackend + Clone + 'static> RuntimeHostFactory for TestCliFactory<B> {
   fn instantiate(&self, instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<RuntimeHostInstallation> {
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, self.backend.clone()))],
     })
   }

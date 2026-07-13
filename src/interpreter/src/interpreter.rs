@@ -332,6 +332,16 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
+  pub fn plan_len(&self) -> usize {
+    self.state.borrow().plan.len()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_plan(&mut self) -> MResult<Value> {
+    self.step(0, 1)
+  }
+
+  #[cfg(feature = "functions")]
   pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>

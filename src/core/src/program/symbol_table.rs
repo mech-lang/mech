@@ -1,6 +1,6 @@
 use crate::*;
 
-// Symbol Table 
+// Symbol Table
 // ----------------------------------------------------------------------------
 
 pub type SymbolTableRef= Ref<SymbolTable>;
@@ -38,6 +38,25 @@ impl SymbolTable {
 
   pub fn contains(&self, key: u64) -> bool {
     self.symbols.contains_key(&key)
+  }
+
+  pub fn value_cell(&self, id: u64) -> Option<ValRef> {
+    self.symbols.get(&id).cloned()
+  }
+
+  pub fn update_existing(&self, id: u64, value: Value) -> MResult<bool> {
+    let Some(cell) = self.symbols.get(&id) else {
+      return Err(MechError::new(SymbolTableUpdateMissing { id }, None));
+    };
+    {
+      let current = cell.borrow().clone();
+      if let Value::MutableReference(reference) = current {
+        *reference.borrow_mut() = value;
+        return Ok(true);
+      }
+    }
+    *cell.borrow_mut() = value;
+    Ok(true)
   }
 
   pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
@@ -81,4 +100,10 @@ impl PrettyPrint for SymbolTable {
     table.with(table_style);
     format!("{table}")
   }
+}
+#[derive(Debug, Clone)]
+pub struct SymbolTableUpdateMissing { pub id: u64 }
+impl MechErrorKind for SymbolTableUpdateMissing {
+  fn name(&self) -> &str { "SymbolTableUpdateMissing" }
+  fn message(&self) -> String { format!("symbol table has no existing value cell for id {}", self.id) }
 }

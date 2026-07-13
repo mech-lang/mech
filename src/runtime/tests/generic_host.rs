@@ -34,6 +34,7 @@ impl RuntimeHostFactory for FakeRobotFactory {
     self.validate_settings(instance_name, settings)?;
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(FakeRobotProvider { instance: instance_name.to_string(), log: self.log.clone() })],
     })
   }
@@ -160,6 +161,7 @@ impl RuntimeHostFactory for FakeBrowserFactory {
     self.validate_settings(instance_name, settings)?;
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: Vec::new(),
     })
   }
@@ -388,6 +390,7 @@ impl RuntimeHostFactory for PlotterFactory {
     self.validate_settings(instance_name, settings)?;
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, self.manifest())?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(PlotterProvider { instance: instance_name.to_string(), log: self.log.clone() })],
     })
   }

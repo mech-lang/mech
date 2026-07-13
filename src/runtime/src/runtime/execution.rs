@@ -294,26 +294,6 @@ fn single_code_program(
   }
 }
 
-fn bind_runtime_value_on_program(
-  program: &mut MechProgram,
-  var: &mech_core::Var,
-  value: Value,
-  mutable: bool,
-) -> MResult<()> {
-  if var.context.is_some() {
-    return Err(MechError::new(
-      RuntimeAddressedAssignmentUnsupported { target: var.name.to_string() },
-      None,
-    ).with_compiler_loc().with_tokens(var.tokens()));
-  }
-  let (id, name) = (var.name.hash(), var.name.to_string());
-  let symbols = program.interpreter_mut().symbols();
-  let mut symbols = symbols.borrow_mut();
-  symbols.insert(id, value, mutable);
-  symbols.dictionary.borrow_mut().insert(id, name);
-  Ok(())
-}
-
 fn resolve_runtime_value(value: Value) -> Value {
   match value {
     Value::MutableReference(value) => value.borrow().clone(),
@@ -501,19 +481,29 @@ impl MechRuntime {
   }
 
   fn bind_context_read_temp(
-    &self,
+    &mut self,
     program: &mut MechProgram,
     target: &str,
     path: &str,
     value: Value,
   ) -> MResult<mech_core::Expression> {
     let name = format!("mech-internal-context-{}-{}", hash_str(target), hash_str(path));
+    let symbol_id = hash_str(&name);
+    let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
+    let source = crate::RuntimeHostInputSource {
+      instance: target.to_string(),
+      context: target.to_string(),
+      path: path.to_string(),
+    };
+    let bindings = self.live_input_bindings.entry(source.clone()).or_default();
+    if !bindings.iter().any(|binding| binding.program_input == input) {
+      bindings.push(crate::RuntimeLiveInputBinding { source, program_input: input });
+    }
     let var = mech_core::Var {
       name: identifier_from_str(&name),
       context: None,
       kind: None,
     };
-    bind_runtime_value_on_program(program, &var, resolve_runtime_value(value), false)?;
     Ok(mech_core::Expression::Var(var))
   }
 
@@ -3789,5 +3779,80 @@ mod tests {
       Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
       other => panic!("expected F64(2.0), got {:?}", other),
     }
+  }
+}
+
+impl MechRuntime {
+  pub fn ingress(&self) -> crate::RuntimeIngress {
+    crate::RuntimeIngress::new(self.host_input_queue.clone())
+  }
+
+  pub fn has_pending_host_inputs(&self) -> bool {
+    self.host_input_queue
+      .lock()
+      .ok()
+      .and_then(|guard| guard.as_ref().map(|queue| !queue.is_empty()))
+      .unwrap_or(false)
+  }
+
+  pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
+    let Some(bindings) = self.live_input_bindings.get(&input.source).cloned() else {
+      return Err(crate::input::input_error(
+        "RuntimeHostInputUnboundSource",
+        format!("host input source {}/{}/{} has no live binding", input.source.instance, input.source.context, input.source.path),
+      ));
+    };
+    if bindings.is_empty() {
+      return Err(crate::input::input_error("RuntimeHostInputUnboundSource", "host input source has no live bindings"));
+    }
+    let mut changed_input_count = 0;
+    for binding in &bindings {
+      if self.program.update_input(binding.program_input, input.value.clone())? {
+        changed_input_count += 1;
+      }
+    }
+    let mut solved = false;
+    let mut plan_steps = 0;
+    if changed_input_count > 0 {
+      let outcome = self.program.solve_plan()?;
+      solved = true;
+      plan_steps = outcome.plan_steps;
+    }
+    Ok(crate::RuntimeHostInputOutcome {
+      source: input.source,
+      binding_count: bindings.len(),
+      changed_input_count,
+      solved,
+      plan_steps,
+    })
+  }
+
+  pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {
+    let inputs = {
+      let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+      let Some(queue) = guard.as_mut() else {
+        return Err(crate::input::input_error("RuntimeIngressClosed", "host input queue is closed"));
+      };
+      let mut inputs = Vec::new();
+      for _ in 0..max_inputs {
+        let Some(input) = queue.pop_front() else { break; };
+        inputs.push(input);
+      }
+      inputs
+    };
+    inputs.into_iter().map(|input| self.apply_host_input(input)).collect()
+  }
+
+  pub fn close_ingress(&mut self) -> MResult<()> {
+    let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+    *guard = None;
+    Ok(())
+  }
+
+  pub fn stop_input_drivers(&mut self) -> MResult<()> {
+    for driver in &mut self.input_drivers {
+      driver.stop()?;
+    }
+    Ok(())
   }
 }

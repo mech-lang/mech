@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind};
-use crate::{ConfigValue, RuntimeResourceProvider};
+use crate::{ConfigValue, RuntimeHostInputDriver, RuntimeResourceProvider};
 use super::{validate_host_interface, HostInstanceConfig, HostInterfaceCatalog, HostManifestConfig, MaterializedHostInterface, validate_host_manifest};
 
 pub trait RuntimeHostFactory: std::fmt::Debug {
@@ -14,6 +14,7 @@ pub trait RuntimeHostFactory: std::fmt::Debug {
 pub struct RuntimeHostInstallation {
   pub interface: MaterializedHostInterface,
   pub resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  pub input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
 }
 
 #[derive(Debug, Default)]

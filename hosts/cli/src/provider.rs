@@ -240,7 +240,8 @@ impl RuntimeHostFactory for CliHostFactory {
         self.validate_settings(instance_name, settings)?;
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, StdCliBackend))],
+            input_drivers: Vec::new(),
+      resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, StdCliBackend))],
         })
     }
 }

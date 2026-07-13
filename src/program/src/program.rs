@@ -45,6 +45,19 @@ impl Default for MechProgramConfig {
   }
 }
 
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ProgramInputId {
+  pub interpreter_id: u64,
+  pub symbol_id: u64,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProgramSolveOutcome {
+  pub value: Value,
+  pub plan_steps: usize,
+}
+
 pub struct MechProgram {
   pub config: MechProgramConfig,
   interpreter: Interpreter,
@@ -236,6 +249,45 @@ impl MechProgram {
     Ok(())
   }
 
+
+  pub fn ensure_input(
+    &mut self,
+    interpreter_id: u64,
+    symbol_id: u64,
+    name: &str,
+    initial_value: Value,
+  ) -> MResult<ProgramInputId> {
+    let Some(()) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
+      let symbols = interpreter.symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      if !symbols_brrw.contains(symbol_id) {
+        symbols_brrw.insert(symbol_id, initial_value.clone(), true);
+      }
+      symbols_brrw.dictionary.borrow_mut().insert(symbol_id, name.to_string());
+      interpreter.dictionary().borrow_mut().insert(symbol_id, name.to_string());
+    }) else {
+      return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
+    };
+    Ok(ProgramInputId { interpreter_id, symbol_id })
+  }
+
+  pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<bool> {
+    let Some(result) = with_interpreter_mut(&mut self.interpreter, input.interpreter_id, &mut |interpreter| {
+      let symbols = interpreter.symbols();
+      symbols.borrow().update_existing(input.symbol_id, value.clone())
+    }) else {
+      return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {}", input.interpreter_id) }, None));
+    };
+    result
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_plan(&mut self) -> MResult<ProgramSolveOutcome> {
+    let plan_steps = self.interpreter.plan_len();
+    let value = self.interpreter.solve_plan()?;
+    Ok(ProgramSolveOutcome { value, plan_steps })
+  }
+
   pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
     match source {
       MechSourceCode::String(source) => self.run_string(source),
@@ -277,6 +329,31 @@ impl MechProgram {
 
     Ok(bytes)
   }
+}
+
+
+fn with_interpreter_mut<T>(
+  interpreter: &mut Interpreter,
+  interpreter_id: u64,
+  f: &mut impl FnMut(&mut Interpreter) -> T,
+) -> Option<T> {
+  if interpreter_id == 0 || interpreter.id == interpreter_id {
+    return Some(f(interpreter));
+  }
+  let child_ids = interpreter.sub_interpreters.borrow().keys().copied().collect::<Vec<_>>();
+  for child_id in child_ids {
+    let mut sub_interpreters = interpreter.sub_interpreters.borrow_mut();
+    let Some(child) = sub_interpreters.get_mut(&child_id) else { continue; };
+    if let Some(result) = with_interpreter_mut(child.as_mut(), interpreter_id, f) { return Some(result); }
+  }
+  None
+}
+
+#[derive(Debug, Clone)]
+pub struct ProgramInputError { pub reason: String }
+impl MechErrorKind for ProgramInputError {
+  fn name(&self) -> &str { "ProgramInputError" }
+  fn message(&self) -> String { self.reason.clone() }
 }
 
 fn with_interpreter<T>(
@@ -449,5 +526,45 @@ mod tests {
       .get(ans_id)
       .map(|value| value.borrow().clone());
     assert_eq!(bound, Some(value));
+  }
+}
+
+#[cfg(test)]
+mod live_input_tests {
+  use super::*;
+  use mech_core::{hash_str, Ref};
+
+  fn f64_value(value: &Value) -> f64 {
+    match value {
+      Value::F64(value) => *value.borrow(),
+      other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[test]
+  fn existing_input_cell_is_mutated_without_replacing_valref() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let input_id = hash_str("input");
+    program.ensure_input(program.interpreter().id, input_id, "input", Value::F64(Ref::new(1.0))).unwrap();
+    program.run_string("output := input * 2").unwrap();
+    let before = program.interpreter().symbols().borrow().value_cell(input_id).unwrap();
+    let pointer = before.as_ptr();
+
+    let handle = program.ensure_input(program.interpreter().id, input_id, "input", Value::F64(Ref::new(1.0))).unwrap();
+    assert!(program.update_input(handle, Value::F64(Ref::new(5.0))).unwrap());
+    let after = program.interpreter().symbols().borrow().value_cell(input_id).unwrap();
+    assert_eq!(pointer, after.as_ptr());
+
+    let outcome = program.solve_plan().unwrap();
+    assert!(outcome.plan_steps > 0);
+    let input = program.interpreter().symbols().borrow().value_cell(input_id).unwrap();
+    assert_eq!(f64_value(&input.borrow()), 5.0);
+  }
+
+  #[test]
+  fn missing_input_returns_error() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let missing = ProgramInputId { interpreter_id: program.interpreter().id, symbol_id: hash_str("missing") };
+    assert!(program.update_input(missing, Value::F64(Ref::new(1.0))).is_err());
   }
 }
