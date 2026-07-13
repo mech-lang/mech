@@ -197,8 +197,13 @@ impl ProgramState {
   }
       
   #[cfg(feature = "functions")]
+  pub fn add_plan_node(&self, step: Box<dyn MechFunction>, spec: PlanNodeSpec) -> PlanNodeId {
+    self.plan.add_node(step, spec)
+  }
+
+  #[cfg(feature = "functions")]
   pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
-    self.plan.add_node(
+    self.add_plan_node(
       step,
       PlanNodeSpec::default(),
     );

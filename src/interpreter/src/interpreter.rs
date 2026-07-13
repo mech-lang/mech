@@ -337,8 +337,13 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
-  pub fn solve_plan(&mut self) -> MResult<Value> {
-    self.step(0, 1)
+  pub fn solve_invalidated(&self, invalidations: &[PlanInvalidation]) -> MResult<PlanSolveOutcome> {
+    self.state.borrow().plan.solve_from(invalidations)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_all(&self) -> MResult<PlanSolveOutcome> {
+    self.state.borrow().plan.solve_all()
   }
 
   #[cfg(feature = "functions")]

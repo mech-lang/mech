@@ -380,8 +380,6 @@ impl RuntimeBuilder {
       input_drivers: self.input_drivers,
       attached_input_driver_count: 0,
       input_driver_cleanup_armed: false,
-      #[cfg(test)]
-      host_input_solve_count: 0,
       host_interfaces,
       module_manifests: self.module_manifests,
     };
@@ -455,8 +453,6 @@ pub struct MechRuntime {
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
   attached_input_driver_count: usize,
   input_driver_cleanup_armed: bool,
-  #[cfg(test)]
-  host_input_solve_count: usize,
   host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
 }

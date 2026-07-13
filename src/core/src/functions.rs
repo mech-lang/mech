@@ -116,6 +116,10 @@ impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
+
+  fn plan_spec(&self, arguments: &[Value], output: &Value) -> MResult<PlanNodeSpec> {
+    PlanNodeSpec::reactive(arguments, output)
+  }
 }
 
 
@@ -130,6 +134,10 @@ impl StaticNativeFunctionCompiler {
 impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     self.inner.compile(arguments)
+  }
+
+  fn plan_spec(&self, arguments: &[Value], output: &Value) -> MResult<PlanNodeSpec> {
+    self.inner.plan_spec(arguments, output)
   }
 }
 

@@ -1,9 +1,11 @@
 use crate::*;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use mech_core::{
-  hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
-  NativeFunctionCompiler, ParsedProgram, Value,
+  hash_str, value_cell_id, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
+  NativeFunctionCompiler, ParsedProgram, PlanInvalidation, PlanInvalidationKind, PlanSolveOutcome,
+  Value, ValueCellId,
 };
 
 use mech_interpreter::Interpreter;
@@ -46,7 +48,7 @@ impl Default for MechProgramConfig {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ProgramInputId {
   pub interpreter_id: u64,
   pub symbol_id: u64,
@@ -58,10 +60,37 @@ pub struct ProgramInputUpdate {
   pub value: Value,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ProgramInvalidation {
+  pub interpreter_id: u64,
+  pub invalidation: PlanInvalidation,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProgramInputUpdateOutcome {
+  pub updated_inputs: usize,
+  pub invalidations: Vec<ProgramInvalidation>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProgramInterpreterSolveOutcome {
+  pub interpreter_id: u64,
+  pub solve: PlanSolveOutcome,
+}
+
 #[derive(Clone, Debug)]
 pub struct ProgramSolveOutcome {
+  pub invalidated_cells: usize,
+  pub scheduled_nodes: usize,
+  pub executed_nodes: usize,
   pub value: Value,
-  pub plan_len: usize,
+  pub interpreters: Vec<ProgramInterpreterSolveOutcome>,
+}
+
+struct PreparedProgramInputUpdate {
+  interpreter_id: u64,
+  assignment: Box<dyn mech_core::MechFunction>,
+  cell: ValueCellId,
 }
 
 pub struct MechProgram {
@@ -277,13 +306,19 @@ impl MechProgram {
     Ok(ProgramInputId { interpreter_id, symbol_id })
   }
 
-  pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<()> {
-    self.update_inputs(&[ProgramInputUpdate { input, value }])?;
-    Ok(())
+  pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<ProgramInputUpdateOutcome> {
+    self.update_inputs(&[ProgramInputUpdate { input, value }])
   }
 
-  pub fn update_inputs(&mut self, updates: &[ProgramInputUpdate]) -> MResult<usize> {
-    let mut assignments = Vec::with_capacity(updates.len());
+  pub fn update_inputs(&mut self, updates: &[ProgramInputUpdate]) -> MResult<ProgramInputUpdateOutcome> {
+    let mut seen_targets = BTreeSet::new();
+    for update in updates {
+      if !seen_targets.insert(update.input) {
+        return Err(MechError::new(ProgramInputDuplicateTarget { input: update.input }, None));
+      }
+    }
+
+    let mut prepared = Vec::with_capacity(updates.len());
     for update in updates {
       let Some(sink) = with_interpreter_mut(&mut self.interpreter, update.input.interpreter_id, &mut |interpreter| {
         interpreter.symbols().borrow().get(update.input.symbol_id)
@@ -293,20 +328,82 @@ impl MechProgram {
       let Some(sink) = sink else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
       };
+      let sink_value = Value::MutableReference(sink.clone());
+      let Some(cell) = value_cell_id(&sink_value) else {
+        return Err(MechError::new(ProgramInputError { reason: format!("program input cell {} has no stable identity", update.input.symbol_id) }, None));
+      };
       let compiler = mech_interpreter::AssignValue {};
-      assignments.push(compiler.compile(&vec![Value::MutableReference(sink), update.value.clone()])?);
+      let assignment = compiler.compile(&vec![sink_value, update.value.clone()])?;
+      prepared.push(PreparedProgramInputUpdate {
+        interpreter_id: update.input.interpreter_id,
+        assignment,
+        cell,
+      });
     }
-    for assignment in &assignments {
-      assignment.solve();
+
+    let mut invalidations = BTreeSet::new();
+    for update in &prepared {
+      update.assignment.solve_result()?;
+      invalidations.insert(ProgramInvalidation {
+        interpreter_id: update.interpreter_id,
+        invalidation: PlanInvalidation {
+          cell: update.cell,
+          kind: PlanInvalidationKind::Triggered,
+        },
+      });
     }
-    Ok(assignments.len())
+
+    Ok(ProgramInputUpdateOutcome {
+      updated_inputs: prepared.len(),
+      invalidations: invalidations.into_iter().collect(),
+    })
   }
 
   #[cfg(feature = "functions")]
-  pub fn solve_plan(&mut self) -> MResult<ProgramSolveOutcome> {
-    let plan_len = self.interpreter.plan_len();
-    let value = self.interpreter.solve_plan()?;
-    Ok(ProgramSolveOutcome { value, plan_len })
+  pub fn solve_invalidated(&mut self, invalidations: &[ProgramInvalidation]) -> MResult<ProgramSolveOutcome> {
+    let mut grouped: BTreeMap<u64, BTreeSet<PlanInvalidation>> = BTreeMap::new();
+    for invalidation in invalidations {
+      grouped.entry(invalidation.interpreter_id).or_default().insert(invalidation.invalidation);
+    }
+
+    let mut interpreters = Vec::new();
+    let mut invalidated_cells = 0usize;
+    let mut scheduled_nodes = 0usize;
+    let mut executed_nodes = 0usize;
+    let mut value = Value::Empty;
+
+    for (interpreter_id, set) in grouped {
+      let interpreter_invalidations = set.into_iter().collect::<Vec<_>>();
+      let Some(solve) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
+        interpreter.solve_invalidated(&interpreter_invalidations)
+      }) else {
+        return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
+      };
+      let solve = solve?;
+      invalidated_cells += solve.invalidated_cells;
+      scheduled_nodes += solve.scheduled_nodes;
+      executed_nodes += solve.executed_nodes;
+      value = solve.value.clone();
+      interpreters.push(ProgramInterpreterSolveOutcome { interpreter_id, solve });
+    }
+
+    Ok(ProgramSolveOutcome { invalidated_cells, scheduled_nodes, executed_nodes, value, interpreters })
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_all(&mut self) -> MResult<ProgramSolveOutcome> {
+    let interpreter_id = self.interpreter.id;
+    let solve = self.interpreter.solve_all()?;
+    let value = solve.value.clone();
+    let scheduled_nodes = solve.scheduled_nodes;
+    let executed_nodes = solve.executed_nodes;
+    Ok(ProgramSolveOutcome {
+      invalidated_cells: 0,
+      scheduled_nodes,
+      executed_nodes,
+      value,
+      interpreters: vec![ProgramInterpreterSolveOutcome { interpreter_id, solve }],
+    })
   }
 
   pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
@@ -373,6 +470,13 @@ pub struct ProgramInputError { pub reason: String }
 impl MechErrorKind for ProgramInputError {
   fn name(&self) -> &str { "ProgramInputError" }
   fn message(&self) -> String { self.reason.clone() }
+}
+
+#[derive(Debug, Clone)]
+pub struct ProgramInputDuplicateTarget { pub input: ProgramInputId }
+impl MechErrorKind for ProgramInputDuplicateTarget {
+  fn name(&self) -> &str { "ProgramInputDuplicateTarget" }
+  fn message(&self) -> String { format!("duplicate program input target {:?}", self.input) }
 }
 
 fn with_interpreter<T>(
@@ -585,8 +689,8 @@ mod live_input_tests {
       other => panic!("expected f64 input, got {other:?}"),
     }
 
-    let outcome = program.solve_plan().unwrap();
-    assert!(outcome.plan_len > 0);
+    let outcome = program.solve_all().unwrap();
+    assert!(outcome.scheduled_nodes > 0);
     let input = program.interpreter().symbols().borrow().get(input_id).unwrap();
     assert_eq!(f64_value(&input.borrow()), 5.0);
     let output = program.interpreter().symbols().borrow().get(output_id).unwrap();

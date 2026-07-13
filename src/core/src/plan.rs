@@ -153,6 +153,12 @@ pub struct PlanNodeSpec {
 }
 
 impl PlanNodeSpec {
+    pub fn has_activation_input(&self) -> bool {
+        self.inputs
+            .iter()
+            .any(|input| matches!(input.mode, PlanInputMode::Reactive | PlanInputMode::Trigger))
+    }
+
     pub fn explicit(inputs: Vec<PlanInput>, outputs: Vec<ValueCellId>) -> Self {
         let mut seen_inputs = BTreeSet::new();
         let mut normalized_inputs = Vec::new();
@@ -1326,5 +1332,30 @@ mod tests {
         assert_eq!(graph.len(), 0);
         assert_eq!(outcome.scheduled_nodes, 0);
         assert_eq!(outcome.ordered_nodes, Vec::<PlanNodeId>::new());
+    }
+    #[test]
+    fn reactive_spec_has_activation_input() {
+        let value = Value::Index(Ref::new(1));
+        let spec = PlanNodeSpec::explicit(vec![input(&value, PlanInputMode::Reactive)], Vec::new());
+        assert!(spec.has_activation_input());
+    }
+
+    #[test]
+    fn trigger_spec_has_activation_input() {
+        let value = Value::Index(Ref::new(1));
+        let spec = PlanNodeSpec::explicit(vec![input(&value, PlanInputMode::Trigger)], Vec::new());
+        assert!(spec.has_activation_input());
+    }
+
+    #[test]
+    fn sampled_only_spec_has_no_activation_input() {
+        let value = Value::Index(Ref::new(1));
+        let spec = PlanNodeSpec::explicit(vec![input(&value, PlanInputMode::Sampled)], Vec::new());
+        assert!(!spec.has_activation_input());
+    }
+
+    #[test]
+    fn empty_spec_has_no_activation_input() {
+        assert!(!PlanNodeSpec::default().has_activation_input());
     }
 }

@@ -157,7 +157,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       }
     }
     None => {
-      let args = vec![sink,source];
+      let args = vec![sink.clone(),source.clone()];
       let fxn: Box<dyn MechFunction> = match op_assgn.op {
         #[cfg(feature = "math_add_assign")]
         OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
@@ -169,9 +169,10 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
         OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
-      fxn.solve();
+      fxn.solve_result()?;
       let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
+      let spec = PlanNodeSpec::read_modify_write(&[source.clone()], &sink)?;
+      retain_initialized_function(p, fxn, spec);
       return Ok(res);
     }
   }
@@ -218,11 +219,14 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
     }
     #[cfg(feature = "assign")]
     None => {
-      let args = vec![sink,source];
+      let args = vec![sink.clone(),source.clone()];
       let fxn = AssignValue{}.compile(&args)?;
-      fxn.solve();
+      fxn.solve_result()?;
       let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
+      if value_cell_id(&source).is_some() {
+        let spec = PlanNodeSpec::assignment(&source, &sink)?;
+        retain_initialized_function(p, fxn, spec);
+      }
       return Ok(res);
     }
     _ => return Err(MechError::new(
@@ -299,8 +303,6 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
   {
     let mut state_brrw = p.state.borrow_mut();
     state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
-    state_brrw.add_plan_step(var_def_fxn);
   }
   p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
@@ -612,9 +614,6 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     }
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
-    // Add variable define step to plan
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-    state_brrw.add_plan_step(var_def_fxn);
     return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
@@ -625,9 +624,6 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   }
   // Save symbol to interpreter
   let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
-  // Add variable define step to plan
-  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-  state_brrw.add_plan_step(var_def_fxn);
   return Ok(detached_result);
 }
 

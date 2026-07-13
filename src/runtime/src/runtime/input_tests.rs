@@ -106,13 +106,12 @@ fn logical_packet_updates_all_inputs_and_solves_once() {
   runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(a), :read(b)}\nsum := @pulse/a + @pulse/b").unwrap();
   assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 3.0);
 
-  let before = runtime.host_input_solve_count;
-  runtime.apply_host_input(RuntimeHostInput::new(vec![
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "a").unwrap(), value: RuntimeHostInputValue::F64(10.0) },
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "b").unwrap(), value: RuntimeHostInputValue::F64(20.0) },
   ]).unwrap()).unwrap();
 
-  assert_eq!(runtime.host_input_solve_count, before + 1);
+  assert_eq!(outcome.solve.executed_nodes, 1);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "a").unwrap())), 10.0);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "b").unwrap())), 20.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 30.0);
@@ -124,8 +123,6 @@ fn packet_with_unbound_source_does_not_mutate_bound_inputs() {
   grant_read(&mut runtime, "docs://clock/ticks", "value");
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
-  let before = runtime.host_input_solve_count;
-
   let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::new(vec![
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), value: RuntimeHostInputValue::F64(5.0) },
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing").unwrap(), value: RuntimeHostInputValue::F64(9.0) },
@@ -133,7 +130,7 @@ fn packet_with_unbound_source_does_not_mutate_bound_inputs() {
 
   assert!(error.contains("RuntimeHostInputUnboundSource"));
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
-  assert_eq!(runtime.host_input_solve_count, before);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 1.0);
 }
 
 #[derive(Debug, Clone)]

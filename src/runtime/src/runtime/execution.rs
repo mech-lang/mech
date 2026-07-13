@@ -3796,7 +3796,6 @@ impl MechRuntime {
     input.validate()?;
     let mut target_updates = Vec::new();
     let mut seen_targets = std::collections::HashSet::new();
-    let mut binding_count = 0usize;
 
     for update in &input.updates {
       let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
@@ -3810,20 +3809,26 @@ impl MechRuntime {
       }
       let value = update.value.clone().into_mech_value()?;
       for program_input in bindings {
-        binding_count += 1;
-        if seen_targets.insert(program_input) {
-          target_updates.push(mech_program::ProgramInputUpdate { input: program_input, value: value.clone() });
+        if !seen_targets.insert(program_input) {
+          return Err(MechError::new(mech_program::ProgramInputDuplicateTarget { input: program_input }, None));
         }
+        target_updates.push(mech_program::ProgramInputUpdate { input: program_input, value: value.clone() });
       }
     }
 
-    self.program.update_inputs(&target_updates)?;
-    let solve = self.program.solve_plan()?;
-    #[cfg(test)]
-    {
-      self.host_input_solve_count += 1;
+    let updates = self.program.update_inputs(&target_updates)?;
+    // Input mutation is complete before dependency scheduling. If the plan graph
+    // contains a dependency cycle, the error is reported without attempting to
+    // roll input cells back.
+    let mut solve = self.program.solve_invalidated(&updates.invalidations)?;
+    if solve.scheduled_nodes == 0 && !updates.invalidations.is_empty() {
+      solve = self.program.solve_all()?;
     }
-    Ok(crate::RuntimeHostInputOutcome { update_count: input.updates.len(), binding_count, solve })
+    Ok(crate::RuntimeHostInputOutcome {
+      update_count: input.updates.len(),
+      binding_count: updates.updated_inputs,
+      solve,
+    })
   }
 
   pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {
