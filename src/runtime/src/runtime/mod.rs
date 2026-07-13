@@ -29,6 +29,9 @@ mod service;
 mod task;
 mod transaction;
 
+#[cfg(test)]
+mod input_tests;
+
 use crate::runtime::errors::*;
 use crate::runtime::host::*;
 
@@ -375,6 +378,8 @@ impl RuntimeBuilder {
       live_input_bindings: HashMap::new(),
       host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(RuntimeHostInputQueueState::new(self.host_input_capacity))),
       input_drivers: self.input_drivers,
+      #[cfg(test)]
+      host_input_solve_count: 0,
       host_interfaces,
       module_manifests: self.module_manifests,
     };
@@ -393,16 +398,14 @@ impl RuntimeBuilder {
     }
 
     let ingress = runtime.ingress();
-    let mut attached = 0usize;
-    for driver in &mut runtime.input_drivers {
-      if let Err(error) = driver.attach(ingress.clone()) {
+    for index in 0..runtime.input_drivers.len() {
+      if let Err(error) = runtime.input_drivers[index].attach(ingress.clone()) {
         let _ = runtime.close_ingress();
-        for attached_driver in runtime.input_drivers[..attached].iter_mut().rev() {
-          let _ = attached_driver.stop();
+        for rollback_index in (0..=index).rev() {
+          let _ = runtime.input_drivers[rollback_index].stop();
         }
         return Err(error);
       }
-      attached += 1;
     }
 
     let mut context = runtime.runtime_context()?;
@@ -444,6 +447,8 @@ pub struct MechRuntime {
   live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
   host_input_queue: RuntimeHostInputQueue,
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
+  #[cfg(test)]
+  host_input_solve_count: usize,
   host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
 }
@@ -1154,23 +1159,42 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn shutdown(&mut self) -> MResult<()> {
-    let mut first_error = self.close_ingress().err();
+    let mut first_error = None;
+
+    if let Err(error) = self.close_ingress() {
+      first_error = Some(error);
+    }
+
     if let Err(error) = self.stop_input_drivers() {
-      if first_error.is_none() { first_error = Some(error); }
+      if first_error.is_none() {
+        first_error = Some(error);
+      }
     }
 
-    let mut context = self.runtime_context()?;
-    if let Err(error) = self.emit_event_to_context(
-      &mut context,
-      RuntimeEventKind::RuntimeShutdown {
-        runtime_id: self.id,
-      },
-    ) {
-      if first_error.is_none() { first_error = Some(error); }
+    match self.runtime_context() {
+      Ok(mut context) => {
+        if let Err(error) = self.emit_event_to_context(
+          &mut context,
+          RuntimeEventKind::RuntimeShutdown {
+            runtime_id: self.id,
+          },
+        ) {
+          if first_error.is_none() {
+            first_error = Some(error);
+          }
+        }
+      }
+      Err(error) => {
+        if first_error.is_none() {
+          first_error = Some(error);
+        }
+      }
     }
 
-    if let Some(error) = first_error { return Err(error); }
-    Ok(())
+    match first_error {
+      Some(error) => Err(error),
+      None => Ok(()),
+    }
   }
 }
 

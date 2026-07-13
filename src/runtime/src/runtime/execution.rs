@@ -486,7 +486,7 @@ impl MechRuntime {
     source: crate::RuntimeHostInputSource,
     value: Value,
   ) -> MResult<mech_core::Expression> {
-    let name = format!("mech-internal-context-{}-{}", hash_str(&source.base_uri), hash_str(&source.path));
+    let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
     let bindings = self.live_input_bindings.entry(source).or_default();
@@ -3802,7 +3802,7 @@ impl MechRuntime {
       let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
         return Err(crate::input::input_error(
           "RuntimeHostInputUnboundSource",
-          format!("host input source {}/{} has no live binding", update.source.base_uri, update.source.path),
+          format!("host input source {}/{} has no live binding", update.source.base_uri(), update.source.path()),
         ));
       };
       if bindings.is_empty() {
@@ -3819,6 +3819,10 @@ impl MechRuntime {
 
     self.program.update_inputs(&target_updates)?;
     let solve = self.program.solve_plan()?;
+    #[cfg(test)]
+    {
+      self.host_input_solve_count += 1;
+    }
     Ok(crate::RuntimeHostInputOutcome { update_count: input.updates.len(), binding_count, solve })
   }
 
@@ -3845,16 +3849,14 @@ impl MechRuntime {
     if self.ingress().is_closed()? {
       return Err(crate::input::input_error("RuntimeIngressClosed", "cannot start input drivers after ingress is closed"));
     }
-    let mut started: Vec<usize> = Vec::new();
-    for (index, driver) in self.input_drivers.iter_mut().enumerate() {
-      if driver.is_live() { continue; }
-      if let Err(error) = driver.start() {
-        for rollback_index in started.into_iter().rev() {
-          let _ = self.input_drivers[rollback_index].stop();
+    for index in 0..self.input_drivers.len() {
+      if self.input_drivers[index].is_live() { continue; }
+      if let Err(error) = self.input_drivers[index].start() {
+        for driver in self.input_drivers.iter_mut().rev() {
+          let _ = driver.stop();
         }
         return Err(error);
       }
-      started.push(index);
     }
     Ok(())
   }

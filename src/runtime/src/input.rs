@@ -93,18 +93,24 @@ impl RuntimeHostInputValue {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RuntimeHostInputSource {
-  pub base_uri: String,
-  pub path: String,
+  base_uri: String,
+  path: String,
 }
 
 impl RuntimeHostInputSource {
   pub fn new(base_uri: impl Into<String>, path: impl Into<String>) -> MResult<Self> {
-    let base_uri = base_uri.into().trim_end_matches('/').to_string();
-    if base_uri.trim().is_empty() || !base_uri.contains("://") {
-      return Err(input_error("RuntimeHostInputSourceInvalid", "host input source base URI must be a non-empty resource URI"));
-    }
+    let raw_base_uri = base_uri.into();
+    let base_uri = crate::resource::canonicalize_resource_base_uri(&raw_base_uri)?;
     let path = path.into().trim_matches('/').to_string();
     Ok(Self { base_uri, path })
+  }
+
+  pub fn base_uri(&self) -> &str {
+    &self.base_uri
+  }
+
+  pub fn path(&self) -> &str {
+    &self.path
   }
 }
 
@@ -136,7 +142,6 @@ impl RuntimeHostInput {
     }
     let mut sources = HashSet::with_capacity(self.updates.len());
     for update in &self.updates {
-      RuntimeHostInputSource::new(update.source.base_uri.clone(), update.source.path.clone())?;
       if !sources.insert(update.source.clone()) {
         return Err(input_error("RuntimeHostInputDuplicateSource", "host input packet contains duplicate sources"));
       }
@@ -231,6 +236,21 @@ mod tests {
 
   fn assert_send_sync<T: Send + Sync>() {}
 
+
+  #[test]
+  fn source_constructor_canonicalizes_base_and_path() {
+    let source = RuntimeHostInputSource::new("test://clock/ticks/", "/value/").unwrap();
+    assert_eq!(source.base_uri(), "test://clock/ticks");
+    assert_eq!(source.path(), "value");
+  }
+
+  #[test]
+  fn source_constructor_rejects_invalid_resource_uris() {
+    assert!(RuntimeHostInputSource::new("clock/ticks", "value").is_err());
+    assert!(RuntimeHostInputSource::new("://clock", "value").is_err());
+    assert!(RuntimeHostInputSource::new("test://", "value").is_err());
+  }
+
   #[test]
   fn host_input_transport_is_send_sync() {
     assert_send_sync::<RuntimeHostInputValue>();
@@ -249,8 +269,8 @@ mod tests {
     assert!(error.contains("RuntimeIngressFull"));
 
     let mut guard = queue.lock().unwrap();
-    assert_eq!(guard.queue.pop_front().unwrap().updates[0].source.path, "a");
-    assert_eq!(guard.queue.pop_front().unwrap().updates[0].source.path, "b");
+    assert_eq!(guard.queue.pop_front().unwrap().updates[0].source.path(), "a");
+    assert_eq!(guard.queue.pop_front().unwrap().updates[0].source.path(), "b");
   }
 
   #[test]
