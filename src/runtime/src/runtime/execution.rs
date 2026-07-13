@@ -483,21 +483,15 @@ impl MechRuntime {
   fn bind_context_read_temp(
     &mut self,
     program: &mut MechProgram,
-    target: &str,
-    path: &str,
+    source: crate::RuntimeHostInputSource,
     value: Value,
   ) -> MResult<mech_core::Expression> {
-    let name = format!("mech-internal-context-{}-{}", hash_str(target), hash_str(path));
+    let name = format!("mech-internal-context-{}-{}", hash_str(&source.base_uri), hash_str(&source.path));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
-    let source = crate::RuntimeHostInputSource {
-      instance: target.to_string(),
-      context: target.to_string(),
-      path: path.to_string(),
-    };
-    let bindings = self.live_input_bindings.entry(source.clone()).or_default();
-    if !bindings.iter().any(|binding| binding.program_input == input) {
-      bindings.push(crate::RuntimeLiveInputBinding { source, program_input: input });
+    let bindings = self.live_input_bindings.entry(source).or_default();
+    if !bindings.iter().any(|binding| *binding == input) {
+      bindings.push(input);
     }
     let var = mech_core::Var {
       name: identifier_from_str(&name),
@@ -524,8 +518,10 @@ impl MechRuntime {
           return Ok(expression.clone());
         };
         let path = var.name.to_string();
+        let resolved = self.resolve_context_resource_request(binding, &path)?;
+        let source = crate::RuntimeHostInputSource::new(resolved.provider_base_uri.clone(), resolved.provider_path.clone())?;
         let value = self.read_context_resource(context, binding, &path)?;
-        self.bind_context_read_temp(program, &target, &path, value)
+        self.bind_context_read_temp(program, source, value)
       }
       mech_core::Expression::Formula(factor) => Ok(mech_core::Expression::Formula(
         self.resolve_context_reads_in_factor(context, program, registry, factor)?,
@@ -3787,72 +3783,90 @@ impl MechRuntime {
     crate::RuntimeIngress::new(self.host_input_queue.clone())
   }
 
-  pub fn has_pending_host_inputs(&self) -> bool {
-    self.host_input_queue
-      .lock()
-      .ok()
-      .and_then(|guard| guard.as_ref().map(|queue| !queue.is_empty()))
-      .unwrap_or(false)
+  pub fn has_pending_host_inputs(&self) -> MResult<bool> {
+    Ok(self.pending_host_input_count()? > 0)
+  }
+
+  pub fn pending_host_input_count(&self) -> MResult<usize> {
+    let guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+    Ok(guard.queue.len())
   }
 
   pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
-    let Some(bindings) = self.live_input_bindings.get(&input.source).cloned() else {
-      return Err(crate::input::input_error(
-        "RuntimeHostInputUnboundSource",
-        format!("host input source {}/{}/{} has no live binding", input.source.instance, input.source.context, input.source.path),
-      ));
-    };
-    if bindings.is_empty() {
-      return Err(crate::input::input_error("RuntimeHostInputUnboundSource", "host input source has no live bindings"));
-    }
-    let mut changed_input_count = 0;
-    for binding in &bindings {
-      if self.program.update_input(binding.program_input, input.value.clone())? {
-        changed_input_count += 1;
+    input.validate()?;
+    let mut target_updates = Vec::new();
+    let mut seen_targets = std::collections::HashSet::new();
+    let mut binding_count = 0usize;
+
+    for update in &input.updates {
+      let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
+        return Err(crate::input::input_error(
+          "RuntimeHostInputUnboundSource",
+          format!("host input source {}/{} has no live binding", update.source.base_uri, update.source.path),
+        ));
+      };
+      if bindings.is_empty() {
+        return Err(crate::input::input_error("RuntimeHostInputUnboundSource", "host input source has no live bindings"));
+      }
+      let value = update.value.clone().into_mech_value()?;
+      for program_input in bindings {
+        binding_count += 1;
+        if seen_targets.insert(program_input) {
+          target_updates.push(mech_program::ProgramInputUpdate { input: program_input, value: value.clone() });
+        }
       }
     }
-    let mut solved = false;
-    let mut plan_steps = 0;
-    if changed_input_count > 0 {
-      let outcome = self.program.solve_plan()?;
-      solved = true;
-      plan_steps = outcome.plan_steps;
-    }
-    Ok(crate::RuntimeHostInputOutcome {
-      source: input.source,
-      binding_count: bindings.len(),
-      changed_input_count,
-      solved,
-      plan_steps,
-    })
+
+    self.program.update_inputs(&target_updates)?;
+    let solve = self.program.solve_plan()?;
+    Ok(crate::RuntimeHostInputOutcome { update_count: input.updates.len(), binding_count, solve })
   }
 
   pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {
-    let inputs = {
-      let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
-      let Some(queue) = guard.as_mut() else {
-        return Err(crate::input::input_error("RuntimeIngressClosed", "host input queue is closed"));
+    let mut outcomes = Vec::new();
+    for _ in 0..max_inputs {
+      let input = {
+        let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+        guard.queue.pop_front()
       };
-      let mut inputs = Vec::new();
-      for _ in 0..max_inputs {
-        let Some(input) = queue.pop_front() else { break; };
-        inputs.push(input);
-      }
-      inputs
-    };
-    inputs.into_iter().map(|input| self.apply_host_input(input)).collect()
+      let Some(input) = input else { break; };
+      outcomes.push(self.apply_host_input(input)?);
+    }
+    Ok(outcomes)
   }
 
   pub fn close_ingress(&mut self) -> MResult<()> {
     let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
-    *guard = None;
+    guard.closed = true;
+    Ok(())
+  }
+
+  pub fn start_input_drivers(&mut self) -> MResult<()> {
+    if self.ingress().is_closed()? {
+      return Err(crate::input::input_error("RuntimeIngressClosed", "cannot start input drivers after ingress is closed"));
+    }
+    let mut started: Vec<usize> = Vec::new();
+    for (index, driver) in self.input_drivers.iter_mut().enumerate() {
+      if driver.is_live() { continue; }
+      if let Err(error) = driver.start() {
+        for rollback_index in started.into_iter().rev() {
+          let _ = self.input_drivers[rollback_index].stop();
+        }
+        return Err(error);
+      }
+      started.push(index);
+    }
     Ok(())
   }
 
   pub fn stop_input_drivers(&mut self) -> MResult<()> {
-    for driver in &mut self.input_drivers {
-      driver.stop()?;
+    let mut first_error = None;
+    for driver in self.input_drivers.iter_mut().rev() {
+      if let Err(error) = driver.stop() {
+        if first_error.is_none() { first_error = Some(error); }
+      }
     }
+    if let Some(error) = first_error { return Err(error); }
     Ok(())
   }
 }

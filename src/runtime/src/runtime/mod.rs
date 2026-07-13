@@ -44,7 +44,7 @@ use mech_core::{
 };
 
 use mech_program::{
-  MechProgram, MechProgramConfig, MechProgramEnvironment
+  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
 
 use crate::capability::{
@@ -99,6 +99,7 @@ use crate::transaction::{
 use crate::actor::ActorTurn;
 
 use crate::{RuntimeServices};
+use crate::input::RuntimeHostInputQueueState;
 
 use crate::actor_behavior::{
   ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
@@ -106,7 +107,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeLiveInputBinding, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -133,6 +134,7 @@ pub struct RuntimeBuilder {
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
+  host_input_capacity: usize,
   host_factories: RuntimeHostFactoryRegistry,
   host_instances: Vec<HostInstanceConfig>,
   run_grants: Vec<RunResourceGrantConfig>,
@@ -180,6 +182,7 @@ impl Default for RuntimeBuilder {
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
       input_drivers: Vec::new(),
+      host_input_capacity: DEFAULT_HOST_INPUT_CAPACITY,
       host_factories: RuntimeHostFactoryRegistry::new(),
       host_instances: Vec::new(),
       run_grants: Vec::new(),
@@ -310,9 +313,17 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn host_input_capacity(mut self, capacity: usize) -> Self {
+    self.host_input_capacity = capacity;
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
     self.scheduler_policy.validate()?;
+    if self.host_input_capacity == 0 {
+      return Err(crate::input::input_error("RuntimeHostInputCapacityInvalid", "host input queue capacity must be greater than zero"));
+    }
 
     let runtime_id = self.id_generator.runtime_id();
 
@@ -362,7 +373,7 @@ impl RuntimeBuilder {
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
       live_input_bindings: HashMap::new(),
-      host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(Some(std::collections::VecDeque::new()))),
+      host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(RuntimeHostInputQueueState::new(self.host_input_capacity))),
       input_drivers: self.input_drivers,
       host_interfaces,
       module_manifests: self.module_manifests,
@@ -377,14 +388,21 @@ impl RuntimeBuilder {
       runtime.register_resource_provider(provider)?;
     }
 
-    let ingress = runtime.ingress();
-    for driver in &mut runtime.input_drivers {
-      driver.attach(ingress.clone())?;
-      driver.start()?;
-    }
-
     for grant in &self.run_grants {
       runtime.install_run_resource_grant(grant)?;
+    }
+
+    let ingress = runtime.ingress();
+    let mut attached = 0usize;
+    for driver in &mut runtime.input_drivers {
+      if let Err(error) = driver.attach(ingress.clone()) {
+        let _ = runtime.close_ingress();
+        for attached_driver in runtime.input_drivers[..attached].iter_mut().rev() {
+          let _ = attached_driver.stop();
+        }
+        return Err(error);
+      }
+      attached += 1;
     }
 
     let mut context = runtime.runtime_context()?;
@@ -423,7 +441,7 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
-  live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<RuntimeLiveInputBinding>>,
+  live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
   host_input_queue: RuntimeHostInputQueue,
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
   host_interfaces: HostInterfaceCatalog,
@@ -1136,16 +1154,32 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn shutdown(&mut self) -> MResult<()> {
-    let mut context = self.runtime_context()?;
+    let mut first_error = self.close_ingress().err();
+    if let Err(error) = self.stop_input_drivers() {
+      if first_error.is_none() { first_error = Some(error); }
+    }
 
-    self.emit_event_to_context(
+    let mut context = self.runtime_context()?;
+    if let Err(error) = self.emit_event_to_context(
       &mut context,
       RuntimeEventKind::RuntimeShutdown {
         runtime_id: self.id,
       },
-    )?;
+    ) {
+      if first_error.is_none() { first_error = Some(error); }
+    }
 
+    if let Some(error) = first_error { return Err(error); }
     Ok(())
+  }
+}
+
+impl Drop for MechRuntime {
+  fn drop(&mut self) {
+    let _ = self.close_ingress();
+    for driver in self.input_drivers.iter_mut().rev() {
+      let _ = driver.stop();
+    }
   }
 }
 

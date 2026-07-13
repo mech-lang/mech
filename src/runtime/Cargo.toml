@@ -174,7 +174,7 @@ uuid = { version = "1.23.1", features = ["js"] }
 [[bin]]
 name = "address_target_diagnostics"
 path = "src/bin/address_target_diagnostics.rs"
-required-features = ["program"]
+required-features = ["program", "bool"]
 
 [[bin]]
 name = "module_smoke"

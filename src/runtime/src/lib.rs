@@ -9,6 +9,7 @@ pub mod host_delegation;
 pub mod host_delegation_crypto;
 pub mod operation;
 mod resource;
+#[cfg(any(feature = "program", feature = "compiler"))]
 pub mod input;
 pub mod host_interface;
 
@@ -47,6 +48,7 @@ pub use self::id::*;
 pub use self::config::*;
 pub use self::config_profile::*;
 pub use self::operation::*;
+#[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::input::*;
 #[cfg(feature = "host_delegation")]
 pub use self::host_delegation::*;

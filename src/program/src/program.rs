@@ -53,9 +53,15 @@ pub struct ProgramInputId {
 }
 
 #[derive(Clone, Debug)]
+pub struct ProgramInputUpdate {
+  pub input: ProgramInputId,
+  pub value: Value,
+}
+
+#[derive(Clone, Debug)]
 pub struct ProgramSolveOutcome {
   pub value: Value,
-  pub plan_steps: usize,
+  pub plan_len: usize,
 }
 
 pub struct MechProgram {
@@ -271,21 +277,36 @@ impl MechProgram {
     Ok(ProgramInputId { interpreter_id, symbol_id })
   }
 
-  pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<bool> {
-    let Some(result) = with_interpreter_mut(&mut self.interpreter, input.interpreter_id, &mut |interpreter| {
-      let symbols = interpreter.symbols();
-      symbols.borrow().update_existing(input.symbol_id, value.clone())
-    }) else {
-      return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {}", input.interpreter_id) }, None));
-    };
-    result
+  pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<()> {
+    self.update_inputs(&[ProgramInputUpdate { input, value }])?;
+    Ok(())
+  }
+
+  pub fn update_inputs(&mut self, updates: &[ProgramInputUpdate]) -> MResult<usize> {
+    let mut assignments = Vec::with_capacity(updates.len());
+    for update in updates {
+      let Some(sink) = with_interpreter_mut(&mut self.interpreter, update.input.interpreter_id, &mut |interpreter| {
+        interpreter.symbols().borrow().get(update.input.symbol_id)
+      }) else {
+        return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {}", update.input.interpreter_id) }, None));
+      };
+      let Some(sink) = sink else {
+        return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
+      };
+      let compiler = mech_interpreter::AssignValue {};
+      assignments.push(compiler.compile(&vec![Value::MutableReference(sink), update.value.clone()])?);
+    }
+    for assignment in &assignments {
+      assignment.solve();
+    }
+    Ok(assignments.len())
   }
 
   #[cfg(feature = "functions")]
   pub fn solve_plan(&mut self) -> MResult<ProgramSolveOutcome> {
-    let plan_steps = self.interpreter.plan_len();
+    let plan_len = self.interpreter.plan_len();
     let value = self.interpreter.solve_plan()?;
-    Ok(ProgramSolveOutcome { value, plan_steps })
+    Ok(ProgramSolveOutcome { value, plan_len })
   }
 
   pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
@@ -545,20 +566,67 @@ mod live_input_tests {
   fn existing_input_cell_is_mutated_without_replacing_valref() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let input_id = hash_str("input");
+    let output_id = hash_str("output");
     program.ensure_input(program.interpreter().id, input_id, "input", Value::F64(Ref::new(1.0))).unwrap();
     program.run_string("output := input * 2").unwrap();
-    let before = program.interpreter().symbols().borrow().value_cell(input_id).unwrap();
-    let pointer = before.as_ptr();
+    let before = program.interpreter().symbols().borrow().get(input_id).unwrap();
+    let outer_pointer = before.as_ptr();
+    let inner_pointer = match &*before.borrow() {
+      Value::F64(value) => value.as_ptr(),
+      other => panic!("expected f64 input, got {other:?}"),
+    };
+    let output = program.interpreter().symbols().borrow().get(output_id).unwrap();
+    assert_eq!(f64_value(&output.borrow()), 2.0);
 
     let handle = program.ensure_input(program.interpreter().id, input_id, "input", Value::F64(Ref::new(1.0))).unwrap();
-    assert!(program.update_input(handle, Value::F64(Ref::new(5.0))).unwrap());
-    let after = program.interpreter().symbols().borrow().value_cell(input_id).unwrap();
-    assert_eq!(pointer, after.as_ptr());
+    program.update_input(handle, Value::F64(Ref::new(5.0))).unwrap();
+    let after = program.interpreter().symbols().borrow().get(input_id).unwrap();
+    assert_eq!(outer_pointer, after.as_ptr());
+    match &*after.borrow() {
+      Value::F64(value) => assert_eq!(inner_pointer, value.as_ptr()),
+      other => panic!("expected f64 input, got {other:?}"),
+    }
 
     let outcome = program.solve_plan().unwrap();
-    assert!(outcome.plan_steps > 0);
-    let input = program.interpreter().symbols().borrow().value_cell(input_id).unwrap();
+    assert!(outcome.plan_len > 0);
+    let input = program.interpreter().symbols().borrow().get(input_id).unwrap();
     assert_eq!(f64_value(&input.borrow()), 5.0);
+    let output = program.interpreter().symbols().borrow().get(output_id).unwrap();
+    assert_eq!(f64_value(&output.borrow()), 10.0);
+  }
+
+
+  #[test]
+  fn incompatible_input_type_is_rejected_without_mutation() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let input_id = hash_str("input");
+    program.ensure_input(program.interpreter().id, input_id, "input", Value::F64(Ref::new(1.0))).unwrap();
+    program.run_string("output := input * 2").unwrap();
+    let handle = ProgramInputId { interpreter_id: program.interpreter().id, symbol_id: input_id };
+    assert!(program.update_inputs(&[ProgramInputUpdate { input: handle, value: Value::String(Ref::new("bad".to_string())) }]).is_err());
+    let input = program.interpreter().symbols().borrow().get(input_id).unwrap();
+    assert_eq!(f64_value(&input.borrow()), 1.0);
+    let output = program.interpreter().symbols().borrow().get(hash_str("output")).unwrap();
+    assert_eq!(f64_value(&output.borrow()), 2.0);
+  }
+
+  #[test]
+  fn multi_update_preflight_is_atomic() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let a_id = hash_str("a");
+    let b_id = hash_str("b");
+    let interpreter_id = program.interpreter().id;
+    let a = program.ensure_input(interpreter_id, a_id, "a", Value::F64(Ref::new(1.0))).unwrap();
+    let b = program.ensure_input(interpreter_id, b_id, "b", Value::F64(Ref::new(2.0))).unwrap();
+    let result = program.update_inputs(&[
+      ProgramInputUpdate { input: a, value: Value::F64(Ref::new(3.0)) },
+      ProgramInputUpdate { input: b, value: Value::String(Ref::new("bad".to_string())) },
+    ]);
+    assert!(result.is_err());
+    let a_value = program.interpreter().symbols().borrow().get(a_id).unwrap();
+    let b_value = program.interpreter().symbols().borrow().get(b_id).unwrap();
+    assert_eq!(f64_value(&a_value.borrow()), 1.0);
+    assert_eq!(f64_value(&b_value.borrow()), 2.0);
   }
 
   #[test]
