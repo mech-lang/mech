@@ -378,6 +378,8 @@ impl RuntimeBuilder {
       live_input_bindings: HashMap::new(),
       host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(RuntimeHostInputQueueState::new(self.host_input_capacity))),
       input_drivers: self.input_drivers,
+      attached_input_driver_count: 0,
+      input_driver_cleanup_armed: false,
       #[cfg(test)]
       host_input_solve_count: 0,
       host_interfaces,
@@ -404,9 +406,13 @@ impl RuntimeBuilder {
         for rollback_index in (0..=index).rev() {
           let _ = runtime.input_drivers[rollback_index].stop();
         }
+        runtime.attached_input_driver_count = 0;
+        runtime.input_driver_cleanup_armed = false;
         return Err(error);
       }
+      runtime.attached_input_driver_count += 1;
     }
+    runtime.input_driver_cleanup_armed = true;
 
     let mut context = runtime.runtime_context()?;
 
@@ -447,6 +453,8 @@ pub struct MechRuntime {
   live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
   host_input_queue: RuntimeHostInputQueue,
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
+  attached_input_driver_count: usize,
+  input_driver_cleanup_armed: bool,
   #[cfg(test)]
   host_input_solve_count: usize,
   host_interfaces: HostInterfaceCatalog,
@@ -1170,6 +1178,7 @@ impl MechRuntime {
         first_error = Some(error);
       }
     }
+    self.input_driver_cleanup_armed = false;
 
     match self.runtime_context() {
       Ok(mut context) => {
@@ -1200,9 +1209,12 @@ impl MechRuntime {
 
 impl Drop for MechRuntime {
   fn drop(&mut self) {
-    let _ = self.close_ingress();
-    for driver in self.input_drivers.iter_mut().rev() {
-      let _ = driver.stop();
+    if self.input_driver_cleanup_armed {
+      let _ = self.close_ingress();
+      for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
+        let _ = driver.stop();
+      }
+      self.input_driver_cleanup_armed = false;
     }
   }
 }

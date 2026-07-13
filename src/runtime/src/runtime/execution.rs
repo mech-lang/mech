@@ -3849,10 +3849,10 @@ impl MechRuntime {
     if self.ingress().is_closed()? {
       return Err(crate::input::input_error("RuntimeIngressClosed", "cannot start input drivers after ingress is closed"));
     }
-    for index in 0..self.input_drivers.len() {
+    for index in 0..self.attached_input_driver_count {
       if self.input_drivers[index].is_live() { continue; }
       if let Err(error) = self.input_drivers[index].start() {
-        for driver in self.input_drivers.iter_mut().rev() {
+        for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
           let _ = driver.stop();
         }
         return Err(error);
@@ -3863,7 +3863,7 @@ impl MechRuntime {
 
   pub fn stop_input_drivers(&mut self) -> MResult<()> {
     let mut first_error = None;
-    for driver in self.input_drivers.iter_mut().rev() {
+    for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
       if let Err(error) = driver.stop() {
         if first_error.is_none() { first_error = Some(error); }
       }

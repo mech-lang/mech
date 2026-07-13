@@ -281,7 +281,10 @@ fn attach_failure_closes_ingress_and_rolls_back_in_reverse_order() {
   assert_eq!(c.borrow().attach_count, 0);
   assert!(a.borrow().attached_ingress.as_ref().unwrap().is_closed().unwrap());
   let stop_events: Vec<String> = events.borrow().iter().filter(|event| event.starts_with("stop:")).cloned().collect();
-  assert_eq!(&stop_events[..2], ["stop:b", "stop:a"]);
+  assert_eq!(stop_events, vec!["stop:b", "stop:a"]);
+  assert_eq!(a.borrow().stop_count, 1);
+  assert_eq!(b.borrow().stop_count, 1);
+  assert_eq!(c.borrow().stop_count, 0);
 }
 
 #[test]
@@ -324,6 +327,8 @@ fn shutdown_closes_ingress_before_stopping_drivers() {
   runtime.shutdown().unwrap();
   assert_eq!(state.borrow().stop_count, 1);
   assert!(state.borrow().stop_observed_closed_ingress);
+  drop(runtime);
+  assert_eq!(state.borrow().stop_count, 1);
   let source = RuntimeHostInputSource::new("test-input://clock/ticks", "value").unwrap();
   let error = format!("{:?}", ingress.submit(RuntimeHostInput::single(source, RuntimeHostInputValue::F64(1.0))).unwrap_err());
   assert!(error.contains("RuntimeIngressClosed"));
