@@ -411,8 +411,7 @@ impl PlanGraph {
         let mut adjacency = vec![BTreeSet::<PlanNodeId>::new(); self.nodes.len()];
         let mut indegree = vec![0usize; self.nodes.len()];
 
-        self.add_producer_consumer_edges(&affected, &mut adjacency, &mut indegree);
-        self.add_multiple_writer_edges(&affected, &mut adjacency, &mut indegree);
+        self.add_cell_ordering_edges(&affected, &mut adjacency, &mut indegree);
 
         let ordered_nodes = self.topological_order(&affected, &adjacency, &mut indegree)?;
 
@@ -461,29 +460,17 @@ impl PlanGraph {
         }
     }
 
-    fn add_producer_consumer_edges(
-        &self,
-        affected: &[bool],
-        adjacency: &mut [BTreeSet<PlanNodeId>],
-        indegree: &mut [usize],
-    ) {
-        for (index, spec) in self.nodes.iter().enumerate() {
-            if !affected.get(index).copied().unwrap_or(false) {
-                continue;
-            }
-
-            let consumer = PlanNodeId(index);
-            for input in &spec.inputs {
-                if let Some(producers) = self.producers.get(&input.cell) {
-                    for producer in producers {
-                        add_ordering_edge(*producer, consumer, affected, adjacency, indegree);
-                    }
-                }
-            }
-        }
+    fn affected_writers(&self, cell: ValueCellId, affected: &[bool]) -> Vec<PlanNodeId> {
+        self.producers
+            .get(&cell)
+            .into_iter()
+            .flatten()
+            .copied()
+            .filter(|producer| affected.get(producer.as_usize()).copied().unwrap_or(false))
+            .collect()
     }
 
-    fn add_multiple_writer_edges(
+    fn add_cell_ordering_edges(
         &self,
         affected: &[bool],
         adjacency: &mut [BTreeSet<PlanNodeId>],
@@ -498,6 +485,30 @@ impl PlanGraph {
 
             for pair in affected_producers.windows(2) {
                 add_ordering_edge(pair[0], pair[1], affected, adjacency, indegree);
+            }
+        }
+
+        for (index, spec) in self.nodes.iter().enumerate() {
+            if !affected.get(index).copied().unwrap_or(false) {
+                continue;
+            }
+
+            let consumer = PlanNodeId(index);
+
+            for input in &spec.inputs {
+                let writers = self.affected_writers(input.cell, affected);
+
+                if writers.is_empty() {
+                    continue;
+                }
+
+                if writers.contains(&consumer) {
+                    continue;
+                }
+
+                let final_writer = *writers.last().expect("non-empty affected writer list");
+
+                add_ordering_edge(final_writer, consumer, affected, adjacency, indegree);
             }
         }
     }
@@ -626,6 +637,16 @@ mod tests {
         graph.add_node(PlanNodeSpec::explicit(
             vec![input(source, PlanInputMode::Reactive)],
             vec![cell(output)],
+        ))
+    }
+
+    fn add_state_writer(graph: &mut PlanGraph, trigger: &Value, state: &Value) -> PlanNodeId {
+        graph.add_node(PlanNodeSpec::explicit(
+            vec![
+                input(trigger, PlanInputMode::Trigger),
+                input(state, PlanInputMode::Sampled),
+            ],
+            vec![cell(state)],
         ))
     }
 
@@ -1089,18 +1110,126 @@ mod tests {
     }
 
     #[test]
-    fn reactive_cycle_is_rejected() {
+    fn true_cross_cell_cycle_is_still_rejected() {
         let a = Value::Index(Ref::new(1));
         let b = Value::Index(Ref::new(2));
         let mut graph = PlanGraph::new();
-        add_edge(&mut graph, &a, &b);
-        add_edge(&mut graph, &b, &a);
+        let node_0 = add_edge(&mut graph, &a, &b);
+        let node_1 = add_edge(&mut graph, &b, &a);
 
         let error = graph
             .schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)])
             .unwrap_err();
 
         assert_eq!(error.kind_name(), "PlanDependencyCycle");
+        assert!(error
+            .kind_message()
+            .contains(&node_0.as_usize().to_string()));
+        assert!(error
+            .kind_message()
+            .contains(&node_1.as_usize().to_string()));
+    }
+
+    #[test]
+    fn two_read_modify_write_nodes_share_state_without_cycle() {
+        let t0 = Value::Index(Ref::new(1));
+        let t1 = Value::Index(Ref::new(2));
+        let state = Value::Index(Ref::new(3));
+        let mut graph = PlanGraph::new();
+        let node_0 = add_state_writer(&mut graph, &t0, &state);
+        let node_1 = add_state_writer(&mut graph, &t1, &state);
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&t0, PlanInvalidationKind::Triggered),
+                invalidation(&t1, PlanInvalidationKind::Triggered),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.scheduled_nodes, 2);
+        assert_eq!(outcome.ordered_nodes, vec![node_0, node_1]);
+    }
+
+    #[test]
+    fn three_read_modify_write_nodes_follow_registration_order() {
+        let t0 = Value::Index(Ref::new(1));
+        let t1 = Value::Index(Ref::new(2));
+        let t2 = Value::Index(Ref::new(3));
+        let state = Value::Index(Ref::new(4));
+        let mut graph = PlanGraph::new();
+        let node_0 = add_state_writer(&mut graph, &t0, &state);
+        let node_1 = add_state_writer(&mut graph, &t1, &state);
+        let node_2 = add_state_writer(&mut graph, &t2, &state);
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&t0, PlanInvalidationKind::Triggered),
+                invalidation(&t1, PlanInvalidationKind::Triggered),
+                invalidation(&t2, PlanInvalidationKind::Triggered),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.scheduled_nodes, 3);
+        assert_eq!(outcome.ordered_nodes, vec![node_0, node_1, node_2]);
+    }
+
+    #[test]
+    fn render_reads_state_after_final_affected_writer() {
+        let render_tick = Value::Index(Ref::new(1));
+        let physics_tick_0 = Value::Index(Ref::new(2));
+        let physics_tick_1 = Value::Index(Ref::new(3));
+        let state = Value::Index(Ref::new(4));
+        let frame = Value::Index(Ref::new(5));
+        let mut graph = PlanGraph::new();
+        let render = graph.add_node(PlanNodeSpec::explicit(
+            vec![
+                input(&render_tick, PlanInputMode::Trigger),
+                input(&state, PlanInputMode::Sampled),
+            ],
+            vec![cell(&frame)],
+        ));
+        let writer_0 = add_state_writer(&mut graph, &physics_tick_0, &state);
+        let writer_1 = add_state_writer(&mut graph, &physics_tick_1, &state);
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&render_tick, PlanInvalidationKind::Triggered),
+                invalidation(&physics_tick_0, PlanInvalidationKind::Triggered),
+                invalidation(&physics_tick_1, PlanInvalidationKind::Triggered),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.ordered_nodes, vec![writer_0, writer_1, render]);
+    }
+
+    #[test]
+    fn inactive_writer_does_not_constrain_schedule() {
+        let t0 = Value::Index(Ref::new(1));
+        let t1 = Value::Index(Ref::new(2));
+        let render_trigger = Value::Index(Ref::new(3));
+        let state = Value::Index(Ref::new(4));
+        let frame = Value::Index(Ref::new(5));
+        let mut graph = PlanGraph::new();
+        let inactive_writer = add_state_writer(&mut graph, &t0, &state);
+        let active_writer = add_state_writer(&mut graph, &t1, &state);
+        let render = graph.add_node(PlanNodeSpec::explicit(
+            vec![
+                input(&render_trigger, PlanInputMode::Trigger),
+                input(&state, PlanInputMode::Sampled),
+            ],
+            vec![cell(&frame)],
+        ));
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&t1, PlanInvalidationKind::Triggered),
+                invalidation(&render_trigger, PlanInvalidationKind::Triggered),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.scheduled_nodes, 2);
+        assert_eq!(outcome.ordered_nodes, vec![active_writer, render]);
+        assert!(!outcome.ordered_nodes.contains(&inactive_writer));
     }
 
     #[test]
