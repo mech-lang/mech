@@ -295,11 +295,34 @@ impl MechErrorKind for PlanInputOutputOverlap {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct PlanDependencyCycle {
+    pub nodes: Vec<PlanNodeId>,
+}
+
+impl MechErrorKind for PlanDependencyCycle {
+    fn name(&self) -> &str {
+        "PlanDependencyCycle"
+    }
+
+    fn message(&self) -> String {
+        let nodes = self
+            .nodes
+            .iter()
+            .map(|node| node.as_usize().to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        format!("planner dependency cycle contains nodes [{}]", nodes,)
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct PlanGraph {
     nodes: Vec<PlanNodeSpec>,
     reactive_consumers: HashMap<ValueCellId, Vec<PlanNodeId>>,
     trigger_consumers: HashMap<ValueCellId, Vec<PlanNodeId>>,
+    producers: HashMap<ValueCellId, Vec<PlanNodeId>>,
 }
 
 impl PlanGraph {
@@ -319,6 +342,7 @@ impl PlanGraph {
         self.nodes.clear();
         self.reactive_consumers.clear();
         self.trigger_consumers.clear();
+        self.producers.clear();
     }
 
     pub fn node_spec(&self, node: PlanNodeId) -> Option<&PlanNodeSpec> {
@@ -345,68 +369,81 @@ impl PlanGraph {
             }
         }
 
+        for output in &spec.outputs {
+            self.producers.entry(*output).or_default().push(id);
+        }
+
         self.nodes.push(spec);
         id
     }
 
-    pub fn schedule_from(&self, invalidations: &[PlanInvalidation]) -> PlanScheduleOutcome {
-        let mut pending = BTreeSet::new();
-        let mut scheduled = vec![false; self.nodes.len()];
-        let mut processed = vec![false; self.nodes.len()];
+    pub fn schedule_from(
+        &self,
+        invalidations: &[PlanInvalidation],
+    ) -> MResult<PlanScheduleOutcome> {
+        let mut pending = BTreeSet::<PlanNodeId>::new();
+        let mut affected = vec![false; self.nodes.len()];
+        let mut expanded = vec![false; self.nodes.len()];
         let mut unique_initial_cells = BTreeSet::new();
         let mut unique_initial_invalidations = BTreeSet::new();
 
         for invalidation in invalidations {
             if unique_initial_invalidations.insert(*invalidation) {
                 unique_initial_cells.insert(invalidation.cell);
-                self.schedule_initial(*invalidation, &mut scheduled, &mut pending);
+                self.schedule_initial(*invalidation, &mut affected, &mut pending);
             }
         }
 
-        let mut ordered_nodes = Vec::new();
         while let Some(node) = pop_first(&mut pending) {
             let index = node.as_usize();
-            if processed.get(index).copied().unwrap_or(true) {
+            if expanded.get(index).copied().unwrap_or(true) {
                 continue;
             }
-            processed[index] = true;
-            ordered_nodes.push(node);
+            expanded[index] = true;
 
             if let Some(spec) = self.node_spec(node) {
                 for output in &spec.outputs {
-                    self.schedule_reactive_consumers(*output, &mut scheduled, &mut pending);
+                    self.schedule_reactive_consumers(*output, &mut affected, &mut pending);
                 }
             }
         }
 
-        PlanScheduleOutcome {
+        let mut adjacency = vec![BTreeSet::<PlanNodeId>::new(); self.nodes.len()];
+        let mut indegree = vec![0usize; self.nodes.len()];
+
+        self.add_producer_consumer_edges(&affected, &mut adjacency, &mut indegree);
+        self.add_multiple_writer_edges(&affected, &mut adjacency, &mut indegree);
+
+        let ordered_nodes = self.topological_order(&affected, &adjacency, &mut indegree)?;
+
+        Ok(PlanScheduleOutcome {
             invalidated_cells: unique_initial_cells.len(),
-            scheduled_nodes: scheduled.iter().filter(|scheduled| **scheduled).count(),
+            scheduled_nodes: affected.iter().filter(|value| **value).count(),
             ordered_nodes,
-        }
+        })
     }
 
     fn schedule_initial(
         &self,
         invalidation: PlanInvalidation,
-        scheduled: &mut [bool],
+        affected: &mut [bool],
         pending: &mut BTreeSet<PlanNodeId>,
     ) {
-        self.schedule_reactive_consumers(invalidation.cell, scheduled, pending);
+        self.schedule_reactive_consumers(invalidation.cell, affected, pending);
         if invalidation.kind == PlanInvalidationKind::Triggered {
-            self.schedule_trigger_consumers(invalidation.cell, scheduled, pending);
+            self.schedule_trigger_consumers(invalidation.cell, affected, pending);
         }
     }
 
     fn schedule_reactive_consumers(
         &self,
         cell: ValueCellId,
-        scheduled: &mut [bool],
+        affected: &mut [bool],
         pending: &mut BTreeSet<PlanNodeId>,
     ) {
         if let Some(consumers) = self.reactive_consumers.get(&cell) {
             for consumer in consumers {
-                mark_scheduled(*consumer, scheduled, pending);
+                mark_scheduled(*consumer, affected, pending);
             }
         }
     }
@@ -414,22 +451,133 @@ impl PlanGraph {
     fn schedule_trigger_consumers(
         &self,
         cell: ValueCellId,
-        scheduled: &mut [bool],
+        affected: &mut [bool],
         pending: &mut BTreeSet<PlanNodeId>,
     ) {
         if let Some(consumers) = self.trigger_consumers.get(&cell) {
             for consumer in consumers {
-                mark_scheduled(*consumer, scheduled, pending);
+                mark_scheduled(*consumer, affected, pending);
             }
         }
     }
+
+    fn add_producer_consumer_edges(
+        &self,
+        affected: &[bool],
+        adjacency: &mut [BTreeSet<PlanNodeId>],
+        indegree: &mut [usize],
+    ) {
+        for (index, spec) in self.nodes.iter().enumerate() {
+            if !affected.get(index).copied().unwrap_or(false) {
+                continue;
+            }
+
+            let consumer = PlanNodeId(index);
+            for input in &spec.inputs {
+                if let Some(producers) = self.producers.get(&input.cell) {
+                    for producer in producers {
+                        add_ordering_edge(*producer, consumer, affected, adjacency, indegree);
+                    }
+                }
+            }
+        }
+    }
+
+    fn add_multiple_writer_edges(
+        &self,
+        affected: &[bool],
+        adjacency: &mut [BTreeSet<PlanNodeId>],
+        indegree: &mut [usize],
+    ) {
+        for producers in self.producers.values() {
+            let affected_producers = producers
+                .iter()
+                .copied()
+                .filter(|producer| affected.get(producer.as_usize()).copied().unwrap_or(false))
+                .collect::<Vec<_>>();
+
+            for pair in affected_producers.windows(2) {
+                add_ordering_edge(pair[0], pair[1], affected, adjacency, indegree);
+            }
+        }
+    }
+
+    fn topological_order(
+        &self,
+        affected: &[bool],
+        adjacency: &[BTreeSet<PlanNodeId>],
+        indegree: &mut [usize],
+    ) -> MResult<Vec<PlanNodeId>> {
+        let affected_count = affected.iter().filter(|value| **value).count();
+        let mut ready = BTreeSet::new();
+        for (index, is_affected) in affected.iter().enumerate() {
+            if *is_affected && indegree[index] == 0 {
+                ready.insert(PlanNodeId(index));
+            }
+        }
+
+        let mut ordered_nodes = Vec::new();
+        while let Some(node) = pop_first(&mut ready) {
+            ordered_nodes.push(node);
+            for destination in &adjacency[node.as_usize()] {
+                let destination_index = destination.as_usize();
+                indegree[destination_index] -= 1;
+                if indegree[destination_index] == 0 {
+                    ready.insert(*destination);
+                }
+            }
+        }
+
+        if ordered_nodes.len() != affected_count {
+            let nodes = affected
+                .iter()
+                .enumerate()
+                .filter_map(|(index, is_affected)| {
+                    if *is_affected && indegree[index] > 0 {
+                        Some(PlanNodeId(index))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            return Err(MechError::new(PlanDependencyCycle { nodes }, None));
+        }
+
+        Ok(ordered_nodes)
+    }
 }
 
-fn mark_scheduled(node: PlanNodeId, scheduled: &mut [bool], pending: &mut BTreeSet<PlanNodeId>) {
-    if let Some(already_scheduled) = scheduled.get_mut(node.as_usize()) {
-        if !*already_scheduled {
-            *already_scheduled = true;
-        }
+fn add_ordering_edge(
+    from: PlanNodeId,
+    to: PlanNodeId,
+    affected: &[bool],
+    adjacency: &mut [BTreeSet<PlanNodeId>],
+    indegree: &mut [usize],
+) {
+    if from == to {
+        return;
+    }
+
+    let from_index = from.as_usize();
+    let to_index = to.as_usize();
+    if !affected.get(from_index).copied().unwrap_or(false)
+        || !affected.get(to_index).copied().unwrap_or(false)
+    {
+        return;
+    }
+
+    if adjacency[from_index].insert(to) {
+        indegree[to_index] += 1;
+    }
+}
+
+fn mark_scheduled(node: PlanNodeId, affected: &mut [bool], pending: &mut BTreeSet<PlanNodeId>) {
+    let Some(is_affected) = affected.get_mut(node.as_usize()) else {
+        return;
+    };
+
+    if !*is_affected {
+        *is_affected = true;
         pending.insert(node);
     }
 }
@@ -585,7 +733,9 @@ mod tests {
         let node_0 = add_edge(&mut graph, &a, &b);
         let node_1 = add_edge(&mut graph, &b, &c);
 
-        let outcome = graph.schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)]);
+        let outcome = graph
+            .schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)])
+            .unwrap();
 
         assert_eq!(outcome.scheduled_nodes, 2);
         assert_eq!(outcome.ordered_nodes, vec![node_0, node_1]);
@@ -601,7 +751,9 @@ mod tests {
         let node_0 = add_edge(&mut graph, &a, &b);
         add_edge(&mut graph, &x, &y);
 
-        let outcome = graph.schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)]);
+        let outcome = graph
+            .schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)])
+            .unwrap();
 
         assert_eq!(outcome.scheduled_nodes, 1);
         assert_eq!(outcome.ordered_nodes, vec![node_0]);
@@ -624,7 +776,9 @@ mod tests {
             vec![cell(&d)],
         ));
 
-        let outcome = graph.schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)]);
+        let outcome = graph
+            .schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)])
+            .unwrap();
 
         assert_eq!(outcome.scheduled_nodes, 3);
         assert_eq!(outcome.ordered_nodes, vec![node_0, node_1, node_2]);
@@ -648,11 +802,13 @@ mod tests {
         let node_0 = add_edge(&mut graph, &a, &b);
         let node_1 = add_edge(&mut graph, &x, &y);
 
-        let outcome = graph.schedule_from(&[
-            invalidation(&x, PlanInvalidationKind::Changed),
-            invalidation(&a, PlanInvalidationKind::Changed),
-            invalidation(&a, PlanInvalidationKind::Changed),
-        ]);
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&x, PlanInvalidationKind::Changed),
+                invalidation(&a, PlanInvalidationKind::Changed),
+                invalidation(&a, PlanInvalidationKind::Changed),
+            ])
+            .unwrap();
 
         assert_eq!(outcome.scheduled_nodes, 2);
         assert_eq!(outcome.ordered_nodes, vec![node_0, node_1]);
@@ -672,10 +828,12 @@ mod tests {
             vec![cell(&output)],
         ));
 
-        let changed_positions =
-            graph.schedule_from(&[invalidation(&positions, PlanInvalidationKind::Changed)]);
-        let triggered_render =
-            graph.schedule_from(&[invalidation(&render_tick, PlanInvalidationKind::Triggered)]);
+        let changed_positions = graph
+            .schedule_from(&[invalidation(&positions, PlanInvalidationKind::Changed)])
+            .unwrap();
+        let triggered_render = graph
+            .schedule_from(&[invalidation(&render_tick, PlanInvalidationKind::Triggered)])
+            .unwrap();
 
         assert_eq!(changed_positions.scheduled_nodes, 0);
         assert_eq!(changed_positions.ordered_nodes, Vec::<PlanNodeId>::new());
@@ -693,9 +851,12 @@ mod tests {
             vec![cell(&output)],
         ));
 
-        let changed = graph.schedule_from(&[invalidation(&trigger, PlanInvalidationKind::Changed)]);
-        let triggered =
-            graph.schedule_from(&[invalidation(&trigger, PlanInvalidationKind::Triggered)]);
+        let changed = graph
+            .schedule_from(&[invalidation(&trigger, PlanInvalidationKind::Changed)])
+            .unwrap();
+        let triggered = graph
+            .schedule_from(&[invalidation(&trigger, PlanInvalidationKind::Triggered)])
+            .unwrap();
 
         assert_eq!(changed.scheduled_nodes, 0);
         assert_eq!(triggered.scheduled_nodes, 1);
@@ -709,9 +870,12 @@ mod tests {
         let mut graph = PlanGraph::new();
         let node = add_edge(&mut graph, &source, &output);
 
-        let changed = graph.schedule_from(&[invalidation(&source, PlanInvalidationKind::Changed)]);
-        let triggered =
-            graph.schedule_from(&[invalidation(&source, PlanInvalidationKind::Triggered)]);
+        let changed = graph
+            .schedule_from(&[invalidation(&source, PlanInvalidationKind::Changed)])
+            .unwrap();
+        let triggered = graph
+            .schedule_from(&[invalidation(&source, PlanInvalidationKind::Triggered)])
+            .unwrap();
 
         assert_eq!(changed.ordered_nodes, vec![node]);
         assert_eq!(triggered.ordered_nodes, vec![node]);
@@ -726,8 +890,9 @@ mod tests {
             vec![cell(&cell_value)],
         ));
 
-        let outcome =
-            graph.schedule_from(&[invalidation(&cell_value, PlanInvalidationKind::Changed)]);
+        let outcome = graph
+            .schedule_from(&[invalidation(&cell_value, PlanInvalidationKind::Changed)])
+            .unwrap();
 
         assert_eq!(outcome.scheduled_nodes, 1);
         assert_eq!(outcome.ordered_nodes, vec![node]);
@@ -745,11 +910,265 @@ mod tests {
             vec![cell(&trigger_output)],
         ));
 
-        let propagated = graph.schedule_from(&[invalidation(&root, PlanInvalidationKind::Changed)]);
-        let direct_trigger =
-            graph.schedule_from(&[invalidation(&produced, PlanInvalidationKind::Triggered)]);
+        let propagated = graph
+            .schedule_from(&[invalidation(&root, PlanInvalidationKind::Changed)])
+            .unwrap();
+        let direct_trigger = graph
+            .schedule_from(&[invalidation(&produced, PlanInvalidationKind::Triggered)])
+            .unwrap();
 
         assert_eq!(propagated.ordered_nodes, vec![producer]);
         assert_eq!(direct_trigger.ordered_nodes, vec![trigger_consumer]);
+    }
+
+    #[test]
+    fn assignment_spec_uses_reactive_source_and_output_sink() {
+        let source = Value::Index(Ref::new(1));
+        let sink = Value::Index(Ref::new(2));
+        let spec = PlanNodeSpec::assignment(&source, &sink).unwrap();
+
+        assert_eq!(
+            spec.inputs,
+            vec![PlanInput {
+                cell: cell(&source),
+                mode: PlanInputMode::Reactive,
+            }]
+        );
+        assert_eq!(spec.outputs, vec![cell(&sink)]);
+    }
+
+    #[test]
+    fn assignment_spec_uses_sampled_input_for_same_cell() {
+        let sink = Value::Index(Ref::new(1));
+        let spec = PlanNodeSpec::assignment(&sink, &sink).unwrap();
+
+        assert_eq!(
+            spec.inputs,
+            vec![PlanInput {
+                cell: cell(&sink),
+                mode: PlanInputMode::Sampled,
+            }]
+        );
+        assert_eq!(spec.outputs, vec![cell(&sink)]);
+    }
+
+    #[test]
+    fn assignment_spec_rejects_missing_source_identity() {
+        let sink = Value::Index(Ref::new(1));
+        let error = PlanNodeSpec::assignment(&Value::Empty, &sink).unwrap_err();
+
+        assert_eq!(error.kind_name(), "PlanCellIdentityMissing");
+        assert!(error.kind_message().contains("assignment source"));
+    }
+
+    #[test]
+    fn assignment_spec_rejects_missing_sink_identity() {
+        let source = Value::Index(Ref::new(1));
+        let error = PlanNodeSpec::assignment(&source, &Value::Empty).unwrap_err();
+
+        assert_eq!(error.kind_name(), "PlanCellIdentityMissing");
+        assert!(error.kind_message().contains("assignment sink"));
+    }
+
+    #[test]
+    fn read_modify_write_adds_sampled_sink() {
+        let source = Value::Index(Ref::new(1));
+        let sink = Value::Index(Ref::new(2));
+        let spec = PlanNodeSpec::read_modify_write(&[source.clone()], &sink).unwrap();
+
+        assert_eq!(
+            spec.inputs,
+            vec![
+                PlanInput {
+                    cell: cell(&source),
+                    mode: PlanInputMode::Reactive,
+                },
+                PlanInput {
+                    cell: cell(&sink),
+                    mode: PlanInputMode::Sampled,
+                },
+            ]
+        );
+        assert_eq!(spec.outputs, vec![cell(&sink)]);
+    }
+
+    #[test]
+    fn read_modify_write_normalizes_sink_duplicates() {
+        let sink = Value::Index(Ref::new(1));
+        let spec = PlanNodeSpec::read_modify_write(&[sink.clone(), sink.clone()], &sink).unwrap();
+
+        assert_eq!(
+            spec.inputs,
+            vec![PlanInput {
+                cell: cell(&sink),
+                mode: PlanInputMode::Sampled,
+            }]
+        );
+        assert_eq!(spec.outputs, vec![cell(&sink)]);
+    }
+
+    #[test]
+    fn read_modify_write_rejects_missing_sink_identity() {
+        let source = Value::Index(Ref::new(1));
+        let error = PlanNodeSpec::read_modify_write(&[source], &Value::Empty).unwrap_err();
+
+        assert_eq!(error.kind_name(), "PlanCellIdentityMissing");
+        assert!(error.kind_message().contains("read-modify-write sink"));
+    }
+
+    #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f64"))]
+    #[test]
+    fn cell_id_tracks_underlying_matrix_allocation() {
+        let reference = Ref::new(na::DMatrix::from_element(2, 2, 1.0));
+        let first = Value::MatrixF64(crate::structures::matrix::Matrix::DMatrix(
+            reference.clone(),
+        ));
+        let second = Value::MatrixF64(crate::structures::matrix::Matrix::DMatrix(reference));
+        let other = Value::MatrixF64(crate::structures::matrix::Matrix::DMatrix(Ref::new(
+            na::DMatrix::from_element(2, 2, 1.0),
+        )));
+
+        assert_eq!(value_cell_id(&first), value_cell_id(&second));
+        assert_ne!(value_cell_id(&first), value_cell_id(&other));
+    }
+
+    #[test]
+    fn dependency_order_overrides_registration_order() {
+        let a = Value::Index(Ref::new(1));
+        let b = Value::Index(Ref::new(2));
+        let c = Value::Index(Ref::new(3));
+        let d = Value::Index(Ref::new(4));
+        let mut graph = PlanGraph::new();
+        let node_0 = graph.add_node(PlanNodeSpec::explicit(
+            vec![
+                input(&b, PlanInputMode::Reactive),
+                input(&c, PlanInputMode::Reactive),
+            ],
+            vec![cell(&d)],
+        ));
+        let node_1 = add_edge(&mut graph, &a, &b);
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&a, PlanInvalidationKind::Changed),
+                invalidation(&c, PlanInvalidationKind::Changed),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.scheduled_nodes, 2);
+        assert_eq!(outcome.ordered_nodes, vec![node_1, node_0]);
+    }
+
+    #[test]
+    fn sampled_dependency_orders_producer_before_consumer() {
+        let positions = Value::Index(Ref::new(1));
+        let render_tick = Value::Index(Ref::new(2));
+        let physics_tick = Value::Index(Ref::new(3));
+        let frame = Value::Index(Ref::new(4));
+        let mut graph = PlanGraph::new();
+        let render = graph.add_node(PlanNodeSpec::explicit(
+            vec![
+                input(&positions, PlanInputMode::Sampled),
+                input(&render_tick, PlanInputMode::Trigger),
+            ],
+            vec![cell(&frame)],
+        ));
+        let physics = graph.add_node(PlanNodeSpec::explicit(
+            vec![input(&physics_tick, PlanInputMode::Trigger)],
+            vec![cell(&positions)],
+        ));
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&render_tick, PlanInvalidationKind::Triggered),
+                invalidation(&physics_tick, PlanInvalidationKind::Triggered),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.ordered_nodes, vec![physics, render]);
+    }
+
+    #[test]
+    fn reactive_cycle_is_rejected() {
+        let a = Value::Index(Ref::new(1));
+        let b = Value::Index(Ref::new(2));
+        let mut graph = PlanGraph::new();
+        add_edge(&mut graph, &a, &b);
+        add_edge(&mut graph, &b, &a);
+
+        let error = graph
+            .schedule_from(&[invalidation(&a, PlanInvalidationKind::Changed)])
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "PlanDependencyCycle");
+    }
+
+    #[test]
+    fn feedback_self_edge_is_not_a_cycle() {
+        let state = Value::Index(Ref::new(1));
+        let mut graph = PlanGraph::new();
+        let node = graph.add_node(PlanNodeSpec::explicit(
+            vec![input(&state, PlanInputMode::Reactive)],
+            vec![cell(&state)],
+        ));
+
+        let outcome = graph
+            .schedule_from(&[invalidation(&state, PlanInvalidationKind::Changed)])
+            .unwrap();
+
+        assert_eq!(outcome.scheduled_nodes, 1);
+        assert_eq!(outcome.ordered_nodes, vec![node]);
+    }
+
+    #[test]
+    fn multiple_writers_follow_registration_order() {
+        let t0 = Value::Index(Ref::new(1));
+        let t1 = Value::Index(Ref::new(2));
+        let render = Value::Index(Ref::new(3));
+        let state = Value::Index(Ref::new(4));
+        let frame = Value::Index(Ref::new(5));
+        let mut graph = PlanGraph::new();
+        let node_0 = graph.add_node(PlanNodeSpec::explicit(
+            vec![input(&t0, PlanInputMode::Trigger)],
+            vec![cell(&state)],
+        ));
+        let node_1 = graph.add_node(PlanNodeSpec::explicit(
+            vec![input(&t1, PlanInputMode::Trigger)],
+            vec![cell(&state)],
+        ));
+        let node_2 = graph.add_node(PlanNodeSpec::explicit(
+            vec![
+                input(&render, PlanInputMode::Trigger),
+                input(&state, PlanInputMode::Sampled),
+            ],
+            vec![cell(&frame)],
+        ));
+
+        let outcome = graph
+            .schedule_from(&[
+                invalidation(&t0, PlanInvalidationKind::Triggered),
+                invalidation(&t1, PlanInvalidationKind::Triggered),
+                invalidation(&render, PlanInvalidationKind::Triggered),
+            ])
+            .unwrap();
+
+        assert_eq!(outcome.ordered_nodes, vec![node_0, node_1, node_2]);
+    }
+
+    #[test]
+    fn clear_removes_producer_and_consumer_indexes() {
+        let source = Value::Index(Ref::new(1));
+        let output = Value::Index(Ref::new(2));
+        let mut graph = PlanGraph::new();
+        add_edge(&mut graph, &source, &output);
+        graph.clear();
+
+        let outcome = graph
+            .schedule_from(&[invalidation(&source, PlanInvalidationKind::Changed)])
+            .unwrap();
+
+        assert_eq!(graph.len(), 0);
+        assert_eq!(outcome.scheduled_nodes, 0);
+        assert_eq!(outcome.ordered_nodes, Vec::<PlanNodeId>::new());
     }
 }
