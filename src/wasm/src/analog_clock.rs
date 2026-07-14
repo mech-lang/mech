@@ -343,7 +343,13 @@ mod browser_tests {
     }
 
     fn deterministic_runtime() -> (MechRuntime, ManualTimeInputDriver) {
-        let snapshot = new_shared_snapshot(TimeSnapshot::default());
+        deterministic_runtime_with_snapshot(TimeSnapshot::default())
+    }
+
+    fn deterministic_runtime_with_snapshot(
+        initial: TimeSnapshot,
+    ) -> (MechRuntime, ManualTimeInputDriver) {
+        let snapshot = new_shared_snapshot(initial);
         let mut runtime = RuntimeBuilder::new()
             .resource_provider(
                 Box::new(TimeResourceProvider::new("clock", snapshot.clone()))
@@ -451,6 +457,27 @@ mod browser_tests {
                 panic!("expected f64 result, got {other:?}");
             }
         }
+    }
+
+    #[wasm_bindgen_test]
+    fn analog_clock_feature_set_loads_shared_model() {
+        let (runtime, _driver) = deterministic_runtime_with_snapshot(TimeSnapshot {
+            unix_ms: 0.0,
+            hour: 3.0,
+            minute: 15.0,
+            second: 30.0,
+            millisecond: 500.0,
+        });
+
+        let values = runtime
+            .root_symbol_values(&[
+                "clock-hour-angle",
+                "clock-minute-angle",
+                "clock-second-angle",
+            ])
+            .unwrap();
+
+        assert_eq!(values.len(), 3);
     }
 
     #[wasm_bindgen_test]
