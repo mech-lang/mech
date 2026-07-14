@@ -38,6 +38,16 @@ use crate::runtime::host::*;
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+#[cfg(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+))]
+use web_time::Instant;
+
+#[cfg(not(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+)))]
 use std::time::Instant;
 
 use mech_core::{

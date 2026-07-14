@@ -386,7 +386,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     turn: &ActorTurn,
   ) -> MResult<()> {
-    let turn_started = std::time::Instant::now();
+    let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
     turn.validate()?;
 

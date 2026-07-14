@@ -144,6 +144,7 @@ jobs:
             examples/analog-clock/pkg/mech_wasm_bg.wasm
 
       - name: Remove generated browser package
+        if: always()
         run: rm -rf examples/analog-clock/pkg
 
   run-only:

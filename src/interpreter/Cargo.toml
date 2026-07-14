@@ -368,3 +368,6 @@ optional = true
 
 [dev-dependencies]
 mech-syntax = { path = "../syntax", default-features = false }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+web-time = "1.1.0"

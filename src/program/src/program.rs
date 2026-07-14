@@ -2,6 +2,18 @@ use crate::*;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
+#[cfg(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+))]
+use web_time::Instant;
+
+#[cfg(not(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+)))]
+use std::time::Instant;
+
 use mech_core::{
   hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
   NativeFunctionCompiler, ParsedProgram, Value,
@@ -189,7 +201,7 @@ impl MechProgram {
   }
 
   pub fn run_profiled_string(&mut self, source: &str) -> MResult<Value> {
-    let now = std::time::Instant::now();
+    let now = Instant::now();
     let result = self.run_string(source);
 
     if self.config.environment.profile_enabled {

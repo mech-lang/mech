@@ -5,6 +5,16 @@ use std::io::{Cursor, Read, Write};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::rc::Rc;
 use std::time::Duration;
+#[cfg(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+))]
+use web_time::Instant;
+
+#[cfg(not(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+)))]
 use std::time::Instant;
 
 // Interpreter

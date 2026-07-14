@@ -409,6 +409,51 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn runtime_turn_timing_works_in_browser() {
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+
+        runtime
+            .run_string("browser-time-test := 1.0 + 2.0")
+            .unwrap();
+
+        let value = runtime.root_symbol_value("browser-time-test").unwrap();
+
+        match value {
+            Value::F64(value) => {
+                assert_eq!(*value.borrow(), 3.0);
+            }
+            other => {
+                panic!("expected f64 result, got {other:?}");
+            }
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn profiled_runtime_execution_works_in_browser() {
+        let mut config = mech_runtime::RuntimeConfig::default();
+        config.diagnostics.profile_enabled = true;
+
+        let mut runtime = RuntimeBuilder::new().config(config).build().unwrap();
+
+        runtime
+            .run_string("profiled-browser-time-test := 2.0 * 3.0")
+            .unwrap();
+
+        let value = runtime
+            .root_symbol_value("profiled-browser-time-test")
+            .unwrap();
+
+        match value {
+            Value::F64(value) => {
+                assert_eq!(*value.borrow(), 6.0);
+            }
+            other => {
+                panic!("expected f64 result, got {other:?}");
+            }
+        }
+    }
+
+    #[wasm_bindgen_test]
     fn constructor_rejects_missing_hour_hand() {
         let fixture = SvgFixture::new("missing-hour", false, true, true);
         let result = WasmAnalogClock::new(

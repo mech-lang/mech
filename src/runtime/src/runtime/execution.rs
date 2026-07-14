@@ -2458,7 +2458,7 @@ impl MechRuntime {
   ) -> MResult<Value> {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
 
     self.emit_event_to_context(
       context,
@@ -2568,7 +2568,7 @@ impl MechRuntime {
   ) -> MResult<Value> {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
 
     self.emit_event_to_context(
       context,
@@ -2699,7 +2699,7 @@ impl MechRuntime {
   ) -> MResult<Value> {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    let profile_started = self.config.diagnostics.profile_enabled.then(std::time::Instant::now);
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
 
     self.emit_event_to_context(
       context,
