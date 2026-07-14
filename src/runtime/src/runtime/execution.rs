@@ -2812,6 +2812,14 @@ impl MechRuntime {
     self.program.symbol_values_for_interpreter(interpreter_id, names)
   }
 
+  pub fn root_symbol_value(&self, name: &str) -> MResult<Value> {
+    self.program.root_symbol_value(name)
+  }
+
+  pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, Value)>> {
+    self.program.root_symbol_values(names)
+  }
+
   pub fn bind_ans_for_interpreter(
     &mut self,
     interpreter_id: u64,
@@ -3872,5 +3880,35 @@ impl MechRuntime {
     }
     if let Some(error) = first_error { return Err(error); }
     Ok(())
+  }
+}
+
+#[cfg(test)]
+mod root_symbol_snapshot_runtime_tests {
+  use super::*;
+
+  fn f64_value(value: &Value) -> f64 {
+    match value {
+      Value::F64(value) => *value.borrow(),
+      other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[test]
+  fn runtime_delegates_root_symbol_value() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime.run_string("answer := 42.0").unwrap();
+    assert_eq!(f64_value(&runtime.root_symbol_value("answer").unwrap()), 42.0);
+  }
+
+  #[test]
+  fn runtime_delegates_root_symbol_values() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime.run_string("a := 1.0\nb := 2.0").unwrap();
+    let rows = runtime.root_symbol_values(&["b", "a"]).unwrap();
+    assert_eq!(rows[0].0, "b");
+    assert_eq!(f64_value(&rows[0].1), 2.0);
+    assert_eq!(rows[1].0, "a");
+    assert_eq!(f64_value(&rows[1].1), 1.0);
   }
 }

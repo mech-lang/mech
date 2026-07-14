@@ -27,6 +27,11 @@ name = "mechc"
 path = "src/bin/mechc.rs"
 required-features = ["compiler"]
 
+[[bin]]
+name = "mech-clock"
+path = "src/bin/mech-clock.rs"
+required-features = ["clock_demo_cli"]
+
 [profile.release]
 debug = false
 
@@ -73,6 +78,9 @@ linked_io = ["mech-program/linked_io"]
 linked_stats = ["mech-program/linked_stats"]
 linked_string = ["mech-program/linked_string"]
 dynamic-modules = ["mech-program/dynamic-modules"]
+time_host_native = ["dep:mech-host-time", "mech-host-time/native"]
+time_host_browser = ["dep:mech-host-time", "mech-host-time/browser"]
+clock_demo_cli = ["cli_core", "program", "f64", "time_host_native", "mech-runtime", "mech-runtime/default"]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -203,6 +211,7 @@ mech-program = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
 mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-host-cli = { version = "0.3.5", default-features = false, optional = true }
+mech-host-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
@@ -247,6 +256,7 @@ members = [
   "hosts/browser",
   "hosts/cli",
   "hosts/robot-arm",
+  "hosts/time",
 ]
 
 [build-dependencies]
@@ -266,6 +276,7 @@ mech-wasm = { path = 'src/wasm'}
 mech-host-browser = { path = 'hosts/browser'}
 mech-host-cli = { path = 'hosts/cli'}
 mech-host-robot-arm = { path = 'hosts/robot-arm'}
+mech-host-time = { path = 'hosts/time'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }

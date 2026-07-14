@@ -1,0 +1,170 @@
+use std::collections::BTreeMap;
+
+use wasm_bindgen::prelude::*;
+use web_sys::Element;
+
+use mech_core::{MechError, MechErrorKind, Value};
+use mech_host_browser::BrowserHostFactory;
+use mech_host_time::BrowserTimeHostFactory;
+use mech_runtime::{ConfigValue, HostInstanceConfig, MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RunResourceGrantConfig};
+
+use crate::host::WasmBrowserDomBackend;
+
+const CLOCK_SOURCE: &str = include_str!("../../../examples/analog-clock/clock.mec");
+
+#[wasm_bindgen]
+pub struct WasmAnalogClock {
+  runtime: MechRuntime,
+  hour_hand: Element,
+  minute_hand: Element,
+  second_hand: Element,
+  center_x: f64,
+  center_y: f64,
+  started: bool,
+}
+
+#[wasm_bindgen]
+impl WasmAnalogClock {
+  #[wasm_bindgen(constructor)]
+  pub fn new(
+    hour_selector: &str,
+    minute_selector: &str,
+    second_selector: &str,
+    center_x: f64,
+    center_y: f64,
+    interval_ms: u32,
+  ) -> Result<WasmAnalogClock, JsValue> {
+    if hour_selector.trim().is_empty() || minute_selector.trim().is_empty() || second_selector.trim().is_empty() {
+      return Err(js_error("clock hand selectors must be non-empty"));
+    }
+    if interval_ms == 0 { return Err(js_error("interval_ms must be greater than zero")); }
+    let window = web_sys::window().ok_or_else(|| js_error("Window is unavailable"))?;
+    let document = window.document().ok_or_else(|| js_error("Document is unavailable"))?;
+    let hour_hand = query_required(&document, hour_selector)?;
+    let minute_hand = query_required(&document, minute_selector)?;
+    let second_hand = query_required(&document, second_selector)?;
+    let mut runtime = build_runtime(interval_ms)?;
+    runtime.run_string(CLOCK_SOURCE).map_err(to_js_error)?;
+    let mut clock = WasmAnalogClock { runtime, hour_hand, minute_hand, second_hand, center_x, center_y, started: false };
+    clock.render()?;
+    Ok(clock)
+  }
+
+  pub fn start(&mut self) -> Result<(), JsValue> {
+    if self.started { return Ok(()); }
+    self.runtime.start_input_drivers().map_err(to_js_error)?;
+    self.started = true;
+    Ok(())
+  }
+
+  #[wasm_bindgen(js_name = "pumpAndRender")]
+  pub fn pump_and_render(&mut self) -> Result<u32, JsValue> {
+    let pending = self.runtime.pending_host_input_count().map_err(to_js_error)?;
+    if pending == 0 { return Ok(0); }
+    let outcomes = self.runtime.drain_host_inputs(pending).map_err(to_js_error)?;
+    self.render()?;
+    Ok(outcomes.len() as u32)
+  }
+
+  pub fn stop(&mut self) -> Result<(), JsValue> {
+    self.runtime.stop_input_drivers().map_err(to_js_error)?;
+    self.started = false;
+    Ok(())
+  }
+}
+
+impl WasmAnalogClock {
+  fn render(&mut self) -> Result<(), JsValue> {
+    let rows = self.runtime.root_symbol_values(&[
+      "clock-hour-angle",
+      "clock-minute-angle",
+      "clock-second-angle",
+    ]).map_err(to_js_error)?;
+    let hour = f64_from_value(&rows[0].1)?;
+    let minute = f64_from_value(&rows[1].1)?;
+    let second = f64_from_value(&rows[2].1)?;
+    self.hour_hand.set_attribute("transform", &svg_rotation(hour, self.center_x, self.center_y)?).map_err(|err| js_error(format!("failed to set hour transform: {err:?}")))?;
+    self.minute_hand.set_attribute("transform", &svg_rotation(minute, self.center_x, self.center_y)?).map_err(|err| js_error(format!("failed to set minute transform: {err:?}")))?;
+    self.second_hand.set_attribute("transform", &svg_rotation(second, self.center_x, self.center_y)?).map_err(|err| js_error(format!("failed to set second transform: {err:?}")))?;
+    Ok(())
+  }
+}
+
+fn build_runtime(interval_ms: u32) -> Result<MechRuntime, JsValue> {
+  let mut settings = BTreeMap::new();
+  settings.insert("interval-ms".to_string(), ConfigValue::Integer(interval_ms as i64));
+  let mut runtime = RuntimeBuilder::new()
+    .host_factory(Box::new(BrowserHostFactory::new(WasmBrowserDomBackend::new()).map_err(to_js_error)?)).map_err(to_js_error)?
+    .host_factory(Box::new(BrowserTimeHostFactory::new().map_err(to_js_error)?)).map_err(to_js_error)?
+    .host_instance(HostInstanceConfig { name: "browser".to_string(), provider: "browser".to_string(), settings: ConfigValue::Map(Default::default()) })
+    .host_instance(HostInstanceConfig { name: "clock".to_string(), provider: "time".to_string(), settings: ConfigValue::Map(settings) })
+    .run_resource_grant(RunResourceGrantConfig {
+      target: "clock/clock".to_string(),
+      operations: vec!["read".to_string()],
+      paths: vec!["unix-ms".to_string(), "hour".to_string(), "minute".to_string(), "second".to_string(), "millisecond".to_string()],
+    })
+    .build().map_err(to_js_error)?;
+  let subject = runtime.runtime_context().map_err(to_js_error)?.subject;
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "time://clock/clock".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["unix-ms".to_string(), "hour".to_string(), "minute".to_string(), "second".to_string(), "millisecond".to_string()],
+  }).map_err(to_js_error)?;
+  Ok(runtime)
+}
+
+fn query_required(document: &web_sys::Document, selector: &str) -> Result<Element, JsValue> {
+  document.query_selector(selector)
+    .map_err(|err| js_error(format!("selector lookup failed for `{selector}`: {err:?}")))?
+    .ok_or_else(|| js_error(format!("selector `{selector}` did not match an element")))
+}
+
+pub(crate) fn svg_rotation(angle: f64, center_x: f64, center_y: f64) -> Result<String, JsValue> {
+  if !angle.is_finite() || !center_x.is_finite() || !center_y.is_finite() {
+    return Err(js_error("SVG rotation values must be finite"));
+  }
+  Ok(format!("rotate({} {} {})", compact_f64(angle), compact_f64(center_x), compact_f64(center_y)))
+}
+
+fn compact_f64(value: f64) -> String {
+  let text = format!("{value:.12}");
+  text.trim_end_matches('0').trim_end_matches('.').to_string()
+}
+
+fn f64_from_value(value: &Value) -> Result<f64, JsValue> {
+  match value {
+    Value::F64(value) => Ok(*value.borrow()),
+    other => Err(js_error(format!("expected f64 clock symbol, got {other:?}"))),
+  }
+}
+
+fn js_error(message: impl Into<String>) -> JsValue { JsValue::from_str(&message.into()) }
+fn to_js_error(error: MechError) -> JsValue { js_error(format!("{error:?}")) }
+
+#[derive(Debug, Clone)]
+struct AnalogClockError { message: String }
+impl MechErrorKind for AnalogClockError {
+  fn name(&self) -> &str { "WasmAnalogClock" }
+  fn message(&self) -> String { self.message.clone() }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn svg_rotation_formats_values() {
+    assert_eq!(svg_rotation(97.5, 100.0, 100.0).unwrap(), "rotate(97.5 100 100)");
+  }
+
+  #[test]
+  fn svg_rotation_rejects_nan() {
+    assert!(svg_rotation(f64::NAN, 100.0, 100.0).is_err());
+  }
+
+  #[test]
+  fn svg_rotation_rejects_infinity() {
+    assert!(svg_rotation(f64::INFINITY, 100.0, 100.0).is_err());
+  }
+}

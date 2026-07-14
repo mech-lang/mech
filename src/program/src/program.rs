@@ -242,6 +242,25 @@ impl MechProgram {
     })
   }
 
+  pub fn root_symbol_value(&self, name: &str) -> MResult<Value> {
+    let mut values = self.root_symbol_values(&[name])?;
+    Ok(values.remove(0).1)
+  }
+
+  pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, Value)>> {
+    let symbols = self.interpreter.symbols();
+    let symbols_brrw = symbols.borrow();
+    let mut values = Vec::with_capacity(names.len());
+    for name in names {
+      let symbol_id = hash_str(name);
+      let Some(value_ref) = symbols_brrw.get(symbol_id) else {
+        return Err(MechError::new(ProgramOutputNotFound { name: (*name).to_string() }, None));
+      };
+      values.push(((*name).to_string(), value_ref.borrow().clone()));
+    }
+    Ok(values)
+  }
+
   pub fn bind_ans_for_interpreter(
     &mut self,
     interpreter_id: u64,
@@ -375,6 +394,14 @@ fn with_interpreter_mut<T>(
     if let Some(result) = with_interpreter_mut(child.as_mut(), interpreter_id, f) { return Some(result); }
   }
   None
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProgramOutputNotFound { pub name: String }
+impl MechErrorKind for ProgramOutputNotFound {
+  fn name(&self) -> &str { "ProgramOutputNotFound" }
+  fn message(&self) -> String { format!("program output symbol `{}` was not found", self.name) }
 }
 
 #[derive(Debug, Clone)]
@@ -648,5 +675,59 @@ mod live_input_tests {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let missing = ProgramInputId { interpreter_id: program.interpreter().id, symbol_id: hash_str("missing") };
     assert!(program.update_input(missing, Value::F64(Ref::new(1.0))).is_err());
+  }
+}
+
+#[cfg(test)]
+mod root_symbol_snapshot_tests {
+  use super::*;
+  use mech_core::Ref;
+
+  fn f64_value(value: &Value) -> f64 {
+    match value {
+      Value::F64(value) => *value.borrow(),
+      other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[test]
+  fn root_symbol_value_returns_value() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("answer := 42.0").unwrap();
+    assert_eq!(f64_value(&program.root_symbol_value("answer").unwrap()), 42.0);
+  }
+
+  #[test]
+  fn root_symbol_values_preserve_order() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("a := 1.0\nb := 2.0\nc := 3.0").unwrap();
+    let rows = program.root_symbol_values(&["c", "a", "b"]).unwrap();
+    let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
+    assert_eq!(names, vec!["c", "a", "b"]);
+  }
+
+  #[test]
+  fn root_symbol_values_snapshot_multiple_values() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("a := 1.0\nb := 2.0").unwrap();
+    let rows = program.root_symbol_values(&["a", "b"]).unwrap();
+    assert_eq!(f64_value(&rows[0].1), 1.0);
+    assert_eq!(f64_value(&rows[1].1), 2.0);
+  }
+
+  #[test]
+  fn missing_root_symbol_returns_structured_error() {
+    let program = MechProgram::new(MechProgramConfig::default());
+    let err = program.root_symbol_value("missing").unwrap_err();
+    assert!(format!("{:?}", err).contains("ProgramOutputNotFound"));
+  }
+
+  #[test]
+  fn snapshot_does_not_hold_symbol_table_borrow() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("answer := 42.0").unwrap();
+    let _snapshot = program.root_symbol_value("answer").unwrap();
+    let symbols = program.interpreter().symbols();
+    let _mutable_borrow = symbols.borrow_mut();
   }
 }

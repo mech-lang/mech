@@ -2,6 +2,12 @@
 
 pub mod host;
 
+#[cfg(feature = "analog_clock_demo")]
+mod analog_clock;
+
+#[cfg(feature = "analog_clock_demo")]
+pub use analog_clock::*;
+
 use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
@@ -61,6 +67,16 @@ fn js_error(message: impl Into<String>) -> JsValue {
   JsValue::from_str(&message.into())
 }
 
+fn html_escape(input: &str) -> String {
+  input
+    .replace('&', "&amp;")
+    .replace('<', "&lt;")
+    .replace('>', "&gt;")
+    .replace('"', "&quot;")
+    .replace('\'', "&#39;")
+}
+
+
 fn browser_host_error_to_js(error: BrowserHostError) -> JsValue {
   js_error(error.to_string())
 }
@@ -113,7 +129,7 @@ fn format_output_value_html(output: &Value) -> String {
   format!(
     "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
     kind_str,
-    output.to_html()
+    html_escape(&format!("{}", output))
   )
 }
 

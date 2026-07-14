@@ -22,7 +22,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
+default = ["baselib", "serde", "compiler", "program", "formatter", "mika",
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
@@ -32,7 +32,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
 
-base = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
+base = ["baselib", "serde", "compiler", "program", "formatter", "mika",
       "statements_default", "subscript_default", "state_machines", "string_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
@@ -66,6 +66,7 @@ mika = ["mech-syntax/mika", "mech-core/mika", "mech-runtime/mika"]
 serde = ["mech-core/serde", "mech-syntax/serde", "mech-interpreter/serde", "mech-runtime/serde", "mech-host-browser/serde"]
 host_delegation = ["serde", "mech-runtime/host_delegation", "mech-host-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
+analog_clock_demo = ["dep:mech-host-time", "mech-host-time/browser", "program", "f64", "mech-host-browser/serde"]
 run_program = ["program"]
 inline_output_values = []
 codeblock_output_values = []
@@ -295,6 +296,7 @@ mech-syntax = { version = "0.3.5", default-features = false}
 mech-interpreter = { version = "0.3.5", default-features = false}
 mech-runtime = { path = "../runtime", default-features = false }
 mech-host-browser = { path = "../../hosts/browser", default-features = false, features = ["provider"] }
+mech-host-time = { version = "0.3.5", path = "../../hosts/time", default-features = false, optional = true }
 
 wasm-bindgen = "0.2.100"
 serde-wasm-bindgen = "0.6.5"
@@ -321,6 +323,7 @@ features = [
   'Crypto',
   'Document',
   'Element',
+  'SvgElement',
   'Event',
   'ErrorEvent',
   'EventTarget',
