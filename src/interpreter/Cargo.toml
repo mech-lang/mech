@@ -74,10 +74,15 @@ string_prelude = ["string_concat", "mech-string/prelude"]
 linked_math = ["mech-math/default", "math_default"]
 linked_combinatorics = ["mech-combinatorics/default", "combinatorics_default"]
 linked_compare = ["mech-compare/default", "compare_default"]
-linked_io = ["mech-io/default", "io_default"]
 linked_stats = ["mech-stats/default", "stats_default"]
 linked_string = ["mech-string/default", "string_default"]
-linked_stdlib = ["linked_math", "linked_combinatorics", "linked_compare", "linked_io", "linked_stats", "linked_string"]
+linked_stdlib = [
+  "linked_math",
+  "linked_combinatorics",
+  "linked_compare",
+  "linked_stats",
+  "linked_string",
+]
 dynamic-modules = ["dep:libloading", "dep:mech-abi"]
   
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define",
@@ -117,7 +122,18 @@ baselib = ["bool", "string",
       "mech-core/baselib", "mech-set/baselib", "mech-math/baselib", "mech-compare/baselib", "mech-logic/baselib", "mech-matrix/baselib", "mech-range/baselib", "mech-string/baselib"
     ]
 
-compiler = ["mech-core/compiler", "mech-set/compiler", "mech-math/compiler", "mech-compare/compiler", "mech-logic/compiler", "mech-matrix/compiler", "mech-range/compiler", "mech-string/compiler"]
+compiler = [
+  "mech-core/compiler",
+  "mech-set/compiler",
+  "mech-math/compiler",
+  "mech-compare/compiler",
+  "mech-logic/compiler",
+  "mech-matrix/compiler",
+  "mech-range/compiler",
+  "mech-string/compiler",
+  "mech-stats/compiler",
+  "mech-combinatorics/compiler",
+]
 program = ["mech-core/program", "mech-set/program", "mech-math/program", "mech-compare/program", "mech-logic/program", "mech-matrix/program", "mech-range/program", "mech-string/program"]
 pretty_print = ["mech-core/pretty_print", "mech-set/pretty_print", "mech-math/pretty_print", "mech-compare/pretty_print", "mech-logic/pretty_print", "mech-matrix/pretty_print", "mech-range/pretty_print", "mech-string/pretty_print"]
 serde = ["mech-core/serde", "mech-set/serde", "mech-math/serde", "mech-compare/serde", "mech-logic/serde", "mech-matrix/serde", "mech-range/serde", "mech-string/serde"]
@@ -212,11 +228,6 @@ stats_default = ["stats_sum"]
 stats = ["num-traits", "functions", "mech-stats/stats"]
 stats_sum = ["stats", "mech-stats/sum"]
 
-# Io
-io_default = ["io_print", "io_println", "mech-io/io_default"]
-io = ["functions"]
-io_print = ["io", "mech-io/print"]
-io_println = ["io", "mech-io/println"]
 
 # Matrix
 matrix_default = ["matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default", "matrix_comprehensions"]
@@ -345,7 +356,6 @@ mech-range = { version = "0.3.5", default-features = false, optional = true }
 mech-matrix = { version = "0.3.5", default-features = false, optional = true }
 mech-compare = { version = "0.3.5", default-features = false, optional = true }
 mech-stats = { version = "0.3.5", default-features = false, optional = true }
-mech-io = { version = "0.3.5", default-features = false, optional = true }
 mech-set = { version = "0.3.5", default-features = false, optional = true }
 mech-combinatorics = { version = "0.3.5", default-features = false, optional = true }
 mech-string = { version = "0.3.5", default-features = false, optional = true }

@@ -22,19 +22,19 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 
-default = ["baselib", "serde", "compiler", "program", "formatter", "mika",
+default = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
       "u8", "u16", "u32", "u64", "u128", 
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines", "string_default",
-      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",      
+      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
 
-base = ["baselib", "serde", "compiler", "program", "formatter", "mika",
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
       "statements_default", "subscript_default", "state_machines", "string_default",
-      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "io_default", "stats_default", "combinatorics_default",
+      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "stats_default", "combinatorics_default",
       "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
       "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
@@ -163,11 +163,6 @@ stats_default = ["stats_sum"]
 stats = ["functions", "mech-interpreter/stats"]
 stats_sum = ["stats", "mech-interpreter/stats_sum"]
 
-# Io
-io_default = ["io_print", "io_println", "mech-interpreter/io_default"]
-io = ["functions", "mech-interpreter/io"]
-io_print = ["io", "mech-interpreter/io_print"]
-io_println = ["io", "mech-interpreter/io_println"]
 
 # Matrix
 matrix_default = ["matrix_comprehensions", "matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-interpreter/matrix_default"]

@@ -74,7 +74,6 @@ linked_stdlib = ["mech-program/linked_stdlib"]
 linked_math = ["mech-program/linked_math"]
 linked_combinatorics = ["mech-program/linked_combinatorics"]
 linked_compare = ["mech-program/linked_compare"]
-linked_io = ["mech-program/linked_io"]
 linked_stats = ["mech-program/linked_stats"]
 linked_string = ["mech-program/linked_string"]
 dynamic-modules = ["mech-program/dynamic-modules"]
@@ -283,7 +282,6 @@ mech-compare = { path = 'machines/compare' }
 mech-matrix = { path = 'machines/matrix' }
 mech-stats = { path = 'machines/stats' }
 mech-math = { path = 'machines/math' }
-mech-io = { path = 'machines/io' }
 mech-range = { path = 'machines/range' }
 mech-logic = { path = 'machines/logic' }
 mech-set = { path = 'machines/set' }

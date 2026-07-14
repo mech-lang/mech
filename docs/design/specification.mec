@@ -328,7 +328,7 @@ Identifiers start with letters or most UTF-8 encoded emoji characters, and can c
 
 ```mech:disabled
   Hello-World
-  io/print
+  clock-output
   Δx^2
   🤖
   A*
