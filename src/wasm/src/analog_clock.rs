@@ -372,7 +372,9 @@ mod browser_tests {
                 ],
             })
             .unwrap();
-        runtime.run_string(CLOCK_SOURCE).unwrap();
+        runtime.run_string(CLOCK_SOURCE).unwrap_or_else(|error| {
+            panic!("failed to load shared analog clock model: {error:?}")
+        });
         let mut driver = ManualTimeInputDriver::new("clock", snapshot);
         driver.attach(runtime.ingress()).unwrap();
         driver.start().unwrap();
@@ -478,6 +480,26 @@ mod browser_tests {
             .unwrap();
 
         assert_eq!(values.len(), 3);
+    }
+
+    #[wasm_bindgen_test]
+    fn analog_clock_feature_set_supports_variable_reads() {
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        runtime
+            .run_string(
+                "feature-input := 1.0\n\
+                 feature-output := feature-input + 2.0",
+            )
+            .unwrap();
+        let value = runtime.root_symbol_value("feature-output").unwrap();
+        match value {
+            Value::F64(value) => {
+                assert_eq!(*value.borrow(), 3.0);
+            }
+            other => {
+                panic!("expected f64 result, got {other:?}");
+            }
+        }
     }
 
     #[wasm_bindgen_test]
