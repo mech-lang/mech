@@ -133,7 +133,7 @@ fn format_output_value_html(output: &Value) -> String {
   )
 }
 
-#[wasm_bindgen(start)]
+#[cfg_attr(not(test), wasm_bindgen(start))]
 pub fn main() -> Result<(), JsValue> {
   //let mut wasm_mech = WasmMech::new();
   //wasm_mech.init();

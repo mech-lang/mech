@@ -1,6 +1,9 @@
-import init, { WasmAnalogClock } from '../../pkg/mech_wasm.js';
+import init, {
+  WasmAnalogClock,
+} from "./pkg/mech_wasm.js";
 
 let clock;
+let running = true;
 
 async function main() {
   await init();
@@ -15,7 +18,18 @@ async function main() {
   clock.start();
 
   function frame() {
-    clock.pumpAndRender();
+    if (!running) {
+      return;
+    }
+
+    try {
+      clock.pumpAndRender();
+    } catch (error) {
+      running = false;
+      console.error(error);
+      return;
+    }
+
     requestAnimationFrame(frame);
   }
 
@@ -23,11 +37,13 @@ async function main() {
 }
 
 window.addEventListener('beforeunload', () => {
+  running = false;
   if (clock) {
     clock.stop();
   }
 });
 
 main().catch((error) => {
+  running = false;
   console.error(error);
 });

@@ -69,6 +69,83 @@ jobs:
           cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
           cargo check -p mech-host-cli --no-default-features
 
+
+  analog-clock:
+    name: Analog clock
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Install WASM target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+
+      - name: Show Chrome version
+        run: google-chrome --version
+
+      - name: Check analog clock package paths
+        run: bash scripts/check-analog-clock-web.sh
+
+      - name: Run native time-host tests
+        run: |
+          cargo test \
+            -p mech-host-time \
+            --no-default-features \
+            --features native
+
+      - name: Check CLI clock
+        run: |
+          cargo check \
+            --bin mech-clock \
+            --features clock_demo_cli
+
+          cargo test \
+            --bin mech-clock \
+            --features clock_demo_cli
+
+      - name: Run finite CLI clock
+        run: |
+          cargo run \
+            --bin mech-clock \
+            --features clock_demo_cli \
+            -- \
+            --ticks 3
+
+      - name: Build browser analog clock package
+        run: bash scripts/build-analog-clock-web.sh
+
+      - name: Run headless Chrome WASM tests
+        run: |
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features analog_clock_demo
+
+      - name: Confirm generated browser package paths
+        run: |
+          test -f \
+            examples/analog-clock/pkg/mech_wasm.js
+
+          test -f \
+            examples/analog-clock/pkg/mech_wasm_bg.wasm
+
+      - name: Remove generated browser package
+        run: rm -rf examples/analog-clock/pkg
+
   run-only:
     name: Run-only CLI
     runs-on: ubuntu-latest

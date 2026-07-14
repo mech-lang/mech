@@ -26,13 +26,27 @@ cargo run \
 Build the browser demo:
 
 ```bash
-wasm-pack build \
-  src/wasm \
-  --target web \
-  -- \
-  --features analog_clock_demo
+bash scripts/build-analog-clock-web.sh
 ```
 
-Serve the repository with an HTTP server and open
-`examples/analog-clock/index.html` from that server. Do not open the page via
-`file://`; browser ES modules and WASM loading require an HTTP origin.
+The build script generates these local files, which are ignored by Git:
+
+```text
+examples/analog-clock/pkg/mech_wasm.js
+examples/analog-clock/pkg/mech_wasm_bg.wasm
+```
+
+Serve the repository with Python:
+
+```bash
+python3 -m http.server 8000
+```
+
+Open the demo at:
+
+```text
+http://localhost:8000/examples/analog-clock/
+```
+
+Do not open the page via `file://`; browser ES modules and WASM loading require
+an HTTP origin.

@@ -1,4 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -36,6 +37,7 @@ where
   snapshot: SharedTimeSnapshot,
   interval: Duration,
   worker: Arc<Mutex<Option<JoinHandle<()>>>>,
+  stop_sender: Arc<Mutex<Option<Sender<()>>>>,
 }
 
 impl<B> std::fmt::Debug for NativeTimeInputDriver<B>
@@ -65,6 +67,7 @@ where
       snapshot,
       interval,
       worker: Arc::new(Mutex::new(None)),
+      stop_sender: Arc::new(Mutex::new(None)),
     }
   }
 }
@@ -86,12 +89,16 @@ where
   }
 
   fn start(&mut self) -> MResult<()> {
-    if self.is_live() { return Ok(()); }
+    if self.is_live() && self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?.is_some() {
+      return Ok(());
+    }
     let ingress = self.ingress.lock().map_err(|_| time_error("TimeDriverStart", "time ingress lock is poisoned"))?
       .clone()
       .ok_or_else(|| time_error("TimeDriverStart", "native time driver must be attached before start"))?;
     let mut worker_guard = self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?;
     if worker_guard.is_some() { return Ok(()); }
+    let (stop_sender, stop_receiver) = mpsc::channel();
+    *self.stop_sender.lock().map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))? = Some(stop_sender);
     self.live.store(true, Ordering::SeqCst);
     let live = self.live.clone();
     let backend = self.backend.clone();
@@ -105,29 +112,46 @@ where
             if let Ok(mut guard) = snapshot.lock() { *guard = next; }
             match next.into_host_input(&instance).and_then(|packet| ingress.submit(packet)) {
               Ok(()) => {}
-              Err(err) => {
-                let text = format!("{:?}", err);
-                if text.contains("RuntimeIngressFull") {
+              Err(err) => match err.kind_name().as_str() {
+                "RuntimeIngressFull" => {
                   // Skip this snapshot and let the next interval try again.
-                } else {
-                  live.store(false, Ordering::SeqCst);
                 }
-              }
+                "RuntimeIngressClosed" => {
+                  live.store(false, Ordering::SeqCst);
+                  break;
+                }
+                _ => {
+                  live.store(false, Ordering::SeqCst);
+                  break;
+                }
+              },
             }
           }
-          Err(_) => live.store(false, Ordering::SeqCst),
+          Err(_) => {
+            live.store(false, Ordering::SeqCst);
+            break;
+          }
         }
-        if live.load(Ordering::SeqCst) { thread::sleep(interval); }
+        match stop_receiver.recv_timeout(interval) {
+          Ok(()) => break,
+          Err(RecvTimeoutError::Disconnected) => break,
+          Err(RecvTimeoutError::Timeout) => {}
+        }
       }
+      live.store(false, Ordering::SeqCst);
     }));
     Ok(())
   }
 
   fn stop(&mut self) -> MResult<()> {
     self.live.store(false, Ordering::SeqCst);
+    let stop_sender = self.stop_sender.lock().map_err(|_| time_error("TimeDriverStop", "time stop-signal lock is poisoned"))?.take();
+    if let Some(sender) = stop_sender {
+      let _ = sender.send(());
+    }
     let handle = self.worker.lock().map_err(|_| time_error("TimeDriverStop", "time worker lock is poisoned"))?.take();
     if let Some(handle) = handle {
-      let _ = handle.join();
+      handle.join().map_err(|_| time_error("TimeDriverStop", "native time worker panicked during shutdown"))?;
     }
     Ok(())
   }

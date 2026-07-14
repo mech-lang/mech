@@ -185,4 +185,82 @@ mod tests {
     assert_eq!(installation.interface.instance, "clock");
     assert_eq!(installation.interface.provider, "time");
   }
+
+  #[cfg(feature = "native")]
+  fn long_interval_driver(runtime: &mech_runtime::MechRuntime) -> NativeTimeInputDriver<FixedBackend> {
+    let mut driver = NativeTimeInputDriver::new(
+      "clock",
+      FixedBackend,
+      new_shared_snapshot(TimeSnapshot::default()),
+      std::time::Duration::from_secs(60),
+    );
+    driver.attach(runtime.ingress()).unwrap();
+    driver
+  }
+
+  #[cfg(feature = "native")]
+  fn wait_for_pending_packets(runtime: &mech_runtime::MechRuntime, count: usize) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+    while runtime.pending_host_input_count().unwrap() < count {
+      assert!(std::time::Instant::now() < deadline, "timed out waiting for native time packet");
+      std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+  }
+
+  #[cfg(feature = "native")]
+  #[test]
+  fn native_driver_stop_wakes_long_interval() {
+    let runtime = mech_runtime::MechRuntime::builder().build().unwrap();
+    let mut driver = long_interval_driver(&runtime);
+    driver.start().unwrap();
+    wait_for_pending_packets(&runtime, 1);
+    let start = std::time::Instant::now();
+    driver.stop().unwrap();
+    let elapsed = start.elapsed();
+    eprintln!("native_driver_stop_wakes_long_interval elapsed_ms={}", elapsed.as_millis());
+    assert!(elapsed < std::time::Duration::from_secs(1), "stop took {elapsed:?}");
+    assert!(!driver.is_live());
+  }
+
+  #[cfg(feature = "native")]
+  #[test]
+  fn native_driver_can_restart_after_stop() {
+    let runtime = mech_runtime::MechRuntime::builder().host_input_capacity(8).build().unwrap();
+    let mut driver = long_interval_driver(&runtime);
+    driver.start().unwrap();
+    wait_for_pending_packets(&runtime, 1);
+    driver.stop().unwrap();
+    let first_count = runtime.pending_host_input_count().unwrap();
+    driver.start().unwrap();
+    wait_for_pending_packets(&runtime, first_count + 1);
+    driver.stop().unwrap();
+    assert!(runtime.pending_host_input_count().unwrap() > first_count);
+  }
+
+  #[cfg(feature = "native")]
+  #[test]
+  fn native_driver_drop_joins_worker() {
+    let runtime = mech_runtime::MechRuntime::builder().build().unwrap();
+    let start = std::time::Instant::now();
+    {
+      let mut driver = long_interval_driver(&runtime);
+      driver.start().unwrap();
+      wait_for_pending_packets(&runtime, 1);
+    }
+    let elapsed = start.elapsed();
+    assert!(elapsed < std::time::Duration::from_secs(1), "drop took {elapsed:?}");
+  }
+
+  #[cfg(feature = "native")]
+  #[test]
+  fn native_driver_start_is_idempotent() {
+    let runtime = mech_runtime::MechRuntime::builder().build().unwrap();
+    let mut driver = long_interval_driver(&runtime);
+    driver.start().unwrap();
+    driver.start().unwrap();
+    wait_for_pending_packets(&runtime, 1);
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    driver.stop().unwrap();
+  }
 }
