@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
@@ -198,29 +198,42 @@ fn build_runtime(
     }
     builder.build().map_err(to_js_error)
 }
+fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
+    let mut providers = BTreeMap::new();
+    #[cfg(feature = "browser_host_dom")]
+    providers.insert("browser", "browser_host_dom");
+    #[cfg(feature = "browser_host_time")]
+    providers.insert("time", "browser_host_time");
+    #[cfg(feature = "browser_host_timer")]
+    providers.insert("timer", "browser_host_timer");
+    #[cfg(feature = "browser_host_console")]
+    providers.insert("console", "browser_host_console");
+    #[cfg(feature = "browser_host_scene")]
+    providers.insert("scene", "browser_host_scene");
+    providers
+}
+
+fn standard_browser_provider_feature(provider: &str) -> Option<&'static str> {
+    match provider {
+        "browser" => Some("browser_host_dom"),
+        "time" => Some("browser_host_time"),
+        "timer" => Some("browser_host_timer"),
+        "console" => Some("browser_host_console"),
+        "scene" => Some("browser_host_scene"),
+        _ => None,
+    }
+}
+
 fn validate_compiled_host_providers(document: &MechConfigDocument) -> mech_core::MResult<()> {
+    let compiled = compiled_browser_providers();
     for host in &document.hosts {
-        let feature = match host.provider.as_str() {
-            "browser" => Some("browser_host_dom"),
-            "time" => Some("browser_host_time"),
-            "timer" => Some("browser_host_timer"),
-            "console" => Some("browser_host_console"),
-            "scene" => Some("browser_host_scene"),
-            _ => None,
-        };
-        let compiled = match host.provider.as_str() {
-            "browser" => cfg!(feature = "browser_host_dom"),
-            "time" => cfg!(feature = "browser_host_time"),
-            "timer" => cfg!(feature = "browser_host_timer"),
-            "console" => cfg!(feature = "browser_host_console"),
-            "scene" => cfg!(feature = "browser_host_scene"),
-            _ => true,
-        };
-        if !compiled {
-            return Err(MechError::new(
-                ProjectError { message: format!("project requires host provider `{}`, but this WASM artifact was built without `{}`", host.provider, feature.unwrap_or("unknown")) },
-                None,
-            ));
+        if let Some(feature) = standard_browser_provider_feature(&host.provider) {
+            if !compiled.contains_key(host.provider.as_str()) {
+                return Err(MechError::new(
+                    ProjectError { message: format!("project requires host provider `{}`, but this WASM artifact was built without `{}`", host.provider, feature) },
+                    None,
+                ));
+            }
         }
     }
     Ok(())

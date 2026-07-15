@@ -138,6 +138,9 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
                 live.store(false, Ordering::SeqCst);
                 return;
             };
+            if !live.load(Ordering::SeqCst) {
+                return;
+            }
             let emissions = scheduler
                 .lock()
                 .ok()
@@ -185,6 +188,7 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
         Ok(())
     }
     fn stop(&mut self) -> MResult<()> {
+        self.live.store(false, Ordering::SeqCst);
         if let Some(handle) = self.interval_handle.take() {
             if let Some(window) = web_sys::window() {
                 window.clear_interval_with_handle(handle);
@@ -194,7 +198,6 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
         if let Ok(mut scheduler) = self.scheduler.lock() {
             scheduler.pause();
         }
-        self.live.store(false, Ordering::SeqCst);
         Ok(())
     }
     fn is_live(&self) -> bool {

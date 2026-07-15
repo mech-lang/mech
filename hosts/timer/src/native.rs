@@ -177,6 +177,9 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                     live.store(false, Ordering::SeqCst);
                     break;
                 };
+                if !live.load(Ordering::SeqCst) {
+                    break;
+                }
                 let emissions = scheduler
                     .lock()
                     .ok()
@@ -229,9 +232,6 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         {
             let _ = sender.send(());
         }
-        if let Ok(mut scheduler) = self.scheduler.lock() {
-            scheduler.pause();
-        }
         if let Some(handle) = self
             .worker
             .lock()
@@ -244,6 +244,9 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                     "native timer worker panicked during shutdown",
                 )
             })?;
+        }
+        if let Ok(mut scheduler) = self.scheduler.lock() {
+            scheduler.pause();
         }
         Ok(())
     }

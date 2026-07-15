@@ -111,8 +111,7 @@ jobs:
           cargo test \
             -p mech-wasm \
             --no-default-features \
-            --features browser_project \
-            required_paths
+            --features browser_project
 
       - name: Check browser host packages
         run: |
@@ -126,6 +125,21 @@ jobs:
             --target wasm32-unknown-unknown \
             --no-default-features \
             --features browser
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser_project_runner
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features "browser_project_runner,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string,record,tuple,table,atom,enum,variables"
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features "browser_project_runner,browser_host_timer,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,range_default,math_default,matrix_default,dynamic_matrix,f64,bool,string,record,tuple,table,atom,enum,variables"
           cargo check \
             -p mech-wasm \
             --target wasm32-unknown-unknown \
@@ -154,6 +168,14 @@ jobs:
 
       - name: Run focused shared-project Chrome WASM test
         run: |
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features browser_project \
+            -- \
+            --list | grep 'generic_project_with_time_console_and_scene_runs_clock_source'
           wasm-pack test \
             --headless \
             --chrome \

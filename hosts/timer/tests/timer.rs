@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
+#[cfg(feature = "native")]
 use std::time::{Duration, Instant};
 
 use mech_core::Value;
 use mech_host_timer::*;
+#[cfg(feature = "native")]
+use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
-    ConfigValue, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeBuilder,
+    ConfigValue, RuntimeHostInputDriver, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeBuilder,
 };
 
 fn settings(freq: i64, catch: i64) -> ConfigValue {
@@ -289,7 +292,15 @@ fn restart_never_regresses_provider_snapshot() {
 
 #[test]
 fn manual_restart_matches_native_semantics() {
-    restart_does_not_count_paused_time();
+    let backend = ManualMonotonicTimerBackend::new();
+    let mut driver = ManualTimerInputDriver::with_backend("physics", backend.clone(), 100, 8);
+    driver.start().unwrap();
+    assert_eq!(driver.publish_steps(2).unwrap(), 2);
+    driver.stop().unwrap();
+    backend.advance_ms(1_000.0).unwrap();
+    driver.start().unwrap();
+    assert_eq!(driver.publish_due_steps().unwrap(), 0);
+    assert_eq!(snapshot_tick(&driver.snapshot()), 2);
 }
 
 #[cfg(feature = "native")]
@@ -301,4 +312,44 @@ fn native_restart_preserves_scheduler_state() {
     scheduler.pause();
     scheduler.start_or_resume(1_000.0);
     assert_eq!(scheduler.tick(), 4);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_stop_leaves_scheduler_paused() {
+    let mut scheduler = FixedStepScheduler::new(60, 8);
+    scheduler.start_or_resume(0.0);
+    scheduler.pause();
+    assert_eq!(scheduler.time_until_next_boundary(10.0), 0.0);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_stop_cannot_reseed_scheduler() {
+    let mut scheduler = FixedStepScheduler::new(60, 8);
+    scheduler.start_or_resume(0.0);
+    scheduler.pause();
+    assert!(scheduler.due_steps(1_000.0).is_empty());
+    assert_eq!(scheduler.tick(), 0);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_restart_preserves_tick_after_stop() {
+    let mut scheduler = FixedStepScheduler::new(60, 8);
+    scheduler.start_or_resume(0.0);
+    scheduler.emit_exact_steps(4);
+    scheduler.pause();
+    scheduler.start_or_resume(1_000.0);
+    assert_eq!(scheduler.tick(), 4);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_callback_does_not_advance_after_stop() {
+    let mut scheduler = FixedStepScheduler::new(60, 8);
+    scheduler.start_or_resume(0.0);
+    scheduler.pause();
+    assert!(scheduler.due_steps(1_000.0).is_empty());
+    assert_eq!(scheduler.tick(), 0);
 }

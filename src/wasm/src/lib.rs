@@ -1,5 +1,6 @@
 #![allow(warnings)]
 
+#[cfg(any(feature = "legacy_browser_api", feature = "browser_host_dom"))]
 pub mod host;
 
 #[cfg(feature = "browser_project_runner")]
@@ -8,6 +9,8 @@ mod project;
 #[cfg(feature = "browser_project_runner")]
 pub use project::*;
 
+#[cfg(feature = "legacy_browser_api")]
+mod legacy_browser_api {
 use crate::host::{
     BrowserCapabilityRequest, BrowserDomScope, BrowserHost, BrowserHostError, BrowserNetworkScope,
     BrowserOperation, BrowserStorageBackend, BrowserStorageScope, WasmBrowserDomBackend,
@@ -44,6 +47,7 @@ use web_sys::{
 };
 
 #[cfg(feature = "repl")]
+#[path = "repl.rs"]
 pub mod repl;
 
 #[cfg(feature = "repl")]
@@ -2325,3 +2329,8 @@ title := @ui/counter/_text
         assert!(mech.can_write_clipboard());
     }
 }
+
+}
+
+#[cfg(feature = "legacy_browser_api")]
+pub use legacy_browser_api::*;
