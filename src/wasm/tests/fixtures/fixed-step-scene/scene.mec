@@ -1,0 +1,59 @@
++> @tick := timer://physics/tick{:read(tick), :read(elapsed-ms), :read(delta-ms), :read(elapsed-seconds), :read(delta-seconds), :read(skipped-steps)}
++> @view := scene/frame
+
+step := @tick/tick
+elapsed := @tick/elapsed-seconds
+delta := @tick/delta-seconds
+
+circle-x-a := 100 + step * 2
+circle-x-b := 220 - step
+
+circles := (
+  {
+    id: "fixture-circle-a"
+    x: circle-x-a
+    y: 120
+    radius: 16
+    fill: "#5cc8ff"
+    stroke: "#ffffff"
+    stroke-width: 2
+    opacity: 1
+  }
+  {
+    id: "fixture-circle-b"
+    x: circle-x-b
+    y: 180
+    radius: 12
+    fill: "#ffcc66"
+    stroke: "#ffffff"
+    stroke-width: 2
+    opacity: 1
+  }
+)
+
+lines := (
+  {
+    id: "fixture-baseline"
+    x1: 40
+    y1: 260
+    x2: 280
+    y2: 260
+    stroke: "#ffffff"
+    stroke-width: 1
+    line-cap: "round"
+    opacity: 0.5
+    rotation: 0
+    origin-x: 0
+    origin-y: 0
+  }
+)
+
+scene := {
+  width: 320
+  height: 280
+  background: "#10131a"
+  circles: circles
+  lines: lines
+}
+
+@view/replace <- scene

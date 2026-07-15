@@ -2,11 +2,11 @@
 
 pub mod host;
 
-#[cfg(feature = "analog_clock_demo")]
-mod analog_clock;
+#[cfg(feature = "browser_project")]
+mod project;
 
-#[cfg(feature = "analog_clock_demo")]
-pub use analog_clock::*;
+#[cfg(feature = "browser_project")]
+pub use project::*;
 
 use wasm_bindgen::prelude::*;
 use mech_core::*;

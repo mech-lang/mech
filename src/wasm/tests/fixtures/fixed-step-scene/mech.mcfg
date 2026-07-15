@@ -1,0 +1,35 @@
+config := {
+  hosts: [
+    {
+      name: "physics"
+      provider: "timer"
+      settings: {
+        frequency-hz: 120
+        max-catch-up-steps: 8
+      }
+    }
+    {
+      name: "view"
+      provider: "scene"
+      settings: {
+        selector: "#test-scene"
+        renderer: "canvas"
+      }
+    }
+  ]
+  run: {
+    paths: ["scene.mec"]
+    grants: [
+      {
+        target: "physics/tick"
+        operations: ["read"]
+        paths: ["tick", "elapsed-ms", "delta-ms", "elapsed-seconds", "delta-seconds", "skipped-steps"]
+      }
+      {
+        target: "view/frame"
+        operations: ["write"]
+        paths: ["replace"]
+      }
+    ]
+  }
+}

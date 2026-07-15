@@ -8,11 +8,13 @@ repo_root="$(
 
 cd "$repo_root"
 
-grep -F './pkg/mech_wasm.js' examples/analog-clock/clock.js >/dev/null
-grep -F 'examples/analog-clock/pkg' scripts/build-analog-clock-web.sh >/dev/null
-grep -F 'scripts/build-analog-clock-web.sh' examples/analog-clock/README.md >/dev/null
+test ! -f examples/analog-clock/clock.js
+grep -F '../common/mech-browser.js' examples/analog-clock/index.html >/dev/null
+grep -F '../pkg/mech_wasm.js' examples/common/mech-browser.js >/dev/null
+grep -F 'examples/pkg' scripts/build-mech-browser.sh >/dev/null
+grep -F 'scripts/build-mech-browser.sh' examples/analog-clock/README.md >/dev/null
 
-if git ls-files examples/analog-clock/pkg | grep -q .; then
-  echo "generated analog clock pkg files must not be tracked" >&2
+if git ls-files examples/pkg | grep -q .; then
+  echo "generated browser pkg files must not be tracked" >&2
   exit 1
 fi

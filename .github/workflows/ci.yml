@@ -104,11 +104,33 @@ jobs:
             -p mech-host-time \
             --no-default-features \
             --features native
+          cargo test -p mech-host-timer
+          cargo test -p mech-host-timer --no-default-features --features native
+          cargo test -p mech-host-scene
+          cargo test -p mech-host-scene --no-default-features --features native
+
+      - name: Check browser host packages
+        run: |
+          cargo check \
+            -p mech-host-timer \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser
+          cargo check \
+            -p mech-host-scene \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser_project
 
       - name: Check CLI clock
         run: |
           cargo check --bin mech
-          cargo test --features "run cli_host time_host_native console_host_native" --test mech_cli_host
+          cargo test --features "run cli_host time_host_native timer_host_native console_host_native scene_host_native" --test mech_cli_host
 
       - name: Smoke test native analog clock project
         run: |
@@ -123,7 +145,7 @@ jobs:
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 
       - name: Build browser analog clock package
-        run: bash scripts/build-analog-clock-web.sh
+        run: bash scripts/build-mech-browser.sh
 
       - name: Run focused shared-project Chrome WASM test
         run: |
@@ -132,7 +154,7 @@ jobs:
             --chrome \
             src/wasm \
             --no-default-features \
-            --features analog_clock_demo \
+            --features browser_project \
             -- \
             shared_config_clock_load_and_time_packet_write_console \
             --nocapture
@@ -144,21 +166,29 @@ jobs:
             --chrome \
             src/wasm \
             --no-default-features \
-            --features analog_clock_demo \
+            --features browser_project \
             -- \
             --nocapture
 
       - name: Confirm generated browser package paths
         run: |
           test -f \
-            examples/analog-clock/pkg/mech_wasm.js
+            examples/pkg/mech_wasm.js
 
           test -f \
-            examples/analog-clock/pkg/mech_wasm_bg.wasm
+            examples/pkg/mech_wasm_bg.wasm
+
+      - name: Confirm browser examples are generic
+        run: |
+          test ! -f examples/analog-clock/clock.js
+          ! rg -n \
+            "WasmAnalogClock|AnalogClockProjectError|CLOCK_PROJECT_SOURCES|clock-hour-angle|bouncing.?balls" \
+            src/wasm hosts/timer hosts/scene
+          test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
 
       - name: Remove generated browser package
         if: always()
-        run: rm -rf examples/analog-clock/pkg
+        run: rm -rf examples/pkg
 
   run-only:
     name: Run-only CLI

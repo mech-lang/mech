@@ -12,6 +12,14 @@ config := {
       provider: "console"
       settings: {}
     }
+    {
+      name: "view"
+      provider: "scene"
+      settings: {
+        selector: "#clock"
+        renderer: "svg"
+      }
+    }
   ]
 
   run: {
@@ -27,6 +35,11 @@ config := {
         target: "console/output"
         operations: ["write"]
         paths: ["line"]
+      }
+      {
+        target: "view/frame"
+        operations: ["write"]
+        paths: ["replace"]
       }
     ]
   }
