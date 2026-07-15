@@ -125,6 +125,18 @@ jobs:
       - name: Build browser analog clock package
         run: bash scripts/build-analog-clock-web.sh
 
+      - name: Run focused shared-project Chrome WASM test
+        run: |
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features analog_clock_demo \
+            -- \
+            shared_config_clock_load_and_time_packet_write_console \
+            --nocapture
+
       - name: Run headless Chrome WASM tests
         run: |
           wasm-pack test \
@@ -132,7 +144,9 @@ jobs:
             --chrome \
             src/wasm \
             --no-default-features \
-            --features analog_clock_demo
+            --features analog_clock_demo \
+            -- \
+            --nocapture
 
       - name: Confirm generated browser package paths
         run: |

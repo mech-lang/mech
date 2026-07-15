@@ -13,7 +13,6 @@ async function main() {
     '#clock-second-hand',
     100,
     100,
-    100,
   );
   clock.start();
 
