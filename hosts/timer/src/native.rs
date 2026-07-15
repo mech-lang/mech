@@ -117,10 +117,11 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         if worker_guard.is_some() {
             return Ok(());
         }
+        let now = self.backend.now_ms()?;
         self.scheduler
             .lock()
             .map_err(|_| timer_error("TimerDriverStart", "timer scheduler lock is poisoned"))?
-            .reset();
+            .start_or_resume(now);
         let (stop_sender, stop_receiver) = mpsc::channel();
         *self
             .stop_sender
@@ -227,6 +228,9 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
             .take()
         {
             let _ = sender.send(());
+        }
+        if let Ok(mut scheduler) = self.scheduler.lock() {
+            scheduler.pause();
         }
         if let Some(handle) = self
             .worker

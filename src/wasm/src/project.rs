@@ -4,20 +4,27 @@ use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
 use mech_core::{MechError, MechErrorKind};
+#[cfg(feature = "browser_host_dom")]
 use mech_host_browser::BrowserHostFactory;
+#[cfg(feature = "browser_host_console")]
 use mech_host_console::BrowserConsoleHostFactory;
+#[cfg(feature = "browser_host_scene")]
 use mech_host_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
+#[cfg(feature = "browser_host_time")]
 use mech_host_time::BrowserTimeHostFactory;
+#[cfg(feature = "browser_host_timer")]
 use mech_host_timer::BrowserTimerHostFactory;
 use mech_runtime::{
     ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeBuilder, parse_config_document,
 };
 
+#[cfg(feature = "browser_host_dom")]
 use crate::host::WasmBrowserDomBackend;
 
 #[wasm_bindgen]
 pub struct WasmProject {
     runtime: MechRuntime,
+    #[cfg(feature = "browser_host_scene")]
     scenes: BrowserSceneRegistry,
     started: bool,
     stopped: bool,
@@ -39,11 +46,14 @@ impl WasmProject {
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
+        validate_compiled_host_providers(&document).map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let mut runtime = build_runtime(&document, scenes.clone())?;
+        let mut runtime = build_runtime(&document, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document, &source_map).map_err(to_js_error)?;
         Ok(Self {
             runtime,
+            #[cfg(feature = "browser_host_scene")]
             scenes,
             started: false,
             stopped: false,
@@ -81,7 +91,10 @@ impl WasmProject {
             .runtime
             .pending_host_input_count()
             .map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
         let rendered = self.scenes.render_frame().map_err(to_js_error)?;
+        #[cfg(not(feature = "browser_host_scene"))]
+        let rendered = 0;
         let out = Object::new();
         Reflect::set(
             &out,
@@ -141,28 +154,40 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
 }
 fn build_runtime(
     document: &MechConfigDocument,
-    scenes: BrowserSceneRegistry,
+    #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
-    let scene_factory = BrowserSceneHostFactory::with_registry(scenes).map_err(to_js_error)?;
-    let mut builder = RuntimeBuilder::new()
-        .host_factory(Box::new(
-            BrowserHostFactory::new(WasmBrowserDomBackend::new()).map_err(to_js_error)?,
-        ))
-        .map_err(to_js_error)?
-        .host_factory(Box::new(
-            BrowserTimeHostFactory::new().map_err(to_js_error)?,
-        ))
-        .map_err(to_js_error)?
-        .host_factory(Box::new(
-            BrowserTimerHostFactory::new().map_err(to_js_error)?,
-        ))
-        .map_err(to_js_error)?
-        .host_factory(Box::new(
-            BrowserConsoleHostFactory::new().map_err(to_js_error)?,
-        ))
-        .map_err(to_js_error)?
-        .host_factory(Box::new(scene_factory))
-        .map_err(to_js_error)?;
+    let mut builder = RuntimeBuilder::new();
+    #[cfg(feature = "browser_host_dom")]
+    {
+        builder = builder
+            .host_factory(Box::new(
+                BrowserHostFactory::new(WasmBrowserDomBackend::new()).map_err(to_js_error)?,
+            ))
+            .map_err(to_js_error)?;
+    }
+    #[cfg(feature = "browser_host_time")]
+    {
+        builder = builder
+            .host_factory(Box::new(BrowserTimeHostFactory::new().map_err(to_js_error)?))
+            .map_err(to_js_error)?;
+    }
+    #[cfg(feature = "browser_host_timer")]
+    {
+        builder = builder
+            .host_factory(Box::new(BrowserTimerHostFactory::new().map_err(to_js_error)?))
+            .map_err(to_js_error)?;
+    }
+    #[cfg(feature = "browser_host_console")]
+    {
+        builder = builder
+            .host_factory(Box::new(BrowserConsoleHostFactory::new().map_err(to_js_error)?))
+            .map_err(to_js_error)?;
+    }
+    #[cfg(feature = "browser_host_scene")]
+    {
+        let scene_factory = BrowserSceneHostFactory::with_registry(scenes).map_err(to_js_error)?;
+        builder = builder.host_factory(Box::new(scene_factory)).map_err(to_js_error)?;
+    }
     for host in &document.hosts {
         builder = builder.host_instance(host.clone());
     }
@@ -172,6 +197,33 @@ fn build_runtime(
         }
     }
     builder.build().map_err(to_js_error)
+}
+fn validate_compiled_host_providers(document: &MechConfigDocument) -> mech_core::MResult<()> {
+    for host in &document.hosts {
+        let feature = match host.provider.as_str() {
+            "browser" => Some("browser_host_dom"),
+            "time" => Some("browser_host_time"),
+            "timer" => Some("browser_host_timer"),
+            "console" => Some("browser_host_console"),
+            "scene" => Some("browser_host_scene"),
+            _ => None,
+        };
+        let compiled = match host.provider.as_str() {
+            "browser" => cfg!(feature = "browser_host_dom"),
+            "time" => cfg!(feature = "browser_host_time"),
+            "timer" => cfg!(feature = "browser_host_timer"),
+            "console" => cfg!(feature = "browser_host_console"),
+            "scene" => cfg!(feature = "browser_host_scene"),
+            _ => true,
+        };
+        if !compiled {
+            return Err(MechError::new(
+                ProjectError { message: format!("project requires host provider `{}`, but this WASM artifact was built without `{}`", host.provider, feature.unwrap_or("unknown")) },
+                None,
+            ));
+        }
+    }
+    Ok(())
 }
 fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue> {
     if !value.is_object() || value.is_null() {

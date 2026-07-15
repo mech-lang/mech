@@ -98,10 +98,11 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
         })?;
         let window = web_sys::window()
             .ok_or_else(|| timer_error("TimerDriverStart", "browser Window is unavailable"))?;
+        let now = self.backend.now_ms()?;
         self.scheduler
             .lock()
             .map_err(|_| timer_error("TimerDriverStart", "timer scheduler lock is poisoned"))?
-            .reset();
+            .start_or_resume(now);
         let backend = self.backend.clone();
         let scheduler = self.scheduler.clone();
         let snapshot = self.snapshot.clone();
@@ -190,6 +191,9 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
             }
         }
         self.closure = None;
+        if let Ok(mut scheduler) = self.scheduler.lock() {
+            scheduler.pause();
+        }
         self.live.store(false, Ordering::SeqCst);
         Ok(())
     }

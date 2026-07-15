@@ -155,10 +155,13 @@ impl RuntimeHostInputDriver for ManualTimerInputDriver {
         Ok(())
     }
     fn start(&mut self) -> MResult<()> {
+        let now = self.backend.now_ms()?;
+        self.scheduler.start_or_resume(now);
         self.live = true;
         Ok(())
     }
     fn stop(&mut self) -> MResult<()> {
+        self.scheduler.pause();
         self.live = false;
         Ok(())
     }

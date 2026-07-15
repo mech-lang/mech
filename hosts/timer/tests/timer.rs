@@ -166,7 +166,10 @@ fn manual_publish_steps_advances_elapsed() {
 
 #[test]
 fn manual_publish_steps_preserves_order_under_backpressure() {
-    retained_timer_packets_submit_in_order();
+    let (_runtime, mut driver, snapshot) = runtime_with_manual_timer(1);
+    assert_eq!(driver.publish_steps(3).unwrap(), 1);
+    assert_eq!(driver.pending_emission_count(), 2);
+    assert_eq!(snapshot_tick(&snapshot), 1);
 }
 
 #[cfg(feature = "native")]
@@ -215,4 +218,87 @@ fn native_stop_wakes_promptly() {
     let start = Instant::now();
     driver.stop().unwrap();
     assert!(start.elapsed() < Duration::from_millis(100));
+}
+
+#[test]
+fn restart_preserves_tick() {
+    let mut driver = ManualTimerInputDriver::new("physics", 100, 8);
+    let snapshot = driver.snapshot();
+    driver.start().unwrap();
+    driver.publish_steps(3).unwrap();
+    driver.stop().unwrap();
+    driver.start().unwrap();
+    assert_eq!(snapshot_tick(&snapshot), 3);
+}
+
+#[test]
+fn restart_preserves_elapsed() {
+    let mut driver = ManualTimerInputDriver::new("physics", 100, 8);
+    let snapshot = driver.snapshot();
+    driver.start().unwrap();
+    driver.publish_steps(3).unwrap();
+    driver.stop().unwrap();
+    driver.start().unwrap();
+    assert_eq!(snapshot.lock().unwrap().elapsed_ms, 30.0);
+}
+
+#[test]
+fn restart_preserves_skipped_steps() {
+    let mut scheduler = FixedStepScheduler::new(100, 2);
+    scheduler.start_or_resume(0.0);
+    let out = scheduler.due_steps(100.0);
+    assert_eq!(out.last().unwrap().snapshot.skipped_steps, 8);
+    scheduler.pause();
+    scheduler.start_or_resume(1000.0);
+    assert_eq!(scheduler.skipped_steps(), 8);
+}
+
+#[test]
+fn restart_does_not_count_paused_time() {
+    let backend = ManualMonotonicTimerBackend::new();
+    let mut driver = ManualTimerInputDriver::with_backend("physics", backend.clone(), 100, 8);
+    driver.start().unwrap();
+    driver.publish_steps(1).unwrap();
+    driver.stop().unwrap();
+    backend.advance_ms(10_000.0).unwrap();
+    driver.start().unwrap();
+    assert_eq!(driver.publish_due_steps().unwrap(), 0);
+}
+
+#[test]
+fn restart_flushes_retained_packets_before_new_steps() {
+    let (_runtime, mut driver, snapshot) = runtime_with_manual_timer(1);
+    assert_eq!(driver.publish_steps(3).unwrap(), 1);
+    driver.stop().unwrap();
+    driver.start().unwrap();
+    assert_eq!(snapshot_tick(&snapshot), 1);
+    assert_eq!(driver.pending_emission_count(), 2);
+}
+
+#[test]
+fn restart_never_regresses_provider_snapshot() {
+    let mut driver = ManualTimerInputDriver::new("physics", 100, 8);
+    let snapshot = driver.snapshot();
+    driver.start().unwrap();
+    driver.publish_steps(5).unwrap();
+    driver.stop().unwrap();
+    driver.start().unwrap();
+    driver.publish_due_steps().unwrap();
+    assert!(snapshot_tick(&snapshot) >= 5);
+}
+
+#[test]
+fn manual_restart_matches_native_semantics() {
+    restart_does_not_count_paused_time();
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_restart_preserves_scheduler_state() {
+    let mut scheduler = FixedStepScheduler::new(60, 8);
+    scheduler.start_or_resume(0.0);
+    scheduler.emit_exact_steps(4);
+    scheduler.pause();
+    scheduler.start_or_resume(1_000.0);
+    assert_eq!(scheduler.tick(), 4);
 }

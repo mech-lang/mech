@@ -57,6 +57,14 @@ impl FixedStepScheduler {
         self.tick = 0;
         self.skipped_steps = 0;
     }
+    pub fn start_or_resume(&mut self, now_ms: f64) {
+        self.start_ms = Some(now_ms);
+        self.next_boundary_ms = now_ms + self.delta_ms;
+    }
+    pub fn pause(&mut self) {
+        self.start_ms = None;
+        self.next_boundary_ms = 0.0;
+    }
 
     pub fn due_steps(&mut self, now_ms: f64) -> Vec<SchedulerEmission> {
         if self.start_ms.is_none() {

@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use mech_core::MResult;
-use mech_runtime::RuntimeIngress;
+use mech_runtime::{RuntimeHostInput, RuntimeIngress};
 
 use crate::{SharedTimerSnapshot, TimerSnapshot};
 
@@ -18,17 +18,24 @@ pub(crate) fn submit_pending_timer_snapshots(
     snapshot: &SharedTimerSnapshot,
     pending: &mut VecDeque<TimerSnapshot>,
 ) -> MResult<(usize, TimerSubmitState)> {
+    submit_pending_with(instance, snapshot, pending, |packet| match ingress {
+        Some(ingress) => ingress.submit(packet),
+        None => Ok(()),
+    })
+}
+
+pub(crate) fn submit_pending_with<F>(
+    instance: &str,
+    snapshot: &SharedTimerSnapshot,
+    pending: &mut VecDeque<TimerSnapshot>,
+    mut submit: F,
+) -> MResult<(usize, TimerSubmitState)>
+where
+    F: FnMut(RuntimeHostInput) -> MResult<()>,
+{
     let mut submitted = 0;
     while let Some(next) = pending.front().copied() {
-        let Some(ingress) = ingress else {
-            *snapshot.lock().map_err(|_| {
-                crate::timer_error("TimerDelivery", "timer snapshot lock is poisoned")
-            })? = next;
-            pending.pop_front();
-            submitted += 1;
-            continue;
-        };
-        match ingress.submit(next.into_host_input(instance)?) {
+        match submit(next.into_host_input(instance)?) {
             Ok(()) => {
                 *snapshot.lock().map_err(|_| {
                     crate::timer_error("TimerDelivery", "timer snapshot lock is poisoned")
