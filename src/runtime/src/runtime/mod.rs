@@ -51,7 +51,7 @@ use web_time::Instant;
 use std::time::Instant;
 
 use mech_core::{
-  MResult, MechError, MechErrorKind, MechSourceCode, Value,
+  MResult, MechError, MechErrorKind, MechSourceCode, Value, ValRef,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
@@ -64,7 +64,7 @@ use mech_program::{
 struct RuntimePersistentSend {
   binding: RuntimeContextBinding,
   path: String,
-  value: Value,
+  value: ValRef,
 }
 
 use crate::capability::{

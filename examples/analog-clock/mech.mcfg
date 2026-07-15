@@ -7,12 +7,16 @@ config := {
         interval-ms: 1000
       }
     }
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
   ]
+
   run: {
-    paths: [
-      "clock.mec"
-      "main.mec"
-    ]
+    paths: ["clock.mec"]
+
     grants: [
       {
         target: "clock/clock"
@@ -20,7 +24,7 @@ config := {
         paths: ["unix-ms", "hour", "minute", "second", "millisecond"]
       }
       {
-        target: "cli/stdout"
+        target: "console/output"
         operations: ["write"]
         paths: ["line"]
       }

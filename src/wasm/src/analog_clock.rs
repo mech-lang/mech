@@ -1,18 +1,15 @@
-use std::collections::BTreeMap;
-
 use wasm_bindgen::prelude::*;
 use web_sys::Element;
 
 use mech_core::{MechError, Value};
-use mech_host_browser::BrowserHostFactory;
+use mech_host_console::BrowserConsoleHostFactory;
 use mech_host_time::BrowserTimeHostFactory;
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, MechRuntime, RunResourceGrantConfig, RuntimeBuilder,
-    RuntimeCapabilityGrant, RuntimeCapabilityOperation,
+    ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeBuilder,
 };
 
-use crate::host::WasmBrowserDomBackend;
-
+const CLOCK_CONFIG_PATH: &str = "examples/analog-clock/mech.mcfg";
+const CLOCK_CONFIG: &str = include_str!("../../../examples/analog-clock/mech.mcfg");
 const CLOCK_SOURCE: &str = include_str!("../../../examples/analog-clock/clock.mec");
 
 #[wasm_bindgen]
@@ -155,59 +152,37 @@ impl WasmAnalogClock {
 }
 
 fn build_runtime(interval_ms: u32) -> Result<MechRuntime, JsValue> {
-    let mut settings = BTreeMap::new();
-    settings.insert(
-        "interval-ms".to_string(),
-        ConfigValue::Integer(interval_ms as i64),
-    );
-    let mut runtime = RuntimeBuilder::new()
-        .host_factory(Box::new(
-            BrowserHostFactory::new(WasmBrowserDomBackend::new()).map_err(to_js_error)?,
-        ))
-        .map_err(to_js_error)?
+    if interval_ms == 0 {
+        return Err(js_error("interval_ms must be greater than zero"));
+    }
+    let document = shared_clock_config().map_err(to_js_error)?;
+    let mut builder = RuntimeBuilder::new()
         .host_factory(Box::new(
             BrowserTimeHostFactory::new().map_err(to_js_error)?,
         ))
         .map_err(to_js_error)?
-        .host_instance(HostInstanceConfig {
-            name: "browser".to_string(),
-            provider: "browser".to_string(),
-            settings: ConfigValue::Map(Default::default()),
-        })
-        .host_instance(HostInstanceConfig {
-            name: "clock".to_string(),
-            provider: "time".to_string(),
-            settings: ConfigValue::Map(settings),
-        })
-        .run_resource_grant(RunResourceGrantConfig {
-            target: "clock/clock".to_string(),
-            operations: vec!["read".to_string()],
-            paths: vec![
-                "unix-ms".to_string(),
-                "hour".to_string(),
-                "minute".to_string(),
-                "second".to_string(),
-                "millisecond".to_string(),
-            ],
-        })
-        .build()
+        .host_factory(Box::new(
+            BrowserConsoleHostFactory::new().map_err(to_js_error)?,
+        ))
         .map_err(to_js_error)?;
-    let subject = runtime.runtime_context().map_err(to_js_error)?.subject;
-    runtime
-        .grant_capability(RuntimeCapabilityGrant {
-            subject,
-            resource: "time://clock/clock".to_string(),
-            operations: vec![RuntimeCapabilityOperation::Read],
-            paths: vec![
-                "unix-ms".to_string(),
-                "hour".to_string(),
-                "minute".to_string(),
-                "second".to_string(),
-                "millisecond".to_string(),
-            ],
-        })
-        .map_err(to_js_error)?;
-    Ok(runtime)
+
+    for host in &document.hosts {
+        builder = builder.host_instance(host.clone());
+    }
+    if let Some(run) = &document.run {
+        for grant in &run.grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+    }
+    builder.build().map_err(to_js_error)
+}
+
+fn shared_clock_config() -> mech_core::MResult<MechConfigDocument> {
+    mech_runtime::parse_config_document(
+        CLOCK_CONFIG_PATH,
+        CLOCK_CONFIG,
+        ConfigProfileOptions::default(),
+    )
 }
 
 fn query_required(document: &web_sys::Document, selector: &str) -> Result<Element, JsValue> {
@@ -276,6 +251,7 @@ mod tests {
 #[cfg(all(test, target_arch = "wasm32"))]
 mod browser_tests {
     use super::*;
+    use mech_host_console::{ConsoleResourceProvider, RecordingConsoleBackend};
     use mech_host_time::{
         new_shared_snapshot, ManualTimeInputDriver, TimeResourceProvider, TimeSnapshot,
     };
@@ -355,6 +331,10 @@ mod browser_tests {
                 Box::new(TimeResourceProvider::new("clock", snapshot.clone()))
                     as Box<dyn RuntimeResourceProvider>,
             )
+            .resource_provider(
+                Box::new(ConsoleResourceProvider::new("console", RecordingConsoleBackend::new()))
+                    as Box<dyn RuntimeResourceProvider>,
+            )
             .build()
             .unwrap();
         let subject = runtime.runtime_context().unwrap().subject;
@@ -370,6 +350,14 @@ mod browser_tests {
                     "second".to_string(),
                     "millisecond".to_string(),
                 ],
+            })
+            .unwrap();
+        runtime
+            .grant_capability(RuntimeCapabilityGrant {
+                subject,
+                resource: "console://console/output".to_string(),
+                operations: vec![RuntimeCapabilityOperation::Write],
+                paths: vec!["line".to_string()],
             })
             .unwrap();
         runtime.run_string(CLOCK_SOURCE).unwrap_or_else(|error| {
@@ -414,6 +402,48 @@ mod browser_tests {
             (actual - expected).abs() < 0.000001,
             "expected {expected}, got {actual}"
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn shared_config_clock_load_and_time_packet_write_console() {
+        let config = shared_clock_config().unwrap();
+        assert!(config.hosts.iter().any(|host| host.provider == "time"));
+        assert!(config.hosts.iter().any(|host| host.provider == "console"));
+        assert_eq!(config.run.as_ref().unwrap().paths, vec!["clock.mec".to_string()]);
+
+        let initial = TimeSnapshot { unix_ms: 0.0, hour: 1.0, minute: 2.0, second: 3.0, millisecond: 4.0 };
+        let snapshot = new_shared_snapshot(initial);
+        let console = RecordingConsoleBackend::new();
+        let mut runtime = RuntimeBuilder::new()
+            .resource_provider(Box::new(TimeResourceProvider::new("clock", snapshot.clone())) as Box<dyn RuntimeResourceProvider>)
+            .resource_provider(Box::new(ConsoleResourceProvider::new("console", console.clone())) as Box<dyn RuntimeResourceProvider>)
+            .build()
+            .unwrap();
+        let subject = runtime.runtime_context().unwrap().subject;
+        runtime.grant_capability(RuntimeCapabilityGrant {
+            subject,
+            resource: "time://clock/clock".to_string(),
+            operations: vec![RuntimeCapabilityOperation::Read],
+            paths: vec!["unix-ms".to_string(), "hour".to_string(), "minute".to_string(), "second".to_string(), "millisecond".to_string()],
+        }).unwrap();
+        runtime.grant_capability(RuntimeCapabilityGrant {
+            subject,
+            resource: "console://console/output".to_string(),
+            operations: vec![RuntimeCapabilityOperation::Write],
+            paths: vec!["line".to_string()],
+        }).unwrap();
+        runtime.run_string(CLOCK_SOURCE).unwrap();
+        let initial_lines = console.lines();
+        assert_eq!(initial_lines.len(), 1);
+
+        let mut driver = ManualTimeInputDriver::new("clock", snapshot);
+        driver.attach(runtime.ingress()).unwrap();
+        driver.start().unwrap();
+        driver.publish(TimeSnapshot { unix_ms: 1.0, hour: 5.0, minute: 6.0, second: 7.0, millisecond: 8.0 }).unwrap();
+        runtime.drain_host_inputs(1).unwrap();
+        let lines = console.lines();
+        assert_eq!(lines.len(), 2);
+        assert_ne!(lines[0], lines[1]);
     }
 
     #[wasm_bindgen_test]

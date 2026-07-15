@@ -66,7 +66,7 @@ mika = ["mech-syntax/mika", "mech-core/mika", "mech-runtime/mika"]
 serde = ["mech-core/serde", "mech-syntax/serde", "mech-interpreter/serde", "mech-runtime/serde", "mech-host-browser/serde"]
 host_delegation = ["serde", "mech-runtime/host_delegation", "mech-host-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
-analog_clock_demo = ["dep:mech-host-time", "mech-host-time/browser", "program", "f64", "variables", "math_add", "math_mul", "math_div", "mech-host-browser/serde"]
+analog_clock_demo = ["dep:mech-host-time", "mech-host-time/browser", "dep:mech-host-console", "mech-host-console/browser", "program", "f64", "variables", "math_add", "math_mul", "math_div", "mech-host-browser/serde"]
 run_program = ["program"]
 inline_output_values = []
 codeblock_output_values = []
@@ -292,6 +292,7 @@ mech-interpreter = { version = "0.3.5", default-features = false}
 mech-runtime = { path = "../runtime", default-features = false }
 mech-host-browser = { path = "../../hosts/browser", default-features = false, features = ["provider"] }
 mech-host-time = { version = "0.3.5", path = "../../hosts/time", default-features = false, optional = true }
+mech-host-console = { version = "0.3.5", path = "../../hosts/console", default-features = false, optional = true }
 
 wasm-bindgen = "0.2.100"
 serde-wasm-bindgen = "0.6.5"

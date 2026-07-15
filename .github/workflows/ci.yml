@@ -108,7 +108,7 @@ jobs:
       - name: Check CLI clock
         run: |
           cargo check --bin mech
-          cargo test --features "run cli_host time_host_native" --test mech_cli_host
+          cargo test --features "run cli_host time_host_native console_host_native" --test mech_cli_host
 
       - name: Smoke test native analog clock project
         run: |
@@ -118,7 +118,9 @@ jobs:
           status=$?
           set -e
           test "$status" -eq 0
-          test "$(wc -l < /tmp/analog-clock.out)" -ge 2
+          grep '^│' /tmp/analog-clock.out > /tmp/clock-values.out
+          test "$(wc -l < /tmp/clock-values.out)" -ge 2
+          test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 
       - name: Build browser analog clock package
         run: bash scripts/build-analog-clock-web.sh

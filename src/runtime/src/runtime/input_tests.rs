@@ -352,3 +352,248 @@ impl MechErrorKind for MockDriverError {
 fn mock_error(name: &'static str, message: impl Into<String>) -> MechError {
   MechError::new(MockDriverError { name, message: message.into() }, None)
 }
+
+#[cfg(test)]
+mod persistent_send_tests {
+  use super::*;
+  use crate::RuntimeResourceWritePreflightRequest;
+
+  #[derive(Clone, Copy, Debug)]
+  struct TimeSnapshot {
+    unix_ms: f64,
+    hour: f64,
+    minute: f64,
+    second: f64,
+    millisecond: f64,
+  }
+
+  #[derive(Debug)]
+  struct TimeResourceProvider {
+    snapshot: Rc<RefCell<TimeSnapshot>>,
+  }
+
+  impl RuntimeResourceProvider for TimeResourceProvider {
+    fn scheme(&self) -> &str { "time" }
+    fn base_uris(&self) -> Vec<String> { vec!["time://clock/clock".to_string()] }
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+      let snapshot = *self.snapshot.borrow();
+      let value = match request.path.as_str() {
+        "unix-ms" => snapshot.unix_ms,
+        "hour" => snapshot.hour,
+        "minute" => snapshot.minute,
+        "second" => snapshot.second,
+        "millisecond" => snapshot.millisecond,
+        other => return Err(MechError::new(PersistentSendTestError(format!("unknown time path {other}")), None)),
+      };
+      Ok(Value::F64(Ref::new(value)))
+    }
+  }
+
+  #[derive(Clone, Debug)]
+  struct ManualTimeInputDriver {
+    snapshot: Rc<RefCell<TimeSnapshot>>,
+    ingress: Rc<RefCell<Option<RuntimeIngress>>>,
+    live: Rc<RefCell<bool>>,
+  }
+
+  impl ManualTimeInputDriver {
+    fn new(snapshot: Rc<RefCell<TimeSnapshot>>) -> Self {
+      Self { snapshot, ingress: Rc::new(RefCell::new(None)), live: Rc::new(RefCell::new(false)) }
+    }
+
+    fn publish(&self, snapshot: TimeSnapshot) -> MResult<()> {
+      *self.snapshot.borrow_mut() = snapshot;
+      let ingress = self.ingress.borrow().clone().ok_or_else(|| MechError::new(PersistentSendTestError("driver is not attached".to_string()), None))?;
+      ingress.submit(RuntimeHostInput::new(vec![
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "unix-ms")?, value: RuntimeHostInputValue::F64(snapshot.unix_ms) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "hour")?, value: RuntimeHostInputValue::F64(snapshot.hour) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "minute")?, value: RuntimeHostInputValue::F64(snapshot.minute) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "second")?, value: RuntimeHostInputValue::F64(snapshot.second) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "millisecond")?, value: RuntimeHostInputValue::F64(snapshot.millisecond) },
+      ])?)
+    }
+  }
+
+  impl RuntimeHostInputDriver for ManualTimeInputDriver {
+    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> { *self.ingress.borrow_mut() = Some(ingress); Ok(()) }
+    fn start(&mut self) -> MResult<()> { *self.live.borrow_mut() = true; Ok(()) }
+    fn stop(&mut self) -> MResult<()> { *self.live.borrow_mut() = false; Ok(()) }
+    fn is_live(&self) -> bool { *self.live.borrow() }
+  }
+
+  #[derive(Clone, Debug, Default)]
+  struct RecordingConsoleBackend {
+    lines: Rc<RefCell<Vec<String>>>,
+    fail_next: Rc<RefCell<Option<String>>>,
+  }
+
+  impl RecordingConsoleBackend {
+    fn lines(&self) -> Vec<String> { self.lines.borrow().clone() }
+    fn fail_next(&self, reason: impl Into<String>) { *self.fail_next.borrow_mut() = Some(reason.into()); }
+  }
+
+  #[derive(Debug)]
+  struct ConsoleResourceProvider { backend: RecordingConsoleBackend }
+
+  impl RuntimeResourceProvider for ConsoleResourceProvider {
+    fn scheme(&self) -> &str { "console" }
+    fn base_uris(&self) -> Vec<String> { vec!["console://console/output".to_string()] }
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> { Err(MechError::new(PersistentSendTestError("console is write-only".to_string()), None)) }
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+      if request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(PersistentSendTestError("bad console write".to_string()), None)) }
+    }
+    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+      self.preflight_write(RuntimeResourceWritePreflightRequest {
+        base_uri: request.base_uri,
+        path: request.path,
+        context_name: request.context_name,
+        operation: request.operation,
+        intent: request.intent,
+      })?;
+      if let Some(reason) = self.backend.fail_next.borrow_mut().take() {
+        return Err(MechError::new(PersistentSendTestError(reason), None));
+      }
+      self.backend.lines.borrow_mut().push(format!("{}", request.value));
+      Ok(())
+    }
+  }
+
+  #[derive(Debug, Clone)]
+  struct PersistentSendTestError(String);
+
+  impl MechErrorKind for PersistentSendTestError {
+    fn name(&self) -> &str { "PersistentSendTestError" }
+    fn message(&self) -> String { self.0.clone() }
+  }
+
+  const TIME_PATHS: &[&str] = &["unix-ms", "hour", "minute", "second", "millisecond"];
+
+  fn snapshot(hour: f64, minute: f64, second: f64, millisecond: f64) -> TimeSnapshot {
+    TimeSnapshot { unix_ms: hour * 3_600_000.0 + minute * 60_000.0 + second * 1000.0 + millisecond, hour, minute, second, millisecond }
+  }
+
+  fn grant(runtime: &mut MechRuntime, resource: &str, operation: RuntimeCapabilityOperation, paths: &[&str]) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject,
+      resource: resource.to_string(),
+      operations: vec![operation],
+      paths: paths.iter().map(|path| path.to_string()).collect(),
+    }).unwrap();
+  }
+
+  fn runtime_with_console(initial: TimeSnapshot, fail_next: bool) -> (MechRuntime, ManualTimeInputDriver, RecordingConsoleBackend) {
+    let shared = Rc::new(RefCell::new(initial));
+    let console = RecordingConsoleBackend::default();
+    if fail_next { console.fail_next("intentional console failure"); }
+    let mut runtime = RuntimeBuilder::new()
+      .resource_provider(Box::new(TimeResourceProvider { snapshot: shared.clone() }) as Box<dyn RuntimeResourceProvider>)
+      .resource_provider(Box::new(ConsoleResourceProvider { backend: console.clone() }) as Box<dyn RuntimeResourceProvider>)
+      .build()
+      .unwrap();
+    grant(&mut runtime, "time://clock/clock", RuntimeCapabilityOperation::Read, TIME_PATHS);
+    grant(&mut runtime, "console://console/output", RuntimeCapabilityOperation::Write, &["line"]);
+    let mut driver = ManualTimeInputDriver::new(shared);
+    driver.attach(runtime.ingress()).unwrap();
+    driver.start().unwrap();
+    (runtime, driver, console)
+  }
+
+  fn load(runtime: &mut MechRuntime, send_expression: &str) {
+    let source = format!(r#"@out := console://console/output{{:write(line)}}
+@clock := time://clock/clock{{:read(unix-ms), :read(hour), :read(minute), :read(second), :read(millisecond)}}
+unix-ms := @clock/unix-ms
+hour := @clock/hour
+minute := @clock/minute
+second := @clock/second
+millisecond := @clock/millisecond
+scalar-output := hour + minute
+clock-output := (hour, minute, second)
+@out/line <- {send_expression}
+"#);
+    runtime.run_string(&source).unwrap();
+  }
+
+  fn publish(runtime: &mut MechRuntime, driver: &ManualTimeInputDriver, snapshot: TimeSnapshot) {
+    driver.publish(snapshot).unwrap();
+    let outcomes = runtime.drain_host_inputs(1).unwrap();
+    assert_eq!(outcomes.len(), 1);
+  }
+
+  #[test]
+  fn persistent_send_initial_evaluation_sends_once() {
+    let (mut runtime, _driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "scalar-output");
+    assert_eq!(console.lines().len(), 1);
+    assert_eq!(runtime.persistent_send_count(), 1);
+  }
+
+  #[test]
+  fn persistent_send_one_packet_sends_once_more_with_changed_value() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "scalar-output");
+    let initial = console.lines();
+    publish(&mut runtime, &driver, snapshot(5.0, 6.0, 7.0, 8.0));
+    let lines = console.lines();
+    assert_eq!(lines.len(), 2);
+    assert_ne!(lines[1], initial[0]);
+  }
+
+  #[test]
+  fn persistent_send_two_packets_produce_two_additional_values_in_order() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 1.0, 1.0, 0.0), false);
+    load(&mut runtime, "scalar-output");
+    publish(&mut runtime, &driver, snapshot(2.0, 3.0, 0.0, 0.0));
+    publish(&mut runtime, &driver, snapshot(4.0, 5.0, 0.0, 0.0));
+    let lines = console.lines();
+    assert_eq!(lines.len(), 3);
+    assert_ne!(lines[1], lines[2]);
+  }
+
+  #[test]
+  fn persistent_send_logical_packet_with_five_fields_sends_once() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "clock-output");
+    publish(&mut runtime, &driver, snapshot(5.0, 6.0, 7.0, 8.0));
+    assert_eq!(console.lines().len(), 2);
+  }
+
+  #[test]
+  fn persistent_send_scalar_reads_new_value_after_solve() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "scalar-output");
+    publish(&mut runtime, &driver, snapshot(10.0, 20.0, 0.0, 0.0));
+    let lines = console.lines();
+    assert!(lines[1].contains("30"), "expected updated scalar in {:?}", lines);
+  }
+
+  #[test]
+  fn persistent_send_tuple_reads_new_values_after_solve() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "clock-output");
+    publish(&mut runtime, &driver, snapshot(10.0, 20.0, 30.0, 40.0));
+    let lines = console.lines();
+    assert!(lines[1].contains("10"), "expected updated tuple in {:?}", lines);
+    assert!(lines[1].contains("20"), "expected updated tuple in {:?}", lines);
+    assert!(lines[1].contains("30"), "expected updated tuple in {:?}", lines);
+  }
+
+  #[test]
+  fn persistent_send_provider_failure_returns_from_drain() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "scalar-output");
+    console.fail_next("expected drain failure");
+    driver.publish(snapshot(5.0, 6.0, 7.0, 8.0)).unwrap();
+    let err = runtime.drain_host_inputs(1).unwrap_err();
+    assert!(format!("{err:?}").contains("expected drain failure"));
+  }
+
+  #[test]
+  fn persistent_send_replay_does_not_register_another_send() {
+    let (mut runtime, driver, _console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    load(&mut runtime, "scalar-output");
+    assert_eq!(runtime.persistent_send_count(), 1);
+    publish(&mut runtime, &driver, snapshot(5.0, 6.0, 7.0, 8.0));
+    assert_eq!(runtime.persistent_send_count(), 1);
+  }
+}

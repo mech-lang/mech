@@ -289,9 +289,6 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 }
 
 fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {
-    const MAX_DRAIN_PER_TURN: usize = 64;
-    const IDLE_SLEEP: Duration = Duration::from_millis(10);
-
     let stop = Arc::new(AtomicBool::new(false));
     let stop_for_handler = Arc::clone(&stop);
     ctrlc::set_handler(move || {
@@ -299,6 +296,20 @@ fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {
     }).map_err(|error| MechError::new(CliRunError { operation: "ctrlc_handler".to_string(), reason: error.to_string() }, None))?;
 
     runtime.start_input_drivers()?;
+    let run_result = run_live_loop(runtime, &stop);
+    let shutdown_result = runtime.shutdown();
+
+    match (run_result, shutdown_result) {
+        (Err(error), _) => Err(error),
+        (Ok(()), Err(error)) => Err(error),
+        (Ok(()), Ok(())) => Ok(()),
+    }
+}
+
+fn run_live_loop(runtime: &mut mech_runtime::MechRuntime, stop: &AtomicBool) -> MResult<()> {
+    const MAX_DRAIN_PER_TURN: usize = 64;
+    const IDLE_SLEEP: Duration = Duration::from_millis(10);
+
     while !stop.load(Ordering::SeqCst) {
         if runtime.pending_host_input_count()? == 0 {
             std::thread::sleep(IDLE_SLEEP);
@@ -306,7 +317,7 @@ fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {
         }
         runtime.drain_host_inputs(MAX_DRAIN_PER_TURN)?;
     }
-    runtime.shutdown()
+    Ok(())
 }
 
 #[cfg(test)]

@@ -1,5 +1,0 @@
-@out := cli://stdout{:write(line)}
-
-clock-output := (clock-hour, clock-minute, clock-second)
-
-@out/line <- clock-output
