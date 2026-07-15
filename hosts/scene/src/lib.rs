@@ -16,7 +16,7 @@ pub use schema::{CircleElement, LineElement, SceneSnapshot};
 #[cfg(feature = "browser")]
 pub use browser::{BrowserSceneBackend, BrowserSceneHostFactory, BrowserSceneRegistry};
 #[cfg(feature = "native")]
-pub use native::{NativeSceneBackend, NativeSceneHostFactory};
+pub use native::{NativeSceneBackend, NativeSceneHostFactory, NativeSceneRegistry};
 
 use mech_core::{MechError, MechErrorKind};
 

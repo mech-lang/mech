@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use mech_core::{MechRecord, MechTuple, Ref, Value};
+use mech_core::{MechRecord, MechTable, MechTuple, Ref, Value};
 use mech_host_scene::*;
 use mech_runtime::{
     ConfigValue, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeResourceProvider,
@@ -18,6 +18,16 @@ fn record(fields: Vec<(&str, Value)>) -> Value {
 }
 fn tuple(values: Vec<Value>) -> Value {
     Value::Tuple(Ref::new(MechTuple::from_vec(values)))
+}
+fn table(records: Vec<Value>) -> Value {
+    let records: Vec<MechRecord> = records
+        .into_iter()
+        .map(|value| match value {
+            Value::Record(record) => record.borrow().clone(),
+            other => panic!("expected record, got {other:?}"),
+        })
+        .collect();
+    Value::Table(Ref::new(MechTable::from_records(records).unwrap()))
 }
 
 fn settings(renderer: &str) -> ConfigValue {
@@ -149,6 +159,229 @@ fn invalid_opacity() {
 }
 
 #[test]
+fn valid_empty_circle_table() {
+    let base = match table(vec![circle("template")]) {
+        Value::Table(table) => table.borrow().empty_table(0),
+        _ => unreachable!(),
+    };
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", Value::Table(Ref::new(base))),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 0);
+}
+
+#[test]
+fn valid_single_circle_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![circle("c1")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 1);
+}
+
+#[test]
+fn valid_many_circle_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![circle("c1"), circle("c2")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 2);
+}
+
+#[test]
+fn valid_many_line_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", table(vec![line("l1"), line("l2")])),
+    ]);
+    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().lines.len(), 2);
+}
+
+#[test]
+fn table_columns_may_be_reordered() {
+    let circle = record(vec![
+        ("opacity", f(1.0)),
+        ("stroke-width", f(0.0)),
+        ("stroke", s("none")),
+        ("fill", s("red")),
+        ("radius", f(3.0)),
+        ("y", f(2.0)),
+        ("x", f(1.0)),
+        ("id", s("c1")),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![circle])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles[0].id, "c1");
+}
+
+#[test]
+fn table_missing_column_is_rejected() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![record(vec![("id", s("c1"))])])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn table_unknown_column_is_rejected() {
+    let bad = record(vec![
+        ("id", s("c1")),
+        ("x", f(1.0)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+        ("extra", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn table_column_length_mismatch_is_rejected() {
+    let mut table = match table(vec![circle("c1")]) {
+        Value::Table(table) => table.borrow().clone(),
+        _ => unreachable!(),
+    };
+    table.rows = 2;
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", Value::Table(Ref::new(table))),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn table_error_identifies_row_and_column() {
+    let bad = record(vec![
+        ("id", s("c1")),
+        ("x", f(f64::NAN)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    let err = format!("{:?}", SceneSnapshot::from_value(&scene).unwrap_err());
+    assert!(err.contains("row 1"));
+    assert!(err.contains("x"));
+}
+
+#[test]
+fn tuple_unknown_field_is_rejected() {
+    let bad = record(vec![
+        ("id", s("c1")),
+        ("x", f(1.0)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+        ("extra", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn empty_element_id_is_rejected() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![circle("")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn non_finite_scene_number_is_rejected() {
+    let scene = record(vec![
+        ("width", f(f64::INFINITY)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn invalid_line_cap_is_rejected() {
+    let bad = record(vec![
+        ("id", s("l1")),
+        ("x1", f(0.0)),
+        ("y1", f(0.0)),
+        ("x2", f(1.0)),
+        ("y2", f(1.0)),
+        ("stroke", s("red")),
+        ("stroke-width", f(1.0)),
+        ("line-cap", s("invalid")),
+        ("opacity", f(1.0)),
+        ("rotation", f(45.0)),
+        ("origin-x", f(0.0)),
+        ("origin-y", f(0.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![bad])),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
 fn unknown_renderer() {
     assert!(scene_settings_from_config(&settings("webgl")).is_err());
 }
@@ -221,8 +454,56 @@ fn latest_scene_replaces_older_scene() {
 #[cfg(feature = "native")]
 #[test]
 fn native_recording_backend_retains_latest_complete_scene() {
-    let backend = RecordingSceneBackend::new();
-    let factory = SceneHostFactory::with_backend(backend.clone()).unwrap();
+    let factory = NativeSceneHostFactory::new().unwrap();
     let installation = factory.instantiate("view", &settings("svg")).unwrap();
     assert_eq!(installation.resource_providers.len(), 1);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_scene_instances_are_isolated() {
+    let factory = NativeSceneHostFactory::new().unwrap();
+    let registry = factory.registry();
+    let mut main = factory
+        .instantiate("main", &settings("svg"))
+        .unwrap()
+        .resource_providers
+        .remove(0);
+    let mut hud = factory
+        .instantiate("hud", &settings("svg"))
+        .unwrap()
+        .resource_providers
+        .remove(0);
+    main.write(RuntimeResourceWriteRequest {
+        base_uri: "scene://main/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "view".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("circles", tuple(vec![])),
+            ("lines", tuple(vec![])),
+        ]),
+    })
+    .unwrap();
+    hud.write(RuntimeResourceWriteRequest {
+        base_uri: "scene://hud/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "view".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: record(vec![
+            ("width", f(200.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("circles", tuple(vec![])),
+            ("lines", tuple(vec![])),
+        ]),
+    })
+    .unwrap();
+    assert_eq!(registry.latest("main").unwrap().width, 100.0);
+    assert_eq!(registry.latest("hud").unwrap().width, 200.0);
 }

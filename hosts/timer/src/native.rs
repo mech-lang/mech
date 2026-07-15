@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
@@ -15,6 +16,7 @@ use crate::{
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config,
 };
+use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 
 #[derive(Clone, Debug)]
 pub struct NativeMonotonicTimerBackend {
@@ -38,6 +40,7 @@ pub struct NativeTimerInputDriver<B: MonotonicTimerBackend + Send + Sync> {
     backend: B,
     scheduler: Arc<Mutex<FixedStepScheduler>>,
     snapshot: SharedTimerSnapshot,
+    pending: Arc<Mutex<VecDeque<TimerSnapshot>>>,
     ingress: Arc<Mutex<Option<RuntimeIngress>>>,
     live: Arc<AtomicBool>,
     worker: Arc<Mutex<Option<JoinHandle<()>>>>,
@@ -63,6 +66,7 @@ impl<B: MonotonicTimerBackend + Send + Sync> NativeTimerInputDriver<B> {
             backend,
             scheduler: Arc::new(Mutex::new(scheduler)),
             snapshot,
+            pending: Arc::new(Mutex::new(VecDeque::new())),
             ingress: Arc::new(Mutex::new(None)),
             live: Arc::new(AtomicBool::new(false)),
             worker: Arc::new(Mutex::new(None)),
@@ -128,41 +132,84 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         let backend = self.backend.clone();
         let scheduler = self.scheduler.clone();
         let snapshot = self.snapshot.clone();
+        let pending = self.pending.clone();
         let instance = self.instance.clone();
         *worker_guard = Some(thread::spawn(move || {
             while live.load(Ordering::SeqCst) {
-                if let Ok(now) = backend.now_ms() {
-                    let emissions = scheduler
-                        .lock()
-                        .ok()
-                        .map(|mut s| s.due_steps(now))
-                        .unwrap_or_default();
-                    for emission in emissions {
-                        if let Ok(mut guard) = snapshot.lock() {
-                            *guard = emission.snapshot;
-                        }
-                        match emission
-                            .snapshot
-                            .into_host_input(&instance)
-                            .and_then(|p| ingress.submit(p))
-                        {
-                            Ok(()) => {}
-                            Err(err) if err.kind_name() == "RuntimeIngressFull" => {}
-                            Err(err) if err.kind_name() == "RuntimeIngressClosed" => {
-                                live.store(false, Ordering::SeqCst);
-                                break;
-                            }
-                            Err(_) => {
-                                live.store(false, Ordering::SeqCst);
-                                break;
-                            }
+                let state = pending
+                    .lock()
+                    .map_err(|_| ())
+                    .and_then(|mut pending| {
+                        submit_pending_timer_snapshots(
+                            &instance,
+                            Some(&ingress),
+                            &snapshot,
+                            &mut pending,
+                        )
+                        .map(|(_, state)| state)
+                        .map_err(|_| ())
+                    });
+                match state {
+                    Ok(TimerSubmitState::Drained) => {}
+                    Ok(TimerSubmitState::Full) => {
+                        let wait = scheduler
+                            .lock()
+                            .ok()
+                            .and_then(|s| backend.now_ms().ok().map(|now| native_wait_duration(&s, now)))
+                            .unwrap_or_else(|| Duration::from_millis(1));
+                        match stop_receiver.recv_timeout(wait) {
+                            Ok(()) | Err(RecvTimeoutError::Disconnected) => break,
+                            Err(RecvTimeoutError::Timeout) => continue,
                         }
                     }
+                    Ok(TimerSubmitState::Closed) => {
+                        live.store(false, Ordering::SeqCst);
+                        break;
+                    }
+                    Err(()) => {
+                        live.store(false, Ordering::SeqCst);
+                        break;
+                    }
+                }
+
+                let Ok(now) = backend.now_ms() else {
+                    live.store(false, Ordering::SeqCst);
+                    break;
+                };
+                let emissions = scheduler
+                    .lock()
+                    .ok()
+                    .map(|mut s| s.due_steps(now))
+                    .unwrap_or_default();
+                if let Ok(mut pending) = pending.lock() {
+                    pending.extend(emissions.into_iter().map(|e| e.snapshot));
                 } else {
                     live.store(false, Ordering::SeqCst);
                     break;
                 }
-                match stop_receiver.recv_timeout(Duration::from_millis(1)) {
+                let state = pending
+                    .lock()
+                    .map_err(|_| ())
+                    .and_then(|mut pending| {
+                        submit_pending_timer_snapshots(
+                            &instance,
+                            Some(&ingress),
+                            &snapshot,
+                            &mut pending,
+                        )
+                        .map(|(_, state)| state)
+                        .map_err(|_| ())
+                    });
+                if matches!(state, Ok(TimerSubmitState::Closed) | Err(())) {
+                    live.store(false, Ordering::SeqCst);
+                    break;
+                }
+                let wait = scheduler
+                    .lock()
+                    .ok()
+                    .map(|s| native_wait_duration(&s, now))
+                    .unwrap_or_else(|| Duration::from_millis(1));
+                match stop_receiver.recv_timeout(wait) {
                     Ok(()) | Err(RecvTimeoutError::Disconnected) => break,
                     Err(RecvTimeoutError::Timeout) => {}
                 }
@@ -199,6 +246,11 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
     fn is_live(&self) -> bool {
         self.live.load(Ordering::SeqCst)
     }
+}
+
+pub fn native_wait_duration(scheduler: &FixedStepScheduler, now_ms: f64) -> Duration {
+    let millis = scheduler.time_until_next_boundary(now_ms).clamp(1.0, 1000.0);
+    Duration::from_millis(millis.ceil() as u64)
 }
 impl<B: MonotonicTimerBackend + Send + Sync> Drop for NativeTimerInputDriver<B> {
     fn drop(&mut self) {

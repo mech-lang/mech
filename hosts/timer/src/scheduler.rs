@@ -38,6 +38,18 @@ impl FixedStepScheduler {
     pub fn current_snapshot(&self) -> TimerSnapshot {
         TimerSnapshot::new(self.tick, self.frequency_hz, self.skipped_steps)
     }
+    pub fn delta_ms(&self) -> f64 {
+        self.delta_ms
+    }
+    pub fn next_deadline_ms(&self) -> Option<f64> {
+        self.start_ms.map(|_| self.next_boundary_ms)
+    }
+    pub fn time_until_next_boundary(&self, now_ms: f64) -> f64 {
+        match self.next_deadline_ms() {
+            Some(deadline) => (deadline - now_ms).max(0.0),
+            None => 0.0,
+        }
+    }
 
     pub fn reset(&mut self) {
         self.start_ms = None;
@@ -67,6 +79,22 @@ impl FixedStepScheduler {
 
         let mut emissions = Vec::with_capacity(emit as usize);
         for _ in 0..emit {
+            self.tick += 1;
+            self.next_boundary_ms += self.delta_ms;
+            emissions.push(SchedulerEmission {
+                snapshot: self.current_snapshot(),
+            });
+        }
+        emissions
+    }
+
+    pub fn emit_exact_steps(&mut self, count: usize) -> Vec<SchedulerEmission> {
+        let mut emissions = Vec::with_capacity(count);
+        if self.start_ms.is_none() {
+            self.start_ms = Some(0.0);
+            self.next_boundary_ms = self.delta_ms;
+        }
+        for _ in 0..count {
             self.tick += 1;
             self.next_boundary_ms += self.delta_ms;
             emissions.push(SchedulerEmission {

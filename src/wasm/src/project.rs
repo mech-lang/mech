@@ -27,11 +27,10 @@ pub struct WasmProject {
 impl WasmProject {
     #[wasm_bindgen(js_name = requiredPaths)]
     pub fn required_paths(config_source: &str) -> Result<Array, JsValue> {
-        let document = parse_project_config(config_source)?;
-        let run = require_run(&document).map_err(to_js_error)?;
+        let paths = required_path_strings(config_source).map_err(to_js_error)?;
         let out = Array::new();
-        for path in &run.paths {
-            out.push(&JsValue::from_str(&path.to_string_lossy()));
+        for path in paths {
+            out.push(&JsValue::from_str(&path));
         }
         Ok(out)
     }
@@ -126,6 +125,19 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
         ConfigProfileOptions::default(),
     )
     .map_err(to_js_error)
+}
+fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
+    let document = parse_config_document(
+        "browser-project/mech.mcfg",
+        source,
+        ConfigProfileOptions::default(),
+    )?;
+    let run = require_run(&document)?;
+    Ok(run
+        .paths
+        .iter()
+        .map(|path| path.to_string_lossy().to_string())
+        .collect())
 }
 fn build_runtime(
     document: &MechConfigDocument,
@@ -236,4 +248,143 @@ fn js_error(message: impl Into<String>) -> JsValue {
 }
 fn to_js_error(error: MechError) -> JsValue {
     js_error(format!("{error:?}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const CONFIG: &str = r#"config := {
+  hosts: []
+  run: {
+    paths: ["a.mec" "b.mec"]
+    grants: []
+  }
+}"#;
+
+    #[test]
+    fn required_paths_returns_configured_paths() {
+        assert_eq!(
+            required_path_strings(CONFIG).unwrap(),
+            vec!["a.mec".to_string(), "b.mec".to_string()]
+        );
+    }
+
+    #[test]
+    fn required_paths_rejects_missing_run() {
+        assert!(required_path_strings("config := { hosts: [] }").is_err());
+    }
+
+    #[test]
+    fn required_paths_rejects_empty_paths() {
+        let config = r#"config := { hosts: [] run: { paths: [] grants: [] } }"#;
+        assert!(required_path_strings(config).is_err());
+    }
+
+    #[test]
+    fn from_sources_executes_paths_in_order() {
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        let document = parse_config_document(
+            "test.mcfg",
+            CONFIG,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let mut sources = HashMap::new();
+        sources.insert("a.mec".to_string(), "x := 1".to_string());
+        sources.insert("b.mec".to_string(), "y := 2".to_string());
+        run_project_sources(&mut runtime, &document, &sources).unwrap();
+    }
+
+    #[test]
+    fn from_sources_rejects_missing_source() {
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        let document = parse_config_document(
+            "test.mcfg",
+            CONFIG,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let sources = HashMap::new();
+        assert!(run_project_sources(&mut runtime, &document, &sources).is_err());
+    }
+}
+
+#[cfg(all(test, target_arch = "wasm32"))]
+mod browser_tests {
+    use super::*;
+    use js_sys::Object;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
+    fn generic_project_starts_and_stops_idempotently() {
+        let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str("x := 1"),
+        )
+        .unwrap();
+        let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
+        project.start().unwrap();
+        project.start().unwrap();
+        project.stop().unwrap();
+        project.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn generic_project_frame_respects_input_bound() {
+        let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str("x := 1"),
+        )
+        .unwrap();
+        let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
+        assert!(project.frame(1).is_ok());
+    }
+
+    #[wasm_bindgen_test]
+    fn generic_project_frame_reports_pending_inputs() {
+        let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str("x := 1"),
+        )
+        .unwrap();
+        let project = WasmProject::from_sources(config, sources.into()).unwrap();
+        assert_eq!(project.pending_inputs().unwrap(), 0);
+    }
+
+    #[wasm_bindgen_test]
+    fn generic_project_frame_renders_latest_scene() {
+        let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str("x := 1"),
+        )
+        .unwrap();
+        let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
+        let result = project.frame(1).unwrap();
+        assert_eq!(Reflect::get(&result, &JsValue::from_str("rendered")).unwrap().as_f64(), Some(0.0));
+    }
+
+    #[wasm_bindgen_test]
+    fn generic_project_with_time_console_and_scene_runs_clock_source() {
+        assert!(required_path_strings(include_str!("../../../examples/analog-clock/mech.mcfg")).is_ok());
+    }
+
+    #[wasm_bindgen_test]
+    fn generic_project_with_timer_and_scene_runs_fixed_step_fixture() {
+        assert!(required_path_strings(include_str!("../tests/fixtures/fixed-step-scene/mech.mcfg")).is_ok());
+    }
 }

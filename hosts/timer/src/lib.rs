@@ -1,4 +1,5 @@
 pub mod config;
+mod delivery;
 pub mod manual;
 pub mod module;
 pub mod provider;

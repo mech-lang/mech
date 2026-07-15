@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::MResult;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{CanvasRenderingContext2d, Element, HtmlCanvasElement};
+use web_sys::{CanvasRenderingContext2d, Element, HtmlCanvasElement, SvgsvgElement};
 
 use crate::{SceneBackend, SceneHostSettings, SceneRendererKind, SceneSnapshot, scene_error};
 
@@ -19,6 +19,15 @@ struct BrowserSceneTarget {
     latest: Option<SceneSnapshot>,
     generation: u64,
     rendered_generation: u64,
+}
+
+#[derive(Clone, Debug)]
+struct RenderJob {
+    instance: String,
+    selector: String,
+    renderer: SceneRendererKind,
+    generation: u64,
+    scene: SceneSnapshot,
 }
 
 impl BrowserSceneRegistry {
@@ -61,22 +70,43 @@ impl BrowserSceneRegistry {
         Ok(())
     }
     pub fn render_frame(&self) -> MResult<u32> {
+        let jobs = {
+            let guard = self.targets.lock().map_err(|_| {
+                scene_error("BrowserSceneRegistry", "scene registry lock is poisoned")
+            })?;
+            guard
+                .iter()
+                .filter_map(|(instance, target)| {
+                    let scene = target.latest.clone()?;
+                    if target.rendered_generation == target.generation {
+                        return None;
+                    }
+                    Some(RenderJob {
+                        instance: instance.clone(),
+                        selector: target.selector.clone(),
+                        renderer: target.renderer,
+                        generation: target.generation,
+                        scene,
+                    })
+                })
+                .collect::<Vec<_>>()
+        };
+
         let mut rendered = 0;
-        let mut guard = self
-            .targets
-            .lock()
-            .map_err(|_| scene_error("BrowserSceneRegistry", "scene registry lock is poisoned"))?;
-        for target in guard.values_mut() {
-            if target.latest.is_none() || target.rendered_generation == target.generation {
-                continue;
+        for job in jobs {
+            match job.renderer {
+                SceneRendererKind::Canvas => render_canvas(&job.selector, &job.scene)?,
+                SceneRendererKind::Svg => render_svg(&job.selector, &job.scene)?,
             }
-            let scene = target.latest.clone().unwrap();
-            match target.renderer {
-                SceneRendererKind::Canvas => render_canvas(&target.selector, &scene)?,
-                SceneRendererKind::Svg => render_svg(&target.selector, &scene)?,
+            let mut guard = self.targets.lock().map_err(|_| {
+                scene_error("BrowserSceneRegistry", "scene registry lock is poisoned")
+            })?;
+            if let Some(target) = guard.get_mut(&job.instance) {
+                if target.generation == job.generation {
+                    target.rendered_generation = job.generation;
+                    rendered += 1;
+                }
             }
-            target.rendered_generation = target.generation;
-            rendered += 1;
         }
         Ok(rendered)
     }
@@ -187,8 +217,22 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     let window =
         web_sys::window().ok_or_else(|| scene_error("BrowserScene", "window unavailable"))?;
     let ratio = window.device_pixel_ratio();
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return Err(scene_error(
+            "BrowserScene",
+            "devicePixelRatio must be finite and positive",
+        ));
+    }
     canvas.set_width((scene.width * ratio).round() as u32);
     canvas.set_height((scene.height * ratio).round() as u32);
+    canvas
+        .style()
+        .set_property("width", &format!("{}px", scene.width))
+        .map_err(|_| scene_error("BrowserScene", "failed to set canvas CSS width"))?;
+    canvas
+        .style()
+        .set_property("height", &format!("{}px", scene.height))
+        .map_err(|_| scene_error("BrowserScene", "failed to set canvas CSS height"))?;
     let ctx: CanvasRenderingContext2d = canvas
         .get_context("2d")
         .map_err(|_| scene_error("BrowserScene", "canvas getContext failed"))?
@@ -221,9 +265,12 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         ctx.set_stroke_style(&JsValue::from_str(&l.stroke));
         ctx.set_line_width(l.stroke_width);
         ctx.set_line_cap(&l.line_cap);
-        ctx.translate(l.origin_x, l.origin_y).ok();
-        ctx.rotate(l.rotation.to_radians()).ok();
-        ctx.translate(-l.origin_x, -l.origin_y).ok();
+        ctx.translate(l.origin_x, l.origin_y)
+            .map_err(|_| scene_error("BrowserScene", format!("failed to translate line `{}`", l.id)))?;
+        ctx.rotate(l.rotation.to_radians())
+            .map_err(|_| scene_error("BrowserScene", format!("failed to rotate line `{}`", l.id)))?;
+        ctx.translate(-l.origin_x, -l.origin_y)
+            .map_err(|_| scene_error("BrowserScene", format!("failed to restore line `{}` translation", l.id)))?;
         ctx.begin_path();
         ctx.move_to(l.x1, l.y1);
         ctx.line_to(l.x2, l.y2);
@@ -235,7 +282,13 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
 }
 
 fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
-    let root = selected(selector)?;
+    let root: SvgsvgElement = selected(selector)?.dyn_into().map_err(|_| {
+        scene_error(
+            "BrowserScene",
+            format!("selector `{selector}` is not an SVG root"),
+        )
+    })?;
+    let root: Element = root.into();
     root.set_attribute("viewBox", &format!("0 0 {} {}", scene.width, scene.height))
         .map_err(|_| scene_error("BrowserScene", "failed to set svg viewBox"))?;
     let doc = document()?;
@@ -248,32 +301,30 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     for c in &scene.circles {
         keep.insert(c.id.clone());
         let el = upsert(&doc, &root, ns, "circle", &c.id)?;
-        el.set_attribute("cx", &c.x.to_string()).ok();
-        el.set_attribute("cy", &c.y.to_string()).ok();
-        el.set_attribute("r", &c.radius.to_string()).ok();
-        el.set_attribute("fill", &c.fill).ok();
-        el.set_attribute("stroke", &c.stroke).ok();
-        el.set_attribute("stroke-width", &c.stroke_width.to_string())
-            .ok();
-        el.set_attribute("opacity", &c.opacity.to_string()).ok();
+        set_attr(&el, "cx", &c.x.to_string())?;
+        set_attr(&el, "cy", &c.y.to_string())?;
+        set_attr(&el, "r", &c.radius.to_string())?;
+        set_attr(&el, "fill", &c.fill)?;
+        set_attr(&el, "stroke", &c.stroke)?;
+        set_attr(&el, "stroke-width", &c.stroke_width.to_string())?;
+        set_attr(&el, "opacity", &c.opacity.to_string())?;
     }
     for l in &scene.lines {
         keep.insert(l.id.clone());
         let el = upsert(&doc, &root, ns, "line", &l.id)?;
-        el.set_attribute("x1", &l.x1.to_string()).ok();
-        el.set_attribute("y1", &l.y1.to_string()).ok();
-        el.set_attribute("x2", &l.x2.to_string()).ok();
-        el.set_attribute("y2", &l.y2.to_string()).ok();
-        el.set_attribute("stroke", &l.stroke).ok();
-        el.set_attribute("stroke-width", &l.stroke_width.to_string())
-            .ok();
-        el.set_attribute("stroke-linecap", &l.line_cap).ok();
-        el.set_attribute("opacity", &l.opacity.to_string()).ok();
-        el.set_attribute(
+        set_attr(&el, "x1", &l.x1.to_string())?;
+        set_attr(&el, "y1", &l.y1.to_string())?;
+        set_attr(&el, "x2", &l.x2.to_string())?;
+        set_attr(&el, "y2", &l.y2.to_string())?;
+        set_attr(&el, "stroke", &l.stroke)?;
+        set_attr(&el, "stroke-width", &l.stroke_width.to_string())?;
+        set_attr(&el, "stroke-linecap", &l.line_cap)?;
+        set_attr(&el, "opacity", &l.opacity.to_string())?;
+        set_attr(
+            &el,
             "transform",
             &format!("rotate({} {} {})", l.rotation, l.origin_x, l.origin_y),
-        )
-        .ok();
+        )?;
     }
     for i in 0..list.length() {
         if let Some(node) = list.item(i) {
@@ -294,19 +345,38 @@ fn upsert(
     tag: &str,
     id: &str,
 ) -> MResult<Element> {
-    let selector = format!("[data-mech-scene-id=\"{}\"]", id);
-    if let Some(el) = root
-        .query_selector(&selector)
-        .map_err(|_| scene_error("BrowserScene", "failed to query svg element"))?
-    {
-        return Ok(el);
+    let managed = root
+        .query_selector_all("[data-mech-scene=\"true\"]")
+        .map_err(|_| scene_error("BrowserScene", "failed to query managed svg elements"))?;
+    for index in 0..managed.length() {
+        if let Some(node) = managed.item(index) {
+            if let Ok(el) = node.dyn_into::<Element>() {
+                if el.get_attribute("data-mech-scene-id").as_deref() == Some(id) {
+                    let existing_tag = el.tag_name().to_ascii_lowercase();
+                    if existing_tag == tag {
+                        return Ok(el);
+                    }
+                    el.remove();
+                    break;
+                }
+            }
+        }
     }
     let el = doc
         .create_element_ns(ns, tag)
         .map_err(|_| scene_error("BrowserScene", format!("failed to create svg `{tag}`")))?;
-    el.set_attribute("data-mech-scene", "true").ok();
-    el.set_attribute("data-mech-scene-id", id).ok();
+    set_attr(&el, "data-mech-scene", "true")?;
+    set_attr(&el, "data-mech-scene-id", id)?;
     root.append_child(&el)
         .map_err(|_| scene_error("BrowserScene", "failed to append svg element"))?;
     Ok(el)
+}
+
+fn set_attr(el: &Element, name: &str, value: &str) -> MResult<()> {
+    el.set_attribute(name, value).map_err(|_| {
+        scene_error(
+            "BrowserScene",
+            format!("failed to set svg attribute `{name}`"),
+        )
+    })
 }

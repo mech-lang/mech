@@ -1,8 +1,27 @@
 import init, { WasmProject } from '../pkg/mech_wasm.js';
 
-const script = document.currentScript;
-const projectBase = new URL(script?.dataset?.mechProject || '.', window.location.href);
-const maxInputsPerFrame = Number.parseInt(script?.dataset?.mechMaxInputs || '8', 10);
+export function findBootstrapScript(ownerDocument, moduleUrl) {
+  const resolvedModuleUrl = new URL(moduleUrl, ownerDocument.baseURI).href;
+  for (const candidate of ownerDocument.querySelectorAll('script[type="module"][src]')) {
+    if (new URL(candidate.getAttribute('src'), ownerDocument.baseURI).href === resolvedModuleUrl) {
+      return candidate;
+    }
+  }
+  throw new Error(`unable to find mech browser bootstrap script for ${resolvedModuleUrl}`);
+}
+
+export function readBootstrapOptions(script, locationUrl) {
+  const projectBase = new URL(script.dataset.mechProject || '.', locationUrl);
+  const rawMaxInputs = script.dataset.mechMaxInputs || '8';
+  const maxInputsPerFrame = Number.parseInt(rawMaxInputs, 10);
+  if (!Number.isFinite(maxInputsPerFrame) || maxInputsPerFrame <= 0 || `${maxInputsPerFrame}` !== rawMaxInputs.trim()) {
+    throw new Error('data-mech-max-inputs must be a positive integer');
+  }
+  return { projectBase, maxInputsPerFrame };
+}
+
+const script = findBootstrapScript(document, import.meta.url);
+const { projectBase, maxInputsPerFrame } = readBootstrapOptions(script, window.location.href);
 let project;
 let running = false;
 
@@ -15,9 +34,6 @@ async function fetchText(path) {
 }
 
 async function main() {
-  if (!Number.isFinite(maxInputsPerFrame) || maxInputsPerFrame <= 0) {
-    throw new Error('data-mech-max-inputs must be a positive integer');
-  }
   await init();
   const config = await fetchText('mech.mcfg');
   const paths = WasmProject.requiredPaths(config);

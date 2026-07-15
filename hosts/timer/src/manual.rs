@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
 use mech_core::MResult;
@@ -7,6 +8,7 @@ use crate::{
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerSnapshot,
     new_shared_snapshot, timer_error,
 };
+use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 
 #[derive(Clone, Debug, Default)]
 pub struct ManualMonotonicTimerBackend {
@@ -55,6 +57,7 @@ pub struct ManualTimerInputDriver {
     scheduler: FixedStepScheduler,
     snapshot: SharedTimerSnapshot,
     ingress: Option<RuntimeIngress>,
+    pending: VecDeque<TimerSnapshot>,
     live: bool,
 }
 
@@ -79,6 +82,7 @@ impl ManualTimerInputDriver {
             scheduler: FixedStepScheduler::new(frequency_hz, max_catch_up_steps),
             snapshot: new_shared_snapshot(TimerSnapshot::new(0, frequency_hz, 0)),
             ingress: None,
+            pending: VecDeque::new(),
             live: false,
         }
     }
@@ -92,62 +96,44 @@ impl ManualTimerInputDriver {
         self.backend.advance_ms(delta_ms)
     }
     pub fn publish_due_steps(&mut self) -> MResult<usize> {
+        let mut submitted = self.flush_pending()?;
+        if !self.pending.is_empty() {
+            return Ok(submitted);
+        }
         let now = self.backend.now_ms()?;
-        let emissions = self.scheduler.due_steps(now);
-        self.publish_emissions(emissions)
+        self.pending
+            .extend(self.scheduler.due_steps(now).into_iter().map(|e| e.snapshot));
+        submitted += self.flush_pending()?;
+        Ok(submitted)
     }
     pub fn publish_steps(&mut self, count: usize) -> MResult<usize> {
-        let mut emitted = 0;
-        for _ in 0..count {
-            let next = self.scheduler.current_snapshot().tick + 1;
-            let frequency_hz =
-                (1000.0 / self.scheduler.current_snapshot().delta_ms.max(0.000001)).round() as u64;
-            let snap =
-                TimerSnapshot::new(next, frequency_hz.max(1), self.scheduler.skipped_steps());
-            if let Ok(mut guard) = self.snapshot.lock() {
-                *guard = snap;
-            }
-            if self.ingress.is_none() {
-                emitted += 1;
-                continue;
-            }
-            if let Some(ingress) = &self.ingress {
-                match ingress.submit(snap.into_host_input(&self.instance)?) {
-                    Ok(()) => emitted += 1,
-                    Err(err) if err.kind_name() == "RuntimeIngressFull" => {}
-                    Err(err) if err.kind_name() == "RuntimeIngressClosed" => {
-                        self.live = false;
-                        break;
-                    }
-                    Err(err) => return Err(err),
-                }
-            }
+        let mut submitted = self.flush_pending()?;
+        if !self.pending.is_empty() {
+            return Ok(submitted);
         }
-        Ok(emitted)
+        self.pending.extend(
+            self.scheduler
+                .emit_exact_steps(count)
+                .into_iter()
+                .map(|e| e.snapshot),
+        );
+        submitted += self.flush_pending()?;
+        Ok(submitted)
     }
-    fn publish_emissions(&mut self, emissions: Vec<crate::SchedulerEmission>) -> MResult<usize> {
-        let mut emitted = 0;
-        for emission in emissions {
-            if let Ok(mut guard) = self.snapshot.lock() {
-                *guard = emission.snapshot;
-            }
-            if self.ingress.is_none() {
-                emitted += 1;
-                continue;
-            }
-            if let Some(ingress) = &self.ingress {
-                match ingress.submit(emission.snapshot.into_host_input(&self.instance)?) {
-                    Ok(()) => emitted += 1,
-                    Err(err) if err.kind_name() == "RuntimeIngressFull" => {}
-                    Err(err) if err.kind_name() == "RuntimeIngressClosed" => {
-                        self.live = false;
-                        break;
-                    }
-                    Err(err) => return Err(err),
-                }
-            }
+    pub fn pending_emission_count(&self) -> usize {
+        self.pending.len()
+    }
+    fn flush_pending(&mut self) -> MResult<usize> {
+        let (submitted, state) = submit_pending_timer_snapshots(
+            &self.instance,
+            self.ingress.as_ref(),
+            &self.snapshot,
+            &mut self.pending,
+        )?;
+        if state == TimerSubmitState::Closed {
+            self.live = false;
         }
-        Ok(emitted)
+        Ok(submitted)
     }
 }
 

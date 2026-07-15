@@ -108,6 +108,11 @@ jobs:
           cargo test -p mech-host-timer --no-default-features --features native
           cargo test -p mech-host-scene
           cargo test -p mech-host-scene --no-default-features --features native
+          cargo test \
+            -p mech-wasm \
+            --no-default-features \
+            --features browser_project \
+            required_paths
 
       - name: Check browser host packages
         run: |
@@ -156,7 +161,15 @@ jobs:
             --no-default-features \
             --features browser_project \
             -- \
-            shared_config_clock_load_and_time_packet_write_console \
+            --list | grep 'generic_project_with_timer_and_scene_runs_fixed_step_fixture'
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features browser_project \
+            -- \
+            generic_project_with_timer_and_scene_runs_fixed_step_fixture \
             --nocapture
 
       - name: Run headless Chrome WASM tests
@@ -182,8 +195,8 @@ jobs:
         run: |
           test ! -f examples/analog-clock/clock.js
           ! rg -n \
-            "WasmAnalogClock|AnalogClockProjectError|CLOCK_PROJECT_SOURCES|clock-hour-angle|bouncing.?balls" \
-            src/wasm hosts/timer hosts/scene
+            "WasmAnalogClock|AnalogClockProjectError|CLOCK_PROJECT_SOURCES|analog_clock_demo|bouncing.?balls" \
+            src/wasm hosts/timer hosts/scene examples/common
           test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
 
       - name: Remove generated browser package

@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -14,6 +15,7 @@ use crate::{
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config,
 };
+use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BrowserMonotonicTimerBackend;
@@ -33,6 +35,7 @@ pub struct BrowserTimerInputDriver<B: MonotonicTimerBackend> {
     backend: B,
     scheduler: Arc<Mutex<FixedStepScheduler>>,
     snapshot: SharedTimerSnapshot,
+    pending: Arc<Mutex<VecDeque<TimerSnapshot>>>,
     ingress: Option<RuntimeIngress>,
     interval_handle: Option<i32>,
     closure: Option<Closure<dyn FnMut()>>,
@@ -58,6 +61,7 @@ impl<B: MonotonicTimerBackend> BrowserTimerInputDriver<B> {
             backend,
             scheduler: Arc::new(Mutex::new(scheduler)),
             snapshot,
+            pending: Arc::new(Mutex::new(VecDeque::new())),
             ingress: None,
             interval_handle: None,
             closure: None,
@@ -101,11 +105,33 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
         let backend = self.backend.clone();
         let scheduler = self.scheduler.clone();
         let snapshot = self.snapshot.clone();
+        let pending = self.pending.clone();
         let instance = self.instance.clone();
         let live = self.live.clone();
         let callback = Closure::wrap(Box::new(move || {
             if !live.load(Ordering::SeqCst) {
                 return;
+            }
+            let state = pending
+                .lock()
+                .map_err(|_| ())
+                .and_then(|mut pending| {
+                    submit_pending_timer_snapshots(
+                        &instance,
+                        Some(&ingress),
+                        &snapshot,
+                        &mut pending,
+                    )
+                    .map(|(_, state)| state)
+                    .map_err(|_| ())
+                });
+            match state {
+                Ok(TimerSubmitState::Drained) => {}
+                Ok(TimerSubmitState::Full) => return,
+                Ok(TimerSubmitState::Closed) | Err(()) => {
+                    live.store(false, Ordering::SeqCst);
+                    return;
+                }
             }
             let Ok(now) = backend.now_ms() else {
                 live.store(false, Ordering::SeqCst);
@@ -116,32 +142,38 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
                 .ok()
                 .map(|mut s| s.due_steps(now))
                 .unwrap_or_default();
-            for emission in emissions {
-                if let Ok(mut guard) = snapshot.lock() {
-                    *guard = emission.snapshot;
-                }
-                match emission
-                    .snapshot
-                    .into_host_input(&instance)
-                    .and_then(|p| ingress.submit(p))
-                {
-                    Ok(()) => {}
-                    Err(err) if err.kind_name() == "RuntimeIngressFull" => {}
-                    Err(err) if err.kind_name() == "RuntimeIngressClosed" => {
-                        live.store(false, Ordering::SeqCst);
-                        break;
-                    }
-                    Err(_) => {
-                        live.store(false, Ordering::SeqCst);
-                        break;
-                    }
-                }
+            if let Ok(mut pending) = pending.lock() {
+                pending.extend(emissions.into_iter().map(|e| e.snapshot));
+            } else {
+                live.store(false, Ordering::SeqCst);
+                return;
+            }
+            let state = pending
+                .lock()
+                .map_err(|_| ())
+                .and_then(|mut pending| {
+                    submit_pending_timer_snapshots(
+                        &instance,
+                        Some(&ingress),
+                        &snapshot,
+                        &mut pending,
+                    )
+                    .map(|(_, state)| state)
+                    .map_err(|_| ())
+                });
+            if matches!(state, Ok(TimerSubmitState::Closed) | Err(())) {
+                live.store(false, Ordering::SeqCst);
             }
         }) as Box<dyn FnMut()>);
+        let wake_interval_ms = self
+            .scheduler
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStart", "timer scheduler lock is poisoned"))
+            .map(|s| browser_wake_interval_ms(&s))?;
         let handle = window
             .set_interval_with_callback_and_timeout_and_arguments_0(
                 callback.as_ref().unchecked_ref(),
-                1,
+                wake_interval_ms,
             )
             .map_err(|_| {
                 timer_error("TimerDriverStart", "failed to start browser timer interval")
@@ -164,6 +196,10 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
     fn is_live(&self) -> bool {
         self.live.load(Ordering::SeqCst)
     }
+}
+
+pub fn browser_wake_interval_ms(scheduler: &FixedStepScheduler) -> i32 {
+    (scheduler.delta_ms() / 2.0).floor().clamp(1.0, 16.0) as i32
 }
 impl<B: MonotonicTimerBackend> Drop for BrowserTimerInputDriver<B> {
     fn drop(&mut self) {

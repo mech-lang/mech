@@ -20,4 +20,4 @@ mech-core = { version = "0.3.5", default-features = false, features = ["f64", "s
 mech-runtime = { version = "0.3.5", default-features = false, features = ["program", "f64", "string"] }
 wasm-bindgen = { version = "0.2.105", optional = true }
 js-sys = { version = "0.3.82", optional = true }
-web-sys = { version = "0.3.82", optional = true, features = ["Window", "Document", "Element", "HtmlCanvasElement", "CanvasRenderingContext2d", "SvgElement", "Node", "NodeList", "DomTokenList"] }
+web-sys = { version = "0.3.82", optional = true, features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "CanvasRenderingContext2d", "SvgElement", "SvgsvgElement", "Node", "NodeList", "DomTokenList", "CssStyleDeclaration"] }

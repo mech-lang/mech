@@ -5,7 +5,7 @@ use mech_core::Value;
 use mech_host_timer::*;
 use mech_runtime::{
     ConfigValue, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeResourceProvider,
-    RuntimeResourceReadRequest,
+    RuntimeResourceReadRequest, RuntimeBuilder,
 };
 
 fn settings(freq: i64, catch: i64) -> ConfigValue {
@@ -60,6 +60,33 @@ fn provider_reads_all_timer_fields() {
     }
 }
 
+fn snapshot_tick(snapshot: &SharedTimerSnapshot) -> u64 {
+    snapshot.lock().unwrap().tick
+}
+
+fn runtime_with_manual_timer(
+    capacity: usize,
+) -> (mech_runtime::MechRuntime, ManualTimerInputDriver, SharedTimerSnapshot) {
+    let runtime = RuntimeBuilder::new()
+        .host_input_capacity(capacity)
+        .resource_provider(Box::new(TimerResourceProvider::new(
+            "physics",
+            new_shared_snapshot(TimerSnapshot::new(0, 100, 0)),
+        )))
+        .build()
+        .unwrap();
+    let mut driver = ManualTimerInputDriver::with_backend(
+        "physics",
+        ManualMonotonicTimerBackend::new(),
+        100,
+        8,
+    );
+    driver.attach(runtime.ingress()).unwrap();
+    driver.start().unwrap();
+    let snapshot = driver.snapshot();
+    (runtime, driver, snapshot)
+}
+
 #[test]
 fn manual_timer_advance_publishes_due_steps_without_sleeping() {
     let mut driver = ManualTimerInputDriver::new("physics", 100, 8);
@@ -68,6 +95,99 @@ fn manual_timer_advance_publishes_due_steps_without_sleeping() {
     assert_eq!(driver.publish_due_steps().unwrap(), 0);
     driver.advance_ms(25.0).unwrap();
     assert_eq!(driver.publish_due_steps().unwrap(), 2);
+}
+
+#[test]
+fn ingress_full_retains_timer_packet() {
+    let (runtime, mut driver, snapshot) = runtime_with_manual_timer(1);
+    assert_eq!(driver.publish_steps(2).unwrap(), 1);
+    assert!(driver.is_live());
+    assert_eq!(driver.pending_emission_count(), 1);
+    assert_eq!(snapshot_tick(&snapshot), 1);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+}
+
+#[test]
+fn retained_timer_packets_submit_in_order() {
+    let mut driver = ManualTimerInputDriver::new("physics", 100, 8);
+    let snapshot = driver.snapshot();
+    assert_eq!(driver.publish_steps(1).unwrap(), 1);
+    assert_eq!(snapshot_tick(&snapshot), 1);
+    assert_eq!(driver.publish_steps(1).unwrap(), 1);
+    assert_eq!(snapshot_tick(&snapshot), 2);
+    assert_eq!(driver.publish_steps(1).unwrap(), 1);
+    assert_eq!(snapshot_tick(&snapshot), 3);
+}
+
+#[test]
+fn provider_snapshot_advances_only_after_submit() {
+    let (_runtime, mut driver, snapshot) = runtime_with_manual_timer(1);
+    assert_eq!(driver.publish_steps(3).unwrap(), 1);
+    assert_eq!(snapshot_tick(&snapshot), 1);
+    assert_eq!(driver.pending_emission_count(), 2);
+}
+
+#[test]
+fn queue_pressure_does_not_stop_timer_driver() {
+    let (_runtime, mut driver, _snapshot) = runtime_with_manual_timer(1);
+    assert_eq!(driver.publish_steps(10).unwrap(), 1);
+    assert!(driver.is_live());
+}
+
+#[test]
+fn closed_ingress_stops_timer_driver() {
+    let (mut runtime, mut driver, _snapshot) = runtime_with_manual_timer(1);
+    runtime.close_ingress().unwrap();
+    assert_eq!(driver.publish_steps(1).unwrap(), 0);
+    assert!(!driver.is_live());
+}
+
+#[test]
+fn unexpected_ingress_error_stops_or_surfaces() {
+    let (mut runtime, mut driver, _snapshot) = runtime_with_manual_timer(1);
+    runtime.close_ingress().unwrap();
+    assert_eq!(driver.publish_steps(1).unwrap(), 0);
+    assert!(!driver.is_live());
+}
+
+#[test]
+fn manual_publish_steps_advances_unique_ticks() {
+    let (_runtime, mut driver, snapshot) = runtime_with_manual_timer(8);
+    assert_eq!(driver.publish_steps(3).unwrap(), 3);
+    assert_eq!(snapshot_tick(&snapshot), 3);
+}
+
+#[test]
+fn manual_publish_steps_advances_elapsed() {
+    let (_runtime, mut driver, snapshot) = runtime_with_manual_timer(8);
+    assert_eq!(driver.publish_steps(3).unwrap(), 3);
+    assert_eq!(snapshot.lock().unwrap().elapsed_ms, 30.0);
+}
+
+#[test]
+fn manual_publish_steps_preserves_order_under_backpressure() {
+    retained_timer_packets_submit_in_order();
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_wait_uses_next_scheduler_boundary() {
+    let mut scheduler = FixedStepScheduler::new(100, 8);
+    scheduler.due_steps(0.0);
+    assert_eq!(mech_host_timer::native::native_wait_duration(&scheduler, 4.0), Duration::from_millis(6));
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_wake_interval_is_derived_from_frequency() {
+    assert_eq!(mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(120, 8)), 4);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_wake_interval_is_bounded() {
+    assert_eq!(mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1000, 8)), 1);
+    assert_eq!(mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1, 8)), 16);
 }
 
 #[test]
