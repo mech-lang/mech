@@ -107,21 +107,18 @@ jobs:
 
       - name: Check CLI clock
         run: |
-          cargo check \
-            --bin mech-clock \
-            --features clock_demo_cli
+          cargo check --bin mech
+          cargo test --features "run cli_host time_host_native" --test mech_cli_host
 
-          cargo test \
-            --bin mech-clock \
-            --features clock_demo_cli
-
-      - name: Run finite CLI clock
+      - name: Smoke test native analog clock project
         run: |
-          cargo run \
-            --bin mech-clock \
-            --features clock_demo_cli \
-            -- \
-            --ticks 3
+          cargo build --bin mech
+          set +e
+          timeout --preserve-status --signal=INT 5s target/debug/mech run examples/analog-clock > /tmp/analog-clock.out
+          status=$?
+          set -e
+          test "$status" -eq 0
+          test "$(wc -l < /tmp/analog-clock.out)" -ge 2
 
       - name: Build browser analog clock package
         run: bash scripts/build-analog-clock-web.sh

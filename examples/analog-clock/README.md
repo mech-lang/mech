@@ -5,22 +5,16 @@ The CLI and browser demos share the same platform-neutral Mech model in
 host and exposes clock-angle symbols; it does not contain CLI, DOM, or SVG
 output operations.
 
-Run the native CLI demo:
+Run the native CLI demo from the repository:
 
 ```bash
-cargo run \
-  --bin mech-clock \
-  --features clock_demo_cli
+cargo run --bin mech -- run examples/analog-clock
 ```
 
-Finite mode:
+Or, with an installed executable:
 
 ```bash
-cargo run \
-  --bin mech-clock \
-  --features clock_demo_cli \
-  -- \
-  --ticks 10
+mech run examples/analog-clock
 ```
 
 Build the browser demo:

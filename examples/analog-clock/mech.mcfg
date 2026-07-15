@@ -4,16 +4,25 @@ config := {
       name: "clock"
       provider: "time"
       settings: {
-        interval-ms: 100
+        interval-ms: 1000
       }
     }
   ]
   run: {
+    paths: [
+      "clock.mec"
+      "main.mec"
+    ]
     grants: [
       {
         target: "clock/clock"
         operations: ["read"]
         paths: ["unix-ms", "hour", "minute", "second", "millisecond"]
+      }
+      {
+        target: "cli/stdout"
+        operations: ["write"]
+        paths: ["line"]
       }
     ]
   }

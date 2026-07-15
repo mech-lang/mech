@@ -1270,7 +1270,9 @@ impl MechRuntime {
         self.flush_direct_execution(program, pending, result)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
         let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
-        self.write_context_resource(context, &binding, &send.target.name.to_string(), value.clone(), RuntimeResourceWriteIntent::Send)?;
+        let path = send.target.name.to_string();
+        self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
+        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value.clone() });
         *result = value;
         return Ok(());
       }
@@ -3795,6 +3797,14 @@ impl MechRuntime {
     Ok(self.pending_host_input_count()? > 0)
   }
 
+  pub fn input_driver_count(&self) -> usize {
+    self.attached_input_driver_count
+  }
+
+  pub fn has_input_drivers(&self) -> bool {
+    self.input_driver_count() > 0
+  }
+
   pub fn pending_host_input_count(&self) -> MResult<usize> {
     let guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
     Ok(guard.queue.len())
@@ -3829,11 +3839,20 @@ impl MechRuntime {
     // ingress slice attempts one full persistent-plan solve and reports any
     // solve error without claiming rollback of the accepted input values.
     let solve = self.program.solve_plan()?;
+    self.execute_persistent_sends()?;
     Ok(crate::RuntimeHostInputOutcome {
       update_count: input.updates.len(),
       binding_count: updated_inputs,
       solve,
     })
+  }
+
+  fn execute_persistent_sends(&mut self) -> MResult<()> {
+    let context = self.runtime_context()?;
+    for send in self.persistent_sends.clone() {
+      self.write_context_resource(&context, &send.binding, &send.path, send.value.clone(), RuntimeResourceWriteIntent::Send)?;
+    }
+    Ok(())
   }
 
   pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {

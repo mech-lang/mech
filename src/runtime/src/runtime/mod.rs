@@ -60,6 +60,13 @@ use mech_program::{
   MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
 
+#[derive(Clone, Debug)]
+struct RuntimePersistentSend {
+  binding: RuntimeContextBinding,
+  path: String,
+  value: Value,
+}
+
 use crate::capability::{
   BasicCapabilityKernel, Capability, CapabilityGrant, CapabilityKernel,
   CapabilityRequest, CapabilityRevocation,
@@ -389,6 +396,7 @@ impl RuntimeBuilder {
       host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(RuntimeHostInputQueueState::new(self.host_input_capacity))),
       input_drivers: self.input_drivers,
       attached_input_driver_count: 0,
+      persistent_sends: Vec::new(),
       input_driver_cleanup_armed: false,
       host_interfaces,
       module_manifests: self.module_manifests,
@@ -462,6 +470,7 @@ pub struct MechRuntime {
   host_input_queue: RuntimeHostInputQueue,
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
   attached_input_driver_count: usize,
+  persistent_sends: Vec<RuntimePersistentSend>,
   input_driver_cleanup_armed: bool,
   host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,

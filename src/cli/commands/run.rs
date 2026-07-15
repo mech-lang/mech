@@ -1,4 +1,6 @@
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::time::Duration;
 
 use clap::{Arg, ArgAction, Command};
 use mech_core::*;
@@ -16,6 +18,17 @@ use crate::source_discovery::{
     collect_sources_with_events,
 };
 use mech_runtime::{RuntimeEvent, RuntimeEventKind};
+
+#[derive(Debug, Clone)]
+struct CliRunError {
+    operation: String,
+    reason: String,
+}
+
+impl MechErrorKind for CliRunError {
+    fn name(&self) -> &str { "CliRunError" }
+    fn message(&self) -> String { format!("{} failed: {}", self.operation, self.reason) }
+}
 
 pub(crate) fn command() -> Command {
     Command::new("run")
@@ -264,11 +277,36 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
             }
         }
         Ok(value) => {
-            print_value(&value);
+            if runtime.has_input_drivers() {
+                run_live_runtime(&mut runtime)?;
+            } else {
+                print_value(&value);
+            }
             Ok(CliOutcome::exit(0))
         }
         Err(err) => Err(err),
     }
+}
+
+fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {
+    const MAX_DRAIN_PER_TURN: usize = 64;
+    const IDLE_SLEEP: Duration = Duration::from_millis(10);
+
+    let stop = Arc::new(AtomicBool::new(false));
+    let stop_for_handler = Arc::clone(&stop);
+    ctrlc::set_handler(move || {
+        stop_for_handler.store(true, Ordering::SeqCst);
+    }).map_err(|error| MechError::new(CliRunError { operation: "ctrlc_handler".to_string(), reason: error.to_string() }, None))?;
+
+    runtime.start_input_drivers()?;
+    while !stop.load(Ordering::SeqCst) {
+        if runtime.pending_host_input_count()? == 0 {
+            std::thread::sleep(IDLE_SLEEP);
+            continue;
+        }
+        runtime.drain_host_inputs(MAX_DRAIN_PER_TURN)?;
+    }
+    runtime.shutdown()
 }
 
 #[cfg(test)]
