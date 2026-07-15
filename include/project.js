@@ -1,4 +1,4 @@
-import init, { WasmProject } from '../pkg/mech_wasm.js';
+import init, { WasmProject } from '/_mech/pkg/mech_wasm.js';
 
 export function findBootstrapScript(ownerDocument, moduleUrl) {
   const resolvedModuleUrl = new URL(moduleUrl, ownerDocument.baseURI).href;

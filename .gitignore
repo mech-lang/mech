@@ -37,6 +37,4 @@ Cargo.lock
 # Mac Files
 .DS_Store
 /src/wasm/pkg
-examples/analog-clock/pkg/
 
-examples/pkg/

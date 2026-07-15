@@ -122,28 +122,7 @@ pub(crate) fn effective_serve_options(
   let mut stylesheet_paths = config_stylesheets;
   stylesheet_paths.extend(cli_stylesheets);
 
-  let mut cli_paths: Vec<String> = args.paths.clone();
-
-  if let Some(loaded) = config {
-    if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
-      if cli_paths.len() == 1 {
-        let current_dir = std::env::current_dir()?;
-        let input = PathBuf::from(&cli_paths[0]);
-        let input_path = if input.is_absolute() {
-          input
-        } else {
-          current_dir.join(input)
-        };
-
-        if input_path.exists()
-          && input_path.is_dir()
-          && input_path.canonicalize()? == *project_dir
-        {
-          cli_paths.clear();
-        }
-      }
-    }
-  }
+  let cli_paths: Vec<String> = args.paths.clone();
 
   let paths = if !cli_paths.is_empty() {
     cli_paths

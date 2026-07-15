@@ -12,13 +12,15 @@ config := {
       name: "view"
       provider: "scene"
       settings: {
-        selector: "#test-scene"
+        selector: "#scene"
         renderer: "canvas"
       }
     }
   ]
+
   run: {
-    paths: ["scene.mec"]
+    paths: ["balls.mec"]
+
     grants: [
       {
         target: "physics/tick"

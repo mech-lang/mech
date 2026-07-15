@@ -1,0 +1,74 @@
+@tick := timer://physics/tick{:read(tick), :read(elapsed-ms), :read(delta-ms), :read(elapsed-seconds), :read(delta-seconds), :read(skipped-steps)}
+@view := scene://view/frame{:write(replace)}
+
+ball-count := 64
+physics-tick := @tick/tick
+physics-skipped-steps := @tick/skipped-steps
+physics-elapsed-ms := @tick/elapsed-ms
+physics-delta-ms := @tick/delta-ms
+elapsed := @tick/elapsed-seconds
+delta := @tick/delta-seconds
+
+scene-width := 960
+scene-height := 540
+
+ball-a-x := 120 + physics-tick * 1.5
+ball-b-x := 840 - physics-tick
+ball-a-y := 160
+ball-b-y := 360
+
+balls := (
+  {
+    id: "ball-1"
+    x: ball-a-x
+    y: ball-a-y
+    vx: 180
+    vy: 80
+    radius: 18
+    fill: "#5cc8ff"
+  },
+  {
+    id: "ball-2"
+    x: ball-b-x
+    y: ball-b-y
+    vx: -120
+    vy: -60
+    radius: 24
+    fill: "#ffcc66"
+  }
+)
+
+circle-scene-table := (
+  {
+    id: "ball-1"
+    x: ball-a-x
+    y: ball-a-y
+    radius: 18
+    fill: "#5cc8ff"
+    stroke: "#ffffff"
+    stroke-width: 2
+    opacity: 1
+  },
+  {
+    id: "ball-2"
+    x: ball-b-x
+    y: ball-b-y
+    radius: 24
+    fill: "#ffcc66"
+    stroke: "#ffffff"
+    stroke-width: 2
+    opacity: 1
+  }
+)
+
+empty-line-table := ()
+
+scene := {
+  width: scene-width
+  height: scene-height
+  background: "#10131a"
+  circles: circle-scene-table
+  lines: empty-line-table
+}
+
+@view/replace <- scene

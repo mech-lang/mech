@@ -71,7 +71,7 @@ jobs:
 
 
   analog-clock:
-    name: Analog clock
+    name: Project examples
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -95,7 +95,7 @@ jobs:
       - name: Show Chrome version
         run: google-chrome --version
 
-      - name: Check analog clock package paths
+      - name: Check generic project package paths
         run: bash scripts/check-analog-clock-web.sh
 
       - name: Run native time-host tests
@@ -163,7 +163,13 @@ jobs:
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 
-      - name: Build browser analog clock package
+          set +e
+          timeout --preserve-status --signal=INT 5s target/debug/mech run examples/bouncing-balls > /tmp/bouncing-balls.out
+          balls_status=$?
+          set -e
+          test "$balls_status" -eq 0
+
+      - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
 
       - name: Run focused shared-project Chrome WASM test
@@ -208,22 +214,27 @@ jobs:
       - name: Confirm generated browser package paths
         run: |
           test -f \
-            examples/pkg/mech_wasm.js
+            src/wasm/pkg/mech_wasm.js
 
           test -f \
-            examples/pkg/mech_wasm_bg.wasm
+            src/wasm/pkg/mech_wasm_bg.wasm
 
       - name: Confirm browser examples are generic
         run: |
-          test ! -f examples/analog-clock/clock.js
+          test ! -e examples/common
+          test ! -e examples/pkg
+          test ! -e examples/analog-clock/clock.js
+          test ! -e examples/bouncing-balls/balls.js
+          test ! -e mech-app
+          test ! -e include/blog.html
           ! rg -n \
-            "WasmAnalogClock|AnalogClockProjectError|CLOCK_PROJECT_SOURCES|analog_clock_demo|bouncing.?balls" \
-            src/wasm hosts/timer hosts/scene examples/common
+            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\\.js|balls\\.js" \
+            src include examples
           test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
 
       - name: Remove generated browser package
         if: always()
-        run: rm -rf examples/pkg
+        run: rm -rf src/wasm/pkg
 
   run-only:
     name: Run-only CLI

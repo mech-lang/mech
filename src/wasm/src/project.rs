@@ -450,6 +450,6 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn generic_project_with_timer_and_scene_runs_fixed_step_fixture() {
-        assert!(required_path_strings(include_str!("../tests/fixtures/fixed-step-scene/mech.mcfg")).is_ok());
+        assert!(required_path_strings(include_str!("../../../examples/bouncing-balls/mech.mcfg")).is_ok());
     }
 }

@@ -15,6 +15,11 @@ pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.j
 #[cfg(not(has_file_js))]
 pub(crate) static MECHJS: &[u8] = b"No Embedded JS";
 
+#[cfg(has_file_project_js)]
+pub(crate) static PROJECTJS: &str = include_str!("../../include/project.js");
+#[cfg(not(has_file_project_js))]
+pub(crate) static PROJECTJS: &str = "No Embedded Project JS";
+
 #[cfg(has_file_shim)]
 pub(crate) static SHIMHTML: &str = include_str!("../../include/index.html");
 #[cfg(not(has_file_shim))]
@@ -34,6 +39,7 @@ pub(crate) struct WebResourceDefaults {
     pub shim_html: &'static str,
     pub mech_wasm: &'static [u8],
     pub mech_js: &'static [u8],
+    pub project_js: &'static str,
 }
 
 impl WebResourceDefaults {
@@ -54,6 +60,7 @@ impl WebResourceDefaults {
             shim_html: SHIMHTML,
             mech_wasm: MECHWASM,
             mech_js: MECHJS,
+            project_js: PROJECTJS,
         }
     }
 }

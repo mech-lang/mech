@@ -68,9 +68,8 @@ host_delegation = ["serde", "dep:mech-host-browser", "mech-runtime/host_delegati
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
 # browser_project is a prebuilt development profile. Production builds are expected
 # to use a compiler-inferred language and host feature closure.
-browser_project = ["browser_project_runner", "legacy_browser_api", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string", "record", "tuple", "table", "atom", "enum", "variables"]
+browser_project = ["browser_project_runner", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_project_runner = ["program", "serde"]
-legacy_browser_api = ["dep:mech-host-browser", "mech-host-browser/provider", "mech-host-browser/serde"]
 browser_host_dom = ["dep:mech-host-browser", "mech-host-browser/provider", "mech-host-browser/serde"]
 browser_host_time = ["dep:mech-host-time", "mech-host-time/browser"]
 browser_host_timer = ["dep:mech-host-timer", "mech-host-timer/browser"]

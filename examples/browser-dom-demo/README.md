@@ -5,8 +5,8 @@ This example demonstrates browser DOM resources backed by runtime resource provi
 It shows a full DOM -> Mech -> DOM round trip:
 
 - `mech serve` loads `demo.mcfg` and injects a derived host config as `window.__MECH_HOST_CONFIG`.
-- `WasmMech.fromHostConfig()` initializes the browser runtime from the host-owned config projection.
-- The page fetches `/code/*.mec` encoded compiled payloads and executes them with `WasmMech.evalCompiled()`.
+- `WasmProject.host-config constructor()` initializes the browser runtime from the host-owned config projection.
+- The page fetches `/code/*.mec` encoded compiled payloads and executes them with `WasmProject`.
 - Mech code binds `@browser := browser://dom/`.
 - Mech reads the source input value from `@browser/body/content/mech-sandbox/input/_value`.
 - Mech computes `greeting`, `roundtrip`, and `status` strings from that DOM value.
@@ -35,10 +35,10 @@ brotli -Z --force src/wasm/pkg/mech_wasm_bg.wasm
 cargo run --bin mech -- --config examples/browser-dom-demo/demo.mcfg serve
 ```
 
-Rebuild `src/wasm/pkg` every time the `WasmMech` browser API changes so the served demo HTML and the wasm-bindgen JavaScript package are from the same commit. Before constructing `WasmMech`, you can verify the host-config constructor is present in DevTools with:
+Rebuild `src/wasm/pkg` every time the `WasmProject` browser API changes so the served demo HTML and the wasm-bindgen JavaScript package are from the same commit. Before constructing `WasmProject`, you can verify the host-config constructor is present in DevTools with:
 
 ```js
-Object.getOwnPropertyNames(WasmMech).includes("fromHostConfig")
+Object.getOwnPropertyNames(WasmProject).includes("project constructor")
 ```
 
 Open:

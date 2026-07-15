@@ -339,6 +339,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
+        resources.project_js.to_string(),
         wasm.bytes,
         js.bytes,
         options.authority,
