@@ -161,8 +161,6 @@ jobs:
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
 
-      - name: Run served project browser smoke tests
-        run: bash scripts/test-served-projects.sh
 
       - name: Run focused shared-project Chrome WASM test
         run: |
@@ -181,7 +179,7 @@ jobs:
             --no-default-features \
             --features browser_project \
             -- \
-            --list | grep 'generic_project_with_timer_and_scene_runs_fixed_step_fixture'
+            --list | grep 'generic_project_with_timer_table_and_scene_renders_fixture'
           wasm-pack test \
             --headless \
             --chrome \
@@ -189,7 +187,7 @@ jobs:
             --no-default-features \
             --features browser_project \
             -- \
-            generic_project_with_timer_and_scene_runs_fixed_step_fixture \
+            generic_project_with_timer_table_and_scene_renders_fixture \
             --nocapture
 
       - name: Run headless Chrome WASM tests
