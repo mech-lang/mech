@@ -4,11 +4,11 @@ use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
 use mech_core::{MechError, MechErrorKind};
-#[cfg(feature = "host_delegation")]
+#[cfg(feature = "served_project_authority")]
 use mech_host_browser::BrowserRuntimeInjectionConfig;
-#[cfg(feature = "host_delegation_signing")]
+#[cfg(feature = "served_project_authority")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
-#[cfg(feature = "host_delegation_signing")]
+#[cfg(feature = "served_project_authority")]
 use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
 #[cfg(feature = "browser_host_dom")]
 use mech_host_browser::BrowserHostFactory;
@@ -72,10 +72,10 @@ impl WasmProject {
         let source_map = source_map_from_js(sources)?;
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
-        validate_compiled_host_providers_for_hosts(&authority.hosts).map_err(to_js_error)?;
+        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let mut runtime = build_runtime_from_authority(&authority, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
+        let mut runtime = build_runtime_from_authority(&document, &authority, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document, &source_map).map_err(to_js_error)?;
         Ok(Self {
             runtime,
@@ -231,24 +231,28 @@ fn build_runtime(
     }
     builder.build().map_err(to_js_error)
 }
-#[cfg(feature = "host_delegation")]
+#[cfg(feature = "served_project_authority")]
 fn build_runtime_from_authority(
+    document: &MechConfigDocument,
     authority: &BrowserRuntimeInjectionConfig,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
     let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?
         .config(authority.into_runtime_config().map_err(to_js_error)?);
-    for host in &authority.hosts {
-        builder = builder.host_instance(host.clone());
+    for required in &document.hosts {
+        if let Some(host) = authority.hosts.iter().find(|host| host.name == required.name && host.provider == required.provider) {
+            builder = builder.host_instance(host.clone());
+        }
     }
-    for grant in &authority.run_grants {
-        builder = builder.run_resource_grant(grant.clone());
+    for grant in required_issued_grants(document, authority) {
+        builder = builder.run_resource_grant(grant);
     }
     builder.build().map_err(to_js_error)
 }
 
-#[cfg(not(feature = "host_delegation"))]
+#[cfg(not(feature = "served_project_authority"))]
 fn build_runtime_from_authority(
+    _document: &MechConfigDocument,
     _authority: &(),
     #[cfg(feature = "browser_host_scene")] _scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
@@ -299,14 +303,14 @@ fn validate_compiled_host_providers_for_hosts(hosts: &[mech_runtime::HostInstanc
     }
     Ok(())
 }
-#[cfg(feature = "host_delegation")]
+#[cfg(feature = "served_project_authority")]
 fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> {
     let window = web_sys::window().ok_or_else(|| js_error("served project authority requires a browser window"))?;
     let host_config = Reflect::get(&window, &JsValue::from_str("__MECH_HOST_CONFIG"))?;
     if host_config.is_undefined() || host_config.is_null() {
         return Err(js_error("served project authority is missing __MECH_HOST_CONFIG"));
     }
-    #[cfg(feature = "host_delegation_signing")]
+    #[cfg(feature = "served_project_authority")]
     {
         let trusted = Reflect::get(&window, &JsValue::from_str("__MECH_TRUSTED_HOST_KEYS"))?;
         let audience = Reflect::get(&window, &JsValue::from_str("__MECH_HOST_DELEGATION_AUDIENCE"))?;
@@ -333,46 +337,93 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
         .map_err(|error| js_error(format!("invalid served host config: {error}")))
 }
 
-#[cfg(not(feature = "host_delegation"))]
+#[cfg(not(feature = "served_project_authority"))]
 fn served_browser_authority() -> Result<(), JsValue> {
     Err(js_error("served project authority support was not compiled into this WASM artifact"))
 }
 
 fn validate_served_authority(
     document: &MechConfigDocument,
-    #[cfg(feature = "host_delegation")] authority: &BrowserRuntimeInjectionConfig,
-    #[cfg(not(feature = "host_delegation"))] _authority: &(),
+    #[cfg(feature = "served_project_authority")] authority: &BrowserRuntimeInjectionConfig,
+    #[cfg(not(feature = "served_project_authority"))] _authority: &(),
 ) -> mech_core::MResult<()> {
-    #[cfg(not(feature = "host_delegation"))]
+    #[cfg(not(feature = "served_project_authority"))]
     {
         return Err(MechError::new(ProjectError { message: "served project authority support was not compiled into this WASM artifact".into() }, None));
     }
-    #[cfg(feature = "host_delegation")]
+    #[cfg(feature = "served_project_authority")]
     {
         for required in &document.hosts {
             if !authority.hosts.iter().any(|host| host.name == required.name && host.provider == required.provider) {
                 return Err(MechError::new(ProjectError { message: format!("served project requires host `{}` provider `{}`, but server authority did not grant it", required.name, required.provider) }, None));
             }
         }
-        if let Some(run) = &document.run {
-            for grant in &run.grants {
-                let Some(issued) = authority.run_grants.iter().find(|issued| issued.target == grant.target) else {
-                    return Err(MechError::new(ProjectError { message: format!("served project requires grant `{}`, but server authority did not issue it", grant.target) }, None));
-                };
-                for operation in &grant.operations {
-                    if !issued.operations.contains(operation) {
-                        return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires operation `{:?}` outside server authority", grant.target, operation) }, None));
-                    }
+        validate_required_grants(document, authority)?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "served_project_authority")]
+fn required_issued_grants(
+    document: &MechConfigDocument,
+    authority: &BrowserRuntimeInjectionConfig,
+) -> Vec<mech_runtime::RunResourceGrantConfig> {
+    let mut out = Vec::new();
+    if let Some(run) = &document.run {
+        for required in &run.grants {
+            let operations = required.operations.clone();
+            let paths = required.paths.clone();
+            if authority.run_grants.iter().any(|issued| issued.target == required.target) {
+                out.push(mech_runtime::RunResourceGrantConfig {
+                    target: required.target.clone(),
+                    operations,
+                    paths,
+                });
+            }
+        }
+    }
+    out
+}
+
+#[cfg(feature = "served_project_authority")]
+fn validate_required_grants(
+    document: &MechConfigDocument,
+    authority: &BrowserRuntimeInjectionConfig,
+) -> mech_core::MResult<()> {
+    if let Some(run) = &document.run {
+        for required in &run.grants {
+            let issued = authority
+                .run_grants
+                .iter()
+                .filter(|issued| issued.target == required.target)
+                .collect::<Vec<_>>();
+            if issued.is_empty() {
+                return Err(MechError::new(ProjectError { message: format!("served project requires grant `{}`, but server authority did not issue it", required.target) }, None));
+            }
+            for operation in &required.operations {
+                if !issued.iter().any(|grant| grant.operations.iter().any(|issued| issued == operation)) {
+                    return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires operation `{}` outside server authority", required.target, operation) }, None));
                 }
-                for path in &grant.paths {
-                    if !issued.paths.contains(path) {
-                        return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires path `{}` outside server authority", grant.target, path) }, None));
-                    }
+            }
+            for path in &required.paths {
+                if !issued.iter().any(|grant| grant.paths.iter().any(|issued| grant_path_allows(issued, path))) {
+                    return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires path `{}` outside server authority", required.target, path) }, None));
                 }
             }
         }
-        Ok(())
     }
+    Ok(())
+}
+
+#[cfg(feature = "served_project_authority")]
+fn grant_path_allows(grant_path: &str, requested_path: &str) -> bool {
+    if grant_path == "*" || grant_path == requested_path {
+        return true;
+    }
+    if let Some(prefix) = grant_path.strip_suffix("/*") {
+        return requested_path.starts_with(&format!("{}/", prefix));
+    }
+    false
 }
 
 fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue> {
@@ -496,6 +547,95 @@ mod tests {
         sources.insert("a.mec".to_string(), "x := 1".to_string());
         sources.insert("b.mec".to_string(), "y := 2".to_string());
         run_project_sources(&mut runtime, &document, &sources).unwrap();
+    }
+
+
+    #[cfg(feature = "served_project_authority")]
+    fn authority_config(hosts: Vec<mech_runtime::HostInstanceConfig>, grants: Vec<mech_runtime::RunResourceGrantConfig>) -> BrowserRuntimeInjectionConfig {
+        BrowserRuntimeInjectionConfig {
+            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&mech_runtime::RuntimeConfig::default()),
+            hosts,
+            run_grants: grants,
+        }
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn host(name: &str, provider: &str) -> mech_runtime::HostInstanceConfig {
+        mech_runtime::HostInstanceConfig { name: name.to_string(), provider: provider.to_string(), settings: mech_runtime::ConfigValue::Map(Default::default()) }
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn grant(target: &str, operations: &[&str], paths: &[&str]) -> mech_runtime::RunResourceGrantConfig {
+        mech_runtime::RunResourceGrantConfig {
+            target: target.to_string(),
+            operations: operations.iter().map(|op| op.to_string()).collect(),
+            paths: paths.iter().map(|path| path.to_string()).collect(),
+        }
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn document_with_grant(path: &str, operation: &str) -> MechConfigDocument {
+        parse_config_document(
+            "served-test.mcfg",
+            &format!(r#"config := {{
+  hosts: [{{ name: "view" provider: "scene" settings: {{}} }}]
+  run: {{
+    paths: ["main.mec"]
+    grants: [{{ target: "view/frame" operations: ["{operation}"] paths: ["{path}"] }}]
+  }}
+}}"#),
+            ConfigProfileOptions::default(),
+        ).unwrap()
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn split_grants_for_one_target_authorize_project_request() {
+        let doc = document_with_grant("replace", "write");
+        let authority = authority_config(
+            vec![host("view", "scene")],
+            vec![grant("view/frame", &["read"], &["replace"]), grant("view/frame", &["write"], &["replace"])],
+        );
+        validate_served_authority(&doc, &authority).unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn broader_path_grant_authorizes_narrower_project_request() {
+        let doc = document_with_grant("hands/second", "write");
+        let authority = authority_config(
+            vec![host("view", "scene")],
+            vec![grant("view/frame", &["write"], &["hands/*"])],
+        );
+        validate_served_authority(&doc, &authority).unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn extra_operation_is_rejected() {
+        let doc = document_with_grant("replace", "write");
+        let authority = authority_config(vec![host("view", "scene")], vec![grant("view/frame", &["read"], &["replace"])]);
+        assert!(validate_served_authority(&doc, &authority).is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn broader_path_request_is_rejected() {
+        let doc = document_with_grant("hands/*", "write");
+        let authority = authority_config(vec![host("view", "scene")], vec![grant("view/frame", &["write"], &["hands/second"])]);
+        assert!(validate_served_authority(&doc, &authority).is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn unrelated_issued_host_does_not_require_compiled_provider() {
+        let doc = document_with_grant("replace", "write");
+        let authority = authority_config(
+            vec![host("view", "scene"), host("unused", "browser")],
+            vec![grant("view/frame", &["write"], &["replace"])],
+        );
+        validate_served_authority(&doc, &authority).unwrap();
+        validate_compiled_host_providers_for_hosts(&doc.hosts).unwrap();
     }
 
     #[test]

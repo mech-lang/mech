@@ -37,7 +37,16 @@ check_routes() {
   curl -fsS "$base/$source" >/dev/null
   curl -fsS "$base/_mech/project.js" >/dev/null
   curl -fsS "$base/_mech/pkg/mech_wasm.js" >/dev/null
-  curl -fsS "$base/_mech/pkg/mech_wasm_bg.wasm" >/dev/null
+  local headers body magic content_type content_encoding
+  headers="$(mktemp)"
+  body="$(mktemp)"
+  curl -fsS -D "$headers" -o "$body" "$base/_mech/pkg/mech_wasm_bg.wasm"
+  magic="$(head -c 4 "$body" | od -An -t x1 | tr -d ' \n')"
+  test "$magic" = "0061736d"
+  content_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0)}' "$headers")"
+  echo "$content_type" | grep -q 'application/wasm'
+  content_encoding="$(awk 'BEGIN{IGNORECASE=1} /^content-encoding:/ {print tolower($0)}' "$headers")"
+  test -z "$content_encoding"
 }
 
 run_server() {
@@ -54,13 +63,18 @@ check_routes http://127.0.0.1:8123 clock.mec
 run_server examples/bouncing-balls 8124
 check_routes http://127.0.0.1:8124 balls.mec
 
-if command -v google-chrome >/dev/null; then
-  google-chrome --headless=new --disable-gpu --virtual-time-budget=3000 --screenshot=/tmp/analog-clock.png http://127.0.0.1:8123/ >/tmp/chrome-clock.log 2>&1
-  google-chrome --headless=new --disable-gpu --virtual-time-budget=3000 --screenshot=/tmp/bouncing-balls-1.png http://127.0.0.1:8124/ >/tmp/chrome-balls-1.log 2>&1
-  google-chrome --headless=new --disable-gpu --virtual-time-budget=6000 --screenshot=/tmp/bouncing-balls-2.png http://127.0.0.1:8124/ >/tmp/chrome-balls-2.log 2>&1
-  test -s /tmp/analog-clock.png
-  test -s /tmp/bouncing-balls-1.png
-  test -s /tmp/bouncing-balls-2.png
-else
-  echo "google-chrome not found; route coverage completed without browser screenshots" >&2
-fi
+command -v google-chrome >/dev/null
+
+google-chrome --headless=new --disable-gpu --virtual-time-budget=3000 --screenshot=/tmp/analog-clock.png http://127.0.0.1:8123/ >/tmp/chrome-clock.log 2>&1
+google-chrome --headless=new --disable-gpu --virtual-time-budget=3000 --screenshot=/tmp/bouncing-balls-1.png http://127.0.0.1:8124/ >/tmp/chrome-balls-1.log 2>&1
+google-chrome --headless=new --disable-gpu --virtual-time-budget=6000 --screenshot=/tmp/bouncing-balls-2.png http://127.0.0.1:8124/ >/tmp/chrome-balls-2.log 2>&1
+test -s /tmp/analog-clock.png
+test -s /tmp/bouncing-balls-1.png
+test -s /tmp/bouncing-balls-2.png
+
+clock_hash="$(sha256sum /tmp/analog-clock.png | awk '{print $1}')"
+balls_hash_1="$(sha256sum /tmp/bouncing-balls-1.png | awk '{print $1}')"
+balls_hash_2="$(sha256sum /tmp/bouncing-balls-2.png | awk '{print $1}')"
+test -n "$clock_hash"
+test "$balls_hash_1" != "$balls_hash_2"
+! grep -iE 'error|exception|panic' /tmp/chrome-clock.log /tmp/chrome-balls-1.log /tmp/chrome-balls-2.log
