@@ -487,7 +487,7 @@ impl MechRuntime {
     source: crate::RuntimeHostInputSource,
     value: Value,
   ) -> MResult<mech_core::Expression> {
-    self.arm_live_context_template(context)?;
+    self.validate_live_context_candidate(context)?;
     let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
@@ -495,6 +495,7 @@ impl MechRuntime {
     if !bindings.iter().any(|binding| *binding == input) {
       bindings.push(input);
     }
+    self.commit_live_context_candidate(context);
     let var = mech_core::Var {
       name: identifier_from_str(&name),
       context: None,
@@ -1270,13 +1271,14 @@ impl MechRuntime {
           pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
         }
         self.flush_direct_execution(program, pending, result)?;
-        self.arm_live_context_template(context)?;
+        self.validate_live_context_candidate(context)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
         let path = send.target.name.to_string();
         self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
         self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
+        self.commit_live_context_candidate(context);
         *result = value;
         return Ok(());
       }
@@ -2514,18 +2516,24 @@ impl MechRuntime {
             MechProgram::new(program_config),
           );
 
-          self.register_runtime_program_host_functions(
-            context,
-            &mut program,
-          )?;
+          let live_state_before = self.live_state_snapshot();
+          let result = (|| {
+            self.register_runtime_program_host_functions(
+              context,
+              &mut program,
+            )?;
 
-          let runtime_ptr: *mut MechRuntime = self;
-          let context_ptr: *mut RuntimeContext = context;
-          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+            let runtime_ptr: *mut MechRuntime = self;
+            let context_ptr: *mut RuntimeContext = context;
+            let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-          let result = self.run_tree_on_program(context, &mut program, &tree, None);
+            self.run_tree_on_program(context, &mut program, &tree, None)
+          })();
 
           self.program = program;
+          if result.is_err() {
+            self.restore_live_state(live_state_before);
+          }
           result
         }
         Err(error) => Err(error),
@@ -2622,6 +2630,7 @@ impl MechRuntime {
     );
     let mut bytecode_program = MechProgram::new(program_config);
 
+    let live_state_before = self.live_state_snapshot();
     let result = (|| {
       self.register_runtime_program_host_functions(
         context,
@@ -2641,6 +2650,7 @@ impl MechRuntime {
       self.program = bytecode_program;
     } else {
       self.program = previous_program;
+      self.restore_live_state(live_state_before);
     }
     match &result {
       Ok(_) => {
@@ -2754,18 +2764,24 @@ impl MechRuntime {
           MechProgram::new(program_config),
         );
 
-        self.register_runtime_program_host_functions(
-          context,
-          &mut program,
-        )?;
+        let live_state_before = self.live_state_snapshot();
+        let result = (|| {
+          self.register_runtime_program_host_functions(
+            context,
+            &mut program,
+          )?;
 
-        let runtime_ptr: *mut MechRuntime = self;
-        let context_ptr: *mut RuntimeContext = context;
-        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+          let runtime_ptr: *mut MechRuntime = self;
+          let context_ptr: *mut RuntimeContext = context;
+          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-        let result = self.run_tree_on_program(context, &mut program, tree, None);
+          self.run_tree_on_program(context, &mut program, tree, None)
+        })();
 
         self.program = program;
+        if result.is_err() {
+          self.restore_live_state(live_state_before);
+        }
         result
       }
       Err(error) => Err(error),
@@ -3886,24 +3902,39 @@ impl MechRuntime {
     let mut context = self.live_turn_context()?;
     self.validate_context_for_runtime(&context)?;
     context.charge_step()?;
-    let started = Instant::now();
-    let runtime_ptr: *mut MechRuntime = self;
-    let context_ptr: *mut RuntimeContext = &mut context;
-    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-    let updated_inputs = self.program.update_inputs(&target_updates)?;
-    // Updates are preflighted before mutation; after admitted mutation this
-    // ingress slice attempts one full persistent-plan solve and reports any
-    // solve error without claiming rollback of the accepted input values.
-    let solve = self.program.solve_plan()?;
-    self.execute_persistent_sends(&context)?;
-    self.enforce_turn_duration(started)?;
-    Ok(crate::RuntimeHostInputOutcome {
-      update_count: input.updates.len(),
-      ignored_update_count,
-      binding_count: updated_inputs,
-      solve: Some(solve),
-    })
+    let turn_started = Instant::now();
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let result = (|| -> MResult<crate::RuntimeHostInputOutcome> {
+      let runtime_ptr: *mut MechRuntime = self;
+      let context_ptr: *mut RuntimeContext = &mut context;
+      let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+      let updated_inputs = program.update_inputs(&target_updates)?;
+      // Updates are preflighted before mutation; after admitted mutation this
+      // ingress slice attempts one full persistent-plan solve and reports any
+      // solve error without claiming rollback of the accepted input values.
+      let solve = program.solve_plan()?;
+      self.execute_persistent_sends(&context)?;
+      self.enforce_turn_duration(turn_started)?;
+
+      Ok(crate::RuntimeHostInputOutcome {
+        update_count: input.updates.len(),
+        ignored_update_count,
+        binding_count: updated_inputs,
+        solve: Some(solve),
+      })
+    })();
+
+    self.program = program;
+
+    result
   }
 
   fn execute_persistent_sends(&mut self, context: &RuntimeContext) -> MResult<()> {

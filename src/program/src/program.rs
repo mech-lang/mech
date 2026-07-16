@@ -655,6 +655,23 @@ mod live_input_tests {
   }
 
 
+
+  #[test]
+  fn ensure_input_refreshes_existing_cell_without_replacing_valref() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let input_id = hash_str("live-x");
+    let interpreter_id = program.interpreter().id;
+    program.ensure_input(interpreter_id, input_id, "live-x", Value::F64(Ref::new(1.0))).unwrap();
+    let before = program.interpreter().symbols().borrow().get(input_id).unwrap();
+    let before_pointer = before.as_ptr();
+    assert_eq!(f64_value(&before.borrow()), 1.0);
+
+    program.ensure_input(interpreter_id, input_id, "live-x", Value::F64(Ref::new(9.0))).unwrap();
+    let after = program.interpreter().symbols().borrow().get(input_id).unwrap();
+    assert_eq!(before_pointer, after.as_ptr());
+    assert_eq!(f64_value(&after.borrow()), 9.0);
+  }
+
   #[test]
   fn incompatible_input_type_is_rejected_without_mutation() {
     let mut program = MechProgram::new(MechProgramConfig::default());

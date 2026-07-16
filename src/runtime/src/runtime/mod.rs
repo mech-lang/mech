@@ -76,13 +76,16 @@ struct RuntimeLiveContextTemplate {
 
 impl RuntimeLiveContextTemplate {
   fn from_context(context: &RuntimeContext) -> Self {
+    let mut capabilities = context.capabilities.clone();
+    capabilities.sort_unstable();
+    capabilities.dedup();
     Self {
       runtime: context.runtime,
       subject: context.subject.clone(),
       task: context.task,
       actor: context.actor,
       module_version: context.module_version,
-      capabilities: context.capabilities.clone(),
+      capabilities,
       budget_limits: ResourceBudget {
         max_steps: context.budget.max_steps,
         used_steps: 0,
@@ -116,17 +119,29 @@ impl RuntimeLiveContextTemplate {
   }
 
   fn matches_context(&self, context: &RuntimeContext) -> bool {
+    let mut capabilities = context.capabilities.clone();
+    capabilities.sort_unstable();
+    capabilities.dedup();
     self.runtime == context.runtime
       && self.subject == context.subject
       && self.task == context.task
       && self.actor == context.actor
       && self.module_version == context.module_version
-      && self.capabilities == context.capabilities
+      && self.actor_message == context.actor_message
+      && self.actor_state == context.actor_state
+      && self.capabilities == capabilities
       && self.budget_limits.max_steps == context.budget.max_steps
       && self.budget_limits.max_bytes == context.budget.max_bytes
       && self.budget_limits.max_items == context.budget.max_items
       && self.budget_limits.max_messages == context.budget.max_messages
   }
+}
+
+#[derive(Clone)]
+struct RuntimeLiveStateSnapshot {
+  context_template: Option<RuntimeLiveContextTemplate>,
+  input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
+  persistent_sends: Vec<RuntimePersistentSend>,
 }
 
 #[derive(Clone, Debug)]
@@ -1090,7 +1105,7 @@ impl MechRuntime {
       .build()
   }
 
-  fn arm_live_context_template(&mut self, context: &RuntimeContext) -> MResult<()> {
+  fn validate_live_context_candidate(&self, context: &RuntimeContext) -> MResult<()> {
     if context.transaction.is_some() {
       return Err(MechError::new(RuntimeInvalidOperationError {
         operation: "RuntimeTransactionalLiveProgramUnsupported",
@@ -1103,11 +1118,28 @@ impl MechRuntime {
         operation: "RuntimeLiveContextMismatch",
         reason: "source load attempted to change the live program execution identity or budget maxima".to_string(),
       }, None)),
-      None => {
-        self.live_context_template = Some(RuntimeLiveContextTemplate::from_context(context));
-        Ok(())
-      }
+      None => Ok(()),
     }
+  }
+
+  fn commit_live_context_candidate(&mut self, context: &RuntimeContext) {
+    if self.live_context_template.is_none() {
+      self.live_context_template = Some(RuntimeLiveContextTemplate::from_context(context));
+    }
+  }
+
+  fn live_state_snapshot(&self) -> RuntimeLiveStateSnapshot {
+    RuntimeLiveStateSnapshot {
+      context_template: self.live_context_template.clone(),
+      input_bindings: self.live_input_bindings.clone(),
+      persistent_sends: self.persistent_sends.clone(),
+    }
+  }
+
+  fn restore_live_state(&mut self, snapshot: RuntimeLiveStateSnapshot) {
+    self.live_context_template = snapshot.context_template;
+    self.live_input_bindings = snapshot.input_bindings;
+    self.persistent_sends = snapshot.persistent_sends;
   }
 
   fn live_turn_context(&self) -> MResult<RuntimeContext> {

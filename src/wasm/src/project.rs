@@ -13,7 +13,7 @@ use mech_host_browser::BrowserRuntimeInjectionConfig;
 #[cfg(feature = "served_project_authority")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 #[cfg(feature = "served_project_authority")]
-use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
+use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest, HOST_DELEGATION_ALGORITHM_ED25519};
 #[cfg(feature = "browser_host_dom")]
 use mech_host_browser::BrowserHostFactory;
 #[cfg(feature = "browser_host_console")]
@@ -319,12 +319,12 @@ struct InjectedHostDelegationPublicKey {
 }
 
 #[cfg(feature = "served_project_authority")]
-fn trusted_host_keys_from_js_value(value: JsValue) -> Result<HostDelegationKeyStore, JsValue> {
-    let keys: Vec<InjectedHostDelegationPublicKey> = serde_wasm_bindgen::from_value(value)
-        .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+fn decode_injected_host_delegation_keys(
+    keys: Vec<InjectedHostDelegationPublicKey>,
+) -> Result<HostDelegationKeyStore, JsValue> {
     let mut decoded_keys = Vec::with_capacity(keys.len());
     for key in keys {
-        if !key.algorithm.eq_ignore_ascii_case("ed25519") {
+        if key.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
             return Err(js_error(format!("unsupported trusted host key algorithm `{}`", key.algorithm)));
         }
         let public_key = base64::engine::general_purpose::STANDARD
@@ -336,11 +336,18 @@ fn trusted_host_keys_from_js_value(value: JsValue) -> Result<HostDelegationKeySt
         decoded_keys.push(HostDelegationPublicKey {
             issuer: key.issuer,
             key_id: key.key_id,
-            algorithm: key.algorithm,
+            algorithm: HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
             public_key,
         });
     }
     Ok(HostDelegationKeyStore::new(decoded_keys))
+}
+
+#[cfg(feature = "served_project_authority")]
+fn trusted_host_keys_from_js_value(value: JsValue) -> Result<HostDelegationKeyStore, JsValue> {
+    let keys: Vec<InjectedHostDelegationPublicKey> = serde_wasm_bindgen::from_value(value)
+        .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+    decode_injected_host_delegation_keys(keys)
 }
 
 #[cfg(feature = "served_project_authority")]

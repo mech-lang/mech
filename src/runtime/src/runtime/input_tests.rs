@@ -1,14 +1,16 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
 
 use mech_core::{hash_str, MResult, MechError, MechErrorKind, Ref, Value};
 
 use super::*;
 use crate::{
+  BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
   ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, InMemoryDocsProvider,
   RuntimeCapabilityGrant, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
   RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeIngress,
-  RuntimeResourceProvider, materialize_host_manifest,
+  RuntimeResourceProvider, ClosureHostFunction, materialize_host_manifest,
 };
 
 fn f64_value(value: &Value) -> f64 {
@@ -84,8 +86,13 @@ fn canonical_host_input_updates_live_context_read() {
   assert!(runtime.live_input_bindings.keys().all(|source| !source.base_uri().contains("pulse") && !source.path().contains("pulse")));
 
   let alias = RuntimeHostInputSource::new("docs://pulse", "value").unwrap();
-  let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::single(alias, RuntimeHostInputValue::F64(5.0))).unwrap_err());
-  assert!(error.contains("RuntimeHostInputUnboundSource"));
+  let outcome = runtime
+    .apply_host_input(RuntimeHostInput::single(alias, RuntimeHostInputValue::F64(5.0)))
+    .unwrap();
+  assert_eq!(outcome.update_count, 1);
+  assert_eq!(outcome.ignored_update_count, 1);
+  assert_eq!(outcome.binding_count, 0);
+  assert!(outcome.solve.is_none());
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
 
   runtime.ingress().submit(RuntimeHostInput::single(canonical, RuntimeHostInputValue::F64(5.0))).unwrap();
@@ -118,19 +125,107 @@ fn logical_packet_updates_all_inputs_and_solves_once() {
 }
 
 #[test]
-fn packet_with_unbound_source_does_not_mutate_bound_inputs() {
+fn packet_with_bound_and_unbound_sources_updates_bound_inputs() {
   let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
   grant_read(&mut runtime, "docs://clock/ticks", "value");
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
-  let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::new(vec![
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), value: RuntimeHostInputValue::F64(5.0) },
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing").unwrap(), value: RuntimeHostInputValue::F64(9.0) },
-  ]).unwrap()).unwrap_err());
+  ]).unwrap()).unwrap();
 
-  assert!(error.contains("RuntimeHostInputUnboundSource"));
+  assert_eq!(outcome.update_count, 2);
+  assert_eq!(outcome.ignored_update_count, 1);
+  assert_eq!(outcome.binding_count, 1);
+  assert!(outcome.solve.is_some());
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 5.0);
+}
+
+
+#[test]
+fn partial_snapshot_updates_bound_fields_and_ignores_unbound_fields() {
+  let provider = InMemoryDocsProvider::new()
+    .with_value("docs://timer/state", "tick", Value::F64(Ref::new(1.0))).unwrap()
+    .with_value("docs://timer/state", "delta-seconds", Value::F64(Ref::new(0.1))).unwrap();
+  let mut runtime = docs_runtime(provider);
+  grant_read(&mut runtime, "docs://timer/state", "tick");
+  grant_read(&mut runtime, "docs://timer/state", "delta-seconds");
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@timer := docs://timer/state{:read(tick), :read(delta-seconds)}\noutput := @timer/tick + @timer/delta-seconds").unwrap();
+
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "tick").unwrap(), value: RuntimeHostInputValue::F64(10.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "elapsed-ms").unwrap(), value: RuntimeHostInputValue::F64(1000.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "delta-ms").unwrap(), value: RuntimeHostInputValue::F64(16.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "elapsed-seconds").unwrap(), value: RuntimeHostInputValue::F64(1.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "delta-seconds").unwrap(), value: RuntimeHostInputValue::F64(0.25) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "skipped-steps").unwrap(), value: RuntimeHostInputValue::F64(0.0) },
+  ]).unwrap()).unwrap();
+
+  assert_eq!(outcome.update_count, 6);
+  assert_eq!(outcome.ignored_update_count, 4);
+  assert_eq!(outcome.binding_count, 2);
+  assert!(outcome.solve.is_some());
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://timer/state", "tick").unwrap())), 10.0);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://timer/state", "delta-seconds").unwrap())), 0.25);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.25);
+}
+
+#[test]
+fn all_unbound_packet_skips_plan_solve() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
+
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing-a").unwrap(), value: RuntimeHostInputValue::F64(5.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing-b").unwrap(), value: RuntimeHostInputValue::F64(9.0) },
+  ]).unwrap()).unwrap();
+
+  assert_eq!(outcome.ignored_update_count, outcome.update_count);
+  assert_eq!(outcome.binding_count, 0);
+  assert!(outcome.solve.is_none());
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
-  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 1.0);
+}
+
+
+#[test]
+fn live_input_recomputes_runtime_host_function() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  runtime
+    .grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(42),
+      &BasicSubject::new(&runtime.runtime_context().unwrap().subject),
+      &BasicResource::new("host:demo/live-plus-one"),
+      [BasicOperation::new("call")],
+    )))
+    .unwrap();
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-plus-one", move |_services, _context, args| {
+    host_calls.fetch_add(1, Ordering::SeqCst);
+    match &args[0] {
+      Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
+      Value::MutableReference(value) => match &*value.borrow() {
+        Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    }
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/live-plus-one(@pulse/value) + 0").unwrap();
+  let initial_calls = calls.load(Ordering::SeqCst);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+
+  runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+
+  assert!(calls.load(Ordering::SeqCst) > initial_calls);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 9.0);
 }
 
 #[derive(Debug, Clone)]
