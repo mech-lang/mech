@@ -671,14 +671,120 @@ rows := |id<string> x<f64>|
         run_project_sources(&mut runtime, &document, &sources).unwrap();
     }
 
+    #[derive(Debug)]
+    struct TestManualTimerHostFactory {
+        manifest: mech_runtime::HostManifestConfig,
+        snapshot: mech_host_timer::SharedTimerSnapshot,
+    }
+
+    impl TestManualTimerHostFactory {
+        fn new() -> Self {
+            Self {
+                manifest: mech_host_timer::timer_host_manifest().unwrap(),
+                snapshot: mech_host_timer::new_shared_snapshot(mech_host_timer::TimerSnapshot::new(0, 60, 0)),
+            }
+        }
+    }
+
+    impl mech_runtime::RuntimeHostFactory for TestManualTimerHostFactory {
+        fn provider_name(&self) -> &str { "timer" }
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig { &self.manifest }
+        fn validate_settings(&self, _instance_name: &str, settings: &mech_runtime::ConfigValue) -> mech_core::MResult<()> {
+            mech_host_timer::timer_settings_from_config(settings).map(|_| ())
+        }
+        fn instantiate(&self, instance_name: &str, settings: &mech_runtime::ConfigValue) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
+            let settings = mech_host_timer::timer_settings_from_config(settings)?;
+            Ok(mech_runtime::RuntimeHostInstallation {
+                interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
+                resource_providers: vec![Box::new(mech_host_timer::TimerResourceProvider::new(instance_name, self.snapshot.clone()))],
+                input_drivers: vec![Box::new(mech_host_timer::ManualTimerInputDriver::new(
+                    instance_name,
+                    settings.frequency_hz,
+                    settings.max_catch_up_steps,
+                ))],
+            })
+        }
+    }
+
+    fn generic_fixture_document() -> MechConfigDocument {
+        parse_config_document(
+            "generic-timer-table-scene/mech.mcfg",
+            include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg"),
+            ConfigProfileOptions::default(),
+        ).unwrap()
+    }
+
+    fn generic_fixture_sources() -> HashMap<String, String> {
+        let mut sources = HashMap::new();
+        sources.insert(
+            "table-scene.mec".to_string(),
+            include_str!("../tests/fixtures/generic-timer-table-scene/table-scene.mec").to_string(),
+        );
+        sources
+    }
+
+
+    fn fixture_timer_packet(tick: u64, delta_seconds: f64) -> mech_runtime::RuntimeHostInput {
+        mech_runtime::RuntimeHostInput::new(vec![
+            mech_runtime::RuntimeHostInputUpdate {
+                source: mech_runtime::RuntimeHostInputSource::new("timer://tick/tick", "tick").unwrap(),
+                value: mech_runtime::RuntimeHostInputValue::F64(tick as f64),
+            },
+            mech_runtime::RuntimeHostInputUpdate {
+                source: mech_runtime::RuntimeHostInputSource::new("timer://tick/tick", "delta-seconds").unwrap(),
+                value: mech_runtime::RuntimeHostInputValue::F64(delta_seconds),
+            },
+        ]).unwrap()
+    }
+
     #[test]
-    fn generic_timer_table_scene_fixture_declares_reusable_project_pipeline() {
-        let paths = required_path_strings(include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg")).unwrap();
-        assert_eq!(paths, vec!["table-scene.mec".to_string()]);
-        let source = include_str!("../tests/fixtures/generic-timer-table-scene/table-scene.mec");
-        assert!(source.contains("@tick/delta-seconds"));
-        assert!(source.contains("rows := |id<string> x<f64> y<f64> radius<f64> fill<string>|"));
-        assert!(source.contains("@view/replace <- scene"));
+    fn generic_timer_table_scene_fixture_executes_with_timer_and_scene_hosts() {
+        let document = generic_fixture_document();
+        let source_paths = required_path_strings(include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg")).unwrap();
+        assert_eq!(source_paths, vec!["table-scene.mec".to_string()]);
+
+        let scene_backend = mech_host_scene::RecordingSceneBackend::new();
+        let mut builder = RuntimeBuilder::new()
+            .host_input_capacity(16)
+            .host_factory(Box::new(TestManualTimerHostFactory::new())).unwrap()
+            .host_factory(Box::new(mech_host_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap())).unwrap();
+        for host in &document.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &document.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        let mut runtime = builder.build().unwrap();
+        run_project_sources(&mut runtime, &document, &generic_fixture_sources()).unwrap();
+
+        let initial_scene = scene_backend.latest().unwrap();
+        assert_eq!(initial_scene.circles.len(), 2);
+        assert_eq!(initial_scene.lines.len(), 3);
+        let initial_x = initial_scene.circles[0].x;
+
+        runtime.start_input_drivers().unwrap();
+        runtime.ingress().submit(fixture_timer_packet(1, 0.25)).unwrap();
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+        let outcomes = runtime.drain_host_inputs(1).unwrap();
+        assert_eq!(outcomes.len(), 1);
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+        let updated_scene = scene_backend.latest().unwrap();
+        assert!(updated_scene.circles[0].x > initial_x);
+        assert!((updated_scene.circles[0].x - 20.25).abs() < 0.000001);
+        assert_eq!(updated_scene.circles.len(), 2);
+        assert_eq!(updated_scene.lines.len(), 3);
+        assert!(scene_backend.generation() >= 2);
+
+        for tick in 2..12 {
+            runtime.ingress().submit(fixture_timer_packet(tick, 0.25)).unwrap();
+        }
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 10);
+        let drained = runtime.drain_host_inputs(3).unwrap();
+        assert_eq!(drained.len(), 3);
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 7);
+        runtime.stop_input_drivers().unwrap();
+        runtime.close_ingress().unwrap();
     }
 
     #[test]
@@ -773,10 +879,25 @@ rows := |id<string> x<f64>|
 
     #[wasm_bindgen_test]
     fn generic_project_with_timer_and_scene_runs_fixed_step_fixture() {
-        let config = r#"config := {
-  hosts: []
-  run: { paths: ["generic-table-scene.mec"] grants: [] }
-}"#;
-        assert_eq!(required_path_strings(config).unwrap(), vec!["generic-table-scene.mec".to_string()]);
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        let canvas = document.create_element("canvas").unwrap();
+        canvas.set_attribute("id", "generic-scene").unwrap();
+        document.body().unwrap().append_child(&canvas).unwrap();
+
+        let config = include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg");
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("table-scene.mec"),
+            &JsValue::from_str(include_str!("../tests/fixtures/generic-timer-table-scene/table-scene.mec")),
+        )
+        .unwrap();
+        let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
+        project.start().unwrap();
+        let result = project.frame(1).unwrap();
+        assert_eq!(Reflect::get(&result, &JsValue::from_str("rendered")).unwrap().as_f64(), Some(1.0));
+        project.stop().unwrap();
+        canvas.remove();
     }
 }

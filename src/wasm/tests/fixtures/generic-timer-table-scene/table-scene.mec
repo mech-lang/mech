@@ -4,11 +4,14 @@
 generic-tick := @tick/tick
 generic-delta := @tick/delta-seconds
 
-rows := |id<string> x<f64> y<f64> radius<f64> fill<string>|
-  | "row-a" 20 + generic-delta 30 4 "#ffffff" |
-  | "row-b" 40 + generic-delta 50 5 "#cccccc" |
+rows := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "row-a" 20 + generic-delta 30 4 "#ffffff" "#222222" 1 1 |
+  | "row-b" 40 + generic-delta 50 5 "#cccccc" "#444444" 1 0.75 |
 
 lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+  | "line-a" 10 10 90 10 "#ffffff" 1 "round" 1 0 0 0 |
+  | "line-b" 10 40 90 40 "#cccccc" 2 "round" 0.8 0 0 0 |
+  | "line-c" 10 70 90 70 "#999999" 1 "square" 0.6 0 0 0 |
 
 scene := {
   width: 100
