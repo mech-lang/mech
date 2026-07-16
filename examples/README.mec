@@ -22,7 +22,6 @@ Browser project examples include:
 
 ```text
 examples/analog-clock/
-examples/bouncing-balls/
 ```
 
 Robot arm examples live with the host crate:

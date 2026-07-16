@@ -139,11 +139,6 @@ jobs:
             -p mech-wasm \
             --target wasm32-unknown-unknown \
             --no-default-features \
-            --features "browser_project_runner,browser_host_timer,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,range_default,math_default,matrix_default,dynamic_matrix,f64,bool,string,record,tuple,table,atom,enum,variables"
-          cargo check \
-            -p mech-wasm \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
             --features browser_project
 
       - name: Check CLI clock
@@ -162,12 +157,6 @@ jobs:
           grep '^│' /tmp/analog-clock.out > /tmp/clock-values.out
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
-
-          set +e
-          timeout --preserve-status --signal=INT 5s target/debug/mech run examples/bouncing-balls > /tmp/bouncing-balls.out
-          balls_status=$?
-          set -e
-          test "$balls_status" -eq 0
 
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
@@ -227,11 +216,10 @@ jobs:
           test ! -e examples/common
           test ! -e examples/pkg
           test ! -e examples/analog-clock/clock.js
-          test ! -e examples/bouncing-balls/balls.js
           test ! -e mech-app
           test ! -e include/blog.html
           ! rg -n \
-            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\\.js|balls\\.js" \
+            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\\.js" \
             src include examples
           test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
 

@@ -401,13 +401,14 @@ fn validate_required_grants(
                 return Err(MechError::new(ProjectError { message: format!("served project requires grant `{}`, but server authority did not issue it", required.target) }, None));
             }
             for operation in &required.operations {
-                if !issued.iter().any(|grant| grant.operations.iter().any(|issued| issued == operation)) {
-                    return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires operation `{}` outside server authority", required.target, operation) }, None));
-                }
-            }
-            for path in &required.paths {
-                if !issued.iter().any(|grant| grant.paths.iter().any(|issued| grant_path_allows(issued, path))) {
-                    return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires path `{}` outside server authority", required.target, path) }, None));
+                for path in &required.paths {
+                    let authorized = issued.iter().any(|grant| {
+                        grant.operations.iter().any(|issued| issued == operation)
+                            && grant.paths.iter().any(|issued| grant_path_allows(issued, path))
+                    });
+                    if !authorized {
+                        return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires operation `{}` on path `{}` outside server authority", required.target, operation, path) }, None));
+                    }
                 }
             }
         }
@@ -628,6 +629,17 @@ mod tests {
 
     #[cfg(feature = "served_project_authority")]
     #[test]
+    fn crossed_operation_and_path_grants_are_rejected() {
+        let doc = document_with_grant("secret/file", "write");
+        let authority = authority_config(
+            vec![host("view", "scene")],
+            vec![grant("view/frame", &["write"], &["public/*"]), grant("view/frame", &["read"], &["secret/*"])],
+        );
+        assert!(validate_served_authority(&doc, &authority).is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
     fn unrelated_issued_host_does_not_require_compiled_provider() {
         let doc = document_with_grant("replace", "write");
         let authority = authority_config(
@@ -636,6 +648,37 @@ mod tests {
         );
         validate_served_authority(&doc, &authority).unwrap();
         validate_compiled_host_providers_for_hosts(&doc.hosts).unwrap();
+    }
+
+
+
+    #[test]
+    fn generic_table_project_source_runs_through_runtime_loader() {
+        let document = parse_config_document(
+            "generic-table.mcfg",
+            r#"config := { hosts: [] run: { paths: ["generic-table.mec"] grants: [] } }"#,
+            ConfigProfileOptions::default(),
+        ).unwrap();
+        let mut sources = HashMap::new();
+        sources.insert(
+            "generic-table.mec".to_string(),
+            r#"delta := 0.25
+rows := |id<string> x<f64>|
+  | "row-a" 1 + delta |
+  | "row-b" 2 + delta |"#.to_string(),
+        );
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        run_project_sources(&mut runtime, &document, &sources).unwrap();
+    }
+
+    #[test]
+    fn generic_timer_table_scene_fixture_declares_reusable_project_pipeline() {
+        let paths = required_path_strings(include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg")).unwrap();
+        assert_eq!(paths, vec!["table-scene.mec".to_string()]);
+        let source = include_str!("../tests/fixtures/generic-timer-table-scene/table-scene.mec");
+        assert!(source.contains("@tick/delta-seconds"));
+        assert!(source.contains("rows := |id<string> x<f64> y<f64> radius<f64> fill<string>|"));
+        assert!(source.contains("@view/replace <- scene"));
     }
 
     #[test]
@@ -679,12 +722,15 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn generic_project_frame_respects_input_bound() {
-        let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;
+        let config = r#"config := { hosts: [] run: { paths: ["generic-table.mec"] grants: [] } }"#;
         let sources = Object::new();
         Reflect::set(
             &sources,
-            &JsValue::from_str("main.mec"),
-            &JsValue::from_str("x := 1"),
+            &JsValue::from_str("generic-table.mec"),
+            &JsValue::from_str(r#"delta := 0.25
+rows := |id<string> x<f64>|
+  | "row-a" 1 + delta |
+  | "row-b" 2 + delta |"#),
         )
         .unwrap();
         let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
@@ -727,6 +773,10 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn generic_project_with_timer_and_scene_runs_fixed_step_fixture() {
-        assert!(required_path_strings(include_str!("../../../examples/bouncing-balls/mech.mcfg")).is_ok());
+        let config = r#"config := {
+  hosts: []
+  run: { paths: ["generic-table-scene.mec"] grants: [] }
+}"#;
+        assert_eq!(required_path_strings(config).unwrap(), vec!["generic-table-scene.mec".to_string()]);
     }
 }

@@ -1,31 +1,30 @@
 config := {
   hosts: [
     {
-      name: "physics"
+      name: "tick"
       provider: "timer"
       settings: {
-        frequency-hz: 120
-        max-catch-up-steps: 8
+        frequency-hz: 60
+        max-catch-up-steps: 3
       }
     }
     {
       name: "view"
       provider: "scene"
       settings: {
-        selector: "#scene"
+        selector: "#generic-scene"
         renderer: "canvas"
       }
     }
   ]
 
   run: {
-    paths: ["balls.mec"]
-
+    paths: ["table-scene.mec"]
     grants: [
       {
-        target: "physics/tick"
+        target: "tick/tick"
         operations: ["read"]
-        paths: ["tick", "elapsed-ms", "delta-ms", "elapsed-seconds", "delta-seconds", "skipped-steps"]
+        paths: ["tick", "delta-seconds"]
       }
       {
         target: "view/frame"
