@@ -297,12 +297,14 @@ fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {
 
     runtime.start_input_drivers()?;
     let run_result = run_live_loop(runtime, &stop);
+    let stop_result = runtime.stop_input_drivers();
     let shutdown_result = runtime.shutdown();
 
-    match (run_result, shutdown_result) {
-        (Err(error), _) => Err(error),
-        (Ok(()), Err(error)) => Err(error),
-        (Ok(()), Ok(())) => Ok(()),
+    match (run_result, stop_result, shutdown_result) {
+        (Err(error), _, _) => Err(error),
+        (Ok(()), Err(error), _) => Err(error),
+        (Ok(()), Ok(()), Err(error)) => Err(error),
+        (Ok(()), Ok(()), Ok(())) => Ok(()),
     }
 }
 

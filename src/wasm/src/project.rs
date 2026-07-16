@@ -4,6 +4,12 @@ use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
 use mech_core::{MechError, MechErrorKind};
+#[cfg(feature = "host_delegation")]
+use mech_host_browser::BrowserRuntimeInjectionConfig;
+#[cfg(feature = "host_delegation_signing")]
+use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
+#[cfg(feature = "host_delegation_signing")]
+use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
 #[cfg(feature = "browser_host_dom")]
 use mech_host_browser::BrowserHostFactory;
 #[cfg(feature = "browser_host_console")]
@@ -62,7 +68,22 @@ impl WasmProject {
 
     #[wasm_bindgen(js_name = fromServedSources)]
     pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
-        Self::from_sources(config_source, sources)
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let authority = served_browser_authority()?;
+        validate_served_authority(&document, &authority).map_err(to_js_error)?;
+        validate_compiled_host_providers_for_hosts(&authority.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let mut runtime = build_runtime_from_authority(&authority, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
+        run_project_sources(&mut runtime, &document, &source_map).map_err(to_js_error)?;
+        Ok(Self {
+            runtime,
+            #[cfg(feature = "browser_host_scene")]
+            scenes,
+            started: false,
+            stopped: false,
+        })
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
@@ -157,10 +178,9 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
         .map(|path| path.to_string_lossy().to_string())
         .collect())
 }
-fn build_runtime(
-    document: &MechConfigDocument,
+fn runtime_builder_with_factories(
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
-) -> Result<MechRuntime, JsValue> {
+) -> Result<RuntimeBuilder, JsValue> {
     let mut builder = RuntimeBuilder::new();
     #[cfg(feature = "browser_host_dom")]
     {
@@ -193,6 +213,14 @@ fn build_runtime(
         let scene_factory = BrowserSceneHostFactory::with_registry(scenes).map_err(to_js_error)?;
         builder = builder.host_factory(Box::new(scene_factory)).map_err(to_js_error)?;
     }
+    Ok(builder)
+}
+
+fn build_runtime(
+    document: &MechConfigDocument,
+    #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+) -> Result<MechRuntime, JsValue> {
+    let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?;
     for host in &document.hosts {
         builder = builder.host_instance(host.clone());
     }
@@ -203,6 +231,30 @@ fn build_runtime(
     }
     builder.build().map_err(to_js_error)
 }
+#[cfg(feature = "host_delegation")]
+fn build_runtime_from_authority(
+    authority: &BrowserRuntimeInjectionConfig,
+    #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+) -> Result<MechRuntime, JsValue> {
+    let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?
+        .config(authority.into_runtime_config().map_err(to_js_error)?);
+    for host in &authority.hosts {
+        builder = builder.host_instance(host.clone());
+    }
+    for grant in &authority.run_grants {
+        builder = builder.run_resource_grant(grant.clone());
+    }
+    builder.build().map_err(to_js_error)
+}
+
+#[cfg(not(feature = "host_delegation"))]
+fn build_runtime_from_authority(
+    _authority: &(),
+    #[cfg(feature = "browser_host_scene")] _scenes: BrowserSceneRegistry,
+) -> Result<MechRuntime, JsValue> {
+    Err(js_error("served project authority support was not compiled into this WASM artifact"))
+}
+
 fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
     let mut providers = BTreeMap::new();
     #[cfg(feature = "browser_host_dom")]
@@ -230,8 +282,12 @@ fn standard_browser_provider_feature(provider: &str) -> Option<&'static str> {
 }
 
 fn validate_compiled_host_providers(document: &MechConfigDocument) -> mech_core::MResult<()> {
+    validate_compiled_host_providers_for_hosts(&document.hosts)
+}
+
+fn validate_compiled_host_providers_for_hosts(hosts: &[mech_runtime::HostInstanceConfig]) -> mech_core::MResult<()> {
     let compiled = compiled_browser_providers();
-    for host in &document.hosts {
+    for host in hosts {
         if let Some(feature) = standard_browser_provider_feature(&host.provider) {
             if !compiled.contains_key(host.provider.as_str()) {
                 return Err(MechError::new(
@@ -243,6 +299,82 @@ fn validate_compiled_host_providers(document: &MechConfigDocument) -> mech_core:
     }
     Ok(())
 }
+#[cfg(feature = "host_delegation")]
+fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> {
+    let window = web_sys::window().ok_or_else(|| js_error("served project authority requires a browser window"))?;
+    let host_config = Reflect::get(&window, &JsValue::from_str("__MECH_HOST_CONFIG"))?;
+    if host_config.is_undefined() || host_config.is_null() {
+        return Err(js_error("served project authority is missing __MECH_HOST_CONFIG"));
+    }
+    #[cfg(feature = "host_delegation_signing")]
+    {
+        let trusted = Reflect::get(&window, &JsValue::from_str("__MECH_TRUSTED_HOST_KEYS"))?;
+        let audience = Reflect::get(&window, &JsValue::from_str("__MECH_HOST_DELEGATION_AUDIENCE"))?;
+        if !trusted.is_undefined() && !trusted.is_null() {
+            let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(host_config.clone())
+                .map_err(|error| js_error(format!("invalid served host delegation envelope: {error}")))?;
+            let keys: Vec<HostDelegationPublicKey> = serde_wasm_bindgen::from_value(trusted)
+                .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+            let audience = audience.as_string().ok_or_else(|| js_error("served host delegation audience must be a string"))?;
+            let now_ms = js_sys::Date::now().max(0.0) as u64;
+            let verified = verify_browser_host_delegation(
+                &envelope,
+                HostDelegationVerificationRequest {
+                    now_ms,
+                    expected_audience: audience,
+                    trusted_keys: HostDelegationKeyStore::new(keys),
+                    max_clock_skew_ms: 60_000,
+                },
+            ).map_err(to_js_error)?;
+            return Ok(verified.authority.runtime_injection);
+        }
+    }
+    serde_wasm_bindgen::from_value(host_config)
+        .map_err(|error| js_error(format!("invalid served host config: {error}")))
+}
+
+#[cfg(not(feature = "host_delegation"))]
+fn served_browser_authority() -> Result<(), JsValue> {
+    Err(js_error("served project authority support was not compiled into this WASM artifact"))
+}
+
+fn validate_served_authority(
+    document: &MechConfigDocument,
+    #[cfg(feature = "host_delegation")] authority: &BrowserRuntimeInjectionConfig,
+    #[cfg(not(feature = "host_delegation"))] _authority: &(),
+) -> mech_core::MResult<()> {
+    #[cfg(not(feature = "host_delegation"))]
+    {
+        return Err(MechError::new(ProjectError { message: "served project authority support was not compiled into this WASM artifact".into() }, None));
+    }
+    #[cfg(feature = "host_delegation")]
+    {
+        for required in &document.hosts {
+            if !authority.hosts.iter().any(|host| host.name == required.name && host.provider == required.provider) {
+                return Err(MechError::new(ProjectError { message: format!("served project requires host `{}` provider `{}`, but server authority did not grant it", required.name, required.provider) }, None));
+            }
+        }
+        if let Some(run) = &document.run {
+            for grant in &run.grants {
+                let Some(issued) = authority.run_grants.iter().find(|issued| issued.target == grant.target) else {
+                    return Err(MechError::new(ProjectError { message: format!("served project requires grant `{}`, but server authority did not issue it", grant.target) }, None));
+                };
+                for operation in &grant.operations {
+                    if !issued.operations.contains(operation) {
+                        return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires operation `{:?}` outside server authority", grant.target, operation) }, None));
+                    }
+                }
+                for path in &grant.paths {
+                    if !issued.paths.contains(path) {
+                        return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires path `{}` outside server authority", grant.target, path) }, None));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue> {
     if !value.is_object() || value.is_null() {
         return Err(js_error("sources must be an object"));
