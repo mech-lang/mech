@@ -60,6 +60,75 @@ use mech_program::{
   MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
 
+
+#[derive(Clone, Debug)]
+struct RuntimeLiveContextTemplate {
+  runtime: RuntimeId,
+  subject: String,
+  task: Option<TaskId>,
+  actor: Option<ActorId>,
+  module_version: Option<ModuleVersionId>,
+  capabilities: Vec<CapabilityId>,
+  budget_limits: ResourceBudget,
+  actor_message: Option<MessageRecord>,
+  actor_state: Option<ObjectId>,
+}
+
+impl RuntimeLiveContextTemplate {
+  fn from_context(context: &RuntimeContext) -> Self {
+    Self {
+      runtime: context.runtime,
+      subject: context.subject.clone(),
+      task: context.task,
+      actor: context.actor,
+      module_version: context.module_version,
+      capabilities: context.capabilities.clone(),
+      budget_limits: ResourceBudget {
+        max_steps: context.budget.max_steps,
+        used_steps: 0,
+        max_bytes: context.budget.max_bytes,
+        used_bytes: 0,
+        max_items: context.budget.max_items,
+        used_items: 0,
+        max_messages: context.budget.max_messages,
+        used_messages: 0,
+      },
+      actor_message: context.actor_message.clone(),
+      actor_state: context.actor_state,
+    }
+  }
+
+  fn fresh_context(&self) -> RuntimeContext {
+    RuntimeContext {
+      runtime: self.runtime,
+      subject: self.subject.clone(),
+      task: self.task,
+      actor: self.actor,
+      access: Default::default(),
+      module_version: self.module_version,
+      transaction: None,
+      capabilities: self.capabilities.clone(),
+      budget: self.budget_limits.clone(),
+      events: Vec::new(),
+      actor_message: self.actor_message.clone(),
+      actor_state: self.actor_state,
+    }
+  }
+
+  fn matches_context(&self, context: &RuntimeContext) -> bool {
+    self.runtime == context.runtime
+      && self.subject == context.subject
+      && self.task == context.task
+      && self.actor == context.actor
+      && self.module_version == context.module_version
+      && self.capabilities == context.capabilities
+      && self.budget_limits.max_steps == context.budget.max_steps
+      && self.budget_limits.max_bytes == context.budget.max_bytes
+      && self.budget_limits.max_items == context.budget.max_items
+      && self.budget_limits.max_messages == context.budget.max_messages
+  }
+}
+
 #[derive(Clone, Debug)]
 struct RuntimePersistentSend {
   binding: RuntimeContextBinding,
@@ -397,6 +466,7 @@ impl RuntimeBuilder {
       input_drivers: self.input_drivers,
       attached_input_driver_count: 0,
       persistent_sends: Vec::new(),
+      live_context_template: None,
       input_driver_cleanup_armed: false,
       host_interfaces,
       module_manifests: self.module_manifests,
@@ -471,6 +541,7 @@ pub struct MechRuntime {
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
   attached_input_driver_count: usize,
   persistent_sends: Vec<RuntimePersistentSend>,
+  live_context_template: Option<RuntimeLiveContextTemplate>,
   input_driver_cleanup_armed: bool,
   host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
@@ -499,6 +570,8 @@ impl std::fmt::Debug for MechRuntime {
       .field("resource_bindings", &self.resource_bindings)
       .field("live_input_bindings", &self.live_input_bindings)
       .field("input_drivers", &self.input_drivers.len())
+      .field("persistent_sends", &self.persistent_sends.len())
+      .field("live_context_template", &self.live_context_template)
       .field("host_interfaces", &self.host_interfaces)
       .field("module_manifests", &self.module_manifests)
       .finish()
@@ -1015,6 +1088,36 @@ impl MechRuntime {
     RuntimeContextBuilder::new(self.id)
       .budget(self.default_budget())
       .build()
+  }
+
+  fn arm_live_context_template(&mut self, context: &RuntimeContext) -> MResult<()> {
+    if context.transaction.is_some() {
+      return Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "RuntimeTransactionalLiveProgramUnsupported",
+        reason: "live context reads and persistent sends cannot be armed under an active transaction".to_string(),
+      }, None));
+    }
+    match &self.live_context_template {
+      Some(template) if template.matches_context(context) => Ok(()),
+      Some(_) => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "RuntimeLiveContextMismatch",
+        reason: "source load attempted to change the live program execution identity or budget maxima".to_string(),
+      }, None)),
+      None => {
+        self.live_context_template = Some(RuntimeLiveContextTemplate::from_context(context));
+        Ok(())
+      }
+    }
+  }
+
+  fn live_turn_context(&self) -> MResult<RuntimeContext> {
+    self.live_context_template
+      .as_ref()
+      .map(RuntimeLiveContextTemplate::fresh_context)
+      .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
+        operation: "RuntimeLiveContextMissing",
+        reason: "host input turn requires a stored live program context".to_string(),
+      }, None))
   }
 
   pub fn context_for_task(&self, task: &TaskRecord) -> MResult<RuntimeContext> {

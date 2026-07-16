@@ -482,10 +482,12 @@ impl MechRuntime {
 
   fn bind_context_read_temp(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     source: crate::RuntimeHostInputSource,
     value: Value,
   ) -> MResult<mech_core::Expression> {
+    self.arm_live_context_template(context)?;
     let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
@@ -521,7 +523,7 @@ impl MechRuntime {
         let resolved = self.resolve_context_resource_request(binding, &path)?;
         let source = crate::RuntimeHostInputSource::new(resolved.provider_base_uri.clone(), resolved.provider_path.clone())?;
         let value = self.read_context_resource(context, binding, &path)?;
-        self.bind_context_read_temp(program, source, value)
+        self.bind_context_read_temp(context, program, source, value)
       }
       mech_core::Expression::Formula(factor) => Ok(mech_core::Expression::Formula(
         self.resolve_context_reads_in_factor(context, program, registry, factor)?,
@@ -1268,6 +1270,7 @@ impl MechRuntime {
           pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
         }
         self.flush_direct_execution(program, pending, result)?;
+        self.arm_live_context_template(context)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
@@ -3851,16 +3854,16 @@ impl MechRuntime {
     input.validate()?;
     let mut target_updates = Vec::new();
     let mut seen_targets = std::collections::HashSet::new();
+    let mut ignored_update_count = 0;
 
     for update in &input.updates {
       let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
-        return Err(crate::input::input_error(
-          "RuntimeHostInputUnboundSource",
-          format!("host input source {}/{} has no live binding", update.source.base_uri(), update.source.path()),
-        ));
+        ignored_update_count += 1;
+        continue;
       };
       if bindings.is_empty() {
-        return Err(crate::input::input_error("RuntimeHostInputUnboundSource", "host input source has no live bindings"));
+        ignored_update_count += 1;
+        continue;
       }
       let value = update.value.clone().into_mech_value()?;
       for program_input in bindings {
@@ -3871,24 +3874,42 @@ impl MechRuntime {
       }
     }
 
+    if target_updates.is_empty() {
+      return Ok(crate::RuntimeHostInputOutcome {
+        update_count: input.updates.len(),
+        ignored_update_count,
+        binding_count: 0,
+        solve: None,
+      });
+    }
+
+    let mut context = self.live_turn_context()?;
+    self.validate_context_for_runtime(&context)?;
+    context.charge_step()?;
+    let started = Instant::now();
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = &mut context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
     let updated_inputs = self.program.update_inputs(&target_updates)?;
     // Updates are preflighted before mutation; after admitted mutation this
     // ingress slice attempts one full persistent-plan solve and reports any
     // solve error without claiming rollback of the accepted input values.
     let solve = self.program.solve_plan()?;
-    self.execute_persistent_sends()?;
+    self.execute_persistent_sends(&context)?;
+    self.enforce_turn_duration(started)?;
     Ok(crate::RuntimeHostInputOutcome {
       update_count: input.updates.len(),
+      ignored_update_count,
       binding_count: updated_inputs,
-      solve,
+      solve: Some(solve),
     })
   }
 
-  fn execute_persistent_sends(&mut self) -> MResult<()> {
-    let context = self.runtime_context()?;
+  fn execute_persistent_sends(&mut self, context: &RuntimeContext) -> MResult<()> {
     for send in self.persistent_sends.clone() {
       let value = resolve_runtime_value(send.value.borrow().clone());
-      self.write_context_resource(&context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
+      self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
     }
     Ok(())
   }

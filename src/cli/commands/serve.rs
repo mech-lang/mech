@@ -312,9 +312,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         .with_compiler_loc()
     })?;
 
-    if resources.mech_wasm.is_none() || resources.mech_js.is_none() || resources.project_js.is_none() {
-        return Err(MechError::new(GenericError { msg: "browser WASM assets are missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc());
-    }
+    let project_js = resources.project_js.ok_or_else(|| MechError::new(GenericError { msg: "browser project.js asset is missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc())?;
 
     print!("{badge} Loading WASM…");
     let wasm = load_resource(
@@ -343,7 +341,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
-        resources.project_js.ok_or_else(|| MechError::new(GenericError { msg: "browser project bootstrap is missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc())?.to_string(),
+        project_js.to_string(),
         wasm.bytes,
         js.bytes,
         options.authority,

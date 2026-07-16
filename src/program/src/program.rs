@@ -295,18 +295,24 @@ impl MechProgram {
     name: &str,
     initial_value: Value,
   ) -> MResult<ProgramInputId> {
-    let Some(()) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
+    let Some(existed) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
       let symbols = interpreter.symbols();
       let mut symbols_brrw = symbols.borrow_mut();
-      if !symbols_brrw.contains(symbol_id) {
+      let existed = symbols_brrw.contains(symbol_id);
+      if !existed {
         symbols_brrw.insert(symbol_id, initial_value.clone(), true);
       }
       symbols_brrw.dictionary.borrow_mut().insert(symbol_id, name.to_string());
       interpreter.dictionary().borrow_mut().insert(symbol_id, name.to_string());
+      existed
     }) else {
       return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
     };
-    Ok(ProgramInputId { interpreter_id, symbol_id })
+    let input = ProgramInputId { interpreter_id, symbol_id };
+    if existed {
+      self.update_input(input, initial_value)?;
+    }
+    Ok(input)
   }
 
   pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<usize> {

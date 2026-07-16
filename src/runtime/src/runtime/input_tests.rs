@@ -111,7 +111,7 @@ fn logical_packet_updates_all_inputs_and_solves_once() {
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "b").unwrap(), value: RuntimeHostInputValue::F64(20.0) },
   ]).unwrap()).unwrap();
 
-  assert!(outcome.solve.plan_len > 0);
+  assert!(outcome.solve.as_ref().unwrap().plan_len > 0);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "a").unwrap())), 10.0);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "b").unwrap())), 20.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 30.0);

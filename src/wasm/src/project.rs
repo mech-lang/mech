@@ -5,6 +5,10 @@ use wasm_bindgen::prelude::*;
 
 use mech_core::{MechError, MechErrorKind};
 #[cfg(feature = "served_project_authority")]
+use base64::Engine as _;
+#[cfg(feature = "served_project_authority")]
+use serde::Deserialize;
+#[cfg(feature = "served_project_authority")]
 use mech_host_browser::BrowserRuntimeInjectionConfig;
 #[cfg(feature = "served_project_authority")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
@@ -303,6 +307,42 @@ fn validate_compiled_host_providers_for_hosts(hosts: &[mech_runtime::HostInstanc
     }
     Ok(())
 }
+
+#[cfg(feature = "served_project_authority")]
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InjectedHostDelegationPublicKey {
+    issuer: String,
+    key_id: String,
+    algorithm: String,
+    public_key: String,
+}
+
+#[cfg(feature = "served_project_authority")]
+fn trusted_host_keys_from_js_value(value: JsValue) -> Result<HostDelegationKeyStore, JsValue> {
+    let keys: Vec<InjectedHostDelegationPublicKey> = serde_wasm_bindgen::from_value(value)
+        .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+    let mut decoded_keys = Vec::with_capacity(keys.len());
+    for key in keys {
+        if !key.algorithm.eq_ignore_ascii_case("ed25519") {
+            return Err(js_error(format!("unsupported trusted host key algorithm `{}`", key.algorithm)));
+        }
+        let public_key = base64::engine::general_purpose::STANDARD
+            .decode(key.public_key.as_bytes())
+            .map_err(|error| js_error(format!("invalid trusted host key publicKey: {error}")))?;
+        if public_key.len() != 32 {
+            return Err(js_error(format!("trusted host key publicKey must decode to 32 bytes, got {}", public_key.len())));
+        }
+        decoded_keys.push(HostDelegationPublicKey {
+            issuer: key.issuer,
+            key_id: key.key_id,
+            algorithm: key.algorithm,
+            public_key,
+        });
+    }
+    Ok(HostDelegationKeyStore::new(decoded_keys))
+}
+
 #[cfg(feature = "served_project_authority")]
 fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> {
     let window = web_sys::window().ok_or_else(|| js_error("served project authority requires a browser window"))?;
@@ -317,8 +357,7 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
         if !trusted.is_undefined() && !trusted.is_null() {
             let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(host_config.clone())
                 .map_err(|error| js_error(format!("invalid served host delegation envelope: {error}")))?;
-            let keys: Vec<HostDelegationPublicKey> = serde_wasm_bindgen::from_value(trusted)
-                .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+            let trusted_keys = trusted_host_keys_from_js_value(trusted)?;
             let audience = audience.as_string().ok_or_else(|| js_error("served host delegation audience must be a string"))?;
             let now_ms = js_sys::Date::now().max(0.0) as u64;
             let verified = verify_browser_host_delegation(
@@ -326,7 +365,7 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
                 HostDelegationVerificationRequest {
                     now_ms,
                     expected_audience: audience,
-                    trusted_keys: HostDelegationKeyStore::new(keys),
+                    trusted_keys,
                     max_clock_skew_ms: 60_000,
                 },
             ).map_err(to_js_error)?;
