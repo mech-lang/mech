@@ -1269,8 +1269,11 @@ impl MechRuntime {
         }
         self.flush_direct_execution(program, pending, result)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
-        let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
-        self.write_context_resource(context, &binding, &send.target.name.to_string(), value.clone(), RuntimeResourceWriteIntent::Send)?;
+        let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
+        let value = resolve_runtime_value(value_cell.borrow().clone());
+        let path = send.target.name.to_string();
+        self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
+        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
         *result = value;
         return Ok(());
       }
@@ -2422,6 +2425,38 @@ impl MechRuntime {
   ) -> MResult<Value> {
     let single = single_code_program(mech_core::MechCode::Expression(expression.clone()), None);
     program.run_tree(&single).map(resolve_runtime_value)
+  }
+
+  fn bind_persistent_send_value_on_program(
+    &mut self,
+    program: &mut MechProgram,
+    expression: mech_core::Expression,
+  ) -> MResult<ValRef> {
+    let name = format!("mech-internal-persistent-send-{}", self.persistent_sends.len());
+    let id = hash_str(&name);
+    let var_def = mech_core::VariableDefine {
+      mutable: false,
+      var: mech_core::Var {
+        name: identifier_from_str(&name),
+        context: None,
+        kind: None,
+      },
+      expression,
+    };
+    let single = single_code_program(
+      mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
+      None,
+    );
+    program.run_tree(&single)?;
+    program
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(id)
+      .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
+        operation: "persistent_context_send",
+        reason: "failed to bind persistent send expression to an output cell".to_string(),
+      }, None))
   }
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
@@ -3795,6 +3830,18 @@ impl MechRuntime {
     Ok(self.pending_host_input_count()? > 0)
   }
 
+  pub fn persistent_send_count(&self) -> usize {
+    self.persistent_sends.len()
+  }
+
+  pub fn input_driver_count(&self) -> usize {
+    self.attached_input_driver_count
+  }
+
+  pub fn has_input_drivers(&self) -> bool {
+    self.input_driver_count() > 0
+  }
+
   pub fn pending_host_input_count(&self) -> MResult<usize> {
     let guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
     Ok(guard.queue.len())
@@ -3829,11 +3876,21 @@ impl MechRuntime {
     // ingress slice attempts one full persistent-plan solve and reports any
     // solve error without claiming rollback of the accepted input values.
     let solve = self.program.solve_plan()?;
+    self.execute_persistent_sends()?;
     Ok(crate::RuntimeHostInputOutcome {
       update_count: input.updates.len(),
       binding_count: updated_inputs,
       solve,
     })
+  }
+
+  fn execute_persistent_sends(&mut self) -> MResult<()> {
+    let context = self.runtime_context()?;
+    for send in self.persistent_sends.clone() {
+      let value = resolve_runtime_value(send.value.borrow().clone());
+      self.write_context_resource(&context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
+    }
+    Ok(())
   }
 
   pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {

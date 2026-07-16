@@ -178,6 +178,9 @@ impl ServerSourceRegistry {
         });
     }
     if normalized.ends_with(".mec") || normalized.ends_with(".🤖") {
+      if let Some(asset) = self.assets.get(&normalized) {
+        return Some((asset.clone(), format!("asset `{}`", normalized)));
+      }
       return self.html_sources
         .get(&normalized)
         .cloned()
@@ -349,6 +352,7 @@ pub struct MechServer {
   init: bool,
   stylesheet: String,
   html_shim: String,
+  project_js: String,
   host_config: Option<BrowserRuntimeInjectionConfig>,
   host_config_injection: Option<HostAuthorityInjection>,
   serve_configured_shim_at_root: bool,
@@ -370,15 +374,16 @@ pub struct MechServer {
 
 impl MechServer {
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority) -> Self {
-    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, wasm, js, authority, RuntimeConfig::default())
+    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, String::new(), wasm, js, authority, RuntimeConfig::default())
   }
 
-  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
+  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, project_js: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
     Self::new_with_runtime_config_and_host_config(
       name,
       full_address,
       stylesheet,
       html_shim,
+      project_js,
       wasm,
       js,
       authority,
@@ -394,6 +399,7 @@ impl MechServer {
     full_address: String,
     stylesheet: String,
     html_shim: String,
+    project_js: String,
     wasm: Vec<u8>,
     js: Vec<u8>,
     authority: HostFilesystemAuthority,
@@ -407,6 +413,7 @@ impl MechServer {
       init: false,
       stylesheet,
       html_shim,
+      project_js,
       host_config,
       host_config_injection,
       serve_configured_shim_at_root,
@@ -448,14 +455,18 @@ impl MechServer {
     dedupe_paths(paths)
   }
 
-  fn injected_html_shim(&self) -> MResult<String> {
+  fn inject_authority_into_html(&self, html: &str) -> MResult<String> {
     if let Some(injection) = &self.host_config_injection {
-      inject_host_authority_injection_script(&self.html_shim, injection)
+      inject_host_authority_injection_script(html, injection)
     } else if let Some(host_config) = &self.host_config {
-      inject_browser_host_config_script(&self.html_shim, host_config)
+      inject_browser_host_config_script(html, host_config)
     } else {
-      Ok(self.html_shim.clone())
+      Ok(html.to_string())
     }
+  }
+
+  fn injected_html_shim(&self) -> MResult<String> {
+    self.inject_authority_into_html(&self.html_shim)
   }
 
   pub async fn init(&mut self) -> MResult<()> {
@@ -469,7 +480,8 @@ impl MechServer {
     let html = asset(html_shim.as_bytes(), "text/html", None, self.html_shim_backing_paths.clone());
     let css = asset(self.stylesheet.as_bytes(), "text/css", None, self.stylesheet_backing_paths.clone());
     let js = asset(&self.js, "application/javascript", None, self.js_backing_paths.clone());
-    let wasm = asset(&self.wasm, "application/wasm", Some("br"), self.wasm_backing_paths.clone());
+    let project_js = asset(self.project_js.as_bytes(), "application/javascript", None, Vec::new());
+    let wasm = asset(&self.wasm, "application/wasm", None, self.wasm_backing_paths.clone());
     if self.serve_configured_shim_at_root {
       registry.insert_user_asset("index.html", html.clone());
     } else {
@@ -477,11 +489,9 @@ impl MechServer {
     }
     registry.insert_asset("_mech/index.html", html);
     registry.insert_asset("_mech/style.css", css);
+    registry.insert_asset("_mech/project.js", project_js);
     registry.insert_asset("_mech/pkg/mech_wasm.js", js.clone());
     registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm", wasm.clone());
-    registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm.br", wasm.clone());
-    registry.insert_asset("pkg/mech_wasm.js", js);
-    registry.insert_asset("pkg/mech_wasm_bg.wasm", wasm);
     self.init = true;
     Ok(())
   }
@@ -508,6 +518,9 @@ impl MechServer {
   pub fn load_workspace(&mut self, paths: &Vec<String>) -> MResult<()> {
     if !self.init {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
+    }
+    if let Some(project) = discover_served_project(paths)? {
+      return self.load_served_project(project);
     }
     let started = Instant::now();
     let plan = plan_serve_inputs(paths)?;
@@ -577,6 +590,51 @@ impl MechServer {
     println!("{} Registry ready in {:?}: {} assets, {} static assets, {} raw sources, {} html sources, {} code sources.", self.badge(), sync_started.elapsed(), summary.assets, summary.static_assets, summary.raw_sources, summary.html_sources, summary.code_sources);
     println!("{} Workspace loaded in {:?}.", self.badge(), started.elapsed());
     self.workspace_session = Some(Arc::new(Mutex::new(session)));
+    Ok(())
+  }
+
+
+  fn load_served_project(&mut self, project: ServedProject) -> MResult<()> {
+    let started = Instant::now();
+    let mut ids = DefaultIdGenerator::new();
+    self.authority.delegate_path_to(&mut ids, &self.serve_subject, &project.root, true, [FS_READ, FS_LIST, FS_SERVE])?;
+    self.registry.write().unwrap().with_capabilities(self.authority.kernel().clone(), self.serve_subject.clone());
+    println!("{} Loading configured project…", self.badge());
+    println!("{} Project root: {}", self.badge(), project.root.display());
+
+    let mut registry = self.registry.write().unwrap();
+    registry.insert_user_asset("mech.mcfg".to_string(), ServerAsset {
+      bytes: project.config_source.as_bytes().to_vec(),
+      content_type: "text/x-mech",
+      content_encoding: None,
+      backing_paths: project.config_path.clone().into_iter().collect(),
+    });
+    for source in &project.run_paths {
+      check_fs_capability(&mut self.authority.kernel().clone(), &self.serve_subject, FS_READ, source)?;
+      let relative = source.strip_prefix(&project.root).map_err(|error| Error::new(ErrorKind::InvalidInput, format!("project source is outside root: {}", error)))?;
+      let key = url_key(relative).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "invalid project source URL"))?;
+      registry.insert_user_asset(key, ServerAsset {
+        bytes: std::fs::read(source)?,
+        content_type: content_type_for_path(source.to_string_lossy().as_ref()),
+        content_encoding: None,
+        backing_paths: vec![source.clone()],
+      });
+    }
+    load_static_assets_from_paths(&mut registry, &project.root, &[".".to_string()])?;
+    if let Some(index_path) = project.index_path.as_ref() {
+      check_fs_capability(&mut self.authority.kernel().clone(), &self.serve_subject, FS_READ, index_path)?;
+      let index_html = std::fs::read_to_string(index_path)?;
+      let index_html = self.inject_authority_into_html(&index_html)?;
+      registry.insert_user_asset("index.html".to_string(), ServerAsset {
+        bytes: index_html.into_bytes(),
+        content_type: "text/html",
+        content_encoding: None,
+        backing_paths: vec![index_path.clone()],
+      });
+    }
+    drop(registry);
+    self.workspace_root = Some(project.root);
+    println!("{} Project loaded in {:?}.", self.badge(), started.elapsed());
     Ok(())
   }
 
@@ -776,6 +834,59 @@ struct ServeInputPlan {
   folders: Vec<RuntimeWorkspaceFolder>,
   static_paths: Vec<String>,
   preferred_index_source: Option<String>,
+}
+
+
+#[derive(Debug, Clone)]
+struct ServedProject {
+  root: PathBuf,
+  config_path: Option<PathBuf>,
+  config_source: String,
+  run_paths: Vec<PathBuf>,
+  index_path: Option<PathBuf>,
+}
+
+fn discover_served_project(paths: &[String]) -> MResult<Option<ServedProject>> {
+  if paths.len() != 1 { return Ok(None); }
+  let current_dir = std::env::current_dir()?.canonicalize()?;
+  let input = Path::new(&paths[0]);
+  let path = if input.is_absolute() { input.to_path_buf() } else { current_dir.join(input) };
+  if path.is_dir() {
+    let root = path.canonicalize()?;
+    let config_path = root.join("mech.mcfg");
+    if !config_path.exists() {
+      return Err(Error::new(ErrorKind::InvalidInput, format!("configured project directory `{}` must contain mech.mcfg", root.display())).into());
+    }
+    let config_source = std::fs::read_to_string(&config_path)?;
+    let document = mech_runtime::parse_config_document(
+      config_path.display().to_string(),
+      &config_source,
+      mech_runtime::ConfigProfileOptions::default(),
+    )?;
+    let run = document.run.as_ref().ok_or_else(|| Error::new(ErrorKind::InvalidInput, "mech.mcfg must contain run settings for served projects"))?;
+    if run.paths.is_empty() {
+      return Err(Error::new(ErrorKind::InvalidInput, "mech.mcfg run.paths must contain at least one source").into());
+    }
+    let mut run_paths = Vec::new();
+    for run_path in &run.paths {
+      let candidate = root.join(run_path);
+      let canonical = candidate.canonicalize()?;
+      if !canonical.starts_with(&root) {
+        return Err(Error::new(ErrorKind::InvalidInput, format!("run path `{}` escapes project root", run_path.display())).into());
+      }
+      run_paths.push(canonical);
+    }
+    let index_path = root.join("index.html");
+    return Ok(Some(ServedProject { root, config_path: Some(config_path.canonicalize()?), config_source, run_paths, index_path: index_path.exists().then_some(index_path.canonicalize()?) }));
+  }
+  if path.is_file() && is_workspace_target_source(&path) {
+    let source = path.canonicalize()?;
+    let root = source.parent().ok_or_else(|| Error::new(ErrorKind::InvalidInput, "served source has no parent directory"))?.to_path_buf();
+    let file_name = source.file_name().and_then(|name| name.to_str()).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "served source file name is not UTF-8"))?.to_string();
+    let config_source = format!("config := {{\n  hosts: []\n  run: {{\n    paths: [\"{}\"]\n    grants: []\n  }}\n}}\n", file_name);
+    return Ok(Some(ServedProject { root, config_path: None, config_source, run_paths: vec![source], index_path: None }));
+  }
+  Ok(None)
 }
 
 fn plan_serve_inputs(paths: &[String]) -> MResult<ServeInputPlan> {
@@ -1210,13 +1321,13 @@ mod tests {
   }
 
   #[test]
-  fn wasm_host_config_constructor_export_is_declared() {
-    let source_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/wasm/src/lib.rs");
+  fn wasm_project_export_is_declared() {
+    let source_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/wasm/src/project.rs");
     let source = std::fs::read_to_string(&source_path)
       .unwrap_or_else(|error| panic!("failed to read {}: {error}", source_path.display()));
-    assert!(source.contains("#[wasm_bindgen(js_name = \"fromHostConfig\")]"));
-    assert!(source.contains("pub fn from_host_config() -> Result<WasmMech, JsValue>"));
-    assert!(source.contains("JsValue::from_str(\"__MECH_HOST_CONFIG\")"));
+    assert!(source.contains("pub struct WasmProject"));
+    assert!(source.contains("pub fn from_sources"));
+    assert!(source.contains("pub fn required_paths"));
   }
 
   #[test]

@@ -1,0 +1,23 @@
+[package]
+name = "mech-host-scene"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Cross-platform scene presentation host provider for Mech."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+license = "Apache-2.0"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+default = []
+native = []
+browser = ["dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
+
+[dependencies]
+mech-core = { version = "0.3.5", default-features = false, features = ["f64", "string", "record", "table", "tuple", "matrix"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["program", "f64", "string"] }
+wasm-bindgen = { version = "0.2.105", optional = true }
+js-sys = { version = "0.3.82", optional = true }
+web-sys = { version = "0.3.82", optional = true, features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "CanvasRenderingContext2d", "SvgElement", "SvgsvgElement", "Node", "NodeList", "DomTokenList", "CssStyleDeclaration"] }

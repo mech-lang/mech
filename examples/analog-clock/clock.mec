@@ -1,3 +1,6 @@
+@out := console://console/output{:write(line)}
+@view := scene://view/frame{:write(replace)}
+
 @clock := time://clock/clock{:read(unix-ms), :read(hour), :read(minute), :read(second), :read(millisecond)}
 
 clock-unix-ms := @clock/unix-ms
@@ -8,3 +11,72 @@ clock-hour := @clock/hour + clock-minute / 60
 clock-second-angle := clock-second * 6
 clock-minute-angle := clock-minute * 6
 clock-hour-angle := clock-hour * 30
+
+clock-output := (clock-hour, clock-minute, clock-second)
+
+clock-circles := ({
+    id: "clock-center-pin"
+    x: 100
+    y: 100
+    radius: 4
+    fill: "#e25555"
+    stroke: "#e25555"
+    stroke-width: 0
+    opacity: 1
+  }
+)
+
+clock-lines := ({
+    id: "clock-hour-hand"
+    x1: 100
+    y1: 100
+    x2: 100
+    y2: 58
+    stroke: "#1d2430"
+    stroke-width: 7
+    line-cap: "round"
+    opacity: 1
+    rotation: clock-hour-angle
+    origin-x: 100
+    origin-y: 100
+  },
+  {
+    id: "clock-minute-hand"
+    x1: 100
+    y1: 100
+    x2: 100
+    y2: 36
+    stroke: "#1d2430"
+    stroke-width: 5
+    line-cap: "round"
+    opacity: 1
+    rotation: clock-minute-angle
+    origin-x: 100
+    origin-y: 100
+  },
+  {
+    id: "clock-second-hand"
+    x1: 100
+    y1: 106
+    x2: 100
+    y2: 28
+    stroke: "#e25555"
+    stroke-width: 2
+    line-cap: "round"
+    opacity: 1
+    rotation: clock-second-angle
+    origin-x: 100
+    origin-y: 100
+  }
+)
+
+clock-scene := {
+  width: 200
+  height: 200
+  background: "transparent"
+  circles: clock-circles
+  lines: clock-lines
+}
+
+@out/line <- clock-output
+@view/replace <- clock-scene

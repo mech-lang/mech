@@ -276,7 +276,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     render_capability_events(&badge.to_string(), &options.capability_events);
 
     let full_address = format!("{}:{}", options.address, options.port);
-    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", options.wasm_pkg);
+    let wasm_path = format!("{}/mech_wasm_bg.wasm", options.wasm_pkg);
     let js_path = format!("{}/mech_wasm.js", options.wasm_pkg);
 
     println!("{badge} Loading resources…");
@@ -312,12 +312,16 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         .with_compiler_loc()
     })?;
 
+    if resources.mech_wasm.is_none() || resources.mech_js.is_none() || resources.project_js.is_none() {
+        return Err(MechError::new(GenericError { msg: "browser WASM assets are missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc());
+    }
+
     print!("{badge} Loading WASM…");
     let wasm = load_resource(
         &options.authority,
         &wasm_path,
         &resources.wasm_backup_url,
-        Some(resources.mech_wasm),
+        resources.mech_wasm,
     )
     .await?;
     render_resource_events(&badge.to_string(), "WASM", &wasm.events);
@@ -327,7 +331,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     };
 
     print!("{badge} Loading JS…");
-    let js = load_resource(&options.authority, &js_path, &resources.js_backup_url, Some(resources.mech_js)).await?;
+    let js = load_resource(&options.authority, &js_path, &resources.js_backup_url, resources.mech_js).await?;
     render_resource_events(&badge.to_string(), "JS", &js.events);
     let js_backing_paths = match &js.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -339,6 +343,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
+        resources.project_js.ok_or_else(|| MechError::new(GenericError { msg: "browser project bootstrap is missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc())?.to_string(),
         wasm.bytes,
         js.bytes,
         options.authority,

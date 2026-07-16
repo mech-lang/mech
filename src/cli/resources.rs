@@ -6,14 +6,13 @@ use mech_runtime::{FS_READ, HostFilesystemAuthority, check_fs_capability};
 use crate::{MechError, read_or_download};
 
 #[cfg(has_file_wasm)]
-pub(crate) static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm.br");
-#[cfg(not(has_file_wasm))]
-pub(crate) static MECHWASM: &[u8] = b"No Embedded WASM";
+pub(crate) static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm");
 
 #[cfg(has_file_js)]
 pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
-#[cfg(not(has_file_js))]
-pub(crate) static MECHJS: &[u8] = b"No Embedded JS";
+
+#[cfg(has_file_project_js)]
+pub(crate) static PROJECTJS: &str = include_str!("../../include/project.js");
 
 #[cfg(has_file_shim)]
 pub(crate) static SHIMHTML: &str = include_str!("../../include/index.html");
@@ -25,6 +24,21 @@ pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
 #[cfg(not(has_file_stylesheet))]
 pub(crate) static STYLESHEET: &str = "No Embedded Stylesheet";
 
+#[cfg(has_file_wasm)]
+fn embedded_wasm() -> Option<&'static [u8]> { Some(MECHWASM) }
+#[cfg(not(has_file_wasm))]
+fn embedded_wasm() -> Option<&'static [u8]> { None }
+
+#[cfg(has_file_js)]
+fn embedded_js() -> Option<&'static [u8]> { Some(MECHJS) }
+#[cfg(not(has_file_js))]
+fn embedded_js() -> Option<&'static [u8]> { None }
+
+#[cfg(has_file_project_js)]
+fn embedded_project_js() -> Option<&'static str> { Some(PROJECTJS) }
+#[cfg(not(has_file_project_js))]
+fn embedded_project_js() -> Option<&'static str> { None }
+
 #[derive(Clone, Debug)]
 pub(crate) struct WebResourceDefaults {
     pub stylesheet_backup_url: String,
@@ -32,8 +46,9 @@ pub(crate) struct WebResourceDefaults {
     pub wasm_backup_url: String,
     pub js_backup_url: String,
     pub shim_html: &'static str,
-    pub mech_wasm: &'static [u8],
-    pub mech_js: &'static [u8],
+    pub mech_wasm: Option<&'static [u8]>,
+    pub mech_js: Option<&'static [u8]>,
+    pub project_js: Option<&'static str>,
 }
 
 impl WebResourceDefaults {
@@ -46,14 +61,15 @@ impl WebResourceDefaults {
                 "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css"
                     .to_string(),
             wasm_backup_url: format!(
-                "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm_bg.wasm.br"
+                "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm_bg.wasm"
             ),
             js_backup_url: format!(
                 "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm.js"
             ),
             shim_html: SHIMHTML,
-            mech_wasm: MECHWASM,
-            mech_js: MECHJS,
+            mech_wasm: embedded_wasm(),
+            mech_js: embedded_js(),
+            project_js: embedded_project_js(),
         }
     }
 }

@@ -1,52 +1,22 @@
 # Analog clock demo
 
-The CLI and browser demos share the same platform-neutral Mech model in
-`examples/analog-clock/clock.mec`. The model reads time values from a `time`
-host and exposes clock-angle symbols; it does not contain CLI, DOM, or SVG
-output operations.
-
-Run the native CLI demo:
+Run natively:
 
 ```bash
-cargo run \
-  --bin mech-clock \
-  --features clock_demo_cli
+mech run examples/analog-clock
 ```
 
-Finite mode:
+Serve in the browser:
 
 ```bash
-cargo run \
-  --bin mech-clock \
-  --features clock_demo_cli \
-  -- \
-  --ticks 10
+mech serve examples/analog-clock
 ```
 
-Build the browser demo:
+The native and browser paths load the same `mech.mcfg` and `clock.mec`.
+`clock.mec` reads the wall-clock time host, computes the clock values and SVG
+scene, emits console output, and sends the scene to the generic scene host.
 
-```bash
-bash scripts/build-analog-clock-web.sh
-```
-
-The build script generates these local files, which are ignored by Git:
-
-```text
-examples/analog-clock/pkg/mech_wasm.js
-examples/analog-clock/pkg/mech_wasm_bg.wasm
-```
-
-Serve the repository with Python:
-
-```bash
-python3 -m http.server 8000
-```
-
-Open the demo at:
-
-```text
-http://localhost:8000/examples/analog-clock/
-```
-
-Do not open the page via `file://`; browser ES modules and WASM loading require
-an HTTP origin.
+Native scene execution is headless. Browser presentation is driven by the shared
+`/_mech/project.js` bootstrap and requestAnimationFrame; there is no
+example-specific JavaScript. The scene host coalesces presentation to the latest
+completed scene while all application state and calculations remain in Mech.

@@ -18,10 +18,10 @@ examples/working/ekf.mec
 examples/working/factorial.mec
 ```
 
-Browser host examples include:
+Browser project examples include:
 
 ```text
-examples/browser-dom-demo/
+examples/analog-clock/
 ```
 
 Robot arm examples live with the host crate:

@@ -13,15 +13,6 @@ fn err_text(source: &str) -> String {
 
 #[test]
 fn shipped_browser_examples_use_hosts_schema() {
-    let demo = parse_config_document(
-        "examples/browser-dom-demo/demo.mcfg",
-        include_str!("../../../examples/browser-dom-demo/demo.mcfg"),
-        ConfigProfileOptions::default(),
-    )
-    .unwrap();
-    assert!(demo.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
-    assert_eq!(demo.run.as_ref().unwrap().grants.len(), 2);
-
     let resource = parse_config_document(
         "examples/browser-dom-resource.mcfg",
         include_str!("../../../examples/browser-dom-resource.mcfg"),
@@ -34,20 +25,10 @@ fn shipped_browser_examples_use_hosts_schema() {
 
 #[test]
 fn shipped_browser_demo_sources_use_browser_dom_host_import() {
-    for (path, source) in [
-        (
-            "examples/browser-dom-demo/demo.mec",
-            include_str!("../../../examples/browser-dom-demo/demo.mec"),
-        ),
-        (
-            "examples/browser-dom-demo/denied.mec",
-            include_str!("../../../examples/browser-dom-demo/denied.mec"),
-        ),
-        (
-            "examples/browser-dom-resource.mec",
-            include_str!("../../../examples/browser-dom-resource.mec"),
-        ),
-    ] {
+    for (path, source) in [(
+        "examples/browser-dom-resource.mec",
+        include_str!("../../../examples/browser-dom-resource.mec"),
+    )] {
         let first_line = source.lines().find(|line| !line.trim().is_empty()).unwrap_or("");
         assert_eq!(first_line, "+> @browser := browser/dom", "{path} must start with a browser/dom host import");
         assert!(

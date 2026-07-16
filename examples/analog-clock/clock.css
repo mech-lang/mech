@@ -12,8 +12,3 @@ main { text-align: center; }
 #clock { width: min(80vw, 480px); height: auto; }
 .clock-face { fill: #f6f7fb; stroke: #2c3444; stroke-width: 4; }
 .markers line { stroke: #2c3444; stroke-width: 4; stroke-linecap: round; }
-.hand { stroke-linecap: round; transform-origin: 100px 100px; }
-.hour { stroke: #1d2430; stroke-width: 7; }
-.minute { stroke: #1d2430; stroke-width: 5; }
-.second { stroke: #e25555; stroke-width: 2; }
-.pin { fill: #e25555; }
