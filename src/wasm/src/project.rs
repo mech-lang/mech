@@ -784,7 +784,8 @@ rows := |id<string> x<f64>|
         assert_eq!(drained.len(), 3);
         assert_eq!(runtime.pending_host_input_count().unwrap(), 7);
         runtime.stop_input_drivers().unwrap();
-        runtime.close_ingress().unwrap();
+        runtime.shutdown().unwrap();
+        runtime.shutdown().unwrap();
     }
 
     #[test]
@@ -878,7 +879,7 @@ rows := |id<string> x<f64>|
     }
 
     #[wasm_bindgen_test]
-    fn generic_project_with_timer_and_scene_runs_fixed_step_fixture() {
+    fn generic_project_with_timer_table_and_scene_renders_fixture() {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         let canvas = document.create_element("canvas").unwrap();
