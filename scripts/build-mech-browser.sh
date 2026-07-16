@@ -14,4 +14,3 @@ wasm-pack build src/wasm \
 
 test -f src/wasm/pkg/mech_wasm.js
 test -f src/wasm/pkg/mech_wasm_bg.wasm
-cargo build --bin mech

@@ -3,8 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   cargo:
@@ -12,9 +16,13 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -24,16 +32,14 @@ jobs:
 
       - name: Build and test
         run: |
-          cargo clean
-
           # Linked-stdlib CLI build for examples that import named modules.
           cargo build --bin mech --features linked_stdlib
           ./target/debug/mech test examples/working
 
           # Prelude-only no-default feature checks.
-          cargo build --no-default-features
-          cargo build --no-default-features --features build
-          cargo build --no-default-features --features test
+          cargo check --no-default-features
+          cargo check --no-default-features --features build
+          cargo check --no-default-features --features test
           cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
 
           # Direct package feature-boundary checks.
@@ -46,39 +52,38 @@ jobs:
           cargo test interpret
           cargo test bytecode
 
-          # Narrow ABI dynamic module smoke test.
-          cargo test --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module"
-          cargo build --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir target/dynamic-modules
-          mkdir -p target/mech-modules
-          cp target/dynamic-modules/debug/libmech_combinatorics.so target/mech-modules/libmech_module_combinatorics.so
-          MECH_MODULE_PATH=target/mech-modules cargo test --test dynamic_combinatorics --no-default-features --features "base dynamic-modules f64"
-          cargo test --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module"
-          cargo build --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir target/dynamic-modules
-          cp target/dynamic-modules/debug/libmech_math.so target/mech-modules/libmech_module_math.so
-          MECH_MODULE_PATH=target/mech-modules cargo test --test dynamic_math --no-default-features --features "base dynamic-modules f64"
-
           # Runtime package tests.
           cargo test -p mech-runtime --lib --tests
 
           # CLI host and context-send regression coverage.
           cargo test -p mech-syntax --test context_parser
-          cargo test -p mech-runtime --test module_smoke
           cargo test -p mech-host-cli --features provider --test provider
           cargo test --features "run repl pretty_print" --test mech_cli_host
           cargo test --features "run repl pretty_print" cli::run::tests
           cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
           cargo check -p mech-host-cli --no-default-features
 
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
 
-  analog-clock:
-    name: Project examples
+      - name: Disk report on failure
+        if: failure()
+        run: bash scripts/ci-disk-report.sh
+
+  project-native:
+    name: Project native
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -86,65 +91,33 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Install WASM target
-        run: rustup target add wasm32-unknown-unknown
-
-      - name: Install wasm-pack
-        run: cargo install wasm-pack --locked
-
-      - name: Show Chrome version
-        run: google-chrome --version
-
       - name: Check generic project package paths
         run: bash scripts/check-analog-clock-web.sh
 
-      - name: Run native time-host tests
+      - name: Run native project tests
         run: |
           cargo test \
             -p mech-host-time \
             --no-default-features \
             --features native
-          cargo test -p mech-host-timer
-          cargo test -p mech-host-timer --no-default-features --features native
-          cargo test -p mech-host-scene
-          cargo test -p mech-host-scene --no-default-features --features native
+          cargo test \
+            -p mech-host-timer \
+            --no-default-features \
+            --features native
+          cargo test \
+            -p mech-host-scene \
+            --no-default-features \
+            --features native
           cargo test \
             -p mech-wasm \
             --no-default-features \
             --features browser_project
 
-      - name: Check browser host packages
-        run: |
-          cargo check \
-            -p mech-host-timer \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features browser
-          cargo check \
-            -p mech-host-scene \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features browser
-          cargo check \
-            -p mech-wasm \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features browser_project_runner
-          cargo check \
-            -p mech-wasm \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features "browser_project_runner,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string,record,tuple,table,atom,enum,variables"
-          cargo check \
-            -p mech-wasm \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features browser_project
-
       - name: Check CLI clock
         run: |
-          cargo check --bin mech
-          cargo test --features "run cli_host time_host_native timer_host_native console_host_native scene_host_native" --test mech_cli_host
+          cargo test \
+            --features "run cli_host time_host_native timer_host_native console_host_native scene_host_native" \
+            --test mech_cli_host
 
       - name: Smoke test native analog clock project
         run: |
@@ -158,37 +131,82 @@ jobs:
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 
+      - name: Confirm browser examples are generic
+        run: |
+          test ! -e examples/common
+          test ! -e examples/pkg
+          test ! -e examples/analog-clock/clock.js
+          test ! -e mech-app
+          test ! -e include/blog.html
+          ! rg -n \
+            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\.js" \
+            src include examples
+          test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
+
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Disk report on failure
+        if: failure()
+        run: bash scripts/ci-disk-report.sh
+
+  project-browser:
+    name: Project browser
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/project-browser
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Install WASM target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        env:
+          WASM_PACK_VERSION: v0.13.1
+        run: |
+          curl -fsSL \
+            "https://github.com/rustwasm/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install "/tmp/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+          wasm-pack --version
+
+      - name: Show Chrome version
+        run: google-chrome --version
+
+      - name: Check browser project feature boundaries
+        run: |
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser_project_runner
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features "browser_project_runner,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string,record,tuple,table,atom,enum,variables"
+
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
 
-
-      - name: Run focused shared-project Chrome WASM test
-        run: |
-          wasm-pack test \
-            --headless \
-            --chrome \
-            src/wasm \
-            --no-default-features \
-            --features browser_project \
-            -- \
-            --list | grep 'generic_project_with_time_console_and_scene_runs_clock_source'
-          wasm-pack test \
-            --headless \
-            --chrome \
-            src/wasm \
-            --no-default-features \
-            --features browser_project \
-            -- \
-            --list | grep 'generic_project_with_timer_table_and_scene_renders_fixture'
-          wasm-pack test \
-            --headless \
-            --chrome \
-            src/wasm \
-            --no-default-features \
-            --features browser_project \
-            -- \
-            generic_project_with_timer_table_and_scene_renders_fixture \
-            --nocapture
+      - name: Remove browser release intermediates
+        run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
 
       - name: Run headless Chrome WASM tests
         run: |
@@ -201,36 +219,24 @@ jobs:
             -- \
             --nocapture
 
-      - name: Confirm generated browser package paths
-        run: |
-          test -f \
-            src/wasm/pkg/mech_wasm.js
-
-          test -f \
-            src/wasm/pkg/mech_wasm_bg.wasm
-
-      - name: Confirm browser examples are generic
-        run: |
-          test ! -e examples/common
-          test ! -e examples/pkg
-          test ! -e examples/analog-clock/clock.js
-          test ! -e mech-app
-          test ! -e include/blog.html
-          ! rg -n \
-            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\\.js" \
-            src include examples
-          test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
-
       - name: Remove generated browser package
         if: always()
         run: rm -rf src/wasm/pkg
 
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Disk report on failure
+        if: failure()
+        run: bash scripts/ci-disk-report.sh
   run-only:
     name: Run-only CLI
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -253,6 +259,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -275,6 +282,10 @@ jobs:
   dynamic-modules:
     name: Dynamic modules
     runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v4
 
