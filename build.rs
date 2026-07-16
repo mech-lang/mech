@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     res.compile().unwrap();
   }
 
-  if Path::new("src/wasm/pkg/mech_wasm_bg.wasm.br").exists() {
+  if Path::new("src/wasm/pkg/mech_wasm_bg.wasm").exists() {
     println!("cargo:rustc-cfg=has_file_wasm");
   }
 
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   println!("cargo::rerun-if-changed=include/index.html");
   println!("cargo::rerun-if-changed=include/style.css");
   println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm.js");
-  println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm_bg.wasm.br");
+  println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm_bg.wasm");
 
   if Path::new("include/project.js").exists() {
     println!("cargo:rustc-cfg=has_file_project_js");

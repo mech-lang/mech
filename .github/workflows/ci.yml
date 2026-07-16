@@ -172,6 +172,9 @@ jobs:
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
 
+      - name: Run served project browser smoke tests
+        run: bash scripts/test-served-projects.sh
+
       - name: Run focused shared-project Chrome WASM test
         run: |
           wasm-pack test \

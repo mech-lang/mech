@@ -60,6 +60,11 @@ impl WasmProject {
         })
     }
 
+    #[wasm_bindgen(js_name = fromServedSources)]
+    pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
+        Self::from_sources(config_source, sources)
+    }
+
     pub fn start(&mut self) -> Result<(), JsValue> {
         if self.started {
             return Ok(());

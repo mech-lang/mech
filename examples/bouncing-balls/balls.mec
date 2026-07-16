@@ -12,56 +12,139 @@ delta := @tick/delta-seconds
 scene-width := 960
 scene-height := 540
 
-ball-a-x := 120 + physics-tick * 1.5
-ball-b-x := 840 - physics-tick
-ball-a-y := 160
-ball-b-y := 360
+balls := |id<string> x<f64> y<f64> vx<f64> vy<f64> radius<f64> fill<string>|
+  | "ball-0" 40 + physics-tick * 0.250000 40 + physics-tick * 0.166667 30 20 10 "#5cc8ff" |
+  | "ball-1" 150 + physics-tick * 0.350000 40 + physics-tick * 0.233333 42 28 12 "#ffcc66" |
+  | "ball-2" 260 + physics-tick * 0.450000 40 + physics-tick * 0.300000 54 36 14 "#8cff80" |
+  | "ball-3" 370 + physics-tick * 0.550000 40 + physics-tick * 0.366667 66 44 16 "#ff7ac8" |
+  | "ball-4" 480 + physics-tick * 0.650000 40 + physics-tick * 0.433333 78 52 10 "#b892ff" |
+  | "ball-5" 590 + physics-tick * 0.250000 40 + physics-tick * 0.500000 30 60 12 "#66ffd9" |
+  | "ball-6" 700 + physics-tick * 0.350000 40 + physics-tick * 0.566667 42 68 14 "#ff8f66" |
+  | "ball-7" 810 + physics-tick * 0.450000 40 + physics-tick * 0.166667 54 20 16 "#d6ff66" |
+  | "ball-8" 40 + physics-tick * 0.550000 100 + physics-tick * 0.233333 66 28 10 "#5cc8ff" |
+  | "ball-9" 150 + physics-tick * 0.650000 100 + physics-tick * 0.300000 78 36 12 "#ffcc66" |
+  | "ball-10" 260 + physics-tick * 0.250000 100 + physics-tick * 0.366667 30 44 14 "#8cff80" |
+  | "ball-11" 370 + physics-tick * 0.350000 100 + physics-tick * 0.433333 42 52 16 "#ff7ac8" |
+  | "ball-12" 480 + physics-tick * 0.450000 100 + physics-tick * 0.500000 54 60 10 "#b892ff" |
+  | "ball-13" 590 + physics-tick * 0.550000 100 + physics-tick * 0.566667 66 68 12 "#66ffd9" |
+  | "ball-14" 700 + physics-tick * 0.650000 100 + physics-tick * 0.166667 78 20 14 "#ff8f66" |
+  | "ball-15" 810 + physics-tick * 0.250000 100 + physics-tick * 0.233333 30 28 16 "#d6ff66" |
+  | "ball-16" 40 + physics-tick * 0.350000 160 + physics-tick * 0.300000 42 36 10 "#5cc8ff" |
+  | "ball-17" 150 + physics-tick * 0.450000 160 + physics-tick * 0.366667 54 44 12 "#ffcc66" |
+  | "ball-18" 260 + physics-tick * 0.550000 160 + physics-tick * 0.433333 66 52 14 "#8cff80" |
+  | "ball-19" 370 + physics-tick * 0.650000 160 + physics-tick * 0.500000 78 60 16 "#ff7ac8" |
+  | "ball-20" 480 + physics-tick * 0.250000 160 + physics-tick * 0.566667 30 68 10 "#b892ff" |
+  | "ball-21" 590 + physics-tick * 0.350000 160 + physics-tick * 0.166667 42 20 12 "#66ffd9" |
+  | "ball-22" 700 + physics-tick * 0.450000 160 + physics-tick * 0.233333 54 28 14 "#ff8f66" |
+  | "ball-23" 810 + physics-tick * 0.550000 160 + physics-tick * 0.300000 66 36 16 "#d6ff66" |
+  | "ball-24" 40 + physics-tick * 0.650000 220 + physics-tick * 0.366667 78 44 10 "#5cc8ff" |
+  | "ball-25" 150 + physics-tick * 0.250000 220 + physics-tick * 0.433333 30 52 12 "#ffcc66" |
+  | "ball-26" 260 + physics-tick * 0.350000 220 + physics-tick * 0.500000 42 60 14 "#8cff80" |
+  | "ball-27" 370 + physics-tick * 0.450000 220 + physics-tick * 0.566667 54 68 16 "#ff7ac8" |
+  | "ball-28" 480 + physics-tick * 0.550000 220 + physics-tick * 0.166667 66 20 10 "#b892ff" |
+  | "ball-29" 590 + physics-tick * 0.650000 220 + physics-tick * 0.233333 78 28 12 "#66ffd9" |
+  | "ball-30" 700 + physics-tick * 0.250000 220 + physics-tick * 0.300000 30 36 14 "#ff8f66" |
+  | "ball-31" 810 + physics-tick * 0.350000 220 + physics-tick * 0.366667 42 44 16 "#d6ff66" |
+  | "ball-32" 40 + physics-tick * 0.450000 280 + physics-tick * 0.433333 54 52 10 "#5cc8ff" |
+  | "ball-33" 150 + physics-tick * 0.550000 280 + physics-tick * 0.500000 66 60 12 "#ffcc66" |
+  | "ball-34" 260 + physics-tick * 0.650000 280 + physics-tick * 0.566667 78 68 14 "#8cff80" |
+  | "ball-35" 370 + physics-tick * 0.250000 280 + physics-tick * 0.166667 30 20 16 "#ff7ac8" |
+  | "ball-36" 480 + physics-tick * 0.350000 280 + physics-tick * 0.233333 42 28 10 "#b892ff" |
+  | "ball-37" 590 + physics-tick * 0.450000 280 + physics-tick * 0.300000 54 36 12 "#66ffd9" |
+  | "ball-38" 700 + physics-tick * 0.550000 280 + physics-tick * 0.366667 66 44 14 "#ff8f66" |
+  | "ball-39" 810 + physics-tick * 0.650000 280 + physics-tick * 0.433333 78 52 16 "#d6ff66" |
+  | "ball-40" 40 + physics-tick * 0.250000 340 + physics-tick * 0.500000 30 60 10 "#5cc8ff" |
+  | "ball-41" 150 + physics-tick * 0.350000 340 + physics-tick * 0.566667 42 68 12 "#ffcc66" |
+  | "ball-42" 260 + physics-tick * 0.450000 340 + physics-tick * 0.166667 54 20 14 "#8cff80" |
+  | "ball-43" 370 + physics-tick * 0.550000 340 + physics-tick * 0.233333 66 28 16 "#ff7ac8" |
+  | "ball-44" 480 + physics-tick * 0.650000 340 + physics-tick * 0.300000 78 36 10 "#b892ff" |
+  | "ball-45" 590 + physics-tick * 0.250000 340 + physics-tick * 0.366667 30 44 12 "#66ffd9" |
+  | "ball-46" 700 + physics-tick * 0.350000 340 + physics-tick * 0.433333 42 52 14 "#ff8f66" |
+  | "ball-47" 810 + physics-tick * 0.450000 340 + physics-tick * 0.500000 54 60 16 "#d6ff66" |
+  | "ball-48" 40 + physics-tick * 0.550000 400 + physics-tick * 0.566667 66 68 10 "#5cc8ff" |
+  | "ball-49" 150 + physics-tick * 0.650000 400 + physics-tick * 0.166667 78 20 12 "#ffcc66" |
+  | "ball-50" 260 + physics-tick * 0.250000 400 + physics-tick * 0.233333 30 28 14 "#8cff80" |
+  | "ball-51" 370 + physics-tick * 0.350000 400 + physics-tick * 0.300000 42 36 16 "#ff7ac8" |
+  | "ball-52" 480 + physics-tick * 0.450000 400 + physics-tick * 0.366667 54 44 10 "#b892ff" |
+  | "ball-53" 590 + physics-tick * 0.550000 400 + physics-tick * 0.433333 66 52 12 "#66ffd9" |
+  | "ball-54" 700 + physics-tick * 0.650000 400 + physics-tick * 0.500000 78 60 14 "#ff8f66" |
+  | "ball-55" 810 + physics-tick * 0.250000 400 + physics-tick * 0.566667 30 68 16 "#d6ff66" |
+  | "ball-56" 40 + physics-tick * 0.350000 460 + physics-tick * 0.166667 42 20 10 "#5cc8ff" |
+  | "ball-57" 150 + physics-tick * 0.450000 460 + physics-tick * 0.233333 54 28 12 "#ffcc66" |
+  | "ball-58" 260 + physics-tick * 0.550000 460 + physics-tick * 0.300000 66 36 14 "#8cff80" |
+  | "ball-59" 370 + physics-tick * 0.650000 460 + physics-tick * 0.366667 78 44 16 "#ff7ac8" |
+  | "ball-60" 480 + physics-tick * 0.250000 460 + physics-tick * 0.433333 30 52 10 "#b892ff" |
+  | "ball-61" 590 + physics-tick * 0.350000 460 + physics-tick * 0.500000 42 60 12 "#66ffd9" |
+  | "ball-62" 700 + physics-tick * 0.450000 460 + physics-tick * 0.566667 54 68 14 "#ff8f66" |
+  | "ball-63" 810 + physics-tick * 0.550000 460 + physics-tick * 0.166667 66 20 16 "#d6ff66" |
 
-balls := (
-  {
-    id: "ball-1"
-    x: ball-a-x
-    y: ball-a-y
-    vx: 180
-    vy: 80
-    radius: 18
-    fill: "#5cc8ff"
-  },
-  {
-    id: "ball-2"
-    x: ball-b-x
-    y: ball-b-y
-    vx: -120
-    vy: -60
-    radius: 24
-    fill: "#ffcc66"
-  }
-)
+circle-scene-table := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "ball-0" 40 + physics-tick * 0.250000 40 + physics-tick * 0.166667 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-1" 150 + physics-tick * 0.350000 40 + physics-tick * 0.233333 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-2" 260 + physics-tick * 0.450000 40 + physics-tick * 0.300000 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-3" 370 + physics-tick * 0.550000 40 + physics-tick * 0.366667 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-4" 480 + physics-tick * 0.650000 40 + physics-tick * 0.433333 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-5" 590 + physics-tick * 0.250000 40 + physics-tick * 0.500000 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-6" 700 + physics-tick * 0.350000 40 + physics-tick * 0.566667 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-7" 810 + physics-tick * 0.450000 40 + physics-tick * 0.166667 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-8" 40 + physics-tick * 0.550000 100 + physics-tick * 0.233333 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-9" 150 + physics-tick * 0.650000 100 + physics-tick * 0.300000 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-10" 260 + physics-tick * 0.250000 100 + physics-tick * 0.366667 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-11" 370 + physics-tick * 0.350000 100 + physics-tick * 0.433333 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-12" 480 + physics-tick * 0.450000 100 + physics-tick * 0.500000 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-13" 590 + physics-tick * 0.550000 100 + physics-tick * 0.566667 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-14" 700 + physics-tick * 0.650000 100 + physics-tick * 0.166667 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-15" 810 + physics-tick * 0.250000 100 + physics-tick * 0.233333 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-16" 40 + physics-tick * 0.350000 160 + physics-tick * 0.300000 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-17" 150 + physics-tick * 0.450000 160 + physics-tick * 0.366667 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-18" 260 + physics-tick * 0.550000 160 + physics-tick * 0.433333 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-19" 370 + physics-tick * 0.650000 160 + physics-tick * 0.500000 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-20" 480 + physics-tick * 0.250000 160 + physics-tick * 0.566667 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-21" 590 + physics-tick * 0.350000 160 + physics-tick * 0.166667 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-22" 700 + physics-tick * 0.450000 160 + physics-tick * 0.233333 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-23" 810 + physics-tick * 0.550000 160 + physics-tick * 0.300000 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-24" 40 + physics-tick * 0.650000 220 + physics-tick * 0.366667 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-25" 150 + physics-tick * 0.250000 220 + physics-tick * 0.433333 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-26" 260 + physics-tick * 0.350000 220 + physics-tick * 0.500000 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-27" 370 + physics-tick * 0.450000 220 + physics-tick * 0.566667 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-28" 480 + physics-tick * 0.550000 220 + physics-tick * 0.166667 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-29" 590 + physics-tick * 0.650000 220 + physics-tick * 0.233333 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-30" 700 + physics-tick * 0.250000 220 + physics-tick * 0.300000 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-31" 810 + physics-tick * 0.350000 220 + physics-tick * 0.366667 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-32" 40 + physics-tick * 0.450000 280 + physics-tick * 0.433333 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-33" 150 + physics-tick * 0.550000 280 + physics-tick * 0.500000 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-34" 260 + physics-tick * 0.650000 280 + physics-tick * 0.566667 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-35" 370 + physics-tick * 0.250000 280 + physics-tick * 0.166667 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-36" 480 + physics-tick * 0.350000 280 + physics-tick * 0.233333 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-37" 590 + physics-tick * 0.450000 280 + physics-tick * 0.300000 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-38" 700 + physics-tick * 0.550000 280 + physics-tick * 0.366667 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-39" 810 + physics-tick * 0.650000 280 + physics-tick * 0.433333 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-40" 40 + physics-tick * 0.250000 340 + physics-tick * 0.500000 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-41" 150 + physics-tick * 0.350000 340 + physics-tick * 0.566667 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-42" 260 + physics-tick * 0.450000 340 + physics-tick * 0.166667 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-43" 370 + physics-tick * 0.550000 340 + physics-tick * 0.233333 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-44" 480 + physics-tick * 0.650000 340 + physics-tick * 0.300000 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-45" 590 + physics-tick * 0.250000 340 + physics-tick * 0.366667 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-46" 700 + physics-tick * 0.350000 340 + physics-tick * 0.433333 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-47" 810 + physics-tick * 0.450000 340 + physics-tick * 0.500000 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-48" 40 + physics-tick * 0.550000 400 + physics-tick * 0.566667 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-49" 150 + physics-tick * 0.650000 400 + physics-tick * 0.166667 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-50" 260 + physics-tick * 0.250000 400 + physics-tick * 0.233333 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-51" 370 + physics-tick * 0.350000 400 + physics-tick * 0.300000 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-52" 480 + physics-tick * 0.450000 400 + physics-tick * 0.366667 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-53" 590 + physics-tick * 0.550000 400 + physics-tick * 0.433333 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-54" 700 + physics-tick * 0.650000 400 + physics-tick * 0.500000 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-55" 810 + physics-tick * 0.250000 400 + physics-tick * 0.566667 16 "#d6ff66" "#ffffff" 1 0.95 |
+  | "ball-56" 40 + physics-tick * 0.350000 460 + physics-tick * 0.166667 10 "#5cc8ff" "#ffffff" 1 0.95 |
+  | "ball-57" 150 + physics-tick * 0.450000 460 + physics-tick * 0.233333 12 "#ffcc66" "#ffffff" 1 0.95 |
+  | "ball-58" 260 + physics-tick * 0.550000 460 + physics-tick * 0.300000 14 "#8cff80" "#ffffff" 1 0.95 |
+  | "ball-59" 370 + physics-tick * 0.650000 460 + physics-tick * 0.366667 16 "#ff7ac8" "#ffffff" 1 0.95 |
+  | "ball-60" 480 + physics-tick * 0.250000 460 + physics-tick * 0.433333 10 "#b892ff" "#ffffff" 1 0.95 |
+  | "ball-61" 590 + physics-tick * 0.350000 460 + physics-tick * 0.500000 12 "#66ffd9" "#ffffff" 1 0.95 |
+  | "ball-62" 700 + physics-tick * 0.450000 460 + physics-tick * 0.566667 14 "#ff8f66" "#ffffff" 1 0.95 |
+  | "ball-63" 810 + physics-tick * 0.550000 460 + physics-tick * 0.166667 16 "#d6ff66" "#ffffff" 1 0.95 |
 
-circle-scene-table := (
-  {
-    id: "ball-1"
-    x: ball-a-x
-    y: ball-a-y
-    radius: 18
-    fill: "#5cc8ff"
-    stroke: "#ffffff"
-    stroke-width: 2
-    opacity: 1
-  },
-  {
-    id: "ball-2"
-    x: ball-b-x
-    y: ball-b-y
-    radius: 24
-    fill: "#ffcc66"
-    stroke: "#ffffff"
-    stroke-width: 2
-    opacity: 1
-  }
-)
-
-empty-line-table := ()
+empty-line-table := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
 
 scene := {
   width: scene-width

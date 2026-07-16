@@ -455,14 +455,18 @@ impl MechServer {
     dedupe_paths(paths)
   }
 
-  fn injected_html_shim(&self) -> MResult<String> {
+  fn inject_authority_into_html(&self, html: &str) -> MResult<String> {
     if let Some(injection) = &self.host_config_injection {
-      inject_host_authority_injection_script(&self.html_shim, injection)
+      inject_host_authority_injection_script(html, injection)
     } else if let Some(host_config) = &self.host_config {
-      inject_browser_host_config_script(&self.html_shim, host_config)
+      inject_browser_host_config_script(html, host_config)
     } else {
-      Ok(self.html_shim.clone())
+      Ok(html.to_string())
     }
+  }
+
+  fn injected_html_shim(&self) -> MResult<String> {
+    self.inject_authority_into_html(&self.html_shim)
   }
 
   pub async fn init(&mut self) -> MResult<()> {
@@ -477,7 +481,7 @@ impl MechServer {
     let css = asset(self.stylesheet.as_bytes(), "text/css", None, self.stylesheet_backing_paths.clone());
     let js = asset(&self.js, "application/javascript", None, self.js_backing_paths.clone());
     let project_js = asset(self.project_js.as_bytes(), "application/javascript", None, Vec::new());
-    let wasm = asset(&self.wasm, "application/wasm", Some("br"), self.wasm_backing_paths.clone());
+    let wasm = asset(&self.wasm, "application/wasm", None, self.wasm_backing_paths.clone());
     if self.serve_configured_shim_at_root {
       registry.insert_user_asset("index.html", html.clone());
     } else {
@@ -488,7 +492,6 @@ impl MechServer {
     registry.insert_asset("_mech/project.js", project_js);
     registry.insert_asset("_mech/pkg/mech_wasm.js", js.clone());
     registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm", wasm.clone());
-    registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm.br", wasm.clone());
     self.init = true;
     Ok(())
   }
@@ -620,8 +623,10 @@ impl MechServer {
     load_static_assets_from_paths(&mut registry, &project.root, &[".".to_string()])?;
     if let Some(index_path) = project.index_path.as_ref() {
       check_fs_capability(&mut self.authority.kernel().clone(), &self.serve_subject, FS_READ, index_path)?;
+      let index_html = std::fs::read_to_string(index_path)?;
+      let index_html = self.inject_authority_into_html(&index_html)?;
       registry.insert_user_asset("index.html".to_string(), ServerAsset {
-        bytes: std::fs::read(index_path)?,
+        bytes: index_html.into_bytes(),
         content_type: "text/html",
         content_encoding: None,
         backing_paths: vec![index_path.clone()],

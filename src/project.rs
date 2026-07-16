@@ -205,7 +205,7 @@ pub fn require_config_dir(field: &str, path: &Path) -> MResult<()> {
 pub fn require_config_wasm_package(field: &str, path: &Path) -> MResult<()> {
   require_config_dir(field, path)?;
 
-  let wasm = path.join("mech_wasm_bg.wasm.br");
+  let wasm = path.join("mech_wasm_bg.wasm");
   if !wasm.is_file() {
     return Err(std::io::Error::new(
       std::io::ErrorKind::InvalidInput,

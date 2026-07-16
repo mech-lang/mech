@@ -41,7 +41,12 @@ async function main() {
   for (const path of paths) {
     sources[path] = await fetchText(path);
   }
-  project = WasmProject.fromSources(config, sources);
+  const hasServedAuthority = Object.prototype.hasOwnProperty.call(window, '__MECH_HOST_CONFIG');
+  if (hasServedAuthority && typeof WasmProject.fromServedSources === 'function') {
+    project = WasmProject.fromServedSources(config, sources);
+  } else {
+    project = WasmProject.fromSources(config, sources);
+  }
   project.start();
   running = true;
   requestAnimationFrame(frame);

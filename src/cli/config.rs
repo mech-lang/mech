@@ -196,7 +196,7 @@ mod config_tests {
 
     fn create_wasm_pkg(path: &Path) {
         std::fs::create_dir_all(path).unwrap();
-        std::fs::write(path.join("mech_wasm_bg.wasm.br"), b"wasm").unwrap();
+        std::fs::write(path.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
         std::fs::write(path.join("mech_wasm.js"), b"js").unwrap();
     }
 
