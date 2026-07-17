@@ -482,10 +482,12 @@ impl MechRuntime {
 
   fn bind_context_read_temp(
     &mut self,
+    context: &RuntimeContext,
     program: &mut MechProgram,
     source: crate::RuntimeHostInputSource,
     value: Value,
   ) -> MResult<mech_core::Expression> {
+    self.validate_live_context_candidate(context)?;
     let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
@@ -493,6 +495,7 @@ impl MechRuntime {
     if !bindings.iter().any(|binding| *binding == input) {
       bindings.push(input);
     }
+    self.commit_live_context_candidate(context);
     let var = mech_core::Var {
       name: identifier_from_str(&name),
       context: None,
@@ -521,7 +524,7 @@ impl MechRuntime {
         let resolved = self.resolve_context_resource_request(binding, &path)?;
         let source = crate::RuntimeHostInputSource::new(resolved.provider_base_uri.clone(), resolved.provider_path.clone())?;
         let value = self.read_context_resource(context, binding, &path)?;
-        self.bind_context_read_temp(program, source, value)
+        self.bind_context_read_temp(context, program, source, value)
       }
       mech_core::Expression::Formula(factor) => Ok(mech_core::Expression::Formula(
         self.resolve_context_reads_in_factor(context, program, registry, factor)?,
@@ -1268,12 +1271,14 @@ impl MechRuntime {
           pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
         }
         self.flush_direct_execution(program, pending, result)?;
+        self.validate_live_context_candidate(context)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
         let path = send.target.name.to_string();
         self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
         self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
+        self.commit_live_context_candidate(context);
         *result = value;
         return Ok(());
       }
@@ -2502,6 +2507,8 @@ impl MechRuntime {
       },
     )?;
 
+    let live_state_before = self.live_state_snapshot();
+
     let result = match mech_syntax::parser::parse(source.trim()) {
       Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
         Ok(()) => {
@@ -2511,16 +2518,18 @@ impl MechRuntime {
             MechProgram::new(program_config),
           );
 
-          self.register_runtime_program_host_functions(
-            context,
-            &mut program,
-          )?;
+          let result = (|| {
+            self.register_runtime_program_host_functions(
+              context,
+              &mut program,
+            )?;
 
-          let runtime_ptr: *mut MechRuntime = self;
-          let context_ptr: *mut RuntimeContext = context;
-          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+            let runtime_ptr: *mut MechRuntime = self;
+            let context_ptr: *mut RuntimeContext = context;
+            let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-          let result = self.run_tree_on_program(context, &mut program, &tree, None);
+            self.run_tree_on_program(context, &mut program, &tree, None)
+          })();
 
           self.program = program;
           result
@@ -2531,6 +2540,9 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
     match &result {
       Ok(_) => {
         self.emit_event_to_context(
@@ -2619,6 +2631,7 @@ impl MechRuntime {
     );
     let mut bytecode_program = MechProgram::new(program_config);
 
+    let live_state_before = self.live_state_snapshot();
     let result = (|| {
       self.register_runtime_program_host_functions(
         context,
@@ -2638,6 +2651,7 @@ impl MechRuntime {
       self.program = bytecode_program;
     } else {
       self.program = previous_program;
+      self.restore_live_state(live_state_before);
     }
     match &result {
       Ok(_) => {
@@ -2743,6 +2757,8 @@ impl MechRuntime {
       },
     )?;
 
+    let live_state_before = self.live_state_snapshot();
+
     let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
       Ok(()) => {
         let program_config = self.program.config.clone();
@@ -2751,16 +2767,18 @@ impl MechRuntime {
           MechProgram::new(program_config),
         );
 
-        self.register_runtime_program_host_functions(
-          context,
-          &mut program,
-        )?;
+        let result = (|| {
+          self.register_runtime_program_host_functions(
+            context,
+            &mut program,
+          )?;
 
-        let runtime_ptr: *mut MechRuntime = self;
-        let context_ptr: *mut RuntimeContext = context;
-        let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+          let runtime_ptr: *mut MechRuntime = self;
+          let context_ptr: *mut RuntimeContext = context;
+          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-        let result = self.run_tree_on_program(context, &mut program, tree, None);
+          self.run_tree_on_program(context, &mut program, tree, None)
+        })();
 
         self.program = program;
         result
@@ -2769,6 +2787,9 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
     match &result {
       Ok(_) => {
         self.emit_event_to_context(
@@ -3851,16 +3872,16 @@ impl MechRuntime {
     input.validate()?;
     let mut target_updates = Vec::new();
     let mut seen_targets = std::collections::HashSet::new();
+    let mut ignored_update_count = 0;
 
     for update in &input.updates {
       let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
-        return Err(crate::input::input_error(
-          "RuntimeHostInputUnboundSource",
-          format!("host input source {}/{} has no live binding", update.source.base_uri(), update.source.path()),
-        ));
+        ignored_update_count += 1;
+        continue;
       };
       if bindings.is_empty() {
-        return Err(crate::input::input_error("RuntimeHostInputUnboundSource", "host input source has no live bindings"));
+        ignored_update_count += 1;
+        continue;
       }
       let value = update.value.clone().into_mech_value()?;
       for program_input in bindings {
@@ -3871,24 +3892,57 @@ impl MechRuntime {
       }
     }
 
-    let updated_inputs = self.program.update_inputs(&target_updates)?;
-    // Updates are preflighted before mutation; after admitted mutation this
-    // ingress slice attempts one full persistent-plan solve and reports any
-    // solve error without claiming rollback of the accepted input values.
-    let solve = self.program.solve_plan()?;
-    self.execute_persistent_sends()?;
-    Ok(crate::RuntimeHostInputOutcome {
-      update_count: input.updates.len(),
-      binding_count: updated_inputs,
-      solve,
-    })
+    if target_updates.is_empty() {
+      return Ok(crate::RuntimeHostInputOutcome {
+        update_count: input.updates.len(),
+        ignored_update_count,
+        binding_count: 0,
+        solve: None,
+      });
+    }
+
+    let mut context = self.live_turn_context()?;
+    self.validate_context_for_runtime(&context)?;
+    context.charge_step()?;
+
+    let turn_started = Instant::now();
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let result = (|| -> MResult<crate::RuntimeHostInputOutcome> {
+      let runtime_ptr: *mut MechRuntime = self;
+      let context_ptr: *mut RuntimeContext = &mut context;
+      let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+      let updated_inputs = program.update_inputs(&target_updates)?;
+      // Updates are preflighted before mutation; after admitted mutation this
+      // ingress slice attempts one full persistent-plan solve and reports any
+      // solve error without claiming rollback of the accepted input values.
+      let solve = program.solve_plan()?;
+      self.execute_persistent_sends(&context)?;
+      self.enforce_turn_duration(turn_started)?;
+
+      Ok(crate::RuntimeHostInputOutcome {
+        update_count: input.updates.len(),
+        ignored_update_count,
+        binding_count: updated_inputs,
+        solve: Some(solve),
+      })
+    })();
+
+    self.program = program;
+
+    result
   }
 
-  fn execute_persistent_sends(&mut self) -> MResult<()> {
-    let context = self.runtime_context()?;
+  fn execute_persistent_sends(&mut self, context: &RuntimeContext) -> MResult<()> {
     for send in self.persistent_sends.clone() {
       let value = resolve_runtime_value(send.value.borrow().clone());
-      self.write_context_resource(&context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
+      self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
     }
     Ok(())
   }

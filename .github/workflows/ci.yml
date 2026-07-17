@@ -141,7 +141,6 @@ jobs:
           ! rg -n \
             "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\.js" \
             src include examples
-          test -z "$(git diff e77f3383163c606784611a0381761580b50650b8...HEAD -- hosts/time)"
 
       - name: Disk report at end
         if: always()

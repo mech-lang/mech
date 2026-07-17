@@ -1,14 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+use std::thread;
+use std::time::Duration;
 
 use mech_core::{hash_str, MResult, MechError, MechErrorKind, Ref, Value};
 
 use super::*;
 use crate::{
+  BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
   ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, InMemoryDocsProvider,
   RuntimeCapabilityGrant, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
   RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeIngress,
-  RuntimeResourceProvider, materialize_host_manifest,
+  RuntimeResourceProvider, ClosureHostFunction, materialize_host_manifest,
 };
 
 fn f64_value(value: &Value) -> f64 {
@@ -16,6 +20,20 @@ fn f64_value(value: &Value) -> f64 {
     Value::F64(value) => *value.borrow(),
     other => panic!("expected f64, got {other:?}"),
   }
+}
+
+fn string_value(value: &Value) -> String {
+  match value {
+    Value::String(value) => value.borrow().clone(),
+    other => panic!("expected string, got {other:?}"),
+  }
+}
+
+#[derive(Debug, Clone)]
+struct DeliberateHostCallError;
+impl MechErrorKind for DeliberateHostCallError {
+  fn name(&self) -> &str { "DeliberateHostCallError" }
+  fn message(&self) -> String { "deliberate host call failure".to_string() }
 }
 
 fn symbol_value(runtime: &MechRuntime, name: &str) -> Value {
@@ -84,8 +102,13 @@ fn canonical_host_input_updates_live_context_read() {
   assert!(runtime.live_input_bindings.keys().all(|source| !source.base_uri().contains("pulse") && !source.path().contains("pulse")));
 
   let alias = RuntimeHostInputSource::new("docs://pulse", "value").unwrap();
-  let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::single(alias, RuntimeHostInputValue::F64(5.0))).unwrap_err());
-  assert!(error.contains("RuntimeHostInputUnboundSource"));
+  let outcome = runtime
+    .apply_host_input(RuntimeHostInput::single(alias, RuntimeHostInputValue::F64(5.0)))
+    .unwrap();
+  assert_eq!(outcome.update_count, 1);
+  assert_eq!(outcome.ignored_update_count, 1);
+  assert_eq!(outcome.binding_count, 0);
+  assert!(outcome.solve.is_none());
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
 
   runtime.ingress().submit(RuntimeHostInput::single(canonical, RuntimeHostInputValue::F64(5.0))).unwrap();
@@ -111,26 +134,429 @@ fn logical_packet_updates_all_inputs_and_solves_once() {
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "b").unwrap(), value: RuntimeHostInputValue::F64(20.0) },
   ]).unwrap()).unwrap();
 
-  assert!(outcome.solve.plan_len > 0);
+  assert!(outcome.solve.as_ref().unwrap().plan_len > 0);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "a").unwrap())), 10.0);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "b").unwrap())), 20.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 30.0);
 }
 
 #[test]
-fn packet_with_unbound_source_does_not_mutate_bound_inputs() {
+fn packet_with_bound_and_unbound_sources_updates_bound_inputs() {
   let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
   grant_read(&mut runtime, "docs://clock/ticks", "value");
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
-  let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::new(vec![
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), value: RuntimeHostInputValue::F64(5.0) },
     RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing").unwrap(), value: RuntimeHostInputValue::F64(9.0) },
-  ]).unwrap()).unwrap_err());
+  ]).unwrap()).unwrap();
 
-  assert!(error.contains("RuntimeHostInputUnboundSource"));
+  assert_eq!(outcome.update_count, 2);
+  assert_eq!(outcome.ignored_update_count, 1);
+  assert_eq!(outcome.binding_count, 1);
+  assert!(outcome.solve.is_some());
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 5.0);
+}
+
+
+#[test]
+fn partial_snapshot_updates_bound_fields_and_ignores_unbound_fields() {
+  let provider = InMemoryDocsProvider::new()
+    .with_value("docs://timer/state", "tick", Value::F64(Ref::new(1.0))).unwrap()
+    .with_value("docs://timer/state", "delta-seconds", Value::F64(Ref::new(0.1))).unwrap();
+  let mut runtime = docs_runtime(provider);
+  grant_read(&mut runtime, "docs://timer/state", "tick");
+  grant_read(&mut runtime, "docs://timer/state", "delta-seconds");
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@timer := docs://timer/state{:read(tick), :read(delta-seconds)}\noutput := @timer/tick + @timer/delta-seconds").unwrap();
+
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "tick").unwrap(), value: RuntimeHostInputValue::F64(10.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "elapsed-ms").unwrap(), value: RuntimeHostInputValue::F64(1000.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "delta-ms").unwrap(), value: RuntimeHostInputValue::F64(16.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "elapsed-seconds").unwrap(), value: RuntimeHostInputValue::F64(1.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "delta-seconds").unwrap(), value: RuntimeHostInputValue::F64(0.25) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://timer/state", "skipped-steps").unwrap(), value: RuntimeHostInputValue::F64(0.0) },
+  ]).unwrap()).unwrap();
+
+  assert_eq!(outcome.update_count, 6);
+  assert_eq!(outcome.ignored_update_count, 4);
+  assert_eq!(outcome.binding_count, 2);
+  assert!(outcome.solve.is_some());
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://timer/state", "tick").unwrap())), 10.0);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://timer/state", "delta-seconds").unwrap())), 0.25);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.25);
+}
+
+#[test]
+fn all_unbound_packet_skips_plan_solve() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
+
+  let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing-a").unwrap(), value: RuntimeHostInputValue::F64(5.0) },
+    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("docs://clock/ticks", "missing-b").unwrap(), value: RuntimeHostInputValue::F64(9.0) },
+  ]).unwrap()).unwrap();
+
+  assert_eq!(outcome.ignored_update_count, outcome.update_count);
+  assert_eq!(outcome.binding_count, 0);
+  assert!(outcome.solve.is_none());
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
-  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 1.0);
+}
+
+
+#[test]
+fn live_input_recomputes_runtime_host_function() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  runtime
+    .grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(42),
+      &BasicSubject::new(&runtime.runtime_context().unwrap().subject),
+      &BasicResource::new("host:demo/live-plus-one"),
+      [BasicOperation::new("call")],
+    )))
+    .unwrap();
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-plus-one", move |_services, _context, args| {
+    host_calls.fetch_add(1, Ordering::SeqCst);
+    match &args[0] {
+      Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
+      Value::MutableReference(value) => match &*value.borrow() {
+        Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    }
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/live-plus-one(@pulse/value) + 0").unwrap();
+  let initial_calls = calls.load(Ordering::SeqCst);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+
+  runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+
+  assert!(calls.load(Ordering::SeqCst) > initial_calls);
+  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 9.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+}
+
+#[test]
+fn live_host_string_output_recomputes_without_replacing_reference() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 45, "host:demo/live-label");
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-label", |_services, _context, args| {
+    let value = match &args[0] {
+      Value::F64(value) => *value.borrow(),
+      Value::MutableReference(value) => match &*value.borrow() {
+        Value::F64(value) => *value.borrow(),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    };
+    Ok(Value::String(Ref::new(format!("tick:{value}"))))
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/live-label(@pulse/value)").unwrap();
+  let before = runtime.program.interpreter().symbols().borrow().get(hash_str("output")).unwrap();
+  let outer_pointer = before.as_ptr();
+  let inner_pointer = match &*before.borrow() {
+    Value::String(value) => value.as_ptr(),
+    other => panic!("expected string, got {other:?}"),
+  };
+  assert_eq!(string_value(&before.borrow()), "tick:1");
+
+  runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+
+  let after = runtime.program.interpreter().symbols().borrow().get(hash_str("output")).unwrap();
+  assert_eq!(outer_pointer, after.as_ptr());
+  match &*after.borrow() {
+    Value::String(value) => {
+      assert_eq!(inner_pointer, value.as_ptr());
+      assert_eq!(&*value.borrow(), "tick:9");
+    }
+    other => panic!("expected string, got {other:?}"),
+  }
+}
+
+#[test]
+fn live_host_output_kind_change_preserves_previous_output() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 46, "host:demo/kind-change");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/kind-change", move |_services, _context, args| {
+    let call = host_calls.fetch_add(1, Ordering::SeqCst);
+    if call == 0 {
+      let value = match &args[0] {
+        Value::F64(value) => *value.borrow(),
+        Value::MutableReference(value) => match &*value.borrow() {
+          Value::F64(value) => *value.borrow(),
+          other => panic!("expected f64 mutable reference, got {other:?}"),
+        },
+        other => panic!("expected f64 argument, got {other:?}"),
+      };
+      Ok(Value::F64(Ref::new(value + 1.0)))
+    } else {
+      Ok(Value::String(Ref::new("bad-kind".to_string())))
+    }
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\nhost-result := demo/kind-change(@pulse/value)\noutput := host-result + 0").unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  let host_result_inner = match &*host_result.borrow() {
+    Value::F64(value) => value.as_ptr(),
+    other => panic!("expected f64 host result, got {other:?}"),
+  };
+
+  let error = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap_err();
+  let rendered = format!("{error:?}");
+  assert!(rendered.contains("RuntimeHostOutputUpdateError"), "{rendered}");
+  assert!(calls.load(Ordering::SeqCst) >= 2);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  match &*host_result.borrow() {
+    Value::F64(value) => {
+      assert_eq!(host_result_inner, value.as_ptr());
+      assert_eq!(*value.borrow(), 2.0);
+    }
+    other => panic!("expected f64 host result, got {other:?}"),
+  }
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  runtime.run_string("recovery := 1").unwrap();
+}
+
+#[test]
+fn live_host_call_failure_propagates_from_solve_plan() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 47, "host:demo/fails-after-first");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/fails-after-first", move |_services, _context, args| {
+    let call = host_calls.fetch_add(1, Ordering::SeqCst);
+    if call > 0 {
+      return Err(MechError::new(DeliberateHostCallError, None));
+    }
+    let value = match &args[0] {
+      Value::F64(value) => *value.borrow(),
+      Value::MutableReference(value) => match &*value.borrow() {
+        Value::F64(value) => *value.borrow(),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    };
+    Ok(Value::F64(Ref::new(value + 1.0)))
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result + 0").unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  let host_result_inner = match &*host_result.borrow() {
+    Value::F64(value) => value.as_ptr(),
+    other => panic!("expected f64 host result, got {other:?}"),
+  };
+
+  let error = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap_err();
+  let rendered = format!("{error:?}");
+  assert!(rendered.contains("DeliberateHostCallError"), "{rendered}");
+  assert!(calls.load(Ordering::SeqCst) >= 2);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  match &*host_result.borrow() {
+    Value::F64(value) => {
+      assert_eq!(host_result_inner, value.as_ptr());
+      assert_eq!(*value.borrow(), 2.0);
+    }
+    other => panic!("expected f64 host result, got {other:?}"),
+  }
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  runtime.run_string("recovery := 1").unwrap();
+}
+
+#[test]
+fn live_host_empty_output_can_recompute() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 48, "host:demo/live-empty");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-empty", move |_services, _context, _args| {
+    host_calls.fetch_add(1, Ordering::SeqCst);
+    Ok(Value::Empty)
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/live-empty(@pulse/value)").unwrap();
+  assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
+
+  let outcome = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+  assert!(outcome.solve.is_some());
+  assert!(calls.load(Ordering::SeqCst) >= 2);
+  assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
+}
+
+
+fn grant_read_to(runtime: &mut MechRuntime, subject: &str, resource: &str, path: &str) {
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject: subject.to_string(),
+    resource: resource.to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec![path.to_string()],
+  }).unwrap();
+}
+
+fn grant_host_call(runtime: &mut MechRuntime, subject: &str, id: u64, resource: &str) {
+  runtime
+    .grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(id.into()),
+      &BasicSubject::new(subject),
+      &BasicResource::new(resource),
+      [BasicOperation::new("call")],
+    )))
+    .unwrap();
+}
+
+fn register_sleep_host(runtime: &mut MechRuntime, name: &str) {
+  runtime.register_mech_host_function(ClosureHostFunction::new(name, move |_services, _context, args| {
+    thread::sleep(Duration::from_millis(5));
+    match args.first() {
+      Some(Value::F64(value)) => Ok(Value::F64(Ref::new(*value.borrow()))),
+      Some(Value::MutableReference(value)) => match &*value.borrow() {
+        Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    }
+  })).unwrap();
+}
+
+#[test]
+fn transactional_context_cannot_arm_live_program() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  let mut context = runtime.runtime_context().unwrap();
+  grant_read_to(&mut runtime, &context.subject, "docs://clock/ticks", "value");
+  runtime.begin_transaction(&mut context).unwrap();
+  let error = format!("{:?}", runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap_err());
+  assert!(error.contains("RuntimeTransactionalLiveProgramUnsupported"), "{error}");
+  assert!(runtime.live_context_template.is_none());
+  assert!(runtime.live_input_bindings.is_empty());
+  assert!(runtime.persistent_sends.is_empty());
+}
+
+#[test]
+fn failed_source_does_not_leave_live_state_armed() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  let mut context_a = runtime.runtime_context().unwrap().with_subject("subject-a");
+  grant_read_to(&mut runtime, "subject-a", "docs://clock/ticks", "value");
+  let error = runtime.run_string_with_context(&mut context_a, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value\nmissing := @pulse/missing");
+  assert!(error.is_err());
+  assert!(runtime.live_context_template.is_none());
+  assert!(runtime.live_input_bindings.is_empty());
+  assert!(runtime.persistent_sends.is_empty());
+
+  let mut context_b = runtime.runtime_context().unwrap().with_subject("subject-b");
+  grant_read_to(&mut runtime, "subject-b", "docs://clock/ticks", "value");
+  runtime.run_string_with_context(&mut context_b, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap();
+}
+
+#[test]
+fn duration_failure_restores_live_state() {
+  let mut config = RuntimeConfig::default();
+  config.limits.max_turn_duration_ms = Some(1);
+  let mut runtime = RuntimeBuilder::new()
+    .config(config)
+    .resource_provider(Box::new(docs_provider_with("docs://clock/ticks", "value", 1.0)))
+    .build()
+    .unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  grant_read_to(&mut runtime, &context.subject, "docs://clock/ticks", "value");
+  grant_host_call(&mut runtime, &context.subject, 43, "host:demo/source-sleep");
+  register_sleep_host(&mut runtime, "demo/source-sleep");
+  let error = format!("{:?}", runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\nslow := demo/source-sleep(@pulse/value)").unwrap_err());
+  assert!(error.contains("turn_duration_ms") || error.contains("ResourceBudgetExceeded"), "{error}");
+  assert!(runtime.live_context_template.is_none());
+  assert!(runtime.live_input_bindings.is_empty());
+  assert!(runtime.persistent_sends.is_empty());
+  runtime.config.limits.max_turn_duration_ms = None;
+  runtime.run_string("recovery := 1").unwrap();
+}
+
+#[test]
+fn live_turn_enforces_step_budget() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  let mut context = runtime.runtime_context().unwrap().with_budget(ResourceBudget::default().with_max_steps(1));
+  grant_read_to(&mut runtime, &context.subject, "docs://clock/ticks", "value");
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
+  runtime.live_context_template.as_mut().unwrap().budget_limits.max_steps = Some(0);
+  let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(2.0))).unwrap_err());
+  assert!(error.contains("ResourceBudgetExceeded"), "{error}");
+
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  let mut context = runtime.runtime_context().unwrap().with_budget(ResourceBudget::default().with_max_steps(1));
+  grant_read_to(&mut runtime, &context.subject, "docs://clock/ticks", "value");
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value * 2").unwrap();
+  let outcome = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(2.0))).unwrap();
+  assert!(outcome.solve.is_some());
+  let outcome = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(3.0))).unwrap();
+  assert!(outcome.solve.is_some());
+}
+
+#[test]
+fn live_turn_enforces_duration_limit() {
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(docs_provider_with("docs://clock/ticks", "value", 1.0)))
+    .build()
+    .unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  grant_read_to(&mut runtime, &context.subject, "docs://clock/ticks", "value");
+  grant_host_call(&mut runtime, &context.subject, 44, "host:demo/live-sleep");
+  register_sleep_host(&mut runtime, "demo/live-sleep");
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\nslow := demo/live-sleep(@pulse/value)").unwrap();
+  runtime.config.limits.max_turn_duration_ms = Some(1);
+  let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(2.0))).unwrap_err());
+  assert!(error.contains("turn_duration_ms") || error.contains("ResourceBudgetExceeded"), "{error}");
+  assert!(runtime.program().interpreter().symbols().borrow().contains(hash_str("slow")));
+  runtime.config.limits.max_turn_duration_ms = None;
+  runtime.run_string("recovery := 1").unwrap();
+}
+
+#[test]
+fn changed_actor_message_rejects_live_context_reuse() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  let actor = ActorId(7);
+  let state = ObjectId(9);
+  let mut context_a = runtime.runtime_context().unwrap().with_subject("actor:7").with_actor(actor);
+  context_a.actor_state = Some(state);
+  context_a.actor_message = Some(MessageRecord::new(MessageId(1), actor, "tick", b"a".to_vec()));
+  grant_read_to(&mut runtime, "actor:7", "docs://clock/ticks", "value");
+  runtime.run_string_with_context(&mut context_a, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap();
+
+  let mut context_b = runtime.runtime_context().unwrap().with_subject("actor:7").with_actor(actor);
+  context_b.actor_state = Some(state);
+  context_b.actor_message = Some(MessageRecord::new(MessageId(2), actor, "tick", b"b".to_vec()));
+  let error = format!("{:?}", runtime.run_string_with_context(&mut context_b, "@pulse := docs://clock/ticks{:read(value)}\nother := @pulse/value").unwrap_err());
+  assert!(error.contains("RuntimeLiveContextMismatch"), "{error}");
+}
+
+#[test]
+fn live_context_capability_order_does_not_cause_mismatch() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  let mut context_a = runtime.runtime_context().unwrap().with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
+  let mut context_b = runtime.runtime_context().unwrap().with_capabilities(vec![CapabilityId(2), CapabilityId(1)]);
+  grant_read_to(&mut runtime, &context_a.subject, "docs://clock/ticks", "value");
+  runtime.run_string_with_context(&mut context_a, "@pulse := docs://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap();
+  runtime.run_string_with_context(&mut context_b, "@pulse := docs://clock/ticks{:read(value)}\nother := @pulse/value").unwrap();
 }
 
 #[derive(Debug, Clone)]
@@ -343,6 +769,7 @@ fn drop_stops_live_input_drivers() {
   assert!(!state.borrow().live);
 }
 
+
 #[derive(Debug, Clone)]
 struct MockDriverError { name: &'static str, message: String }
 impl MechErrorKind for MockDriverError {
@@ -518,6 +945,48 @@ clock-output := (hour, minute, second)
     driver.publish(snapshot).unwrap();
     let outcomes = runtime.drain_host_inputs(1).unwrap();
     assert_eq!(outcomes.len(), 1);
+  }
+
+
+  #[test]
+  fn persistent_send_uses_original_custom_subject() {
+    let initial = snapshot(1.0, 2.0, 3.0, 4.0);
+    let shared = Rc::new(RefCell::new(initial));
+    let console = RecordingConsoleBackend::default();
+    let mut runtime = RuntimeBuilder::new()
+      .resource_provider(Box::new(TimeResourceProvider { snapshot: shared.clone() }) as Box<dyn RuntimeResourceProvider>)
+      .resource_provider(Box::new(ConsoleResourceProvider { backend: console.clone() }) as Box<dyn RuntimeResourceProvider>)
+      .build()
+      .unwrap();
+    let subject = "task:live-custom";
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: subject.to_string(),
+      resource: "time://clock/clock".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Read],
+      paths: TIME_PATHS.iter().map(|path| path.to_string()).collect(),
+    }).unwrap();
+    runtime.grant_capability(RuntimeCapabilityGrant {
+      subject: subject.to_string(),
+      resource: "console://console/output".to_string(),
+      operations: vec![RuntimeCapabilityOperation::Write],
+      paths: vec!["line".to_string()],
+    }).unwrap();
+    assert!(!runtime.has_capability_grant(&runtime.runtime_context().unwrap().subject, "console://console/output", &RuntimeCapabilityOperation::Write, "line"));
+
+    let mut context = runtime.runtime_context().unwrap().with_subject(subject);
+    runtime.run_string_with_context(&mut context, r#"@out := console://console/output{:write(line)}
+@clock := time://clock/clock{:read(hour)}
+hour := @clock/hour
+output := hour + 1
+@out/line <- output
+"#).unwrap();
+    assert_eq!(console.lines().len(), 1);
+    *shared.borrow_mut() = snapshot(1.0, 9.0, 3.0, 4.0);
+    let outcome = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("time://clock/clock", "hour").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+    assert!(outcome.solve.is_some());
+    let lines = console.lines();
+    assert_eq!(lines.len(), 2);
+    assert!(lines.last().unwrap().contains("10"), "{lines:?}");
   }
 
   #[test]

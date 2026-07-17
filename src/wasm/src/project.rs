@@ -5,11 +5,15 @@ use wasm_bindgen::prelude::*;
 
 use mech_core::{MechError, MechErrorKind};
 #[cfg(feature = "served_project_authority")]
+use base64::Engine as _;
+#[cfg(feature = "served_project_authority")]
+use serde::Deserialize;
+#[cfg(feature = "served_project_authority")]
 use mech_host_browser::BrowserRuntimeInjectionConfig;
 #[cfg(feature = "served_project_authority")]
 use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
 #[cfg(feature = "served_project_authority")]
-use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest};
+use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest, HOST_DELEGATION_ALGORITHM_ED25519};
 #[cfg(feature = "browser_host_dom")]
 use mech_host_browser::BrowserHostFactory;
 #[cfg(feature = "browser_host_console")]
@@ -303,6 +307,49 @@ fn validate_compiled_host_providers_for_hosts(hosts: &[mech_runtime::HostInstanc
     }
     Ok(())
 }
+
+#[cfg(feature = "served_project_authority")]
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InjectedHostDelegationPublicKey {
+    issuer: String,
+    key_id: String,
+    algorithm: String,
+    public_key: String,
+}
+
+#[cfg(feature = "served_project_authority")]
+fn decode_injected_host_delegation_keys(
+    keys: Vec<InjectedHostDelegationPublicKey>,
+) -> Result<HostDelegationKeyStore, JsValue> {
+    let mut decoded_keys = Vec::with_capacity(keys.len());
+    for key in keys {
+        if key.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
+            return Err(js_error(format!("unsupported trusted host key algorithm `{}`", key.algorithm)));
+        }
+        let public_key = base64::engine::general_purpose::STANDARD
+            .decode(key.public_key.as_bytes())
+            .map_err(|error| js_error(format!("invalid trusted host key publicKey: {error}")))?;
+        if public_key.len() != 32 {
+            return Err(js_error(format!("trusted host key publicKey must decode to 32 bytes, got {}", public_key.len())));
+        }
+        decoded_keys.push(HostDelegationPublicKey {
+            issuer: key.issuer,
+            key_id: key.key_id,
+            algorithm: HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+            public_key,
+        });
+    }
+    Ok(HostDelegationKeyStore::new(decoded_keys))
+}
+
+#[cfg(feature = "served_project_authority")]
+fn trusted_host_keys_from_js_value(value: JsValue) -> Result<HostDelegationKeyStore, JsValue> {
+    let keys: Vec<InjectedHostDelegationPublicKey> = serde_wasm_bindgen::from_value(value)
+        .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+    decode_injected_host_delegation_keys(keys)
+}
+
 #[cfg(feature = "served_project_authority")]
 fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> {
     let window = web_sys::window().ok_or_else(|| js_error("served project authority requires a browser window"))?;
@@ -317,8 +364,7 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
         if !trusted.is_undefined() && !trusted.is_null() {
             let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(host_config.clone())
                 .map_err(|error| js_error(format!("invalid served host delegation envelope: {error}")))?;
-            let keys: Vec<HostDelegationPublicKey> = serde_wasm_bindgen::from_value(trusted)
-                .map_err(|error| js_error(format!("invalid trusted host keys: {error}")))?;
+            let trusted_keys = trusted_host_keys_from_js_value(trusted)?;
             let audience = audience.as_string().ok_or_else(|| js_error("served host delegation audience must be a string"))?;
             let now_ms = js_sys::Date::now().max(0.0) as u64;
             let verified = verify_browser_host_delegation(
@@ -326,7 +372,7 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
                 HostDelegationVerificationRequest {
                     now_ms,
                     expected_audience: audience,
-                    trusted_keys: HostDelegationKeyStore::new(keys),
+                    trusted_keys,
                     max_clock_skew_ms: 60_000,
                 },
             ).map_err(to_js_error)?;
@@ -498,6 +544,12 @@ impl MechErrorKind for ProjectError {
     }
 }
 fn js_error(message: impl Into<String>) -> JsValue {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = message.into();
+        return JsValue::NULL;
+    }
+    #[cfg(target_arch = "wasm32")]
     JsValue::from_str(&message.into())
 }
 fn to_js_error(error: MechError) -> JsValue {
@@ -800,6 +852,64 @@ rows := |id<string> x<f64>|
         let sources = HashMap::new();
         assert!(run_project_sources(&mut runtime, &document, &sources).is_err());
     }
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_ed25519_key_decodes() {
+        use base64::Engine as _;
+        let public_key = (0u8..32).collect::<Vec<_>>();
+        let store = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+            issuer: "issuer".to_string(),
+            key_id: "key-1".to_string(),
+            algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+            public_key: base64::engine::general_purpose::STANDARD.encode(&public_key),
+        }]).unwrap();
+        let key = store.key("issuer", "key-1").unwrap();
+        assert_eq!(key.issuer, "issuer");
+        assert_eq!(key.key_id, "key-1");
+        assert_eq!(key.algorithm, "ed25519");
+        assert_eq!(key.public_key, public_key);
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_key_rejects_mixed_case_algorithm() {
+        use base64::Engine as _;
+        let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+            issuer: "issuer".to_string(),
+            key_id: "key-1".to_string(),
+            algorithm: "ED25519".to_string(),
+            public_key: base64::engine::general_purpose::STANDARD.encode([0u8; 32]),
+        }]);
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_key_rejects_invalid_base64() {
+        let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+            issuer: "issuer".to_string(),
+            key_id: "key-1".to_string(),
+            algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+            public_key: "not base64!".to_string(),
+        }]);
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_key_rejects_wrong_length() {
+        use base64::Engine as _;
+        for bytes in [vec![0u8; 31], vec![0u8; 33]] {
+            let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+                issuer: "issuer".to_string(),
+                key_id: "key-1".to_string(),
+                algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+                public_key: base64::engine::general_purpose::STANDARD.encode(bytes),
+            }]);
+            assert!(result.is_err());
+        }
+    }
+
 }
 
 #[cfg(all(test, target_arch = "wasm32"))]
@@ -901,4 +1011,6 @@ rows := |id<string> x<f64>|
         project.stop().unwrap();
         canvas.remove();
     }
+
+
 }

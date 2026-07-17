@@ -4,7 +4,7 @@ use mech_core::*;
 
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
-    LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
     Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
 };
 use crate::cli::{capabilities, config, serve_options};
@@ -259,6 +259,27 @@ pub(crate) fn prepare(
     })
 }
 
+
+#[derive(Debug)]
+struct LoadedBrowserAssets {
+    project_js: &'static str,
+    wasm: LoadedResource,
+    js: LoadedResource,
+}
+
+async fn load_browser_assets(
+    authority: &mech_runtime::HostFilesystemAuthority,
+    wasm_pkg: &str,
+    resources: &WebResourceDefaults,
+) -> MResult<LoadedBrowserAssets> {
+    let project_js = resources.project_js.ok_or_else(|| MechError::new(GenericError { msg: "browser project.js asset is missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc())?;
+    let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
+    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
+    let wasm = load_resource(authority, &wasm_path, &resources.wasm_backup_url, resources.mech_wasm).await?;
+    let js = load_resource(authority, &js_path, &resources.js_backup_url, resources.mech_js).await?;
+    Ok(LoadedBrowserAssets { project_js, wasm, js })
+}
+
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let resources = &options.resources;
@@ -276,8 +297,6 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     render_capability_events(&badge.to_string(), &options.capability_events);
 
     let full_address = format!("{}:{}", options.address, options.port);
-    let wasm_path = format!("{}/mech_wasm_bg.wasm", options.wasm_pkg);
-    let js_path = format!("{}/mech_wasm.js", options.wasm_pkg);
 
     println!("{badge} Loading resources…");
 
@@ -312,18 +331,8 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         .with_compiler_loc()
     })?;
 
-    if resources.mech_wasm.is_none() || resources.mech_js.is_none() || resources.project_js.is_none() {
-        return Err(MechError::new(GenericError { msg: "browser WASM assets are missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc());
-    }
-
     print!("{badge} Loading WASM…");
-    let wasm = load_resource(
-        &options.authority,
-        &wasm_path,
-        &resources.wasm_backup_url,
-        resources.mech_wasm,
-    )
-    .await?;
+    let LoadedBrowserAssets { project_js, wasm, js } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
     render_resource_events(&badge.to_string(), "WASM", &wasm.events);
     let wasm_backing_paths = match &wasm.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -331,7 +340,6 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     };
 
     print!("{badge} Loading JS…");
-    let js = load_resource(&options.authority, &js_path, &resources.js_backup_url, resources.mech_js).await?;
     render_resource_events(&badge.to_string(), "JS", &js.events);
     let js_backing_paths = match &js.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -343,7 +351,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
-        resources.project_js.ok_or_else(|| MechError::new(GenericError { msg: "browser project bootstrap is missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc())?.to_string(),
+        project_js.to_string(),
         wasm.bytes,
         js.bytes,
         options.authority,
@@ -430,4 +438,64 @@ fn serve_host_delegation_injection(
         .as_millis() as u64;
 
     crate::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_runtime::{DefaultIdGenerator, HostFilesystemAuthority, SharedCapabilityKernel, FS_READ, MECH_TOOL_SUBJECT};
+
+    fn authority_for(path: &std::path::Path) -> HostFilesystemAuthority {
+        let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+        let mut ids = DefaultIdGenerator::new();
+        authority.grant_path(&mut ids, path, true, [FS_READ]).unwrap();
+        authority
+    }
+
+    fn defaults(project_js: Option<&'static str>, mech_wasm: Option<&'static [u8]>, mech_js: Option<&'static [u8]>) -> WebResourceDefaults {
+        WebResourceDefaults {
+            stylesheet_backup_url: "http://unused/style.css".to_string(),
+            shim_backup_url: "http://unused/shim.html".to_string(),
+            wasm_backup_url: "http://unused/mech_wasm_bg.wasm".to_string(),
+            js_backup_url: "http://unused/mech_wasm.js".to_string(),
+            shim_html: "",
+            mech_wasm,
+            mech_js,
+            project_js,
+        }
+    }
+
+    #[test]
+    fn local_wasm_package_works_without_embedded_assets() {
+        let root = tempfile::tempdir().unwrap();
+        let pkg = root.path().join("pkg");
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"local-wasm").unwrap();
+        std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
+        let authority = authority_for(root.path());
+        let assets = tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(Some("project"), None, None))).unwrap();
+        assert_eq!(assets.project_js, "project");
+        assert_eq!(assets.wasm.bytes, b"local-wasm");
+        assert_eq!(assets.js.bytes, b"local-js");
+    }
+
+    #[test]
+    fn missing_local_and_embedded_wasm_fails() {
+        let root = tempfile::tempdir().unwrap();
+        let authority = authority_for(root.path());
+        let error = format!("{:?}", tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, root.path().join("missing").to_str().unwrap(), &defaults(Some("project"), None, Some(b"js")))).unwrap_err());
+        assert!(error.contains("mech_wasm_bg.wasm") || error.contains("unused"), "{error}");
+    }
+
+    #[test]
+    fn missing_project_js_fails_independently() {
+        let root = tempfile::tempdir().unwrap();
+        let pkg = root.path().join("pkg");
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"local-wasm").unwrap();
+        std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
+        let authority = authority_for(root.path());
+        let error = format!("{:?}", tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(None, None, None))).unwrap_err());
+        assert!(error.contains("project.js"), "{error}");
+    }
 }

@@ -863,9 +863,9 @@ fn discover_served_project(paths: &[String]) -> MResult<Option<ServedProject>> {
       &config_source,
       mech_runtime::ConfigProfileOptions::default(),
     )?;
-    let run = document.run.as_ref().ok_or_else(|| Error::new(ErrorKind::InvalidInput, "mech.mcfg must contain run settings for served projects"))?;
+    let Some(run) = document.run.as_ref() else { return Ok(None); };
     if run.paths.is_empty() {
-      return Err(Error::new(ErrorKind::InvalidInput, "mech.mcfg run.paths must contain at least one source").into());
+      return Ok(None);
     }
     let mut run_paths = Vec::new();
     for run_path in &run.paths {

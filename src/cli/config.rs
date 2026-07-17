@@ -326,6 +326,77 @@ mod config_tests {
     }
 
     #[test]
+    fn serve_only_project_directory_uses_serve_paths() {
+        let root = temp_root("serve-only-project-uses-serve-paths");
+        let project = create_serve_project(&root);
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = load_cli_config_with_inputs(serve_matches, &["project".to_string()])
+                .unwrap()
+                .unwrap();
+            let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
+            assert_eq!(
+                options.paths,
+                vec![project.join("demo.mec").to_string_lossy().to_string()]
+            );
+            assert!(!options.paths.iter().any(|path| path == "project"));
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn runnable_project_directory_preserves_project_selector() {
+        let root = temp_root("runnable-project-preserves-selector");
+        let project = root.join("project");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(project.join("index.html"), "<html></html>").unwrap();
+        std::fs::write(project.join("main.mec"), "# main\n").unwrap();
+        std::fs::write(
+            project.join(DEFAULT_CONFIG_FILENAME),
+            r#"config := {
+  run: {paths: ["main.mec"]}
+  serve: {paths: ["served.mec"]}
+}
+"#,
+        )
+        .unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "project"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = load_cli_config_with_inputs(serve_matches, &["project".to_string()])
+                .unwrap()
+                .unwrap();
+            let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
+            assert_eq!(options.paths, vec!["project".to_string()]);
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn explicit_serve_target_overrides_config_paths() {
+        let root = temp_root("explicit-serve-target-overrides");
+        std::fs::write(
+            root.join(DEFAULT_CONFIG_FILENAME),
+            r#"config := {serve: {paths: ["demo.mec"]}}"#,
+        )
+        .unwrap();
+        std::fs::write(root.join("demo.mec"), "# demo\n").unwrap();
+        std::fs::write(root.join("explicit.mec"), "# explicit\n").unwrap();
+        {
+            let _guard = CurrentDirGuard::enter(&root);
+            let matches = matches(&["mech", "serve", "explicit.mec"]);
+            let serve_matches = matches.subcommand_matches("serve").unwrap();
+            let loaded = load_cli_config(serve_matches).unwrap().unwrap();
+            let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
+            assert_eq!(options.paths, vec!["explicit.mec".to_string()]);
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn project_directory_without_mech_config_falls_back_to_current_dir_config() {
         let root = temp_root("project-without-config-falls-back");
         let project = root.join("project");

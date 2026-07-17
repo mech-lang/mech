@@ -153,8 +153,9 @@ impl RuntimeHostInput {
 #[derive(Clone, Debug)]
 pub struct RuntimeHostInputOutcome {
   pub update_count: usize,
+  pub ignored_update_count: usize,
   pub binding_count: usize,
-  pub solve: ProgramSolveOutcome,
+  pub solve: Option<ProgramSolveOutcome>,
 }
 
 #[derive(Debug)]

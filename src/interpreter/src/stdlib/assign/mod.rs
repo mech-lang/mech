@@ -24,7 +24,7 @@ pub use self::map::*;
 pub use self::tuple::*;
 
 // ----------------------------------------------------------------------------
-// Assign 
+// Assign
 // ----------------------------------------------------------------------------
 
 // x = 1 ----------------------------------------------------------------------
@@ -34,7 +34,7 @@ struct Assign<T> {
   sink: Ref<T>,
   source: Ref<T>,
 }
-impl<T> MechFunctionImpl for Assign<T> 
+impl<T> MechFunctionImpl for Assign<T>
 where
   T: Clone + Debug,
   Ref<T>: ToValue
@@ -50,13 +50,45 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for Assign<T> 
+impl<T> MechFunctionCompiler for Assign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("Assign<{}>", T::as_value_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct EmptyAssignmentNotBytecodeCompilable;
+impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
+  fn name(&self) -> &str {
+    "EmptyAssignmentNotBytecodeCompilable"
+  }
+
+  fn message(&self) -> String {
+    "empty stable assignment is not currently bytecode-compilable".to_string()
+  }
+}
+
+#[derive(Debug)]
+struct AssignEmpty;
+impl MechFunctionImpl for AssignEmpty {
+  fn solve(&self) {}
+  fn out(&self) -> Value { Value::Empty }
+  fn to_string(&self) -> String { "AssignEmpty".to_string() }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AssignEmpty {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    Err(
+      MechError::new(
+        EmptyAssignmentNotBytecodeCompilable,
+        None,
+      )
+      .with_compiler_loc()
+    )
   }
 }
 
@@ -110,6 +142,26 @@ macro_rules! impl_assign_value_match_arms {
 }
 
 fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+  match (&sink, &source) {
+    (Value::Typed(sink_inner, sink_annotation), Value::Typed(source_inner, source_annotation))
+      if sink_annotation == source_annotation =>
+    {
+      return assign_value_fxn(
+        sink_inner.as_ref().clone(),
+        source_inner.as_ref().clone(),
+      );
+    }
+    (Value::Empty, Value::Empty) => {
+      return Ok(Box::new(AssignEmpty));
+    }
+    (Value::Index(sink), Value::Index(source)) => {
+      return Ok(Box::new(Assign {
+        sink: sink.clone(),
+        source: source.clone(),
+      }));
+    }
+    _ => {}
+  }
   impl_assign_value_match_arms!(
     (sink, source),
     Bool,   "bool";
@@ -123,7 +175,7 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
     I16,    "i16";
     I32,    "i32";
     I64,    "i64";
-    U128,   "u128";
+    I128,   "i128";
     F32,    "f32";
     F64,    "f64";
     R64, "rational";
@@ -217,5 +269,21 @@ impl NativeFunctionCompiler for AddAssignValue {
         }
       }
     }
+  }
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[cfg(feature = "compiler")]
+  #[test]
+  fn empty_stable_assignment_bytecode_compile_returns_error() {
+    let assignment = AssignEmpty;
+    let mut ctx = CompileCtx::new();
+    let error = assignment.compile(&mut ctx).unwrap_err();
+    let rendered = format!("{error:?}");
+    assert!(rendered.contains("EmptyAssignmentNotBytecodeCompilable"), "{rendered}");
   }
 }
