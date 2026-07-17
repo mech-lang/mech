@@ -254,7 +254,13 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
     });
 
     match result {
-      Ok(value) => *self.value.borrow_mut() = value,
+      Ok(value) => {
+        let mut current = self.value.borrow_mut();
+        match (&mut *current, value) {
+          (Value::F64(current), Value::F64(next)) => *current.borrow_mut() = *next.borrow(),
+          (_, next) => *current = next,
+        }
+      },
       Err(error) => {
         eprintln!(
           "[Mech Runtime Host Error] function `{}` failed during solve; preserving previous output: {:?}",

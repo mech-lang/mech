@@ -2507,6 +2507,8 @@ impl MechRuntime {
       },
     )?;
 
+    let live_state_before = self.live_state_snapshot();
+
     let result = match mech_syntax::parser::parse(source.trim()) {
       Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
         Ok(()) => {
@@ -2516,7 +2518,6 @@ impl MechRuntime {
             MechProgram::new(program_config),
           );
 
-          let live_state_before = self.live_state_snapshot();
           let result = (|| {
             self.register_runtime_program_host_functions(
               context,
@@ -2531,9 +2532,6 @@ impl MechRuntime {
           })();
 
           self.program = program;
-          if result.is_err() {
-            self.restore_live_state(live_state_before);
-          }
           result
         }
         Err(error) => Err(error),
@@ -2542,6 +2540,9 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
     match &result {
       Ok(_) => {
         self.emit_event_to_context(
@@ -2756,6 +2757,8 @@ impl MechRuntime {
       },
     )?;
 
+    let live_state_before = self.live_state_snapshot();
+
     let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
       Ok(()) => {
         let program_config = self.program.config.clone();
@@ -2764,7 +2767,6 @@ impl MechRuntime {
           MechProgram::new(program_config),
         );
 
-        let live_state_before = self.live_state_snapshot();
         let result = (|| {
           self.register_runtime_program_host_functions(
             context,
@@ -2779,15 +2781,15 @@ impl MechRuntime {
         })();
 
         self.program = program;
-        if result.is_err() {
-          self.restore_live_state(live_state_before);
-        }
         result
       }
       Err(error) => Err(error),
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
     match &result {
       Ok(_) => {
         self.emit_event_to_context(

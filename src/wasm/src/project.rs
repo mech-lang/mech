@@ -544,6 +544,12 @@ impl MechErrorKind for ProjectError {
     }
 }
 fn js_error(message: impl Into<String>) -> JsValue {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = message.into();
+        return JsValue::NULL;
+    }
+    #[cfg(target_arch = "wasm32")]
     JsValue::from_str(&message.into())
 }
 fn to_js_error(error: MechError) -> JsValue {
@@ -846,6 +852,64 @@ rows := |id<string> x<f64>|
         let sources = HashMap::new();
         assert!(run_project_sources(&mut runtime, &document, &sources).is_err());
     }
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_ed25519_key_decodes() {
+        use base64::Engine as _;
+        let public_key = (0u8..32).collect::<Vec<_>>();
+        let store = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+            issuer: "issuer".to_string(),
+            key_id: "key-1".to_string(),
+            algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+            public_key: base64::engine::general_purpose::STANDARD.encode(&public_key),
+        }]).unwrap();
+        let key = store.key("issuer", "key-1").unwrap();
+        assert_eq!(key.issuer, "issuer");
+        assert_eq!(key.key_id, "key-1");
+        assert_eq!(key.algorithm, "ed25519");
+        assert_eq!(key.public_key, public_key);
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_key_rejects_mixed_case_algorithm() {
+        use base64::Engine as _;
+        let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+            issuer: "issuer".to_string(),
+            key_id: "key-1".to_string(),
+            algorithm: "ED25519".to_string(),
+            public_key: base64::engine::general_purpose::STANDARD.encode([0u8; 32]),
+        }]);
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_key_rejects_invalid_base64() {
+        let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+            issuer: "issuer".to_string(),
+            key_id: "key-1".to_string(),
+            algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+            public_key: "not base64!".to_string(),
+        }]);
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn injected_key_rejects_wrong_length() {
+        use base64::Engine as _;
+        for bytes in [vec![0u8; 31], vec![0u8; 33]] {
+            let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+                issuer: "issuer".to_string(),
+                key_id: "key-1".to_string(),
+                algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+                public_key: base64::engine::general_purpose::STANDARD.encode(bytes),
+            }]);
+            assert!(result.is_err());
+        }
+    }
+
 }
 
 #[cfg(all(test, target_arch = "wasm32"))]
@@ -947,4 +1011,6 @@ rows := |id<string> x<f64>|
         project.stop().unwrap();
         canvas.remove();
     }
+
+
 }
