@@ -60,6 +60,18 @@ where
   }
 }
 
+#[derive(Debug, Clone)]
+pub struct EmptyAssignmentNotBytecodeCompilable;
+impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
+  fn name(&self) -> &str {
+    "EmptyAssignmentNotBytecodeCompilable"
+  }
+
+  fn message(&self) -> String {
+    "empty stable assignment is not currently bytecode-compilable".to_string()
+  }
+}
+
 #[derive(Debug)]
 struct AssignEmpty;
 impl MechFunctionImpl for AssignEmpty {
@@ -70,7 +82,13 @@ impl MechFunctionImpl for AssignEmpty {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for AssignEmpty {
   fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!("AssignEmpty bytecode compilation is not implemented")
+    Err(
+      MechError::new(
+        EmptyAssignmentNotBytecodeCompilable,
+        None,
+      )
+      .with_compiler_loc()
+    )
   }
 }
 
@@ -251,5 +269,21 @@ impl NativeFunctionCompiler for AddAssignValue {
         }
       }
     }
+  }
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[cfg(feature = "compiler")]
+  #[test]
+  fn empty_stable_assignment_bytecode_compile_returns_error() {
+    let assignment = AssignEmpty;
+    let mut ctx = CompileCtx::new();
+    let error = assignment.compile(&mut ctx).unwrap_err();
+    let rendered = format!("{error:?}");
+    assert!(rendered.contains("EmptyAssignmentNotBytecodeCompilable"), "{rendered}");
   }
 }

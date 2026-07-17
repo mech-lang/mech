@@ -64,26 +64,79 @@ fn stable_value_update_kind_mismatch(expected: ValueKind, actual: ValueKind) -> 
   MechError::new(StableValueUpdateKindMismatch { expected, actual }, None)
 }
 
-fn is_stable_value_update_supported_kind(kind: &ValueKind) -> bool {
-  match kind {
-    ValueKind::U8 |
-    ValueKind::U16 |
-    ValueKind::U32 |
-    ValueKind::U64 |
-    ValueKind::U128 |
-    ValueKind::I8 |
-    ValueKind::I16 |
-    ValueKind::I32 |
-    ValueKind::I64 |
-    ValueKind::I128 |
-    ValueKind::F32 |
-    ValueKind::F64 |
-    ValueKind::C64 |
-    ValueKind::R64 |
-    ValueKind::String |
-    ValueKind::Bool |
-    ValueKind::Index |
-    ValueKind::Matrix(_, _) => true,
+fn is_stable_value_update_supported_value(value: &Value) -> bool {
+  match value {
+    #[cfg(feature = "u8")]
+    Value::U8(_) => true,
+    #[cfg(feature = "u16")]
+    Value::U16(_) => true,
+    #[cfg(feature = "u32")]
+    Value::U32(_) => true,
+    #[cfg(feature = "u64")]
+    Value::U64(_) => true,
+    #[cfg(feature = "u128")]
+    Value::U128(_) => true,
+    #[cfg(feature = "i8")]
+    Value::I8(_) => true,
+    #[cfg(feature = "i16")]
+    Value::I16(_) => true,
+    #[cfg(feature = "i32")]
+    Value::I32(_) => true,
+    #[cfg(feature = "i64")]
+    Value::I64(_) => true,
+    #[cfg(feature = "i128")]
+    Value::I128(_) => true,
+    #[cfg(feature = "f32")]
+    Value::F32(_) => true,
+    #[cfg(feature = "f64")]
+    Value::F64(_) => true,
+    #[cfg(feature = "complex")]
+    Value::C64(_) => true,
+    #[cfg(feature = "rational")]
+    Value::R64(_) => true,
+    #[cfg(any(feature = "string", feature = "variable_define"))]
+    Value::String(_) => true,
+    #[cfg(any(feature = "bool", feature = "variable_define"))]
+    Value::Bool(_) => true,
+    Value::Index(_) => true,
+
+    #[cfg(feature = "matrix")]
+    Value::MatrixIndex(_) => false,
+    #[cfg(feature = "matrix")]
+    Value::MatrixValue(_) => false,
+    #[cfg(all(feature = "matrix", feature = "bool"))]
+    Value::MatrixBool(_) => true,
+    #[cfg(all(feature = "matrix", feature = "u8"))]
+    Value::MatrixU8(_) => true,
+    #[cfg(all(feature = "matrix", feature = "u16"))]
+    Value::MatrixU16(_) => true,
+    #[cfg(all(feature = "matrix", feature = "u32"))]
+    Value::MatrixU32(_) => true,
+    #[cfg(all(feature = "matrix", feature = "u64"))]
+    Value::MatrixU64(_) => true,
+    #[cfg(all(feature = "matrix", feature = "u128"))]
+    Value::MatrixU128(_) => true,
+    #[cfg(all(feature = "matrix", feature = "i8"))]
+    Value::MatrixI8(_) => true,
+    #[cfg(all(feature = "matrix", feature = "i16"))]
+    Value::MatrixI16(_) => true,
+    #[cfg(all(feature = "matrix", feature = "i32"))]
+    Value::MatrixI32(_) => true,
+    #[cfg(all(feature = "matrix", feature = "i64"))]
+    Value::MatrixI64(_) => true,
+    #[cfg(all(feature = "matrix", feature = "i128"))]
+    Value::MatrixI128(_) => true,
+    #[cfg(all(feature = "matrix", feature = "f32"))]
+    Value::MatrixF32(_) => true,
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    Value::MatrixF64(_) => true,
+    #[cfg(all(feature = "matrix", feature = "string"))]
+    Value::MatrixString(_) => true,
+    #[cfg(all(feature = "matrix", feature = "rational"))]
+    Value::MatrixR64(_) => true,
+    #[cfg(all(feature = "matrix", feature = "complex"))]
+    Value::MatrixC64(_) => true,
+
     _ => false,
   }
 }
@@ -107,8 +160,13 @@ fn validate_stable_value_update(current: &Value, next: &Value) -> MResult<()> {
     }
     (Value::Empty, Value::Empty) => Ok(()),
     #[cfg(feature = "matrix")]
-    (Value::MatrixValue(_), _) | (_, Value::MatrixValue(_)) => Err(MechError::new(
+    (Value::MatrixValue(_), _) => Err(MechError::new(
       StableValueUpdateUnsupported { kind: current.kind() },
+      None,
+    )),
+    #[cfg(feature = "matrix")]
+    (_, Value::MatrixValue(_)) => Err(MechError::new(
+      StableValueUpdateUnsupported { kind: next.kind() },
       None,
     )),
     _ => {
@@ -117,14 +175,19 @@ fn validate_stable_value_update(current: &Value, next: &Value) -> MResult<()> {
       if expected != actual {
         return Err(stable_value_update_kind_mismatch(expected, actual));
       }
-      if is_stable_value_update_supported_kind(&expected) {
-        Ok(())
-      } else {
-        Err(MechError::new(
+      if !is_stable_value_update_supported_value(current) {
+        return Err(MechError::new(
           StableValueUpdateUnsupported { kind: expected },
           None,
-        ))
+        ));
       }
+      if !is_stable_value_update_supported_value(next) {
+        return Err(MechError::new(
+          StableValueUpdateUnsupported { kind: actual },
+          None,
+        ));
+      }
+      Ok(())
     }
   }
 }
@@ -1003,6 +1066,17 @@ mod live_input_tests {
     }
   }
 
+
+  #[cfg(feature = "compiler")]
+  #[test]
+  fn empty_stable_assignment_bytecode_compile_returns_error() {
+    let assignment = compile_stable_value_update(Ref::new(Value::Empty), Value::Empty).unwrap();
+    let mut ctx = CompileCtx::new();
+    let error = assignment.compile(&mut ctx).unwrap_err();
+    let rendered = format!("{error:?}");
+    assert!(rendered.contains("EmptyAssignmentNotBytecodeCompilable"), "{rendered}");
+  }
+
   #[test]
   fn stable_value_update_accepts_empty_to_empty() {
     let sink = Ref::new(Value::Empty);
@@ -1069,6 +1143,57 @@ mod live_input_tests {
         assert_eq!(value, &original);
       }
       other => panic!("expected f64 matrix, got {other:?}"),
+    }
+  }
+
+
+  #[cfg(all(feature = "matrix", feature = "f64"))]
+  #[test]
+  fn stable_value_update_rejects_matrix_value_sink() {
+    let matrix_value = MechMatrix::from_vec(vec![Value::F64(Ref::new(1.0))], 1, 1);
+    let sink = Ref::new(Value::MatrixValue(matrix_value));
+    let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
+    let rendered = format!("{:?}", result.unwrap_err());
+    assert!(rendered.contains("StableValueUpdateUnsupported"), "{rendered}");
+    assert!(rendered.contains("Matrix(F64"), "{rendered}");
+  }
+
+  #[cfg(all(feature = "matrix", feature = "f64"))]
+  #[test]
+  fn stable_value_update_rejects_matrix_value_source() {
+    let sink = Ref::new(Value::F64(Ref::new(1.0)));
+    let matrix_value = MechMatrix::from_vec(vec![Value::F64(Ref::new(9.0))], 1, 1);
+    let result = apply_stable_value_update(sink.clone(), Value::MatrixValue(matrix_value));
+    let rendered = format!("{:?}", result.unwrap_err());
+    assert!(rendered.contains("StableValueUpdateUnsupported"), "{rendered}");
+    assert!(rendered.contains("Matrix(F64"), "{rendered}");
+  }
+
+  #[cfg(feature = "matrix")]
+  #[test]
+  fn stable_value_update_rejects_matrix_index() {
+    let matrix = MechMatrix::from_vec(vec![1usize, 2, 3, 4], 2, 2);
+    let original = matrix.clone();
+    let sink = Ref::new(Value::MatrixIndex(matrix));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::MatrixIndex(value) => value.addr(),
+      other => panic!("expected index matrix, got {other:?}"),
+    };
+    let result = apply_stable_value_update(
+      sink.clone(),
+      Value::MatrixIndex(MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2)),
+    );
+    let rendered = format!("{:?}", result.unwrap_err());
+    assert!(rendered.contains("StableValueUpdateUnsupported"), "{rendered}");
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::MatrixIndex(value) => {
+        assert_eq!(inner_pointer, value.addr());
+        assert_eq!(value.shape(), vec![2, 2]);
+        assert_eq!(value, &original);
+      }
+      other => panic!("expected index matrix, got {other:?}"),
     }
   }
 
