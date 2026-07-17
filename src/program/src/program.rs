@@ -16,13 +16,33 @@ use std::time::Instant;
 
 use mech_core::{
   hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
-  NativeFunctionCompiler, ParsedProgram, Value,
+  MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value,
 };
 
 use mech_interpreter::Interpreter;
 use mech_syntax::parser;
 
 use crate::ClosureNativeFunctionCompiler;
+
+pub fn compile_stable_value_update(
+  sink: ValRef,
+  source: Value,
+) -> MResult<Box<dyn MechFunction>> {
+  let compiler = mech_interpreter::AssignValue {};
+  compiler.compile(&vec![
+    Value::MutableReference(sink),
+    source,
+  ])
+}
+
+pub fn apply_stable_value_update(
+  sink: ValRef,
+  source: Value,
+) -> MResult<Value> {
+  let update = compile_stable_value_update(sink.clone(), source)?;
+  update.solve_result()?;
+  Ok(sink.borrow().clone())
+}
 
 #[derive(Debug, Clone)]
 pub struct MechProgramEnvironment {
@@ -337,8 +357,7 @@ impl MechProgram {
       let Some(sink) = sink else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
       };
-      let compiler = mech_interpreter::AssignValue {};
-      assignments.push(compiler.compile(&vec![Value::MutableReference(sink), update.value.clone()])?);
+      assignments.push(compile_stable_value_update(sink, update.value.clone())?);
     }
     for assignment in &assignments {
       assignment.solve_result()?;
@@ -613,11 +632,152 @@ mod tests {
 mod live_input_tests {
   use super::*;
   use mech_core::{hash_str, Ref};
+  #[cfg(all(feature = "matrix", feature = "f64"))]
+  use mech_core::structures::matrix::Matrix as MechMatrix;
 
   fn f64_value(value: &Value) -> f64 {
     match value {
       Value::F64(value) => *value.borrow(),
       other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn stable_value_update_preserves_f64_reference() {
+    let sink = Ref::new(Value::F64(Ref::new(1.0)));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::F64(value) => value.as_ptr(),
+      other => panic!("expected f64, got {other:?}"),
+    };
+    apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0))).unwrap();
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::F64(value) => {
+        assert_eq!(inner_pointer, value.as_ptr());
+        assert_eq!(*value.borrow(), 9.0);
+      }
+      other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[cfg(feature = "i64")]
+  #[test]
+  fn stable_value_update_preserves_i64_reference() {
+    let sink = Ref::new(Value::I64(Ref::new(1)));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::I64(value) => value.as_ptr(),
+      other => panic!("expected i64, got {other:?}"),
+    };
+    apply_stable_value_update(sink.clone(), Value::I64(Ref::new(9))).unwrap();
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::I64(value) => {
+        assert_eq!(inner_pointer, value.as_ptr());
+        assert_eq!(*value.borrow(), 9);
+      }
+      other => panic!("expected i64, got {other:?}"),
+    }
+  }
+
+  #[cfg(feature = "bool")]
+  #[test]
+  fn stable_value_update_preserves_bool_reference() {
+    let sink = Ref::new(Value::Bool(Ref::new(false)));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::Bool(value) => value.as_ptr(),
+      other => panic!("expected bool, got {other:?}"),
+    };
+    apply_stable_value_update(sink.clone(), Value::Bool(Ref::new(true))).unwrap();
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::Bool(value) => {
+        assert_eq!(inner_pointer, value.as_ptr());
+        assert!(*value.borrow());
+      }
+      other => panic!("expected bool, got {other:?}"),
+    }
+  }
+
+  #[cfg(any(feature = "string", feature = "variable_define"))]
+  #[test]
+  fn stable_value_update_preserves_string_reference() {
+    let sink = Ref::new(Value::String(Ref::new("old".to_string())));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::String(value) => value.as_ptr(),
+      other => panic!("expected string, got {other:?}"),
+    };
+    apply_stable_value_update(sink.clone(), Value::String(Ref::new("new".to_string()))).unwrap();
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::String(value) => {
+        assert_eq!(inner_pointer, value.as_ptr());
+        assert_eq!(&*value.borrow(), "new");
+      }
+      other => panic!("expected string, got {other:?}"),
+    }
+  }
+
+  #[test]
+  fn stable_value_update_preserves_index_reference() {
+    let sink = Ref::new(Value::Index(Ref::new(1)));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::Index(value) => value.as_ptr(),
+      other => panic!("expected index, got {other:?}"),
+    };
+    apply_stable_value_update(sink.clone(), Value::Index(Ref::new(9))).unwrap();
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::Index(value) => {
+        assert_eq!(inner_pointer, value.as_ptr());
+        assert_eq!(*value.borrow(), 9);
+      }
+      other => panic!("expected index, got {other:?}"),
+    }
+  }
+
+  #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
+  #[test]
+  fn stable_value_update_rejects_incompatible_kind() {
+    let sink = Ref::new(Value::F64(Ref::new(1.0)));
+    let inner_pointer = match &*sink.borrow() {
+      Value::F64(value) => value.as_ptr(),
+      other => panic!("expected f64, got {other:?}"),
+    };
+    assert!(apply_stable_value_update(sink.clone(), Value::String(Ref::new("bad".to_string()))).is_err());
+    match &*sink.borrow() {
+      Value::F64(value) => {
+        assert_eq!(inner_pointer, value.as_ptr());
+        assert_eq!(*value.borrow(), 1.0);
+      }
+      other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[cfg(all(feature = "matrix", feature = "f64"))]
+  #[test]
+  fn stable_value_update_preserves_matrix_storage() {
+    let sink_matrix = MechMatrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+    let source_matrix = MechMatrix::from_vec(vec![5.0, 6.0, 7.0, 8.0], 2, 2);
+    let sink = Ref::new(Value::MatrixF64(sink_matrix));
+    let outer_pointer = sink.as_ptr();
+    let inner_pointer = match &*sink.borrow() {
+      Value::MatrixF64(value) => value.addr(),
+      other => panic!("expected f64 matrix, got {other:?}"),
+    };
+    apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix.clone())).unwrap();
+    assert_eq!(outer_pointer, sink.as_ptr());
+    match &*sink.borrow() {
+      Value::MatrixF64(value) => {
+        assert_eq!(inner_pointer, value.addr());
+        assert_eq!(value, &source_matrix);
+      }
+      other => panic!("expected f64 matrix, got {other:?}"),
     }
   }
 

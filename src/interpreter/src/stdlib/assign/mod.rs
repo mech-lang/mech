@@ -110,6 +110,15 @@ macro_rules! impl_assign_value_match_arms {
 }
 
 fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+  match (&sink, &source) {
+    (Value::Index(sink), Value::Index(source)) => {
+      return Ok(Box::new(Assign {
+        sink: sink.clone(),
+        source: source.clone(),
+      }));
+    }
+    _ => {}
+  }
   impl_assign_value_match_arms!(
     (sink, source),
     Bool,   "bool";
@@ -123,7 +132,7 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
     I16,    "i16";
     I32,    "i32";
     I64,    "i64";
-    U128,   "u128";
+    I128,   "i128";
     F32,    "f32";
     F64,    "f64";
     R64, "rational";

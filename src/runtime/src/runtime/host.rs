@@ -34,7 +34,7 @@
 
 
 use super::*;
-use mech_core::Ref;
+use mech_core::{Ref, ValueKind};
 
 impl MechRuntime {
 
@@ -229,6 +229,46 @@ pub struct RuntimeHostNativeFunction {
   pub value: Ref<Value>,
 }
 
+#[derive(Debug, Clone)]
+pub struct RuntimeHostOutputUpdateError {
+  pub function: String,
+  pub expected: ValueKind,
+  pub actual: ValueKind,
+  pub reason: String,
+}
+impl MechErrorKind for RuntimeHostOutputUpdateError {
+  fn name(&self) -> &str { "RuntimeHostOutputUpdateError" }
+  fn message(&self) -> String {
+    format!(
+      "host function `{}` returned unsupported or incompatible output kind {:?}; expected {:?}: {}",
+      self.function,
+      self.actual,
+      self.expected,
+      self.reason,
+    )
+  }
+}
+
+impl RuntimeHostNativeFunction {
+  fn update_output(&self, next: Value) -> MResult<()> {
+    let expected = self.value.borrow().kind();
+    let actual = next.kind();
+    mech_program::apply_stable_value_update(self.value.clone(), next)
+      .map(|_| ())
+      .map_err(|error| {
+        MechError::new(
+          RuntimeHostOutputUpdateError {
+            function: self.name.clone(),
+            expected,
+            actual,
+            reason: format!("{error:?}"),
+          },
+          None,
+        )
+      })
+  }
+}
+
 impl MechFunctionImpl for RuntimeHostNativeFunction {
   fn solve(&self) {
     let result = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
@@ -254,16 +294,13 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
     });
 
     match result {
-      Ok(value) => {
-        let mut current = self.value.borrow_mut();
-        match (&mut *current, value) {
-          #[cfg(feature = "f64")]
-          (Value::F64(current), Value::F64(next)) => {
-            *current.borrow_mut() = *next.borrow();
-          }
-          (_, next) => {
-            *current = next;
-          }
+      Ok(next) => {
+        if let Err(error) = self.update_output(next) {
+          eprintln!(
+            "[Mech Runtime Host Error] function `{}` returned an incompatible or unsupported output during solve; preserving previous output: {:?}",
+            self.name,
+            error,
+          );
         }
       },
       Err(error) => {

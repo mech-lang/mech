@@ -22,6 +22,13 @@ fn f64_value(value: &Value) -> f64 {
   }
 }
 
+fn string_value(value: &Value) -> String {
+  match value {
+    Value::String(value) => value.borrow().clone(),
+    other => panic!("expected string, got {other:?}"),
+  }
+}
+
 fn symbol_value(runtime: &MechRuntime, name: &str) -> Value {
   runtime
     .program
@@ -229,6 +236,81 @@ fn live_input_recomputes_runtime_host_function() {
   assert!(calls.load(Ordering::SeqCst) > initial_calls);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap())), 9.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+}
+
+#[test]
+fn live_host_string_output_recomputes_without_replacing_reference() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 45, "host:demo/live-label");
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-label", |_services, _context, args| {
+    let value = match &args[0] {
+      Value::F64(value) => *value.borrow(),
+      Value::MutableReference(value) => match &*value.borrow() {
+        Value::F64(value) => *value.borrow(),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    };
+    Ok(Value::String(Ref::new(format!("tick:{value}"))))
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/live-label(@pulse/value)").unwrap();
+  let before = runtime.program.interpreter().symbols().borrow().get(hash_str("output")).unwrap();
+  let outer_pointer = before.as_ptr();
+  let inner_pointer = match &*before.borrow() {
+    Value::String(value) => value.as_ptr(),
+    other => panic!("expected string, got {other:?}"),
+  };
+  assert_eq!(string_value(&before.borrow()), "tick:1");
+
+  runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+
+  let after = runtime.program.interpreter().symbols().borrow().get(hash_str("output")).unwrap();
+  assert_eq!(outer_pointer, after.as_ptr());
+  match &*after.borrow() {
+    Value::String(value) => {
+      assert_eq!(inner_pointer, value.as_ptr());
+      assert_eq!(&*value.borrow(), "tick:9");
+    }
+    other => panic!("expected string, got {other:?}"),
+  }
+}
+
+#[test]
+fn live_host_output_kind_change_preserves_previous_output() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 46, "host:demo/kind-change");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/kind-change", move |_services, _context, args| {
+    let call = host_calls.fetch_add(1, Ordering::SeqCst);
+    if call == 0 {
+      let value = match &args[0] {
+        Value::F64(value) => *value.borrow(),
+        Value::MutableReference(value) => match &*value.borrow() {
+          Value::F64(value) => *value.borrow(),
+          other => panic!("expected f64 mutable reference, got {other:?}"),
+        },
+        other => panic!("expected f64 argument, got {other:?}"),
+      };
+      Ok(Value::F64(Ref::new(value + 1.0)))
+    } else {
+      Ok(Value::String(Ref::new("bad-kind".to_string())))
+    }
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/kind-change(@pulse/value) + 0").unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+
+  let outcome = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
+  assert!(outcome.solve.is_some());
+  assert!(calls.load(Ordering::SeqCst) >= 2);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  runtime.run_string("recovery := 1").unwrap();
 }
 
 
