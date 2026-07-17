@@ -24,7 +24,7 @@ pub use self::map::*;
 pub use self::tuple::*;
 
 // ----------------------------------------------------------------------------
-// Assign 
+// Assign
 // ----------------------------------------------------------------------------
 
 // x = 1 ----------------------------------------------------------------------
@@ -34,7 +34,7 @@ struct Assign<T> {
   sink: Ref<T>,
   source: Ref<T>,
 }
-impl<T> MechFunctionImpl for Assign<T> 
+impl<T> MechFunctionImpl for Assign<T>
 where
   T: Clone + Debug,
   Ref<T>: ToValue
@@ -50,13 +50,27 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for Assign<T> 
+impl<T> MechFunctionCompiler for Assign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("Assign<{}>", T::as_value_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+  }
+}
+
+#[derive(Debug)]
+struct AssignEmpty;
+impl MechFunctionImpl for AssignEmpty {
+  fn solve(&self) {}
+  fn out(&self) -> Value { Value::Empty }
+  fn to_string(&self) -> String { "AssignEmpty".to_string() }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AssignEmpty {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!("AssignEmpty bytecode compilation is not implemented")
   }
 }
 
@@ -111,6 +125,17 @@ macro_rules! impl_assign_value_match_arms {
 
 fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
   match (&sink, &source) {
+    (Value::Typed(sink_inner, sink_annotation), Value::Typed(source_inner, source_annotation))
+      if sink_annotation == source_annotation =>
+    {
+      return assign_value_fxn(
+        sink_inner.as_ref().clone(),
+        source_inner.as_ref().clone(),
+      );
+    }
+    (Value::Empty, Value::Empty) => {
+      return Ok(Box::new(AssignEmpty));
+    }
     (Value::Index(sink), Value::Index(source)) => {
       return Ok(Box::new(Assign {
         sink: sink.clone(),

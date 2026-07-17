@@ -29,6 +29,13 @@ fn string_value(value: &Value) -> String {
   }
 }
 
+#[derive(Debug, Clone)]
+struct DeliberateHostCallError;
+impl MechErrorKind for DeliberateHostCallError {
+  fn name(&self) -> &str { "DeliberateHostCallError" }
+  fn message(&self) -> String { "deliberate host call failure".to_string() }
+}
+
 fn symbol_value(runtime: &MechRuntime, name: &str) -> Value {
   runtime
     .program
@@ -303,14 +310,100 @@ fn live_host_output_kind_change_preserves_previous_output() {
     }
   })).unwrap();
   let mut context = runtime.runtime_context().unwrap();
-  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/kind-change(@pulse/value) + 0").unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\nhost-result := demo/kind-change(@pulse/value)\noutput := host-result + 0").unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  let host_result_inner = match &*host_result.borrow() {
+    Value::F64(value) => value.as_ptr(),
+    other => panic!("expected f64 host result, got {other:?}"),
+  };
+
+  let error = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap_err();
+  let rendered = format!("{error:?}");
+  assert!(rendered.contains("RuntimeHostOutputUpdateError"), "{rendered}");
+  assert!(calls.load(Ordering::SeqCst) >= 2);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  match &*host_result.borrow() {
+    Value::F64(value) => {
+      assert_eq!(host_result_inner, value.as_ptr());
+      assert_eq!(*value.borrow(), 2.0);
+    }
+    other => panic!("expected f64 host result, got {other:?}"),
+  }
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  runtime.run_string("recovery := 1").unwrap();
+}
+
+#[test]
+fn live_host_call_failure_propagates_from_solve_plan() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 47, "host:demo/fails-after-first");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/fails-after-first", move |_services, _context, args| {
+    let call = host_calls.fetch_add(1, Ordering::SeqCst);
+    if call > 0 {
+      return Err(MechError::new(DeliberateHostCallError, None));
+    }
+    let value = match &args[0] {
+      Value::F64(value) => *value.borrow(),
+      Value::MutableReference(value) => match &*value.borrow() {
+        Value::F64(value) => *value.borrow(),
+        other => panic!("expected f64 mutable reference, got {other:?}"),
+      },
+      other => panic!("expected f64 argument, got {other:?}"),
+    };
+    Ok(Value::F64(Ref::new(value + 1.0)))
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result + 0").unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  let host_result_inner = match &*host_result.borrow() {
+    Value::F64(value) => value.as_ptr(),
+    other => panic!("expected f64 host result, got {other:?}"),
+  };
+
+  let error = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap_err();
+  let rendered = format!("{error:?}");
+  assert!(rendered.contains("DeliberateHostCallError"), "{rendered}");
+  assert!(calls.load(Ordering::SeqCst) >= 2);
+  let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap();
+  match &*host_result.borrow() {
+    Value::F64(value) => {
+      assert_eq!(host_result_inner, value.as_ptr());
+      assert_eq!(*value.borrow(), 2.0);
+    }
+    other => panic!("expected f64 host result, got {other:?}"),
+  }
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  runtime.run_string("recovery := 1").unwrap();
+}
+
+#[test]
+fn live_host_empty_output_can_recompute() {
+  let mut runtime = docs_runtime(docs_provider_with("docs://clock/ticks", "value", 1.0));
+  grant_read(&mut runtime, "docs://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 48, "host:demo/live-empty");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-empty", move |_services, _context, _args| {
+    host_calls.fetch_add(1, Ordering::SeqCst);
+    Ok(Value::Empty)
+  })).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.run_string_with_context(&mut context, "@pulse := docs://clock/ticks{:read(value)}\noutput := demo/live-empty(@pulse/value)").unwrap();
+  assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
 
   let outcome = runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("docs://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(9.0))).unwrap();
   assert!(outcome.solve.is_some());
   assert!(calls.load(Ordering::SeqCst) >= 2);
-  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
-  runtime.run_string("recovery := 1").unwrap();
+  assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
 }
 
 
