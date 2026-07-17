@@ -3,16 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/_mech/style.css">
-  <title>Mech Project</title>
+  <style>{{STYLESHEET}}</style>
+  <title>{{TITLE}}</title>
 </head>
 <body>
-  <main id="mech-project"></main>
-  <script
-    type="module"
-    src="/_mech/project.js"
-    data-mech-project="."
-    data-mech-max-inputs="8">
-  </script>
+  <main class="mech-document">
+    {{HERO}}
+    {{TOC}}
+    {{ABSTRACT}}
+    {{INTRO}}
+    {{CONTENT}}
+    {{CITED}}
+    {{FOOTNOTES}}
+    {{REPL}}
+  </main>
 </body>
 </html>

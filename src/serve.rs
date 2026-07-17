@@ -352,6 +352,7 @@ pub struct MechServer {
   init: bool,
   stylesheet: String,
   html_shim: String,
+  project_html: String,
   project_js: String,
   host_config: Option<BrowserRuntimeInjectionConfig>,
   host_config_injection: Option<HostAuthorityInjection>,
@@ -374,15 +375,16 @@ pub struct MechServer {
 
 impl MechServer {
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority) -> Self {
-    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, String::new(), wasm, js, authority, RuntimeConfig::default())
+    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, include_str!("../include/project.html").to_string(), String::new(), wasm, js, authority, RuntimeConfig::default())
   }
 
-  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, project_js: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
+  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, project_html: String, project_js: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
     Self::new_with_runtime_config_and_host_config(
       name,
       full_address,
       stylesheet,
       html_shim,
+      project_html,
       project_js,
       wasm,
       js,
@@ -399,6 +401,7 @@ impl MechServer {
     full_address: String,
     stylesheet: String,
     html_shim: String,
+    project_html: String,
     project_js: String,
     wasm: Vec<u8>,
     js: Vec<u8>,
@@ -413,6 +416,7 @@ impl MechServer {
       init: false,
       stylesheet,
       html_shim,
+      project_html,
       project_js,
       host_config,
       host_config_injection,
@@ -630,6 +634,14 @@ impl MechServer {
         content_type: "text/html",
         content_encoding: None,
         backing_paths: vec![index_path.clone()],
+      });
+    } else {
+      let index_html = self.inject_authority_into_html(&self.project_html)?;
+      registry.insert_user_asset("index.html".to_string(), ServerAsset {
+        bytes: index_html.into_bytes(),
+        content_type: "text/html",
+        content_encoding: None,
+        backing_paths: Vec::new(),
       });
     }
     drop(registry);

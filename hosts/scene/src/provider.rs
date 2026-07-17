@@ -50,12 +50,14 @@ impl SceneBackend for RecordingSceneBackend {
 pub struct SceneResourceProvider<B: SceneBackend> {
     instance: String,
     backend: B,
+    last_accepted: Option<SceneSnapshot>,
 }
 impl<B: SceneBackend> SceneResourceProvider<B> {
     pub fn new(instance: impl Into<String>, backend: B) -> Self {
         Self {
             instance: instance.into(),
             backend,
+            last_accepted: None,
         }
     }
     fn base(&self) -> String {
@@ -105,7 +107,12 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
             intent: request.intent,
         })?;
         let scene = SceneSnapshot::from_value(&request.value)?;
-        self.backend.replace_scene(scene)
+        if self.last_accepted.as_ref() == Some(&scene) {
+            return Ok(());
+        }
+        self.backend.replace_scene(scene.clone())?;
+        self.last_accepted = Some(scene);
+        Ok(())
     }
 }
 

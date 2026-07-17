@@ -3863,6 +3863,14 @@ impl MechRuntime {
     self.input_driver_count() > 0
   }
 
+  pub fn live_input_binding_count(&self) -> usize {
+    self.live_input_bindings.values().map(Vec::len).sum()
+  }
+
+  pub fn has_live_input_bindings(&self) -> bool {
+    self.live_input_binding_count() > 0
+  }
+
   pub fn pending_host_input_count(&self) -> MResult<usize> {
     let guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
     Ok(guard.queue.len())

@@ -351,6 +351,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
+        include_str!("../../../include/project.html").to_string(),
         project_js.to_string(),
         wasm.bytes,
         js.bytes,

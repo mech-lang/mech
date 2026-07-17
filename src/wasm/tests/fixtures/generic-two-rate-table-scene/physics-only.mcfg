@@ -1,0 +1,15 @@
+config := {
+  hosts: [
+    {
+      name: "physics"
+      provider: "timer"
+      settings: { frequency-hz: 100 max-catch-up-steps: 10 }
+    }
+  ]
+  run: {
+    paths: ["physics.mec"]
+    grants: [
+      { target: "physics/tick" operations: ["read"] paths: ["tick", "delta-seconds"] }
+    ]
+  }
+}

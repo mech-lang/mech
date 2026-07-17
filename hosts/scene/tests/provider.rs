@@ -507,3 +507,44 @@ fn native_scene_instances_are_isolated() {
     assert_eq!(registry.latest("main").unwrap().width, 100.0);
     assert_eq!(registry.latest("hud").unwrap().width, 200.0);
 }
+
+#[test]
+fn scene_provider_deduplicates_identical_replacements() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("main", backend.clone());
+    let write = |value| RuntimeResourceWriteRequest {
+        base_uri: "scene://main/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value,
+    };
+
+    provider.write(write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+    provider.write(write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+
+    let changed = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#111")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    provider.write(write(changed)).unwrap();
+    assert_eq!(backend.generation(), 2);
+
+    let other_backend = RecordingSceneBackend::new();
+    let mut other_provider = SceneResourceProvider::new("other", other_backend.clone());
+    other_provider.write(RuntimeResourceWriteRequest {
+        base_uri: "scene://other/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: empty_scene(),
+    }).unwrap();
+    assert_eq!(other_backend.generation(), 1);
+}

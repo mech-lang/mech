@@ -1,0 +1,27 @@
+config := {
+  hosts: [
+    {
+      name: "physics"
+      provider: "timer"
+      settings: { frequency-hz: 100 max-catch-up-steps: 10 }
+    }
+    {
+      name: "presentation"
+      provider: "timer"
+      settings: { frequency-hz: 60 max-catch-up-steps: 6 }
+    }
+    {
+      name: "view"
+      provider: "scene"
+      settings: { selector: "#generic-two-rate-scene" renderer: "canvas" }
+    }
+  ]
+  run: {
+    paths: ["physics.mec", "view.mec"]
+    grants: [
+      { target: "physics/tick" operations: ["read"] paths: ["tick", "delta-seconds"] }
+      { target: "presentation/tick" operations: ["read"] paths: ["tick", "delta-seconds"] }
+      { target: "view/frame" operations: ["write"] paths: ["replace"] }
+    ]
+  }
+}
