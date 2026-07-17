@@ -303,6 +303,13 @@ fn resolve_runtime_value(value: Value) -> Value {
 
 
 
+#[derive(Debug, Clone)]
+pub struct RuntimeIsolatedProgramPersistentSendUnsupported;
+impl mech_core::MechErrorKind for RuntimeIsolatedProgramPersistentSendUnsupported {
+  fn name(&self) -> &str { "RuntimeIsolatedProgramPersistentSendUnsupported" }
+  fn message(&self) -> String { "persistent sends are not supported while evaluating an isolated temporary program".to_string() }
+}
+
 impl MechRuntime {
   fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
     matches!(import.alias, Some(mech_core::ModuleImportAlias::Context(_)))
@@ -491,11 +498,13 @@ impl MechRuntime {
     let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
-    let bindings = self.live_input_bindings.entry(source).or_default();
-    if !bindings.iter().any(|binding| *binding == input) {
-      bindings.push(input);
+    if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
+      let bindings = self.live_input_bindings.entry(source).or_default();
+      if !bindings.iter().any(|binding| *binding == input) {
+        bindings.push(input);
+      }
+      self.commit_live_context_candidate(context);
     }
-    self.commit_live_context_candidate(context);
     let var = mech_core::Var {
       name: identifier_from_str(&name),
       context: None,
@@ -1271,6 +1280,9 @@ impl MechRuntime {
           pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
         }
         self.flush_direct_execution(program, pending, result)?;
+        if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+          return Err(MechError::new(RuntimeIsolatedProgramPersistentSendUnsupported, None));
+        }
         self.validate_live_context_candidate(context)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
@@ -3235,6 +3247,8 @@ impl MechRuntime {
     // exports, address environment, and ModuleInstance identity.
     let execution_scope = execution_scope_for_extracted_module_source(scope);
 
+    let previous_live_registration_mode = self.live_registration_mode;
+    self.live_registration_mode = crate::runtime::LiveRegistrationMode::IsolatedSnapshot;
     let result = match source {
       MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
         Ok(tree) => {
@@ -3281,6 +3295,8 @@ impl MechRuntime {
         reason: "unsupported executable source kind for provider preflight: image".to_string(),
       }, None)),
     };
+
+    self.live_registration_mode = previous_live_registration_mode;
 
     match &result {
       Ok(_) => {
@@ -3869,6 +3885,18 @@ impl MechRuntime {
 
   pub fn has_live_input_bindings(&self) -> bool {
     self.live_input_binding_count() > 0
+  }
+
+  pub fn driven_live_input_binding_count(&self) -> usize {
+    self.live_input_bindings
+      .iter()
+      .filter(|(source, _)| self.input_drivers[..self.attached_input_driver_count].iter().any(|driver| driver.drives(source)))
+      .map(|(_, bindings)| bindings.len())
+      .sum()
+  }
+
+  pub fn has_driven_live_input_bindings(&self) -> bool {
+    self.driven_live_input_binding_count() > 0
   }
 
   pub fn pending_host_input_count(&self) -> MResult<usize> {

@@ -7,11 +7,12 @@ use std::time::{Duration, Instant};
 
 use mech_core::MResult;
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver,
+    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource,
     RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
 };
 
 use crate::{
+    TIMER_PATHS,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config,
@@ -75,6 +76,10 @@ impl<B: MonotonicTimerBackend + Send + Sync> NativeTimerInputDriver<B> {
     }
 }
 impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTimerInputDriver<B> {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        source.base_uri() == format!("timer://{}/tick", self.instance) && TIMER_PATHS.contains(&source.path())
+    }
+
     fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
         if self.is_live() {
             return Err(timer_error(

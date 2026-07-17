@@ -2,9 +2,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use mech_core::MResult;
-use mech_runtime::{RuntimeHostInputDriver, RuntimeIngress};
+use mech_runtime::{RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress};
 
-use crate::{time_error, SharedTimeSnapshot, TimeSnapshot};
+use crate::{CLOCK_PATHS, time_error, SharedTimeSnapshot, TimeSnapshot};
 
 #[derive(Clone, Debug)]
 pub struct ManualTimeInputDriver {
@@ -32,6 +32,10 @@ impl ManualTimeInputDriver {
 }
 
 impl RuntimeHostInputDriver for ManualTimeInputDriver {
+  fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+    source.base_uri() == format!("time://{}/clock", self.instance) && CLOCK_PATHS.contains(&source.path())
+  }
+
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
     let mut guard = self.ingress.lock().map_err(|_| time_error("TimeDriverAttach", "time ingress lock is poisoned"))?;
     if guard.is_some() {

@@ -144,6 +144,12 @@ struct RuntimeLiveStateSnapshot {
   persistent_sends: Vec<RuntimePersistentSend>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum LiveRegistrationMode {
+  RetainedRoot,
+  IsolatedSnapshot,
+}
+
 #[derive(Clone, Debug)]
 struct RuntimePersistentSend {
   binding: RuntimeContextBinding,
@@ -476,6 +482,7 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      live_registration_mode: LiveRegistrationMode::RetainedRoot,
       live_input_bindings: HashMap::new(),
       host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(RuntimeHostInputQueueState::new(self.host_input_capacity))),
       input_drivers: self.input_drivers,
@@ -551,6 +558,7 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  live_registration_mode: LiveRegistrationMode,
   live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
   host_input_queue: RuntimeHostInputQueue,
   input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,

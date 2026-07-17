@@ -923,6 +923,12 @@ mod browser_tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
+
+    #[wasm_bindgen_test]
+    fn wasm_project_reports_served_authority_capability() {
+        assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
+    }
+
     #[wasm_bindgen_test]
     fn generic_project_starts_and_stops_idempotently() {
         let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;

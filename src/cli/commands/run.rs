@@ -289,7 +289,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 }
 
 fn should_run_live(runtime: &mech_runtime::MechRuntime) -> bool {
-    runtime.has_input_drivers() && runtime.has_live_input_bindings()
+    runtime.has_driven_live_input_bindings()
 }
 
 fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {

@@ -205,6 +205,7 @@ impl RuntimeIngress {
 /// `Value`; they submit only owned `RuntimeHostInput` packets through cloned
 /// `RuntimeIngress` handles.
 pub trait RuntimeHostInputDriver: std::fmt::Debug {
+  fn drives(&self, _source: &RuntimeHostInputSource) -> bool { false }
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()>;
   fn start(&mut self) -> MResult<()>;
   fn stop(&mut self) -> MResult<()>;

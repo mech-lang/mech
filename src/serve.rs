@@ -375,16 +375,15 @@ pub struct MechServer {
 
 impl MechServer {
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority) -> Self {
-    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, include_str!("../include/project.html").to_string(), String::new(), wasm, js, authority, RuntimeConfig::default())
+    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, String::new(), wasm, js, authority, RuntimeConfig::default())
   }
 
-  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, project_html: String, project_js: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
+  pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, project_js: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
     Self::new_with_runtime_config_and_host_config(
       name,
       full_address,
       stylesheet,
       html_shim,
-      project_html,
       project_js,
       wasm,
       js,
@@ -397,6 +396,25 @@ impl MechServer {
   }
 
   pub fn new_with_runtime_config_and_host_config(
+    name: String,
+    full_address: String,
+    stylesheet: String,
+    html_shim: String,
+    project_js: String,
+    wasm: Vec<u8>,
+    js: Vec<u8>,
+    authority: HostFilesystemAuthority,
+    runtime_config: RuntimeConfig,
+    host_config: Option<BrowserRuntimeInjectionConfig>,
+    host_config_injection: Option<HostAuthorityInjection>,
+    serve_configured_shim_at_root: bool,
+  ) -> Self {
+    Self::new_with_project_html_and_host_config(
+      name, full_address, stylesheet, html_shim, include_str!("../include/project.html").to_string(), project_js, wasm, js, authority, runtime_config, host_config, host_config_injection, serve_configured_shim_at_root,
+    )
+  }
+
+  pub(crate) fn new_with_project_html_and_host_config(
     name: String,
     full_address: String,
     stylesheet: String,

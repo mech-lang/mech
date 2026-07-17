@@ -1,8 +1,0 @@
-@physics := timer://physics/tick{:read(tick), :read(delta-seconds)}
-
-physics-tick := @physics/tick
-physics-delta := @physics/delta-seconds
-
-physics-state := |id<string> x<f64> y<f64> vx<f64> vy<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
-  | "body-a" 20 + (physics-tick * 1) 30 + (physics-tick * 0.5) 1 0.5 4 "#ffffff" "#222222" 1 1 |
-  | "body-b" 40 - (physics-tick * 0.5) 50 + (physics-tick * 1) -0.5 1 5 "#cccccc" "#444444" 1 0.75 |
