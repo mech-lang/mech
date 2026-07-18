@@ -95,7 +95,23 @@ pub trait MechFunctionImpl {
     self.solve();
     Ok(())
   }
+  fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+    self.solve_result()?;
+    Ok(ReactiveSolveStatus::Changed)
+  }
   fn out(&self) -> Value;
+  fn reactive_dependency_kinds(
+    &self,
+    _argument_count: usize,
+  ) -> Option<Vec<ReactiveDependencyKind>> {
+    None
+  }
+  fn reactive_output_values(&self) -> Vec<Value> {
+    vec![self.out()]
+  }
+  fn reactive_node_kind(&self) -> ReactiveNodeKind {
+    ReactiveNodeKind::Combinational
+  }
   fn to_string(&self) -> String;
 }
 
@@ -287,8 +303,59 @@ impl MechFunctionCompiler for UserFunction {
   }
 }
 
-// Plan
+// Reactive Plan
 // ----------------------------------------------------------------------------
+
+pub type ReactiveNodeId = usize;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReactiveDependencyKind {
+  Reactive,
+  Sampled,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ReactiveNodeKind {
+  Combinational,
+  Register,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReactiveSolveStatus {
+  Changed,
+  Unchanged,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReactiveDependency {
+  pub cell: ReactiveCellId,
+  pub kind: ReactiveDependencyKind,
+}
+
+pub struct ReactivePlanNode {
+  pub id: ReactiveNodeId,
+  pub plan_index: usize,
+  pub function: Box<dyn MechFunction>,
+  pub inputs: Vec<ReactiveDependency>,
+  pub outputs: Vec<ReactiveCellId>,
+  pub kind: ReactiveNodeKind,
+}
+
+pub struct ReactivePlan {
+  pub nodes: Vec<ReactivePlanNode>,
+  pub reactive_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
+  pub sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
+}
+
+impl ReactivePlan {
+  pub fn new() -> Self {
+    Self {
+      nodes: Vec::new(),
+      reactive_consumers: HashMap::new(),
+      sampled_consumers: HashMap::new(),
+    }
+  }
+}
 
 pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
 

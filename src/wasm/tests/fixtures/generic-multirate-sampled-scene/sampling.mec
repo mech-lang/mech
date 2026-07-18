@@ -2,16 +2,22 @@
 @frame := scene://view/frame{:write(replace)}
 
 sample-tick := @sample/tick
-sampled-state := state
+sampled-a := sample/hold(value: state/a, trigger: sample-tick)
+sampled-b := sample/hold(value: state/b, trigger: sample-tick)
 
 lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
   | "reference" 0 90 120 90 "#555555" 1 "round" 1 0 0 0 |
+
+circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "signal-a" sampled-a{1} sampled-b{1} 4 "#ffffff" "#222222" 1 1 |
+  | "signal-b" sampled-a{2} sampled-b{2} 5 "#cccccc" "#444444" 1 0.75 |
+  | "signal-c" sampled-a{3} sampled-b{3} 6 "#999999" "#111111" 1 0.6 |
 
 scene := {
   width: 120
   height: 96
   background: "#000000"
-  circles: sampled-state
+  circles: circles
   lines: lines
 }
 
