@@ -566,6 +566,12 @@ struct MockDriver {
   events: Rc<RefCell<Vec<String>>>,
 }
 
+const MOCK_DRIVER_BASE_URI: &str =
+  "test-input://clock/ticks";
+
+const MOCK_DRIVER_PATH: &str =
+  "value";
+
 #[derive(Debug, Default)]
 struct MockDriverState {
   attach_count: usize,
@@ -591,6 +597,14 @@ impl MockDriver {
 }
 
 impl RuntimeHostInputDriver for MockDriver {
+  fn drives(
+    &self,
+    source: &RuntimeHostInputSource,
+  ) -> bool {
+    source.base_uri() == MOCK_DRIVER_BASE_URI
+      && source.path() == MOCK_DRIVER_PATH
+  }
+
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
     let mut state = self.state.borrow_mut();
     state.attach_count += 1;
@@ -785,6 +799,24 @@ mod persistent_send_tests {
   use super::*;
   use crate::RuntimeResourceWritePreflightRequest;
 
+  const TEST_TIME_BASE_URI: &str =
+    "time://clock/clock";
+
+  const TEST_TIME_PATHS: [&str; 5] = [
+    "unix-ms",
+    "hour",
+    "minute",
+    "second",
+    "millisecond",
+  ];
+
+  fn test_time_source_matches(
+    source: &RuntimeHostInputSource,
+  ) -> bool {
+    source.base_uri() == TEST_TIME_BASE_URI
+      && TEST_TIME_PATHS.contains(&source.path())
+  }
+
   #[derive(Clone, Copy, Debug)]
   struct TimeSnapshot {
     unix_ms: f64,
@@ -801,7 +833,7 @@ mod persistent_send_tests {
 
   impl RuntimeResourceProvider for TimeResourceProvider {
     fn scheme(&self) -> &str { "time" }
-    fn base_uris(&self) -> Vec<String> { vec!["time://clock/clock".to_string()] }
+    fn base_uris(&self) -> Vec<String> { vec![TEST_TIME_BASE_URI.to_string()] }
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
       let snapshot = *self.snapshot.borrow();
       let value = match request.path.as_str() {
@@ -832,16 +864,17 @@ mod persistent_send_tests {
       *self.snapshot.borrow_mut() = snapshot;
       let ingress = self.ingress.borrow().clone().ok_or_else(|| MechError::new(PersistentSendTestError("driver is not attached".to_string()), None))?;
       ingress.submit(RuntimeHostInput::new(vec![
-        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "unix-ms")?, value: RuntimeHostInputValue::F64(snapshot.unix_ms) },
-        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "hour")?, value: RuntimeHostInputValue::F64(snapshot.hour) },
-        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "minute")?, value: RuntimeHostInputValue::F64(snapshot.minute) },
-        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "second")?, value: RuntimeHostInputValue::F64(snapshot.second) },
-        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("time://clock/clock", "millisecond")?, value: RuntimeHostInputValue::F64(snapshot.millisecond) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new(TEST_TIME_BASE_URI, "unix-ms")?, value: RuntimeHostInputValue::F64(snapshot.unix_ms) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new(TEST_TIME_BASE_URI, "hour")?, value: RuntimeHostInputValue::F64(snapshot.hour) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new(TEST_TIME_BASE_URI, "minute")?, value: RuntimeHostInputValue::F64(snapshot.minute) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new(TEST_TIME_BASE_URI, "second")?, value: RuntimeHostInputValue::F64(snapshot.second) },
+        RuntimeHostInputUpdate { source: RuntimeHostInputSource::new(TEST_TIME_BASE_URI, "millisecond")?, value: RuntimeHostInputValue::F64(snapshot.millisecond) },
       ])?)
     }
   }
 
   impl RuntimeHostInputDriver for ManualTimeInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool { test_time_source_matches(source) }
     fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> { *self.ingress.borrow_mut() = Some(ingress); Ok(()) }
     fn start(&mut self) -> MResult<()> { *self.live.borrow_mut() = true; Ok(()) }
     fn stop(&mut self) -> MResult<()> { *self.live.borrow_mut() = false; Ok(()) }
