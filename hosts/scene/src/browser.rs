@@ -294,6 +294,7 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     let doc = document()?;
     let ns = Some("http://www.w3.org/2000/svg");
     let managed_selector = "[data-mech-scene=\"true\"]";
+    upsert_background(&doc, &root, ns, scene)?;
     let list = root
         .query_selector_all(managed_selector)
         .map_err(|_| scene_error("BrowserScene", "failed to query managed svg elements"))?;
@@ -330,6 +331,9 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         if let Some(node) = list.item(i) {
             if let Ok(el) = node.dyn_into::<Element>() {
                 let id = el.get_attribute("data-mech-scene-id").unwrap_or_default();
+                if el.has_attribute("data-mech-scene-background") {
+                    continue;
+                }
                 if !keep.contains(&id) {
                     el.remove();
                 }
@@ -338,6 +342,41 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     }
     Ok(())
 }
+fn upsert_background(
+    doc: &web_sys::Document,
+    root: &Element,
+    ns: Option<&str>,
+    scene: &SceneSnapshot,
+) -> MResult<Element> {
+    let el = match root
+        .query_selector("[data-mech-scene-background=\"true\"]")
+        .map_err(|_| scene_error("BrowserScene", "failed to query svg background"))? {
+        Some(el) => el,
+        None => {
+            let el = doc
+                .create_element_ns(ns, "rect")
+                .map_err(|_| scene_error("BrowserScene", "failed to create svg background"))?;
+            set_attr(&el, "data-mech-scene", "true")?;
+            set_attr(&el, "data-mech-scene-background", "true")?;
+            match root.first_child() {
+                Some(first) => root
+                    .insert_before(&el, Some(&first))
+                    .map_err(|_| scene_error("BrowserScene", "failed to insert svg background"))?,
+                None => root
+                    .append_child(&el)
+                    .map_err(|_| scene_error("BrowserScene", "failed to append svg background"))?,
+            };
+            el
+        }
+    };
+    set_attr(&el, "x", "0")?;
+    set_attr(&el, "y", "0")?;
+    set_attr(&el, "width", &scene.width.to_string())?;
+    set_attr(&el, "height", &scene.height.to_string())?;
+    set_attr(&el, "fill", &scene.background)?;
+    Ok(el)
+}
+
 fn upsert(
     doc: &web_sys::Document,
     root: &Element,

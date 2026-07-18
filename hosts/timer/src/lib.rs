@@ -18,6 +18,7 @@ pub use provider::TimerResourceProvider;
 pub use scheduler::{FixedStepScheduler, SchedulerEmission};
 pub use snapshot::{
     MonotonicTimerBackend, SharedTimerSnapshot, TIMER_PATHS, TimerSnapshot, new_shared_snapshot,
+    timer_input_base_uri, timer_source_matches,
 };
 
 #[cfg(feature = "browser")]

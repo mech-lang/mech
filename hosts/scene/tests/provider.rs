@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use mech_core::{MechRecord, MechTable, MechTuple, Ref, Value};
+use mech_core::{MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, Value};
 use mech_host_scene::*;
 use mech_runtime::{
     ConfigValue, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeResourceProvider,
@@ -506,4 +506,93 @@ fn native_scene_instances_are_isolated() {
     .unwrap();
     assert_eq!(registry.latest("main").unwrap().width, 100.0);
     assert_eq!(registry.latest("hud").unwrap().width, 200.0);
+}
+
+#[test]
+fn scene_provider_deduplicates_identical_replacements() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("main", backend.clone());
+    let write = |value| RuntimeResourceWriteRequest {
+        base_uri: "scene://main/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value,
+    };
+
+    provider.write(write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+    provider.write(write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+
+    let changed = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#111")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    provider.write(write(changed)).unwrap();
+    assert_eq!(backend.generation(), 2);
+
+    let other_backend = RecordingSceneBackend::new();
+    let mut other_provider = SceneResourceProvider::new("other", other_backend.clone());
+    other_provider.write(RuntimeResourceWriteRequest {
+        base_uri: "scene://other/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: empty_scene(),
+    }).unwrap();
+    assert_eq!(other_backend.generation(), 1);
+}
+
+#[derive(Clone, Debug, Default)]
+struct FailableSceneBackend {
+    inner: RecordingSceneBackend,
+    fail_next: std::sync::Arc<std::sync::Mutex<bool>>,
+}
+impl FailableSceneBackend {
+    fn generation(&self) -> u64 { self.inner.generation() }
+    fn fail_next(&self) { *self.fail_next.lock().unwrap() = true; }
+}
+impl SceneBackend for FailableSceneBackend {
+    fn replace_scene(&mut self, scene: SceneSnapshot) -> mech_core::MResult<()> {
+        let mut fail = self.fail_next.lock().unwrap();
+        if *fail {
+            *fail = false;
+            return Err(MechError::new(TestSceneError, None));
+        }
+        self.inner.replace_scene(scene)
+    }
+}
+
+#[derive(Debug, Clone)]
+struct TestSceneError;
+impl MechErrorKind for TestSceneError {
+    fn name(&self) -> &str { "SceneBackendRejected" }
+    fn message(&self) -> String { "backend rejected scene".to_string() }
+}
+
+#[test]
+fn scene_provider_failed_replace_does_not_advance_dedup_state() {
+    let backend = FailableSceneBackend::default();
+    let mut provider = SceneResourceProvider::new("main", backend.clone());
+    let write = |value| RuntimeResourceWriteRequest {
+        base_uri: "scene://main/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value,
+    };
+    backend.fail_next();
+    assert!(provider.write(write(empty_scene())).is_err());
+    assert_eq!(backend.generation(), 0);
+    provider.write(write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+    provider.write(write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
 }

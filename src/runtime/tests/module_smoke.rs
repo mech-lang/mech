@@ -3683,6 +3683,7 @@ fn cli_context_module_send_is_not_stripped() {
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   runtime.run_module(version).unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+  assert_eq!(runtime.persistent_send_count(), 0);
 }
 
 #[derive(Debug, Clone)]
@@ -3919,6 +3920,7 @@ fn named_fenced_context_import_write_uses_context_registry() {
   ).unwrap();
 
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+  assert_eq!(runtime.persistent_send_count(), 0);
 }
 
 #[test]

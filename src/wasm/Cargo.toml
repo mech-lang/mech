@@ -22,26 +22,23 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
-      "u8", "u16", "u32", "u64", "u128", 
-      "i8", "i16", "i32", "i64", "i128", 
+default = ["base",
+      "u8", "u16", "u32", "u64", "u128",
+      "i8", "i16", "i32", "i64", "i128",
       "f32", "f64", "c64", "r64",
-      "statements_default", "subscript_default", "state_machines", "string_default",
-      "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "stats_default", "combinatorics_default",
-      "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
-      "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
 
-base = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika",
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "formatter", "mika", "browser_project_runner",
       "statements_default", "subscript_default", "state_machines", "string_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "stats_default", "combinatorics_default",
-      "run_program", "inline_output_values", "codeblock_output_values", "clickable_symbol_listeners",
-      "eval", "repl", "whos", "help", "docs", "clc", "clear", "code",
       ]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 state_machines = ["functions", "mech-interpreter/state_machines", "mech-runtime/state_machines"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+sample_hold = ["mech-interpreter/sample_hold"]
+state_step = ["mech-interpreter/state_step"]
 
 baselib = ["bool", "string", 
       "f64", "c64", "r64",
@@ -68,7 +65,7 @@ host_delegation = ["serde", "dep:mech-host-browser", "mech-runtime/host_delegati
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-host-browser/delegation_signing"]
 # browser_project is a prebuilt development profile. Production builds are expected
 # to use a compiler-inferred language and host feature closure.
-browser_project = ["browser_project_runner", "served_project_authority", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string", "record", "tuple", "table", "atom", "enum", "variables"]
+browser_project = ["browser_project_runner", "sample_hold", "state_step", "served_project_authority", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_project_runner = ["program", "serde"]
 served_project_authority = ["host_delegation_signing"]
 browser_host_dom = ["dep:mech-host-browser", "mech-host-browser/provider", "mech-host-browser/serde"]

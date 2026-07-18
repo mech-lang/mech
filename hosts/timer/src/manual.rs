@@ -2,9 +2,10 @@ use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
 use mech_core::MResult;
-use mech_runtime::{RuntimeHostInputDriver, RuntimeIngress};
+use mech_runtime::{RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress};
 
 use crate::{
+    timer_source_matches,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerSnapshot,
     new_shared_snapshot, timer_error,
 };
@@ -138,7 +139,11 @@ impl ManualTimerInputDriver {
 }
 
 impl RuntimeHostInputDriver for ManualTimerInputDriver {
-    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+    timer_source_matches(&self.instance, source)
+  }
+
+  fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
         if self.live {
             return Err(timer_error(
                 "TimerDriverAttach",

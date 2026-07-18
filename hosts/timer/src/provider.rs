@@ -1,7 +1,7 @@
 use mech_core::{MResult, Ref, Value};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
 
-use crate::{SharedTimerSnapshot, TimerSnapshot, timer_error};
+use crate::{SharedTimerSnapshot, TimerSnapshot, timer_error, timer_input_base_uri};
 
 #[derive(Debug)]
 pub struct TimerResourceProvider {
@@ -18,7 +18,7 @@ impl TimerResourceProvider {
     }
 
     pub fn base_uri(&self) -> String {
-        format!("timer://{}/tick", self.instance)
+        timer_input_base_uri(&self.instance)
     }
 
     fn value_for(snapshot: TimerSnapshot, path: &str) -> MResult<Value> {

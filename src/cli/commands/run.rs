@@ -277,7 +277,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
             }
         }
         Ok(value) => {
-            if runtime.has_input_drivers() {
+            if should_run_live(&runtime) {
                 run_live_runtime(&mut runtime)?;
             } else {
                 print_value(&value);
@@ -286,6 +286,10 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         }
         Err(err) => Err(err),
     }
+}
+
+fn should_run_live(runtime: &mech_runtime::MechRuntime) -> bool {
+    runtime.has_driven_live_input_bindings()
 }
 
 fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {

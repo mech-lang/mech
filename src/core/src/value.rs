@@ -642,6 +642,19 @@ pub enum Value {
 
 impl Eq for Value {}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ReactiveCellId(u64);
+
+impl ReactiveCellId {
+  pub fn new(id: u64) -> Self {
+    Self(id)
+  }
+
+  pub fn get(self) -> u64 {
+    self.0
+  }
+}
+
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     if cfg!(feature = "pretty_print") {
@@ -754,6 +767,116 @@ impl Hash for Value {
   }
 }
 impl Value {
+  fn push_reactive_cell_id(ids: &mut Vec<ReactiveCellId>, id: u64) {
+    let id = ReactiveCellId::new(id);
+    if !ids.contains(&id) {
+      ids.push(id);
+    }
+  }
+
+  pub fn reactive_cell_ids(&self) -> Vec<ReactiveCellId> {
+    let mut ids = Vec::new();
+    self.collect_reactive_cell_ids(&mut ids);
+    ids
+  }
+
+  fn collect_reactive_cell_ids(&self, ids: &mut Vec<ReactiveCellId>) {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "u16")]
+      Value::U16(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "u32")]
+      Value::U32(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "u64")]
+      Value::U64(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "u128")]
+      Value::U128(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "i8")]
+      Value::I8(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "i16")]
+      Value::I16(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "i32")]
+      Value::I32(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "i64")]
+      Value::I64(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "i128")]
+      Value::I128(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "f32")]
+      Value::F32(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "f64")]
+      Value::F64(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "complex")]
+      Value::C64(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "rational")]
+      Value::R64(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "atom")]
+      Value::Atom(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "enum")]
+      Value::Enum(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "set")]
+      Value::Set(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "map")]
+      Value::Map(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "record")]
+      Value::Record(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "table")]
+      Value::Table(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "tuple")]
+      Value::Tuple(v) => Self::push_reactive_cell_id(ids, v.id()),
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(v) => Self::push_reactive_cell_id(ids, v.addr() as u64),
+      Value::Index(v) => Self::push_reactive_cell_id(ids, v.id()),
+      Value::MutableReference(v) => {
+        Self::push_reactive_cell_id(ids, v.id());
+        v.borrow().collect_reactive_cell_ids(ids);
+      }
+      Value::Typed(value, _) => value.collect_reactive_cell_ids(ids),
+      Value::Id(_)
+      | Value::Kind(_)
+      | Value::IndexAll
+      | Value::EmptyKind(_)
+      | Value::Empty => {}
+    }
+  }
 
   #[cfg(feature = "matrix")]
   fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {

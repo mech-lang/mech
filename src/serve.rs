@@ -352,6 +352,7 @@ pub struct MechServer {
   init: bool,
   stylesheet: String,
   html_shim: String,
+  project_html: String,
   project_js: String,
   host_config: Option<BrowserRuntimeInjectionConfig>,
   host_config_injection: Option<HostAuthorityInjection>,
@@ -408,11 +409,32 @@ impl MechServer {
     host_config_injection: Option<HostAuthorityInjection>,
     serve_configured_shim_at_root: bool,
   ) -> Self {
+    Self::new_with_project_html_and_host_config(
+      name, full_address, stylesheet, html_shim, include_str!("../include/project.html").to_string(), project_js, wasm, js, authority, runtime_config, host_config, host_config_injection, serve_configured_shim_at_root,
+    )
+  }
+
+  pub(crate) fn new_with_project_html_and_host_config(
+    name: String,
+    full_address: String,
+    stylesheet: String,
+    html_shim: String,
+    project_html: String,
+    project_js: String,
+    wasm: Vec<u8>,
+    js: Vec<u8>,
+    authority: HostFilesystemAuthority,
+    runtime_config: RuntimeConfig,
+    host_config: Option<BrowserRuntimeInjectionConfig>,
+    host_config_injection: Option<HostAuthorityInjection>,
+    serve_configured_shim_at_root: bool,
+  ) -> Self {
     Self {
       name,
       init: false,
       stylesheet,
       html_shim,
+      project_html,
       project_js,
       host_config,
       host_config_injection,
@@ -630,6 +652,14 @@ impl MechServer {
         content_type: "text/html",
         content_encoding: None,
         backing_paths: vec![index_path.clone()],
+      });
+    } else {
+      let index_html = self.inject_authority_into_html(&self.project_html)?;
+      registry.insert_user_asset("index.html".to_string(), ServerAsset {
+        bytes: index_html.into_bytes(),
+        content_type: "text/html",
+        content_encoding: None,
+        backing_paths: Vec::new(),
       });
     }
     drop(registry);

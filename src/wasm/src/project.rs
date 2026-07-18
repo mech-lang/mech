@@ -52,6 +52,12 @@ impl WasmProject {
         Ok(out)
     }
 
+
+    #[wasm_bindgen(js_name = supportsServedAuthority)]
+    pub fn supports_served_authority() -> bool {
+        cfg!(feature = "served_project_authority")
+    }
+
     #[wasm_bindgen(js_name = fromSources)]
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
@@ -70,6 +76,7 @@ impl WasmProject {
         })
     }
 
+    #[cfg(feature = "served_project_authority")]
     #[wasm_bindgen(js_name = fromServedSources)]
     pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
@@ -383,10 +390,6 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
         .map_err(|error| js_error(format!("invalid served host config: {error}")))
 }
 
-#[cfg(not(feature = "served_project_authority"))]
-fn served_browser_authority() -> Result<(), JsValue> {
-    Err(js_error("served project authority support was not compiled into this WASM artifact"))
-}
 
 fn validate_served_authority(
     document: &MechConfigDocument,
@@ -919,6 +922,12 @@ mod browser_tests {
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+
+    #[wasm_bindgen_test]
+    fn wasm_project_reports_served_authority_capability() {
+        assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
+    }
 
     #[wasm_bindgen_test]
     fn generic_project_starts_and_stops_idempotently() {

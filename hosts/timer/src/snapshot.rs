@@ -5,6 +5,14 @@ use mech_runtime::{
     RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue,
 };
 
+pub fn timer_input_base_uri(instance: &str) -> String {
+    format!("timer://{instance}/tick")
+}
+
+pub fn timer_source_matches(instance: &str, source: &RuntimeHostInputSource) -> bool {
+    source.base_uri() == timer_input_base_uri(instance) && TIMER_PATHS.contains(&source.path())
+}
+
 pub const TIMER_PATHS: [&str; 6] = [
     "tick",
     "elapsed-ms",
@@ -39,7 +47,7 @@ impl TimerSnapshot {
     }
 
     pub fn into_host_input(self, instance: &str) -> MResult<RuntimeHostInput> {
-        let base_uri = format!("timer://{instance}/tick");
+        let base_uri = timer_input_base_uri(instance);
         let values = [
             self.tick as f64,
             self.elapsed_ms,

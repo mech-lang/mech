@@ -13,7 +13,7 @@ pub use config::{time_settings_from_config, TimeHostSettings};
 pub use manual::ManualTimeInputDriver;
 pub use module::{time_host_manifest, TIME_HOST_MCFG};
 pub use provider::TimeResourceProvider;
-pub use snapshot::{new_shared_snapshot, SharedTimeSnapshot, TimeBackend, TimeSnapshot, CLOCK_PATHS};
+pub use snapshot::{new_shared_snapshot, SharedTimeSnapshot, TimeBackend, TimeSnapshot, CLOCK_PATHS, time_input_base_uri, time_source_matches};
 
 #[cfg(feature = "browser")]
 pub use browser::{BrowserTimeBackend, BrowserTimeHostFactory, BrowserTimeInputDriver};

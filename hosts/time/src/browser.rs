@@ -2,11 +2,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use mech_core::MResult;
-use mech_runtime::{materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInstallation, RuntimeIngress};
+use mech_runtime::{materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 
-use crate::{new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
+use crate::{time_source_matches, new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BrowserTimeBackend;
@@ -65,6 +65,10 @@ impl<B> RuntimeHostInputDriver for BrowserTimeInputDriver<B>
 where
   B: TimeBackend,
 {
+  fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+    time_source_matches(&self.instance, source)
+  }
+
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
     if self.is_live() { return Err(time_error("TimeDriverAttach", "cannot attach browser time driver while live")); }
     if self.ingress.is_some() { return Err(time_error("TimeDriverAttach", "browser time driver is already attached")); }

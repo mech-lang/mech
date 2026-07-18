@@ -304,6 +304,17 @@ fn resolve_runtime_value(value: Value) -> Value {
 
 
 impl MechRuntime {
+  fn with_live_registration_mode<T>(
+    &mut self,
+    mode: crate::runtime::LiveRegistrationMode,
+    f: impl FnOnce(&mut Self) -> MResult<T>,
+  ) -> MResult<T> {
+    let previous = std::mem::replace(&mut self.live_registration_mode, mode);
+    let result = f(self);
+    self.live_registration_mode = previous;
+    result
+  }
+
   fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
     matches!(import.alias, Some(mech_core::ModuleImportAlias::Context(_)))
   }
@@ -491,11 +502,13 @@ impl MechRuntime {
     let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
-    let bindings = self.live_input_bindings.entry(source).or_default();
-    if !bindings.iter().any(|binding| *binding == input) {
-      bindings.push(input);
+    if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
+      let bindings = self.live_input_bindings.entry(source).or_default();
+      if !bindings.iter().any(|binding| *binding == input) {
+        bindings.push(input);
+      }
+      self.commit_live_context_candidate(context);
     }
-    self.commit_live_context_candidate(context);
     let var = mech_core::Var {
       name: identifier_from_str(&name),
       context: None,
@@ -1271,11 +1284,17 @@ impl MechRuntime {
           pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
         }
         self.flush_direct_execution(program, pending, result)?;
-        self.validate_live_context_candidate(context)?;
         let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
+        let path = send.target.name.to_string();
+        if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+          let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
+          self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
+          *result = value;
+          return Ok(());
+        }
+        self.validate_live_context_candidate(context)?;
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
-        let path = send.target.name.to_string();
         self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
         self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
         self.commit_live_context_candidate(context);
@@ -3235,40 +3254,41 @@ impl MechRuntime {
     // exports, address environment, and ModuleInstance identity.
     let execution_scope = execution_scope_for_extracted_module_source(scope);
 
-    let result = match source {
+    let result = self.with_live_registration_mode(crate::runtime::LiveRegistrationMode::IsolatedSnapshot, |runtime| {
+      match source {
       MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
         Ok(tree) => {
-          let registry = self.direct_context_registry_for_scope(&tree, &execution_scope)?;
-          match self.preflight_context_capabilities_with_registry(
+          let registry = runtime.direct_context_registry_for_scope(&tree, &execution_scope)?;
+          match runtime.preflight_context_capabilities_with_registry(
             context,
             &registry,
             &tree,
             &execution_scope,
             AddressedReadPreflight::AllowModuleAddressTargets,
           ) {
-            Ok(()) => self.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
+            Ok(()) => runtime.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
             Err(error) => Err(error),
           }
         },
         Err(error) => Err(error),
       },
       MechSourceCode::Tree(tree) => {
-        let registry = self.direct_context_registry_for_scope(tree, &execution_scope)?;
-        match self.preflight_context_capabilities_with_registry(
+        let registry = runtime.direct_context_registry_for_scope(tree, &execution_scope)?;
+        match runtime.preflight_context_capabilities_with_registry(
           context,
           &registry,
           tree,
           &execution_scope,
           AddressedReadPreflight::AllowModuleAddressTargets,
         ) {
-          Ok(()) => self.run_tree_on_program(context, program, tree, Some(&execution_scope)),
+          Ok(()) => runtime.run_tree_on_program(context, program, tree, Some(&execution_scope)),
           Err(error) => Err(error),
         }
       },
       MechSourceCode::Program(sources) => {
         let mut result = Ok(Value::Empty);
         for source in sources {
-          result = self.run_module_source_on_program(context, program, source, scope);
+          result = runtime.run_module_source_on_program(context, program, source, scope);
           if result.is_err() {
             break;
           }
@@ -3280,7 +3300,8 @@ impl MechRuntime {
         operation: "run_module_preflight",
         reason: "unsupported executable source kind for provider preflight: image".to_string(),
       }, None)),
-    };
+      }
+    });
 
     match &result {
       Ok(_) => {
@@ -3861,6 +3882,26 @@ impl MechRuntime {
 
   pub fn has_input_drivers(&self) -> bool {
     self.input_driver_count() > 0
+  }
+
+  pub fn live_input_binding_count(&self) -> usize {
+    self.live_input_bindings.values().map(Vec::len).sum()
+  }
+
+  pub fn has_live_input_bindings(&self) -> bool {
+    self.live_input_binding_count() > 0
+  }
+
+  pub fn driven_live_input_binding_count(&self) -> usize {
+    self.live_input_bindings
+      .iter()
+      .filter(|(source, _)| self.input_drivers[..self.attached_input_driver_count].iter().any(|driver| driver.drives(source)))
+      .map(|(_, bindings)| bindings.len())
+      .sum()
+  }
+
+  pub fn has_driven_live_input_bindings(&self) -> bool {
+    self.driven_live_input_binding_count() > 0
   }
 
   pub fn pending_host_input_count(&self) -> MResult<usize> {

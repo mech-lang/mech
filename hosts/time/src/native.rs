@@ -6,9 +6,9 @@ use std::time::Duration;
 
 use chrono::{Local, Timelike};
 use mech_core::MResult;
-use mech_runtime::{materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInstallation, RuntimeIngress};
+use mech_runtime::{materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress};
 
-use crate::{new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
+use crate::{time_source_matches, new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeTimeBackend;
@@ -76,6 +76,10 @@ impl<B> RuntimeHostInputDriver for NativeTimeInputDriver<B>
 where
   B: TimeBackend + Send + Sync,
 {
+  fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+    time_source_matches(&self.instance, source)
+  }
+
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
     if self.is_live() {
       return Err(time_error("TimeDriverAttach", "cannot attach native time driver while live"));

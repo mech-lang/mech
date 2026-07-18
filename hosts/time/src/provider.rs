@@ -1,7 +1,7 @@
 use mech_core::{MResult, Ref, Value};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
 
-use crate::{time_error, SharedTimeSnapshot, TimeSnapshot};
+use crate::{time_error, time_input_base_uri, SharedTimeSnapshot, TimeSnapshot};
 
 #[derive(Debug)]
 pub struct TimeResourceProvider {
@@ -15,7 +15,7 @@ impl TimeResourceProvider {
   }
 
   pub fn base_uri(&self) -> String {
-    format!("time://{}/clock", self.instance)
+    time_input_base_uri(&self.instance)
   }
 
   fn value_for(snapshot: TimeSnapshot, path: &str) -> MResult<Value> {

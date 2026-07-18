@@ -265,6 +265,12 @@ pub struct ProgramInputUpdate {
 }
 
 #[derive(Clone, Debug)]
+pub struct ProgramInputUpdateOutcome {
+  pub updated_count: usize,
+  pub dirty_cells: Vec<ReactiveCellId>,
+}
+
+#[derive(Clone, Debug)]
 pub struct ProgramSolveOutcome {
   pub value: Value,
   pub plan_len: usize,
@@ -513,6 +519,13 @@ impl MechProgram {
   }
 
   pub fn update_inputs(&mut self, updates: &[ProgramInputUpdate]) -> MResult<usize> {
+    Ok(self.update_inputs_with_dirty_cells(updates)?.updated_count)
+  }
+
+  pub fn update_inputs_with_dirty_cells(
+    &mut self,
+    updates: &[ProgramInputUpdate],
+  ) -> MResult<ProgramInputUpdateOutcome> {
     let mut seen_targets = BTreeSet::new();
     for update in updates {
       if !seen_targets.insert(update.input) {
@@ -521,6 +534,7 @@ impl MechProgram {
     }
 
     let mut assignments = Vec::with_capacity(updates.len());
+    let mut dirty_cells = Vec::new();
     for update in updates {
       let Some(sink) = with_interpreter_mut(&mut self.interpreter, update.input.interpreter_id, &mut |interpreter| {
         interpreter.symbols().borrow().get(update.input.symbol_id)
@@ -530,12 +544,20 @@ impl MechProgram {
       let Some(sink) = sink else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
       };
+      for cell in sink.borrow().reactive_cell_ids() {
+        if !dirty_cells.contains(&cell) {
+          dirty_cells.push(cell);
+        }
+      }
       assignments.push(compile_stable_value_update(sink, update.value.clone())?);
     }
     for assignment in &assignments {
       assignment.solve_result()?;
     }
-    Ok(assignments.len())
+    Ok(ProgramInputUpdateOutcome {
+      updated_count: assignments.len(),
+      dirty_cells,
+    })
   }
 
   #[cfg(feature = "functions")]

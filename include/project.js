@@ -42,7 +42,11 @@ async function main() {
     sources[path] = await fetchText(path);
   }
   const hasServedAuthority = Object.prototype.hasOwnProperty.call(window, '__MECH_HOST_CONFIG');
-  if (hasServedAuthority && typeof WasmProject.fromServedSources === 'function') {
+  if (hasServedAuthority) {
+    const supported = typeof WasmProject.supportsServedAuthority === 'function' && WasmProject.supportsServedAuthority() === true;
+    if (!supported || typeof WasmProject.fromServedSources !== 'function') {
+      throw new Error('WASM build-profile mismatch: served project authority was injected by the server, but this mech_wasm artifact was not compiled with served_project_authority support');
+    }
     project = WasmProject.fromServedSources(config, sources);
   } else {
     project = WasmProject.fromSources(config, sources);
