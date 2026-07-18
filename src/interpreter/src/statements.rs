@@ -4,19 +4,6 @@ use paste::paste;
 #[cfg(feature = "variable_define")]
 use crate::stdlib::define::*;
 
-#[cfg(feature = "functions")]
-fn execute_indexed_statement_compiler(
-  plan: &Plan,
-  compiler: &dyn NativeFunctionCompiler,
-  arguments: Vec<Value>,
-) -> MResult<Value> {
-  let function = compiler.compile(&arguments)?;
-  function.solve();
-  let output = function.out();
-  plan.register_function(function, &arguments)?;
-  Ok(output)
-}
-
 // Statements
 // ----------------------------------------------------------------------------
 
@@ -567,30 +554,30 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
-          result = execute_indexed_statement_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            result = execute_indexed_statement_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
+            result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          result = execute_indexed_statement_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(target_matrix_knd,_)) => {
         if value.is_matrix() {
-          result = execute_indexed_statement_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            result = execute_indexed_statement_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
+            result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          result = execute_indexed_statement_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       // Kind isn't checked
       x => {
-        result = execute_indexed_statement_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_knd)])?;
+        result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_knd)])?;
       },
     };
     let detached_result = detach_variable_value(&result);
@@ -1042,5 +1029,39 @@ impl MechErrorKind for UnableToConvertRecordError {
   }
   fn message(&self) -> String {
     format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
+  }
+}
+
+#[cfg(all(
+  test,
+  feature = "variable_define",
+  feature = "f64",
+  feature = "string",
+  feature = "bool",
+))]
+mod variable_define_dependency_tests {
+  use super::*;
+
+  #[test]
+  fn var_define_registration_has_no_reactive_inputs() {
+    let plan = Plan::new();
+    let value = Ref::new(1.0);
+    let value_cell = ReactiveCellId::new(value.id());
+    let arguments = vec![
+      Value::F64(value),
+      Value::String(Ref::new("defined value".to_string())),
+      Value::Bool(Ref::new(false)),
+    ];
+    let function = VarDefine {}.compile(&arguments).unwrap();
+
+    plan.register_function(function, &[]).unwrap();
+
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow.node(0).unwrap();
+    assert_eq!(plan_borrow.len(), 1);
+    assert!(node.inputs.is_empty());
+    assert!(plan_borrow.reactive_consumers.is_empty());
+    assert!(plan_borrow.sampled_consumers.is_empty());
+    assert!(node.outputs.contains(&value_cell));
   }
 }

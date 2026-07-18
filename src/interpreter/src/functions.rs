@@ -200,6 +200,18 @@ pub fn execute_native_function_compiler(
   }
 }
 
+pub(crate) fn execute_initialized_indexed_compiler(
+  plan: &Plan,
+  compiler: &dyn NativeFunctionCompiler,
+  arguments: Vec<Value>,
+) -> MResult<Value> {
+  let function = compiler.compile(&arguments)?;
+  function.solve();
+  let output = function.out();
+  plan.register_function(function, &arguments)?;
+  Ok(output)
+}
+
 // Executes a user-defined function. Handles argument count validation,
 // optional matrix broadcasting, match-arm dispatch, and plain statement bodies.
 // Logs entry/exit (or failure) via the trace machinery.
@@ -944,9 +956,10 @@ impl MechErrorKind for FunctionInputTypeMismatchError {
   }
 }
 
-#[cfg(all(test, feature = "f64"))]
+#[cfg(all(test, feature = "functions", feature = "f64"))]
 mod native_dependency_tests {
   use super::*;
+  use std::sync::atomic::{AtomicUsize, Ordering};
 
   struct NativeDependencyTestCompiler;
 
@@ -979,6 +992,80 @@ mod native_dependency_tests {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
       Ok(0)
     }
+  }
+
+  struct IndexedInitializedCompiler {
+    output: Value,
+    solve_calls: Arc<AtomicUsize>,
+  }
+
+  struct IndexedInitializedFunction {
+    output: Value,
+    solve_calls: Arc<AtomicUsize>,
+  }
+
+  impl NativeFunctionCompiler for IndexedInitializedCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(IndexedInitializedFunction {
+        output: self.output.clone(),
+        solve_calls: self.solve_calls.clone(),
+      }))
+    }
+  }
+
+  impl MechFunctionImpl for IndexedInitializedFunction {
+    fn solve(&self) {
+      self.solve_calls.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn out(&self) -> Value {
+      self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+      "indexed-initialized-test".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for IndexedInitializedFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  #[test]
+  fn initialized_indexed_compiler_records_dependencies() {
+    let plan = Plan::new();
+    let input = Ref::new(1.0);
+    let input_cell = ReactiveCellId::new(input.id());
+    let output = Ref::new(2.0);
+    let output_cell = ReactiveCellId::new(output.id());
+    let solve_calls = Arc::new(AtomicUsize::new(0));
+
+    let result = execute_initialized_indexed_compiler(
+      &plan,
+      &IndexedInitializedCompiler {
+        output: Value::F64(output),
+        solve_calls: solve_calls.clone(),
+      },
+      vec![Value::F64(input)],
+    )
+    .unwrap();
+
+    assert!(result.reactive_cell_ids().contains(&output_cell));
+    assert_eq!(solve_calls.load(Ordering::SeqCst), 1);
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow.node(0).unwrap();
+    assert_eq!(plan_borrow.len(), 1);
+    assert!(node.inputs.iter().any(|dependency| {
+      dependency.cell == input_cell
+        && dependency.kind == ReactiveDependencyKind::Reactive
+    }));
+    assert_eq!(plan_borrow.reactive_consumers_for(input_cell), &[0]);
+    assert!(plan_borrow.sampled_consumers_for(input_cell).is_empty());
+    assert!(node.outputs.contains(&output_cell));
+    assert!(!node.inputs.iter().any(|dependency| dependency.cell == output_cell));
   }
 
   #[derive(Debug, Clone)]
@@ -1021,7 +1108,7 @@ mod native_dependency_tests {
     let plan = plan.borrow();
     let node = plan.last().unwrap();
     assert!(plan.nodes.last().unwrap().inputs.iter().any(|dependency| dependency.cell == input_cell));
-    assert!(plan.nodes.last().unwrap().function.solve_result().unwrap_err().to_string().contains("DeferredNativeSolveError"));
+    assert!(plan.nodes.last().unwrap().function.solve_result().unwrap_err().kind_name().contains("DeferredNativeSolveError"));
     assert_eq!(plan.len(), 1);
   }
 
