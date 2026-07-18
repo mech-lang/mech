@@ -17,6 +17,7 @@ use std::time::Instant;
 use mech_core::{
   hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
   MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value, ValueKind,
+  val_ref_reactive_cell_ids,
 };
 
 use mech_interpreter::Interpreter;
@@ -544,7 +545,7 @@ impl MechProgram {
       let Some(sink) = sink else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
       };
-      for cell in sink.borrow().reactive_cell_ids() {
+      for cell in val_ref_reactive_cell_ids(&sink) {
         if !dirty_cells.contains(&cell) {
           dirty_cells.push(cell);
         }
@@ -1301,6 +1302,33 @@ mod live_input_tests {
     let b_value = program.interpreter().symbols().borrow().get(b_id).unwrap();
     assert_eq!(f64_value(&a_value.borrow()), 1.0);
     assert_eq!(f64_value(&b_value.borrow()), 2.0);
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn program_input_dirty_cells_include_outer_valref() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let input_id = hash_str("input");
+    let interpreter_id = program.interpreter().id;
+    let input = program
+      .ensure_input(interpreter_id, input_id, "input", Value::F64(Ref::new(1.0)))
+      .unwrap();
+    let input_val_ref = program.interpreter().symbols().borrow().get(input_id).unwrap();
+    let input_val_ref_id = input_val_ref.id();
+    let nested_scalar_id = match &*input_val_ref.borrow() {
+      Value::F64(value) => value.id(),
+      other => panic!("expected f64 input, got {other:?}"),
+    };
+
+    let outcome = program
+      .update_inputs_with_dirty_cells(&[ProgramInputUpdate {
+        input,
+        value: Value::F64(Ref::new(2.0)),
+      }])
+      .unwrap();
+
+    assert!(outcome.dirty_cells.contains(&ReactiveCellId::new(input_val_ref_id)));
+    assert!(outcome.dirty_cells.contains(&ReactiveCellId::new(nested_scalar_id)));
   }
 
   #[test]
