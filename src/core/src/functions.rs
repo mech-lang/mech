@@ -45,6 +45,46 @@ impl FunctionArgs {
       FunctionArgs::Variadic(_, args) => args.len(),
     }
   }
+
+  pub fn input_values(&self) -> Vec<Value> {
+    match self {
+      FunctionArgs::Nullary(_) =>
+        Vec::new(),
+
+      FunctionArgs::Unary(_, a) =>
+        vec![a.clone()],
+
+      FunctionArgs::Binary(_, a, b) =>
+        vec![
+          a.clone(),
+          b.clone(),
+        ],
+
+      FunctionArgs::Ternary(_, a, b, c) =>
+        vec![
+          a.clone(),
+          b.clone(),
+          c.clone(),
+        ],
+
+      FunctionArgs::Quaternary(
+        _,
+        a,
+        b,
+        c,
+        d,
+      ) =>
+        vec![
+          a.clone(),
+          b.clone(),
+          c.clone(),
+          d.clone(),
+        ],
+
+      FunctionArgs::Variadic(_, arguments) =>
+        arguments.clone(),
+    }
+  }
 }
 
 #[repr(C)]
@@ -347,6 +387,48 @@ pub struct ReactivePlan {
   pub sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ReactiveDependencyArityMismatchError {
+  pub function: String,
+  pub expected: usize,
+  pub found: usize,
+}
+
+impl MechErrorKind for ReactiveDependencyArityMismatchError {
+  fn name(&self) -> &str {
+    "ReactiveDependencyArityMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Reactive dependency arity mismatch for function '{}': expected {} dependency kinds, found {}.",
+      self.function,
+      self.expected,
+      self.found,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactiveDependencyKindConflictError {
+  pub function: String,
+  pub cell: ReactiveCellId,
+}
+
+impl MechErrorKind for ReactiveDependencyKindConflictError {
+  fn name(&self) -> &str {
+    "ReactiveDependencyKindConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Reactive dependency kind conflict for function '{}': one node classified cell {:?} as both reactive and sampled.",
+      self.function,
+      self.cell,
+    )
+  }
+}
+
 impl ReactivePlan {
   pub fn new() -> Self {
     Self {
@@ -412,6 +494,117 @@ impl ReactivePlan {
     self.nodes.push(node);
     node_id
   }
+
+  pub fn register(
+    &mut self,
+    function: Box<dyn MechFunction>,
+    arguments: &[Value],
+  ) -> MResult<ReactiveNodeId> {
+    let node_id = self.nodes.len();
+    let plan_index = node_id;
+    let function_description = function.to_string();
+
+    let dependency_kinds = match function.reactive_dependency_kinds(arguments.len()) {
+      Some(kinds) => {
+        if kinds.len() != arguments.len() {
+          return Err(MechError::new(
+            ReactiveDependencyArityMismatchError {
+              function: function_description,
+              expected: arguments.len(),
+              found: kinds.len(),
+            },
+            None,
+          ));
+        }
+        kinds
+      }
+      None => vec![
+        ReactiveDependencyKind::Reactive;
+        arguments.len()
+      ],
+    };
+
+    let mut inputs = Vec::<ReactiveDependency>::new();
+
+    for (argument, kind) in arguments.iter().zip(dependency_kinds.iter()) {
+      for cell in argument.reactive_cell_ids() {
+        match inputs.iter().find(|dependency| dependency.cell == cell) {
+          Some(dependency) if dependency.kind == *kind => {}
+          Some(_) => {
+            return Err(MechError::new(
+              ReactiveDependencyKindConflictError {
+                function: function_description,
+                cell,
+              },
+              None,
+            ));
+          }
+          None => inputs.push(ReactiveDependency {
+            cell,
+            kind: *kind,
+          }),
+        }
+      }
+    }
+
+    let mut outputs = Vec::<ReactiveCellId>::new();
+
+    for output in function.reactive_output_values() {
+      for cell in output.reactive_cell_ids() {
+        if !outputs.contains(&cell) {
+          outputs.push(cell);
+        }
+      }
+    }
+
+    let node = ReactivePlanNode {
+      id: node_id,
+      plan_index,
+      inputs,
+      outputs,
+      kind: function.reactive_node_kind(),
+      function,
+    };
+
+    self.nodes.push(node);
+
+    for dependency in &self.nodes[node_id].inputs {
+      let consumers = match dependency.kind {
+        ReactiveDependencyKind::Reactive =>
+          self.reactive_consumers
+            .entry(dependency.cell)
+            .or_default(),
+        ReactiveDependencyKind::Sampled =>
+          self.sampled_consumers
+            .entry(dependency.cell)
+            .or_default(),
+      };
+
+      if !consumers.contains(&node_id) {
+        consumers.push(node_id);
+      }
+    }
+
+    Ok(node_id)
+  }
+
+  pub fn node(&self, node_id: ReactiveNodeId) -> Option<&ReactivePlanNode> {
+    self.nodes.get(node_id)
+  }
+
+  pub fn reactive_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
+    self.reactive_consumers
+      .get(&cell)
+      .map(Vec::as_slice)
+      .unwrap_or(&[])
+  }
+
+  pub fn sampled_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
+    self.sampled_consumers
+      .get(&cell)
+      .map(Vec::as_slice)
+      .unwrap_or(&[])
+  }
 }
 
 impl core::ops::Index<usize> for ReactivePlan {
@@ -458,6 +651,19 @@ impl Plan {
 
   pub fn add_function(&self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
     self.0.borrow_mut().push(function)
+  }
+
+  pub fn register_function(
+    &self,
+    function: Box<dyn MechFunction>,
+    arguments: &[Value],
+  ) -> MResult<ReactiveNodeId> {
+    self.0
+      .borrow_mut()
+      .register(
+        function,
+        arguments,
+      )
   }
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
@@ -543,16 +749,41 @@ mod reactive_plan_tests {
   struct TestFunction {
     name: &'static str,
     output: Value,
+    dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
+    node_kind: ReactiveNodeKind,
   }
 
   impl TestFunction {
     fn new(name: &'static str) -> Self {
-      Self { name, output: Value::Empty }
+      Self {
+        name,
+        output: Value::Empty,
+        dependency_kinds: None,
+        node_kind: ReactiveNodeKind::Combinational,
+      }
     }
 
     #[cfg(feature = "f64")]
     fn with_output(name: &'static str, output: Value) -> Self {
-      Self { name, output }
+      Self {
+        name,
+        output,
+        dependency_kinds: None,
+        node_kind: ReactiveNodeKind::Combinational,
+      }
+    }
+
+    fn with_dependency_kinds(
+      mut self,
+      dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
+    ) -> Self {
+      self.dependency_kinds = dependency_kinds;
+      self
+    }
+
+    fn with_node_kind(mut self, node_kind: ReactiveNodeKind) -> Self {
+      self.node_kind = node_kind;
+      self
     }
   }
 
@@ -561,6 +792,17 @@ mod reactive_plan_tests {
 
     fn out(&self) -> Value {
       self.output.clone()
+    }
+
+    fn reactive_dependency_kinds(
+      &self,
+      _argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyKind>> {
+      self.dependency_kinds.clone()
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+      self.node_kind
     }
 
     fn to_string(&self) -> String {
@@ -639,6 +881,192 @@ mod reactive_plan_tests {
     assert!(plan.nodes.is_empty());
     assert!(plan.reactive_consumers.is_empty());
     assert!(plan.sampled_consumers.is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    let reference = Ref::new(value);
+    let cell = ReactiveCellId::new(reference.id());
+    (Value::F64(reference), cell)
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn function_args_returns_only_inputs() {
+    let (out, _) = scalar(0.0);
+    let (a, _) = scalar(1.0);
+    let (b, _) = scalar(2.0);
+    let (c, _) = scalar(3.0);
+    let (d, _) = scalar(4.0);
+
+    assert_eq!(FunctionArgs::Nullary(out.clone()).input_values(), Vec::<Value>::new());
+    assert_eq!(FunctionArgs::Unary(out.clone(), a.clone()).input_values(), vec![a.clone()]);
+    assert_eq!(
+      FunctionArgs::Binary(out.clone(), a.clone(), b.clone()).input_values(),
+      vec![a.clone(), b.clone()],
+    );
+    assert_eq!(
+      FunctionArgs::Ternary(out.clone(), a.clone(), b.clone(), c.clone()).input_values(),
+      vec![a.clone(), b.clone(), c.clone()],
+    );
+    assert_eq!(
+      FunctionArgs::Quaternary(
+        out.clone(),
+        a.clone(),
+        b.clone(),
+        c.clone(),
+        d.clone(),
+      )
+      .input_values(),
+      vec![a.clone(), b.clone(), c.clone(), d.clone()],
+    );
+    assert_eq!(
+      FunctionArgs::Variadic(out, vec![a.clone(), b.clone(), c.clone(), d.clone()])
+        .input_values(),
+      vec![a, b, c, d],
+    );
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_defaults_arguments_to_reactive() {
+    let (first, first_cell) = scalar(1.0);
+    let (second, second_cell) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(
+        Box::new(TestFunction::new("default")),
+        &[first, second],
+      )
+      .unwrap();
+
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(
+      node.inputs,
+      vec![
+        ReactiveDependency { cell: first_cell, kind: ReactiveDependencyKind::Reactive },
+        ReactiveDependency { cell: second_cell, kind: ReactiveDependencyKind::Reactive },
+      ],
+    );
+    assert_eq!(plan.reactive_consumers_for(first_cell), &[node_id]);
+    assert_eq!(plan.reactive_consumers_for(second_cell), &[node_id]);
+    assert!(plan.sampled_consumers_for(first_cell).is_empty());
+    assert!(plan.sampled_consumers_for(second_cell).is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_records_sampled_dependencies_separately() {
+    let (first, first_cell) = scalar(1.0);
+    let (second, second_cell) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(
+        Box::new(
+          TestFunction::new("sampled")
+            .with_dependency_kinds(Some(vec![
+              ReactiveDependencyKind::Sampled,
+              ReactiveDependencyKind::Reactive,
+            ])),
+        ),
+        &[first, second],
+      )
+      .unwrap();
+
+    assert_eq!(plan.sampled_consumers_for(first_cell), &[node_id]);
+    assert!(plan.reactive_consumers_for(first_cell).is_empty());
+    assert_eq!(plan.reactive_consumers_for(second_cell), &[node_id]);
+    assert!(plan.sampled_consumers_for(second_cell).is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_deduplicates_same_cell_same_kind() {
+    let (value, cell) = scalar(1.0);
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(
+        Box::new(TestFunction::new("dedupe")),
+        &[value.clone(), value],
+      )
+      .unwrap();
+
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.inputs, vec![ReactiveDependency { cell, kind: ReactiveDependencyKind::Reactive }]);
+    assert_eq!(plan.reactive_consumers_for(cell), &[node_id]);
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_rejects_same_cell_with_conflicting_kinds() {
+    let (value, _cell) = scalar(1.0);
+    let mut plan = ReactivePlan::new();
+
+    let error = plan
+      .register(
+        Box::new(
+          TestFunction::new("conflict")
+            .with_dependency_kinds(Some(vec![
+              ReactiveDependencyKind::Sampled,
+              ReactiveDependencyKind::Reactive,
+            ])),
+        ),
+        &[value.clone(), value],
+      )
+      .unwrap_err();
+
+    assert!(format!("{:?}", error).contains("ReactiveDependencyKindConflict"));
+    assert!(plan.nodes.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_rejects_dependency_arity_mismatch() {
+    let (first, _) = scalar(1.0);
+    let (second, _) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+
+    let error = plan
+      .register(
+        Box::new(
+          TestFunction::new("arity")
+            .with_dependency_kinds(Some(vec![ReactiveDependencyKind::Reactive])),
+        ),
+        &[first, second],
+      )
+      .unwrap_err();
+
+    assert!(format!("{:?}", error).contains("ReactiveDependencyArityMismatch"));
+    assert!(plan.nodes.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_records_outputs_and_kind() {
+    let output = Ref::new(42.0);
+    let output_cell = ReactiveCellId::new(output.id());
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(
+        Box::new(
+          TestFunction::with_output("register", Value::F64(output))
+            .with_node_kind(ReactiveNodeKind::Register),
+        ),
+        &[],
+      )
+      .unwrap();
+
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert!(node.outputs.contains(&output_cell));
   }
 }
 

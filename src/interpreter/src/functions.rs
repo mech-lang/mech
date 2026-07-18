@@ -183,15 +183,17 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      let mut plan_brrw = plan.borrow_mut();
-      new_fxn.solve();                   // run the function once to initialise its output
+      new_fxn.solve_result()?;           // run the function once to initialise its output
       let result = new_fxn.out();
       trace_println!(
         p,
         "{}",
         format_trace("arm", format!("result {}", summarize_function_value(&result)))
       );
-      plan_brrw.push(new_fxn);          // keep it in the plan for reactive re-evaluation
+      plan.register_function(
+        new_fxn,
+        input_arg_values,
+      )?;                                // keep it in the plan for reactive re-evaluation
       Ok(result)
     }
     Err(err) => Err(err),
@@ -939,5 +941,86 @@ impl MechErrorKind for FunctionInputTypeMismatchError {
       "Function '{}' argument '{}' expected {}, found {}",
       self.function_name, self.argument_name, self.expected, self.found
     )
+  }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod native_dependency_tests {
+  use super::*;
+
+  struct NativeDependencyTestCompiler;
+
+  impl NativeFunctionCompiler for NativeDependencyTestCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(NativeDependencyTestFunction {
+        output: Value::F64(Ref::new(2.0)),
+      }))
+    }
+  }
+
+  struct NativeDependencyTestFunction {
+    output: Value,
+  }
+
+  impl MechFunctionImpl for NativeDependencyTestFunction {
+    fn solve(&self) {}
+
+    fn out(&self) -> Value {
+      self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+      "native-dependency-test".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for NativeDependencyTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  #[test]
+  fn native_function_registration_records_operand_cells() {
+    let interpreter = Interpreter::new(0, 100);
+    let input = Ref::new(1.0);
+    let input_cell = ReactiveCellId::new(input.id());
+    let arguments = vec![Value::F64(input)];
+
+    let result = execute_native_function_compiler(
+      Arc::new(NativeDependencyTestCompiler),
+      &arguments,
+      &interpreter,
+    )
+    .unwrap();
+
+    let output_cell = match result {
+      Value::F64(output) => ReactiveCellId::new(output.id()),
+      other => panic!("expected f64 output, found {:?}", other),
+    };
+
+    let plan = interpreter.plan();
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow
+      .nodes
+      .iter()
+      .find(|node| !node.inputs.is_empty())
+      .expect("native compiler path should register indexed inputs");
+
+    assert!(
+      node
+        .inputs
+        .iter()
+        .any(|dependency| {
+          dependency.cell == input_cell
+            && dependency.kind == ReactiveDependencyKind::Reactive
+        })
+    );
+    assert_eq!(
+      plan_borrow.reactive_consumers_for(input_cell),
+      &[node.id],
+    );
+    assert!(node.outputs.contains(&output_cell));
   }
 }
