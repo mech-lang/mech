@@ -177,6 +177,7 @@ pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Valu
 
 #[cfg(feature = "record")]
 pub fn record(rcrd: &Record, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
   let mut kinds: Vec<ValueKind> = Vec::new();
@@ -193,14 +194,11 @@ pub fn record(rcrd: &Record, env: Option<&Environment>, p: &Interpreter) -> MRes
     kinds.push(knd.clone());
     #[cfg(feature = "convert")]
     if knd != val.kind() {
-      let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd.clone())]);
-      match fxn {
-        Ok(convert_fxn) => {
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          p.state.borrow_mut().add_plan_step(convert_fxn);
+      let arguments = vec![val.clone(), Value::Kind(knd.clone())];
+      match execute_initialized_indexed_compiler(&plan, &ConvertKind {}, arguments) {
+        Ok(converted_result) => {
           data.insert(name_hash, converted_result);
-        },
+        }
         Err(e) => {
           return Err(MechError::new(
             TableColumnKindMismatchError {
