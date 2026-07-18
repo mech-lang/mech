@@ -4,6 +4,19 @@ use paste::paste;
 #[cfg(feature = "variable_define")]
 use crate::stdlib::define::*;
 
+#[cfg(feature = "functions")]
+fn execute_indexed_statement_compiler(
+  plan: &Plan,
+  compiler: &dyn NativeFunctionCompiler,
+  arguments: Vec<Value>,
+) -> MResult<Value> {
+  let function = compiler.compile(&arguments)?;
+  function.solve();
+  let output = function.out();
+  plan.register_function(function, &arguments)?;
+  Ok(output)
+}
+
 // Statements
 // ----------------------------------------------------------------------------
 
@@ -293,14 +306,16 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
       ).with_compiler_loc().with_tokens(inv_def.name.tokens()));
     }
   }
+  let plan = p.plan();
   let result = expression(&inv_def.expression, None, p)?;
   let rhs_ref = value_to_ref(result.clone());
   let detached_result = detach_variable_value(&result);
   {
     let mut state_brrw = p.state.borrow_mut();
     state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
-    state_brrw.add_plan_step(var_def_fxn);
+    let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))];
+    let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+    plan.register_function(var_def_fxn, &[])?;
   }
   p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
@@ -495,6 +510,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       ).with_compiler_loc().with_tokens(var_def.var.name.tokens()));
     }
   }
+  let plan = p.plan();
   #[cfg(feature = "subscript_formula")]
   reset_current_string_access_expression_live(p);
   let mut result = expression(&var_def.expression, None, p)?;
@@ -551,58 +567,30 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
-          let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
+          result = execute_indexed_statement_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
-            convert_fxn.solve();
-            let converted_result = convert_fxn.out();
-            state_brrw.add_plan_step(convert_fxn);
-            result = converted_result;
+            result = execute_indexed_statement_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;          
+          result = execute_indexed_statement_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(target_matrix_knd,_)) => {
         if value.is_matrix() {
-          let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
+          result = execute_indexed_statement_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
-            convert_fxn.solve();
-            let converted_result = convert_fxn.out();
-            state_brrw.add_plan_step(convert_fxn);
-            result = converted_result;
+            result = execute_indexed_statement_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
+          result = execute_indexed_statement_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       // Kind isn't checked
       x => {
-        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
-        convert_fxn.solve();
-        let converted_result = convert_fxn.out();
-        state_brrw.add_plan_step(convert_fxn);
-        result = converted_result;
+        result = execute_indexed_statement_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_knd)])?;
       },
     };
     let detached_result = detach_variable_value(&result);
@@ -613,8 +601,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
     // Add variable define step to plan
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-    state_brrw.add_plan_step(var_def_fxn);
+    let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))];
+    let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+    plan.register_function(var_def_fxn, &[])?;
     return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
@@ -626,8 +615,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   // Save symbol to interpreter
   let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
   // Add variable define step to plan
-  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-  state_brrw.add_plan_step(var_def_fxn);
+  let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))];
+  let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+  plan.register_function(var_def_fxn, &[])?;
   return Ok(detached_result);
 }
 
