@@ -522,10 +522,13 @@ impl Interpreter {
           DecodedInstr::NullOp { fxn_id, dst } => {
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
-                let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Nullary(out.clone()))?;
-                self.out = fxn.out().clone();
-                state_brrw.add_plan_step(fxn);
+                let out = self.registers[*dst as usize].clone();
+                let function_args = FunctionArgs::Nullary(out);
+                self.out = register_bytecode_function(
+                  &state_brrw,
+                  *fxn_factory,
+                  function_args,
+                )?;
               }
               None => {
                 return Err(MechError::new(
@@ -539,12 +542,14 @@ impl Interpreter {
           DecodedInstr::UnOp { fxn_id, dst, src } => {
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
-                let src = &self.registers[*src as usize];
-                let out = &self.registers[*dst as usize];
-                let fxn =
-                    fxn_factory(FunctionArgs::Unary(out.clone(), src.clone()))?;
-                self.out = fxn.out().clone();
-                state_brrw.add_plan_step(fxn);
+                let out = self.registers[*dst as usize].clone();
+                let input = self.registers[*src as usize].clone();
+                let function_args = FunctionArgs::Unary(out, input);
+                self.out = register_bytecode_function(
+                  &state_brrw,
+                  *fxn_factory,
+                  function_args,
+                )?;
               }
               None => {
                 return Err(MechError::new(
@@ -555,15 +560,18 @@ impl Interpreter {
               }
             }
           }
-          DecodedInstr::BinOp { fxn_id, dst, lhs, rhs } => 
+          DecodedInstr::BinOp { fxn_id, dst, lhs, rhs } =>
           match functions_table.functions.get(fxn_id) {
             Some(fxn_factory) => {
-              let lhs = &self.registers[*lhs as usize];
-              let rhs = &self.registers[*rhs as usize];
-              let out = &self.registers[*dst as usize];
-              let fxn = fxn_factory(FunctionArgs::Binary(out.clone(),lhs.clone(),rhs.clone()))?;
-              self.out = fxn.out().clone();
-              state_brrw.add_plan_step(fxn);
+              let out = self.registers[*dst as usize].clone();
+              let lhs = self.registers[*lhs as usize].clone();
+              let rhs = self.registers[*rhs as usize].clone();
+              let function_args = FunctionArgs::Binary(out, lhs, rhs);
+              self.out = register_bytecode_function(
+                &state_brrw,
+                *fxn_factory,
+                function_args,
+              )?;
             }
             None => {
               return Err(MechError::new(
@@ -573,21 +581,24 @@ impl Interpreter {
               .with_compiler_loc());
             }
           },
-          DecodedInstr::TernOp {fxn_id,dst,a,b,c} => 
+          DecodedInstr::TernOp {fxn_id,dst,a,b,c} =>
           match functions_table.functions.get(fxn_id) {
             Some(fxn_factory) => {
-              let arg1 = &self.registers[*a as usize];
-              let arg2 = &self.registers[*b as usize];
-              let arg3 = &self.registers[*c as usize];
-              let out = &self.registers[*dst as usize];
-              let fxn = fxn_factory(FunctionArgs::Ternary(
-                out.clone(),
-                arg1.clone(),
-                arg2.clone(),
-                arg3.clone(),
-              ))?;
-              self.out = fxn.out().clone();
-              state_brrw.add_plan_step(fxn);
+              let out = self.registers[*dst as usize].clone();
+              let arg_a = self.registers[*a as usize].clone();
+              let arg_b = self.registers[*b as usize].clone();
+              let arg_c = self.registers[*c as usize].clone();
+              let function_args = FunctionArgs::Ternary(
+                out,
+                arg_a,
+                arg_b,
+                arg_c,
+              );
+              self.out = register_bytecode_function(
+                &state_brrw,
+                *fxn_factory,
+                function_args,
+              )?;
             }
             None => {
               return Err(MechError::new(
@@ -597,23 +608,26 @@ impl Interpreter {
               .with_compiler_loc());
             }
           },
-          DecodedInstr::QuadOp {fxn_id,dst,a,b,c,d } => 
+          DecodedInstr::QuadOp {fxn_id,dst,a,b,c,d } =>
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
-                let arg1 = &self.registers[*a as usize];
-                let arg2 = &self.registers[*b as usize];
-                let arg3 = &self.registers[*c as usize];
-                let arg4 = &self.registers[*d as usize];
-                let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Quaternary(
-                    out.clone(),
-                    arg1.clone(),
-                    arg2.clone(),
-                    arg3.clone(),
-                    arg4.clone(),
-                ))?;
-                self.out = fxn.out().clone();
-                state_brrw.add_plan_step(fxn);
+                let out = self.registers[*dst as usize].clone();
+                let arg_a = self.registers[*a as usize].clone();
+                let arg_b = self.registers[*b as usize].clone();
+                let arg_c = self.registers[*c as usize].clone();
+                let arg_d = self.registers[*d as usize].clone();
+                let function_args = FunctionArgs::Quaternary(
+                  out,
+                  arg_a,
+                  arg_b,
+                  arg_c,
+                  arg_d,
+                );
+                self.out = register_bytecode_function(
+                  &state_brrw,
+                  *fxn_factory,
+                  function_args,
+                )?;
               }
               None => {
                 return Err(MechError::new(
@@ -626,14 +640,17 @@ impl Interpreter {
           DecodedInstr::VarArg { fxn_id, dst, args } => {
             match functions_table.functions.get(fxn_id) {
               Some(fxn_factory) => {
-                let arg_values: Vec<Value> = args
+                let out = self.registers[*dst as usize].clone();
+                let argument_values = args
                   .iter()
-                  .map(|r| self.registers[*r as usize].clone())
-                  .collect();
-                let out = &self.registers[*dst as usize];
-                let fxn = fxn_factory(FunctionArgs::Variadic(out.clone(), arg_values))?;
-                self.out = fxn.out().clone();
-                state_brrw.add_plan_step(fxn);
+                  .map(|register| self.registers[*register as usize].clone())
+                  .collect::<Vec<Value>>();
+                let function_args = FunctionArgs::Variadic(out, argument_values);
+                self.out = register_bytecode_function(
+                  &state_brrw,
+                  *fxn_factory,
+                  function_args,
+                )?;
               }
               None => {
                 return Err(MechError::new(
@@ -686,6 +703,185 @@ impl Interpreter {
     let bytes = ctx.compile()?;
     self.context = Some(ctx);
     Ok(bytes)
+  }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn register_bytecode_function(
+  state: &ProgramState,
+  factory: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
+  function_args: FunctionArgs,
+) -> MResult<Value> {
+  let input_values = function_args.input_values();
+  let function = factory(function_args)?;
+  let output = function.out();
+
+  state.plan.register_function(function, &input_values)?;
+
+  Ok(output)
+}
+
+#[cfg(all(test, feature = "program", feature = "functions", feature = "symbol_table", feature = "f64"))]
+mod bytecode_dependency_tests {
+  use super::*;
+
+  struct BytecodeDependencyTestFunction {
+    output: Value,
+  }
+
+  impl MechFunctionImpl for BytecodeDependencyTestFunction {
+    fn solve(&self) {}
+
+    fn out(&self) -> Value {
+      self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+      "bytecode-dependency-test".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for BytecodeDependencyTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  fn bytecode_dependency_test_factory(
+    args: FunctionArgs,
+  ) -> MResult<Box<dyn MechFunction>> {
+    let output = match args {
+      FunctionArgs::Nullary(output)
+      | FunctionArgs::Unary(output, _)
+      | FunctionArgs::Binary(output, _, _)
+      | FunctionArgs::Ternary(output, _, _, _)
+      | FunctionArgs::Quaternary(output, _, _, _, _)
+      | FunctionArgs::Variadic(output, _) => output,
+    };
+
+    Ok(Box::new(BytecodeDependencyTestFunction { output }))
+  }
+
+  fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    let cell = Ref::new(value);
+    let id = ReactiveCellId::new(cell.id());
+    (Value::F64(cell), id)
+  }
+
+  #[test]
+  fn bytecode_nullary_registration_has_no_inputs() {
+    let state = ProgramState::new();
+    let (output, output_cell) = scalar(1.0);
+
+    let result = register_bytecode_function(
+      &state,
+      bytecode_dependency_test_factory,
+      FunctionArgs::Nullary(output.clone()),
+    )
+    .unwrap();
+
+    let plan = state.plan.borrow();
+    let node = plan.node(0).unwrap();
+    assert_eq!(plan.len(), 1);
+    assert!(node.inputs.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
+    assert!(node.outputs.contains(&output_cell));
+    assert_eq!(result.reactive_cell_ids(), output.reactive_cell_ids());
+  }
+
+  #[test]
+  fn bytecode_unary_registration_indexes_operand() {
+    let state = ProgramState::new();
+    let (output, output_cell) = scalar(1.0);
+    let (input, input_cell) = scalar(2.0);
+
+    register_bytecode_function(
+      &state,
+      bytecode_dependency_test_factory,
+      FunctionArgs::Unary(output, input),
+    )
+    .unwrap();
+
+    let plan = state.plan.borrow();
+    let node = plan.node(0).unwrap();
+    assert_eq!(node.inputs.len(), 1);
+    assert_eq!(node.inputs[0].cell, input_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Reactive);
+    assert_eq!(plan.reactive_consumers_for(input_cell), &[0]);
+    assert!(!node.inputs.iter().any(|dependency| dependency.cell == output_cell));
+    assert!(node.outputs.contains(&output_cell));
+  }
+
+  #[test]
+  fn bytecode_binary_registration_preserves_operand_order() {
+    let state = ProgramState::new();
+    let (output, _) = scalar(1.0);
+    let (lhs, lhs_cell) = scalar(2.0);
+    let (rhs, rhs_cell) = scalar(3.0);
+
+    register_bytecode_function(
+      &state,
+      bytecode_dependency_test_factory,
+      FunctionArgs::Binary(output, lhs, rhs),
+    )
+    .unwrap();
+
+    let plan = state.plan.borrow();
+    let node = plan.node(0).unwrap();
+    assert_eq!(
+      node.inputs.iter().map(|dependency| dependency.cell).collect::<Vec<_>>(),
+      vec![lhs_cell, rhs_cell],
+    );
+    assert!(node.inputs.iter().all(|dependency| {
+      dependency.kind == ReactiveDependencyKind::Reactive
+    }));
+    assert_eq!(plan.reactive_consumers_for(lhs_cell), &[0]);
+    assert_eq!(plan.reactive_consumers_for(rhs_cell), &[0]);
+  }
+
+  #[test]
+  fn bytecode_variadic_registration_preserves_all_inputs() {
+    let state = ProgramState::new();
+    let (output, _) = scalar(1.0);
+    let (first, first_cell) = scalar(2.0);
+    let (second, second_cell) = scalar(3.0);
+    let (third, third_cell) = scalar(4.0);
+
+    register_bytecode_function(
+      &state,
+      bytecode_dependency_test_factory,
+      FunctionArgs::Variadic(output, vec![first, second, third]),
+    )
+    .unwrap();
+
+    let plan = state.plan.borrow();
+    let node = plan.node(0).unwrap();
+    assert_eq!(
+      node.inputs.iter().map(|dependency| dependency.cell).collect::<Vec<_>>(),
+      vec![first_cell, second_cell, third_cell],
+    );
+  }
+
+  #[test]
+  fn bytecode_registration_deduplicates_alias_operands() {
+    let state = ProgramState::new();
+    let (output, _) = scalar(1.0);
+    let (input, input_cell) = scalar(2.0);
+
+    register_bytecode_function(
+      &state,
+      bytecode_dependency_test_factory,
+      FunctionArgs::Binary(output, input.clone(), input),
+    )
+    .unwrap();
+
+    let plan = state.plan.borrow();
+    let node = plan.node(0).unwrap();
+    assert_eq!(node.inputs.len(), 1);
+    assert_eq!(node.inputs[0].cell, input_cell);
+    assert_eq!(plan.reactive_consumers_for(input_cell), &[0]);
   }
 }
 
