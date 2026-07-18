@@ -482,6 +482,64 @@ fn register_initialized_expression_function(
   Ok(function.out())
 }
 
+#[cfg(feature = "functions")]
+fn register_expression_function_batch(
+  plan: &Plan,
+  functions: Vec<(Box<dyn MechFunction>, Vec<Value>)>,
+) -> MResult<()> {
+  for (function, arguments) in functions {
+    plan.register_function(function, &arguments)?;
+  }
+  Ok(())
+}
+
+#[cfg(all(test, feature = "functions", feature = "f64"))]
+mod indexed_expression_registration_tests {
+  use super::*;
+  use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+  struct IndexedExpressionTestFunction { output: Value, solve_calls: Arc<AtomicUsize> }
+  impl MechFunctionImpl for IndexedExpressionTestFunction {
+    fn solve(&self) { self.solve_calls.fetch_add(1, Ordering::SeqCst); }
+    fn out(&self) -> Value { self.output.clone() }
+    fn to_string(&self) -> String { "indexed-expression-test".to_string() }
+  }
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for IndexedExpressionTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+  }
+  fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    let reference = Ref::new(value); let cell = ReactiveCellId::new(reference.id());
+    (Value::F64(reference), cell)
+  }
+  fn function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+    Box::new(IndexedExpressionTestFunction { output, solve_calls: calls })
+  }
+  #[test]
+  fn indexed_expression_registration_records_dependencies() {
+    let plan = Plan::new(); let (first, a) = scalar(1.0); let (second, b) = scalar(2.0); let (third, c) = scalar(3.0); let (output, out) = scalar(4.0); let calls = Arc::new(AtomicUsize::new(0));
+    let result = register_initialized_expression_function(&plan, function(output, calls.clone()), &[first, second, third]).unwrap();
+    let plan_borrow = plan.borrow(); let node = plan_borrow.node(0).unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 1); assert_eq!(result.reactive_cell_ids(), vec![out]);
+    assert_eq!(node.inputs.iter().map(|d| d.cell).collect::<Vec<_>>(), vec![a,b,c]);
+    assert!(node.inputs.iter().all(|d| d.kind == ReactiveDependencyKind::Reactive));
+    for cell in [a,b,c] { assert_eq!(plan_borrow.reactive_consumers_for(cell), &[0]); assert!(plan_borrow.sampled_consumers_for(cell).is_empty()); }
+    assert!(node.outputs.contains(&out)); assert!(!node.inputs.iter().any(|d| d.cell == out));
+  }
+  #[test]
+  fn indexed_expression_registration_deduplicates_aliases() {
+    let plan=Plan::new(); let (input, cell)=scalar(1.0); let (output,_)=scalar(2.0); let calls=Arc::new(AtomicUsize::new(0));
+    register_initialized_expression_function(&plan, function(output,calls.clone()), &[input.clone(),input]).unwrap();
+    let p=plan.borrow(); assert_eq!(calls.load(Ordering::SeqCst),1); assert_eq!(p.node(0).unwrap().inputs.len(),1); assert_eq!(p.reactive_consumers_for(cell),&[0]);
+  }
+  #[test]
+  fn binary_term_batch_registration_preserves_order_and_edges() {
+    let plan=Plan::new(); let (a,ac)=scalar(1.0); let (b,bc)=scalar(2.0); let (c,cc)=scalar(3.0); let (mid,mc)=scalar(4.0); let (final_out,fc)=scalar(5.0); let first=Arc::new(AtomicUsize::new(0)); let second=Arc::new(AtomicUsize::new(0)); let f1=function(mid.clone(),first.clone()); let f2=function(final_out,second.clone()); f1.solve(); f2.solve();
+    register_expression_function_batch(&plan,vec![(f1,vec![a,b]),(f2,vec![mid,c])]).unwrap(); let p=plan.borrow();
+    assert_eq!(p.len(),2); assert_eq!(p.node(0).unwrap().inputs.iter().map(|d|d.cell).collect::<Vec<_>>(),vec![ac,bc]); assert_eq!(p.node(1).unwrap().inputs.iter().map(|d|d.cell).collect::<Vec<_>>(),vec![mc,cc]); assert!(p.node(1).unwrap().outputs.contains(&fc)); assert_eq!(p.reactive_consumers_for(mc),&[1]); assert_eq!(first.load(Ordering::SeqCst),1); assert_eq!(second.load(Ordering::SeqCst),1);
+  }
+}
+
 #[cfg(feature = "range")]
 pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
@@ -1622,9 +1680,10 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
 pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut lhs = factor(&trm.lhs, env, p)?;
-  let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
+  let mut term_plan: Vec<(Box<dyn MechFunction>, Vec<Value>)> = Vec::new();
   for (op, rhs) in &trm.rhs {
     let rhs = factor(&rhs, env, p)?;
+    let dependency_arguments = vec![lhs.clone(), rhs.clone()];
     #[cfg(feature = "subscript_formula")]
     let new_fxn_is_live = current_string_access_expression_live(p)
       || string_access_input_is_live(&lhs, p)
@@ -1757,12 +1816,11 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       mark_current_string_access_expression_live(p);
       mark_string_access_value_live(p, &res);
     }
-    term_plan.push(new_fxn);
+    term_plan.push((new_fxn, dependency_arguments));
     lhs = res;
   }
-  let mut plan_brrw = plan.borrow_mut();
-  plan_brrw.append(&mut term_plan);
-  return Ok(lhs);
+  register_expression_function_batch(&plan, term_plan)?;
+  Ok(lhs)
 }
 
 #[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
