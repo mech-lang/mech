@@ -858,11 +858,11 @@ pub fn subscript(
                     let shape = result.shape();
                     fxn_input.push(result);
                     match shape[..] {
-                        [1, 1] => plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -922,11 +922,11 @@ pub fn subscript(
                     let shape = index_arg.shape();
                     fxn_input.push(index_arg);
                     match shape[..] {
-                        [1, 1] => plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -953,21 +953,13 @@ pub fn subscript(
                     fxn_input.push(result);
                     match ((shape1[0], shape1[1]), (shape2[0], shape2[1])) {
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (1, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarScalar {}.compile(&fxn_input)?),
+                        ((1, 1), (1, 1)) => { plan.borrow_mut().push(MatrixAccessScalarScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (m, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarRange {}.compile(&fxn_input)?),
+                        ((1, 1), (m, 1)) => { plan.borrow_mut().push(MatrixAccessScalarRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (1, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeScalar {}.compile(&fxn_input)?),
+                        ((n, 1), (1, 1)) => { plan.borrow_mut().push(MatrixAccessRangeScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (m, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        ((n, 1), (m, 1)) => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         _ => unreachable!(),
                     }
                 }
@@ -989,17 +981,11 @@ pub fn subscript(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessAllScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessAllScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessAllRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessAllRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessAllRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessAllRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1011,17 +997,11 @@ pub fn subscript(
                     fxn_input.push(Value::IndexAll);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarAll {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessScalarAll {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeAll {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeAll {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeAll {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeAll {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1034,17 +1014,11 @@ pub fn subscript(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessRangeScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1057,17 +1031,11 @@ pub fn subscript(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarRange {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessScalarRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }

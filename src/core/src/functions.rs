@@ -355,9 +355,80 @@ impl ReactivePlan {
       sampled_consumers: HashMap::new(),
     }
   }
+
+  pub fn len(&self) -> usize {
+    self.nodes.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.nodes.is_empty()
+  }
+
+  pub fn clear(&mut self) {
+    self.nodes.clear();
+    self.reactive_consumers.clear();
+    self.sampled_consumers.clear();
+  }
+
+  pub fn iter(&self) -> impl Iterator<Item = &Box<dyn MechFunction>> {
+    self.nodes.iter().map(|node| &node.function)
+  }
+
+  pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Box<dyn MechFunction>> {
+    self.nodes.iter_mut().map(|node| &mut node.function)
+  }
+
+  pub fn last(&self) -> Option<&Box<dyn MechFunction>> {
+    self.nodes.last().map(|node| &node.function)
+  }
+
+  pub fn append(&mut self, functions: &mut Vec<Box<dyn MechFunction>>) {
+    for function in functions.drain(..) {
+      self.push(function);
+    }
+  }
+
+  pub fn push(&mut self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
+    let node_id = self.nodes.len();
+    let mut outputs = Vec::<ReactiveCellId>::new();
+
+    for output in function.reactive_output_values() {
+      for cell in output.reactive_cell_ids() {
+        if !outputs.contains(&cell) {
+          outputs.push(cell);
+        }
+      }
+    }
+
+    let node = ReactivePlanNode {
+      id: node_id,
+      plan_index: node_id,
+      inputs: Vec::new(),
+      outputs,
+      kind: function.reactive_node_kind(),
+      function,
+    };
+
+    self.nodes.push(node);
+    node_id
+  }
 }
 
-pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
+impl core::ops::Index<usize> for ReactivePlan {
+  type Output = Box<dyn MechFunction>;
+
+  fn index(&self, index: usize) -> &Self::Output {
+    &self.nodes[index].function
+  }
+}
+
+impl core::ops::IndexMut<usize> for ReactivePlan {
+  fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+    &mut self.nodes[index].function
+  }
+}
+
+pub struct Plan(pub Ref<ReactivePlan>);
 
 impl Clone for Plan {
   fn clone(&self) -> Self { Plan(self.0.clone()) }
@@ -365,7 +436,7 @@ impl Clone for Plan {
 
 impl fmt::Debug for Plan {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    for p in &(*self.0.borrow()) {
+    for p in self.0.borrow().iter() {
       writeln!(f, "{}", p.to_string())?;
     }
     Ok(())
@@ -373,13 +444,33 @@ impl fmt::Debug for Plan {
 }
 
 impl Plan {
-  pub fn new() -> Self { Plan(Ref::new(vec![])) }
-  pub fn borrow(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
-  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow_mut() }
-  pub fn add_function(&self, func: Box<dyn MechFunction>) { self.0.borrow_mut().push(func); }
-  pub fn get_functions(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
-  pub fn len(&self) -> usize { self.0.borrow().len() }
-  pub fn is_empty(&self) -> bool { self.0.borrow().is_empty() }
+  pub fn new() -> Self {
+    Self(Ref::new(ReactivePlan::new()))
+  }
+
+  pub fn borrow(&self) -> std::cell::Ref<'_, ReactivePlan> {
+    self.0.borrow()
+  }
+
+  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, ReactivePlan> {
+    self.0.borrow_mut()
+  }
+
+  pub fn add_function(&self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
+    self.0.borrow_mut().push(function)
+  }
+
+  pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
+    self.0.borrow()
+  }
+
+  pub fn len(&self) -> usize {
+    self.0.borrow().len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.0.borrow().is_empty()
+  }
 }
 
 #[cfg(feature = "pretty_print")]
@@ -394,7 +485,6 @@ impl PrettyPrint for Plan {
       let total = plan_brrw.len();
       let mut display_fxns: Vec<String> = Vec::new();
 
-      // Determine which functions to display
       let indices: Vec<usize> = if total > 30 {
           (0..10).chain((total - 10)..total).collect()
       } else {
@@ -407,9 +497,9 @@ impl PrettyPrint for Plan {
 
         let truncated = if lines.len() > 20 {
           let mut t = Vec::new();
-          t.extend_from_slice(&lines[..10]);           // first 10
-          t.push("…");                                 // ellipsis
-          t.extend_from_slice(&lines[lines.len()-10..]); // last 10
+          t.extend_from_slice(&lines[..10]);
+          t.push("…");
+          t.extend_from_slice(&lines[lines.len()-10..]);
           t.join("\n")
         } else {
           lines.join("\n")
@@ -418,12 +508,10 @@ impl PrettyPrint for Plan {
         display_fxns.push(format!("{}. {}", ix + 1, truncated));
       }
 
-      // Insert ellipsis for skipped functions
       if total > 30 {
         display_fxns.insert(10, "…".to_string());
       }
 
-      // Push rows in chunks of 4 (like before)
       let mut row: Vec<String> = Vec::new();
       for plan_str in display_fxns {
         row.push(plan_str);
@@ -433,6 +521,9 @@ impl PrettyPrint for Plan {
         }
       }
       if !row.is_empty() {
+        while row.len() < 4 {
+          row.push("".to_string());
+        }
         builder.push_record(row);
       }
     }
@@ -445,6 +536,111 @@ impl PrettyPrint for Plan {
   }
 }
 
+#[cfg(test)]
+mod reactive_plan_tests {
+  use super::*;
+
+  struct TestFunction {
+    name: &'static str,
+    output: Value,
+  }
+
+  impl TestFunction {
+    fn new(name: &'static str) -> Self {
+      Self { name, output: Value::Empty }
+    }
+
+    #[cfg(feature = "f64")]
+    fn with_output(name: &'static str, output: Value) -> Self {
+      Self { name, output }
+    }
+  }
+
+  impl MechFunctionImpl for TestFunction {
+    fn solve(&self) {}
+
+    fn out(&self) -> Value {
+      self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+      self.name.to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for TestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  #[test]
+  fn reactive_plan_push_creates_one_node() {
+    let mut plan = ReactivePlan::new();
+    plan.push(Box::new(TestFunction::new("first")));
+
+    assert_eq!(plan.nodes.len(), 1);
+    assert_eq!(plan.nodes[0].id, 0);
+    assert_eq!(plan.nodes[0].plan_index, 0);
+  }
+
+  #[test]
+  fn reactive_plan_preserves_insertion_order() {
+    let mut plan = ReactivePlan::new();
+    plan.push(Box::new(TestFunction::new("first")));
+    plan.push(Box::new(TestFunction::new("second")));
+
+    let names = plan.iter().map(|function| function.to_string()).collect::<Vec<_>>();
+    assert_eq!(names, vec!["first".to_string(), "second".to_string()]);
+    assert_eq!(plan[0].to_string(), "first");
+    assert_eq!(plan[1].to_string(), "second");
+  }
+
+  #[test]
+  fn reactive_plan_node_is_only_function_owner() {
+    let mut plan = ReactivePlan::new();
+    plan.push(Box::new(TestFunction::new("first")));
+    plan.push(Box::new(TestFunction::new("second")));
+
+    assert_eq!(plan.len(), plan.nodes.len());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn reactive_plan_records_output_cells() {
+    let output = Ref::new(42.0);
+    let mut plan = ReactivePlan::new();
+    plan.push(Box::new(TestFunction::with_output("output", Value::F64(output.clone()))));
+
+    assert!(plan.nodes[0].outputs.contains(&ReactiveCellId::new(output.id())));
+  }
+
+  #[test]
+  fn reactive_plan_clone_shares_storage() {
+    let plan = Plan::new();
+    let clone = plan.clone();
+
+    plan.add_function(Box::new(TestFunction::new("shared")));
+
+    assert_eq!(plan.len(), 1);
+    assert_eq!(clone.len(), 1);
+  }
+
+  #[test]
+  fn reactive_plan_clear_removes_nodes_and_indexes() {
+    let mut plan = ReactivePlan::new();
+    plan.push(Box::new(TestFunction::new("first")));
+    plan.reactive_consumers.insert(ReactiveCellId::new(1), vec![0]);
+    plan.sampled_consumers.insert(ReactiveCellId::new(2), vec![0]);
+
+    plan.clear();
+
+    assert!(plan.nodes.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
+  }
+}
 
 
 // Function Registry
