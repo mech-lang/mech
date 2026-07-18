@@ -183,7 +183,7 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      new_fxn.solve_result()?;           // run the function once to initialise its output
+      new_fxn.solve();                   // run the function once to initialise its output
       let result = new_fxn.out();
       trace_println!(
         p,
@@ -979,6 +979,50 @@ mod native_dependency_tests {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
       Ok(0)
     }
+  }
+
+  #[derive(Debug, Clone)]
+  struct DeferredNativeSolveError;
+
+  impl MechErrorKind for DeferredNativeSolveError {
+    fn name(&self) -> &str { "DeferredNativeSolveError" }
+    fn message(&self) -> String { "deferred native solve error".to_string() }
+  }
+
+  struct DeferredNativeSolveCompiler { solve_calls: Arc<std::sync::atomic::AtomicUsize> }
+  struct DeferredNativeSolveFunction { output: Value, solve_calls: Arc<std::sync::atomic::AtomicUsize> }
+
+  impl NativeFunctionCompiler for DeferredNativeSolveCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(DeferredNativeSolveFunction { output: Value::F64(Ref::new(2.0)), solve_calls: self.solve_calls.clone() }))
+    }
+  }
+  impl MechFunctionImpl for DeferredNativeSolveFunction {
+    fn solve(&self) { self.solve_calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst); }
+    fn solve_result(&self) -> MResult<()> { Err(MechError::new(DeferredNativeSolveError, None)) }
+    fn out(&self) -> Value { self.output.clone() }
+    fn to_string(&self) -> String { "deferred-native-solve".to_string() }
+  }
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for DeferredNativeSolveFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+  }
+
+  #[test]
+  fn native_registration_defers_solve_result_errors() {
+    let interpreter = Interpreter::new(0, 100);
+    let input = Ref::new(1.0);
+    let input_cell = ReactiveCellId::new(input.id());
+    let arguments = vec![Value::F64(input)];
+    let solve_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    assert!(execute_native_function_compiler(Arc::new(DeferredNativeSolveCompiler { solve_calls: solve_calls.clone() }), &arguments, &interpreter).is_ok());
+    assert_eq!(solve_calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.last().unwrap();
+    assert!(plan.nodes.last().unwrap().inputs.iter().any(|dependency| dependency.cell == input_cell));
+    assert!(plan.nodes.last().unwrap().function.solve_result().unwrap_err().to_string().contains("DeferredNativeSolveError"));
+    assert_eq!(plan.len(), 1);
   }
 
   #[test]

@@ -469,40 +469,50 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) 
     }
 }
 
+#[cfg(feature = "functions")]
+fn register_initialized_expression_function(
+  plan: &Plan,
+  function: Box<dyn MechFunction>,
+  arguments: &[Value],
+) -> MResult<Value> {
+  let node_id = plan.register_function(function, arguments)?;
+  let plan_borrow = plan.borrow();
+  let function = &plan_borrow[node_id];
+  function.solve();
+  Ok(function.out())
+}
+
 #[cfg(feature = "range")]
 pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-    let plan = p.plan();
-    let start = factor(&rng.start, env, p)?;
-    let terminal = factor(&rng.terminal, env, p)?;
-    let new_fxn = match &rng.increment {
-        Some((_, inc)) => {
-            let step = factor(inc, env, p)?;
-            match &rng.operator {
-                #[cfg(feature = "range_exclusive")]
-                RangeOp::Exclusive => {
-                    RangeIncrementExclusive {}.compile(&vec![start, step, terminal])?
-                }
-                #[cfg(feature = "range_inclusive")]
-                RangeOp::Inclusive => {
-                    RangeIncrementInclusive {}.compile(&vec![start, step, terminal])?
-                }
-                x => unreachable!(),
-            }
-        }
-        None => match &rng.operator {
-            #[cfg(feature = "range_exclusive")]
-            RangeOp::Exclusive => RangeExclusive {}.compile(&vec![start, terminal])?,
-            #[cfg(feature = "range_inclusive")]
-            RangeOp::Inclusive => RangeInclusive {}.compile(&vec![start, terminal])?,
-            x => unreachable!(),
-        },
-    };
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.push(new_fxn);
-    let step = plan_brrw.last().unwrap();
-    step.solve();
-    let res = step.out();
-    Ok(res)
+  let plan = p.plan();
+  let start = factor(&rng.start, env, p)?;
+  let terminal = factor(&rng.terminal, env, p)?;
+  let (function, arguments) = match &rng.increment {
+    Some((_, increment)) => {
+      let step = factor(increment, env, p)?;
+      let arguments = vec![start, step, terminal];
+      let function = match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeIncrementExclusive {}.compile(&arguments)?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeIncrementInclusive {}.compile(&arguments)?,
+        _ => unreachable!(),
+      };
+      (function, arguments)
+    }
+    None => {
+      let arguments = vec![start, terminal];
+      let function = match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeExclusive {}.compile(&arguments)?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeInclusive {}.compile(&arguments)?,
+        _ => unreachable!(),
+      };
+      (function, arguments)
+    }
+  };
+  register_initialized_expression_function(&plan, function, &arguments)
 }
 
 fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
@@ -1560,15 +1570,15 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
       let value = factor(neg, env, p)?;
       #[cfg(feature = "subscript_formula")]
       let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
-      let new_fxn = MathNegate {}.compile(&vec![value])?;
-      new_fxn.solve();
-      let out = new_fxn.out();
+      let arguments = vec![value];
+      let function = MathNegate {}.compile(&arguments)?;
+      let plan = p.plan();
+      let out = register_initialized_expression_function(&plan, function, &arguments)?;
       #[cfg(feature = "subscript_formula")]
       if value_is_live {
         mark_current_string_access_expression_live(p);
         mark_string_access_value_live(p, &out);
       }
-      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     #[cfg(feature = "logic_not")]
@@ -1576,15 +1586,15 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
       let value = factor(neg, env, p)?;
       #[cfg(feature = "subscript_formula")]
       let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
-      let new_fxn = LogicNot {}.compile(&vec![value])?;
-      new_fxn.solve();
-      let out = new_fxn.out();
+      let arguments = vec![value];
+      let function = LogicNot {}.compile(&arguments)?;
+      let plan = p.plan();
+      let out = register_initialized_expression_function(&plan, function, &arguments)?;
       #[cfg(feature = "subscript_formula")]
       if value_is_live {
         mark_current_string_access_expression_live(p);
         mark_string_access_value_live(p, &out);
       }
-      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     #[cfg(feature = "matrix_transpose")]
@@ -1593,15 +1603,15 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
       let value = factor(fctr, env, p)?;
       #[cfg(feature = "subscript_formula")]
       let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
-      let new_fxn = MatrixTranspose {}.compile(&vec![value])?;
-      new_fxn.solve();
-      let out = new_fxn.out();
+      let arguments = vec![value];
+      let function = MatrixTranspose {}.compile(&arguments)?;
+      let plan = p.plan();
+      let out = register_initialized_expression_function(&plan, function, &arguments)?;
       #[cfg(feature = "subscript_formula")]
       if value_is_live {
         mark_current_string_access_expression_live(p);
         mark_string_access_value_live(p, &out);
       }
-      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     _ => todo!(),
