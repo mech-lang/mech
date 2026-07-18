@@ -11,7 +11,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
 
 use crate::{
-    TIMER_PATHS,
+    timer_source_matches,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config,
@@ -72,7 +72,7 @@ impl<B: MonotonicTimerBackend> BrowserTimerInputDriver<B> {
 }
 impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDriver<B> {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-        source.base_uri() == format!("timer://{}/tick", self.instance) && TIMER_PATHS.contains(&source.path())
+        timer_source_matches(&self.instance, source)
     }
 
     fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {

@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use mech_core::MResult;
 use mech_runtime::{RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress};
 
-use crate::{CLOCK_PATHS, time_error, SharedTimeSnapshot, TimeSnapshot};
+use crate::{time_source_matches, time_error, SharedTimeSnapshot, TimeSnapshot};
 
 #[derive(Clone, Debug)]
 pub struct ManualTimeInputDriver {
@@ -33,7 +33,7 @@ impl ManualTimeInputDriver {
 
 impl RuntimeHostInputDriver for ManualTimeInputDriver {
   fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-    source.base_uri() == format!("time://{}/clock", self.instance) && CLOCK_PATHS.contains(&source.path())
+    time_source_matches(&self.instance, source)
   }
 
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {

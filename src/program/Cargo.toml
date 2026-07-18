@@ -72,6 +72,9 @@ stdlib = ["bool", "string",
       "functions", "formulas"
     ]
 
+sample_hold = ["mech-interpreter/sample_hold"]
+state_step = ["mech-interpreter/state_step"]
+
 baselib = ["bool", "string", 
       "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",

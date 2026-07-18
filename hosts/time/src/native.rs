@@ -8,7 +8,7 @@ use chrono::{Local, Timelike};
 use mech_core::MResult;
 use mech_runtime::{materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress};
 
-use crate::{CLOCK_PATHS, new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
+use crate::{time_source_matches, new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeTimeBackend;
@@ -77,7 +77,7 @@ where
   B: TimeBackend + Send + Sync,
 {
   fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-    source.base_uri() == format!("time://{}/clock", self.instance) && CLOCK_PATHS.contains(&source.path())
+    time_source_matches(&self.instance, source)
   }
 
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {

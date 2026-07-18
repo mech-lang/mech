@@ -12,7 +12,7 @@ use mech_runtime::{
 };
 
 use crate::{
-    TIMER_PATHS,
+    timer_source_matches,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config,
@@ -77,7 +77,7 @@ impl<B: MonotonicTimerBackend + Send + Sync> NativeTimerInputDriver<B> {
 }
 impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTimerInputDriver<B> {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-        source.base_uri() == format!("timer://{}/tick", self.instance) && TIMER_PATHS.contains(&source.path())
+        timer_source_matches(&self.instance, source)
     }
 
     fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {

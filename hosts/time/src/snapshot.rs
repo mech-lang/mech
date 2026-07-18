@@ -3,6 +3,14 @@ use std::sync::{Arc, Mutex};
 use mech_core::MResult;
 use mech_runtime::{RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue};
 
+pub fn time_input_base_uri(instance: &str) -> String {
+  format!("time://{instance}/clock")
+}
+
+pub fn time_source_matches(instance: &str, source: &RuntimeHostInputSource) -> bool {
+  source.base_uri() == time_input_base_uri(instance) && CLOCK_PATHS.contains(&source.path())
+}
+
 pub const CLOCK_PATHS: [&str; 5] = ["unix-ms", "hour", "minute", "second", "millisecond"];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -16,7 +24,7 @@ pub struct TimeSnapshot {
 
 impl TimeSnapshot {
   pub fn into_host_input(self, instance: &str) -> MResult<RuntimeHostInput> {
-    let base_uri = format!("time://{instance}/clock");
+    let base_uri = time_input_base_uri(instance);
     let values = [self.unix_ms, self.hour, self.minute, self.second, self.millisecond];
     let mut updates = Vec::with_capacity(CLOCK_PATHS.len());
     for (path, value) in CLOCK_PATHS.iter().zip(values) {

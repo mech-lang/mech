@@ -90,6 +90,9 @@ statements_default = ["variable_assign","variable_define","invariant_define","ki
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing",
     "mech-core/subscript_default", "mech-set/subscript_default", "mech-math/subscript_default", "mech-compare/subscript_default", "mech-logic/subscript_default", "mech-matrix/subscript_default", "mech-range/subscript_default", "mech-string/subscript_default"]
 
+sample_hold = []
+state_step = []
+
 stdlib = ["bool", "string", 
   "u8", "u16", "u32", "u64", "u128", 
   "i8", "i16", "i32", "i64", "i128", 

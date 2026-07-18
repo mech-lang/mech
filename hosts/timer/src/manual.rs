@@ -5,7 +5,7 @@ use mech_core::MResult;
 use mech_runtime::{RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress};
 
 use crate::{
-    TIMER_PATHS,
+    timer_source_matches,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerSnapshot,
     new_shared_snapshot, timer_error,
 };
@@ -140,7 +140,7 @@ impl ManualTimerInputDriver {
 
 impl RuntimeHostInputDriver for ManualTimerInputDriver {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-    source.base_uri() == format!("timer://{}/tick", self.instance) && TIMER_PATHS.contains(&source.path())
+    timer_source_matches(&self.instance, source)
   }
 
   fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
