@@ -3,7 +3,7 @@ use crate::value::*;
 use crate::nodes::*;
 use crate::*;
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap, HashSet};
 #[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
 use std::rc::Rc;
@@ -392,6 +392,14 @@ pub enum ReactiveSolveStatus {
   Unchanged,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReactivePlanSolveOutcome {
+  pub executed_nodes: Vec<ReactiveNodeId>,
+  pub changed_nodes: Vec<ReactiveNodeId>,
+  pub unchanged_nodes: Vec<ReactiveNodeId>,
+  pub pending_register_nodes: Vec<ReactiveNodeId>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReactiveDependency {
   pub cell: ReactiveCellId,
@@ -677,6 +685,53 @@ impl ReactivePlan {
       .map(Vec::as_slice)
       .unwrap_or(&[])
   }
+
+  pub fn solve_dirty_cells(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+  ) -> MResult<ReactivePlanSolveOutcome> {
+    let dirty_cells = dirty_cells.iter().copied().collect::<HashSet<_>>();
+    let mut work = BTreeSet::new();
+    let mut processed = BTreeSet::new();
+    let mut outcome = ReactivePlanSolveOutcome::default();
+
+    for cell in dirty_cells.iter().copied() {
+      for node_id in self.reactive_consumers_for(cell) {
+        let node = &self.nodes[*node_id];
+        work.insert((node.plan_index, node.id));
+      }
+    }
+
+    while let Some((_, node_id)) = work.pop_first() {
+      if !processed.insert(node_id) {
+        continue;
+      }
+
+      let node = &self.nodes[node_id];
+      if node.kind == ReactiveNodeKind::Register {
+        outcome.pending_register_nodes.push(node.id);
+        continue;
+      }
+
+      let status = node.function.solve_reactive()?;
+      outcome.executed_nodes.push(node.id);
+      match status {
+        ReactiveSolveStatus::Changed => {
+          outcome.changed_nodes.push(node.id);
+          let outputs = node.outputs.clone();
+          for cell in outputs {
+            for consumer_id in self.reactive_consumers_for(cell) {
+              let consumer = &self.nodes[*consumer_id];
+              work.insert((consumer.plan_index, consumer.id));
+            }
+          }
+        }
+        ReactiveSolveStatus::Unchanged => outcome.unchanged_nodes.push(node.id),
+      }
+    }
+
+    Ok(outcome)
+  }
 }
 
 impl core::ops::Index<usize> for ReactivePlan {
@@ -736,6 +791,13 @@ impl Plan {
         function,
         arguments,
       )
+  }
+
+  pub fn solve_dirty_cells(
+    &self,
+    dirty_cells: &[ReactiveCellId],
+  ) -> MResult<ReactivePlanSolveOutcome> {
+    self.0.borrow_mut().solve_dirty_cells(dirty_cells)
   }
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
@@ -1379,6 +1441,68 @@ mod reactive_plan_tests {
     assert_eq!(node.kind, ReactiveNodeKind::Register);
     assert!(node.outputs.contains(&output_cell));
   }
+
+  #[cfg(feature = "f64")]
+  struct SchedulerFunction {
+    label: &'static str, output: Value, kind: ReactiveNodeKind,
+    status: ReactiveSolveStatus, count: Rc<RefCell<usize>>, log: Rc<RefCell<Vec<&'static str>>>, error: bool,
+  }
+  #[cfg(feature = "f64")]
+  impl MechFunctionImpl for SchedulerFunction {
+    fn solve(&self) {}
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+      *self.count.borrow_mut() += 1; self.log.borrow_mut().push(self.label);
+      if self.error { Err(MechError::new(GenericError { msg: self.label.into() }, None)) } else { Ok(self.status) }
+    }
+    fn out(&self) -> Value { self.output.clone() }
+    fn reactive_node_kind(&self) -> ReactiveNodeKind { self.kind }
+    fn to_string(&self) -> String { self.label.into() }
+  }
+  #[cfg(all(feature = "f64", feature = "compiler"))]
+  impl MechFunctionCompiler for SchedulerFunction { fn compile(&self, _: &mut CompileCtx) -> MResult<Register> { Ok(0) } }
+
+  #[cfg(feature = "f64")]
+  fn scheduler_node(plan: &mut ReactivePlan, label: &'static str, inputs: &[Value], kind: ReactiveNodeKind, status: ReactiveSolveStatus, log: Rc<RefCell<Vec<&'static str>>>, error: bool) -> (ReactiveNodeId, Value, Rc<RefCell<usize>>) {
+    let output = Value::F64(Ref::new(0.0)); let count = Rc::new(RefCell::new(0));
+    let function = SchedulerFunction { label, output: output.clone(), kind, status, count: count.clone(), log, error };
+    (plan.register(Box::new(function), inputs).unwrap(), output, count)
+  }
+  #[cfg(feature = "f64")]
+  fn scheduler_source() -> Value { Value::F64(Ref::new(0.0)) }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn reactive_dirty_scheduler_runs_linear_chain() {
+    let mut p=ReactivePlan::new(); let l=Rc::new(RefCell::new(vec![])); let d=scheduler_source();
+    let (a,ao,_)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);
+    let (b,bo,_)=scheduler_node(&mut p,"B",&[ao],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);
+    let (c,_,_)=scheduler_node(&mut p,"C",&[bo],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);
+    let o=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap(); assert_eq!(o.executed_nodes,vec![a,b,c]); assert_eq!(o.changed_nodes,vec![a,b,c]); assert!(o.unchanged_nodes.is_empty()&&o.pending_register_nodes.is_empty()); assert_eq!(*l.borrow(),vec!["A","B","C"]);
+  }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_orders_independent_branches_by_plan_index() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let x=scheduler_source();let y=scheduler_source();let(a,_,_)=scheduler_node(&mut p,"A",&[x.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);let(b,_,_)=scheduler_node(&mut p,"B",&[y.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);assert_eq!(p.solve_dirty_cells(&[y.reactive_root_cell_ids()[0],x.reactive_root_cell_ids()[0]]).unwrap().executed_nodes,vec![a,b]); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_skips_unrelated_nodes() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_a,_,_)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);let(u,_,uc)=scheduler_node(&mut p,"U",&[],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let o=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();assert_eq!(*uc.borrow(),0);assert!(!o.executed_nodes.contains(&u)); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_deduplicates_dirty_cells() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,_,c)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let cell=d.reactive_root_cell_ids()[0];p.solve_dirty_cells(&[cell,cell,cell]).unwrap();assert_eq!(*c.borrow(),1); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_executes_fan_in_consumer_once() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let x=scheduler_source();let y=scheduler_source();let(_,lo,_)=scheduler_node(&mut p,"L",&[x.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);let(_,ro,_)=scheduler_node(&mut p,"R",&[y.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),false);let(_,_,c)=scheduler_node(&mut p,"J",&[lo,ro],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);p.solve_dirty_cells(&[x.reactive_root_cell_ids()[0],y.reactive_root_cell_ids()[0]]).unwrap();assert_eq!(*c.borrow(),1); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_propagates_changed_outputs() { reactive_dirty_scheduler_runs_linear_chain(); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_stops_on_unchanged() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(a,ao,ac)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Unchanged,l.clone(),false);let(b,_,bc)=scheduler_node(&mut p,"B",&[ao],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let o=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();assert_eq!(*ac.borrow(),1);assert_eq!(*bc.borrow(),0);assert_eq!(o.unchanged_nodes,vec![a]);assert!(!o.executed_nodes.contains(&b)); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_ignores_sampled_consumers() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(n,_,c)=scheduler_node(&mut p,"R",&[],ReactiveNodeKind::Register,ReactiveSolveStatus::Changed,l,false);p.sampled_consumers.entry(d.reactive_root_cell_ids()[0]).or_default().push(n);let o=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();assert_eq!(*c.borrow(),0);assert!(!o.pending_register_nodes.contains(&n)); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_reports_register_pending_without_execution() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(r,_,c)=scheduler_node(&mut p,"R",&[d.clone()],ReactiveNodeKind::Register,ReactiveSolveStatus::Changed,l,false);let o=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();assert_eq!(o.pending_register_nodes,vec![r]);assert_eq!(*c.borrow(),0);assert!(o.executed_nodes.is_empty()); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_stops_at_register_boundary() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(r,ro,rc)=scheduler_node(&mut p,"R",&[d.clone()],ReactiveNodeKind::Register,ReactiveSolveStatus::Changed,l.clone(),false);let(_,_,dc)=scheduler_node(&mut p,"D",&[ro],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let o=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap();assert_eq!(o.pending_register_nodes,vec![r]);assert_eq!(*rc.borrow(),0);assert_eq!(*dc.borrow(),0); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_dirty_register_output_runs_downstream_only() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(r,ro,rc)=scheduler_node(&mut p,"R",&[d.clone()],ReactiveNodeKind::Register,ReactiveSolveStatus::Changed,l.clone(),false);let(_,_,dc)=scheduler_node(&mut p,"D",&[ro.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let cell=ro.reactive_root_cell_ids()[0];let o=p.solve_dirty_cells(&[cell]).unwrap();assert!(!o.pending_register_nodes.contains(&r));assert_eq!(*rc.borrow(),0);assert_eq!(*dc.borrow(),1); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_stops_on_error() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,ao,ac)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),true);let(_,_,bc)=scheduler_node(&mut p,"B",&[ao],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let e=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap_err();assert!(e.kind_message().contains("A"));assert_eq!(*ac.borrow(),1);assert_eq!(*bc.borrow(),0); }
+  #[cfg(feature = "f64")] #[test]
+  fn reactive_dirty_scheduler_empty_dirty_set_is_noop() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,_,c)=scheduler_node(&mut p,"A",&[d],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);assert_eq!(p.solve_dirty_cells(&[]).unwrap(),ReactivePlanSolveOutcome::default());assert_eq!(*c.borrow(),0); }
 }
 
 
