@@ -292,6 +292,12 @@ macro_rules! impl_assign_scalar_scalar {
             *sink_ptr $op_fn (*source_ptr).clone();
           }
         }
+        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+          let mut next = self.sink.borrow().clone();
+          let source = self.source.borrow().clone();
+          next $op_fn source;
+          Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
+        }
         fn out(&self) -> Value { self.sink.to_value() }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String { format!("{:#?}", self) }
@@ -344,7 +350,7 @@ macro_rules! impl_assign_vector_vector {
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-        MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+        MatA: Debug + Clone + CompileConst + ConstElem + AsValueKind + 'static,
         MatB: Debug + CompileConst + ConstElem + AsValueKind + 'static,
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -365,7 +371,7 @@ macro_rules! impl_assign_vector_vector {
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-        MatA: Debug,
+        MatA: Debug + Clone + 'static,
         MatB: Debug,
       {
         fn solve(&self) {
@@ -378,6 +384,16 @@ macro_rules! impl_assign_vector_vector {
               *dst $op_fn src.clone();
             }
           }
+        }
+        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+          let mut next = self.sink.borrow().clone();
+          {
+            let source = self.source.borrow();
+            for (dst, src) in (&mut next).into_iter().zip((&*source).into_iter()) {
+              *dst $op_fn src.clone();
+            }
+          }
+          Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
         fn out(&self) -> Value {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
@@ -417,7 +433,7 @@ macro_rules! impl_assign_vector_scalar {
         CompileConst + ConstElem + AsValueKind,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-        MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+        MatA: Debug + Clone + CompileConst + ConstElem + AsValueKind + 'static,
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
@@ -440,7 +456,7 @@ macro_rules! impl_assign_vector_scalar {
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-        MatA: Debug,
+        MatA: Debug + Clone + 'static,
       {
         fn solve(&self) {
           unsafe {
@@ -452,6 +468,14 @@ macro_rules! impl_assign_vector_scalar {
               *dst $op_fn source_ref.clone();
             }
           }
+        }
+        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+          let mut next = self.sink.borrow().clone();
+          let source = self.source.borrow().clone();
+          for dst in (&mut next).into_iter() {
+            *dst $op_fn source.clone();
+          }
+          Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
         fn out(&self) -> Value {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }

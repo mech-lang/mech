@@ -82,6 +82,11 @@ where
       *sink_ptr = (*source_ptr).clone();
     }
   }
+  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+    let next = self.source.borrow().clone();
+    let output_cells = self.reactive_output_cell_ids();
+    Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, output_cells)))
+  }
   fn out(&self) -> Value { self.sink.to_value() }
   fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
   fn to_string(&self) -> String { format!("{:#?}", self) }
@@ -140,6 +145,9 @@ impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
 struct AssignEmpty;
 impl MechFunctionImpl for AssignEmpty {
   fn solve(&self) {}
+  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+    Ok(Box::new(ReactiveRegisterNoopCommit::new(self.reactive_output_cell_ids())))
+  }
   fn out(&self) -> Value { Value::Empty }
   fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
   fn to_string(&self) -> String { "AssignEmpty".to_string() }
