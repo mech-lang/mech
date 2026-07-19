@@ -771,6 +771,101 @@ impl Hash for Value {
   }
 }
 impl Value {
+  pub fn reactive_root_cell_ids(&self) -> Vec<ReactiveCellId> {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u16")]
+      Value::U16(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u32")]
+      Value::U32(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u64")]
+      Value::U64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u128")]
+      Value::U128(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i8")]
+      Value::I8(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i16")]
+      Value::I16(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i32")]
+      Value::I32(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i64")]
+      Value::I64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i128")]
+      Value::I128(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "f32")]
+      Value::F32(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "f64")]
+      Value::F64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "complex")]
+      Value::C64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "rational")]
+      Value::R64(v) => vec![ReactiveCellId::new(v.id())],
+      Value::Index(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "atom")]
+      Value::Atom(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "enum")]
+      Value::Enum(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "set")]
+      Value::Set(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "map")]
+      Value::Map(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "record")]
+      Value::Record(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "table")]
+      Value::Table(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "tuple")]
+      Value::Tuple(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      Value::MutableReference(v) => vec![ReactiveCellId::new(v.id())],
+      Value::Typed(value, _) => value.reactive_root_cell_ids(),
+      Value::Id(_)
+      | Value::Kind(_)
+      | Value::IndexAll
+      | Value::EmptyKind(_)
+      | Value::Empty => Vec::new(),
+    }
+  }
+
   pub fn reactive_cell_ids(&self) -> Vec<ReactiveCellId> {
     let mut ids = Vec::new();
     let mut seen = HashSet::new();
@@ -2997,6 +3092,32 @@ mod reactive_cell_tests {
     let outer = Ref::new(Value::F64(scalar.clone()));
     let value = Value::MutableReference(outer.clone());
 
+    assert_eq!(value.reactive_cell_ids(), cell_ids(&[outer.id(), scalar.id()]));
+  }
+
+  #[cfg(all(feature = "set", feature = "f64"))]
+  #[test]
+  fn reactive_root_cells_exclude_nested_container_cells() {
+    let first = Ref::new(1.0);
+    let second = Ref::new(2.0);
+    let mut members = IndexSet::new();
+    members.insert(Value::F64(first.clone()));
+    members.insert(Value::F64(second.clone()));
+    let set = Ref::new(MechSet { kind: ValueKind::F64, num_elements: 2, set: members });
+    let value = Value::Set(set.clone());
+
+    assert_eq!(value.reactive_root_cell_ids(), cell_ids(&[set.id()]));
+    assert_eq!(value.reactive_cell_ids(), cell_ids(&[set.id(), first.id(), second.id()]));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn mutable_reference_root_cell_is_outer_only() {
+    let scalar = Ref::new(1.0);
+    let outer = Ref::new(Value::F64(scalar.clone()));
+    let value = Value::MutableReference(outer.clone());
+
+    assert_eq!(value.reactive_root_cell_ids(), cell_ids(&[outer.id()]));
     assert_eq!(value.reactive_cell_ids(), cell_ids(&[outer.id(), scalar.id()]));
   }
 
