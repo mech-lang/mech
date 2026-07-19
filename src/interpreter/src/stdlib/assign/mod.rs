@@ -72,7 +72,7 @@ where
 }
 impl<T> MechFunctionImpl for Assign<T>
 where
-  T: Clone + Debug,
+  T: Clone + Debug + 'static,
   Ref<T>: ToValue
 {
   fn solve(&self) {
