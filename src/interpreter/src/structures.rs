@@ -243,6 +243,9 @@ pub struct ValueSet {
 impl MechFunctionImpl for ValueSet {
   fn solve(&self) {}
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
+  fn reactive_dependency_scopes(&self, argument_count: usize) -> Option<Vec<ReactiveDependencyScope>> {
+    Some(vec![ReactiveDependencyScope::None; argument_count])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "set")]
@@ -303,7 +306,8 @@ register_descriptor!{
 }
 
 #[cfg(feature = "set")]
-pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
+pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
   let mut elements = Vec::new();
   for el in &m.elements {
     let result = expression(el, env, p)?;
@@ -333,13 +337,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
   #[cfg(feature = "functions")]
   {
-    let new_fxn = SetDefine { kind: element_kind.clone() }.compile(&elements)?;
-    new_fxn.solve();
-    let out = new_fxn.out();
-    let plan = p.plan();
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.push(new_fxn);
-    Ok(out)
+    execute_initialized_indexed_compiler(&plan, &SetDefine { kind: element_kind }, elements)
   }
   #[cfg(not(feature = "functions"))]
   {
@@ -755,5 +753,82 @@ mod matrix_dependency_tests {
     let output = interpreter.run_program(&program).unwrap();
     assert_eq!(output, Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2)));
     assert_matrix_literal_chain(&interpreter.plan());
+  }
+}
+
+#[cfg(all(test, feature = "set", feature = "f64", feature = "functions", feature = "program", feature = "compiler"))]
+mod set_dependency_tests {
+  use super::*;
+
+  fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    let reference = Ref::new(value);
+    let cell = ReactiveCellId::new(reference.id());
+    (Value::F64(reference), cell)
+  }
+
+  fn set_members(value: &Value) -> Vec<ReactiveCellId> {
+    match value {
+      Value::Set(set) => set.borrow().elements.iter().flat_map(Value::reactive_root_cell_ids).collect(),
+      other => panic!("expected set, found {:?}", other),
+    }
+  }
+
+  fn assert_structural_set_node(plan: &Plan, output: &Value) {
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let member_cells = set_members(output);
+    let plan = plan.borrow();
+    let (node_id, node) = (0..plan.len()).find_map(|node_id| {
+      let node = plan.node(node_id).unwrap();
+      node.outputs.contains(&output_cell).then_some((node_id, node))
+    }).expect("set structural node should be registered");
+    assert!(node.inputs.is_empty());
+    assert_eq!(node.outputs.as_slice(), &[output_cell]);
+    for member_cell in member_cells {
+      assert!(!node.outputs.contains(&member_cell));
+      assert!(!plan.reactive_consumers_for(member_cell).contains(&node_id));
+      assert!(!plan.sampled_consumers_for(member_cell).contains(&node_id));
+    }
+  }
+
+  #[test]
+  fn set_define_registration_ignores_element_dependencies() {
+    let plan = Plan::new();
+    let (first, first_cell) = scalar(1.0);
+    let (second, second_cell) = scalar(2.0);
+    let output = execute_initialized_indexed_compiler(&plan, &SetDefine { kind: ValueKind::F64 }, vec![first, second]).unwrap();
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let plan = plan.borrow();
+    let node = plan.node(0).unwrap();
+    assert_eq!(plan.len(), 1);
+    assert!(node.inputs.is_empty());
+    assert!(plan.reactive_consumers_for(first_cell).is_empty());
+    assert!(plan.reactive_consumers_for(second_cell).is_empty());
+    assert!(plan.sampled_consumers_for(first_cell).is_empty());
+    assert!(plan.sampled_consumers_for(second_cell).is_empty());
+    assert_eq!(node.outputs.as_slice(), &[output_cell]);
+    assert!(!node.outputs.contains(&first_cell));
+    assert!(!node.outputs.contains(&second_cell));
+  }
+
+  #[test]
+  fn source_set_literal_registers_structural_node() {
+    let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(output.to_string(), "{1, 2}");
+    assert_structural_set_node(&interpreter.plan(), &output);
+  }
+
+  #[test]
+  fn decoded_set_literal_registers_structural_node() {
+    let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let source_output = interpreter.interpret(&tree).unwrap();
+    let bytecode = interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+    interpreter.clear_plan();
+    let decoded_output = interpreter.run_program(&program).unwrap();
+    assert_eq!(decoded_output, source_output);
+    assert_structural_set_node(&interpreter.plan(), &decoded_output);
   }
 }
