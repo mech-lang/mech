@@ -200,16 +200,31 @@ pub fn execute_native_function_compiler(
   }
 }
 
+pub fn execute_initialized_indexed_compiler_with_registration_arguments(
+  plan: &Plan,
+  compiler: &dyn NativeFunctionCompiler,
+  compile_arguments: Vec<Value>,
+  registration_arguments: Vec<Value>,
+) -> MResult<Value> {
+  let function = compiler.compile(&compile_arguments)?;
+  function.solve_result()?;
+  let output = function.out();
+  plan.register_function(function, &registration_arguments)?;
+  Ok(output)
+}
+
 pub(crate) fn execute_initialized_indexed_compiler(
   plan: &Plan,
   compiler: &dyn NativeFunctionCompiler,
   arguments: Vec<Value>,
 ) -> MResult<Value> {
-  let function = compiler.compile(&arguments)?;
-  function.solve();
-  let output = function.out();
-  plan.register_function(function, &arguments)?;
-  Ok(output)
+  let registration_arguments = arguments.clone();
+  execute_initialized_indexed_compiler_with_registration_arguments(
+    plan,
+    compiler,
+    arguments,
+    registration_arguments,
+  )
 }
 
 // Executes a user-defined function. Handles argument count validation,

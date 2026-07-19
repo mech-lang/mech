@@ -47,6 +47,7 @@ where
     }
   }
   fn out(&self) -> Value { self.sink.to_value() }
+  fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
@@ -77,6 +78,7 @@ struct AssignEmpty;
 impl MechFunctionImpl for AssignEmpty {
   fn solve(&self) {}
   fn out(&self) -> Value { Value::Empty }
+  fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
   fn to_string(&self) -> String { "AssignEmpty".to_string() }
 }
 #[cfg(feature = "compiler")]

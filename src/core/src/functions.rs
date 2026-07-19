@@ -521,7 +521,6 @@ impl ReactivePlan {
   pub fn push(&mut self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
     let node_id = self.nodes.len();
     let outputs = function.reactive_output_cell_ids();
-
     let node = ReactivePlanNode {
       id: node_id,
       plan_index: node_id,
@@ -581,7 +580,18 @@ impl ReactivePlan {
       None => vec![ReactiveDependencyScope::Recursive; arguments.len()],
     };
 
+    let node_kind = function.reactive_node_kind();
+    let outputs = function.reactive_output_cell_ids();
     let mut inputs = Vec::<ReactiveDependency>::new();
+
+    if node_kind == ReactiveNodeKind::Register {
+      for cell in &outputs {
+        inputs.push(ReactiveDependency {
+          cell: *cell,
+          kind: ReactiveDependencyKind::Sampled,
+        });
+      }
+    }
 
     for ((argument, kind), scope) in arguments
       .iter()
@@ -597,6 +607,11 @@ impl ReactivePlan {
       for cell in cells {
         match inputs.iter().find(|dependency| dependency.cell == cell) {
           Some(dependency) if dependency.kind == *kind => {}
+          Some(dependency)
+            if node_kind == ReactiveNodeKind::Register
+              && outputs.contains(&cell)
+              && (dependency.kind == ReactiveDependencyKind::Sampled
+                || *kind == ReactiveDependencyKind::Sampled) => {}
           Some(_) => {
             return Err(MechError::new(
               ReactiveDependencyKindConflictError {
@@ -614,14 +629,12 @@ impl ReactivePlan {
       }
     }
 
-    let outputs = function.reactive_output_cell_ids();
-
     let node = ReactivePlanNode {
       id: node_id,
       plan_index,
       inputs,
       outputs,
-      kind: function.reactive_node_kind(),
+      kind: node_kind,
       function,
     };
 
@@ -1008,6 +1021,85 @@ mod reactive_plan_tests {
     let reference = Ref::new(value);
     let cell = ReactiveCellId::new(reference.id());
     (Value::F64(reference), cell)
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_node_indexes_output_as_sampled_state() {
+    let (output, output_cell) = scalar(1.0);
+    let mut plan = ReactivePlan::new();
+    let node_id = plan.register(Box::new(TestFunction::with_output("register", output).with_node_kind(ReactiveNodeKind::Register)), &[]).unwrap();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![output_cell]);
+    assert_eq!(node.inputs, vec![ReactiveDependency { cell: output_cell, kind: ReactiveDependencyKind::Sampled }]);
+    assert_eq!(plan.sampled_consumers_for(output_cell), &[node_id]);
+    assert!(plan.reactive_consumers_for(output_cell).is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_node_keeps_source_dependency_reactive() {
+    let (output, output_cell) = scalar(1.0);
+    let (source, source_cell) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+    let node_id = plan.register(Box::new(TestFunction::with_output("register", output).with_node_kind(ReactiveNodeKind::Register)), &[source]).unwrap();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.inputs, vec![
+      ReactiveDependency { cell: output_cell, kind: ReactiveDependencyKind::Sampled },
+      ReactiveDependency { cell: source_cell, kind: ReactiveDependencyKind::Reactive },
+    ]);
+    assert_eq!(plan.sampled_consumers_for(output_cell), &[node_id]);
+    assert_eq!(plan.reactive_consumers_for(source_cell), &[node_id]);
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_node_coalesces_output_operand_alias_to_sampled() {
+    let (output, output_cell) = scalar(1.0);
+    let mut plan = ReactivePlan::new();
+    let node_id = plan.register(Box::new(TestFunction::with_output("register", output.clone()).with_node_kind(ReactiveNodeKind::Register)), &[output]).unwrap();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.inputs, vec![ReactiveDependency { cell: output_cell, kind: ReactiveDependencyKind::Sampled }]);
+    assert!(plan.reactive_consumers_for(output_cell).is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_node_has_no_reactive_self_consumer() {
+    let (output, output_cell) = scalar(1.0);
+    let (source, _) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+    let node_id = plan.register(Box::new(TestFunction::with_output("register", output).with_node_kind(ReactiveNodeKind::Register)), &[source]).unwrap();
+    assert!(!plan.reactive_consumers_for(output_cell).contains(&node_id));
+    assert!(plan.sampled_consumers_for(output_cell).contains(&node_id));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_node_preserves_dependency_order() {
+    let (output, output_cell) = scalar(1.0);
+    let (first, first_cell) = scalar(2.0);
+    let (second, second_cell) = scalar(3.0);
+    let mut plan = ReactivePlan::new();
+    let node_id = plan.register(Box::new(TestFunction::with_output("register", output).with_node_kind(ReactiveNodeKind::Register)), &[first, second]).unwrap();
+    assert_eq!(plan.node(node_id).unwrap().inputs, vec![
+      ReactiveDependency { cell: output_cell, kind: ReactiveDependencyKind::Sampled },
+      ReactiveDependency { cell: first_cell, kind: ReactiveDependencyKind::Reactive },
+      ReactiveDependency { cell: second_cell, kind: ReactiveDependencyKind::Reactive },
+    ]);
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_node_validation_failure_does_not_mutate_plan() {
+    let (output, _) = scalar(1.0);
+    let (source, _) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+    assert!(plan.register(Box::new(TestFunction::with_output("register", output).with_node_kind(ReactiveNodeKind::Register).with_dependency_kinds(Some(vec![]))), &[source]).is_err());
+    assert!(plan.nodes.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
   }
 
   #[cfg(feature = "f64")]

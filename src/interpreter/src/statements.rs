@@ -157,22 +157,20 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       }
     }
     None => {
-      let args = vec![sink,source];
-      let fxn: Box<dyn MechFunction> = match op_assgn.op {
+      let plan = p.plan();
+      let compile_arguments = vec![sink, source.clone()];
+      let registration_arguments = vec![source];
+      return match op_assgn.op {
         #[cfg(feature = "math_add_assign")]
-        OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
+        OpAssignOp::Add => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &AddAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_sub_assign")]
-        OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
+        OpAssignOp::Sub => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &SubAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_div_assign")]
-        OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
+        OpAssignOp::Div => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &DivAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_mul_assign")]
-        OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
+        OpAssignOp::Mul => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &MulAssignValue{}, compile_arguments, registration_arguments),
         _ => todo!(),
       };
-      fxn.solve();
-      let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
-      return Ok(res);
     }
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
@@ -218,12 +216,13 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
     }
     #[cfg(feature = "assign")]
     None => {
-      let args = vec![sink,source];
-      let fxn = AssignValue{}.compile(&args)?;
-      fxn.solve();
-      let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
-      return Ok(res);
+      let plan = p.plan();
+      return execute_initialized_indexed_compiler_with_registration_arguments(
+        &plan,
+        &AssignValue{},
+        vec![sink, source.clone()],
+        vec![source],
+      );
     }
     _ => return Err(MechError::new(
       FeatureNotEnabledError,
