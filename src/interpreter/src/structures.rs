@@ -768,7 +768,7 @@ mod set_dependency_tests {
 
   fn set_members(value: &Value) -> Vec<ReactiveCellId> {
     match value {
-      Value::Set(set) => set.borrow().elements.iter().flat_map(Value::reactive_root_cell_ids).collect(),
+      Value::Set(set) => set.borrow().set.iter().flat_map(Value::reactive_root_cell_ids).collect(),
       other => panic!("expected set, found {:?}", other),
     }
   }
@@ -815,7 +815,7 @@ mod set_dependency_tests {
     let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
     let mut interpreter = Interpreter::new_with_full_stdlib(0);
     let output = interpreter.interpret(&tree).unwrap();
-    assert_eq!(output.to_string(), "{1, 2}");
+    assert_eq!(output.to_string(), "{\n  1,\n  2\n}");
     assert_structural_set_node(&interpreter.plan(), &output);
   }
 

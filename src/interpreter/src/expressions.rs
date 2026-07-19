@@ -540,6 +540,108 @@ mod indexed_expression_registration_tests {
   }
 }
 
+#[cfg(all(test, feature = "functions", feature = "record", feature = "tuple", feature = "f64", feature = "program", feature = "compiler"))]
+mod structural_alias_access_tests {
+  use super::*;
+
+  fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+    interpreter.symbols().borrow().get(hash_str(name)).unwrap().borrow().clone()
+  }
+
+  fn alias_node(plan: &Plan, name: &str) -> usize {
+    let plan = plan.borrow();
+    (0..plan.len()).find_map(|node_id| {
+      let node = plan.node(node_id).unwrap();
+      node.function.to_string().contains(name).then_some(node_id)
+    }).unwrap_or_else(|| panic!("missing {name} node"))
+  }
+
+  fn assert_alias_node(plan: &Plan, name: &str, output: &Value, container: &Value) {
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let container_cell = container.reactive_root_cell_ids()[0];
+    let node_id = alias_node(plan, name);
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow.node(node_id).unwrap();
+    assert!(node.inputs.is_empty());
+    assert_eq!(node.outputs.as_slice(), &[output_cell]);
+    assert!(!node.inputs.iter().any(|input| input.cell == container_cell));
+    assert!(!plan_borrow.reactive_consumers_for(container_cell).contains(&node_id));
+    assert!(!plan_borrow.sampled_consumers_for(container_cell).contains(&node_id));
+  }
+
+  #[test]
+  fn record_field_access_registers_structural_node() {
+    let tree = mech_syntax::parser::parse("record := {field: 2}; record.field").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    assert_alias_node(&interpreter.plan(), "RecordAccessField", &output, &symbol(&interpreter, "record"));
+  }
+
+  #[test]
+  fn tuple_element_access_registers_structural_node() {
+    let tree = mech_syntax::parser::parse("tuple := (1, 2); tuple.2").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    assert_alias_node(&interpreter.plan(), "TupleAccessElement", &output, &symbol(&interpreter, "tuple"));
+  }
+
+  #[test]
+  fn record_field_consumer_depends_on_member_cell() {
+    let tree = mech_syntax::parser::parse("record := {field: 2}; record.field + 1").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    let record = symbol(&interpreter, "record");
+    let record_cell = record.reactive_root_cell_ids()[0];
+    let field_cell = {
+      let Value::Record(record) = record else { panic!("expected record") };
+      record.borrow().get(&hash_str("field")).unwrap().reactive_root_cell_ids()[0]
+    };
+    let plan = interpreter.plan();
+    let alias_id = alias_node(&plan, "RecordAccessField");
+    assert!(plan.borrow().node(alias_id).unwrap().inputs.is_empty());
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let plan = plan.borrow();
+    let (consumer_id, consumer) = (0..plan.len()).find_map(|node_id| {
+      let node = plan.node(node_id).unwrap();
+      (node_id != alias_id && node.outputs.contains(&output_cell)).then_some((node_id, node))
+    }).expect("missing computed field consumer");
+    assert!(consumer.inputs.iter().any(|input| input.cell == field_cell));
+    assert!(plan.reactive_consumers_for(field_cell).contains(&consumer_id));
+    assert!(!consumer.inputs.iter().any(|input| input.cell == record_cell));
+  }
+
+  #[test]
+  fn decoded_structural_alias_access_matches_source() {
+    for (source, name) in [("tuple := (1, 2); tuple.2", "TupleAccessElement")] {
+      let tree = mech_syntax::parser::parse(source).unwrap();
+      let mut interpreter = Interpreter::new_with_full_stdlib(0);
+      let source_output = interpreter.interpret(&tree).unwrap();
+      {
+        let source_plan = interpreter.plan();
+        let source_node = alias_node(&source_plan, name);
+        let source_plan = source_plan.borrow();
+        let source_node = source_plan.node(source_node).unwrap();
+        assert!(source_node.inputs.is_empty());
+        assert_eq!(source_node.outputs.as_slice(), &source_output.reactive_root_cell_ids());
+      }
+      let bytecode = interpreter.compile().unwrap();
+      let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+      interpreter.clear_plan();
+      let decoded_output = interpreter.run_program(&program).unwrap();
+      assert_eq!(decoded_output, source_output);
+      let decoded_node = alias_node(&interpreter.plan(), name);
+      let decoded_plan = interpreter.plan();
+      let decoded_plan = decoded_plan.borrow();
+      let decoded_node = decoded_plan.node(decoded_node).unwrap();
+      assert!(decoded_node.inputs.is_empty());
+      assert_eq!(decoded_node.outputs.as_slice(), &decoded_output.reactive_root_cell_ids());
+    }
+  }
+}
+
 #[cfg(all(test, feature = "functions", feature = "f64", feature = "u64", feature = "convert", feature = "kind_annotation", feature = "variable_define", feature = "variables"))]
 mod variable_kind_cast_dependency_tests {
   use super::*;
@@ -893,6 +995,11 @@ pub fn subscript(
         Subscript::Dot(x) => {
             let key = x.hash();
             let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
+            #[cfg(feature = "record")]
+            if matches!(val.deref_kind(), ValueKind::Record(..)) {
+                let function = AccessColumn {}.compile(&fxn_input)?;
+                return register_initialized_expression_function(&plan, function, &[]);
+            }
             let new_fxn = AccessColumn {}.compile(&fxn_input)?;
             new_fxn.solve();
             let res = new_fxn.out();
@@ -914,11 +1021,8 @@ pub fn subscript(
                 }
                 #[cfg(feature = "tuple")]
                 ValueKind::Tuple(..) => {
-                    let new_fxn = TupleAccess {}.compile(&fxn_input)?;
-                    new_fxn.solve();
-                    let res = new_fxn.out();
-                    plan.borrow_mut().push(new_fxn);
-                    return Ok(res);
+                    let function = TupleAccess {}.compile(&fxn_input)?;
+                    return register_initialized_expression_function(&plan, function, &[]);
                 }
                 /*ValueKind::Record(_) => {
                   let new_fxn = RecordAccessScalar{}.compile(&fxn_input)?;
