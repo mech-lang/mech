@@ -612,12 +612,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
       return Ok(Value::MatrixValue(Matrix::from_vec(values, row_count, cols)));
     }
 
-    let new_fxn = MatrixVertCat{}.compile(&col)?;
-    new_fxn.solve();
-    let out = new_fxn.out();
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.push(new_fxn);
-    return Ok(out);
+    return execute_initialized_indexed_compiler(&plan, &MatrixVertCat {}, col);
   }
   return Err(MechError::new(
     FeatureNotEnabledError,
@@ -654,14 +649,111 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
     return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));
   }
-  let new_fxn = MatrixHorzCat{}.compile(&row)?;
-  new_fxn.solve();
-  let out = new_fxn.out();
-  let mut plan_brrw = plan.borrow_mut();
-  plan_brrw.push(new_fxn);
-  Ok(out)
+  execute_initialized_indexed_compiler(&plan, &MatrixHorzCat {}, row)
+}
+pub fn matrix_column(r: &MatrixColumn, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+  expression(&r.element, env, p)
 }
 
-pub fn matrix_column(r: &MatrixColumn, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
-  expression(&r.element, env, p)
+#[cfg(all(test, feature = "f64", feature = "matrix_horzcat", feature = "matrix_vertcat", feature = "program", feature = "compiler"))]
+mod matrix_dependency_tests {
+  use super::*;
+
+  fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    let reference = Ref::new(value);
+    let cell = ReactiveCellId::new(reference.id());
+    (Value::F64(reference), cell)
+  }
+
+  fn assert_matrix_literal_chain(plan: &Plan) {
+    let plan = plan.borrow();
+    assert_eq!(plan.len(), 3);
+
+    let first_row = plan.node(0).unwrap();
+    let second_row = plan.node(1).unwrap();
+    let vertical = plan.node(2).unwrap();
+    assert!(!first_row.inputs.is_empty());
+    assert!(!second_row.inputs.is_empty());
+    assert!(!vertical.inputs.is_empty());
+
+    assert!(first_row.outputs.iter().all(|output| !vertical.outputs.contains(output)));
+    assert!(second_row.outputs.iter().all(|output| !vertical.outputs.contains(output)));
+    assert!(vertical.inputs.iter().all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive));
+    assert!(!vertical.outputs.is_empty());
+  }
+
+  #[test]
+  fn indexed_matrix_horzcat_records_dependencies() {
+    let plan = Plan::new();
+    let (first, first_cell) = scalar(1.0);
+    let (second, second_cell) = scalar(2.0);
+
+    let output = execute_initialized_indexed_compiler(
+      &plan,
+      &MatrixHorzCat {},
+      vec![first, second],
+    ).unwrap();
+    let output_cell = output.reactive_cell_ids()[0];
+    let plan = plan.borrow();
+    let node = plan.node(0).unwrap();
+
+    assert_eq!(plan.len(), 1);
+    assert_eq!(node.inputs.iter().map(|dependency| dependency.cell).collect::<Vec<_>>(), vec![first_cell, second_cell]);
+    assert!(node.inputs.iter().all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive));
+    assert_eq!(plan.reactive_consumers_for(first_cell), &[0]);
+    assert_eq!(plan.reactive_consumers_for(second_cell), &[0]);
+    assert!(node.outputs.contains(&output_cell));
+    assert!(!node.inputs.iter().any(|dependency| dependency.cell == output_cell));
+  }
+
+  #[test]
+  fn indexed_matrix_vertcat_records_dependencies() {
+    let plan = Plan::new();
+    let (first, _) = scalar(1.0);
+    let (second, _) = scalar(2.0);
+    let first_row = execute_initialized_indexed_compiler(&plan, &MatrixHorzCat {}, vec![first]).unwrap();
+    let second_row = execute_initialized_indexed_compiler(&plan, &MatrixHorzCat {}, vec![second]).unwrap();
+    let first_cell = first_row.reactive_cell_ids()[0];
+    let second_cell = second_row.reactive_cell_ids()[0];
+
+    let output = execute_initialized_indexed_compiler(
+      &plan,
+      &MatrixVertCat {},
+      vec![first_row, second_row],
+    ).unwrap();
+    let output_cell = output.reactive_cell_ids()[0];
+    let plan = plan.borrow();
+    let node = plan.node(2).unwrap();
+
+    assert_eq!(node.inputs.iter().map(|dependency| dependency.cell).collect::<Vec<_>>(), vec![first_cell, second_cell]);
+    assert!(node.inputs.iter().all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive));
+    assert_eq!(plan.reactive_consumers_for(first_cell), &[2]);
+    assert_eq!(plan.reactive_consumers_for(second_cell), &[2]);
+    assert!(node.outputs.contains(&output_cell));
+    assert!(!node.inputs.iter().any(|dependency| dependency.cell == output_cell));
+  }
+
+  #[test]
+  fn indexed_matrix_literal_builds_dependency_chain() {
+    let tree = mech_syntax::parser::parse("[1.0 2.0; 3.0 4.0]").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+
+    assert_eq!(output, Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2)));
+    assert_matrix_literal_chain(&interpreter.plan());
+  }
+
+  #[test]
+  fn decoded_matrix_literal_preserves_dependency_chain() {
+    let tree = mech_syntax::parser::parse("[1.0 2.0; 3.0 4.0]").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    interpreter.interpret(&tree).unwrap();
+    let bytecode = interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+
+    interpreter.clear_plan();
+    let output = interpreter.run_program(&program).unwrap();
+    assert_eq!(output, Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2)));
+    assert_matrix_literal_chain(&interpreter.plan());
+  }
 }
