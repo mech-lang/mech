@@ -149,6 +149,19 @@ pub trait MechFunctionImpl {
   fn reactive_output_values(&self) -> Vec<Value> {
     vec![self.out()]
   }
+  fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
+    let mut cells = Vec::new();
+
+    for output in self.reactive_output_values() {
+      for cell in output.reactive_root_cell_ids() {
+        if !cells.contains(&cell) {
+          cells.push(cell);
+        }
+      }
+    }
+
+    cells
+  }
   fn reactive_node_kind(&self) -> ReactiveNodeKind {
     ReactiveNodeKind::Combinational
   }
@@ -472,15 +485,7 @@ impl ReactivePlan {
 
   pub fn push(&mut self, function: Box<dyn MechFunction>) -> ReactiveNodeId {
     let node_id = self.nodes.len();
-    let mut outputs = Vec::<ReactiveCellId>::new();
-
-    for output in function.reactive_output_values() {
-      for cell in output.reactive_cell_ids() {
-        if !outputs.contains(&cell) {
-          outputs.push(cell);
-        }
-      }
-    }
+    let outputs = function.reactive_output_cell_ids();
 
     let node = ReactivePlanNode {
       id: node_id,
@@ -547,15 +552,7 @@ impl ReactivePlan {
       }
     }
 
-    let mut outputs = Vec::<ReactiveCellId>::new();
-
-    for output in function.reactive_output_values() {
-      for cell in output.reactive_cell_ids() {
-        if !outputs.contains(&cell) {
-          outputs.push(cell);
-        }
-      }
-    }
+    let outputs = function.reactive_output_cell_ids();
 
     let node = ReactivePlanNode {
       id: node_id,
@@ -846,6 +843,49 @@ mod reactive_plan_tests {
     plan.push(Box::new(TestFunction::new("second")));
 
     assert_eq!(plan.len(), plan.nodes.len());
+  }
+
+  #[cfg(all(feature = "set", feature = "f64"))]
+  fn set_output() -> (Value, ReactiveCellId, ReactiveCellId, ReactiveCellId) {
+    let first = Ref::new(1.0);
+    let second = Ref::new(2.0);
+    let mut members = indexmap::IndexSet::new();
+    members.insert(Value::F64(first.clone()));
+    members.insert(Value::F64(second.clone()));
+    let set = Ref::new(MechSet { kind: ValueKind::F64, num_elements: 2, set: members });
+
+    (
+      Value::Set(set.clone()),
+      ReactiveCellId::new(set.id()),
+      ReactiveCellId::new(first.id()),
+      ReactiveCellId::new(second.id()),
+    )
+  }
+
+  #[cfg(all(feature = "set", feature = "f64"))]
+  #[test]
+  fn reactive_plan_push_records_root_output_cells() {
+    let (output, outer, first, second) = set_output();
+    let mut plan = ReactivePlan::new();
+    plan.push(Box::new(TestFunction::with_output("set", output)));
+
+    assert_eq!(plan.nodes.len(), 1);
+    assert_eq!(plan.nodes[0].outputs, vec![outer]);
+    assert!(!plan.nodes[0].outputs.contains(&first));
+    assert!(!plan.nodes[0].outputs.contains(&second));
+  }
+
+  #[cfg(all(feature = "set", feature = "f64"))]
+  #[test]
+  fn reactive_plan_register_records_root_output_cells() {
+    let (output, outer, first, second) = set_output();
+    let mut plan = ReactivePlan::new();
+    let node_id = plan.register(Box::new(TestFunction::with_output("set", output)), &[]).unwrap();
+    let node = plan.node(node_id).unwrap();
+
+    assert_eq!(node.outputs, vec![outer]);
+    assert!(!node.outputs.contains(&first));
+    assert!(!node.outputs.contains(&second));
   }
 
   #[cfg(feature = "f64")]
