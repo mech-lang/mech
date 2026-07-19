@@ -146,6 +146,12 @@ pub trait MechFunctionImpl {
   ) -> Option<Vec<ReactiveDependencyKind>> {
     None
   }
+  fn reactive_dependency_scopes(
+    &self,
+    _argument_count: usize,
+  ) -> Option<Vec<ReactiveDependencyScope>> {
+    None
+  }
   fn reactive_output_values(&self) -> Vec<Value> {
     vec![self.out()]
   }
@@ -367,6 +373,13 @@ pub enum ReactiveDependencyKind {
   Sampled,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReactiveDependencyScope {
+  Recursive,
+  Root,
+  None,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ReactiveNodeKind {
   Combinational,
@@ -415,6 +428,28 @@ impl MechErrorKind for ReactiveDependencyArityMismatchError {
   fn message(&self) -> String {
     format!(
       "Reactive dependency arity mismatch for function '{}': expected {} dependency kinds, found {}.",
+      self.function,
+      self.expected,
+      self.found,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactiveDependencyScopeArityMismatchError {
+  pub function: String,
+  pub expected: usize,
+  pub found: usize,
+}
+
+impl MechErrorKind for ReactiveDependencyScopeArityMismatchError {
+  fn name(&self) -> &str {
+    "ReactiveDependencyScopeArityMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Reactive dependency scope arity mismatch for function '{}': expected argument count {}, provided scope count {}.",
       self.function,
       self.expected,
       self.found,
@@ -529,10 +564,37 @@ impl ReactivePlan {
       ],
     };
 
+    let dependency_scopes = match function.reactive_dependency_scopes(arguments.len()) {
+      Some(scopes) => {
+        if scopes.len() != arguments.len() {
+          return Err(MechError::new(
+            ReactiveDependencyScopeArityMismatchError {
+              function: function_description,
+              expected: arguments.len(),
+              found: scopes.len(),
+            },
+            None,
+          ));
+        }
+        scopes
+      }
+      None => vec![ReactiveDependencyScope::Recursive; arguments.len()],
+    };
+
     let mut inputs = Vec::<ReactiveDependency>::new();
 
-    for (argument, kind) in arguments.iter().zip(dependency_kinds.iter()) {
-      for cell in argument.reactive_cell_ids() {
+    for ((argument, kind), scope) in arguments
+      .iter()
+      .zip(dependency_kinds.iter())
+      .zip(dependency_scopes.iter())
+    {
+      let cells = match scope {
+        ReactiveDependencyScope::Recursive => argument.reactive_cell_ids(),
+        ReactiveDependencyScope::Root => argument.reactive_root_cell_ids(),
+        ReactiveDependencyScope::None => Vec::new(),
+      };
+
+      for cell in cells {
         match inputs.iter().find(|dependency| dependency.cell == cell) {
           Some(dependency) if dependency.kind == *kind => {}
           Some(_) => {
@@ -747,6 +809,7 @@ mod reactive_plan_tests {
     name: &'static str,
     output: Value,
     dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
+    dependency_scopes: Option<Vec<ReactiveDependencyScope>>,
     node_kind: ReactiveNodeKind,
   }
 
@@ -756,6 +819,7 @@ mod reactive_plan_tests {
         name,
         output: Value::Empty,
         dependency_kinds: None,
+        dependency_scopes: None,
         node_kind: ReactiveNodeKind::Combinational,
       }
     }
@@ -766,6 +830,7 @@ mod reactive_plan_tests {
         name,
         output,
         dependency_kinds: None,
+        dependency_scopes: None,
         node_kind: ReactiveNodeKind::Combinational,
       }
     }
@@ -775,6 +840,14 @@ mod reactive_plan_tests {
       dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
     ) -> Self {
       self.dependency_kinds = dependency_kinds;
+      self
+    }
+
+    fn with_dependency_scopes(
+      mut self,
+      scopes: Option<Vec<ReactiveDependencyScope>>,
+    ) -> Self {
+      self.dependency_scopes = scopes;
       self
     }
 
@@ -796,6 +869,13 @@ mod reactive_plan_tests {
       _argument_count: usize,
     ) -> Option<Vec<ReactiveDependencyKind>> {
       self.dependency_kinds.clone()
+    }
+
+    fn reactive_dependency_scopes(
+      &self,
+      _argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+      self.dependency_scopes.clone()
     }
 
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -995,6 +1075,81 @@ mod reactive_plan_tests {
     assert!(plan.sampled_consumers_for(second_cell).is_empty());
   }
 
+  #[cfg(all(feature = "set", feature = "f64"))]
+  #[test]
+  fn register_defaults_dependency_scope_to_recursive() {
+    let (set, outer, first, second) = set_output();
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(Box::new(TestFunction::new("recursive")), &[set])
+      .unwrap();
+
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(
+      node.inputs,
+      vec![
+        ReactiveDependency { cell: outer, kind: ReactiveDependencyKind::Reactive },
+        ReactiveDependency { cell: first, kind: ReactiveDependencyKind::Reactive },
+        ReactiveDependency { cell: second, kind: ReactiveDependencyKind::Reactive },
+      ],
+    );
+    assert_eq!(plan.reactive_consumers_for(outer), &[node_id]);
+    assert_eq!(plan.reactive_consumers_for(first), &[node_id]);
+    assert_eq!(plan.reactive_consumers_for(second), &[node_id]);
+    assert!(plan.sampled_consumers.is_empty());
+  }
+
+  #[cfg(all(feature = "set", feature = "f64"))]
+  #[test]
+  fn register_root_scope_uses_only_root_cell() {
+    let (set, outer, first, second) = set_output();
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(
+        Box::new(
+          TestFunction::new("root").with_dependency_scopes(Some(vec![
+            ReactiveDependencyScope::Root,
+          ])),
+        ),
+        &[set],
+      )
+      .unwrap();
+
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(
+      node.inputs,
+      vec![ReactiveDependency { cell: outer, kind: ReactiveDependencyKind::Reactive }],
+    );
+    assert_eq!(plan.reactive_consumers_for(outer), &[node_id]);
+    assert!(plan.reactive_consumers_for(first).is_empty());
+    assert!(plan.reactive_consumers_for(second).is_empty());
+    assert_eq!(plan.reactive_consumers.len(), 1);
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_none_scope_ignores_argument_cells() {
+    let (value, _) = scalar(1.0);
+    let mut plan = ReactivePlan::new();
+
+    let node_id = plan
+      .register(
+        Box::new(
+          TestFunction::new("none").with_dependency_scopes(Some(vec![
+            ReactiveDependencyScope::None,
+          ])),
+        ),
+        &[value],
+      )
+      .unwrap();
+
+    assert!(plan.node(node_id).unwrap().inputs.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
+  }
+
   #[cfg(feature = "f64")]
   #[test]
   fn register_records_sampled_dependencies_separately() {
@@ -1082,6 +1237,30 @@ mod reactive_plan_tests {
       .unwrap_err();
 
     assert!(format!("{:?}", error).contains("ReactiveDependencyArityMismatch"));
+    assert!(plan.nodes.is_empty());
+    assert!(plan.reactive_consumers.is_empty());
+    assert!(plan.sampled_consumers.is_empty());
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn register_rejects_dependency_scope_arity_mismatch() {
+    let (first, _) = scalar(1.0);
+    let (second, _) = scalar(2.0);
+    let mut plan = ReactivePlan::new();
+
+    let error = plan
+      .register(
+        Box::new(
+          TestFunction::new("scope arity").with_dependency_scopes(Some(vec![
+            ReactiveDependencyScope::Recursive,
+          ])),
+        ),
+        &[first, second],
+      )
+      .unwrap_err();
+
+    assert!(format!("{:?}", error).contains("ReactiveDependencyScopeArityMismatch"));
     assert!(plan.nodes.is_empty());
     assert!(plan.reactive_consumers.is_empty());
     assert!(plan.sampled_consumers.is_empty());
