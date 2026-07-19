@@ -34,6 +34,42 @@ struct Assign<T> {
   sink: Ref<T>,
   source: Ref<T>,
 }
+impl<T> MechFunctionFactory for Assign<T>
+where
+  T: Clone
+    + Debug
+    + Sync
+    + Send
+    + 'static
+    + CompileConst
+    + ConstElem
+    + AsValueKind,
+  Ref<T>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, source) => {
+        let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
+        let source: Ref<T> = unsafe { source.as_unchecked() }.clone();
+
+        Ok(Box::new(Self {
+          sink,
+          source,
+        }))
+      }
+      _ => Err(
+        MechError::new(
+          IncorrectNumberOfArguments {
+            expected: 2,
+            found: args.len(),
+          },
+          None,
+        )
+        .with_compiler_loc(),
+      ),
+    }
+  }
+}
 impl<T> MechFunctionImpl for Assign<T>
 where
   T: Clone + Debug,
@@ -58,6 +94,33 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("Assign<{}>", T::as_value_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+  }
+}
+
+register_fxn_descriptor!(
+  Assign,
+  u8, "u8",
+  u16, "u16",
+  u32, "u32",
+  u64, "u64",
+  u128, "u128",
+  i8, "i8",
+  i16, "i16",
+  i32, "i32",
+  i64, "i64",
+  i128, "i128",
+  f32, "f32",
+  f64, "f64",
+  bool, "bool",
+  String, "string",
+  R64, "r64",
+  C64, "c64",
+);
+
+register_descriptor! {
+  FunctionDescriptor {
+    name: "Assign<index>",
+    ptr: Assign::<usize>::new,
   }
 }
 
