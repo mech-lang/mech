@@ -1064,3 +1064,210 @@ mod variable_define_dependency_tests {
     assert!(node.outputs.contains(&value_cell));
   }
 }
+
+#[cfg(all(
+  test,
+  feature = "functions",
+  feature = "variables",
+  feature = "variable_define",
+  feature = "variable_assign",
+  feature = "assign",
+  feature = "f64",
+  feature = "program",
+  feature = "compiler",
+))]
+mod whole_assignment_register_tests {
+  use super::*;
+
+  fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+    interpreter.symbols().borrow().get(hash_str(name))
+      .unwrap_or_else(|| panic!("missing symbol {name}"))
+      .borrow()
+      .clone()
+  }
+
+  fn root_cell(value: &Value) -> ReactiveCellId {
+    let cells = value.reactive_root_cell_ids();
+    assert_eq!(cells.len(), 1);
+    cells[0]
+  }
+
+  fn register_node_id_for_output(interpreter: &Interpreter, output_cell: ReactiveCellId) -> ReactiveNodeId {
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node_ids = plan.nodes.iter()
+      .filter(|node| node.kind == ReactiveNodeKind::Register && node.outputs == vec![output_cell])
+      .map(|node| node.id)
+      .collect::<Vec<_>>();
+    assert_eq!(node_ids.len(), 1);
+    node_ids[0]
+  }
+
+  #[derive(Debug, PartialEq, Eq)]
+  struct RegisterGraphShape {
+    output_count: usize,
+    input_kinds: Vec<ReactiveDependencyKind>,
+    output_is_first_input: bool,
+    source_is_second_input: bool,
+    output_is_sampled_consumer: bool,
+    output_is_reactive_consumer: bool,
+    source_is_reactive_consumer: bool,
+    source_is_sampled_consumer: bool,
+  }
+
+  fn distinct_assignment_graph_shape(interpreter: &Interpreter, target_name: &str, source_name: &str) -> RegisterGraphShape {
+    let target_cell = root_cell(&symbol(interpreter, target_name));
+    let source_cell = root_cell(&symbol(interpreter, source_name));
+    assert_ne!(target_cell, source_cell);
+    let node_id = register_node_id_for_output(interpreter, target_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![target_cell]);
+    assert_eq!(node.inputs.len(), 2);
+    assert_eq!(node.inputs[0].cell, target_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert_eq!(node.inputs[1].cell, source_cell);
+    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
+    RegisterGraphShape {
+      output_count: node.outputs.len(),
+      input_kinds: node.inputs.iter().map(|input| input.kind).collect(),
+      output_is_first_input: node.inputs[0].cell == target_cell,
+      source_is_second_input: node.inputs[1].cell == source_cell,
+      output_is_sampled_consumer: plan.sampled_consumers_for(target_cell).contains(&node_id),
+      output_is_reactive_consumer: plan.reactive_consumers_for(target_cell).contains(&node_id),
+      source_is_reactive_consumer: plan.reactive_consumers_for(source_cell).contains(&node_id),
+      source_is_sampled_consumer: plan.sampled_consumers_for(source_cell).contains(&node_id),
+    }
+  }
+
+  fn expected_distinct_assignment_shape() -> RegisterGraphShape {
+    RegisterGraphShape {
+      output_count: 1,
+      input_kinds: vec![ReactiveDependencyKind::Sampled, ReactiveDependencyKind::Reactive],
+      output_is_first_input: true,
+      source_is_second_input: true,
+      output_is_sampled_consumer: true,
+      output_is_reactive_consumer: false,
+      source_is_reactive_consumer: true,
+      source_is_sampled_consumer: false,
+    }
+  }
+
+  #[test]
+  fn whole_variable_assignment_registers_state_node() {
+    let source = "~x := 1.0; y := 2.0; x = y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    assert_eq!(distinct_assignment_graph_shape(&interpreter, "x", "y"), expected_distinct_assignment_shape());
+  }
+
+  #[cfg(feature = "math_add_assign")]
+  #[test]
+  fn whole_add_assignment_registers_state_node() {
+    let source = "~x := 1.0; y := 2.0; x += y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    assert_eq!(distinct_assignment_graph_shape(&interpreter, "x", "y"), expected_distinct_assignment_shape());
+  }
+
+  #[cfg(feature = "math_add_assign")]
+  #[test]
+  fn whole_add_assignment_alias_is_sampled_once() {
+    let source = "~x := 2.0; x += x; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 4.0);
+    let x_cell = root_cell(&symbol(&interpreter, "x"));
+    let node_id = register_node_id_for_output(&interpreter, x_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![x_cell]);
+    assert_eq!(node.inputs.len(), 1);
+    assert_eq!(node.inputs[0].cell, x_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert!(plan.sampled_consumers_for(x_cell).contains(&node_id));
+    assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
+  }
+
+  #[test]
+  fn decoded_whole_variable_assignment_matches_source_graph() {
+    let source = "~x := 1.0; y := 2.0; x = y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    let source_output = source_interpreter.interpret(&tree).unwrap();
+    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
+    let source_shape = distinct_assignment_graph_shape(&source_interpreter, "x", "y");
+    let bytecode = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let mut decoded_interpreter = Interpreter::new_with_full_stdlib(0);
+    let decoded_output = decoded_interpreter.run_program(&program).unwrap();
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
+    let decoded_shape = distinct_assignment_graph_shape(&decoded_interpreter, "x", "y");
+    assert_eq!(source_shape, expected_distinct_assignment_shape());
+    assert_eq!(decoded_shape, expected_distinct_assignment_shape());
+    assert_eq!(source_shape, decoded_shape);
+  }
+
+  #[cfg(feature = "math_add_assign")]
+  #[test]
+  fn decoded_whole_add_assignment_matches_source_graph() {
+    let source = "~x := 1.0; y := 2.0; x += y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    let source_output = source_interpreter.interpret(&tree).unwrap();
+    assert_eq!(*source_output.as_f64().unwrap().borrow(), 3.0);
+    let source_shape = distinct_assignment_graph_shape(&source_interpreter, "x", "y");
+    let bytecode = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let mut decoded_interpreter = Interpreter::new_with_full_stdlib(0);
+    let decoded_output = decoded_interpreter.run_program(&program).unwrap();
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 3.0);
+    let decoded_shape = distinct_assignment_graph_shape(&decoded_interpreter, "x", "y");
+    assert_eq!(source_shape, expected_distinct_assignment_shape());
+    assert_eq!(decoded_shape, expected_distinct_assignment_shape());
+    assert_eq!(source_shape, decoded_shape);
+  }
+
+  #[cfg(all(feature = "matrix", feature = "row_vectord"))]
+  #[test]
+  fn whole_matrix_assignment_uses_root_cells() {
+    let source = "~x := [1.0 2.0]; y := [3.0 4.0]; x = y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    let x = symbol(&interpreter, "x");
+    let y = symbol(&interpreter, "y");
+    let x_root_cells = x.reactive_root_cell_ids();
+    let y_root_cells = y.reactive_root_cell_ids();
+    assert_eq!(x_root_cells.len(), 1);
+    assert_eq!(y_root_cells.len(), 1);
+    let x_cell = x_root_cells[0];
+    let y_cell = y_root_cells[0];
+    let node_id = register_node_id_for_output(&interpreter, x_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![x_cell]);
+    assert_eq!(node.outputs.len(), 1);
+    assert_eq!(node.inputs.len(), 2);
+    assert_eq!(node.inputs[0].cell, x_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert_eq!(node.inputs[1].cell, y_cell);
+    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
+    assert!(plan.sampled_consumers_for(x_cell).contains(&node_id));
+    assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
+    assert!(plan.reactive_consumers_for(y_cell).contains(&node_id));
+    assert!(!plan.sampled_consumers_for(y_cell).contains(&node_id));
+    assert_eq!(output, y);
+  }
+}
