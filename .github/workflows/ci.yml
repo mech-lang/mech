@@ -52,6 +52,14 @@ jobs:
           cargo test interpret
           cargo test bytecode
 
+          # Whole-value assignment reactive graph coverage.
+          cargo test -p mech-interpreter whole_variable_assignment_registers_state_node -- --nocapture
+          cargo test -p mech-interpreter whole_add_assignment_registers_state_node -- --nocapture
+          cargo test -p mech-interpreter whole_add_assignment_alias_is_sampled_once -- --nocapture
+          cargo test -p mech-interpreter decoded_whole_variable_assignment_matches_source_graph -- --nocapture
+          cargo test -p mech-interpreter decoded_whole_add_assignment_matches_source_graph -- --nocapture
+          cargo test -p mech-interpreter whole_matrix_assignment_uses_root_cells -- --nocapture
+
           # Runtime package tests.
           cargo test -p mech-runtime --lib --tests
 
