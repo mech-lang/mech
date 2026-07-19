@@ -110,6 +110,16 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
   Ok(source)
 }
 
+fn assignment_registration_operand(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => {
+      let inner = reference.borrow();
+      assignment_registration_operand(&inner)
+    }
+    _ => value.clone(),
+  }
+}
+
 #[cfg(feature = "math")]
 pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, env, p)?;
@@ -158,8 +168,9 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
     }
     None => {
       let plan = p.plan();
-      let compile_arguments = vec![sink, source.clone()];
-      let registration_arguments = vec![source];
+      let registration_source = assignment_registration_operand(&source);
+      let compile_arguments = vec![sink, source];
+      let registration_arguments = vec![registration_source];
       return match op_assgn.op {
         #[cfg(feature = "math_add_assign")]
         OpAssignOp::Add => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &AddAssignValue{}, compile_arguments, registration_arguments),
@@ -217,11 +228,12 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
     #[cfg(feature = "assign")]
     None => {
       let plan = p.plan();
+      let registration_source = assignment_registration_operand(&source);
       return execute_initialized_indexed_compiler_with_registration_arguments(
         &plan,
         &AssignValue{},
-        vec![sink, source.clone()],
-        vec![source],
+        vec![sink, source],
+        vec![registration_source],
       );
     }
     _ => return Err(MechError::new(
@@ -1268,6 +1280,10 @@ mod whole_assignment_register_tests {
     assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
     assert!(plan.reactive_consumers_for(y_cell).contains(&node_id));
     assert!(!plan.sampled_consumers_for(y_cell).contains(&node_id));
-    assert_eq!(output, y);
+    let resolved_output = match output {
+      Value::MutableReference(reference) => reference.borrow().clone(),
+      other => other,
+    };
+    assert_eq!(resolved_output, y);
   }
 }
