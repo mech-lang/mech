@@ -1105,7 +1105,7 @@ mod decoded_variable_definition_symbol_metadata_tests {
       assert_eq!(*value.as_f64().unwrap().borrow(), expected);
     }
     let state = decoded.state.borrow();
-    assert!(state.symbol_table.borrow().get_mutable_symbol(input_id).is_none());
-    assert!(state.symbol_table.borrow().get_mutable_symbol(state_id).is_some());
+    assert!(state.get_mutable_symbol(input_id).is_none());
+    assert!(state.get_mutable_symbol(state_id).is_some());
   }
 }
