@@ -26,21 +26,40 @@ jobs:
           rustup default nightly-2026-03-03
 
       - name: Build interpreter test binary
-        run: cargo test -p mech-interpreter --lib --no-run
+        run: cargo test -q -p mech-interpreter --lib --no-run
 
       - name: Capture failing test backtrace
+        id: reproduce
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           test_binary="$(find target/debug/deps -maxdepth 1 -type f -name 'mech_interpreter-*' -perm -111 | head -n 1)"
           test -n "$test_binary"
           echo "test binary: $test_binary"
+          set +e
           gdb -q -batch \
             -ex 'set pagination off' \
             -ex 'set print frame-arguments all' \
             -ex run \
-            -ex 'thread apply all bt 120' \
+            -ex 'thread apply all bt 160' \
             --args "$test_binary" \
               expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
               --exact \
-              --nocapture
+              --nocapture \
+            > structural-alias-gdb.txt 2>&1
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -80 structural-alias-gdb.txt || true
+
+      - name: Upload stack trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: structural-alias-gdb
+          path: structural-alias-gdb.txt
+
+      - name: Fail after artifact upload
+        if: always()
+        shell: bash
+        run: exit "${{ steps.reproduce.outputs.status || '1' }}"
