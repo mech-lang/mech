@@ -68,6 +68,9 @@ jobs:
           # Two-phase register staging and atomic commit coverage.
           cargo test -p mech-core reactive_register_commit_ -- --nocapture
           cargo test -p mech-interpreter register_commit_ -- --nocapture
+          cargo test -p mech-core reactive_turn_ -- --nocapture
+          cargo test -p mech-interpreter reactive_turn_ -- --nocapture
+          cargo test -p mech-interpreter decoded_reactive_turn_ -- --nocapture
 
           # Runtime package tests.
           cargo test -p mech-runtime --lib --tests

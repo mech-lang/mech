@@ -448,6 +448,11 @@ pub struct ReactiveRegisterCommitOutcome {
   pub committed_nodes: Vec<ReactiveNodeId>,
   pub dirty_cells: Vec<ReactiveCellId>,
 }
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReactiveTurnState { pub pending_register_nodes: Vec<ReactiveNodeId> }
+impl ReactiveTurnState { pub fn has_pending_registers(&self) -> bool { !self.pending_register_nodes.is_empty() } }
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReactiveTurnOutcome { pub before_commit: ReactivePlanSolveOutcome, pub register_commit: ReactiveRegisterCommitOutcome, pub after_commit: ReactivePlanSolveOutcome }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReactiveDependency {
@@ -861,6 +866,26 @@ impl ReactivePlan {
     }
     Ok(outcome)
   }
+  /// Advances one synchronous reactive turn using this existing plan.
+  ///
+  /// Pre-commit and staging failures occur before register mutation. Post-commit
+  /// propagation failures occur after the atomic register batch has been committed
+  /// and are therefore not rolled back.
+  pub fn advance_reactive_turn(&mut self, state: &mut ReactiveTurnState, dirty_cells: &[ReactiveCellId]) -> MResult<ReactiveTurnOutcome> {
+    let before_commit = self.solve_dirty_cells(dirty_cells)?;
+    let mut pending_register_nodes = std::mem::take(&mut state.pending_register_nodes);
+    pending_register_nodes.extend(before_commit.pending_register_nodes.iter().copied());
+    let register_commit = match self.commit_pending_registers(&pending_register_nodes) {
+      Ok(outcome) => outcome,
+      Err(error) => { state.pending_register_nodes = pending_register_nodes; return Err(error); }
+    };
+    state.pending_register_nodes.clear();
+    let after_commit = self.solve_dirty_cells(&register_commit.dirty_cells)?;
+    pending_register_nodes.clear();
+    pending_register_nodes.extend(after_commit.pending_register_nodes.iter().copied());
+    state.pending_register_nodes = pending_register_nodes;
+    Ok(ReactiveTurnOutcome { before_commit, register_commit, after_commit })
+  }
 }
 
 impl core::ops::Index<usize> for ReactivePlan {
@@ -932,6 +957,7 @@ impl Plan {
   pub fn commit_pending_registers(&self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
     self.0.borrow_mut().commit_pending_registers(pending_nodes)
   }
+  pub fn advance_reactive_turn(&self, state: &mut ReactiveTurnState, dirty_cells: &[ReactiveCellId]) -> MResult<ReactiveTurnOutcome> { self.0.borrow_mut().advance_reactive_turn(state, dirty_cells) }
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
     self.0.borrow()

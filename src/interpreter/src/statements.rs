@@ -1393,4 +1393,16 @@ mod register_commit_integration_tests {
     assert_eq!(commit.dirty_cells, vec![output_cell]);
     assert_eq!(*output.as_f64().unwrap().borrow(), 5.0);
   }
+  #[test]
+  fn reactive_turn_updates_downstream_after_register_commit() {
+    let t=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap(); let mut i=Interpreter::new_with_full_stdlib(0); i.interpret(&t).unwrap(); let(x,y)=(cell(&i,"x"),cell(&i,"y")); let r=register(&i,x); set(&i,"y",10.); let mut state=ReactiveTurnState::default(); let outcome=i.plan().advance_reactive_turn(&mut state,&[y]).unwrap(); assert_eq!((value(&i,"x"),value(&i,"z")),(13.,14.)); assert_eq!(outcome.before_commit.pending_register_nodes,vec![r]); assert_eq!(outcome.register_commit.committed_nodes,vec![r]); assert!(state.pending_register_nodes.is_empty());
+  }
+  #[test]
+  fn reactive_turn_defers_second_register_layer() {
+    let t=mech_syntax::parser::parse("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap(); let mut i=Interpreter::new_with_full_stdlib(0); i.interpret(&t).unwrap(); let(input,a,b)=(cell(&i,"input"),cell(&i,"a"),cell(&i,"b")); let(ra,rb)=(register(&i,a),register(&i,b)); set(&i,"input",10.); let mut state=ReactiveTurnState::default(); let first=i.plan().advance_reactive_turn(&mut state,&[input]).unwrap(); assert_eq!(first.register_commit.committed_nodes,vec![ra]); assert_eq!(first.after_commit.pending_register_nodes,vec![rb]); assert_eq!(state.pending_register_nodes,vec![rb]); assert_eq!(value(&i,"output"),1.); let second=i.plan().advance_reactive_turn(&mut state,&[]).unwrap(); assert_eq!(second.register_commit.committed_nodes,vec![rb]); assert_eq!(value(&i,"output"),12.); assert!(state.pending_register_nodes.is_empty());
+  }
+  #[test]
+  fn decoded_reactive_turn_reuses_compiled_plan() {
+    let t=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0\nz").unwrap(); let mut source=Interpreter::new_with_full_stdlib(0); source.interpret(&t).unwrap(); let bytes=source.compile().unwrap(); let program=ParsedProgram::from_bytes(&bytes).unwrap(); let mut i=Interpreter::new_with_full_stdlib(0); i.run_program(&program).unwrap(); let x=cell(&i,"x"); let r=register(&i,x); let(source_cell,length,outputs)={let p=i.plan();let p=p.borrow();let n=p.node(r).unwrap();(n.inputs.iter().find(|d|d.kind==ReactiveDependencyKind::Reactive&&d.cell!=x).unwrap().cell,p.len(),p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>())}; let mut state=ReactiveTurnState::default(); for expected in [(5.,6.),(7.,8.)] {i.plan().advance_reactive_turn(&mut state,&[source_cell]).unwrap();assert_eq!((value(&i,"x"),value(&i,"z")),expected);let p=i.plan();let p=p.borrow();assert_eq!(p.len(),length);assert_eq!(p.node(r).unwrap().id,r);assert_eq!(p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>(),outputs);assert!(state.pending_register_nodes.is_empty());}
+  }
 }
