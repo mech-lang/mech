@@ -514,7 +514,7 @@ where
     for e in &self.e0 {
       mat_regs.push(compile_register_mat!(e, ctx));
     }
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
     ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
       registers[0],
@@ -546,6 +546,8 @@ mod compiler_tests {
     assert_eq!(ctx.const_entries.len(), 2);
     assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register)).count(), 1);
     assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register]));
+    assert!(ctx.features.contains(&FeatureFlag::Builtin(FeatureKind::VertCat)));
+    assert!(!ctx.features.contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)));
   }
 }
 

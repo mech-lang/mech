@@ -797,6 +797,7 @@ mod compiler_tests {
   fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
     let matrix = matrix();
     let scalar = Ref::new(9i64);
+    let scalar_addr = scalar.addr();
     let function = HorizontalConcatenateRDN {
       matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
       scalar: vec![(scalar, 2)],
@@ -806,7 +807,8 @@ mod compiler_tests {
     function.compile(&mut ctx).unwrap();
 
     let matrix_register = assert_single_matrix_load(&ctx, &matrix);
-    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args[0] == matrix_register && args[1] == matrix_register));
+    let scalar_register = ctx.reg_map[&scalar_addr];
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register, scalar_register]));
   }
 }
 
