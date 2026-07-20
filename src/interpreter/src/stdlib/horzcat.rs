@@ -732,6 +732,84 @@ where
 #[cfg(feature = "row_vectord")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateRDN);
 
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "row_vectord", feature = "i64"))]
+mod compiler_tests {
+  use super::*;
+
+  fn matrix() -> Ref<DMatrix<i64>> {
+    Ref::new(DMatrix::from_vec(1, 1, vec![7i64]))
+  }
+
+  fn assert_single_matrix_load(ctx: &CompileCtx, matrix: &Ref<DMatrix<i64>>) -> Register {
+    let matrix_register = ctx.reg_map[&matrix.addr()];
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register)).count(), 1);
+    matrix_register
+  }
+
+  #[test]
+  fn pointer_register_matrix_initializes_once() {
+    let mut ctx = CompileCtx::new();
+    let ctx = &mut ctx;
+    let matrix_a = matrix();
+    let matrix_b = matrix();
+
+    let register_a = compile_register_mat!(matrix_a, ctx);
+    let register_a_again = compile_register_mat!(matrix_a, ctx);
+    let register_b = compile_register_mat!(matrix_b, ctx);
+
+    assert_eq!(register_a_again, register_a);
+    assert_ne!(register_b, register_a);
+    assert_eq!(ctx.const_entries.len(), 2);
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_a)).count(), 1);
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_b)).count(), 1);
+  }
+
+  #[test]
+  fn horizontal_concatenate_four_args_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let function = HorizontalConcatenateFourArgs {
+      e0: Box::new(matrix.clone()), e1: Box::new(matrix.clone()),
+      e2: Box::new(matrix.clone()), e3: Box::new(matrix.clone()),
+      out: Ref::new(DMatrix::from_element(1, 4, 0i64)),
+    };
+    let mut ctx = CompileCtx::new();
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&ctx, &matrix);
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::QuadOp { a, b, c, d, .. }) if [*a, *b, *c, *d] == [matrix_register; 4]));
+  }
+
+  #[test]
+  fn horizontal_concatenate_n_args_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let function = HorizontalConcatenateNArgs {
+      e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+      out: Ref::new(DMatrix::from_element(1, 2, 0i64)),
+    };
+    let mut ctx = CompileCtx::new();
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&ctx, &matrix);
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register]));
+  }
+
+  #[test]
+  fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let scalar = Ref::new(9i64);
+    let function = HorizontalConcatenateRDN {
+      matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
+      scalar: vec![(scalar, 2)],
+      out: Ref::new(RowDVector::from_element(3, 0i64)),
+    };
+    let mut ctx = CompileCtx::new();
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&ctx, &matrix);
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args[0] == matrix_register && args[1] == matrix_register));
+  }
+}
+
 // HorizontalConcatenateS1D ---------------------------------------------------
 
 #[cfg(feature = "matrixd")]

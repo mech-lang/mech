@@ -293,3 +293,32 @@ impl MechErrorKind for FinalBufferLengthMismatchError {
     format!("Final buffer length mismatch: expected {}, got {}", self.expected, self.got)
   }
 }
+
+#[cfg(all(test, feature = "compiler"))]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn compile_context_initializes_pointer_register_once() {
+    let mut ctx = CompileCtx::new();
+    let pointer_a = 100usize;
+    let pointer_b = 200usize;
+
+    let (register_a, initializes_a) = ctx.register_for_ptr_with_initialization_status(pointer_a);
+    assert!(initializes_a);
+
+    let (register_a_again, initializes_a_again) = ctx.register_for_ptr_with_initialization_status(pointer_a);
+    assert_eq!(register_a_again, register_a);
+    assert!(!initializes_a_again);
+
+    let (register_b, initializes_b) = ctx.register_for_ptr_with_initialization_status(pointer_b);
+    assert_ne!(register_b, register_a);
+    assert!(initializes_b);
+
+    ctx.clear();
+
+    let (register_a_after_clear, initializes_a_after_clear) = ctx.register_for_ptr_with_initialization_status(pointer_a);
+    assert_eq!(register_a_after_clear, 0);
+    assert!(initializes_a_after_clear);
+  }
+}
