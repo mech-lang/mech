@@ -96,14 +96,9 @@ jobs:
           bash scripts/ci-timed.sh \
             "cargo test -p mech-core --lib" \
             cargo test -p mech-core --lib
-          # Known pre-existing failure: mech-lang/mech#612. This parity test
-          # executes decoded bytecode in the source interpreter's existing state
-          # and can create a recursive value graph. Keep every other interpreter
-          # unit test enabled until the test is corrected to use a fresh instance.
           bash scripts/ci-timed.sh \
-            "cargo test -p mech-interpreter --lib (skip #612)" \
-            cargo test -p mech-interpreter --lib -- \
-              --skip decoded_structural_alias_access_matches_source
+            "cargo test -p mech-interpreter --lib" \
+            cargo test -p mech-interpreter --lib
 
       - name: Run runtime package tests
         run: |
