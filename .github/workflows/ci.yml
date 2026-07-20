@@ -6,6 +6,9 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
@@ -30,95 +33,186 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Build and test
+      - name: Initialize Cargo timing summary
         run: |
-          # Linked-stdlib CLI build for examples that import named modules.
-          cargo build --bin mech --features linked_stdlib
-          ./target/debug/mech test examples/working
+          {
+            echo "## Cargo CI timings"
+            echo
+            echo "| Command | Duration | Status |"
+            echo "| --- | ---: | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          # Prelude-only no-default feature checks.
-          cargo check --no-default-features
-          cargo check --no-default-features --features build
-          cargo check --no-default-features --features test
-          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+      - name: Build linked CLI and test examples
+        run: |
+          bash scripts/ci-timed.sh \
+            "cargo build --bin mech --features linked_stdlib" \
+            cargo build --locked --bin mech --features linked_stdlib
+          bash scripts/ci-timed.sh \
+            "mech test examples/working" \
+            ./target/debug/mech test examples/working
 
-          # Direct package feature-boundary checks.
-          cargo check -p mech-core --no-default-features --features mika
-          cargo check -p mech-core --no-default-features --features "mika serde"
-          cargo check -p mech-syntax --no-default-features --features mika
-          cargo check -p mech-interpreter --no-default-features --features program
-          cargo check -p mech-program --no-default-features --features program
+      - name: Check root feature boundaries
+        run: |
+          bash scripts/ci-timed.sh \
+            "cargo check --no-default-features" \
+            cargo check --locked --no-default-features
+          bash scripts/ci-timed.sh \
+            "cargo check --no-default-features --features build" \
+            cargo check --locked --no-default-features --features build
+          bash scripts/ci-timed.sh \
+            "cargo check --no-default-features --features test" \
+            cargo check --locked --no-default-features --features test
+          bash scripts/ci-timed.sh \
+            "cargo run --bin mech --no-default-features --features test -- test fizzbuzz" \
+            cargo run --locked --bin mech --no-default-features --features test -- \
+              test examples/working/fizzbuzz.mec
 
-          cargo test interpret
-          cargo test bytecode
+      - name: Check package feature boundaries
+        run: |
+          bash scripts/ci-timed.sh \
+            "cargo check -p mech-core --no-default-features --features mika" \
+            cargo check --locked -p mech-core --no-default-features --features mika
+          bash scripts/ci-timed.sh \
+            "cargo check -p mech-core --no-default-features --features mika,serde" \
+            cargo check --locked -p mech-core --no-default-features --features "mika serde"
+          bash scripts/ci-timed.sh \
+            "cargo check -p mech-syntax --no-default-features --features mika" \
+            cargo check --locked -p mech-syntax --no-default-features --features mika
+          bash scripts/ci-timed.sh \
+            "cargo check -p mech-interpreter --no-default-features --features program" \
+            cargo check --locked -p mech-interpreter --no-default-features --features program
+          bash scripts/ci-timed.sh \
+            "cargo check -p mech-program --no-default-features --features program" \
+            cargo check --locked -p mech-program --no-default-features --features program
 
-          # Whole-value assignment reactive graph coverage.
-          cargo test -p mech-interpreter whole_variable_assignment_registers_state_node -- --nocapture
-          cargo test -p mech-interpreter whole_add_assignment_registers_state_node -- --nocapture
-          cargo test -p mech-interpreter whole_add_assignment_alias_is_sampled_once -- --nocapture
-          cargo test -p mech-interpreter decoded_whole_variable_assignment_matches_source_graph -- --nocapture
-          cargo test -p mech-interpreter decoded_whole_add_assignment_matches_source_graph -- --nocapture
-          cargo test -p mech-interpreter whole_matrix_assignment_uses_root_cells -- --nocapture
+      - name: Run root language tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "cargo test interpret" \
+            cargo test --locked interpret
+          bash scripts/ci-timed.sh \
+            "cargo test bytecode" \
+            cargo test --locked bytecode
 
-          # Deterministic dirty-cell scheduler coverage.
-          cargo test -p mech-core reactive_dirty_scheduler_ -- --nocapture
-          cargo test -p mech-interpreter dirty_scheduler_updates_only_reachable_combinational_nodes -- --nocapture
-          cargo test -p mech-interpreter dirty_scheduler_stops_at_register_boundary -- --nocapture
+      - name: Run whole-value assignment graph tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "mech-interpreter whole_variable_assignment_registers_state_node" \
+            cargo test --locked -p mech-interpreter \
+              whole_variable_assignment_registers_state_node
+          bash scripts/ci-timed.sh \
+            "mech-interpreter whole_add_assignment_registers_state_node" \
+            cargo test --locked -p mech-interpreter \
+              whole_add_assignment_registers_state_node
+          bash scripts/ci-timed.sh \
+            "mech-interpreter whole_add_assignment_alias_is_sampled_once" \
+            cargo test --locked -p mech-interpreter \
+              whole_add_assignment_alias_is_sampled_once
+          bash scripts/ci-timed.sh \
+            "mech-interpreter decoded_whole_variable_assignment_matches_source_graph" \
+            cargo test --locked -p mech-interpreter \
+              decoded_whole_variable_assignment_matches_source_graph
+          bash scripts/ci-timed.sh \
+            "mech-interpreter decoded_whole_add_assignment_matches_source_graph" \
+            cargo test --locked -p mech-interpreter \
+              decoded_whole_add_assignment_matches_source_graph
+          bash scripts/ci-timed.sh \
+            "mech-interpreter whole_matrix_assignment_uses_root_cells" \
+            cargo test --locked -p mech-interpreter \
+              whole_matrix_assignment_uses_root_cells
 
-          # Two-phase register staging and atomic commit coverage.
-          cargo test -p mech-core reactive_register_commit_ -- --nocapture
-          cargo test -p mech-interpreter register_commit_ -- --nocapture
-          cargo test -p mech-core reactive_turn_ -- --nocapture
-          cargo test -p mech-interpreter reactive_turn_ -- --nocapture
-          cargo test -p mech-interpreter decoded_reactive_turn_ -- --nocapture
+      - name: Run dirty scheduler and register commit tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "mech-core reactive_dirty_scheduler_" \
+            cargo test --locked -p mech-core reactive_dirty_scheduler_
+          bash scripts/ci-timed.sh \
+            "mech-interpreter dirty_scheduler_updates_only_reachable_combinational_nodes" \
+            cargo test --locked -p mech-interpreter \
+              dirty_scheduler_updates_only_reachable_combinational_nodes
+          bash scripts/ci-timed.sh \
+            "mech-interpreter dirty_scheduler_stops_at_register_boundary" \
+            cargo test --locked -p mech-interpreter \
+              dirty_scheduler_stops_at_register_boundary
+          bash scripts/ci-timed.sh \
+            "mech-core reactive_register_commit_" \
+            cargo test --locked -p mech-core reactive_register_commit_
+          bash scripts/ci-timed.sh \
+            "mech-interpreter register_commit_" \
+            cargo test --locked -p mech-interpreter register_commit_
 
-          # Pointer-register initialization identity coverage.
-          cargo test \
-            -p mech-core \
-            compile_context_initializes_pointer_register_once \
-            -- --nocapture
-          cargo test \
-            -p mech-core \
-            pointer_register_scalar_initializes_once \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            pointer_register_matrix_initializes_once \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            horizontal_concatenate_four_args_reuses_repeated_matrix_register \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            horizontal_concatenate_n_args_reuses_repeated_matrix_register \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            horizontal_concatenate_rdn_reuses_repeated_matrix_register \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            vertical_concatenate_n_args_reuses_repeated_matrix_register \
-            -- --nocapture
+      - name: Run reactive turn tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "mech-core reactive_turn_" \
+            cargo test --locked -p mech-core reactive_turn_
+          bash scripts/ci-timed.sh \
+            "mech-interpreter reactive_turn_" \
+            cargo test --locked -p mech-interpreter reactive_turn_
+          bash scripts/ci-timed.sh \
+            "mech-interpreter decoded_reactive_turn_" \
+            cargo test --locked -p mech-interpreter decoded_reactive_turn_
 
-          # Runtime package tests.
-          cargo test -p mech-runtime --lib --tests
+      - name: Run pointer-register identity tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "mech-core compile_context_initializes_pointer_register_once" \
+            cargo test --locked -p mech-core \
+              compile_context_initializes_pointer_register_once
+          bash scripts/ci-timed.sh \
+            "mech-core pointer_register_scalar_initializes_once" \
+            cargo test --locked -p mech-core \
+              pointer_register_scalar_initializes_once
+          bash scripts/ci-timed.sh \
+            "mech-interpreter pointer_register_matrix_initializes_once" \
+            cargo test --locked -p mech-interpreter \
+              pointer_register_matrix_initializes_once
+          bash scripts/ci-timed.sh \
+            "mech-interpreter horizontal_concatenate_four_args_reuses_repeated_matrix_register" \
+            cargo test --locked -p mech-interpreter \
+              horizontal_concatenate_four_args_reuses_repeated_matrix_register
+          bash scripts/ci-timed.sh \
+            "mech-interpreter horizontal_concatenate_n_args_reuses_repeated_matrix_register" \
+            cargo test --locked -p mech-interpreter \
+              horizontal_concatenate_n_args_reuses_repeated_matrix_register
+          bash scripts/ci-timed.sh \
+            "mech-interpreter horizontal_concatenate_rdn_reuses_repeated_matrix_register" \
+            cargo test --locked -p mech-interpreter \
+              horizontal_concatenate_rdn_reuses_repeated_matrix_register
+          bash scripts/ci-timed.sh \
+            "mech-interpreter vertical_concatenate_n_args_reuses_repeated_matrix_register" \
+            cargo test --locked -p mech-interpreter \
+              vertical_concatenate_n_args_reuses_repeated_matrix_register
 
-          # CLI host and context-send regression coverage.
-          cargo test -p mech-syntax --test context_parser
-          cargo test -p mech-host-cli --features provider --test provider
-          cargo test --features "run repl pretty_print" --test mech_cli_host
-          cargo test --features "run repl pretty_print" cli::run::tests
-          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
-          cargo check -p mech-host-cli --no-default-features
+      - name: Run runtime package tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "cargo test -p mech-runtime --lib --tests" \
+            cargo test --locked -p mech-runtime --lib --tests
+
+      - name: Run CLI host and context tests
+        run: |
+          bash scripts/ci-timed.sh \
+            "mech-syntax context_parser" \
+            cargo test --locked -p mech-syntax --test context_parser
+          bash scripts/ci-timed.sh \
+            "mech-host-cli provider" \
+            cargo test --locked -p mech-host-cli --features provider --test provider
+          bash scripts/ci-timed.sh \
+            "mech_cli_host integration test" \
+            cargo test --locked --features "run repl pretty_print" --test mech_cli_host
+          bash scripts/ci-timed.sh \
+            "cli::run::tests" \
+            cargo test --locked --features "run repl pretty_print" cli::run::tests
+          bash scripts/ci-timed.sh \
+            "cargo check runtime and hosts" \
+            cargo check --locked -p mech-runtime -p mech-host-browser -p mech-host-cli
+          bash scripts/ci-timed.sh \
+            "cargo check mech-host-cli --no-default-features" \
+            cargo check --locked -p mech-host-cli --no-default-features
 
       - name: Disk report at end
         if: always()
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Disk report on failure
-        if: failure()
         run: bash scripts/ci-disk-report.sh
 
   project-native:
