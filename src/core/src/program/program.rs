@@ -459,7 +459,7 @@ impl ParsedProgram {
           }
           let table = MechTable::from_le(&data);
           Value::Table(Ref::new(table))
-        },
+        }
         #[cfg(feature = "tuple")]
         TypeTag::Tuple => {
           if data.len() < 9 {
@@ -467,7 +467,7 @@ impl ParsedProgram {
           }
           let tuple = MechTuple::from_le(&data);
           Value::Tuple(Ref::new(tuple))
-        }
+        },
         _ => {
           return Err(
             MechError::new(
