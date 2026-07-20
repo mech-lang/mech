@@ -28,10 +28,8 @@ macro_rules! compile_register_brrw {
   ($reg:expr, $ctx:ident) => {
     {
       let addr = $reg.addr();
-      let reg = $ctx.alloc_register_for_ptr(addr);
-      let borrow = $reg.borrow();
-      let const_id = borrow.compile_const($ctx).unwrap();
-      $ctx.emit_const_load(reg, const_id);
+      let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+      if needs_initialization { let borrow = $reg.borrow(); let const_id = borrow.compile_const($ctx).unwrap(); $ctx.emit_const_load(reg, const_id); }
       reg
     }
   };
@@ -42,9 +40,8 @@ macro_rules! compile_register {
   ($reg:expr, $ctx:ident) => {
     {
       let addr = $reg.addr();
-      let reg = $ctx.alloc_register_for_ptr(addr);
-      let const_id = $reg.compile_const($ctx).unwrap();
-      $ctx.emit_const_load(reg, const_id);
+      let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+      if needs_initialization { let const_id = $reg.compile_const($ctx).unwrap(); $ctx.emit_const_load(reg, const_id); }
       reg
     }
   };
@@ -55,9 +52,8 @@ macro_rules! compile_register_mat {
   ($reg:expr, $ctx:ident) => {
     {
       let addr = $reg.addr();
-      let reg = $ctx.alloc_register_for_ptr(addr);
-      let const_id = $reg.compile_const_mat($ctx).unwrap();
-      $ctx.emit_const_load(reg, const_id);
+      let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+      if needs_initialization { let const_id = $reg.compile_const_mat($ctx).unwrap(); $ctx.emit_const_load(reg, const_id); }
       reg
     }
   };
