@@ -459,6 +459,14 @@ impl ParsedProgram {
           }
           let table = MechTable::from_le(&data);
           Value::Table(Ref::new(table))
+        },
+        #[cfg(feature = "tuple")]
+        TypeTag::Tuple => {
+          if data.len() < 9 {
+            return Err(MechError::new(ConstantTooShortError { type_name: "tuple" }, None).with_compiler_loc());
+          }
+          let tuple = MechTuple::from_le(&data);
+          Value::Tuple(Ref::new(tuple))
         }
         _ => {
           return Err(

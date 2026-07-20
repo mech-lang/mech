@@ -1022,7 +1022,7 @@ impl ConstElem for Value {
     }
   }
   fn value_kind(&self) -> ValueKind {
-    self.value_kind()
+    self.kind()
   }
   fn align() -> u8 {
     1
@@ -1185,6 +1185,21 @@ impl ConstElem for ValueKind {
         }
         let row_count = cursor.read_u32::<LittleEndian>().expect("read table row count") as usize;
         ValueKind::Table(fields, row_count)
+      }
+      #[cfg(feature = "tuple")]
+      27 => {
+        let element_count = cursor
+          .read_u32::<LittleEndian>()
+          .expect("read tuple kind length") as usize;
+        let mut elements = Vec::with_capacity(element_count);
+        for _ in 0..element_count {
+          let vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+          let mut encoded = Vec::new();
+          vk.write_le(&mut encoded);
+          cursor.set_position(cursor.position() + encoded.len() as u64);
+          elements.push(vk);
+        }
+        ValueKind::Tuple(elements)
       }
       #[cfg(feature = "set")]
       29 => {
