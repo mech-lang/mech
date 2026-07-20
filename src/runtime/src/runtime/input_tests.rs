@@ -76,6 +76,17 @@ fn f64_value(value: &Value) -> f64 {
   }
 }
 
+fn host_f64_argument(value: &Value) -> f64 {
+  match value {
+    Value::F64(value) => *value.borrow(),
+    Value::MutableReference(value) => match &*value.borrow() {
+      Value::F64(value) => *value.borrow(),
+      other => panic!("expected f64 mutable reference, got {other:?}"),
+    },
+    other => panic!("expected f64 host argument, got {other:?}"),
+  }
+}
+
 fn string_value(value: &Value) -> String {
   match value {
     Value::String(value) => value.borrow().clone(),
@@ -120,6 +131,41 @@ fn source_value(runtime: &MechRuntime, source: &RuntimeHostInputSource) -> Value
     .clone()
 }
 
+fn symbol_cell(runtime: &MechRuntime, name: &str) -> ReactiveCellId {
+  let cells = symbol_value(runtime, name).reactive_root_cell_ids();
+  assert_eq!(cells.len(), 1, "symbol {name} must have one root cell");
+  cells[0]
+}
+
+fn source_cell(runtime: &MechRuntime, source: &RuntimeHostInputSource) -> ReactiveCellId {
+  let cells = source_value(runtime, source).reactive_root_cell_ids();
+  assert_eq!(cells.len(), 1, "source must have one root cell");
+  cells[0]
+}
+
+fn register_node_for_symbol(runtime: &MechRuntime, name: &str) -> ReactiveNodeId {
+  let output = symbol_cell(runtime, name);
+  let plan = runtime.program.interpreter().plan();
+  let plan = plan.borrow();
+  let nodes = plan.nodes.iter().filter(|node| node.kind == ReactiveNodeKind::Register && node.outputs.contains(&output)).map(|node| node.id).collect::<Vec<_>>();
+  assert_eq!(nodes.len(), 1, "symbol {name} must have one register node");
+  nodes[0]
+}
+
+fn combinational_node_for_output_and_inputs(runtime: &MechRuntime, output: ReactiveCellId, required_inputs: &[ReactiveCellId]) -> ReactiveNodeId {
+  let plan = runtime.program.interpreter().plan();
+  let plan = plan.borrow();
+  let nodes = plan.nodes.iter().filter(|node| node.kind == ReactiveNodeKind::Combinational && node.outputs.contains(&output) && required_inputs.iter().all(|required| node.inputs.iter().any(|dependency| dependency.cell == *required && dependency.kind == ReactiveDependencyKind::Reactive))).map(|node| node.id).collect::<Vec<_>>();
+  assert_eq!(nodes.len(), 1, "expected one matching combinational node");
+  nodes[0]
+}
+
+fn plan_snapshot(runtime: &MechRuntime) -> (usize, Vec<ReactiveNodeId>, Vec<Vec<ReactiveCellId>>) {
+  let plan = runtime.program.interpreter().plan();
+  let plan = plan.borrow();
+  (plan.len(), plan.nodes.iter().map(|node| node.id).collect(), plan.nodes.iter().map(|node| node.outputs.clone()).collect())
+}
+
 fn test_provider_with(base_uri: &str, path: &str, value: f64) -> TestResourceProvider {
   TestResourceProvider::new()
     .with_value(base_uri, path, Value::F64(Ref::new(value)))
@@ -133,6 +179,11 @@ fn grant_read(runtime: &mut MechRuntime, resource: &str, path: &str) {
     operations: vec![RuntimeCapabilityOperation::Read],
     paths: vec![path.to_string()],
   }).unwrap();
+}
+
+fn grant_write(runtime: &mut MechRuntime, resource: &str, path: &str) {
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(RuntimeCapabilityGrant { subject, resource: resource.to_string(), operations: vec![RuntimeCapabilityOperation::Write], paths: vec![path.to_string()] }).unwrap();
 }
 
 fn test_runtime(provider: TestResourceProvider) -> MechRuntime {
@@ -186,21 +237,26 @@ fn runtime_reactive_host_input_batches_bound_updates_into_one_turn() {
     .with_value(TEST_CLOCK_BASE_URI, "a", Value::F64(Ref::new(1.0)))
     .with_value(TEST_CLOCK_BASE_URI, "b", Value::F64(Ref::new(2.0)));
   let mut runtime = test_runtime(provider);
-  grant_read(&mut runtime, "test://clock/ticks", "a");
-  grant_read(&mut runtime, "test://clock/ticks", "b");
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "a");
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "b");
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(a), :read(b)}\nsum := @pulse/a + @pulse/b").unwrap();
-  assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 3.0);
-
+  let a_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "a").unwrap();
+  let b_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "b").unwrap();
+  let sum_node = combinational_node_for_output_and_inputs(&runtime, symbol_cell(&runtime, "sum"), &[source_cell(&runtime, &a_source), source_cell(&runtime, &b_source)]);
+  let root_interpreter_id = runtime.program.interpreter().id;
   let outcome = runtime.apply_host_input(RuntimeHostInput::new(vec![
-    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("test://clock/ticks", "a").unwrap(), value: RuntimeHostInputValue::F64(10.0) },
-    RuntimeHostInputUpdate { source: RuntimeHostInputSource::new("test://clock/ticks", "b").unwrap(), value: RuntimeHostInputValue::F64(20.0) },
+    RuntimeHostInputUpdate { source: a_source.clone(), value: RuntimeHostInputValue::F64(10.0) },
+    RuntimeHostInputUpdate { source: b_source.clone(), value: RuntimeHostInputValue::F64(20.0) },
   ]).unwrap()).unwrap();
-
-  assert!(outcome.turn.as_ref().unwrap().plan_len > 0);
-  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("test://clock/ticks", "a").unwrap())), 10.0);
-  assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("test://clock/ticks", "b").unwrap())), 20.0);
-  assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 30.0);
+  let program_turn = outcome.turn.as_ref().unwrap();
+  let interpreter_turn = &program_turn.interpreter_turns[0];
+  let reactive_turn = &interpreter_turn.turn;
+  assert_eq!(outcome.update_count, 2); assert_eq!(outcome.ignored_update_count, 0); assert_eq!(outcome.binding_count, 2);
+  assert_eq!(program_turn.updated_count, 2); assert_eq!(program_turn.interpreter_turns.len(), 1); assert_eq!(interpreter_turn.interpreter_id, root_interpreter_id); assert!(!interpreter_turn.dirty_cells.is_empty());
+  assert_eq!(reactive_turn.before_commit.executed_nodes.iter().filter(|node| **node == sum_node).count(), 1);
+  assert!(reactive_turn.register_commit.staged_nodes.is_empty()); assert!(reactive_turn.register_commit.committed_nodes.is_empty()); assert!(reactive_turn.register_commit.dirty_cells.is_empty());
+  assert_eq!(f64_value(&source_value(&runtime, &a_source)), 10.0); assert_eq!(f64_value(&source_value(&runtime, &b_source)), 20.0); assert_eq!(f64_value(&symbol_value(&runtime, "sum")), 30.0);
 }
 
 #[test]
@@ -272,7 +328,7 @@ fn runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers
 
 
 #[test]
-fn runtime_reactive_host_input_executes_only_reachable_branch() {
+fn live_input_recomputes_runtime_host_function() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
   grant_read(&mut runtime, "test://clock/ticks", "value");
   runtime
@@ -306,6 +362,25 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
   assert!(calls.load(Ordering::SeqCst) > initial_calls);
   assert_eq!(f64_value(&source_value(&runtime, &RuntimeHostInputSource::new("test://clock/ticks", "value").unwrap())), 9.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+}
+
+#[test]
+fn runtime_reactive_host_input_executes_only_reachable_branch() {
+  let provider = TestResourceProvider::new().with_value(TEST_CLOCK_BASE_URI, "left", Value::F64(Ref::new(1.0))).with_value(TEST_CLOCK_BASE_URI, "right", Value::F64(Ref::new(2.0)));
+  let mut runtime = test_runtime(provider);
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "left"); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "right");
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 91, "host:demo/left-branch"); grant_host_call(&mut runtime, &subject, 92, "host:demo/right-branch");
+  let left_calls = Arc::new(AtomicUsize::new(0)); let right_calls = Arc::new(AtomicUsize::new(0));
+  for (name, calls, add) in [("demo/left-branch", left_calls.clone(), 100.0), ("demo/right-branch", right_calls.clone(), 200.0)] {
+    runtime.register_mech_host_function(ClosureHostFunction::new(name, move |_services, _context, args| { calls.fetch_add(1, Ordering::SeqCst); let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + add))) })).unwrap();
+  }
+  let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(left), :read(right)}\nleft-output := demo/left-branch(@pulse/left)\nright-output := demo/right-branch(@pulse/right)").unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "left-output")), 101.0); assert_eq!(f64_value(&symbol_value(&runtime, "right-output")), 202.0);
+  let left_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "left").unwrap(); let right_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "right").unwrap();
+  let plan = runtime.program.interpreter().plan(); let left_consumers = plan.borrow().reactive_consumers_for(source_cell(&runtime, &left_source)).to_vec(); let right_consumers = plan.borrow().reactive_consumers_for(source_cell(&runtime, &right_source)).to_vec(); drop(plan);
+  let outcome = runtime.apply_host_input(RuntimeHostInput::single(left_source, RuntimeHostInputValue::F64(10.0))).unwrap(); let reactive_turn = &outcome.turn.as_ref().unwrap().interpreter_turns[0].turn;
+  assert_eq!((left_calls.load(Ordering::SeqCst), right_calls.load(Ordering::SeqCst)), (2, 1)); assert!(left_consumers.iter().any(|id| reactive_turn.before_commit.executed_nodes.contains(id))); assert!(!right_consumers.iter().any(|id| reactive_turn.before_commit.executed_nodes.contains(id))); assert_eq!(f64_value(&symbol_value(&runtime, "left-output")), 110.0); assert_eq!(f64_value(&symbol_value(&runtime, "right-output")), 202.0);
 }
 
 #[test]
@@ -448,7 +523,7 @@ fn runtime_reactive_host_input_turn_failure_preserves_admitted_inputs() {
 }
 
 #[test]
-fn runtime_reactive_host_input_preserves_deferred_registers_across_packets() {
+fn live_host_empty_output_can_recompute() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
   grant_read(&mut runtime, "test://clock/ticks", "value");
   let subject = runtime.runtime_context().unwrap().subject;
@@ -1179,4 +1254,13 @@ output := hour + 1
     publish(&mut runtime, &driver, snapshot(5.0, 6.0, 7.0, 8.0));
     assert_eq!(runtime.persistent_send_count(), 1);
   }
+}
+
+#[test]
+fn runtime_reactive_host_input_preserves_deferred_registers_across_packets() {
+  let mut runtime = test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0)); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\n~a := 0.0\n~b := 0.0\na = @pulse/value\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();
+  let a = register_node_for_symbol(&runtime, "a"); let b = register_node_for_symbol(&runtime, "b"); let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  let first = runtime.apply_host_input(RuntimeHostInput::single(source.clone(), RuntimeHostInputValue::F64(10.0))).unwrap(); let turn = &first.turn.as_ref().unwrap().interpreter_turns[0].turn; assert_eq!(turn.register_commit.committed_nodes, vec![a]); assert_eq!(turn.after_commit.pending_register_nodes, vec![b]); assert_eq!(f64_value(&symbol_value(&runtime, "b")), 2.0);
+  let second = runtime.apply_host_input(RuntimeHostInput::single(source, RuntimeHostInputValue::F64(20.0))).unwrap(); let turn = &second.turn.as_ref().unwrap().interpreter_turns[0].turn; assert_eq!(turn.register_commit.committed_nodes, vec![a, b]); assert_eq!(turn.after_commit.pending_register_nodes, vec![b]); assert_eq!(f64_value(&symbol_value(&runtime, "b")), 11.0);
 }
