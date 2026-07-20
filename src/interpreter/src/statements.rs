@@ -1400,8 +1400,16 @@ mod register_commit_integration_tests {
     interpreter.interpret(&tree).unwrap();
     let (x_cell, y_cell, z_cell) = (cell(&interpreter, "x"), cell(&interpreter, "y"), cell(&interpreter, "z"));
     let x_register = register(&interpreter, x_cell);
-    let z_node = { let plan=interpreter.plan(); plan.borrow().nodes.iter().filter(|node| node.outputs.contains(&z_cell)).map(|node| node.id).collect::<Vec<_>>() };
-    assert_eq!(z_node.len(), 1);
+    let x_consumers = {
+      let plan_handle = interpreter.plan();
+      let plan = plan_handle.borrow();
+      let consumers = plan.reactive_consumers_for(x_cell).to_vec();
+      assert!(!consumers.is_empty());
+      for node_id in &consumers {
+        assert_eq!(plan.node(*node_id).unwrap().kind, ReactiveNodeKind::Combinational);
+      }
+      consumers
+    };
     set(&interpreter, "y", 10.0);
     let mut turn_state = ReactiveTurnState::default();
     let outcome = interpreter.plan().advance_reactive_turn(&mut turn_state, &[y_cell]).unwrap();
@@ -1409,7 +1417,10 @@ mod register_commit_integration_tests {
     assert_eq!(outcome.before_commit.pending_register_nodes, vec![x_register]);
     assert_eq!(outcome.register_commit.staged_nodes, vec![x_register]);
     assert_eq!(outcome.register_commit.committed_nodes, vec![x_register]);
-    assert!(outcome.after_commit.executed_nodes.contains(&z_node[0]));
+    assert_eq!(outcome.register_commit.dirty_cells, vec![x_cell]);
+    for node_id in &x_consumers { assert!(outcome.after_commit.executed_nodes.contains(node_id)); }
+    let executed_z_nodes = { let plan_handle=interpreter.plan(); let plan=plan_handle.borrow(); outcome.after_commit.executed_nodes.iter().copied().filter(|node_id| plan.node(*node_id).unwrap().outputs.contains(&z_cell)).collect::<Vec<_>>() };
+    assert!(!executed_z_nodes.is_empty());
     assert!(turn_state.pending_register_nodes.is_empty());
   }
   #[test]
@@ -1444,21 +1455,21 @@ mod register_commit_integration_tests {
     let decoded_output = interpreter.run_program(&program).unwrap();
     assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 4.0);
     let z_cell = decoded_output.reactive_root_cell_ids()[0];
-    let (x_register, x_ref, x_cell, source_cell, plan_length, node_ids, output_cells, z_node_id) = {
+    let (x_register, x_ref, x_cell, source_cell, x_consumers, plan_length, node_ids, output_cells) = {
       let plan_handle = interpreter.plan(); let plan = plan_handle.borrow();
-      let z_nodes = plan.nodes.iter().filter(|node| node.outputs.contains(&z_cell)).collect::<Vec<_>>();
-      assert_eq!(z_nodes.len(),1); let z_node=z_nodes[0]; assert_eq!(z_node.kind,ReactiveNodeKind::Combinational);
-      let registers=plan.nodes.iter().filter(|node| node.kind==ReactiveNodeKind::Register && node.outputs.iter().any(|output| z_node.inputs.iter().any(|dependency| dependency.kind==ReactiveDependencyKind::Reactive && dependency.cell==*output))).collect::<Vec<_>>();
+      let registers=plan.nodes.iter().filter(|node| node.kind==ReactiveNodeKind::Register).collect::<Vec<_>>();
       assert_eq!(registers.len(),1); let x_register=registers[0].id;
       let x_output=plan.node(x_register).unwrap().function.out(); let x_ref=x_output.as_f64().unwrap().clone(); let x_cell=x_output.reactive_root_cell_ids()[0];
       let source_dependencies=plan.node(x_register).unwrap().inputs.iter().filter(|dependency| dependency.kind==ReactiveDependencyKind::Reactive&&dependency.cell!=x_cell).collect::<Vec<_>>(); assert_eq!(source_dependencies.len(),1);
-      (x_register,x_ref,x_cell,source_dependencies[0].cell,plan.len(),plan.nodes.iter().map(|node|node.id).collect::<Vec<_>>(),plan.nodes.iter().map(|node|node.outputs.clone()).collect::<Vec<_>>(),z_node.id)
+      let x_consumers=plan.reactive_consumers_for(x_cell).to_vec(); assert!(!x_consumers.is_empty());
+      (x_register,x_ref,x_cell,source_dependencies[0].cell,x_consumers,plan.len(),plan.nodes.iter().map(|node|node.id).collect::<Vec<_>>(),plan.nodes.iter().map(|node|node.outputs.clone()).collect::<Vec<_>>())
     };
     assert_eq!(*x_ref.borrow(),3.0);
     let mut turn_state=ReactiveTurnState::default();
     for (expected_x,expected_z) in [(5.0,6.0),(7.0,8.0)] {
       let outcome=interpreter.plan().advance_reactive_turn(&mut turn_state,&[source_cell]).unwrap();
-      assert_eq!(outcome.before_commit.pending_register_nodes,vec![x_register]); assert_eq!(outcome.register_commit.staged_nodes,vec![x_register]); assert_eq!(outcome.register_commit.committed_nodes,vec![x_register]); assert_eq!(outcome.register_commit.dirty_cells,vec![x_cell]); assert!(outcome.after_commit.executed_nodes.contains(&z_node_id));
+      assert_eq!(outcome.before_commit.pending_register_nodes,vec![x_register]); assert_eq!(outcome.register_commit.staged_nodes,vec![x_register]); assert_eq!(outcome.register_commit.committed_nodes,vec![x_register]); assert_eq!(outcome.register_commit.dirty_cells,vec![x_cell]); for node_id in &x_consumers { assert!(outcome.after_commit.executed_nodes.contains(node_id)); }
+      let executed_z_nodes={let plan_handle=interpreter.plan();let plan=plan_handle.borrow();outcome.after_commit.executed_nodes.iter().copied().filter(|node_id|plan.node(*node_id).unwrap().outputs.contains(&z_cell)).collect::<Vec<_>>()};assert!(!executed_z_nodes.is_empty());
       assert_eq!(*x_ref.borrow(),expected_x); assert_eq!(*decoded_output.as_f64().unwrap().borrow(),expected_z); assert!(turn_state.pending_register_nodes.is_empty());
       let plan_handle=interpreter.plan();let plan=plan_handle.borrow();assert_eq!(plan.len(),plan_length);assert_eq!(plan.nodes.iter().map(|node|node.id).collect::<Vec<_>>(),node_ids);assert_eq!(plan.nodes.iter().map(|node|node.outputs.clone()).collect::<Vec<_>>(),output_cells);
     }
