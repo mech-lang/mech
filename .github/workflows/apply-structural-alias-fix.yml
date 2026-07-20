@@ -23,7 +23,7 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Fix recursive Value constant kind
+      - name: Fix tuple constant bytecode path
         shell: bash
         run: |
           python - <<'PY'
@@ -31,18 +31,117 @@ jobs:
 
           constants_path = Path('src/core/src/program/compiler/constants.rs')
           constants = constants_path.read_text()
+
           marker = 'impl ConstElem for Value {'
           before, after = constants.split(marker, 1)
-          old = '''  fn value_kind(&self) -> ValueKind {
+          recursive = '''  fn value_kind(&self) -> ValueKind {
               self.value_kind()
             }'''
-          new = '''  fn value_kind(&self) -> ValueKind {
+          corrected = '''  fn value_kind(&self) -> ValueKind {
               self.kind()
             }'''
-          if old not in after:
+          if recursive not in after:
               raise SystemExit('recursive ConstElem for Value implementation not found')
-          after = after.replace(old, new, 1)
-          constants_path.write_text(before + marker + after)
+          constants = before + marker + after.replace(recursive, corrected, 1)
+
+          tuple_insert_point = '''      #[cfg(feature = "set")]
+                29 => {
+          '''
+          tuple_kind_decoder = '''      #[cfg(feature = "tuple")]
+                27 => {
+                  let element_count = cursor
+                    .read_u32::<LittleEndian>()
+                    .expect("read tuple kind length") as usize;
+                  let mut elements = Vec::with_capacity(element_count);
+                  for _ in 0..element_count {
+                    let vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+                    let mut encoded = Vec::new();
+                    vk.write_le(&mut encoded);
+                    cursor.set_position(cursor.position() + encoded.len() as u64);
+                    elements.push(vk);
+                  }
+                  ValueKind::Tuple(elements)
+                }
+                #[cfg(feature = "set")]
+                29 => {
+          '''
+          if tuple_insert_point not in constants:
+              raise SystemExit('ValueKind tuple decoder insertion point not found')
+          constants = constants.replace(tuple_insert_point, tuple_kind_decoder, 1)
+          constants_path.write_text(constants)
+
+          program_path = Path('src/core/src/program/program.rs')
+          program = program_path.read_text()
+          program_insert_point = '''        #[cfg(feature = "table")]
+                  TypeTag::Table => {
+                    if data.len() < 8 {
+                      return Err(MechError::new(ConstantTooShortError { type_name: "table" }, None).with_compiler_loc());
+                    }
+                    let table = MechTable::from_le(&data);
+                    Value::Table(Ref::new(table))
+                  }
+                  _ => {
+          '''
+          tuple_constant_decoder = '''        #[cfg(feature = "table")]
+                  TypeTag::Table => {
+                    if data.len() < 8 {
+                      return Err(MechError::new(ConstantTooShortError { type_name: "table" }, None).with_compiler_loc());
+                    }
+                    let table = MechTable::from_le(&data);
+                    Value::Table(Ref::new(table))
+                  },
+                  #[cfg(feature = "tuple")]
+                  TypeTag::Tuple => {
+                    if data.len() < 9 {
+                      return Err(MechError::new(ConstantTooShortError { type_name: "tuple" }, None).with_compiler_loc());
+                    }
+                    let tuple = MechTuple::from_le(&data);
+                    Value::Tuple(Ref::new(tuple))
+                  }
+                  _ => {
+          '''
+          if program_insert_point not in program:
+              raise SystemExit('tuple constant decoder insertion point not found')
+          program_path.write_text(program.replace(program_insert_point, tuple_constant_decoder, 1))
+
+          tuple_path = Path('src/interpreter/src/stdlib/access/tuple.rs')
+          tuple_source = tuple_path.read_text()
+          factory_insert_point = '''impl MechFunctionImpl for TupleAccessElement {
+            fn solve(&self) {
+              ()
+            }
+            fn out(&self) -> Value { self.out.clone() }
+            fn to_string(&self) -> String { format!("{:#?}", self) }
+          }
+          '''
+          factory = '''impl MechFunctionImpl for TupleAccessElement {
+            fn solve(&self) {
+              ()
+            }
+            fn out(&self) -> Value { self.out.clone() }
+            fn to_string(&self) -> String { format!("{:#?}", self) }
+          }
+          impl MechFunctionFactory for TupleAccessElement {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+              match args {
+                FunctionArgs::Nullary(out) => Ok(Box::new(TupleAccessElement { out })),
+                _ => Err(MechError::new(
+                  IncorrectNumberOfArguments { expected: 0, found: args.len() },
+                  None,
+                ).with_compiler_loc()),
+              }
+            }
+          }
+          register_descriptor! {
+            FunctionDescriptor {
+              name: "TupleAccessElement",
+              ptr: TupleAccessElement::new,
+            }
+          }
+          '''
+          if factory_insert_point not in tuple_source:
+              raise SystemExit('TupleAccessElement factory insertion point not found')
+          tuple_path.write_text(tuple_source.replace(factory_insert_point, factory, 1))
 
           ci_path = Path('.github/workflows/ci.yml')
           ci = ci_path.read_text()
@@ -67,17 +166,24 @@ jobs:
           git rm .github/workflows/diagnose-structural-alias.yml
           git rm .github/workflows/apply-structural-alias-fix.yml
 
-      - name: Verify targeted regression
+      - name: Verify targeted structural alias regression
         run: |
           cargo test -p mech-interpreter --lib \
             expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
             -- --exact
+
+      - name: Verify complete interpreter library suite
+        run: cargo test -p mech-interpreter --lib
 
       - name: Commit and push fix
         shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add .github/workflows/ci.yml src/core/src/program/compiler/constants.rs
-          git commit -m 'fix compiler value constant kind recursion'
+          git add \
+            .github/workflows/ci.yml \
+            src/core/src/program/compiler/constants.rs \
+            src/core/src/program/program.rs \
+            src/interpreter/src/stdlib/access/tuple.rs
+          git commit -m 'fix tuple constant bytecode decoding'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
