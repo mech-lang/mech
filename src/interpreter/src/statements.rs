@@ -41,6 +41,30 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -
   }
 }
 
+#[cfg(all(test, feature = "program", feature = "functions", feature = "variables", feature = "variable_define", feature = "variable_assign", feature = "f64", feature = "math", feature = "assign"))]
+mod dirty_scheduler_integration_tests {
+  use super::*;
+
+  fn symbol(interpreter: &Interpreter, name: &str) -> Value { interpreter.symbols().borrow().get(hash_str(name)).unwrap_or_else(|| panic!("missing symbol {name}")).borrow().clone() }
+  fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId { let cells=symbol(interpreter,name).reactive_root_cell_ids(); assert_eq!(cells.len(),1); cells[0] }
+  fn set_f64(interpreter: &Interpreter, name: &str, value: f64) { *symbol(interpreter,name).as_f64().unwrap().borrow_mut()=value; }
+  fn output_nodes(interpreter: &Interpreter, cell: ReactiveCellId) -> Vec<ReactiveNodeId> { let plan=interpreter.plan(); plan.borrow().nodes.iter().filter(|node| node.outputs.contains(&cell)).map(|node|node.id).collect() }
+  fn executed_outputs(interpreter: &Interpreter, executed: &[ReactiveNodeId], cell: ReactiveCellId) -> bool { let plan=interpreter.plan(); let plan=plan.borrow(); executed.iter().any(|id|plan.node(*id).unwrap().outputs.contains(&cell)) }
+  fn value(interpreter: &Interpreter, name: &str) -> f64 { *symbol(interpreter,name).as_f64().unwrap().borrow() }
+
+  #[test]
+  fn dirty_scheduler_updates_only_reachable_combinational_nodes() {
+    let tree=mech_syntax::parser::parse("a := 1.0\nb := a + 1.0\nc := b + 1.0\n\nu := 100.0\nv := u + 1.0").unwrap(); let mut interpreter=Interpreter::new_with_full_stdlib(0); interpreter.interpret(&tree).unwrap();
+    assert_eq!((value(&interpreter,"b"),value(&interpreter,"c"),value(&interpreter,"v")),(2.0,3.0,101.0)); let a=root_cell(&interpreter,"a");let b=root_cell(&interpreter,"b");let c=root_cell(&interpreter,"c");let v=root_cell(&interpreter,"v"); set_f64(&interpreter,"a",10.0); let outcome=interpreter.plan().solve_dirty_cells(&[a]).unwrap();
+    assert_eq!((value(&interpreter,"b"),value(&interpreter,"c"),value(&interpreter,"v")),(11.0,12.0,101.0)); assert!(executed_outputs(&interpreter,&outcome.executed_nodes,b));assert!(executed_outputs(&interpreter,&outcome.executed_nodes,c));assert!(!executed_outputs(&interpreter,&outcome.executed_nodes,v));assert!(outcome.pending_register_nodes.is_empty()); let plan=interpreter.plan();let plan=plan.borrow();assert!(outcome.executed_nodes.windows(2).all(|pair|plan.node(pair[0]).unwrap().plan_index < plan.node(pair[1]).unwrap().plan_index));let unique=outcome.executed_nodes.iter().collect::<std::collections::HashSet<_>>();assert_eq!(unique.len(),outcome.executed_nodes.len());
+  }
+
+  #[test]
+  fn dirty_scheduler_stops_at_register_boundary() {
+    let tree=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();let mut interpreter=Interpreter::new_with_full_stdlib(0);interpreter.interpret(&tree).unwrap();assert_eq!((value(&interpreter,"x"),value(&interpreter,"z")),(3.0,4.0));let x=root_cell(&interpreter,"x");let y=root_cell(&interpreter,"y");let z=root_cell(&interpreter,"z");let registers={let plan=interpreter.plan();let plan=plan.borrow();plan.nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Register&&n.outputs.contains(&x)).map(|n|n.id).collect::<Vec<_>>()};assert_eq!(registers.len(),1);let register=registers[0];assert!(output_nodes(&interpreter,x).contains(&register));set_f64(&interpreter,"y",10.0);let outcome=interpreter.plan().solve_dirty_cells(&[y]).unwrap();assert_eq!(outcome.pending_register_nodes,vec![register]);assert_eq!((value(&interpreter,"x"),value(&interpreter,"z")),(3.0,4.0));assert!(!outcome.executed_nodes.contains(&register));assert!(!executed_outputs(&interpreter,&outcome.executed_nodes,z));
+  }
+}
+
 
 
 
@@ -110,6 +134,16 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
   Ok(source)
 }
 
+fn assignment_registration_operand(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => {
+      let inner = reference.borrow();
+      assignment_registration_operand(&inner)
+    }
+    _ => value.clone(),
+  }
+}
+
 #[cfg(feature = "math")]
 pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, env, p)?;
@@ -157,22 +191,21 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       }
     }
     None => {
-      let args = vec![sink,source];
-      let fxn: Box<dyn MechFunction> = match op_assgn.op {
+      let plan = p.plan();
+      let registration_source = assignment_registration_operand(&source);
+      let compile_arguments = vec![sink, source];
+      let registration_arguments = vec![registration_source];
+      return match op_assgn.op {
         #[cfg(feature = "math_add_assign")]
-        OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
+        OpAssignOp::Add => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &AddAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_sub_assign")]
-        OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
+        OpAssignOp::Sub => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &SubAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_div_assign")]
-        OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
+        OpAssignOp::Div => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &DivAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_mul_assign")]
-        OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
+        OpAssignOp::Mul => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &MulAssignValue{}, compile_arguments, registration_arguments),
         _ => todo!(),
       };
-      fxn.solve();
-      let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
-      return Ok(res);
     }
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
@@ -218,12 +251,14 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
     }
     #[cfg(feature = "assign")]
     None => {
-      let args = vec![sink,source];
-      let fxn = AssignValue{}.compile(&args)?;
-      fxn.solve();
-      let res = fxn.out();
-      p.state.borrow_mut().add_plan_step(fxn);
-      return Ok(res);
+      let plan = p.plan();
+      let registration_source = assignment_registration_operand(&source);
+      return execute_initialized_indexed_compiler_with_registration_arguments(
+        &plan,
+        &AssignValue{},
+        vec![sink, source],
+        vec![registration_source],
+      );
     }
     _ => return Err(MechError::new(
       FeatureNotEnabledError,
@@ -293,14 +328,16 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
       ).with_compiler_loc().with_tokens(inv_def.name.tokens()));
     }
   }
+  let plan = p.plan();
   let result = expression(&inv_def.expression, None, p)?;
   let rhs_ref = value_to_ref(result.clone());
   let detached_result = detach_variable_value(&result);
   {
     let mut state_brrw = p.state.borrow_mut();
     state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))])?;
-    state_brrw.add_plan_step(var_def_fxn);
+    let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))];
+    let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+    plan.register_function(var_def_fxn, &[])?;
   }
   p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
   #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
@@ -495,6 +532,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       ).with_compiler_loc().with_tokens(var_def.var.name.tokens()));
     }
   }
+  let plan = p.plan();
   #[cfg(feature = "subscript_formula")]
   reset_current_string_access_expression_live(p);
   let mut result = expression(&var_def.expression, None, p)?;
@@ -551,58 +589,30 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
-          let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
-            convert_fxn.solve();
-            let converted_result = convert_fxn.out();
-            state_brrw.add_plan_step(convert_fxn);
-            result = converted_result;
+            result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;          
+          result = execute_initialized_indexed_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(target_matrix_knd,_)) => {
         if value.is_matrix() {
-          let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
-            convert_fxn.solve();
-            let converted_result = convert_fxn.out();
-            state_brrw.add_plan_step(convert_fxn);
-            result = converted_result;
+            result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
-          convert_fxn.solve();
-          let converted_result = convert_fxn.out();
-          state_brrw.add_plan_step(convert_fxn);
-          result = converted_result;
+          result = execute_initialized_indexed_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       // Kind isn't checked
       x => {
-        let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
-        convert_fxn.solve();
-        let converted_result = convert_fxn.out();
-        state_brrw.add_plan_step(convert_fxn);
-        result = converted_result;
+        result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_knd)])?;
       },
     };
     let detached_result = detach_variable_value(&result);
@@ -613,8 +623,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     // Save symbol to interpreter
     let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), detached_result.clone(), var_def.mutable);
     // Add variable define step to plan
-    let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-    state_brrw.add_plan_step(var_def_fxn);
+    let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))];
+    let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+    plan.register_function(var_def_fxn, &[])?;
     return Ok(detached_result);
   } 
   let mut state_brrw = p.state.borrow_mut();
@@ -626,8 +637,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   // Save symbol to interpreter
   let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),detached_result.clone(),var_def.mutable);
   // Add variable define step to plan
-  let var_def_fxn = VarDefine{}.compile(&vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))])?;
-  state_brrw.add_plan_step(var_def_fxn);
+  let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(var_name.clone())), Value::Bool(Ref::new(var_def.mutable))];
+  let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+  plan.register_function(var_def_fxn, &[])?;
   return Ok(detached_result);
 }
 
@@ -677,9 +689,9 @@ macro_rules! op_assign {
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
-                  [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
-                  [1,n] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
-                  [n,1] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
+                  [1,1] => { plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?); }
+                  [1,n] => { plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?); }
+                  [n,1] => { plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?); }
                   _ => todo!(),
                 }
               },
@@ -690,9 +702,9 @@ macro_rules! op_assign {
                 fxn_input.push(ix);
                 fxn_input.push(Value::IndexAll);
                 match shape[..] {
-                  [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
-                  [1,n] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
-                  [n,1] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
+                  [1,1] => { plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?); }
+                  [1,n] => { plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?); }
+                  [n,1] => { plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?); }
                   _ => todo!(),
                 }
               },
@@ -775,11 +787,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(ixes);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
+            [1,1] => { plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+            [1,n] => { plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+            [n,1] => { plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?); }
             _ => todo!(),
           }
         },
@@ -808,13 +820,13 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result2);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             #[cfg(feature = "matrix")]
-            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAssignScalarScalar{}.compile(&fxn_input)?),
+            ((1,1),(1,1)) => { plan.borrow_mut().push(MatrixAssignScalarScalar{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
+            ((1,1),(m,1)) => { plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => { plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => { plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?); }
             _ => unreachable!(),
           }          
         },
@@ -836,11 +848,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(ix);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignAllScalar{}.compile(&fxn_input)?),
+            [1,1] => { plan.borrow_mut().push(MatrixAssignAllScalar{}.compile(&fxn_input)?); }
             #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
+            [1,n] => { plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?); }
             #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
+            [n,1] => { plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?); }
             _ => todo!(),
           }
         }
@@ -853,11 +865,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(Value::IndexAll);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
+            [1,1] => { plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?),
+            [1,n] => { plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?); }
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?),
+            [n,1] => { plan.borrow_mut().push(MatrixAssignRangeAll{}.compile(&fxn_input)?); }
             _ => todo!(),
           }
         },
@@ -871,11 +883,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
+            [1,1] => { plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?); }
             #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
+            [1,n] => { plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?); }
             #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
+            [n,1] => { plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?); }
             _ => todo!(),
           }
         },
@@ -889,11 +901,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
+            [1,1] => { plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?); }
             #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
+            [1,n] => { plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?); }
             #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
+            [n,1] => { plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?); }
             _ => todo!(),
           }
         },
@@ -932,11 +944,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
           fxn_input.push(ixes);
           match shape[..] {
             #[cfg(feature = "map")]
-            [1,1] => plan.borrow_mut().push(MapAssignScalar{}.compile(&fxn_input)?),
+            [1,1] => { plan.borrow_mut().push(MapAssignScalar{}.compile(&fxn_input)?); }
             //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            //[1,n] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+            //[1,n] => { plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?); }
             //#[cfg(all(feature = "matrix", feature = "subscript_range", feature = "assign"))]
-            //[n,1] => plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?),
+            //[n,1] => { plan.borrow_mut().push(MatrixAssignRange{}.compile(&fxn_input)?); }
             _ => todo!(),
           }
         },
@@ -1052,5 +1064,414 @@ impl MechErrorKind for UnableToConvertRecordError {
   }
   fn message(&self) -> String {
     format!("Unable to convert record of kind `{:?}` to record of kind `{:?}`", self.source_record_kind, self.target_record_kind)
+  }
+}
+
+#[cfg(all(
+  test,
+  feature = "variable_define",
+  feature = "f64",
+  feature = "string",
+  feature = "bool",
+))]
+mod variable_define_dependency_tests {
+  use super::*;
+
+  #[test]
+  fn var_define_registration_has_no_reactive_inputs() {
+    let plan = Plan::new();
+    let value = Ref::new(1.0);
+    let value_cell = ReactiveCellId::new(value.id());
+    let arguments = vec![
+      Value::F64(value),
+      Value::String(Ref::new("defined value".to_string())),
+      Value::Bool(Ref::new(false)),
+    ];
+    let function = VarDefine {}.compile(&arguments).unwrap();
+
+    plan.register_function(function, &[]).unwrap();
+
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow.node(0).unwrap();
+    assert_eq!(plan_borrow.len(), 1);
+    assert!(node.inputs.is_empty());
+    assert!(plan_borrow.reactive_consumers.is_empty());
+    assert!(plan_borrow.sampled_consumers.is_empty());
+    assert!(node.outputs.contains(&value_cell));
+  }
+}
+
+#[cfg(all(
+  test,
+  feature = "functions",
+  feature = "variables",
+  feature = "variable_define",
+  feature = "variable_assign",
+  feature = "assign",
+  feature = "f64",
+  feature = "program",
+  feature = "compiler",
+))]
+mod whole_assignment_register_tests {
+  use super::*;
+
+  fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+    interpreter.symbols().borrow().get(hash_str(name))
+      .unwrap_or_else(|| panic!("missing symbol {name}"))
+      .borrow()
+      .clone()
+  }
+
+  fn root_cell(value: &Value) -> ReactiveCellId {
+    let cells = value.reactive_root_cell_ids();
+    assert_eq!(cells.len(), 1);
+    cells[0]
+  }
+
+  fn register_node_id_for_output(interpreter: &Interpreter, output_cell: ReactiveCellId) -> ReactiveNodeId {
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node_ids = plan.nodes.iter()
+      .filter(|node| node.kind == ReactiveNodeKind::Register && node.outputs == vec![output_cell])
+      .map(|node| node.id)
+      .collect::<Vec<_>>();
+    assert_eq!(node_ids.len(), 1);
+    node_ids[0]
+  }
+
+  #[derive(Debug, PartialEq, Eq)]
+  struct RegisterGraphShape {
+    output_count: usize,
+    input_kinds: Vec<ReactiveDependencyKind>,
+    output_is_first_input: bool,
+    source_is_second_input: bool,
+    output_is_sampled_consumer: bool,
+    output_is_reactive_consumer: bool,
+    source_is_reactive_consumer: bool,
+    source_is_sampled_consumer: bool,
+  }
+
+  fn distinct_assignment_graph_shape(interpreter: &Interpreter, target_name: &str, source_name: &str) -> RegisterGraphShape {
+    let target_cell = root_cell(&symbol(interpreter, target_name));
+    let source_cell = root_cell(&symbol(interpreter, source_name));
+    assert_ne!(target_cell, source_cell);
+    let node_id = register_node_id_for_output(interpreter, target_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![target_cell]);
+    assert_eq!(node.inputs.len(), 2);
+    assert_eq!(node.inputs[0].cell, target_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert_eq!(node.inputs[1].cell, source_cell);
+    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
+    RegisterGraphShape {
+      output_count: node.outputs.len(),
+      input_kinds: node.inputs.iter().map(|input| input.kind).collect(),
+      output_is_first_input: node.inputs[0].cell == target_cell,
+      source_is_second_input: node.inputs[1].cell == source_cell,
+      output_is_sampled_consumer: plan.sampled_consumers_for(target_cell).contains(&node_id),
+      output_is_reactive_consumer: plan.reactive_consumers_for(target_cell).contains(&node_id),
+      source_is_reactive_consumer: plan.reactive_consumers_for(source_cell).contains(&node_id),
+      source_is_sampled_consumer: plan.sampled_consumers_for(source_cell).contains(&node_id),
+    }
+  }
+
+  fn decoded_assignment_graph_shape(interpreter: &Interpreter, output: &Value) -> RegisterGraphShape {
+    let resolved_output = match output {
+      Value::MutableReference(reference) => reference.borrow().clone(),
+      other => other.clone(),
+    };
+    let output_cell = root_cell(&resolved_output);
+    let node_id = register_node_id_for_output(interpreter, output_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![output_cell]);
+    assert_eq!(node.outputs.len(), 1);
+    assert_eq!(node.inputs.len(), 2);
+    assert_eq!(node.inputs[0].cell, output_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert_ne!(node.inputs[1].cell, output_cell);
+    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
+    let source_cell = node.inputs[1].cell;
+    RegisterGraphShape {
+      output_count: node.outputs.len(),
+      input_kinds: node.inputs.iter().map(|input| input.kind).collect(),
+      output_is_first_input: node.inputs[0].cell == output_cell,
+      source_is_second_input: node.inputs[1].cell == source_cell,
+      output_is_sampled_consumer: plan.sampled_consumers_for(output_cell).contains(&node_id),
+      output_is_reactive_consumer: plan.reactive_consumers_for(output_cell).contains(&node_id),
+      source_is_reactive_consumer: plan.reactive_consumers_for(source_cell).contains(&node_id),
+      source_is_sampled_consumer: plan.sampled_consumers_for(source_cell).contains(&node_id),
+    }
+  }
+
+  fn expected_distinct_assignment_shape() -> RegisterGraphShape {
+    RegisterGraphShape {
+      output_count: 1,
+      input_kinds: vec![ReactiveDependencyKind::Sampled, ReactiveDependencyKind::Reactive],
+      output_is_first_input: true,
+      source_is_second_input: true,
+      output_is_sampled_consumer: true,
+      output_is_reactive_consumer: false,
+      source_is_reactive_consumer: true,
+      source_is_sampled_consumer: false,
+    }
+  }
+
+  #[test]
+  fn whole_variable_assignment_registers_state_node() {
+    let source = "~x := 1.0; y := 2.0; x = y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    assert_eq!(distinct_assignment_graph_shape(&interpreter, "x", "y"), expected_distinct_assignment_shape());
+  }
+
+  #[cfg(feature = "math_add_assign")]
+  #[test]
+  fn whole_add_assignment_registers_state_node() {
+    let source = "~x := 1.0; y := 2.0; x += y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    assert_eq!(distinct_assignment_graph_shape(&interpreter, "x", "y"), expected_distinct_assignment_shape());
+  }
+
+  #[cfg(feature = "math_add_assign")]
+  #[test]
+  fn whole_add_assignment_alias_is_sampled_once() {
+    let source = "~x := 2.0; x += x; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 4.0);
+    let x_cell = root_cell(&symbol(&interpreter, "x"));
+    let node_id = register_node_id_for_output(&interpreter, x_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![x_cell]);
+    assert_eq!(node.inputs.len(), 1);
+    assert_eq!(node.inputs[0].cell, x_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert!(plan.sampled_consumers_for(x_cell).contains(&node_id));
+    assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
+  }
+
+  #[test]
+  fn decoded_whole_variable_assignment_matches_source_graph() {
+    let source = "~x := 1.0; y := 2.0; x = y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    let source_output = source_interpreter.interpret(&tree).unwrap();
+    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
+    let source_shape = distinct_assignment_graph_shape(&source_interpreter, "x", "y");
+    let bytecode = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let mut decoded_interpreter = Interpreter::new_with_full_stdlib(0);
+    let decoded_output = decoded_interpreter.run_program(&program).unwrap();
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
+    let decoded_shape = decoded_assignment_graph_shape(&decoded_interpreter, &decoded_output);
+    assert_eq!(source_shape, expected_distinct_assignment_shape());
+    assert_eq!(decoded_shape, expected_distinct_assignment_shape());
+    assert_eq!(source_shape, decoded_shape);
+  }
+
+  #[cfg(feature = "math_add_assign")]
+  #[test]
+  fn decoded_whole_add_assignment_matches_source_graph() {
+    let source = "~x := 1.0; y := 2.0; x += y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    let source_output = source_interpreter.interpret(&tree).unwrap();
+    assert_eq!(*source_output.as_f64().unwrap().borrow(), 3.0);
+    let source_shape = distinct_assignment_graph_shape(&source_interpreter, "x", "y");
+    let bytecode = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let mut decoded_interpreter = Interpreter::new_with_full_stdlib(0);
+    let decoded_output = decoded_interpreter.run_program(&program).unwrap();
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 3.0);
+    let decoded_shape = decoded_assignment_graph_shape(&decoded_interpreter, &decoded_output);
+    assert_eq!(source_shape, expected_distinct_assignment_shape());
+    assert_eq!(decoded_shape, expected_distinct_assignment_shape());
+    assert_eq!(source_shape, decoded_shape);
+  }
+
+  #[cfg(all(feature = "matrix", feature = "row_vectord"))]
+  #[test]
+  fn whole_matrix_assignment_uses_root_cells() {
+    let source = "~x := [1.0 2.0]; y := [3.0 4.0]; x = y; x";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    let x = symbol(&interpreter, "x");
+    let y = symbol(&interpreter, "y");
+    let x_root_cells = x.reactive_root_cell_ids();
+    let y_root_cells = y.reactive_root_cell_ids();
+    assert_eq!(x_root_cells.len(), 1);
+    assert_eq!(y_root_cells.len(), 1);
+    let x_cell = x_root_cells[0];
+    let y_cell = y_root_cells[0];
+    let node_id = register_node_id_for_output(&interpreter, x_cell);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.node(node_id).unwrap();
+    assert_eq!(node.kind, ReactiveNodeKind::Register);
+    assert_eq!(node.outputs, vec![x_cell]);
+    assert_eq!(node.outputs.len(), 1);
+    assert_eq!(node.inputs.len(), 2);
+    assert_eq!(node.inputs[0].cell, x_cell);
+    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
+    assert_eq!(node.inputs[1].cell, y_cell);
+    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
+    assert!(plan.sampled_consumers_for(x_cell).contains(&node_id));
+    assert!(!plan.reactive_consumers_for(x_cell).contains(&node_id));
+    assert!(plan.reactive_consumers_for(y_cell).contains(&node_id));
+    assert!(!plan.sampled_consumers_for(y_cell).contains(&node_id));
+    let resolved_output = match output {
+      Value::MutableReference(reference) => reference.borrow().clone(),
+      other => other,
+    };
+    assert_eq!(resolved_output, y);
+  }
+}
+
+#[cfg(all(test, feature = "program", feature = "compiler", feature = "functions", feature = "variables", feature = "variable_define", feature = "variable_assign", feature = "assign", feature = "f64", feature = "math", feature = "math_add_assign"))]
+mod register_commit_integration_tests {
+  use super::*;
+  fn symbol(i:&Interpreter,n:&str)->Value{i.symbols().borrow().get(hash_str(n)).unwrap().borrow().clone()}
+  fn cell(i:&Interpreter,n:&str)->ReactiveCellId {let c=symbol(i,n).reactive_root_cell_ids();assert_eq!(c.len(),1);c[0]}
+  fn value(i:&Interpreter,n:&str)->f64 {*symbol(i,n).as_f64().unwrap().borrow()}
+  fn set(i:&Interpreter,n:&str,v:f64){*symbol(i,n).as_f64().unwrap().borrow_mut()=v;}
+  fn register(i:&Interpreter,c:ReactiveCellId)->ReactiveNodeId {let p=i.plan();let p=p.borrow();let v=p.nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Register&&n.outputs.contains(&c)).map(|n|n.id).collect::<Vec<_>>();assert_eq!(v.len(),1);v[0]}
+  #[test] fn register_commit_plain_assignment_updates_register_only() {let t=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx = y\nz := x + 1.0").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);i.interpret(&t).unwrap();assert_eq!((value(&i,"x"),value(&i,"z")),(2.,3.));let(x,y)=(cell(&i,"x"),cell(&i,"y"));let r=register(&i,x);set(&i,"y",10.);let s=i.plan().solve_dirty_cells(&[y]).unwrap();assert_eq!(s.pending_register_nodes,vec![r]);let c=i.plan().commit_pending_registers(&s.pending_register_nodes).unwrap();assert_eq!(c.staged_nodes,vec![r]);assert_eq!(c.committed_nodes,vec![r]);assert_eq!(c.dirty_cells,vec![x]);assert_eq!((value(&i,"x"),value(&i,"z")),(10.,3.));}
+  #[test] fn register_commit_add_assignment_updates_register_only() {let t=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);i.interpret(&t).unwrap();assert_eq!((value(&i,"x"),value(&i,"z")),(3.,4.));let(x,y)=(cell(&i,"x"),cell(&i,"y"));set(&i,"y",10.);let s=i.plan().solve_dirty_cells(&[y]).unwrap();let c=i.plan().commit_pending_registers(&s.pending_register_nodes).unwrap();assert_eq!(c.dirty_cells,vec![x]);assert_eq!((value(&i,"x"),value(&i,"z")),(13.,4.));}
+  #[test] fn register_commit_simultaneous_assignments_use_precommit_state() {let t=mech_syntax::parser::parse("~x := 1.0\n~y := 2.0\nx += y\ny += x").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);i.interpret(&t).unwrap();assert_eq!((value(&i,"x"),value(&i,"y")),(3.,5.));let(x,y)=(cell(&i,"x"),cell(&i,"y"));let(rx,ry)=(register(&i,x),register(&i,y));let s=i.plan().solve_dirty_cells(&[x,y]).unwrap();assert_eq!(s.pending_register_nodes,vec![rx,ry]);let c=i.plan().commit_pending_registers(&[ry,rx]).unwrap();assert_eq!(c.staged_nodes,vec![rx,ry]);assert_eq!(c.committed_nodes,vec![rx,ry]);assert_eq!(c.dirty_cells,vec![x,y]);assert_eq!((value(&i,"x"),value(&i,"y")),(8.,8.));}
+  #[test]
+  fn decoded_register_commit_add_assignment_uses_staging() {
+    let tree = mech_syntax::parser::parse(
+      "~x := 1.0\n\
+       y := 2.0\n\
+       x += y\n\
+       x",
+    )
+    .unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    source_interpreter.interpret(&tree).unwrap();
+    let bytes = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytes).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.run_program(&program).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    let output_cells = output.reactive_root_cell_ids();
+    assert_eq!(output_cells.len(), 1);
+    let output_cell = output_cells[0];
+    let register_node = register(&interpreter, output_cell);
+    let source_cell = {
+      let plan = interpreter.plan();
+      let plan = plan.borrow();
+      let node = plan.node(register_node).unwrap();
+      let dependencies = node.inputs.iter().filter(|dependency| {
+        dependency.kind == ReactiveDependencyKind::Reactive
+          && dependency.cell != output_cell
+      }).collect::<Vec<_>>();
+      assert_eq!(dependencies.len(), 1, "decoded register must have exactly one distinct reactive source");
+      dependencies[0].cell
+    };
+    let scheduling = interpreter.plan().solve_dirty_cells(&[source_cell]).unwrap();
+    assert_eq!(scheduling.pending_register_nodes, vec![register_node]);
+    let commit = interpreter.plan().commit_pending_registers(&scheduling.pending_register_nodes).unwrap();
+    assert_eq!(commit.staged_nodes, vec![register_node]);
+    assert_eq!(commit.committed_nodes, vec![register_node]);
+    assert_eq!(commit.dirty_cells, vec![output_cell]);
+    assert_eq!(*output.as_f64().unwrap().borrow(), 5.0);
+  }
+  #[test]
+  fn reactive_turn_updates_downstream_after_register_commit() {
+    let tree = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    interpreter.interpret(&tree).unwrap();
+    let (x_cell, y_cell, z_cell) = (cell(&interpreter, "x"), cell(&interpreter, "y"), cell(&interpreter, "z"));
+    let x_register = register(&interpreter, x_cell);
+    let x_consumers = {
+      let plan_handle = interpreter.plan();
+      let plan = plan_handle.borrow();
+      let consumers = plan.reactive_consumers_for(x_cell).to_vec();
+      assert!(!consumers.is_empty());
+      for node_id in &consumers {
+        assert_eq!(plan.node(*node_id).unwrap().kind, ReactiveNodeKind::Combinational);
+      }
+      consumers
+    };
+    set(&interpreter, "y", 10.0);
+    let mut turn_state = ReactiveTurnState::default();
+    let outcome = interpreter.plan().advance_reactive_turn(&mut turn_state, &[y_cell]).unwrap();
+    assert_eq!((value(&interpreter, "x"), value(&interpreter, "z")), (13.0, 14.0));
+    assert_eq!(outcome.before_commit.pending_register_nodes, vec![x_register]);
+    assert_eq!(outcome.register_commit.staged_nodes, vec![x_register]);
+    assert_eq!(outcome.register_commit.committed_nodes, vec![x_register]);
+    assert_eq!(outcome.register_commit.dirty_cells, vec![x_cell]);
+    for node_id in &x_consumers { assert!(outcome.after_commit.executed_nodes.contains(node_id)); }
+    let executed_z_nodes = { let plan_handle=interpreter.plan(); let plan=plan_handle.borrow(); outcome.after_commit.executed_nodes.iter().copied().filter(|node_id| plan.node(*node_id).unwrap().outputs.contains(&z_cell)).collect::<Vec<_>>() };
+    assert!(!executed_z_nodes.is_empty());
+    assert!(turn_state.pending_register_nodes.is_empty());
+  }
+  #[test]
+  fn reactive_turn_defers_second_register_layer() {
+    let tree = mech_syntax::parser::parse("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    interpreter.interpret(&tree).unwrap();
+    assert_eq!((value(&interpreter,"input"),value(&interpreter,"a"),value(&interpreter,"middle"),value(&interpreter,"b"),value(&interpreter,"output")),(1.,1.,2.,2.,3.));
+    let (input, a, b) = (cell(&interpreter,"input"),cell(&interpreter,"a"),cell(&interpreter,"b"));
+    let (a_register, b_register) = (register(&interpreter,a),register(&interpreter,b));
+    set(&interpreter,"input",10.0);
+    let mut turn_state = ReactiveTurnState::default();
+    let first = interpreter.plan().advance_reactive_turn(&mut turn_state,&[input]).unwrap();
+    assert_eq!((value(&interpreter,"a"),value(&interpreter,"middle"),value(&interpreter,"b"),value(&interpreter,"output")),(10.,11.,2.,3.));
+    assert_eq!(first.register_commit.committed_nodes,vec![a_register]);
+    assert_eq!(first.after_commit.pending_register_nodes,vec![b_register]);
+    assert_eq!(turn_state.pending_register_nodes,vec![b_register]);
+    let second = interpreter.plan().advance_reactive_turn(&mut turn_state,&[]).unwrap();
+    assert_eq!((value(&interpreter,"a"),value(&interpreter,"middle"),value(&interpreter,"b"),value(&interpreter,"output")),(10.,11.,11.,12.));
+    assert_eq!(second.register_commit.committed_nodes,vec![b_register]);
+    assert!(!second.register_commit.committed_nodes.contains(&a_register));
+    assert!(turn_state.pending_register_nodes.is_empty());
+  }
+  #[test]
+  fn decoded_reactive_turn_reuses_compiled_plan() {
+    let tree = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0\nz").unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    source_interpreter.interpret(&tree).unwrap();
+    let bytes = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytes).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let decoded_output = interpreter.run_program(&program).unwrap();
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 4.0);
+    let z_cell = decoded_output.reactive_root_cell_ids()[0];
+    let (x_register, x_ref, x_cell, source_cell, x_consumers, plan_length, node_ids, output_cells) = {
+      let plan_handle = interpreter.plan(); let plan = plan_handle.borrow();
+      let registers=plan.nodes.iter().filter(|node| node.kind==ReactiveNodeKind::Register).collect::<Vec<_>>();
+      assert_eq!(registers.len(),1); let x_register=registers[0].id;
+      let x_output=plan.node(x_register).unwrap().function.out(); let x_ref=x_output.as_f64().unwrap().clone(); let x_cell=x_output.reactive_root_cell_ids()[0];
+      let source_dependencies=plan.node(x_register).unwrap().inputs.iter().filter(|dependency| dependency.kind==ReactiveDependencyKind::Reactive&&dependency.cell!=x_cell).collect::<Vec<_>>(); assert_eq!(source_dependencies.len(),1);
+      let x_consumers=plan.reactive_consumers_for(x_cell).to_vec(); assert!(!x_consumers.is_empty());
+      (x_register,x_ref,x_cell,source_dependencies[0].cell,x_consumers,plan.len(),plan.nodes.iter().map(|node|node.id).collect::<Vec<_>>(),plan.nodes.iter().map(|node|node.outputs.clone()).collect::<Vec<_>>())
+    };
+    assert_eq!(*x_ref.borrow(),3.0);
+    let mut turn_state=ReactiveTurnState::default();
+    for (expected_x,expected_z) in [(5.0,6.0),(7.0,8.0)] {
+      let outcome=interpreter.plan().advance_reactive_turn(&mut turn_state,&[source_cell]).unwrap();
+      assert_eq!(outcome.before_commit.pending_register_nodes,vec![x_register]); assert_eq!(outcome.register_commit.staged_nodes,vec![x_register]); assert_eq!(outcome.register_commit.committed_nodes,vec![x_register]); assert_eq!(outcome.register_commit.dirty_cells,vec![x_cell]); for node_id in &x_consumers { assert!(outcome.after_commit.executed_nodes.contains(node_id)); }
+      let executed_z_nodes={let plan_handle=interpreter.plan();let plan=plan_handle.borrow();outcome.after_commit.executed_nodes.iter().copied().filter(|node_id|plan.node(*node_id).unwrap().outputs.contains(&z_cell)).collect::<Vec<_>>()};assert!(!executed_z_nodes.is_empty());
+      assert_eq!(*x_ref.borrow(),expected_x); assert_eq!(*decoded_output.as_f64().unwrap().borrow(),expected_z); assert!(turn_state.pending_register_nodes.is_empty());
+      let plan_handle=interpreter.plan();let plan=plan_handle.borrow();assert_eq!(plan.len(),plan_length);assert_eq!(plan.nodes.iter().map(|node|node.id).collect::<Vec<_>>(),node_ids);assert_eq!(plan.nodes.iter().map(|node|node.outputs.clone()).collect::<Vec<_>>(),output_cells);
+    }
   }
 }
