@@ -25,6 +25,11 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Install gdb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdb
+
       - name: Build interpreter test binary
         run: cargo test -q -p mech-interpreter --lib --no-run
 
