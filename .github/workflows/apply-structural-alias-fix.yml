@@ -1,0 +1,83 @@
+name: Apply structural alias fix
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    if: >-
+      github.event.pull_request.head.ref == 'agent/refactor-ci-observability' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Fix recursive Value constant kind
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          constants_path = Path('src/core/src/program/compiler/constants.rs')
+          constants = constants_path.read_text()
+          marker = 'impl ConstElem for Value {'
+          before, after = constants.split(marker, 1)
+          old = '''  fn value_kind(&self) -> ValueKind {
+              self.value_kind()
+            }'''
+          new = '''  fn value_kind(&self) -> ValueKind {
+              self.kind()
+            }'''
+          if old not in after:
+              raise SystemExit('recursive ConstElem for Value implementation not found')
+          after = after.replace(old, new, 1)
+          constants_path.write_text(before + marker + after)
+
+          ci_path = Path('.github/workflows/ci.yml')
+          ci = ci_path.read_text()
+          old_ci = '''          # Known pre-existing failure: mech-lang/mech#612. This parity test
+                    # executes decoded bytecode in the source interpreter's existing state
+                    # and can create a recursive value graph. Keep every other interpreter
+                    # unit test enabled until the test is corrected to use a fresh instance.
+                    bash scripts/ci-timed.sh \\
+                      "cargo test -p mech-interpreter --lib (skip #612)" \\
+                      cargo test -p mech-interpreter --lib -- \\
+                        --skip decoded_structural_alias_access_matches_source
+          '''
+          new_ci = '''          bash scripts/ci-timed.sh \\
+                      "cargo test -p mech-interpreter --lib" \\
+                      cargo test -p mech-interpreter --lib
+          '''
+          if old_ci not in ci:
+              raise SystemExit('temporary interpreter test exclusion not found')
+          ci_path.write_text(ci.replace(old_ci, new_ci, 1))
+          PY
+
+          git rm .github/workflows/diagnose-structural-alias.yml
+          git rm .github/workflows/apply-structural-alias-fix.yml
+
+      - name: Verify targeted regression
+        run: |
+          cargo test -p mech-interpreter --lib \
+            expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
+            -- --exact
+
+      - name: Commit and push fix
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/ci.yml src/core/src/program/compiler/constants.rs
+          git commit -m 'fix compiler value constant kind recursion'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
