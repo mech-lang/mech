@@ -23,7 +23,7 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Fix tuple constant bytecode path
+      - name: Fix tuple structural alias bytecode path
         shell: bash
         run: |
           python - <<'PY'
@@ -142,11 +142,11 @@ jobs:
           if factory_insert_point not in tuple_source:
               raise SystemExit('TupleAccessElement factory insertion point not found')
           tuple_source = tuple_source.replace(factory_insert_point, factory, 1)
-          quoted_name = '    let name = stringify!("TupleAccessElement");'
-          literal_name = '    let name = "TupleAccessElement";'
-          if quoted_name not in tuple_source:
-              raise SystemExit('quoted TupleAccessElement compiler name not found')
-          tuple_source = tuple_source.replace(quoted_name, literal_name, 1)
+          quoted_hash = '      hash_str(stringify!("TupleAccessElement")),'
+          literal_hash = '      hash_str("TupleAccessElement"),'
+          if quoted_hash not in tuple_source:
+              raise SystemExit('quoted TupleAccessElement hash not found')
+          tuple_source = tuple_source.replace(quoted_hash, literal_hash, 1)
           tuple_path.write_text(tuple_source)
 
           value_path = Path('src/core/src/value.rs')
