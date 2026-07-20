@@ -2603,7 +2603,9 @@ impl MechRuntime {
     result
   }
 
-
+  /// Evaluates bytecode in an isolated temporary program. It returns the
+  /// evaluation result but does not install the decoded program, symbols,
+  /// execution plan, or live state as the runtime's persistent active program.
   pub fn run_bytecode_with_context(
     &mut self,
     context: &mut RuntimeContext,
@@ -2666,12 +2668,10 @@ impl MechRuntime {
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
 
-    if result.is_ok() {
-      self.program = bytecode_program;
-    } else {
-      self.program = previous_program;
-      self.restore_live_state(live_state_before);
-    }
+    // Runtime bytecode execution is one-shot. Direct MechProgram
+    // bytecode loading is the persistent installation path.
+    self.program = previous_program;
+    self.restore_live_state(live_state_before);
     match &result {
       Ok(_) => {
         self.emit_event_to_context(
