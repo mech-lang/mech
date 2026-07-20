@@ -512,11 +512,7 @@ where
 
     let mut mat_regs = Vec::new();
     for e in &self.e0 {
-      let e_addr = e.addr();
-      let e_reg = ctx.alloc_register_for_ptr(e_addr);
-      let e_const_id = e.compile_const_mat(ctx).unwrap();
-      ctx.emit_const_load(e_reg, e_const_id);
-      mat_regs.push(e_reg);
+      mat_regs.push(compile_register_mat!(e, ctx));
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_varop(
@@ -629,17 +625,8 @@ where
 
     registers[0] = compile_register!(self.out, ctx);
 
-    let lhs_addr = self.e0.addr();
-    let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
-    let lhs_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(lhs_reg, lhs_const_id);
-    registers[1] = lhs_reg;
-
-    let rhs_addr = self.e1.addr();
-    let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
-    let rhs_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(rhs_reg, rhs_const_id);
-    registers[2] = rhs_reg;
+    registers[1] = compile_register_mat!(self.e0, ctx);
+    registers[2] = compile_register_mat!(self.e1, ctx);
 
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 

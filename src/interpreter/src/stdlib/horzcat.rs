@@ -492,33 +492,7 @@ where
   T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let mut registers = [0, 0, 0];
-
-    registers[0] = compile_register!(self.out, ctx);
-
-    let e0_addr = self.e0.addr();
-    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
-    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e0_reg, e0_const_id);
-    registers[1] = e0_reg;
-
-    let e1_addr = self.e1.addr();
-    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
-    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e1_reg, e1_const_id);
-    registers[2] = e1_reg;
-
-    let e2_addr = self.e2.addr();
-    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
-    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e2_reg, e2_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
-
-    let e3_addr = self.e3.addr();
-    let e3_reg = ctx.alloc_register_for_ptr(e3_addr);
-    let e3_const_id = self.e3.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e3_reg, e3_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], registers[3], e3_reg];
+    let registers = [compile_register!(self.out, ctx), compile_register_mat!(self.e0, ctx), compile_register_mat!(self.e1, ctx), compile_register_mat!(self.e2, ctx), compile_register_mat!(self.e3, ctx)];
 
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
@@ -594,11 +568,7 @@ where
 
     let mut mat_regs = Vec::new();
     for e in &self.e0 {
-      let e_addr = e.addr();
-      let e_reg = ctx.alloc_register_for_ptr(e_addr);
-      let e_const_id = e.compile_const_mat(ctx).unwrap();
-      ctx.emit_const_load(e_reg, e_const_id);
-      mat_regs.push(e_reg);
+      mat_regs.push(compile_register_mat!(e, ctx));
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_varop(
@@ -736,11 +706,7 @@ where
 
     let mut mat_regs = Vec::new();
     for (e, _) in &self.matrix {
-      let e_addr = e.addr();
-      let e_reg = ctx.alloc_register_for_ptr(e_addr);
-      let e_const_id = e.compile_const_mat(ctx).unwrap();
-      ctx.emit_const_load(e_reg, e_const_id);
-      mat_regs.push(e_reg);
+      mat_regs.push(compile_register_mat!(e, ctx));
     }
     let mut scalar_regs = Vec::new();
     for (e, _) in &self.scalar {
