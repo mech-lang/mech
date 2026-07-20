@@ -1078,3 +1078,34 @@ mod reactive_turn_interpreter_state_tests {
   #[test] fn reactive_turn_interpreter_state_clear_plan_resets_pending(){let mut i=interpreter();first(&mut i);assert!(i.has_pending_reactive_registers());assert!(i.plan_len()>0);i.clear_plan();assert_eq!(i.plan_len(),0);assert!(!i.has_pending_reactive_registers());}
   #[test] fn reactive_turn_interpreter_state_clone_preserves_pending(){let mut i=interpreter();first(&mut i);let c=i.clone();assert!(i.has_pending_reactive_registers());assert!(c.has_pending_reactive_registers());assert_eq!(i.plan_len(),c.plan_len());}
 }
+
+#[cfg(all(test, feature = "program", feature = "compiler", feature = "functions", feature = "symbol_table", feature = "variable_define", feature = "f64"))]
+mod decoded_variable_definition_symbol_metadata_tests {
+  use super::*;
+
+  #[test]
+  fn decoded_variable_definition_symbol_metadata_round_trips() {
+    let tree = mech_syntax::parser::parse("input := 1.0\n~state := 2.0").unwrap();
+    let mut source = Interpreter::new_with_full_stdlib(1);
+    source.interpret(&tree).unwrap();
+    let bytes = source.compile().unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    let input_id = hash_str("input");
+    let state_id = hash_str("state");
+    assert!(parsed.symbols.contains_key(&input_id));
+    assert!(parsed.symbols.contains_key(&state_id));
+    assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
+    assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
+    assert!(!parsed.mutable_symbols.contains(&input_id));
+    assert!(parsed.mutable_symbols.contains(&state_id));
+    let mut decoded = Interpreter::new_with_full_stdlib(2);
+    decoded.run_program(&parsed).unwrap();
+    for (name, expected) in [("input", 1.0), ("state", 2.0)] {
+      let value = decoded.symbols().borrow().get(hash_str(name)).unwrap().borrow().clone();
+      assert_eq!(*value.as_f64().unwrap().borrow(), expected);
+    }
+    let state = decoded.state.borrow();
+    assert!(state.symbol_table.borrow().get_mutable_symbol(input_id).is_none());
+    assert!(state.symbol_table.borrow().get_mutable_symbol(state_id).is_some());
+  }
+}

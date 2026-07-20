@@ -67,6 +67,10 @@ where
   MatA: CompileConst + ConstElem + AsNaKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let variable_register = compile_register_brrw!(self.var, ctx);
+    let variable_name = self.name.borrow().clone();
+    let variable_mutable = *self.mutable.borrow();
+    ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
     let name = format!("VariableDefineMatrix<{}{}>", T::as_value_kind(), MatA::as_na_kind());
     compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
   }
@@ -109,6 +113,10 @@ macro_rules! impl_variable_define_fxn {
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+          let variable_register = compile_register_brrw!(self.var, ctx);
+          let variable_name = self.name.borrow().clone();
+          let variable_mutable = *self.mutable.borrow();
+          ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
           let name = format!(stringify!([<VariableDefine $kind:camel>]));
           compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
         }
@@ -185,6 +193,10 @@ impl MechFunctionImpl for VariableDefineEmpty {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let variable_register = compile_register_brrw!(self.var, ctx);
+    let variable_name = self.name.borrow().clone();
+    let variable_mutable = *self.mutable.borrow();
+    ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
     let name = "VariableDefineEmpty".to_string();
     compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
   }

@@ -92,6 +92,24 @@ jobs:
             --lib \
             reactive_turn_interpreter_state_ \
             -- --nocapture
+          decoded_symbol_tests="$(
+            cargo test \
+              -p mech-interpreter \
+              --lib \
+              decoded_variable_definition_symbol_metadata_ \
+              -- --list
+          )"
+          printf '%s\n' "$decoded_symbol_tests"
+          if ! grep -Fq "decoded_variable_definition_symbol_metadata_round_trips: test" <<<"$decoded_symbol_tests"
+          then
+            echo "::error::missing decoded variable-definition symbol metadata test"
+            exit 1
+          fi
+          cargo test \
+            -p mech-interpreter \
+            --lib \
+            decoded_variable_definition_symbol_metadata_ \
+            -- --nocapture
           cargo test -p mech-interpreter reactive_turn_ -- --nocapture
           cargo test -p mech-interpreter decoded_reactive_turn_ -- --nocapture
           program_turn_tests="$(
