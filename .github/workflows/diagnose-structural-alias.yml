@@ -1,0 +1,46 @@
+name: Diagnose structural alias
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnose-structural-alias-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  stack-trace:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build interpreter test binary
+        run: cargo test -p mech-interpreter --lib --no-run
+
+      - name: Capture failing test backtrace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_binary="$(find target/debug/deps -maxdepth 1 -type f -name 'mech_interpreter-*' -perm -111 | head -n 1)"
+          test -n "$test_binary"
+          echo "test binary: $test_binary"
+          gdb -q -batch \
+            -ex 'set pagination off' \
+            -ex 'set print frame-arguments all' \
+            -ex run \
+            -ex 'thread apply all bt 120' \
+            --args "$test_binary" \
+              expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
+              --exact \
+              --nocapture
