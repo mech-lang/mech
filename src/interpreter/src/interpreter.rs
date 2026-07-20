@@ -39,6 +39,8 @@ pub struct Interpreter {
   ip: usize, // instruction pointer
   pub state: Ref<ProgramState>,
   #[cfg(feature = "functions")]
+  reactive_turn_state: ReactiveTurnState,
+  #[cfg(feature = "functions")]
   pub stack: Vec<Frame>,
   registers: Vec<Value>,
   constants: Vec<Value>,
@@ -75,6 +77,8 @@ impl Clone for Interpreter {
       #[cfg(feature = "trace")]
       trace_events: self.trace_events.clone(),
       state: Ref::new(self.state.borrow().clone()),
+      #[cfg(feature = "functions")]
+      reactive_turn_state: self.reactive_turn_state.clone(),
       #[cfg(feature = "functions")]
       stack: self.stack.clone(),
       registers: self.registers.clone(),
@@ -133,6 +137,8 @@ impl Interpreter {
       #[cfg(feature = "trace")]
       trace_events: Ref::new(Vec::new()),
       state: Ref::new(state),
+      #[cfg(feature = "functions")]
+      reactive_turn_state: ReactiveTurnState::default(),
       #[cfg(feature = "functions")]
       stack: Vec::new(),
       registers: Vec::new(),
@@ -206,6 +212,7 @@ impl Interpreter {
   #[cfg(feature = "functions")]
   pub fn clear_plan(&mut self) {
     self.state.borrow_mut().plan.borrow_mut().clear();
+    self.reactive_turn_state = ReactiveTurnState::default();
   }
 
   #[cfg(feature = "pretty_print")]
@@ -320,6 +327,20 @@ impl Interpreter {
   #[cfg(feature = "functions")]
   pub fn plan(&self) -> Plan {
     self.state.borrow().plan.clone()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+  ) -> MResult<ReactiveTurnOutcome> {
+    let plan = self.plan();
+    plan.advance_reactive_turn(&mut self.reactive_turn_state, dirty_cells)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn has_pending_reactive_registers(&self) -> bool {
+    self.reactive_turn_state.has_pending_registers()
   }
 
   #[cfg(feature = "symbol_table")]

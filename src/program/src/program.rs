@@ -1,5 +1,5 @@
 use crate::*;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 #[cfg(all(
@@ -17,7 +17,7 @@ use std::time::Instant;
 use mech_core::{
   hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
   MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value, ValueKind,
-  val_ref_reactive_cell_ids,
+  val_ref_reactive_cell_ids, ReactiveCellId, ReactiveTurnOutcome,
 };
 
 use mech_interpreter::Interpreter;
@@ -269,6 +269,25 @@ pub struct ProgramInputUpdate {
 pub struct ProgramInputUpdateOutcome {
   pub updated_count: usize,
   pub dirty_cells: Vec<ReactiveCellId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProgramInterpreterTurnOutcome {
+  pub interpreter_id: u64,
+  pub dirty_cells: Vec<ReactiveCellId>,
+  pub turn: ReactiveTurnOutcome,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProgramInputTurnOutcome {
+  pub updated_count: usize,
+  pub interpreter_turns: Vec<ProgramInterpreterTurnOutcome>,
+}
+
+struct PreparedProgramInputBatch {
+  assignments: Vec<Box<dyn MechFunction>>,
+  dirty_cells: Vec<ReactiveCellId>,
+  dirty_cells_by_interpreter: BTreeMap<u64, Vec<ReactiveCellId>>,
 }
 
 #[derive(Clone, Debug)]
@@ -527,38 +546,106 @@ impl MechProgram {
     &mut self,
     updates: &[ProgramInputUpdate],
   ) -> MResult<ProgramInputUpdateOutcome> {
-    let mut seen_targets = BTreeSet::new();
-    for update in updates {
-      if !seen_targets.insert(update.input) {
-        return Err(MechError::new(ProgramInputDuplicateTarget { input: update.input }, None));
-      }
-    }
+    let prepared = self.prepare_input_updates(updates)?;
+    Self::apply_prepared_input_updates(&prepared)?;
+    Ok(ProgramInputUpdateOutcome {
+      updated_count: prepared.assignments.len(),
+      dirty_cells: prepared.dirty_cells,
+    })
+  }
 
+  fn prepare_input_updates(
+    &self,
+    updates: &[ProgramInputUpdate],
+  ) -> MResult<PreparedProgramInputBatch> {
+    let mut seen_targets = BTreeSet::new();
     let mut assignments = Vec::with_capacity(updates.len());
     let mut dirty_cells = Vec::new();
+    let mut dirty_cells_by_interpreter = BTreeMap::new();
     for update in updates {
-      let Some(sink) = with_interpreter_mut(&mut self.interpreter, update.input.interpreter_id, &mut |interpreter| {
-        interpreter.symbols().borrow().get(update.input.symbol_id)
+      let Some((actual_interpreter_id, sink)) = with_interpreter(&self.interpreter, update.input.interpreter_id, &mut |interpreter| {
+        let sink = interpreter.symbols().borrow().get(update.input.symbol_id);
+        (interpreter.id, sink)
       }) else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {}", update.input.interpreter_id) }, None));
       };
       let Some(sink) = sink else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
       };
+      let canonical_input = ProgramInputId {
+        interpreter_id: actual_interpreter_id,
+        symbol_id: update.input.symbol_id,
+      };
+      if !seen_targets.insert(canonical_input) {
+        return Err(MechError::new(ProgramInputDuplicateTarget { input: canonical_input }, None));
+      }
+      assignments.push(compile_stable_value_update(sink.clone(), update.value.clone())?);
       for cell in val_ref_reactive_cell_ids(&sink) {
         if !dirty_cells.contains(&cell) {
           dirty_cells.push(cell);
         }
+        let cells = dirty_cells_by_interpreter
+          .entry(actual_interpreter_id)
+          .or_insert_with(Vec::new);
+        if !cells.contains(&cell) {
+          cells.push(cell);
+        }
       }
-      assignments.push(compile_stable_value_update(sink, update.value.clone())?);
     }
-    for assignment in &assignments {
-      assignment.solve_result()?;
-    }
-    Ok(ProgramInputUpdateOutcome {
-      updated_count: assignments.len(),
+    Ok(PreparedProgramInputBatch {
+      assignments,
       dirty_cells,
+      dirty_cells_by_interpreter,
     })
+  }
+
+  fn apply_prepared_input_updates(prepared: &PreparedProgramInputBatch) -> MResult<()> {
+    let mut staged = Vec::with_capacity(prepared.assignments.len());
+    for assignment in &prepared.assignments {
+      staged.push(assignment.stage_register()?);
+    }
+    for commit in staged {
+      commit.commit();
+    }
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+  ) -> MResult<ReactiveTurnOutcome> {
+    let Some(result) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
+      interpreter.advance_reactive_turn(dirty_cells)
+    }) else {
+      return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
+    };
+    result
+  }
+
+  /// Applies all input writes before advancing affected interpreters in ascending
+  /// actual interpreter-ID order. If a turn fails, prior input writes and prior
+  /// interpreter commits remain, the failing turn retains its reactive-plan error
+  /// state, later interpreters are not executed, and no rollback is attempted.
+  #[cfg(feature = "functions")]
+  pub fn update_inputs_and_advance_turn(
+    &mut self,
+    updates: &[ProgramInputUpdate],
+  ) -> MResult<ProgramInputTurnOutcome> {
+    let prepared = self.prepare_input_updates(updates)?;
+    Self::apply_prepared_input_updates(&prepared)?;
+    let updated_count = prepared.assignments.len();
+    let mut interpreter_turns = Vec::with_capacity(prepared.dirty_cells_by_interpreter.len());
+    for (interpreter_id, dirty_cells) in prepared.dirty_cells_by_interpreter {
+      let turn = self.advance_reactive_turn(interpreter_id, &dirty_cells)?;
+      interpreter_turns.push(ProgramInterpreterTurnOutcome {
+        interpreter_id,
+        dirty_cells,
+        turn,
+      });
+    }
+    Ok(ProgramInputTurnOutcome { updated_count, interpreter_turns })
   }
 
   #[cfg(feature = "functions")]
