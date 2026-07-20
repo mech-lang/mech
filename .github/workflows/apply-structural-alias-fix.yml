@@ -143,6 +143,34 @@ jobs:
               raise SystemExit('TupleAccessElement factory insertion point not found')
           tuple_path.write_text(tuple_source.replace(factory_insert_point, factory, 1))
 
+          value_path = Path('src/core/src/value.rs')
+          value_source = value_path.read_text()
+          downcast_insert_point = '''      #[cfg(feature = "enum")]
+                Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
+                #[cfg(feature = "set")]
+                Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
+                #[cfg(feature = "table")]
+                Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
+          '''
+          complete_downcasts = '''      #[cfg(feature = "atom")]
+                Value::Atom(r) => &*(r as *const Ref<MechAtom> as *const Ref<T>),
+                #[cfg(feature = "enum")]
+                Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
+                #[cfg(feature = "map")]
+                Value::Map(r) => &*(r as *const Ref<MechMap> as *const Ref<T>),
+                #[cfg(feature = "record")]
+                Value::Record(r) => &*(r as *const Ref<MechRecord> as *const Ref<T>),
+                #[cfg(feature = "set")]
+                Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
+                #[cfg(feature = "table")]
+                Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
+                #[cfg(feature = "tuple")]
+                Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),
+          '''
+          if downcast_insert_point not in value_source:
+              raise SystemExit('container downcast insertion point not found')
+          value_path.write_text(value_source.replace(downcast_insert_point, complete_downcasts, 1))
+
           ci_path = Path('.github/workflows/ci.yml')
           ci = ci_path.read_text()
           old_ci = '''          # Known pre-existing failure: mech-lang/mech#612. This parity test
@@ -171,7 +199,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          cargo test -p mech-interpreter --lib \
+          RUST_BACKTRACE=full cargo test -p mech-interpreter --lib \
             expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
             -- --exact --nocapture \
             > structural-alias-fix-test.txt 2>&1
@@ -203,6 +231,7 @@ jobs:
             .github/workflows/ci.yml \
             src/core/src/program/compiler/constants.rs \
             src/core/src/program/program.rs \
+            src/core/src/value.rs \
             src/interpreter/src/stdlib/access/tuple.rs
           git commit -m 'fix tuple constant bytecode decoding'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
