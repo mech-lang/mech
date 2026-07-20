@@ -72,6 +72,36 @@ jobs:
           cargo test -p mech-interpreter reactive_turn_ -- --nocapture
           cargo test -p mech-interpreter decoded_reactive_turn_ -- --nocapture
 
+          # Pointer-register initialization identity coverage.
+          cargo test \
+            -p mech-core \
+            compile_context_initializes_pointer_register_once \
+            -- --nocapture
+          cargo test \
+            -p mech-core \
+            pointer_register_scalar_initializes_once \
+            -- --nocapture
+          cargo test \
+            -p mech-interpreter \
+            pointer_register_matrix_initializes_once \
+            -- --nocapture
+          cargo test \
+            -p mech-interpreter \
+            horizontal_concatenate_four_args_reuses_repeated_matrix_register \
+            -- --nocapture
+          cargo test \
+            -p mech-interpreter \
+            horizontal_concatenate_n_args_reuses_repeated_matrix_register \
+            -- --nocapture
+          cargo test \
+            -p mech-interpreter \
+            horizontal_concatenate_rdn_reuses_repeated_matrix_register \
+            -- --nocapture
+          cargo test \
+            -p mech-interpreter \
+            vertical_concatenate_n_args_reuses_repeated_matrix_register \
+            -- --nocapture
+
           # Runtime package tests.
           cargo test -p mech-runtime --lib --tests
 
