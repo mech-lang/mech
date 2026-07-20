@@ -166,11 +166,30 @@ jobs:
           git rm .github/workflows/diagnose-structural-alias.yml
           git rm .github/workflows/apply-structural-alias-fix.yml
 
-      - name: Verify targeted structural alias regression
+      - name: Run targeted structural alias regression
+        id: targeted
+        shell: bash
         run: |
+          set +e
           cargo test -p mech-interpreter --lib \
             expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
-            -- --exact
+            -- --exact --nocapture \
+            > structural-alias-fix-test.txt 2>&1
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -120 structural-alias-fix-test.txt || true
+
+      - name: Upload targeted test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: structural-alias-fix-test
+          path: structural-alias-fix-test.txt
+
+      - name: Require targeted regression to pass
+        if: always()
+        run: exit "${{ steps.targeted.outputs.status || '1' }}"
 
       - name: Verify complete interpreter library suite
         run: cargo test -p mech-interpreter --lib
