@@ -30,17 +30,35 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gdb
 
+      - name: Apply confirmed constant-kind fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/core/src/program/compiler/constants.rs')
+          text = path.read_text()
+          marker = 'impl ConstElem for Value {'
+          before, after = text.split(marker, 1)
+          old = '''  fn value_kind(&self) -> ValueKind {
+              self.value_kind()
+            }'''
+          new = '''  fn value_kind(&self) -> ValueKind {
+              self.kind()
+            }'''
+          if old not in after:
+              raise SystemExit('recursive implementation not found')
+          path.write_text(before + marker + after.replace(old, new, 1))
+          PY
+
       - name: Build interpreter test binary
         run: cargo test -q -p mech-interpreter --lib --no-run
 
-      - name: Capture failing test backtrace
+      - name: Capture post-fix failure
         id: reproduce
         shell: bash
         run: |
           set -uo pipefail
           test_binary="$(find target/debug/deps -maxdepth 1 -type f -name 'mech_interpreter-*' -perm -111 | head -n 1)"
           test -n "$test_binary"
-          echo "test binary: $test_binary"
           set +e
           gdb -q -batch \
             -ex 'set pagination off' \
@@ -55,9 +73,9 @@ jobs:
           status=$?
           set -e
           echo "status=$status" >> "$GITHUB_OUTPUT"
-          tail -80 structural-alias-gdb.txt || true
+          tail -100 structural-alias-gdb.txt || true
 
-      - name: Upload stack trace
+      - name: Upload diagnostic
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -66,5 +84,4 @@ jobs:
 
       - name: Fail after artifact upload
         if: always()
-        shell: bash
         run: exit "${{ steps.reproduce.outputs.status || '1' }}"
