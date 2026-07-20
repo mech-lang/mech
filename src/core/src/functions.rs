@@ -787,10 +787,19 @@ impl ReactivePlan {
     &mut self,
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactivePlanSolveOutcome> {
+    let mut outcome = ReactivePlanSolveOutcome::default();
+    self.solve_dirty_cells_into(dirty_cells, &mut outcome)?;
+    Ok(outcome)
+  }
+
+  fn solve_dirty_cells_into(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    outcome: &mut ReactivePlanSolveOutcome,
+  ) -> MResult<()> {
     let dirty_cells = dirty_cells.iter().copied().collect::<HashSet<_>>();
     let mut work = BTreeSet::new();
     let mut processed = BTreeSet::new();
-    let mut outcome = ReactivePlanSolveOutcome::default();
 
     for cell in dirty_cells.iter().copied() {
       for node_id in self.reactive_consumers_for(cell) {
@@ -827,7 +836,7 @@ impl ReactivePlan {
       }
     }
 
-    Ok(outcome)
+    Ok(())
   }
 
   pub fn commit_pending_registers(&mut self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
@@ -899,10 +908,12 @@ impl ReactivePlan {
       }
     };
     state.pending_register_nodes.clear();
-    let after_commit = self.solve_dirty_cells(&register_commit.dirty_cells)?;
-    pending_register_nodes.clear();
-    pending_register_nodes.extend(after_commit.pending_register_nodes.iter().copied());
-    state.pending_register_nodes = pending_register_nodes;
+    let mut after_commit = ReactivePlanSolveOutcome::default();
+    if let Err(error) = self.solve_dirty_cells_into(&register_commit.dirty_cells, &mut after_commit) {
+      state.pending_register_nodes = after_commit.pending_register_nodes;
+      return Err(error);
+    }
+    state.pending_register_nodes = after_commit.pending_register_nodes.clone();
     Ok(ReactiveTurnOutcome {
       before_commit,
       register_commit,
@@ -1738,6 +1749,37 @@ mod reactive_turn_tests {
   #[test] fn reactive_turn_empty_is_noop() { let mut p=ReactivePlan::new();let mut s=ReactiveTurnState::default();assert_eq!(p.advance_reactive_turn(&mut s,&[]).unwrap(),ReactiveTurnOutcome::default());assert_eq!(s,ReactiveTurnState::default()); }
   #[test] fn reactive_turn_commit_failure_skips_post_commit_propagation() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let sink=Ref::new(1.);let(r,solve,stage,commit)=reg(&mut p,input.clone(),sink.clone(),true);let(_,down)=comb(&mut p,sink.clone(),Ref::new(2.),false);let mut s=ReactiveTurnState::default();let e=p.advance_reactive_turn(&mut s,&input.to_value().reactive_root_cell_ids()).unwrap_err();assert!(e.kind_message().contains("stage failure"));assert_eq!((*solve.borrow(),*stage.borrow(),*commit.borrow(),*down.borrow(),*sink.borrow()),(0,1,0,0,1.));assert_eq!(s.pending_register_nodes,vec![r]); }
   #[test] fn reactive_turn_post_commit_failure_does_not_requeue_committed_registers() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let sink=Ref::new(1.);let(_,_,_,commit)=reg(&mut p,input.clone(),sink.clone(),false);let(_,down)=comb(&mut p,sink.clone(),Ref::new(2.),true);*input.borrow_mut()=10.;let mut s=ReactiveTurnState::default();assert!(p.advance_reactive_turn(&mut s,&input.to_value().reactive_root_cell_ids()).is_err());assert_eq!((*sink.borrow(),*commit.borrow(),*down.borrow()),(10.,1,1));assert!(s.pending_register_nodes.is_empty()); }
+  #[test]
+  fn reactive_turn_post_commit_failure_preserves_deferred_registers() {
+    let mut p = ReactivePlan::new();
+    let input = Ref::new(1.);
+    let a = Ref::new(1.);
+    let middle = Ref::new(2.);
+    let b = Ref::new(2.);
+    let (a_register, _, _, a_commits) = reg(&mut p, input.clone(), a.clone(), false);
+    let (_, middle_solves) = comb(&mut p, a.clone(), middle.clone(), false);
+    let (b_register, _, _, b_commits) = reg(&mut p, middle.clone(), b.clone(), false);
+    let (_, error_solves) = comb(&mut p, middle.clone(), Ref::new(0.), true);
+
+    *input.borrow_mut() = 10.;
+    let mut state = ReactiveTurnState::default();
+    let error = p
+      .advance_reactive_turn(&mut state, &input.to_value().reactive_root_cell_ids())
+      .unwrap_err();
+
+    assert!(error.kind_message().contains("solve failure"));
+    assert_eq!((*a.borrow(), *middle.borrow(), *b.borrow()), (10., 11., 2.));
+    assert_eq!((*a_commits.borrow(), *b_commits.borrow()), (1, 0));
+    assert_eq!((*middle_solves.borrow(), *error_solves.borrow()), (1, 1));
+    assert_eq!(state.pending_register_nodes, vec![b_register]);
+    assert!(!state.pending_register_nodes.contains(&a_register));
+
+    let retry = p.advance_reactive_turn(&mut state, &[]).unwrap();
+    assert_eq!(retry.register_commit.committed_nodes, vec![b_register]);
+    assert_eq!((*a_commits.borrow(), *b_commits.borrow()), (1, 1));
+    assert_eq!(*b.borrow(), 11.);
+    assert!(state.pending_register_nodes.is_empty());
+  }
   #[test] fn reactive_turn_reuses_existing_plan() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let sink=Ref::new(1.);reg(&mut p,input.clone(),sink.clone(),false);comb(&mut p,sink.clone(),Ref::new(2.),false);let len=p.len();let ids=p.nodes.iter().map(|n|n.id).collect::<Vec<_>>();let outputs=p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>();let mut s=ReactiveTurnState::default();for value in [10.,20.] {*input.borrow_mut()=value;p.advance_reactive_turn(&mut s,&input.to_value().reactive_root_cell_ids()).unwrap();assert_eq!(p.len(),len);assert_eq!(p.nodes.iter().map(|n|n.id).collect::<Vec<_>>(),ids);assert_eq!(p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>(),outputs);} }
   #[test] fn reactive_turn_pre_commit_failure_preserves_carried_registers() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let(carried,solve,stage,commit)=reg(&mut p,Ref::new(2.),Ref::new(3.),false);comb(&mut p,input.clone(),Ref::new(0.),true);let mut state=ReactiveTurnState{pending_register_nodes:vec![carried]};let error=p.advance_reactive_turn(&mut state,&input.to_value().reactive_root_cell_ids()).unwrap_err();assert!(error.kind_message().contains("solve failure"));assert_eq!((*solve.borrow(),*stage.borrow(),*commit.borrow()),(0,0,0));assert_eq!(state.pending_register_nodes,vec![carried]); }
 }
