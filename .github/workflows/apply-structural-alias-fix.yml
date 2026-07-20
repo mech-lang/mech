@@ -141,7 +141,13 @@ jobs:
           '''
           if factory_insert_point not in tuple_source:
               raise SystemExit('TupleAccessElement factory insertion point not found')
-          tuple_path.write_text(tuple_source.replace(factory_insert_point, factory, 1))
+          tuple_source = tuple_source.replace(factory_insert_point, factory, 1)
+          quoted_name = '    let name = stringify!("TupleAccessElement");'
+          literal_name = '    let name = "TupleAccessElement";'
+          if quoted_name not in tuple_source:
+              raise SystemExit('quoted TupleAccessElement compiler name not found')
+          tuple_source = tuple_source.replace(quoted_name, literal_name, 1)
+          tuple_path.write_text(tuple_source)
 
           value_path = Path('src/core/src/value.rs')
           value_source = value_path.read_text()
@@ -233,5 +239,5 @@ jobs:
             src/core/src/program/program.rs \
             src/core/src/value.rs \
             src/interpreter/src/stdlib/access/tuple.rs
-          git commit -m 'fix tuple constant bytecode decoding'
+          git commit -m 'fix tuple structural alias bytecode path'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
