@@ -193,6 +193,33 @@ macro_rules! compile_varop {
   };
 }
 
+#[cfg(all(test, feature = "compiler", feature = "i64"))]
+mod tests {
+  use crate::*;
+
+  #[test]
+  fn pointer_register_scalar_initializes_once() {
+    let mut ctx = CompileCtx::new();
+    let ctx = &mut ctx;
+    let scalar_a = Ref::new(42i64);
+    let scalar_b = Ref::new(42i64);
+
+    let register_a = compile_register_brrw!(scalar_a, ctx);
+    let register_a_again = compile_register_brrw!(scalar_a, ctx);
+    let register_b = compile_register_brrw!(scalar_b, ctx);
+
+    assert_eq!(register_a_again, register_a);
+    assert_ne!(register_b, register_a);
+    assert_eq!(ctx.const_entries.len(), 2);
+
+    let const_loads = ctx.instrs.iter().filter_map(|instruction| match instruction {
+      EncodedInstr::ConstLoad { dst, const_id } => Some((*dst, *const_id)),
+      _ => None,
+    }).collect::<Vec<_>>();
+    assert_eq!(const_loads, vec![(register_a, 0), (register_b, 1)]);
+  }
+}
+
 #[macro_export]
 macro_rules! register_fxn_descriptor_inner_logic {
   // single type

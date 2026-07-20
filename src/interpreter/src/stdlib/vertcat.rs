@@ -526,6 +526,29 @@ where
 #[cfg(feature = "matrixd")]
 register_vertical_concatenate_fxn!(VerticalConcatenateNArgs);
 
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
+mod compiler_tests {
+  use super::*;
+
+  #[test]
+  fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {
+    let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7i64]));
+    let out = Ref::new(DMatrix::from_element(2, 1, 0i64));
+    let function = VerticalConcatenateNArgs {
+      e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+      out,
+    };
+    let mut ctx = CompileCtx::new();
+
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = ctx.reg_map[&matrix.addr()];
+    assert_eq!(ctx.const_entries.len(), 2);
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register)).count(), 1);
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register]));
+  }
+}
+
 // VerticalConcatenateVec -----------------------------------------------------
 
 macro_rules! vertical_concatenate {
