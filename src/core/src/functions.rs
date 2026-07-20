@@ -139,6 +139,12 @@ pub trait MechFunctionImpl {
     self.solve_result()?;
     Ok(ReactiveSolveStatus::Changed)
   }
+  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+    Err(MechError::new(
+      ReactiveRegisterStagingUnsupportedError { function: self.to_string() },
+      None,
+    ).with_compiler_loc())
+  }
   fn out(&self) -> Value;
   fn reactive_dependency_kinds(
     &self,
@@ -172,6 +178,42 @@ pub trait MechFunctionImpl {
     ReactiveNodeKind::Combinational
   }
   fn to_string(&self) -> String;
+}
+
+/// An already validated register write. Implementations must not fail or run
+/// arbitrary reactive work when they are committed.
+pub trait ReactiveRegisterCommit {
+  fn output_cells(&self) -> &[ReactiveCellId];
+  fn commit(self: Box<Self>);
+}
+
+pub struct ReactiveRegisterWrite<T> {
+  sink: Ref<T>,
+  next: T,
+  output_cells: Vec<ReactiveCellId>,
+}
+
+impl<T> ReactiveRegisterWrite<T> {
+  pub fn new(sink: Ref<T>, next: T, output_cells: Vec<ReactiveCellId>) -> Self {
+    Self { sink, next, output_cells }
+  }
+}
+
+impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
+  fn output_cells(&self) -> &[ReactiveCellId] { self.output_cells.as_slice() }
+  fn commit(self: Box<Self>) {
+    let ReactiveRegisterWrite { sink, next, output_cells: _ } = *self;
+    *sink.borrow_mut() = next;
+  }
+}
+
+pub struct ReactiveRegisterNoopCommit { output_cells: Vec<ReactiveCellId> }
+impl ReactiveRegisterNoopCommit {
+  pub fn new(output_cells: Vec<ReactiveCellId>) -> Self { Self { output_cells } }
+}
+impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
+  fn output_cells(&self) -> &[ReactiveCellId] { self.output_cells.as_slice() }
+  fn commit(self: Box<Self>) {}
 }
 
 #[cfg(feature = "compiler")]
@@ -400,6 +442,13 @@ pub struct ReactivePlanSolveOutcome {
   pub pending_register_nodes: Vec<ReactiveNodeId>,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReactiveRegisterCommitOutcome {
+  pub staged_nodes: Vec<ReactiveNodeId>,
+  pub committed_nodes: Vec<ReactiveNodeId>,
+  pub dirty_cells: Vec<ReactiveCellId>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReactiveDependency {
   pub cell: ReactiveCellId,
@@ -469,6 +518,37 @@ impl MechErrorKind for ReactiveDependencyScopeArityMismatchError {
 pub struct ReactiveDependencyKindConflictError {
   pub function: String,
   pub cell: ReactiveCellId,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactiveRegisterStagingUnsupportedError { pub function: String }
+impl MechErrorKind for ReactiveRegisterStagingUnsupportedError {
+  fn name(&self) -> &str { "ReactiveRegisterStagingUnsupported" }
+  fn message(&self) -> String { format!("Reactive register staging is not implemented for function '{}'.", self.function) }
+}
+#[derive(Debug, Clone)]
+pub struct ReactiveRegisterNodeNotFoundError { pub node_id: ReactiveNodeId }
+impl MechErrorKind for ReactiveRegisterNodeNotFoundError {
+  fn name(&self) -> &str { "ReactiveRegisterNodeNotFound" }
+  fn message(&self) -> String { format!("Reactive register node {} does not exist.", self.node_id) }
+}
+#[derive(Debug, Clone)]
+pub struct ReactiveRegisterNodeKindError { pub node_id: ReactiveNodeId, pub actual: ReactiveNodeKind }
+impl MechErrorKind for ReactiveRegisterNodeKindError {
+  fn name(&self) -> &str { "ReactiveRegisterNodeKind" }
+  fn message(&self) -> String { format!("Reactive node {} must be a register for commit, but its kind is {:?}.", self.node_id, self.actual) }
+}
+#[derive(Debug, Clone)]
+pub struct ReactiveRegisterOutputConflictError { pub cell: ReactiveCellId, pub first_node: ReactiveNodeId, pub second_node: ReactiveNodeId }
+impl MechErrorKind for ReactiveRegisterOutputConflictError {
+  fn name(&self) -> &str { "ReactiveRegisterOutputConflict" }
+  fn message(&self) -> String { format!("Reactive register nodes {} and {} both write output cell {:?}.", self.first_node, self.second_node, self.cell) }
+}
+#[derive(Debug, Clone)]
+pub struct ReactiveRegisterStagedOutputMismatchError { pub node_id: ReactiveNodeId, pub expected: Vec<ReactiveCellId>, pub found: Vec<ReactiveCellId> }
+impl MechErrorKind for ReactiveRegisterStagedOutputMismatchError {
+  fn name(&self) -> &str { "ReactiveRegisterStagedOutputMismatch" }
+  fn message(&self) -> String { format!("Reactive register node {} staged outputs {:?}, but its registered outputs are {:?}.", self.node_id, self.found, self.expected) }
 }
 
 impl MechErrorKind for ReactiveDependencyKindConflictError {
@@ -732,6 +812,55 @@ impl ReactivePlan {
 
     Ok(outcome)
   }
+
+  pub fn commit_pending_registers(&mut self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
+    let mut unique = HashSet::new();
+    let mut ordered = BTreeSet::new();
+    for node_id in pending_nodes.iter().copied() {
+      if !unique.insert(node_id) { continue; }
+      let node = self.nodes.get(node_id).ok_or_else(|| MechError::new(
+        ReactiveRegisterNodeNotFoundError { node_id }, None))?;
+      if node.kind != ReactiveNodeKind::Register {
+        return Err(MechError::new(ReactiveRegisterNodeKindError { node_id, actual: node.kind }, None));
+      }
+      ordered.insert((node.plan_index, node.id));
+    }
+
+    let mut owners = HashMap::new();
+    for (_, node_id) in &ordered {
+      let node = &self.nodes[*node_id];
+      for cell in &node.outputs {
+        if let Some(first_node) = owners.insert(*cell, node.id) {
+          return Err(MechError::new(ReactiveRegisterOutputConflictError {
+            cell: *cell, first_node, second_node: node.id,
+          }, None));
+        }
+      }
+    }
+
+    let mut staged: Vec<(ReactiveNodeId, Box<dyn ReactiveRegisterCommit>)> = Vec::new();
+    for (_, node_id) in &ordered {
+      let node = &self.nodes[*node_id];
+      let commit = node.function.stage_register()?;
+      let found = commit.output_cells().to_vec();
+      if found != node.outputs {
+        return Err(MechError::new(ReactiveRegisterStagedOutputMismatchError {
+          node_id: node.id, expected: node.outputs.clone(), found,
+        }, None));
+      }
+      staged.push((node.id, commit));
+    }
+
+    let staged_nodes = staged.iter().map(|(id, _)| *id).collect();
+    let mut outcome = ReactiveRegisterCommitOutcome { staged_nodes, ..Default::default() };
+    for (node_id, commit) in staged {
+      let outputs = commit.output_cells().to_vec();
+      commit.commit();
+      outcome.committed_nodes.push(node_id);
+      for cell in outputs { if !outcome.dirty_cells.contains(&cell) { outcome.dirty_cells.push(cell); } }
+    }
+    Ok(outcome)
+  }
 }
 
 impl core::ops::Index<usize> for ReactivePlan {
@@ -798,6 +927,10 @@ impl Plan {
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactivePlanSolveOutcome> {
     self.0.borrow_mut().solve_dirty_cells(dirty_cells)
+  }
+
+  pub fn commit_pending_registers(&self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
+    self.0.borrow_mut().commit_pending_registers(pending_nodes)
   }
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
@@ -1616,4 +1749,51 @@ impl MechErrorKind for IncorrectNumberOfArguments {
   fn message(&self) -> String {
     format!("Expected {} arguments, but found {}", self.expected, self.found)
   }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod reactive_register_commit_tests {
+  use super::*;
+
+  struct RegisterStageTestCommit { label: &'static str, sink: Ref<f64>, next: f64, output_cells: Vec<ReactiveCellId>, commit_count: Rc<RefCell<usize>>, commit_log: Rc<RefCell<Vec<&'static str>>>, total_commit_count: Rc<RefCell<usize>> }
+  impl ReactiveRegisterCommit for RegisterStageTestCommit {
+    fn output_cells(&self) -> &[ReactiveCellId] { &self.output_cells }
+    fn commit(self: Box<Self>) { *self.sink.borrow_mut() = self.next; *self.commit_count.borrow_mut() += 1; *self.total_commit_count.borrow_mut() += 1; self.commit_log.borrow_mut().push(self.label); }
+  }
+  struct RegisterStageTestFunction { label: &'static str, sink: Ref<f64>, sources: Vec<Ref<f64>>, stage_count: Rc<RefCell<usize>>, solve_count: Rc<RefCell<usize>>, commit_count: Rc<RefCell<usize>>, stage_log: Rc<RefCell<Vec<&'static str>>>, commit_log: Rc<RefCell<Vec<&'static str>>>, total_commit_count: Rc<RefCell<usize>>, commit_counts_observed_during_stage: Rc<RefCell<Vec<usize>>>, fail_stage: bool, mismatch_outputs: Option<Vec<ReactiveCellId>> }
+  impl MechFunctionImpl for RegisterStageTestFunction {
+    fn solve(&self) { *self.solve_count.borrow_mut() += 1; }
+    fn out(&self) -> Value { self.sink.to_value() }
+    fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+      *self.stage_count.borrow_mut() += 1; self.stage_log.borrow_mut().push(self.label); let total = *self.total_commit_count.borrow(); self.commit_counts_observed_during_stage.borrow_mut().push(total);
+      if self.fail_stage { return Err(MechError::new(GenericError { msg: self.label.to_string() }, None)); }
+      let next = self.sources.iter().map(|source| *source.borrow()).sum::<f64>();
+      let output_cells = self.mismatch_outputs.clone().unwrap_or_else(|| self.reactive_output_cell_ids());
+      Ok(Box::new(RegisterStageTestCommit { label: self.label, sink: self.sink.clone(), next, output_cells, commit_count: self.commit_count.clone(), commit_log: self.commit_log.clone(), total_commit_count: self.total_commit_count.clone() }))
+    }
+    fn to_string(&self) -> String { self.label.to_string() }
+  }
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for RegisterStageTestFunction { fn compile(&self, _: &mut CompileCtx) -> MResult<Register> { Ok(0) } }
+  struct Fixture { node: ReactiveNodeId, sink: Ref<f64>, stage: Rc<RefCell<usize>>, solve: Rc<RefCell<usize>>, commit: Rc<RefCell<usize>> }
+  fn add(plan: &mut ReactivePlan, label: &'static str, sink: Ref<f64>, sources: Vec<Ref<f64>>, stage_log: Rc<RefCell<Vec<&'static str>>>, commit_log: Rc<RefCell<Vec<&'static str>>>, total: Rc<RefCell<usize>>, fail: bool, mismatch: Option<Vec<ReactiveCellId>>) -> Fixture {
+    let stage=Rc::new(RefCell::new(0)); let solve=Rc::new(RefCell::new(0)); let commit=Rc::new(RefCell::new(0)); let observed=Rc::new(RefCell::new(vec![]));
+    let node=plan.register(Box::new(RegisterStageTestFunction { label, sink:sink.clone(), sources, stage_count:stage.clone(), solve_count:solve.clone(), commit_count:commit.clone(), stage_log, commit_log, total_commit_count:total, commit_counts_observed_during_stage:observed, fail_stage:fail, mismatch_outputs:mismatch }), &[]).unwrap(); Fixture {node,sink,stage,solve,commit}
+  }
+  fn shared() -> (Rc<RefCell<Vec<&'static str>>>, Rc<RefCell<Vec<&'static str>>>, Rc<RefCell<usize>>) { (Rc::new(RefCell::new(vec![])),Rc::new(RefCell::new(vec![])),Rc::new(RefCell::new(0))) }
+  #[test] fn reactive_register_commit_stages_all_before_any_commit() { let mut p=ReactivePlan::new();let(xl,cl,t)=shared();let x=Ref::new(1.);let y=Ref::new(2.);let a=add(&mut p,"X",x.clone(),vec![x.clone(),y.clone()],xl.clone(),cl.clone(),t.clone(),false,None);let b=add(&mut p,"Y",y.clone(),vec![y.clone(),x.clone()],xl.clone(),cl.clone(),t,false,None);let o=p.commit_pending_registers(&[b.node,a.node]).unwrap();assert_eq!((*x.borrow(),*y.borrow()),(3.,3.));assert_eq!(o.staged_nodes,vec![a.node,b.node]);assert_eq!(*xl.borrow(),vec!["X","Y"]);assert_eq!(*cl.borrow(),vec!["X","Y"]);assert_eq!((*a.solve.borrow(),*b.solve.borrow(),*a.stage.borrow(),*b.stage.borrow(),*a.commit.borrow(),*b.commit.borrow()),(0,0,1,1,1,1)); }
+  #[test] fn reactive_register_commit_deduplicates_and_orders_pending_nodes() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(0.),vec![],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",Ref::new(0.),vec![],l.clone(),c.clone(),t.clone(),false,None);let d=add(&mut p,"C",Ref::new(0.),vec![],l.clone(),c.clone(),t,false,None);let o=p.commit_pending_registers(&[d.node,a.node,b.node,a.node,d.node,b.node]).unwrap();assert_eq!(o.staged_nodes,vec![a.node,b.node,d.node]);assert_eq!(*l.borrow(),vec!["A","B","C"]);assert_eq!(*c.borrow(),vec!["A","B","C"]);for f in [&a,&b,&d] {assert_eq!((*f.stage.borrow(),*f.commit.borrow(),*f.solve.borrow()),(1,1,0));} }
+  #[test] fn reactive_register_commit_is_atomic_on_stage_error() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![Ref::new(4.)],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",Ref::new(2.),vec![],l,c,t.clone(),true,None);let e=p.commit_pending_registers(&[a.node,b.node]).unwrap_err();assert!(e.kind_message().contains("B"));assert_eq!((*a.sink.borrow(),*b.sink.borrow(),*a.commit.borrow(),*b.commit.borrow(),*t.borrow()),(1.,2.,0,0,0)); }
+  #[test] fn reactive_register_commit_rejects_missing_node_without_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);let missing=p.nodes.len()+100;let e=p.commit_pending_registers(&[a.node,missing]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterNodeNotFound");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow(),*a.sink.borrow()),(0,0,0,1.)); }
+  #[test] fn reactive_register_commit_rejects_combinational_node_without_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);struct Combinational; impl MechFunctionImpl for Combinational { fn solve(&self) {} fn out(&self) -> Value { Value::Empty } fn to_string(&self)->String { "C".into() } } #[cfg(feature="compiler")] impl MechFunctionCompiler for Combinational { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)} } let combinational=p.push(Box::new(Combinational));let e=p.commit_pending_registers(&[a.node,combinational]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterNodeKind");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow()),(0,0,0)); }
+  #[test] fn reactive_register_commit_rejects_overlapping_outputs_before_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let sink=Ref::new(1.);let a=add(&mut p,"A",sink.clone(),vec![],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",sink.clone(),vec![],l,c,t,false,None);let e=p.commit_pending_registers(&[a.node,b.node]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterOutputConflict");assert_eq!((*a.stage.borrow(),*b.stage.borrow(),*a.commit.borrow(),*b.commit.borrow(),*sink.borrow()),(0,0,0,0,1.)); }
+  #[test] fn reactive_register_commit_rejects_staged_output_mismatch_without_commit() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let sink=Ref::new(1.);let other=Ref::new(2.).to_value().reactive_root_cell_ids();let a=add(&mut p,"A",sink.clone(),vec![],l,c,t,false,Some(other));let e=p.commit_pending_registers(&[a.node]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterStagedOutputMismatch");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow(),*sink.borrow()),(1,0,0,1.)); }
+  #[test] fn reactive_register_commit_returns_ordered_unique_dirty_cells() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",Ref::new(2.),vec![],l,c,t,false,None);let cells=vec![p.nodes[a.node].outputs[0],p.nodes[b.node].outputs[0]];let o=p.commit_pending_registers(&[b.node,a.node,b.node]).unwrap();assert_eq!(o.dirty_cells,cells);assert_eq!(o.committed_nodes,vec![a.node,b.node]); }
+  struct RegisterWithoutStaging { sink: Ref<f64>, solves: Rc<RefCell<usize>> }
+  impl MechFunctionImpl for RegisterWithoutStaging { fn solve(&self) {*self.solves.borrow_mut()+=1;} fn out(&self)->Value {self.sink.to_value()} fn reactive_node_kind(&self)->ReactiveNodeKind {ReactiveNodeKind::Register} fn to_string(&self)->String {"unsupported".into()} }
+  #[cfg(feature="compiler")] impl MechFunctionCompiler for RegisterWithoutStaging { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)} }
+  #[test] fn reactive_register_commit_does_not_execute_downstream_nodes() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![Ref::new(2.)],l,c,t,false,None);let downstream=Rc::new(RefCell::new(0)); struct C(Rc<RefCell<usize>>);impl MechFunctionImpl for C {fn solve(&self){*self.0.borrow_mut()+=1;}fn out(&self)->Value{Value::Empty}fn to_string(&self)->String{"C".into()}} #[cfg(feature="compiler")] impl MechFunctionCompiler for C {fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)}} p.push(Box::new(C(downstream.clone())));let o=p.commit_pending_registers(&[a.node]).unwrap();assert_eq!(*a.commit.borrow(),1);assert!(o.dirty_cells.contains(&p.nodes[a.node].outputs[0]));assert_eq!(*downstream.borrow(),0); }
+  #[test] fn reactive_register_commit_rejects_unsupported_register_staging() { let mut p=ReactivePlan::new();let sink=Ref::new(1.);let solves=Rc::new(RefCell::new(0));let n=p.register(Box::new(RegisterWithoutStaging{sink:sink.clone(),solves:solves.clone()}),&[]).unwrap();let e=p.commit_pending_registers(&[n]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterStagingUnsupported");assert_eq!((*solves.borrow(),*sink.borrow()),(0,1.)); }
+  #[test] fn reactive_register_commit_empty_pending_set_is_noop() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);assert_eq!(p.commit_pending_registers(&[]).unwrap(),ReactiveRegisterCommitOutcome::default());assert_eq!((*a.stage.borrow(),*a.solve.borrow(),*a.commit.borrow()),(0,0,0)); }
 }

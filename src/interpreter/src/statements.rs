@@ -1342,3 +1342,55 @@ mod whole_assignment_register_tests {
     assert_eq!(resolved_output, y);
   }
 }
+
+#[cfg(all(test, feature = "program", feature = "compiler", feature = "functions", feature = "variables", feature = "variable_define", feature = "variable_assign", feature = "assign", feature = "f64", feature = "math", feature = "math_add_assign"))]
+mod register_commit_integration_tests {
+  use super::*;
+  fn symbol(i:&Interpreter,n:&str)->Value{i.symbols().borrow().get(hash_str(n)).unwrap().borrow().clone()}
+  fn cell(i:&Interpreter,n:&str)->ReactiveCellId {let c=symbol(i,n).reactive_root_cell_ids();assert_eq!(c.len(),1);c[0]}
+  fn value(i:&Interpreter,n:&str)->f64 {*symbol(i,n).as_f64().unwrap().borrow()}
+  fn set(i:&Interpreter,n:&str,v:f64){*symbol(i,n).as_f64().unwrap().borrow_mut()=v;}
+  fn register(i:&Interpreter,c:ReactiveCellId)->ReactiveNodeId {let p=i.plan();let p=p.borrow();let v=p.nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Register&&n.outputs.contains(&c)).map(|n|n.id).collect::<Vec<_>>();assert_eq!(v.len(),1);v[0]}
+  #[test] fn register_commit_plain_assignment_updates_register_only() {let t=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx = y\nz := x + 1.0").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);i.interpret(&t).unwrap();assert_eq!((value(&i,"x"),value(&i,"z")),(2.,3.));let(x,y)=(cell(&i,"x"),cell(&i,"y"));let r=register(&i,x);set(&i,"y",10.);let s=i.plan().solve_dirty_cells(&[y]).unwrap();assert_eq!(s.pending_register_nodes,vec![r]);let c=i.plan().commit_pending_registers(&s.pending_register_nodes).unwrap();assert_eq!(c.staged_nodes,vec![r]);assert_eq!(c.committed_nodes,vec![r]);assert_eq!(c.dirty_cells,vec![x]);assert_eq!((value(&i,"x"),value(&i,"z")),(10.,3.));}
+  #[test] fn register_commit_add_assignment_updates_register_only() {let t=mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);i.interpret(&t).unwrap();assert_eq!((value(&i,"x"),value(&i,"z")),(3.,4.));let(x,y)=(cell(&i,"x"),cell(&i,"y"));set(&i,"y",10.);let s=i.plan().solve_dirty_cells(&[y]).unwrap();let c=i.plan().commit_pending_registers(&s.pending_register_nodes).unwrap();assert_eq!(c.dirty_cells,vec![x]);assert_eq!((value(&i,"x"),value(&i,"z")),(13.,4.));}
+  #[test] fn register_commit_simultaneous_assignments_use_precommit_state() {let t=mech_syntax::parser::parse("~x := 1.0\n~y := 2.0\nx += y\ny += x").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);i.interpret(&t).unwrap();assert_eq!((value(&i,"x"),value(&i,"y")),(3.,5.));let(x,y)=(cell(&i,"x"),cell(&i,"y"));let(rx,ry)=(register(&i,x),register(&i,y));let s=i.plan().solve_dirty_cells(&[x,y]).unwrap();assert_eq!(s.pending_register_nodes,vec![rx,ry]);let c=i.plan().commit_pending_registers(&[ry,rx]).unwrap();assert_eq!(c.staged_nodes,vec![rx,ry]);assert_eq!(c.committed_nodes,vec![rx,ry]);assert_eq!(c.dirty_cells,vec![x,y]);assert_eq!((value(&i,"x"),value(&i,"y")),(8.,8.));}
+  #[test]
+  fn decoded_register_commit_add_assignment_uses_staging() {
+    let tree = mech_syntax::parser::parse(
+      "~x := 1.0\n\
+       y := 2.0\n\
+       x += y\n\
+       x",
+    )
+    .unwrap();
+    let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
+    source_interpreter.interpret(&tree).unwrap();
+    let bytes = source_interpreter.compile().unwrap();
+    let program = ParsedProgram::from_bytes(&bytes).unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.run_program(&program).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    let output_cells = output.reactive_root_cell_ids();
+    assert_eq!(output_cells.len(), 1);
+    let output_cell = output_cells[0];
+    let register_node = register(&interpreter, output_cell);
+    let source_cell = {
+      let plan = interpreter.plan();
+      let plan = plan.borrow();
+      let node = plan.node(register_node).unwrap();
+      let dependencies = node.inputs.iter().filter(|dependency| {
+        dependency.kind == ReactiveDependencyKind::Reactive
+          && dependency.cell != output_cell
+      }).collect::<Vec<_>>();
+      assert_eq!(dependencies.len(), 1, "decoded register must have exactly one distinct reactive source");
+      dependencies[0].cell
+    };
+    let scheduling = interpreter.plan().solve_dirty_cells(&[source_cell]).unwrap();
+    assert_eq!(scheduling.pending_register_nodes, vec![register_node]);
+    let commit = interpreter.plan().commit_pending_registers(&scheduling.pending_register_nodes).unwrap();
+    assert_eq!(commit.staged_nodes, vec![register_node]);
+    assert_eq!(commit.committed_nodes, vec![register_node]);
+    assert_eq!(commit.dirty_cells, vec![output_cell]);
+    assert_eq!(*output.as_f64().unwrap().borrow(), 5.0);
+  }
+}
