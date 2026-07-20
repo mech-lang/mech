@@ -1064,3 +1064,17 @@ impl MechErrorKind for NoStepsInPlanError {
     "Plan contains no steps. This program doesn't do anything.".to_string()
   }
 }
+
+#[cfg(all(test, feature = "program", feature = "compiler", feature = "functions", feature = "variables", feature = "variable_define", feature = "variable_assign", feature = "assign", feature = "f64", feature = "math"))]
+mod reactive_turn_interpreter_state_tests {
+  use super::*;
+  const SOURCE: &str = "input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0";
+  fn interpreter() -> Interpreter { let mut i=Interpreter::new_with_full_stdlib(1); let t=mech_syntax::parser::parse(SOURCE).unwrap(); i.interpret(&t).unwrap(); i }
+  fn value(i:&Interpreter,n:&str)->f64 {let value=i.symbols().borrow().get(hash_str(n)).expect("symbol").borrow().clone();*value.as_f64().expect("f64").borrow()}
+  fn cell(i:&Interpreter,n:&str)->ReactiveCellId {let v=i.symbols().borrow().get(hash_str(n)).expect("symbol").borrow().reactive_root_cell_ids(); assert_eq!(v.len(),1,"root cell");v[0]}
+  fn register(i:&Interpreter,c:ReactiveCellId)->ReactiveNodeId {let p=i.plan();let v=p.borrow().nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Register&&n.outputs.contains(&c)).map(|n|n.id).collect::<Vec<_>>();assert_eq!(v.len(),1,"register");v[0]}
+  fn first(i:&mut Interpreter)->(ReactiveNodeId,ReactiveNodeId){assert_eq!((value(i,"input"),value(i,"a"),value(i,"middle"),value(i,"b"),value(i,"output")),(1.,1.,2.,2.,3.));let(input,a,b)=(cell(i,"input"),register(i,cell(i,"a")),register(i,cell(i,"b")));let input_value=i.symbols().borrow().get(hash_str("input")).unwrap().borrow().clone();*input_value.as_f64().unwrap().borrow_mut()=10.;let o=i.advance_reactive_turn(&[input]).unwrap();assert_eq!(o.register_commit.committed_nodes,vec![a]);assert_eq!(o.after_commit.pending_register_nodes,vec![b]);(a,b)}
+  #[test] fn reactive_turn_interpreter_state_persists_between_calls(){let mut i=interpreter();let(a,b)=first(&mut i);assert_eq!((value(&i,"a"),value(&i,"middle"),value(&i,"b"),value(&i,"output")),(10.,11.,2.,3.));assert!(i.has_pending_reactive_registers());let o=i.advance_reactive_turn(&[]).unwrap();assert_eq!(o.register_commit.committed_nodes,vec![b]);assert!(!o.register_commit.committed_nodes.contains(&a));assert_eq!((value(&i,"a"),value(&i,"middle"),value(&i,"b"),value(&i,"output")),(10.,11.,11.,12.));assert!(o.after_commit.pending_register_nodes.is_empty());assert!(!i.has_pending_reactive_registers());}
+  #[test] fn reactive_turn_interpreter_state_clear_plan_resets_pending(){let mut i=interpreter();first(&mut i);assert!(i.has_pending_reactive_registers());assert!(i.plan_len()>0);i.clear_plan();assert_eq!(i.plan_len(),0);assert!(!i.has_pending_reactive_registers());}
+  #[test] fn reactive_turn_interpreter_state_clone_preserves_pending(){let mut i=interpreter();first(&mut i);let c=i.clone();assert!(i.has_pending_reactive_registers());assert!(c.has_pending_reactive_registers());assert_eq!(i.plan_len(),c.plan_len());}
+}
