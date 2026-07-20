@@ -1,0 +1,210 @@
+name: Repair structural alias source diff
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-source:
+    if: >-
+      github.event.pull_request.head.ref == 'agent/refactor-ci-observability' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Restore base files and apply minimal fix
+        shell: bash
+        run: |
+          git fetch origin implement-synchronous-reactive-turn
+          git checkout origin/implement-synchronous-reactive-turn -- \
+            src/core/src/program/compiler/constants.rs \
+            src/core/src/program/program.rs \
+            src/core/src/value.rs \
+            src/interpreter/src/stdlib/access/tuple.rs
+
+          python - <<'PY'
+          from pathlib import Path
+
+          def read_raw(path: str) -> tuple[Path, str, str]:
+              file = Path(path)
+              with file.open('r', encoding='utf-8', newline='') as handle:
+                  text = handle.read()
+              newline = '\r\n' if '\r\n' in text else '\n'
+              return file, text, newline
+
+          def write_raw(file: Path, text: str) -> None:
+              with file.open('w', encoding='utf-8', newline='') as handle:
+                  handle.write(text)
+
+          def nl(text: str, newline: str) -> str:
+              return text.replace('\n', newline)
+
+          file, text, newline = read_raw('src/core/src/program/compiler/constants.rs')
+          old = nl('''  fn value_kind(&self) -> ValueKind {
+            self.value_kind()
+          }''', newline)
+          new = nl('''  fn value_kind(&self) -> ValueKind {
+            self.kind()
+          }''', newline)
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one recursive Value::value_kind, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+
+          marker = nl('''      #[cfg(feature = "set")]
+                29 => {''', newline)
+          addition = nl('''      #[cfg(feature = "tuple")]
+                27 => {
+                  let element_count = cursor
+                    .read_u32::<LittleEndian>()
+                    .expect("read tuple kind length") as usize;
+                  let mut elements = Vec::with_capacity(element_count);
+                  for _ in 0..element_count {
+                    let vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+                    let mut encoded = Vec::new();
+                    vk.write_le(&mut encoded);
+                    cursor.set_position(cursor.position() + encoded.len() as u64);
+                    elements.push(vk);
+                  }
+                  ValueKind::Tuple(elements)
+                }
+                #[cfg(feature = "set")]
+                29 => {''', newline)
+          if text.count(marker) != 1:
+              raise SystemExit(f'expected one tuple kind insertion point, found {text.count(marker)}')
+          text = text.replace(marker, addition, 1)
+          write_raw(file, text)
+
+          file, text, newline = read_raw('src/core/src/program/program.rs')
+          marker = nl('''        #[cfg(feature = "table")]
+                  TypeTag::Table => {
+                    if data.len() < 8 {
+                      return Err(MechError::new(ConstantTooShortError { type_name: "table" }, None).with_compiler_loc());
+                    }
+                    let table = MechTable::from_le(&data);
+                    Value::Table(Ref::new(table))
+                  }
+                  _ => {''', newline)
+          addition = nl('''        #[cfg(feature = "table")]
+                  TypeTag::Table => {
+                    if data.len() < 8 {
+                      return Err(MechError::new(ConstantTooShortError { type_name: "table" }, None).with_compiler_loc());
+                    }
+                    let table = MechTable::from_le(&data);
+                    Value::Table(Ref::new(table))
+                  },
+                  #[cfg(feature = "tuple")]
+                  TypeTag::Tuple => {
+                    if data.len() < 9 {
+                      return Err(MechError::new(ConstantTooShortError { type_name: "tuple" }, None).with_compiler_loc());
+                    }
+                    let tuple = MechTuple::from_le(&data);
+                    Value::Tuple(Ref::new(tuple))
+                  }
+                  _ => {''', newline)
+          if text.count(marker) != 1:
+              raise SystemExit(f'expected one tuple constant insertion point, found {text.count(marker)}')
+          text = text.replace(marker, addition, 1)
+          write_raw(file, text)
+
+          file, text, newline = read_raw('src/core/src/value.rs')
+          marker = nl('''      #[cfg(feature = "enum")]
+                Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
+                #[cfg(feature = "set")]
+                Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
+                #[cfg(feature = "table")]
+                Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),''', newline)
+          addition = nl('''      #[cfg(feature = "atom")]
+                Value::Atom(r) => &*(r as *const Ref<MechAtom> as *const Ref<T>),
+                #[cfg(feature = "enum")]
+                Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
+                #[cfg(feature = "map")]
+                Value::Map(r) => &*(r as *const Ref<MechMap> as *const Ref<T>),
+                #[cfg(feature = "record")]
+                Value::Record(r) => &*(r as *const Ref<MechRecord> as *const Ref<T>),
+                #[cfg(feature = "set")]
+                Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
+                #[cfg(feature = "table")]
+                Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
+                #[cfg(feature = "tuple")]
+                Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),''', newline)
+          if text.count(marker) != 1:
+              raise SystemExit(f'expected one container downcast insertion point, found {text.count(marker)}')
+          text = text.replace(marker, addition, 1)
+          write_raw(file, text)
+
+          file, text, newline = read_raw('src/interpreter/src/stdlib/access/tuple.rs')
+          marker = nl('''impl MechFunctionImpl for TupleAccessElement {
+            fn solve(&self) {
+              ()
+            }
+            fn out(&self) -> Value { self.out.clone() }
+            fn to_string(&self) -> String { format!("{:#?}", self) }
+          }''', newline)
+          addition = nl('''impl MechFunctionImpl for TupleAccessElement {
+            fn solve(&self) {
+              ()
+            }
+            fn out(&self) -> Value { self.out.clone() }
+            fn to_string(&self) -> String { format!("{:#?}", self) }
+          }
+          impl MechFunctionFactory for TupleAccessElement {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+              match args {
+                FunctionArgs::Nullary(out) => Ok(Box::new(TupleAccessElement { out })),
+                _ => Err(MechError::new(
+                  IncorrectNumberOfArguments { expected: 0, found: args.len() },
+                  None,
+                ).with_compiler_loc()),
+              }
+            }
+          }
+          register_descriptor! {
+            FunctionDescriptor {
+              name: "TupleAccessElement",
+              ptr: TupleAccessElement::new,
+            }
+          }''', newline)
+          if text.count(marker) != 1:
+              raise SystemExit(f'expected one TupleAccessElement implementation, found {text.count(marker)}')
+          text = text.replace(marker, addition, 1)
+          old_hash = '      hash_str(stringify!("TupleAccessElement")),'
+          new_hash = '      hash_str("TupleAccessElement"),'
+          if text.count(old_hash) != 1:
+              raise SystemExit(f'expected one quoted tuple hash, found {text.count(old_hash)}')
+          text = text.replace(old_hash, new_hash, 1)
+          write_raw(file, text)
+          PY
+
+      - name: Verify targeted regression
+        run: |
+          cargo test -p mech-interpreter --lib \
+            expressions::structural_alias_access_tests::decoded_structural_alias_access_matches_source \
+            -- --exact
+
+      - name: Verify complete interpreter suite
+        run: cargo test -p mech-interpreter --lib
+
+      - name: Commit and push minimal source diff
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            src/core/src/program/compiler/constants.rs \
+            src/core/src/program/program.rs \
+            src/core/src/value.rs \
+            src/interpreter/src/stdlib/access/tuple.rs
+          git diff --cached --stat
+          git commit -m 'repair tuple fix source line endings'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
