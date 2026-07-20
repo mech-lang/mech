@@ -69,8 +69,78 @@ jobs:
           cargo test -p mech-core reactive_register_commit_ -- --nocapture
           cargo test -p mech-interpreter register_commit_ -- --nocapture
           cargo test -p mech-core reactive_turn_ -- --nocapture
+          interpreter_state_tests="$(
+            cargo test \
+              -p mech-interpreter \
+              --lib \
+              reactive_turn_interpreter_state_ \
+              -- --list
+          )"
+          printf '%s\n' "$interpreter_state_tests"
+          for test_name in \
+            reactive_turn_interpreter_state_persists_between_calls \
+            reactive_turn_interpreter_state_clear_plan_resets_pending \
+            reactive_turn_interpreter_state_clone_preserves_pending
+          do
+            if ! grep -Fq "${test_name}: test" <<<"$interpreter_state_tests"; then
+              echo "::error::missing interpreter test ${test_name}"
+              exit 1
+            fi
+          done
+          cargo test \
+            -p mech-interpreter \
+            --lib \
+            reactive_turn_interpreter_state_ \
+            -- --nocapture
+          decoded_symbol_tests="$(
+            cargo test \
+              -p mech-interpreter \
+              --lib \
+              decoded_variable_definition_symbol_metadata_ \
+              -- --list
+          )"
+          printf '%s\n' "$decoded_symbol_tests"
+          if ! grep -Fq "decoded_variable_definition_symbol_metadata_round_trips: test" <<<"$decoded_symbol_tests"
+          then
+            echo "::error::missing decoded variable-definition symbol metadata test"
+            exit 1
+          fi
+          cargo test \
+            -p mech-interpreter \
+            --lib \
+            decoded_variable_definition_symbol_metadata_ \
+            -- --nocapture
           cargo test -p mech-interpreter reactive_turn_ -- --nocapture
           cargo test -p mech-interpreter decoded_reactive_turn_ -- --nocapture
+          program_turn_tests="$(
+            cargo test \
+              -p mech-program \
+              --lib \
+              program_reactive_turn_ \
+              -- --list
+          )"
+          printf '%s\n' "$program_turn_tests"
+          for test_name in \
+            program_reactive_turn_updates_only_reachable_branch \
+            program_reactive_turn_batches_inputs_into_one_turn \
+            program_reactive_turn_preserves_deferred_registers_between_calls \
+            program_reactive_turn_legacy_update_api_does_not_execute_plan \
+            program_reactive_turn_preflight_failure_mutates_nothing \
+            program_reactive_turn_rejects_root_alias_duplicate \
+            program_reactive_turn_empty_batch_is_noop \
+            program_reactive_turn_orders_nested_interpreters_deterministically \
+            program_reactive_turn_decoded_plan_reuses_identity
+          do
+            if ! grep -Fq "${test_name}: test" <<<"$program_turn_tests"; then
+              echo "::error::missing program test ${test_name}"
+              exit 1
+            fi
+          done
+          cargo test \
+            -p mech-program \
+            --lib \
+            program_reactive_turn_ \
+            -- --nocapture
 
           # Pointer-register initialization identity coverage.
           cargo test \

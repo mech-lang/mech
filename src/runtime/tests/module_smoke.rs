@@ -4424,18 +4424,38 @@ result := pick("secret") == "matched"
 #[test]
 fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
   let mut compiler_program = MechProgram::new(MechProgramConfig::default());
-  compiler_program.run_string("x := 2").unwrap();
+  compiler_program.run_string("x := 2.0\nx").unwrap();
   let bytecode = compiler_program.compile_bytecode().unwrap();
 
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   let mut context = runtime.runtime_context().unwrap();
-  runtime.run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode)).unwrap();
+  runtime
+    .run_source_with_context(&mut context, &MechSourceCode::String("y := 1.0".to_string()))
+    .unwrap();
+  let plan_len = runtime.program().interpreter().plan_len();
+  let y = runtime.program().interpreter().symbols().borrow().get(hash_str("y")).unwrap();
+  let y_ptr = y.as_ptr();
+  assert_eq!(*y.borrow().as_f64().unwrap().borrow(), 1.0);
+  assert!(runtime.program().interpreter().symbols().borrow().get(hash_str("x")).is_none());
+
+  let bytecode_result = runtime
+    .run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode))
+    .unwrap();
+  assert_eq!(bytecode_result, Value::F64(Ref::new(2.0)));
+  let symbols = runtime.program().interpreter().symbols();
+  let y_after = symbols.borrow().get(hash_str("y")).unwrap();
+  assert_eq!(y_after.as_ptr(), y_ptr);
+  assert_eq!(*y_after.borrow().as_f64().unwrap().borrow(), 1.0);
+  assert!(symbols.borrow().get(hash_str("x")).is_none());
+  assert_eq!(runtime.program().interpreter().plan_len(), plan_len);
 
   let result = runtime
-    .run_source_with_context(&mut context, &MechSourceCode::String("x := 3".to_string()))
+    .run_source_with_context(&mut context, &MechSourceCode::String("x := 3.0".to_string()))
     .unwrap();
 
   assert_eq!(result, Value::F64(Ref::new(3.0)));
+  assert_eq!(*runtime.program().interpreter().symbols().borrow().get(hash_str("x")).unwrap().borrow().as_f64().unwrap().borrow(), 3.0);
+  assert_eq!(*runtime.program().interpreter().symbols().borrow().get(hash_str("y")).unwrap().borrow().as_f64().unwrap().borrow(), 1.0);
 }
 
 #[test]

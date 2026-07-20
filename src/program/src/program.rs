@@ -1,5 +1,5 @@
 use crate::*;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 #[cfg(all(
@@ -17,7 +17,7 @@ use std::time::Instant;
 use mech_core::{
   hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
   MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value, ValueKind,
-  val_ref_reactive_cell_ids,
+  val_ref_reactive_cell_ids, ReactiveCellId, ReactiveTurnOutcome,
 };
 
 use mech_interpreter::Interpreter;
@@ -269,6 +269,25 @@ pub struct ProgramInputUpdate {
 pub struct ProgramInputUpdateOutcome {
   pub updated_count: usize,
   pub dirty_cells: Vec<ReactiveCellId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProgramInterpreterTurnOutcome {
+  pub interpreter_id: u64,
+  pub dirty_cells: Vec<ReactiveCellId>,
+  pub turn: ReactiveTurnOutcome,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProgramInputTurnOutcome {
+  pub updated_count: usize,
+  pub interpreter_turns: Vec<ProgramInterpreterTurnOutcome>,
+}
+
+struct PreparedProgramInputBatch {
+  assignments: Vec<Box<dyn MechFunction>>,
+  dirty_cells: Vec<ReactiveCellId>,
+  dirty_cells_by_interpreter: BTreeMap<u64, Vec<ReactiveCellId>>,
 }
 
 #[derive(Clone, Debug)]
@@ -527,38 +546,106 @@ impl MechProgram {
     &mut self,
     updates: &[ProgramInputUpdate],
   ) -> MResult<ProgramInputUpdateOutcome> {
-    let mut seen_targets = BTreeSet::new();
-    for update in updates {
-      if !seen_targets.insert(update.input) {
-        return Err(MechError::new(ProgramInputDuplicateTarget { input: update.input }, None));
-      }
-    }
+    let prepared = self.prepare_input_updates(updates)?;
+    Self::apply_prepared_input_updates(&prepared)?;
+    Ok(ProgramInputUpdateOutcome {
+      updated_count: prepared.assignments.len(),
+      dirty_cells: prepared.dirty_cells,
+    })
+  }
 
+  fn prepare_input_updates(
+    &self,
+    updates: &[ProgramInputUpdate],
+  ) -> MResult<PreparedProgramInputBatch> {
+    let mut seen_targets = BTreeSet::new();
     let mut assignments = Vec::with_capacity(updates.len());
     let mut dirty_cells = Vec::new();
+    let mut dirty_cells_by_interpreter = BTreeMap::new();
     for update in updates {
-      let Some(sink) = with_interpreter_mut(&mut self.interpreter, update.input.interpreter_id, &mut |interpreter| {
-        interpreter.symbols().borrow().get(update.input.symbol_id)
+      let Some((actual_interpreter_id, sink)) = with_interpreter(&self.interpreter, update.input.interpreter_id, &mut |interpreter| {
+        let sink = interpreter.symbols().borrow().get(update.input.symbol_id);
+        (interpreter.id, sink)
       }) else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {}", update.input.interpreter_id) }, None));
       };
       let Some(sink) = sink else {
         return Err(MechError::new(ProgramInputError { reason: format!("missing program input cell {}", update.input.symbol_id) }, None));
       };
+      let canonical_input = ProgramInputId {
+        interpreter_id: actual_interpreter_id,
+        symbol_id: update.input.symbol_id,
+      };
+      if !seen_targets.insert(canonical_input) {
+        return Err(MechError::new(ProgramInputDuplicateTarget { input: canonical_input }, None));
+      }
+      assignments.push(compile_stable_value_update(sink.clone(), update.value.clone())?);
       for cell in val_ref_reactive_cell_ids(&sink) {
         if !dirty_cells.contains(&cell) {
           dirty_cells.push(cell);
         }
+        let cells = dirty_cells_by_interpreter
+          .entry(actual_interpreter_id)
+          .or_insert_with(Vec::new);
+        if !cells.contains(&cell) {
+          cells.push(cell);
+        }
       }
-      assignments.push(compile_stable_value_update(sink, update.value.clone())?);
     }
-    for assignment in &assignments {
-      assignment.solve_result()?;
-    }
-    Ok(ProgramInputUpdateOutcome {
-      updated_count: assignments.len(),
+    Ok(PreparedProgramInputBatch {
+      assignments,
       dirty_cells,
+      dirty_cells_by_interpreter,
     })
+  }
+
+  fn apply_prepared_input_updates(prepared: &PreparedProgramInputBatch) -> MResult<()> {
+    let mut staged = Vec::with_capacity(prepared.assignments.len());
+    for assignment in &prepared.assignments {
+      staged.push(assignment.stage_register()?);
+    }
+    for commit in staged {
+      commit.commit();
+    }
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+  ) -> MResult<ReactiveTurnOutcome> {
+    let Some(result) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
+      interpreter.advance_reactive_turn(dirty_cells)
+    }) else {
+      return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
+    };
+    result
+  }
+
+  /// Applies all input writes before advancing affected interpreters in ascending
+  /// actual interpreter-ID order. If a turn fails, prior input writes and prior
+  /// interpreter commits remain, the failing turn retains its reactive-plan error
+  /// state, later interpreters are not executed, and no rollback is attempted.
+  #[cfg(feature = "functions")]
+  pub fn update_inputs_and_advance_turn(
+    &mut self,
+    updates: &[ProgramInputUpdate],
+  ) -> MResult<ProgramInputTurnOutcome> {
+    let prepared = self.prepare_input_updates(updates)?;
+    Self::apply_prepared_input_updates(&prepared)?;
+    let updated_count = prepared.assignments.len();
+    let mut interpreter_turns = Vec::with_capacity(prepared.dirty_cells_by_interpreter.len());
+    for (interpreter_id, dirty_cells) in prepared.dirty_cells_by_interpreter {
+      let turn = self.advance_reactive_turn(interpreter_id, &dirty_cells)?;
+      interpreter_turns.push(ProgramInterpreterTurnOutcome {
+        interpreter_id,
+        dirty_cells,
+        turn,
+      });
+    }
+    Ok(ProgramInputTurnOutcome { updated_count, interpreter_turns })
   }
 
   #[cfg(feature = "functions")]
@@ -1391,4 +1478,28 @@ mod root_symbol_snapshot_tests {
     let symbols = program.interpreter().symbols();
     let _mutable_borrow = symbols.borrow_mut();
   }
+}
+
+#[cfg(all(test, feature = "program", feature = "functions", feature = "f64", feature = "variable_define", feature = "variable_assign"))]
+mod program_reactive_turn_tests {
+  use super::*;
+  use mech_core::Ref;
+  fn f64_value(v:f64)->Value {Value::F64(Ref::new(v))}
+  fn input(p:&mut MechProgram,n:&str,v:f64)->ProgramInputId {let id=hash_str(n);p.ensure_input(p.interpreter().id,id,n,f64_value(v)).unwrap()}
+  fn symbol(p:&MechProgram,id:u64,n:&str)->Value {with_interpreter(p.interpreter(),id,&mut |i|i.symbols().borrow().get(hash_str(n)).expect("symbol").borrow().clone()).expect("interpreter")}
+  fn value(p:&MechProgram,id:u64,n:&str)->f64 {*symbol(p,id,n).as_f64().expect("f64").borrow()}
+  fn cell(p:&MechProgram,id:u64,n:&str)->ReactiveCellId {let v=symbol(p,id,n).reactive_root_cell_ids();assert_eq!(v.len(),1,"root cell");v[0]}
+  fn register_node_for_output(p:&MechProgram,id:u64,c:ReactiveCellId)->ReactiveNodeId {let v=with_interpreter(p.interpreter(),id,&mut |i|{let q=i.plan();q.borrow().nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Register&&n.outputs.contains(&c)).map(|n|n.id).collect::<Vec<_>>()}).expect("interpreter");assert_eq!(v.len(),1,"register node");v[0]}
+  fn combinational_node_for_output_and_inputs(p:&MechProgram,id:u64,c:ReactiveCellId,required:&[ReactiveCellId])->ReactiveNodeId {let v=with_interpreter(p.interpreter(),id,&mut |i|{let q=i.plan();q.borrow().nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Combinational&&n.outputs.contains(&c)&&required.iter().all(|r|n.inputs.iter().any(|d|d.cell==*r&&d.kind==ReactiveDependencyKind::Reactive))).map(|n|n.id).collect::<Vec<_>>()}).expect("interpreter");assert_eq!(v.len(),1,"computation node");v[0]}
+  fn pending(p:&MechProgram,id:u64)->bool {with_interpreter(p.interpreter(),id,&mut |i|i.has_pending_reactive_registers()).expect("interpreter")}
+  fn snapshot(p:&MechProgram,id:u64)->(usize,Vec<ReactiveNodeId>,Vec<Vec<ReactiveCellId>>){with_interpreter(p.interpreter(),id,&mut |i|{let q=i.plan();let q=q.borrow();(q.len(),q.nodes.iter().map(|n|n.id).collect(),q.nodes.iter().map(|n|n.outputs.clone()).collect())}).expect("interpreter")}
+  #[test] fn program_reactive_turn_updates_only_reachable_branch(){let mut p=MechProgram::new(MechProgramConfig::default());let(l,r)=(input(&mut p,"left",1.),input(&mut p,"right",2.));p.run_string("left-output := left + 1.0\nright-output := right + 1.0").unwrap();let id=p.interpreter().id;let(lc,rc,lo,ro)=(cell(&p,id,"left"),cell(&p,id,"right"),cell(&p,id,"left-output"),cell(&p,id,"right-output"));let(ln,rn)=(combinational_node_for_output_and_inputs(&p,id,lo,&[lc]),combinational_node_for_output_and_inputs(&p,id,ro,&[rc]));let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:l,value:f64_value(10.)}]).unwrap();assert_eq!(o.updated_count,1);assert_eq!(o.interpreter_turns.len(),1);let t=&o.interpreter_turns[0];assert_eq!(t.interpreter_id,id);assert_eq!((value(&p,id,"left-output"),value(&p,id,"right-output")),(11.,3.));assert!(t.turn.before_commit.executed_nodes.contains(&ln));assert!(!t.turn.before_commit.executed_nodes.contains(&rn));assert!(t.turn.before_commit.pending_register_nodes.is_empty());assert_eq!(t.turn.register_commit,ReactiveRegisterCommitOutcome::default());assert_eq!(t.turn.after_commit,ReactivePlanSolveOutcome::default());let _=r;}
+  #[test] fn program_reactive_turn_batches_inputs_into_one_turn(){let mut p=MechProgram::new(MechProgramConfig::default());let(a,b)=(input(&mut p,"a",1.),input(&mut p,"b",2.));p.run_string("~total := 0.0\nsum := a + b\ntotal = sum\noutput := total + 1.0").unwrap();let id=p.interpreter().id;let(ac,bc,sc,tc,oc)=(cell(&p,id,"a"),cell(&p,id,"b"),cell(&p,id,"sum"),cell(&p,id,"total"),cell(&p,id,"output"));let(sum,total,out)=(combinational_node_for_output_and_inputs(&p,id,sc,&[ac,bc]),register_node_for_output(&p,id,tc),combinational_node_for_output_and_inputs(&p,id,oc,&[tc]));let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:a,value:f64_value(10.)},ProgramInputUpdate{input:b,value:f64_value(20.)}]).unwrap();let t=&o.interpreter_turns[0].turn;assert_eq!(o.updated_count,2);assert_eq!(o.interpreter_turns.len(),1);assert_eq!(t.before_commit.executed_nodes.iter().filter(|node_id| **node_id==sum).count(),1);assert_eq!(t.before_commit.pending_register_nodes,vec![total]);assert_eq!(t.register_commit.staged_nodes,vec![total]);assert_eq!(t.register_commit.committed_nodes,vec![total]);assert!(t.after_commit.executed_nodes.contains(&out));assert_eq!((value(&p,id,"sum"),value(&p,id,"total"),value(&p,id,"output")),(30.,30.,31.));assert!(!pending(&p,id));}
+  #[test] fn program_reactive_turn_preserves_deferred_registers_between_calls(){let mut p=MechProgram::new(MechProgramConfig::default());let x=input(&mut p,"input",1.);p.run_string("~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();let id=p.interpreter().id;let(a,b)=(register_node_for_output(&p,id,cell(&p,id,"a")),register_node_for_output(&p,id,cell(&p,id,"b")));let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:x,value:f64_value(10.)}]).unwrap();let t=&o.interpreter_turns[0].turn;assert_eq!(t.register_commit.committed_nodes,vec![a]);assert_eq!(t.after_commit.pending_register_nodes,vec![b]);assert_eq!((value(&p,id,"a"),value(&p,id,"middle"),value(&p,id,"b"),value(&p,id,"output")),(10.,11.,2.,3.));assert!(pending(&p,id));let t=p.advance_reactive_turn(id,&[]).unwrap();assert_eq!(t.register_commit.committed_nodes,vec![b]);assert_eq!((value(&p,id,"a"),value(&p,id,"middle"),value(&p,id,"b"),value(&p,id,"output")),(10.,11.,11.,12.));assert!(!pending(&p,id));}
+  #[test] fn program_reactive_turn_legacy_update_api_does_not_execute_plan(){let mut p=MechProgram::new(MechProgramConfig::default());let x=input(&mut p,"input",1.);p.run_string("output := input * 2.0").unwrap();let id=p.interpreter().id;let u=p.update_inputs_with_dirty_cells(&[ProgramInputUpdate{input:x,value:f64_value(5.)}]).unwrap();assert_eq!((value(&p,id,"input"),value(&p,id,"output")),(5.,2.));assert!(!pending(&p,id));assert_eq!(u.updated_count,1);assert!(!u.dirty_cells.is_empty());p.advance_reactive_turn(id,&u.dirty_cells).unwrap();assert_eq!(value(&p,id,"output"),10.);}
+  #[cfg(feature="string")] #[test] fn program_reactive_turn_preflight_failure_mutates_nothing(){let mut p=MechProgram::new(MechProgramConfig::default());let(a,b)=(input(&mut p,"a",1.),input(&mut p,"b",2.));p.run_string("output := a + b").unwrap();let id=p.interpreter().id;let s=snapshot(&p,id);let q=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:a,value:f64_value(10.)},ProgramInputUpdate{input:b,value:Value::String(Ref::new("bad".into()))}]).unwrap_err();assert!(format!("{q:?}").contains("StableValueUpdateKindMismatch"));assert_eq!((value(&p,id,"a"),value(&p,id,"b"),value(&p,id,"output")),(1.,2.,3.));assert_eq!(snapshot(&p,id),s);assert!(!pending(&p,id));}
+  #[test] fn program_reactive_turn_rejects_root_alias_duplicate(){let mut p=MechProgram::new(MechProgramConfig::default());let x=input(&mut p,"input",1.);let id=p.interpreter().id;let e=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:ProgramInputId{interpreter_id:0,symbol_id:x.symbol_id},value:f64_value(2.)},ProgramInputUpdate{input:x,value:f64_value(3.)}]).unwrap_err();assert!(format!("{e:?}").contains("ProgramInputDuplicateTarget"));assert_eq!(value(&p,id,"input"),1.);assert!(!pending(&p,id));}
+  #[test] fn program_reactive_turn_empty_batch_is_noop(){let mut p=MechProgram::new(MechProgramConfig::default());let id=p.interpreter().id;let s=snapshot(&p,id);assert_eq!(p.update_inputs_and_advance_turn(&[]).unwrap(),ProgramInputTurnOutcome::default());assert_eq!(snapshot(&p,id),s);assert!(!pending(&p,id));}
+  #[test] fn program_reactive_turn_orders_nested_interpreters_deterministically(){let mut p=MechProgram::new(MechProgramConfig::default());let mut c1=Interpreter::new_with_full_stdlib(101);let mut c2=Interpreter::new_with_full_stdlib(202);for(i,src) in [(&mut c1,"input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0"),(&mut c2,"input := 1.0\noutput := input + 1.0")]{i.interpret(&parser::parse(src).unwrap()).unwrap();}p.interpreter_mut().sub_interpreters.borrow_mut().insert(101,Box::new(c1));p.interpreter_mut().sub_interpreters.borrow_mut().insert(202,Box::new(c2));let(a,b)=(ProgramInputId{interpreter_id:101,symbol_id:hash_str("input")},ProgramInputId{interpreter_id:202,symbol_id:hash_str("input")});let root=snapshot(&p,p.interpreter().id);let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:b,value:f64_value(20.)},ProgramInputUpdate{input:a,value:f64_value(10.)}]).unwrap();assert_eq!(o.updated_count,2);assert_eq!(o.interpreter_turns.iter().map(|x|x.interpreter_id).collect::<Vec<_>>(),vec![101,202]);assert!(!o.interpreter_turns[0].dirty_cells.is_empty());assert!(!o.interpreter_turns[1].dirty_cells.is_empty());assert_ne!(o.interpreter_turns[0].dirty_cells,o.interpreter_turns[1].dirty_cells);assert_eq!((value(&p,101,"a"),value(&p,101,"middle"),value(&p,101,"b")),(10.,11.,2.));assert!(pending(&p,101));assert_eq!(value(&p,202,"output"),21.);assert!(!pending(&p,202));assert!(!pending(&p,p.interpreter().id));assert_eq!(snapshot(&p,p.interpreter().id),root);p.advance_reactive_turn(101,&[]).unwrap();assert_eq!((value(&p,101,"b"),value(&p,101,"output"),value(&p,202,"output")),(11.,12.,21.));assert!(!pending(&p,101));assert!(!pending(&p,202));}
+  #[cfg(feature="compiler")] #[test] fn program_reactive_turn_decoded_plan_reuses_identity(){let mut source=MechProgram::new(MechProgramConfig::default());source.load_full_stdlib();source.run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\noutput").unwrap();let bytes=source.compile_bytecode().unwrap();let mut p=MechProgram::new(MechProgramConfig::default());p.load_full_stdlib();p.run_bytecode(&bytes).unwrap();let id=p.interpreter().id;let x=p.ensure_input(id,hash_str("input"),"input",f64_value(1.)).unwrap();let s=snapshot(&p,id);let(a,b)=(register_node_for_output(&p,id,cell(&p,id,"a")),register_node_for_output(&p,id,cell(&p,id,"b")));let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:x,value:f64_value(10.)}]).unwrap();assert_eq!(o.interpreter_turns[0].turn.register_commit.committed_nodes,vec![a]);assert_eq!(o.interpreter_turns[0].turn.after_commit.pending_register_nodes,vec![b]);let o=p.advance_reactive_turn(id,&[]).unwrap();assert_eq!(o.register_commit.committed_nodes,vec![b]);assert_eq!(value(&p,id,"output"),12.);assert!(!pending(&p,id));assert_eq!(snapshot(&p,id),s);}
 }
