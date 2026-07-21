@@ -1261,6 +1261,47 @@ output := hour + 1
     publish(&mut runtime, &driver, snapshot(5.0, 6.0, 7.0, 8.0));
     assert_eq!(runtime.persistent_send_count(), 1);
   }
+
+  #[test]
+  fn activation_send_registers_one_barrier_per_scope_and_replays_equal_triggers() {
+    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    runtime.run_string(r#"@out := console://console/output{:write(line)}
+@clock := time://clock/clock{:read(hour)}
+render-tick := @clock/hour
+~> render-tick {
+  @out/line <- "first"
+  @out/line <- "second"
+  @out/line <- "third"
+}
+"#).unwrap();
+
+    // Activation effects are registered, rather than evaluated, during load.
+    assert!(console.lines().is_empty());
+    assert_eq!(runtime.persistent_send_count(), 3);
+    let schedules: Vec<_> = runtime.persistent_sends.iter().map(|send| match send.schedule {
+      RuntimePersistentSendSchedule::Activation { barrier_node_id, .. } => barrier_node_id,
+      RuntimePersistentSendSchedule::EveryAcceptedTurn => panic!("activation send used top-level schedule"),
+    }).collect();
+    assert!(schedules.windows(2).all(|ids| ids[0] == ids[1]));
+    let barriers = runtime.program.interpreter().plan().borrow().nodes.iter().filter(|node| {
+      node.kind == mech_core::ReactiveNodeKind::Combinational
+        && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
+        && node.outputs.is_empty()
+    }).count();
+    assert_eq!(barriers, 1);
+
+    // Equal admitted values still execute the barrier and replay every send.
+    publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
+    publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
+    assert_eq!(console.lines(), vec!["first", "second", "third", "first", "second", "third"]);
+  }
+
+  #[test]
+  fn activation_internal_barrier_is_not_user_callable() {
+    let (mut runtime, _driver, _console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
+    let error = runtime.run_string("mech/runtime/activation-effect-barrier()").unwrap_err();
+    assert!(format!("{error:?}").contains("MissingFunction"));
+  }
 }
 
 #[test]
