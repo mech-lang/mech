@@ -25,6 +25,7 @@ enum RuntimeAddressTarget {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum DirectContextEffectPlacement {
   TopLevel,
+  ActivationScope,
   FunctionBody,
   FsmTransition,
 }
@@ -45,14 +46,12 @@ impl DirectContextEffectPlacement {
   fn description(self) -> &'static str {
     match self {
       DirectContextEffectPlacement::TopLevel => "module top level",
+      DirectContextEffectPlacement::ActivationScope => "an activation scope",
       DirectContextEffectPlacement::FunctionBody => "a function body",
       DirectContextEffectPlacement::FsmTransition => "an FSM transition",
     }
   }
 
-  fn allows_direct_context_effect(self) -> bool {
-    matches!(self, DirectContextEffectPlacement::TopLevel)
-  }
 }
 
 struct ActiveRuntimeProgramHostGuard {
@@ -95,6 +94,36 @@ struct ResolvedContextResourceRequest {
   provider_base_uri: String,
   provider_path: String,
   context_path: String,
+}
+
+// This name deliberately starts with a NUL byte.  It is an identifier we can
+// construct in the lowered tree, but it cannot be produced by the Mech lexer.
+// Keeping the compiler registered on the program is therefore not a public
+// source-level API.
+pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "\0mech/runtime/activation-effect-barrier";
+const ACTIVATION_SEND_PAYLOAD_NAME_PREFIX: &str =
+  "\0mech/runtime/activation-send-payload/";
+
+#[derive(Clone, Debug)]
+pub(super) struct ActivationEffectBarrierCompiler;
+impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    if !arguments.is_empty() { return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier accepts no arguments".into() }, None)); }
+    Ok(Box::new(ActivationEffectBarrier))
+  }
+}
+#[derive(Clone, Debug)]
+struct ActivationEffectBarrier;
+impl MechFunctionImpl for ActivationEffectBarrier {
+  fn solve(&self) {}
+  fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> { Ok(mech_core::ReactiveSolveStatus::Unchanged) }
+  // The barrier is a scheduling node, not a value producer.  Its node id and
+  // reactive execution record are the observable state used by send replay.
+  fn out(&self) -> Value { Value::Empty }
+  fn to_string(&self) -> String { ACTIVATION_EFFECT_BARRIER_NAME.to_string() }
+}
+impl MechFunctionCompiler for ActivationEffectBarrier {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
 }
 
 fn identifier_from_str(name: &str) -> mech_core::Identifier {
@@ -313,6 +342,20 @@ impl MechRuntime {
     let result = f(self);
     self.live_registration_mode = previous;
     result
+  }
+
+  #[cfg(test)]
+  pub(super) fn run_string_with_isolated_registration_for_test(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
+    self.with_live_registration_mode(
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      |runtime| {
+        runtime.run_string_with_context(context, source)
+      },
+    )
   }
 
   fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
@@ -1148,7 +1191,12 @@ impl MechRuntime {
     code: &mech_core::MechCode,
   ) -> MResult<mech_core::MechCode> {
     match code {
-      mech_core::MechCode::ActivationScope(_) => Err(MechError::new(mech_core::GenericError { msg: "ActivationScopeBytecodeUnsupported".to_string() }, None)),
+      mech_core::MechCode::ActivationScope(scope) => {
+        let mut scope = scope.clone();
+        scope.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        scope.body = scope.body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?;
+        Ok(mech_core::MechCode::ActivationScope(scope))
+      },
       mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
         self.resolve_context_reads_in_statement(context, program, registry, statement)?,
       )),
@@ -1243,6 +1291,50 @@ impl MechRuntime {
         }
         Ok(())
       }
+      mech_core::MechCode::ActivationScope(scope) => {
+        if !pending_codes.is_empty() { pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes))); }
+        self.flush_direct_execution(program, pending, result)?;
+        let mut lowered = scope.clone();
+        lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        let mut registrations = Vec::new();
+        lowered.body.clear();
+        for (body_code, body_comment) in &scope.body {
+          match body_code {
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+              let context_name = send.target.context.as_ref().unwrap().to_string();
+              let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
+              let index = self.persistent_sends.len() + registrations.len();
+              let value_name = format!("{ACTIVATION_SEND_PAYLOAD_NAME_PREFIX}{index}");
+              let value = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&value_name), context: None, kind: None }, expression: self.resolve_context_reads_in_expression(context, program, registry, &send.expression)? };
+              lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
+              registrations.push((binding, send.target.name.to_string(), hash_str(&value_name)));
+            }
+            _ => lowered.body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+          }
+        }
+        if registrations.is_empty() {
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          return Ok(());
+        }
+        lowered.body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
+        self.validate_live_context_candidate(context)?;
+        let plan_start = program.interpreter().plan().borrow().nodes.len();
+        program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+        let interpreter_id = program.interpreter().id;
+        let trigger_cells = match &scope.trigger { mech_core::Expression::Var(var) => program.interpreter().symbols().borrow().get(var.name.hash()).ok_or_else(|| MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation trigger disappeared".into() }, None))?.borrow().reactive_root_cell_ids(), _ => vec![] };
+        let barrier_ids: Vec<_> = program.interpreter().plan().borrow().nodes[plan_start..].iter().filter(|node| node.kind == mech_core::ReactiveNodeKind::Combinational && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME && trigger_cells.iter().all(|cell| node.inputs.iter().any(|dependency| dependency.cell == *cell && dependency.kind == mech_core::ReactiveDependencyKind::Reactive))).map(|node| node.id).collect();
+        if barrier_ids.len() != 1 { return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: format!("expected exactly one activation effect barrier, found {}", barrier_ids.len()) }, None)); }
+        let barrier_node_id = barrier_ids[0];
+        let symbols = program.interpreter().symbols();
+        let mut sends = Vec::new();
+        for (binding, path, value_id) in registrations {
+          let value = symbols.borrow().get(value_id).ok_or_else(|| MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "missing lowered activation payload".into() }, None))?;
+          sends.push(RuntimePersistentSend { binding, path, value, schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } });
+        }
+        self.persistent_sends.extend(sends);
+        self.commit_live_context_candidate(context);
+        Ok(())
+      }
       mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
         if let Some(context_name) = &var_def.var.context {
           let target = context_name.to_string();
@@ -1297,7 +1389,7 @@ impl MechRuntime {
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
         self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
-        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
+        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell, schedule: RuntimePersistentSendSchedule::EveryAcceptedTurn });
         self.commit_live_context_candidate(context);
         *result = value;
         return Ok(());
@@ -1385,8 +1477,19 @@ impl MechRuntime {
     match code {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
+        let has_send = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
+        // Only writes to local registers conflict with an effectful activation.
+        // Context-addressed assignments have their own, operation-specific
+        // placement error below (they are top-level only).
+        let has_register = scope.body.iter().any(|(code, _)| match code {
+          mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => assign.target.context.is_none(),
+          mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => assign.target.context.is_none(),
+          _ => false,
+        });
+        if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
+        if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
         for (body_code, _) in &scope.body {
-          self.preflight_code_context_capabilities(context, registry, body_code, placement, addressed_read_preflight)?;
+          self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
         }
         Ok(())
       }
@@ -2279,9 +2382,12 @@ impl MechRuntime {
     path: &str,
     placement: DirectContextEffectPlacement,
   ) -> MResult<()> {
-    if placement.allows_direct_context_effect() {
-      return Ok(());
-    }
+    let allowed = match effect {
+      "assignment" => matches!(placement, DirectContextEffectPlacement::TopLevel),
+      "send" => matches!(placement, DirectContextEffectPlacement::TopLevel | DirectContextEffectPlacement::ActivationScope),
+      _ => false,
+    };
+    if allowed { return Ok(()); }
 
     Err(MechError::new(RuntimeInvalidOperationError {
       operation: "direct_context_effect_placement",
@@ -3975,7 +4081,7 @@ impl MechRuntime {
         program.update_inputs_and_advance_turn(
           &target_updates,
         )?;
-      self.execute_persistent_sends(&context)?;
+      self.execute_persistent_sends(&context, &turn)?;
       self.enforce_turn_duration(turn_started)?;
 
       Ok(crate::RuntimeHostInputOutcome {
@@ -3991,8 +4097,15 @@ impl MechRuntime {
     result
   }
 
-  fn execute_persistent_sends(&mut self, context: &RuntimeContext) -> MResult<()> {
+  fn execute_persistent_sends(&mut self, context: &RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
     for send in self.persistent_sends.clone() {
+      let should_send = match send.schedule {
+        RuntimePersistentSendSchedule::EveryAcceptedTurn => true,
+        RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
+          outcome.turn.before_commit.executed_nodes.contains(&barrier_node_id) || outcome.turn.after_commit.executed_nodes.contains(&barrier_node_id)
+        }).unwrap_or(false),
+      };
+      if !should_send { continue; }
       let value = resolve_runtime_value(send.value.borrow().clone());
       self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
     }

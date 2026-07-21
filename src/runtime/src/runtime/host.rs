@@ -34,6 +34,7 @@
 
 
 use super::*;
+use super::execution::{ACTIVATION_EFFECT_BARRIER_NAME, ActivationEffectBarrierCompiler};
 use mech_core::{Ref, ValueKind};
 
 impl MechRuntime {
@@ -43,6 +44,10 @@ impl MechRuntime {
     _context: &mut RuntimeContext,
     program: &mut MechProgram,
   ) -> MResult<()> {
+    program.register_native_function_compiler(
+      ACTIVATION_EFFECT_BARRIER_NAME,
+      Arc::new(ActivationEffectBarrierCompiler),
+    );
     for name in self.host_registry.list_functions()? {
       program.register_native_function_compiler(
         name.clone(),
