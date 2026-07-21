@@ -422,13 +422,17 @@ impl MechErrorKind for ActivationScopeContextSendUnsupported { fn name(&self) ->
 impl MechErrorKind for ActivationScopeDefinitionUnsupported { fn name(&self) -> &str { "ActivationScopeDefinitionUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
 #[derive(Debug, Clone)] struct ActivationScopeDeclarationUnsupported;
 impl MechErrorKind for ActivationScopeDeclarationUnsupported { fn name(&self) -> &str { "ActivationScopeDeclarationUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeTriggerWriteUnsupported;
+impl MechErrorKind for ActivationScopeTriggerWriteUnsupported { fn name(&self) -> &str { "ActivationScopeTriggerWriteUnsupported" } fn message(&self) -> String { "An activation scope cannot assign to its own trigger.".to_string() } }
 #[derive(Debug, Clone)] struct ActivationScopeNestedUnsupported;
 impl MechErrorKind for ActivationScopeNestedUnsupported { fn name(&self) -> &str { "ActivationScopeNestedUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
 
-fn validate_activation_body(body: &[(MechCode, Option<Comment>)]) -> MResult<()> {
+fn validate_activation_body(body: &[(MechCode, Option<Comment>)], trigger_id: u64) -> MResult<()> {
   for (code, _) in body { match code {
     MechCode::ActivationScope(_) => return Err(MechError::new(ActivationScopeNestedUnsupported, None).with_tokens(code.tokens())),
     MechCode::Import(_) | MechCode::FunctionDefine(_) | MechCode::FsmSpecification(_) | MechCode::FsmImplementation(_) => return Err(MechError::new(ActivationScopeDefinitionUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::VariableAssign(assign)) if assign.target.name.hash() == trigger_id => return Err(MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::OpAssign(assign)) if assign.target.name.hash() == trigger_id => return Err(MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(code.tokens())),
     MechCode::Statement(Statement::ContextSend(_)) => return Err(MechError::new(ActivationScopeContextSendUnsupported, None).with_tokens(code.tokens())),
     MechCode::Statement(Statement::VariableDefine(def)) if def.mutable => return Err(MechError::new(ActivationScopeDefinitionUnsupported, None).with_tokens(code.tokens())),
     MechCode::Statement(Statement::ContextDeclaration(_) | Statement::ExportDeclaration(_) | Statement::FsmDeclare(_)) => return Err(MechError::new(ActivationScopeDeclarationUnsupported, None).with_tokens(code.tokens())),
@@ -457,7 +461,7 @@ fn elaborate_activation_scope(scope: &ActivationScope, _p: &Interpreter, _trigge
 
 fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
   let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
-  validate_activation_body(&scope.body)?;
+  validate_activation_body(&scope.body, var.name.hash())?;
   let trigger_cells = activation_trigger_cells(scope, var, p)?;
   elaborate_activation_scope(scope, p, trigger_cells)
 }
