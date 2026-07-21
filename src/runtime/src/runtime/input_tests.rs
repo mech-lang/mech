@@ -1092,6 +1092,111 @@ mod persistent_send_tests {
 
   const TIME_PATHS: &[&str] = &["unix-ms", "hour", "minute", "second", "millisecond"];
 
+    fn grant_write_to(runtime: &mut MechRuntime, subject: &str, resource: &str, path: &str) {
+        runtime
+            .grant_capability(RuntimeCapabilityGrant {
+                subject: subject.to_string(),
+                resource: resource.to_string(),
+                operations: vec![RuntimeCapabilityOperation::Write],
+                paths: vec![path.to_string()],
+            })
+            .unwrap();
+    }
+
+    #[derive(Clone, Debug, Default)]
+    struct SequencedOutput {
+        attempts: Rc<RefCell<Vec<String>>>,
+        successes: Rc<RefCell<Vec<String>>>,
+        fail_once_at: Rc<RefCell<Option<usize>>>,
+    }
+
+    impl SequencedOutput {
+        fn attempts(&self) -> Vec<String> {
+            self.attempts.borrow().clone()
+        }
+        fn successes(&self) -> Vec<String> {
+            self.successes.borrow().clone()
+        }
+        fn fail_once_at(&self, attempt: usize) {
+            assert!(attempt > 0);
+            *self.fail_once_at.borrow_mut() = Some(attempt);
+        }
+    }
+
+    #[derive(Debug)]
+    struct SequencedOutputProvider {
+        backend: SequencedOutput,
+    }
+
+    impl RuntimeResourceProvider for SequencedOutputProvider {
+        fn scheme(&self) -> &str {
+            "test"
+        }
+        fn base_uris(&self) -> Vec<String> {
+            vec![TEST_OUTPUT_BASE_URI.to_string()]
+        }
+        fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+            Err(MechError::new(
+                PersistentSendTestError(format!(
+                    "sequenced output is write-only: {} / {}",
+                    request.base_uri, request.path,
+                )),
+                None,
+            ))
+        }
+        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+            if request.base_uri == TEST_OUTPUT_BASE_URI
+                && request.path == "line"
+                && request.intent == RuntimeResourceWriteIntent::Send
+            {
+                Ok(())
+            } else {
+                Err(MechError::new(
+                    PersistentSendTestError(format!(
+                        "invalid sequenced output write: {} / {}",
+                        request.base_uri, request.path,
+                    )),
+                    None,
+                ))
+            }
+        }
+        fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+            self.preflight_write(RuntimeResourceWritePreflightRequest {
+                base_uri: request.base_uri.clone(),
+                path: request.path.clone(),
+                context_name: request.context_name.clone(),
+                operation: request.operation.clone(),
+                intent: request.intent,
+            })?;
+            let rendered = format!("{}", request.value);
+            let attempt_number = {
+                let mut attempts = self.backend.attempts.borrow_mut();
+                attempts.push(rendered.clone());
+                attempts.len()
+            };
+            let should_fail = {
+                let mut fail_once_at = self.backend.fail_once_at.borrow_mut();
+                if *fail_once_at == Some(attempt_number) {
+                    *fail_once_at = None;
+                    true
+                } else {
+                    false
+                }
+            };
+            if should_fail {
+                return Err(MechError::new(
+                    PersistentSendTestError(format!(
+                        "intentional output failure on attempt {attempt_number}"
+                    )),
+                    None,
+                ));
+            }
+            self.backend.successes.borrow_mut().push(rendered);
+            Ok(())
+        }
+    }
+
+
   fn snapshot(hour: f64, minute: f64, second: f64, millisecond: f64) -> TimeSnapshot {
     TimeSnapshot { unix_ms: hour * 3_600_000.0 + minute * 60_000.0 + second * 1000.0 + millisecond, hour, minute, second, millisecond }
   }
@@ -1148,8 +1253,8 @@ clock-output := (hour, minute, second)
   #[derive(Clone, Debug, PartialEq, Eq)]
   struct ActivationPlanSnapshot { nodes: Vec<ActivationNodeSnapshot>, reactive_consumers: Vec<(ReactiveCellId, Vec<ReactiveNodeId>)>, sampled_consumers: Vec<(ReactiveCellId, Vec<ReactiveNodeId>)> }
   #[derive(Clone, Debug, PartialEq, Eq)]
-  struct ActivationNodeSnapshot { id: ReactiveNodeId, plan_index: usize, kind: ReactiveNodeKind, function: String, inputs: Vec<(ReactiveCellId, ReactiveDependencyKind)>, outputs: Vec<ReactiveCellId> }
-  fn activation_plan_snapshot(runtime: &MechRuntime) -> ActivationPlanSnapshot { let plan=runtime.program.interpreter().plan(); let plan=plan.borrow(); let nodes=plan.nodes.iter().map(|n| ActivationNodeSnapshot{id:n.id,plan_index:n.plan_index,kind:n.kind,function: std::any::type_name_of_val(n.function.as_ref()).to_string(),inputs:n.inputs.iter().map(|d|(d.cell,d.kind)).collect(),outputs:n.outputs.clone()}).collect(); let mut reactive_consumers=plan.reactive_consumers.iter().map(|(c,n)|(*c,n.clone())).collect::<Vec<_>>();let mut sampled_consumers=plan.sampled_consumers.iter().map(|(c,n)|(*c,n.clone())).collect::<Vec<_>>();reactive_consumers.sort_by_key(|(c,_)|c.get());sampled_consumers.sort_by_key(|(c,_)|c.get());ActivationPlanSnapshot{nodes,reactive_consumers,sampled_consumers} }
+  struct ActivationNodeSnapshot { id: ReactiveNodeId, plan_index: usize, kind: ReactiveNodeKind, inputs: Vec<(ReactiveCellId, ReactiveDependencyKind)>, outputs: Vec<ReactiveCellId> }
+  fn activation_plan_snapshot(runtime: &MechRuntime) -> ActivationPlanSnapshot { let plan=runtime.program.interpreter().plan(); let plan=plan.borrow(); let nodes=plan.nodes.iter().map(|n| ActivationNodeSnapshot{id:n.id,plan_index:n.plan_index,kind:n.kind,inputs:n.inputs.iter().map(|d|(d.cell,d.kind)).collect(),outputs:n.outputs.clone()}).collect(); let mut reactive_consumers=plan.reactive_consumers.iter().map(|(c,n)|(*c,n.clone())).collect::<Vec<_>>();let mut sampled_consumers=plan.sampled_consumers.iter().map(|(c,n)|(*c,n.clone())).collect::<Vec<_>>();reactive_consumers.sort_by_key(|(c,_)|c.get());sampled_consumers.sort_by_key(|(c,_)|c.get());ActivationPlanSnapshot{nodes,reactive_consumers,sampled_consumers} }
   fn activation_nodes_for_trigger(runtime:&MechRuntime, trigger_name:&str, kind:ReactiveNodeKind)->Vec<ReactiveNodeId>{let c=symbol_cell(runtime,trigger_name);let p=runtime.program.interpreter().plan();p.borrow().nodes.iter().filter(|n|n.kind==kind&&n.inputs.iter().any(|d|d.cell==c&&d.kind==ReactiveDependencyKind::Reactive)).map(|n|n.id).collect()}
   fn activation_barrier_for_trigger(runtime:&MechRuntime, trigger_name:&str)->ReactiveNodeId {let c=symbol_cell(runtime,trigger_name);let p=runtime.program.interpreter().plan();let barriers=p.borrow().nodes.iter().filter(|n|n.kind==ReactiveNodeKind::Combinational&&n.function.to_string()==ACTIVATION_EFFECT_BARRIER_NAME&&n.outputs.is_empty()&&n.inputs.iter().any(|d|d.cell==c&&d.kind==ReactiveDependencyKind::Reactive)).map(|n|n.id).collect::<Vec<_>>();assert_eq!(barriers.len(),1,"expected exactly one activation-effect barrier for trigger {trigger_name}");barriers[0]}
   fn only_reactive_turn(outcome:&RuntimeHostInputOutcome)->&ReactiveTurnOutcome{let p=outcome.turn.as_ref().expect("expected a program input turn");assert_eq!(p.interpreter_turns.len(),1,"expected exactly one affected interpreter");&p.interpreter_turns[0].turn}
@@ -1385,6 +1490,260 @@ render-tick := @tick/tick
   @out/line <- render-tick
 }
 "#).unwrap_err();assert!(e.kind_as::<RuntimeIsolatedActivationSendUnsupported>().is_some(),"unexpected error: {e:?}");assert_rejected_activation_left_no_state(&r,&o,&p,n,&b);}
+
+    #[test]
+    fn activation_send_reactive_failure_produces_no_writes() {
+        let provider = TestResourceProvider::new().with_value(
+            "test://render/timer",
+            "tick",
+            Value::F64(Ref::new(0.0)),
+        );
+        let (mut runtime, output) = test_runtime_with_output(provider);
+        grant_read(&mut runtime, "test://render/timer", "tick");
+        grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+        let subject = runtime.runtime_context().unwrap().subject;
+        grant_host_call(
+            &mut runtime,
+            &subject,
+            193,
+            "host:demo/activation-fail-second",
+        );
+        let calls = Arc::new(AtomicUsize::new(0));
+        let host_calls = calls.clone();
+        runtime
+            .register_mech_host_function(ClosureHostFunction::new(
+                "demo/activation-fail-second",
+                move |_services, _context, args| {
+                    let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
+                    if call_number == 2 {
+                        return Err(MechError::new(DeliberateHostCallError, None));
+                    }
+                    Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))))
+                },
+            ))
+            .unwrap();
+        runtime
+            .run_string(
+                r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+
+render-tick := @tick/tick
+
+~> render-tick {
+  @out/line <-
+    demo/activation-fail-second(render-tick)
+}
+"#,
+            )
+            .unwrap();
+        let plan_before = activation_plan_snapshot(&runtime);
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "host function must compile once during load"
+        );
+        assert!(output.lines().is_empty());
+        assert_eq!(activation_send_count(&runtime), 1);
+        let error = runtime
+            .apply_host_input(RuntimeHostInput::single(
+                RuntimeHostInputSource::new("test://render/timer", "tick").unwrap(),
+                RuntimeHostInputValue::F64(1.0),
+            ))
+            .unwrap_err();
+        assert!(
+            error.kind_as::<DeliberateHostCallError>().is_some(),
+            "unexpected error: {error:?}"
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert!(output.lines().is_empty());
+        assert_eq!(activation_send_count(&runtime), 1);
+        assert_eq!(activation_plan_snapshot(&runtime), plan_before);
+        let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
+        assert!(retry.turn.is_some());
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert_eq!(output.lines().len(), 1);
+        assert_eq!(recorded_f64(&output, 0), 1.0);
+        assert_eq!(activation_send_count(&runtime), 1);
+        assert_eq!(activation_plan_snapshot(&runtime), plan_before);
+    }
+
+    #[test]
+    fn activation_send_provider_failure_is_fail_fast_and_registration_is_retained() {
+        let provider = TestResourceProvider::new().with_value(
+            "test://render/timer",
+            "tick",
+            Value::F64(Ref::new(0.0)),
+        );
+        let output = SequencedOutput::default();
+        let mut runtime = RuntimeBuilder::new()
+            .resource_provider(Box::new(provider) as Box<dyn RuntimeResourceProvider>)
+            .resource_provider(Box::new(SequencedOutputProvider {
+                backend: output.clone(),
+            }) as Box<dyn RuntimeResourceProvider>)
+            .build()
+            .unwrap();
+        grant_read(&mut runtime, "test://render/timer", "tick");
+        grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+        runtime
+            .run_string(
+                r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+
+render-tick := @tick/tick
+latest := render-tick + 1.0
+
+~> render-tick {
+  @out/line <- "first"
+  @out/line <- "second"
+  @out/line <- "third"
+}
+"#,
+            )
+            .unwrap();
+        assert!(output.attempts().is_empty());
+        assert!(output.successes().is_empty());
+        assert_eq!(activation_send_count(&runtime), 3);
+        let plan_before = activation_plan_snapshot(&runtime);
+        output.fail_once_at(2);
+        let error = runtime
+            .apply_host_input(RuntimeHostInput::single(
+                RuntimeHostInputSource::new("test://render/timer", "tick").unwrap(),
+                RuntimeHostInputValue::F64(1.0),
+            ))
+            .unwrap_err();
+        assert!(
+            error.kind_as::<PersistentSendTestError>().is_some(),
+            "unexpected error: {error:?}"
+        );
+        assert_eq!(
+            output.attempts(),
+            vec!["\"first\"".to_string(), "\"second\"".to_string()]
+        );
+        assert_eq!(output.successes(), vec!["\"first\"".to_string()]);
+        assert_eq!(
+            f64_value(&symbol_value(&runtime, "latest")),
+            2.0,
+            "reactive state must remain committed"
+        );
+        assert_eq!(activation_send_count(&runtime), 3);
+        assert_eq!(activation_plan_snapshot(&runtime), plan_before);
+        let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
+        assert!(retry.turn.is_some());
+        assert_eq!(
+            output.attempts(),
+            vec![
+                "\"first\"".to_string(),
+                "\"second\"".to_string(),
+                "\"first\"".to_string(),
+                "\"second\"".to_string(),
+                "\"third\"".to_string()
+            ]
+        );
+        assert_eq!(
+            output.successes(),
+            vec![
+                "\"first\"".to_string(),
+                "\"first\"".to_string(),
+                "\"second\"".to_string(),
+                "\"third\"".to_string()
+            ]
+        );
+        assert_eq!(activation_send_count(&runtime), 3);
+        assert_eq!(activation_plan_snapshot(&runtime), plan_before);
+    }
+
+    #[test]
+    fn activation_send_preserves_custom_live_authority() {
+        let provider = TestResourceProvider::new().with_value(
+            "test://render/timer",
+            "tick",
+            Value::F64(Ref::new(0.0)),
+        );
+        let (mut runtime, output) = test_runtime_with_output(provider);
+        let default_subject = runtime.runtime_context().unwrap().subject;
+        let custom_subject = "task:activation-send-custom";
+        grant_read_to(&mut runtime, custom_subject, "test://render/timer", "tick");
+        grant_write_to(&mut runtime, custom_subject, TEST_OUTPUT_BASE_URI, "line");
+        assert!(!runtime.has_capability_grant(
+            &default_subject,
+            "test://render/timer",
+            &RuntimeCapabilityOperation::Read,
+            "tick"
+        ));
+        assert!(!runtime.has_capability_grant(
+            &default_subject,
+            TEST_OUTPUT_BASE_URI,
+            &RuntimeCapabilityOperation::Write,
+            "line"
+        ));
+        let mut context = runtime
+            .runtime_context()
+            .unwrap()
+            .with_subject(custom_subject);
+        let source = r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+
+render-tick := @tick/tick
+
+~> render-tick {
+  @out/line <- render-tick
+}
+"#;
+        runtime
+            .run_string_with_context(&mut context, source)
+            .unwrap();
+        assert!(output.lines().is_empty());
+        assert_eq!(activation_send_count(&runtime), 1);
+        let outcome = apply_f64_input(&mut runtime, "test://render/timer", "tick", 9.0);
+        assert!(outcome.turn.is_some());
+        assert_eq!(output.lines().len(), 1);
+        assert_eq!(recorded_f64(&output, 0), 9.0);
+        assert_eq!(activation_send_count(&runtime), 1);
+    }
+
+    #[test]
+    fn activation_send_internal_payload_name_does_not_collide_with_user_binding() {
+        let provider = TestResourceProvider::new().with_value(
+            "test://render/timer",
+            "tick",
+            Value::F64(Ref::new(0.0)),
+        );
+        let (mut runtime, output) = test_runtime_with_output(provider);
+        grant_read(&mut runtime, "test://render/timer", "tick");
+        grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+        runtime
+            .run_string(
+                r#"mech-internal-activation-send-value-0 := 41.0
+
+@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+
+render-tick := @tick/tick
+
+~> render-tick {
+  @out/line <- 7.0
+}
+
+after :=
+  mech-internal-activation-send-value-0 + 1.0
+"#,
+            )
+            .unwrap();
+        assert_eq!(
+            f64_value(&symbol_value(
+                &runtime,
+                "mech-internal-activation-send-value-0"
+            )),
+            41.0
+        );
+        assert_eq!(f64_value(&symbol_value(&runtime, "after")), 42.0);
+        assert!(output.lines().is_empty());
+        assert_eq!(activation_send_count(&runtime), 1);
+        let outcome = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
+        assert!(outcome.turn.is_some());
+        assert_eq!(output.lines().len(), 1);
+        assert_eq!(recorded_f64(&output, 0), 7.0);
+    }
 
   #[test]
   fn activation_internal_barrier_is_not_user_callable() {

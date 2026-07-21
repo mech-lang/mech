@@ -101,6 +101,8 @@ struct ResolvedContextResourceRequest {
 // Keeping the compiler registered on the program is therefore not a public
 // source-level API.
 pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "\0mech/runtime/activation-effect-barrier";
+const ACTIVATION_SEND_PAYLOAD_NAME_PREFIX: &str =
+  "\0mech/runtime/activation-send-payload/";
 
 #[derive(Clone, Debug)]
 pub(super) struct ActivationEffectBarrierCompiler;
@@ -1302,7 +1304,7 @@ impl MechRuntime {
               let context_name = send.target.context.as_ref().unwrap().to_string();
               let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
               let index = self.persistent_sends.len() + registrations.len();
-              let value_name = format!("mech-internal-activation-send-value-{index}");
+              let value_name = format!("{ACTIVATION_SEND_PAYLOAD_NAME_PREFIX}{index}");
               let value = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&value_name), context: None, kind: None }, expression: self.resolve_context_reads_in_expression(context, program, registry, &send.expression)? };
               lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
               registrations.push((binding, send.target.name.to_string(), hash_str(&value_name)));
