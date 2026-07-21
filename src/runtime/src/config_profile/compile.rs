@@ -16,6 +16,7 @@ impl ConfigCompiler {
         let mut items = Vec::new();
         for (code, _) in &extracted.code {
             match code {
+                MechCode::ActivationScope(_) => return Err(ConfigProfileViolation::error("ActivationScopeBytecodeUnsupported")),
                 MechCode::Comment(_) => {}
                 MechCode::Expression(expr) => {
                     items.push(ConfigItem::Expr(self.compile_expr(expr)?))

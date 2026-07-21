@@ -680,7 +680,7 @@ impl Formatter {
     for (code,cmmnt) in &block.code {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
-        MechCode::ActivationScope(scope) => format!("~> {} {{ … }}", self.expression(&scope.trigger)),
+        MechCode::ActivationScope(scope) => self.activation_scope(scope),
         MechCode::Expression(expr) => self.expression(expr),
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
@@ -1542,7 +1542,7 @@ impl Formatter {
     for (code,cmmnt) in node {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
-        MechCode::ActivationScope(scope) => format!("~> {} {{ … }}", self.expression(&scope.trigger)),
+        MechCode::ActivationScope(scope) => self.activation_scope(scope),
         MechCode::Expression(expr) => self.expression(expr),
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
@@ -2008,6 +2008,27 @@ impl Formatter {
     } else {
       format!("{} {} {}", name, ":=", expression)
     }
+  }
+
+  pub fn activation_scope(&mut self, node: &ActivationScope) -> String {
+    let mut lines = vec![format!("{} {} {{", node.operator.to_string(), self.expression(&node.trigger))];
+    for (code, comment) in &node.body {
+      let source = match code {
+        MechCode::Comment(value) => self.comment(value),
+        MechCode::ActivationScope(value) => self.activation_scope(value),
+        MechCode::Expression(value) => self.expression(value),
+        MechCode::FsmSpecification(value) => self.fsm_specification(value),
+        MechCode::FsmImplementation(value) => self.fsm_implementation(value),
+        MechCode::FunctionDefine(value) => self.function_define(value),
+        MechCode::Import(value) => self.module_import(value),
+        MechCode::Statement(value) => self.statement(value),
+        MechCode::Error(token, _) => token.to_string(),
+      };
+      lines.extend(source.lines().map(|line| format!("  {line}")));
+      if let Some(value) = comment { lines.push(format!("  {}", self.comment(value))); }
+    }
+    lines.push("}".to_string());
+    lines.join("\n")
   }
 
   pub fn statement(&mut self, node: &Statement) -> String {

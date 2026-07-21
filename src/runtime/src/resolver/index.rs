@@ -397,6 +397,10 @@ fn index_mech_code_address_references(
     code: &MechCode,
 ) {
     match code {
+        MechCode::ActivationScope(activation) => {
+            index_expression_address_references(index, scope, order, &activation.trigger);
+            for (body_code, _) in &activation.body { index_mech_code_address_references(index, scope, order, body_code); }
+        }
         MechCode::Import(import) => {
             for declaration in module_import_declarations(import) {
                 index.push_import(

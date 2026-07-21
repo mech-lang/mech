@@ -416,27 +416,29 @@ impl MechErrorKind for ActivationScopeMutableDefinitionUnsupported {
   fn name(&self) -> &str { "ActivationScopeMutableDefinitionUnsupported" }
   fn message(&self) -> String { "Mutable variable definitions are not supported inside an activation scope.".to_string() }
 }
+#[derive(Debug, Clone)]
+struct ActivationScopeExecutionUnsupported;
+impl MechErrorKind for ActivationScopeExecutionUnsupported {
+  fn name(&self) -> &str { "ActivationScopeExecutionUnsupported" }
+  fn message(&self) -> String { "Activation-scope execution has not yet been implemented.".to_string() }
+}
 
-/// Elaborate an activation block in the surrounding symbol environment.  The
-/// parser intentionally retains a dedicated node so later plan registration can
-/// attach activation metadata without treating this as a lexical block.
+/// Validate source-only restrictions without evaluating or registering body code.
+fn validate_activation_body(body: &[(MechCode, Option<Comment>)]) -> MResult<()> {
+  for (code, _) in body {
+    match code {
+      MechCode::ActivationScope(_) => return Err(MechError::new(GenericError { msg: "Nested activation scopes are not supported.".to_string() }, None).with_tokens(code.tokens())),
+      MechCode::Statement(Statement::VariableDefine(def)) if def.mutable => return Err(MechError::new(ActivationScopeMutableDefinitionUnsupported, None).with_tokens(code.tokens())),
+      _ => {}
+    }
+  }
+  Ok(())
+}
+
 fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
-  if !matches!(scope.trigger, Expression::Var(_)) {
-    return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()));
-  }
-  let trigger = expression(&scope.trigger, None, p)?;
-  if trigger.reactive_root_cell_ids().is_empty() {
-    return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()));
-  }
-  let mut output = Value::Empty;
-  for (code, _) in &scope.body {
-    if matches!(code, MechCode::ActivationScope(_)) {
-      return Err(MechError::new(GenericError { msg: "Nested activation scopes are not supported.".to_string() }, None).with_tokens(code.tokens()));
-    }
-    if matches!(code, MechCode::Statement(Statement::VariableDefine(def)) if def.mutable) {
-      return Err(MechError::new(ActivationScopeMutableDefinitionUnsupported, None).with_tokens(code.tokens()));
-    }
-    output = mech_code(code, p)?;
-  }
-  Ok(output)
+  let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
+  let trigger = p.state.borrow().get_symbol(hash_str(&var.name.to_string())).ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?;
+  if trigger.reactive_root_cell_ids().is_empty() { return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())); }
+  validate_activation_body(&scope.body)?;
+  Err(MechError::new(ActivationScopeExecutionUnsupported, None).with_tokens(scope.tokens()))
 }

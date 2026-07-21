@@ -1,21 +1,20 @@
 //! Parser for the source activation block (`~> trigger { ... }`).
 use crate::*;
 use mech_core::nodes::*;
-use nom::{Err, combinator::cut};
+use nom::combinator::cut;
 
 /// activation-scope := "~>", whitespace0, expression, whitespace0, "{", mech-code, "}" ;
 /// The header deliberately uses the ordinary expression parser; semantic validation
 /// of the stable-reference restriction belongs to elaboration.
 pub fn activation_scope(input: ParseString) -> ParseResult<ActivationScope> {
-  let (input, _) = tag("~>")(input)?;
-  let (input, _) = whitespace0(input)?;
+  let (input, operator) = async_transition_operator(input)?;
   let (input, trigger) = cut(expression)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = cut(left_brace)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, parsed) = mech_code(input)?;
   let (input, _) = cut(right_brace)(input)?;
-  Ok((input, ActivationScope { trigger, body: parsed.code }))
+  Ok((input, ActivationScope { operator, trigger, body: parsed.code }))
 }
 
 #[cfg(test)]

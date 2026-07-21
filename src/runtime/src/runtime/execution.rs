@@ -1148,6 +1148,7 @@ impl MechRuntime {
     code: &mech_core::MechCode,
   ) -> MResult<mech_core::MechCode> {
     match code {
+      mech_core::MechCode::ActivationScope(_) => Err(MechError::new(mech_core::GenericError { msg: "ActivationScopeBytecodeUnsupported".to_string() }, None)),
       mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
         self.resolve_context_reads_in_statement(context, program, registry, statement)?,
       )),

@@ -93,7 +93,7 @@ pub trait Recoverable: Sized {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TokenKind {
-  AbstractSigil, ActivationScope, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  AbstractSigil, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
@@ -1005,13 +1005,14 @@ impl MechCode {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ActivationScope {
+  pub operator: Token,
   pub trigger: Expression,
   pub body: Vec<(MechCode, Option<Comment>)>,
 }
 
 impl ActivationScope {
   pub fn tokens(&self) -> Vec<Token> {
-    let mut tokens = vec![Token { kind: TokenKind::ActivationScope, chars: vec!['~', '>'], src_range: self.trigger.tokens().first().map(|t| t.src_range.clone()).unwrap_or_default() }];
+    let mut tokens = vec![self.operator.clone()];
     tokens.append(&mut self.trigger.tokens());
     for (code, comment) in &self.body {
       tokens.append(&mut code.tokens());
