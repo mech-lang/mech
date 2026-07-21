@@ -478,7 +478,7 @@ fn register_initialized_expression_function(
   let node_id = plan.register_function(function, arguments)?;
   let plan_borrow = plan.borrow();
   let function = &plan_borrow[node_id];
-  function.solve();
+  if !plan.activation_registration_active() { function.solve(); }
   Ok(function.out())
 }
 

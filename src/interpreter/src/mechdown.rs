@@ -411,52 +411,57 @@ impl MechErrorKind for ActivationTriggerMustBeStableReference {
   fn message(&self) -> String { "An activation trigger must refer to existing reactive storage.".to_string() }
 }
 #[derive(Debug, Clone)]
-struct ActivationScopeMutableDefinitionUnsupported;
-impl MechErrorKind for ActivationScopeMutableDefinitionUnsupported {
-  fn name(&self) -> &str { "ActivationScopeMutableDefinitionUnsupported" }
-  fn message(&self) -> String { "Mutable variable definitions are not supported inside an activation scope.".to_string() }
+struct ActivationScopeRegistrationUnsupported;
+impl MechErrorKind for ActivationScopeRegistrationUnsupported {
+  fn name(&self) -> &str { "ActivationScopeRegistrationUnsupported" }
+  fn message(&self) -> String { "Activation registration requires reactive functions and symbol storage.".to_string() }
 }
-#[derive(Debug, Clone)]
-struct ActivationScopeExecutionUnsupported;
-impl MechErrorKind for ActivationScopeExecutionUnsupported {
-  fn name(&self) -> &str { "ActivationScopeExecutionUnsupported" }
-  fn message(&self) -> String { "Activation-scope execution has not yet been implemented.".to_string() }
+#[derive(Debug, Clone)] struct ActivationScopeContextSendUnsupported;
+impl MechErrorKind for ActivationScopeContextSendUnsupported { fn name(&self) -> &str { "ActivationScopeContextSendUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeDefinitionUnsupported;
+impl MechErrorKind for ActivationScopeDefinitionUnsupported { fn name(&self) -> &str { "ActivationScopeDefinitionUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeDeclarationUnsupported;
+impl MechErrorKind for ActivationScopeDeclarationUnsupported { fn name(&self) -> &str { "ActivationScopeDeclarationUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeTriggerWriteUnsupported;
+impl MechErrorKind for ActivationScopeTriggerWriteUnsupported { fn name(&self) -> &str { "ActivationScopeTriggerWriteUnsupported" } fn message(&self) -> String { "An activation scope cannot assign to its own trigger.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeNestedUnsupported;
+impl MechErrorKind for ActivationScopeNestedUnsupported { fn name(&self) -> &str { "ActivationScopeNestedUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+
+fn validate_activation_body(body: &[(MechCode, Option<Comment>)], trigger_id: u64) -> MResult<()> {
+  for (code, _) in body { match code {
+    MechCode::ActivationScope(_) => return Err(MechError::new(ActivationScopeNestedUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Import(_) | MechCode::FunctionDefine(_) | MechCode::FsmSpecification(_) | MechCode::FsmImplementation(_) => return Err(MechError::new(ActivationScopeDefinitionUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::VariableAssign(assign)) if assign.target.name.hash() == trigger_id => return Err(MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::OpAssign(assign)) if assign.target.name.hash() == trigger_id => return Err(MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::ContextSend(_)) => return Err(MechError::new(ActivationScopeContextSendUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::VariableDefine(def)) if def.mutable => return Err(MechError::new(ActivationScopeDefinitionUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::ContextDeclaration(_) | Statement::ExportDeclaration(_) | Statement::FsmDeclare(_)) => return Err(MechError::new(ActivationScopeDeclarationUnsupported, None).with_tokens(code.tokens())),
+    _ => {}
+  }} Ok(())
 }
 
-/// Validate source-only restrictions without evaluating or registering body code.
-fn validate_activation_body(body: &[(MechCode, Option<Comment>)]) -> MResult<()> {
-  for (code, _) in body {
-    match code {
-      MechCode::ActivationScope(_) => return Err(MechError::new(GenericError { msg: "Nested activation scopes are not supported.".to_string() }, None).with_tokens(code.tokens())),
-      MechCode::Statement(Statement::VariableDefine(def)) if def.mutable => return Err(MechError::new(ActivationScopeMutableDefinitionUnsupported, None).with_tokens(code.tokens())),
-      _ => {}
-    }
-  }
-  Ok(())
+#[cfg(all(feature = "functions", feature = "symbol_table"))]
+fn activation_trigger_cells(scope: &ActivationScope, var: &Var, p: &Interpreter) -> MResult<Vec<ReactiveCellId>> {
+  let trigger = { let state = p.state.borrow(); state.get_symbol(var.name.hash()) }.ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?;
+  let cells = trigger.borrow().reactive_root_cell_ids();
+  if cells.is_empty() { return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())); }
+  Ok(cells)
 }
+#[cfg(not(all(feature = "functions", feature = "symbol_table")))]
+fn activation_trigger_cells(scope: &ActivationScope, _var: &Var, _p: &Interpreter) -> MResult<Vec<ReactiveCellId>> { Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens())) }
 
-#[cfg(feature = "symbol_table")]
-fn validate_activation_trigger_storage(scope: &ActivationScope, var: &Var, p: &Interpreter) -> MResult<()> {
-  let trigger = p.state.borrow().get_symbol(var.name.hash()).ok_or_else(|| {
-    MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())
-  })?;
-  if trigger.borrow().reactive_root_cell_ids().is_empty() {
-    return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()));
-  }
-  Ok(())
+#[cfg(all(feature = "functions", feature = "symbol_table"))]
+fn elaborate_activation_scope(scope: &ActivationScope, p: &Interpreter, trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> {
+ let plan=p.plan(); plan.push_activation_registration_scope(trigger_cells);
+ let result=(|| -> MResult<Value> { for (code,_) in &scope.body { mech_code(code,p)?; } Ok(Value::Empty) })();
+ plan.pop_activation_registration_scope(); result
 }
-
-#[cfg(not(feature = "symbol_table"))]
-fn validate_activation_trigger_storage(_scope: &ActivationScope, _var: &Var, _p: &Interpreter) -> MResult<()> {
-  Ok(())
-}
+#[cfg(not(all(feature = "functions", feature = "symbol_table")))]
+fn elaborate_activation_scope(scope: &ActivationScope, _p: &Interpreter, _trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> { Err(MechError::new(ActivationScopeRegistrationUnsupported,None).with_tokens(scope.tokens())) }
 
 fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
-  let var = match &scope.trigger {
-    Expression::Var(var) => var,
-    _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())),
-  };
-  validate_activation_body(&scope.body)?;
-  validate_activation_trigger_storage(scope, var, p)?;
-  Err(MechError::new(ActivationScopeExecutionUnsupported, None).with_tokens(scope.tokens()))
+  let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
+  validate_activation_body(&scope.body, var.name.hash())?;
+  let trigger_cells = activation_trigger_cells(scope, var, p)?;
+  elaborate_activation_scope(scope, p, trigger_cells)
 }
