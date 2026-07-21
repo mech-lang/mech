@@ -342,6 +342,20 @@ impl MechRuntime {
     result
   }
 
+  #[cfg(test)]
+  pub(super) fn run_string_with_isolated_registration_for_test(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
+    self.with_live_registration_mode(
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      |runtime| {
+        runtime.run_string_with_context(context, source)
+      },
+    )
+  }
+
   fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
     matches!(import.alias, Some(mech_core::ModuleImportAlias::Context(_)))
   }
