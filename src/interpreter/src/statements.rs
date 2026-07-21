@@ -68,6 +68,28 @@ mod dirty_scheduler_integration_tests {
 
 
 
+
+#[cfg(all(test, feature = "program", feature = "functions", feature = "variables", feature = "variable_define", feature = "variable_assign", feature = "f64", feature = "math", feature = "assign"))]
+mod activation_scope_tests {
+ use super::*;
+ fn load() -> Interpreter { let t=mech_syntax::parser::parse("tick := 0.0\nx := 10.0\nradius := 2.0\n~> tick { left := x - radius\n doubled := left * 2.0 }").unwrap(); let mut i=Interpreter::new_with_full_stdlib(0); i.interpret(&t).unwrap(); i }
+ fn cell(i:&Interpreter,n:&str)->ReactiveCellId{i.symbols().borrow().get(hash_str(n)).unwrap().borrow().reactive_root_cell_ids()[0]}
+ fn nodes(i:&Interpreter)->Vec<ReactiveNodeId>{let p=i.plan();p.borrow().nodes.iter().filter(|n|n.outputs.contains(&cell(i,"left"))||n.outputs.contains(&cell(i,"doubled"))).map(|n|n.id).collect()}
+ #[test] fn activation_scope_does_not_execute_during_load(){let i=load();assert_eq!(*i.symbols().borrow().get(hash_str("x")).unwrap().borrow().as_f64().unwrap().borrow(),10.);assert!(!i.plan().activation_registration_active());}
+ #[test] fn activation_scope_trigger_is_reactive(){let i=load();let t=cell(&i,"tick");let p=i.plan();assert!(nodes(&i).iter().all(|n|p.borrow().node(*n).unwrap().inputs.iter().any(|d|d.cell==t&&d.kind==ReactiveDependencyKind::Reactive)));}
+ #[test] fn activation_scope_external_inputs_are_sampled(){let i=load();let p=i.plan();assert!(p.borrow().node(nodes(&i)[0]).unwrap().inputs.iter().any(|d|d.cell==cell(&i,"x")&&d.kind==ReactiveDependencyKind::Sampled));}
+ #[test] fn activation_scope_local_outputs_are_reactive(){let i=load();let p=i.plan();assert!(p.borrow().node(nodes(&i)[1]).unwrap().inputs.iter().any(|d|d.cell==cell(&i,"left")&&d.kind==ReactiveDependencyKind::Reactive));}
+ #[test] fn activation_scope_runs_once_on_trigger(){let mut i=load();let t=cell(&i,"tick");let o=i.advance_reactive_turn(&[t]).unwrap();assert!(nodes(&i).iter().all(|n|o.before_commit.executed_nodes.contains(n)));}
+ #[test] fn activation_scope_ignores_external_value_change(){let mut i=load();let x=cell(&i,"x");let o=i.advance_reactive_turn(&[x]).unwrap();assert!(nodes(&i).iter().all(|n|!o.before_commit.executed_nodes.contains(n)));}
+ #[test] fn activation_scope_samples_latest_external_value(){let mut i=load();let x=i.symbols().borrow().get(hash_str("x")).unwrap().borrow().clone();*x.as_f64().unwrap().borrow_mut()=20.;let t=cell(&i,"tick");i.advance_reactive_turn(&[t]).unwrap();assert_eq!(*i.symbols().borrow().get(hash_str("left")).unwrap().borrow().as_f64().unwrap().borrow(),18.);}
+ #[test] fn activation_scope_registers_commit_atomically(){assert!(!nodes(&load()).is_empty());}
+ #[test] fn activation_scope_register_commit_does_not_reactivate_body(){let mut i=load();let t=cell(&i,"tick");assert!(i.advance_reactive_turn(&[t]).unwrap().after_commit.executed_nodes.is_empty());}
+ #[test] fn activation_scope_failed_elaboration_clears_registration_state(){let i=load();assert!(!i.plan().activation_registration_active());}
+ #[test] fn activation_scope_rejects_whole_assignment_to_trigger(){let t=mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick = tick + 1.0 }").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);assert!(format!("{:?}",i.interpret(&t).unwrap_err()).contains("ActivationScopeTriggerWriteUnsupported"));}
+ #[test] fn activation_scope_rejects_operator_assignment_to_trigger(){let t=mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick += 1.0 }").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);assert!(format!("{:?}",i.interpret(&t).unwrap_err()).contains("ActivationScopeTriggerWriteUnsupported"));}
+ #[test] fn activation_scope_plan_is_stable_across_triggers(){let mut i=load();let n=i.plan().len();let t=cell(&i,"tick");for _ in 0..2{i.advance_reactive_turn(&[t]).unwrap();}assert_eq!(i.plan().len(),n);}
+}
+
 // Interpreter-local context bindings are for direct interpreter execution.
 // Host runtime resource bindings are owned by MechRuntime.resource_bindings.
 pub fn context_declaration(ctx: &ContextDeclaration, p: &Interpreter) -> MResult<Value> {
