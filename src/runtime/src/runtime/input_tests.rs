@@ -186,6 +186,91 @@ fn grant_write(runtime: &mut MechRuntime, resource: &str, path: &str) {
   runtime.grant_capability(RuntimeCapabilityGrant { subject, resource: resource.to_string(), operations: vec![RuntimeCapabilityOperation::Write], paths: vec![path.to_string()] }).unwrap();
 }
 
+fn grant_read_to(
+  runtime: &mut MechRuntime,
+  subject: &str,
+  resource: &str,
+  path: &str,
+) {
+  runtime
+    .grant_capability(
+      RuntimeCapabilityGrant {
+        subject: subject.to_string(),
+        resource: resource.to_string(),
+        operations: vec![
+          RuntimeCapabilityOperation::Read,
+        ],
+        paths: vec![path.to_string()],
+      },
+    )
+    .unwrap();
+}
+
+fn grant_host_call(
+  runtime: &mut MechRuntime,
+  subject: &str,
+  id: u64,
+  resource: &str,
+) {
+  runtime
+    .grant_capability(
+      Arc::new(
+        BasicCapability::new(
+          CapabilityId(id.into()),
+          &BasicSubject::new(subject),
+          &BasicResource::new(resource),
+          [
+            BasicOperation::new("call"),
+          ],
+        ),
+      ),
+    )
+    .unwrap();
+}
+
+fn register_sleep_host(
+  runtime: &mut MechRuntime,
+  name: &str,
+) {
+  runtime
+    .register_mech_host_function(
+      ClosureHostFunction::new(
+        name,
+        move |_services, _context, args| {
+          thread::sleep(
+            Duration::from_millis(5),
+          );
+
+          match args.first() {
+            Some(Value::F64(value)) =>
+              Ok(Value::F64(
+                Ref::new(*value.borrow()),
+              )),
+
+            Some(Value::MutableReference(value)) =>
+              match &*value.borrow() {
+                Value::F64(value) =>
+                  Ok(Value::F64(
+                    Ref::new(*value.borrow()),
+                  )),
+
+                other =>
+                  panic!(
+                    "expected f64 mutable reference, got {other:?}",
+                  ),
+              },
+
+            other =>
+              panic!(
+                "expected f64 argument, got {other:?}",
+              ),
+          }
+        },
+      ),
+    )
+    .unwrap();
+}
+
 fn test_runtime(provider: TestResourceProvider) -> MechRuntime {
   RuntimeBuilder::new()
     .resource_provider(Box::new(provider))
