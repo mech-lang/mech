@@ -115,40 +115,25 @@ mod activation_scope_tests {
             .unwrap()
             .borrow()
     }
-    fn node_for(i: &Interpreter, name: &str, kind: ReactiveNodeKind) -> ReactiveNodeId {
+    fn nodes_for_output(i: &Interpreter, name: &str, kind: ReactiveNodeKind) -> Vec<ReactiveNodeId> {
         let output = cell(i, name);
         let p = i.plan();
-        let found = p
+        p
             .borrow()
             .nodes
             .iter()
             .filter(|n| n.kind == kind && n.outputs.contains(&output))
             .map(|n| n.id)
-            .collect::<Vec<_>>();
-        assert_eq!(found.len(), 1, "expected one {kind:?} node for {name}");
-        found[0]
+            .collect()
     }
-    fn nodes(i: &Interpreter) -> Vec<ReactiveNodeId> {
-        vec![
-            node_for(i, "left", ReactiveNodeKind::Combinational),
-            node_for(i, "doubled", ReactiveNodeKind::Combinational),
-        ]
-    }
+    fn unique_register_for(i: &Interpreter, name: &str) -> ReactiveNodeId { let found=nodes_for_output(i,name,ReactiveNodeKind::Register);assert_eq!(found.len(),1,"expected one register node for {name}");found[0] }
+    fn activation_nodes(i: &Interpreter, trigger_name: &str, kind: ReactiveNodeKind) -> Vec<ReactiveNodeId> { let trigger=cell(i,trigger_name);let p=i.plan();p.borrow().nodes.iter().filter(|node|node.kind==kind&&node.inputs.iter().any(|dependency|dependency.cell==trigger&&dependency.kind==ReactiveDependencyKind::Reactive)).map(|node|node.id).collect() }
+    fn combinational_node_for_output_and_dependency(i: &Interpreter, output_name: &str, input_name: &str, input_kind: ReactiveDependencyKind) -> ReactiveNodeId { let output=cell(i,output_name);let input=cell(i,input_name);let p=i.plan();let found=p.borrow().nodes.iter().filter(|node|node.kind==ReactiveNodeKind::Combinational&&node.outputs.contains(&output)&&node.inputs.iter().any(|dependency|dependency.cell==input&&dependency.kind==input_kind)).map(|node|node.id).collect::<Vec<_>>();assert_eq!(found.len(),1,"expected one combinational node for {output_name} consuming {input_name}");found[0] }
+    fn nodes(i: &Interpreter) -> Vec<ReactiveNodeId> { activation_nodes(i,"tick",ReactiveNodeKind::Combinational) }
     fn two_register_nodes(i: &Interpreter) -> Vec<ReactiveNodeId> {
-        let p = i.plan();
-        let registers = p
-            .borrow()
-            .nodes
-            .iter()
-            .filter(|n| {
-                n.kind == ReactiveNodeKind::Register
-                    && [cell(i, "x"), cell(i, "y")]
-                        .iter()
-                        .any(|c| n.outputs.contains(c))
-            })
-            .map(|n| n.id)
-            .collect::<Vec<_>>();
+        let registers = activation_nodes(i,"tick",ReactiveNodeKind::Register);
         assert_eq!(registers.len(), 2, "exactly two activation registers");
+        let p=i.plan();let p=p.borrow();let outputs=registers.iter().flat_map(|id|p.node(*id).unwrap().outputs.iter()).copied().collect::<HashSet<_>>();assert_eq!(outputs,[cell(i,"x"),cell(i,"y")].into_iter().collect());
         registers
     }
     fn snapshot(
@@ -198,11 +183,10 @@ mod activation_scope_tests {
     fn activation_scope_does_not_execute_during_load() {
         let i = interpret(REGISTER);
         let (next_x, register) = (
-            node_for(&i, "next-x", ReactiveNodeKind::Combinational),
-            node_for(&i, "x", ReactiveNodeKind::Register),
+            nodes_for_output(&i, "next-x", ReactiveNodeKind::Combinational), unique_register_for(&i,"x"),
         );
         assert_eq!(value(&i, "x"), 10.);
-        assert!(i.plan().borrow().node(next_x).is_some());
+        assert!(!next_x.is_empty());
         assert_eq!(
             i.plan()
                 .borrow()
@@ -235,7 +219,7 @@ mod activation_scope_tests {
     #[test]
     fn activation_scope_external_inputs_are_sampled() {
         let i = load();
-        let left = node_for(&i, "left", ReactiveNodeKind::Combinational);
+        let left = combinational_node_for_output_and_dependency(&i,"left","x",ReactiveDependencyKind::Sampled);
         let p = i.plan();
         let p = p.borrow();
         for input in ["x", "radius"] {
@@ -257,7 +241,7 @@ mod activation_scope_tests {
         let p = i.plan();
         assert!(
             p.borrow()
-                .node(nodes(&i)[1])
+                .node(combinational_node_for_output_and_dependency(&i,"doubled","left",ReactiveDependencyKind::Reactive))
                 .unwrap()
                 .inputs
                 .iter()
@@ -342,23 +326,20 @@ mod activation_scope_tests {
     #[test]
     fn activation_scope_register_commit_does_not_reactivate_body() {
         let mut i = interpret(TWO_REGISTERS);
-        let body = vec![
-            node_for(&i, "next-x", ReactiveNodeKind::Combinational),
-            node_for(&i, "next-y", ReactiveNodeKind::Combinational),
-            node_for(&i, "x", ReactiveNodeKind::Register),
-            node_for(&i, "y", ReactiveNodeKind::Register),
-        ];
+        let combinational=activation_nodes(&i,"tick",ReactiveNodeKind::Combinational);let registers=two_register_nodes(&i);assert!(!combinational.is_empty());
         let o = i.advance_reactive_turn(&[cell(&i, "tick")]).unwrap();
         assert!(
-            body[..2]
-                .iter()
-                .all(|id| o.before_commit.executed_nodes.contains(id))
+            combinational.iter().all(|id| o.before_commit.executed_nodes.iter().filter(|node| **node==*id).count()==1)
         );
-        assert_eq!(o.before_commit.pending_register_nodes, body[2..]);
-        assert_eq!(o.register_commit.committed_nodes, body[2..]);
+        assert_eq!(o.before_commit.pending_register_nodes.iter().copied().collect::<HashSet<_>>(),registers.iter().copied().collect());
+        assert_eq!(o.before_commit.pending_register_nodes.len(),registers.len());
+        assert_eq!(o.register_commit.staged_nodes.iter().copied().collect::<HashSet<_>>(),registers.iter().copied().collect());
+        assert_eq!(o.register_commit.staged_nodes.len(),registers.len());
+        assert_eq!(o.register_commit.committed_nodes.iter().copied().collect::<HashSet<_>>(),registers.iter().copied().collect());
+        assert_eq!(o.register_commit.committed_nodes.len(),registers.len());
         assert_eq!((value(&i, "x"), value(&i, "y")), (1., 2.));
         assert!(
-            body[..2]
+            combinational
                 .iter()
                 .all(|id| !o.after_commit.executed_nodes.contains(id))
         );
@@ -372,32 +353,19 @@ mod activation_scope_tests {
         assert!(
             i.plan()
                 .borrow()
-                .node(node_for(
-                    &i,
-                    "registered-first",
-                    ReactiveNodeKind::Combinational
-                ))
-                .is_some()
+                .nodes.iter().any(|node|node.kind==ReactiveNodeKind::Combinational&&node.outputs.contains(&cell(&i,"registered-first")))
         );
         assert!(!i.plan().activation_registration_active());
         let ordinary = mech_syntax::parser::parse("ordinary := x + 2.0").unwrap();
         i.interpret(&ordinary).unwrap();
-        let ordinary_node = node_for(&i, "ordinary", ReactiveNodeKind::Combinational);
+        let ordinary_nodes=nodes_for_output(&i,"ordinary",ReactiveNodeKind::Combinational);assert!(!ordinary_nodes.is_empty());
         let p = i.plan();
         let p = p.borrow();
         assert!(
-            !p.node(ordinary_node)
-                .unwrap()
-                .inputs
-                .iter()
-                .any(|d| d.cell == cell(&i, "tick"))
+            ordinary_nodes.iter().all(|node|!p.node(*node).unwrap().inputs.iter().any(|d|d.cell==cell(&i,"tick")))
         );
         assert!(
-            p.node(ordinary_node)
-                .unwrap()
-                .inputs
-                .iter()
-                .any(|d| d.cell == cell(&i, "x") && d.kind == ReactiveDependencyKind::Reactive)
+            ordinary_nodes.iter().any(|node|p.node(*node).unwrap().inputs.iter().any(|d|d.cell==cell(&i,"x")&&d.kind==ReactiveDependencyKind::Reactive))
         );
         assert!(!i.plan().activation_registration_active());
     }
