@@ -1383,6 +1383,13 @@ impl MechRuntime {
     addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match code {
+      mech_core::MechCode::ActivationScope(scope) => {
+        self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
+        for (body_code, _) in &scope.body {
+          self.preflight_code_context_capabilities(context, registry, body_code, placement, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
       mech_core::MechCode::Statement(statement) => {
         self.preflight_statement_context_capabilities(context, registry, statement, placement, addressed_read_preflight)
       }

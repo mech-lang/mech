@@ -997,6 +997,11 @@ impl IntoHostValue for bool {
   }
 }
 
+#[cfg(any(
+  feature = "u8", feature = "u16", feature = "u32", feature = "u64", feature = "u128",
+  feature = "i8", feature = "i16", feature = "i32", feature = "i64", feature = "i128",
+  feature = "f32", feature = "f64",
+))]
 macro_rules! impl_host_numeric {
   ($rust:ty, $arg_fn:ident, $value_fn:ident) => {
     impl FromHostValue for $rust {
