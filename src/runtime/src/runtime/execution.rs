@@ -3938,7 +3938,7 @@ impl MechRuntime {
         update_count: input.updates.len(),
         ignored_update_count,
         binding_count: 0,
-        solve: None,
+        turn: None,
       });
     }
 
@@ -3959,19 +3959,22 @@ impl MechRuntime {
       let context_ptr: *mut RuntimeContext = &mut context;
       let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
 
-      let updated_inputs = program.update_inputs(&target_updates)?;
-      // Updates are preflighted before mutation; after admitted mutation this
-      // ingress slice attempts one full persistent-plan solve and reports any
-      // solve error without claiming rollback of the accepted input values.
-      let solve = program.solve_plan()?;
+      // The program API performs complete input preflight, commits the
+      // accepted input batch, and advances one persistent reactive turn
+      // per affected interpreter. Errors after input admission preserve
+      // accepted writes and completed register commits.
+      let turn =
+        program.update_inputs_and_advance_turn(
+          &target_updates,
+        )?;
       self.execute_persistent_sends(&context)?;
       self.enforce_turn_duration(turn_started)?;
 
       Ok(crate::RuntimeHostInputOutcome {
         update_count: input.updates.len(),
         ignored_update_count,
-        binding_count: updated_inputs,
-        solve: Some(solve),
+        binding_count: turn.updated_count,
+        turn: Some(turn),
       })
     })();
 

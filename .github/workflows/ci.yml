@@ -173,6 +173,35 @@ jobs:
             -- --nocapture
 
           # Runtime package tests.
+          runtime_turn_tests="$(
+            cargo test \
+              -p mech-runtime \
+              --lib \
+              runtime_reactive_host_input_ \
+              -- --list
+          )"
+
+          printf '%s\n' "$runtime_turn_tests"
+
+          for test_name in \
+            runtime_reactive_host_input_batches_bound_updates_into_one_turn \
+            runtime_reactive_host_input_executes_only_reachable_branch \
+            runtime_reactive_host_input_preserves_deferred_registers_across_packets \
+            runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers \
+            runtime_reactive_host_input_preflight_failure_mutates_nothing \
+            runtime_reactive_host_input_turn_failure_preserves_admitted_inputs
+          do
+            grep -Fq \
+              "${test_name}: test" \
+              <<<"$runtime_turn_tests" \
+              || {
+                echo \
+                  "::error::missing runtime reactive host-input test ${test_name}"
+                exit 1
+              }
+          done
+
+          # The complete runtime suite executes the six guarded tests.
           cargo test -p mech-runtime --lib --tests
 
           # CLI host and context-send regression coverage.
