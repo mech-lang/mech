@@ -52,9 +52,6 @@ impl DirectContextEffectPlacement {
     }
   }
 
-  fn allows_direct_context_effect(self) -> bool {
-    matches!(self, DirectContextEffectPlacement::TopLevel | DirectContextEffectPlacement::ActivationScope)
-  }
 }
 
 struct ActiveRuntimeProgramHostGuard {
@@ -97,6 +94,28 @@ struct ResolvedContextResourceRequest {
   provider_base_uri: String,
   provider_path: String,
   context_path: String,
+}
+
+pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "mech/runtime/activation-effect-barrier";
+
+#[derive(Clone, Debug)]
+pub(super) struct ActivationEffectBarrierCompiler;
+impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    if !arguments.is_empty() { return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier accepts no arguments".into() }, None)); }
+    Ok(Box::new(ActivationEffectBarrier { value: mech_core::Ref::new(Value::U64(mech_core::Ref::new(0))) }))
+  }
+}
+#[derive(Clone, Debug)]
+struct ActivationEffectBarrier { value: mech_core::Ref<Value> }
+impl MechFunctionImpl for ActivationEffectBarrier {
+  fn solve(&self) {}
+  fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> { Ok(mech_core::ReactiveSolveStatus::Unchanged) }
+  fn out(&self) -> Value { self.value.borrow().clone() }
+  fn to_string(&self) -> String { ACTIVATION_EFFECT_BARRIER_NAME.to_string() }
+}
+impl MechFunctionCompiler for ActivationEffectBarrier {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
 }
 
 fn identifier_from_str(name: &str) -> mech_core::Identifier {
@@ -1264,29 +1283,34 @@ impl MechRuntime {
               let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
               let index = self.persistent_sends.len() + registrations.len();
               let value_name = format!("mech-internal-activation-send-value-{index}");
-              let marker_name = format!("mech-internal-activation-send-marker-{index}");
               let value = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&value_name), context: None, kind: None }, expression: self.resolve_context_reads_in_expression(context, program, registry, &send.expression)? };
-              // The marker is deliberately a normal reactive binding.  Its trigger input
-              // makes it an activation node even when the payload is a constant.
-              let marker = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&marker_name), context: None, kind: None }, expression: lowered.trigger.clone() };
               lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
-              lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(marker)), None));
-              registrations.push((binding, send.target.name.to_string(), hash_str(&value_name), hash_str(&marker_name)));
+              registrations.push((binding, send.target.name.to_string(), hash_str(&value_name)));
             }
             _ => lowered.body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
           }
         }
+        if registrations.is_empty() {
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          return Ok(());
+        }
+        lowered.body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
+        self.validate_live_context_candidate(context)?;
+        let plan_start = program.interpreter().plan().borrow().nodes.len();
         program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
         let interpreter_id = program.interpreter().id;
-        for (binding, path, value_id, marker_id) in registrations {
-          let symbols = program.interpreter().symbols();
-          let value = symbols.borrow().get(value_id).ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "missing lowered payload".to_string() }, None))?;
-          let marker = symbols.borrow().get(marker_id).ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "missing lowered marker".to_string() }, None))?;
-          let marker_cells = marker.borrow().reactive_root_cell_ids();
-          let marker_cell = *marker_cells.first().ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "marker has no reactive cell".to_string() }, None))?;
-          let marker_node_id = program.interpreter().plan().borrow().nodes.iter().find(|node| node.outputs.contains(&marker_cell)).map(|node| node.id).ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "missing marker plan node".to_string() }, None))?;
-          self.persistent_sends.push(RuntimePersistentSend { binding, path, value, schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, marker_node_id } });
+        let trigger_cells = match &scope.trigger { mech_core::Expression::Var(var) => program.interpreter().symbols().borrow().get(var.name.hash()).ok_or_else(|| MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation trigger disappeared".into() }, None))?.borrow().reactive_root_cell_ids(), _ => vec![] };
+        let barrier_ids: Vec<_> = program.interpreter().plan().borrow().nodes[plan_start..].iter().filter(|node| node.kind == mech_core::ReactiveNodeKind::Combinational && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME && trigger_cells.iter().all(|cell| node.inputs.iter().any(|dependency| dependency.cell == *cell && dependency.kind == mech_core::ReactiveDependencyKind::Reactive))).map(|node| node.id).collect();
+        if barrier_ids.len() != 1 { return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: format!("expected exactly one activation effect barrier, found {}", barrier_ids.len()) }, None)); }
+        let barrier_node_id = barrier_ids[0];
+        let symbols = program.interpreter().symbols();
+        let mut sends = Vec::new();
+        for (binding, path, value_id) in registrations {
+          let value = symbols.borrow().get(value_id).ok_or_else(|| MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "missing lowered activation payload".into() }, None))?;
+          sends.push(RuntimePersistentSend { binding, path, value, schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } });
         }
+        self.persistent_sends.extend(sends);
+        self.commit_live_context_candidate(context);
         Ok(())
       }
       mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
@@ -1432,8 +1456,9 @@ impl MechRuntime {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
         let has_send = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
-        let has_register = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(_))));
-        if has_send && has_register { return Err(MechError::new(RuntimeInvalidOperationError { operation: "ActivationScopeEffectWithRegisterUnsupported", reason: "activation scopes cannot mix register assignments and context sends".to_string() }, None)); }
+        let has_register = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(_) | mech_core::Statement::OpAssign(_))));
+        if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
+        if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
         for (body_code, _) in &scope.body {
           self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
         }
@@ -2328,9 +2353,12 @@ impl MechRuntime {
     path: &str,
     placement: DirectContextEffectPlacement,
   ) -> MResult<()> {
-    if placement.allows_direct_context_effect() {
-      return Ok(());
-    }
+    let allowed = match effect {
+      "assignment" => matches!(placement, DirectContextEffectPlacement::TopLevel),
+      "send" => matches!(placement, DirectContextEffectPlacement::TopLevel | DirectContextEffectPlacement::ActivationScope),
+      _ => false,
+    };
+    if allowed { return Ok(()); }
 
     Err(MechError::new(RuntimeInvalidOperationError {
       operation: "direct_context_effect_placement",
@@ -4044,8 +4072,8 @@ impl MechRuntime {
     for send in self.persistent_sends.clone() {
       let should_send = match send.schedule {
         RuntimePersistentSendSchedule::EveryAcceptedTurn => true,
-        RuntimePersistentSendSchedule::Activation { interpreter_id, marker_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
-          outcome.turn.before_commit.executed_nodes.contains(&marker_node_id) || outcome.turn.after_commit.executed_nodes.contains(&marker_node_id)
+        RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
+          outcome.turn.before_commit.executed_nodes.contains(&barrier_node_id) || outcome.turn.after_commit.executed_nodes.contains(&barrier_node_id)
         }).unwrap_or(false),
       };
       if !should_send { continue; }
