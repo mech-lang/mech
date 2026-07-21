@@ -69,25 +69,368 @@ mod dirty_scheduler_integration_tests {
 
 
 
-#[cfg(all(test, feature = "program", feature = "functions", feature = "variables", feature = "variable_define", feature = "variable_assign", feature = "f64", feature = "math", feature = "assign"))]
+#[cfg(all(
+    test,
+    feature = "program",
+    feature = "functions",
+    feature = "variables",
+    feature = "variable_define",
+    feature = "variable_assign",
+    feature = "f64",
+    feature = "math",
+    feature = "assign"
+))]
 mod activation_scope_tests {
- use super::*;
- fn load() -> Interpreter { let t=mech_syntax::parser::parse("tick := 0.0\nx := 10.0\nradius := 2.0\n~> tick { left := x - radius\n doubled := left * 2.0 }").unwrap(); let mut i=Interpreter::new_with_full_stdlib(0); i.interpret(&t).unwrap(); i }
- fn cell(i:&Interpreter,n:&str)->ReactiveCellId{i.symbols().borrow().get(hash_str(n)).unwrap().borrow().reactive_root_cell_ids()[0]}
- fn nodes(i:&Interpreter)->Vec<ReactiveNodeId>{let p=i.plan();p.borrow().nodes.iter().filter(|n|n.outputs.contains(&cell(i,"left"))||n.outputs.contains(&cell(i,"doubled"))).map(|n|n.id).collect()}
- #[test] fn activation_scope_does_not_execute_during_load(){let i=load();assert_eq!(*i.symbols().borrow().get(hash_str("x")).unwrap().borrow().as_f64().unwrap().borrow(),10.);assert!(!i.plan().activation_registration_active());}
- #[test] fn activation_scope_trigger_is_reactive(){let i=load();let t=cell(&i,"tick");let p=i.plan();assert!(nodes(&i).iter().all(|n|p.borrow().node(*n).unwrap().inputs.iter().any(|d|d.cell==t&&d.kind==ReactiveDependencyKind::Reactive)));}
- #[test] fn activation_scope_external_inputs_are_sampled(){let i=load();let p=i.plan();assert!(p.borrow().node(nodes(&i)[0]).unwrap().inputs.iter().any(|d|d.cell==cell(&i,"x")&&d.kind==ReactiveDependencyKind::Sampled));}
- #[test] fn activation_scope_local_outputs_are_reactive(){let i=load();let p=i.plan();assert!(p.borrow().node(nodes(&i)[1]).unwrap().inputs.iter().any(|d|d.cell==cell(&i,"left")&&d.kind==ReactiveDependencyKind::Reactive));}
- #[test] fn activation_scope_runs_once_on_trigger(){let mut i=load();let t=cell(&i,"tick");let o=i.advance_reactive_turn(&[t]).unwrap();assert!(nodes(&i).iter().all(|n|o.before_commit.executed_nodes.contains(n)));}
- #[test] fn activation_scope_ignores_external_value_change(){let mut i=load();let x=cell(&i,"x");let o=i.advance_reactive_turn(&[x]).unwrap();assert!(nodes(&i).iter().all(|n|!o.before_commit.executed_nodes.contains(n)));}
- #[test] fn activation_scope_samples_latest_external_value(){let mut i=load();let x=i.symbols().borrow().get(hash_str("x")).unwrap().borrow().clone();*x.as_f64().unwrap().borrow_mut()=20.;let t=cell(&i,"tick");i.advance_reactive_turn(&[t]).unwrap();assert_eq!(*i.symbols().borrow().get(hash_str("left")).unwrap().borrow().as_f64().unwrap().borrow(),18.);}
- #[test] fn activation_scope_registers_commit_atomically(){assert!(!nodes(&load()).is_empty());}
- #[test] fn activation_scope_register_commit_does_not_reactivate_body(){let mut i=load();let t=cell(&i,"tick");assert!(i.advance_reactive_turn(&[t]).unwrap().after_commit.executed_nodes.is_empty());}
- #[test] fn activation_scope_failed_elaboration_clears_registration_state(){let i=load();assert!(!i.plan().activation_registration_active());}
- #[test] fn activation_scope_rejects_whole_assignment_to_trigger(){let t=mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick = tick + 1.0 }").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);assert!(format!("{:?}",i.interpret(&t).unwrap_err()).contains("ActivationScopeTriggerWriteUnsupported"));}
- #[test] fn activation_scope_rejects_operator_assignment_to_trigger(){let t=mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick += 1.0 }").unwrap();let mut i=Interpreter::new_with_full_stdlib(0);assert!(format!("{:?}",i.interpret(&t).unwrap_err()).contains("ActivationScopeTriggerWriteUnsupported"));}
- #[test] fn activation_scope_plan_is_stable_across_triggers(){let mut i=load();let n=i.plan().len();let t=cell(&i,"tick");for _ in 0..2{i.advance_reactive_turn(&[t]).unwrap();}assert_eq!(i.plan().len(),n);}
+    use super::*;
+    use std::collections::HashSet;
+
+    const PURE: &str = "tick := 0.0\nx := 10.0\nradius := 2.0\n~> tick { left := x - radius\n doubled := left * 2.0 }";
+    const REGISTER: &str =
+        "tick := 0.0\n~x := 10.0\n\n~> tick {\n  next-x := x + 1.0\n  x = next-x\n}";
+    const TWO_REGISTERS: &str = "tick := 0.0\n\n~x := 0.0\n~y := 0.0\n\n~> tick {\n  next-x := x + 1.0\n  next-y := y + 2.0\n\n  x = next-x\n  y = next-y\n}";
+    fn interpret(source: &str) -> Interpreter {
+        let t = mech_syntax::parser::parse(source).unwrap();
+        let mut i = Interpreter::new_with_full_stdlib(0);
+        i.interpret(&t).unwrap();
+        i
+    }
+    fn load() -> Interpreter {
+        interpret(PURE)
+    }
+    fn cell(i: &Interpreter, n: &str) -> ReactiveCellId {
+        i.symbols()
+            .borrow()
+            .get(hash_str(n))
+            .unwrap()
+            .borrow()
+            .reactive_root_cell_ids()[0]
+    }
+    fn value(i: &Interpreter, n: &str) -> f64 {
+        *i.symbols()
+            .borrow()
+            .get(hash_str(n))
+            .unwrap()
+            .borrow()
+            .as_f64()
+            .unwrap()
+            .borrow()
+    }
+    fn node_for(i: &Interpreter, name: &str, kind: ReactiveNodeKind) -> ReactiveNodeId {
+        let output = cell(i, name);
+        let p = i.plan();
+        let found = p
+            .borrow()
+            .nodes
+            .iter()
+            .filter(|n| n.kind == kind && n.outputs.contains(&output))
+            .map(|n| n.id)
+            .collect::<Vec<_>>();
+        assert_eq!(found.len(), 1, "expected one {kind:?} node for {name}");
+        found[0]
+    }
+    fn nodes(i: &Interpreter) -> Vec<ReactiveNodeId> {
+        vec![
+            node_for(i, "left", ReactiveNodeKind::Combinational),
+            node_for(i, "doubled", ReactiveNodeKind::Combinational),
+        ]
+    }
+    fn two_register_nodes(i: &Interpreter) -> Vec<ReactiveNodeId> {
+        let p = i.plan();
+        let registers = p
+            .borrow()
+            .nodes
+            .iter()
+            .filter(|n| {
+                n.kind == ReactiveNodeKind::Register
+                    && [cell(i, "x"), cell(i, "y")]
+                        .iter()
+                        .any(|c| n.outputs.contains(c))
+            })
+            .map(|n| n.id)
+            .collect::<Vec<_>>();
+        assert_eq!(registers.len(), 2, "exactly two activation registers");
+        registers
+    }
+    fn snapshot(
+        i: &Interpreter,
+    ) -> (
+        usize,
+        Vec<(
+            usize,
+            usize,
+            ReactiveNodeKind,
+            Vec<u64>,
+            Vec<(u64, ReactiveDependencyKind)>,
+        )>,
+        Vec<(u64, Vec<usize>)>,
+        Vec<(u64, Vec<usize>)>,
+    ) {
+        let p = i.plan();
+        let p = p.borrow();
+        let nodes = p
+            .nodes
+            .iter()
+            .map(|n| {
+                (
+                    n.id,
+                    n.plan_index,
+                    n.kind,
+                    n.outputs.iter().map(|c| c.get()).collect(),
+                    n.inputs.iter().map(|d| (d.cell.get(), d.kind)).collect(),
+                )
+            })
+            .collect();
+        let mut reactive = p
+            .reactive_consumers
+            .iter()
+            .map(|(c, n)| (c.get(), n.clone()))
+            .collect::<Vec<_>>();
+        let mut sampled = p
+            .sampled_consumers
+            .iter()
+            .map(|(c, n)| (c.get(), n.clone()))
+            .collect::<Vec<_>>();
+        reactive.sort_by_key(|(c, _)| *c);
+        sampled.sort_by_key(|(c, _)| *c);
+        (p.len(), nodes, reactive, sampled)
+    }
+    #[test]
+    fn activation_scope_does_not_execute_during_load() {
+        let i = interpret(REGISTER);
+        let (next_x, register) = (
+            node_for(&i, "next-x", ReactiveNodeKind::Combinational),
+            node_for(&i, "x", ReactiveNodeKind::Register),
+        );
+        assert_eq!(value(&i, "x"), 10.);
+        assert!(i.plan().borrow().node(next_x).is_some());
+        assert_eq!(
+            i.plan()
+                .borrow()
+                .nodes
+                .iter()
+                .filter(
+                    |n| n.kind == ReactiveNodeKind::Register && n.outputs.contains(&cell(&i, "x"))
+                )
+                .map(|n| n.id)
+                .collect::<Vec<_>>(),
+            vec![register]
+        );
+        assert!(!i.has_pending_reactive_registers());
+        assert!(!i.plan().activation_registration_active());
+    }
+    #[test]
+    fn activation_scope_trigger_is_reactive() {
+        let i = load();
+        let t = cell(&i, "tick");
+        let p = i.plan();
+        assert!(nodes(&i).iter().all(|n| {
+            p.borrow()
+                .node(*n)
+                .unwrap()
+                .inputs
+                .iter()
+                .any(|d| d.cell == t && d.kind == ReactiveDependencyKind::Reactive)
+        }));
+    }
+    #[test]
+    fn activation_scope_external_inputs_are_sampled() {
+        let i = load();
+        let left = node_for(&i, "left", ReactiveNodeKind::Combinational);
+        let p = i.plan();
+        let p = p.borrow();
+        for input in ["x", "radius"] {
+            let c = cell(&i, input);
+            assert!(
+                p.node(left)
+                    .unwrap()
+                    .inputs
+                    .iter()
+                    .any(|d| d.cell == c && d.kind == ReactiveDependencyKind::Sampled)
+            );
+            assert!(p.sampled_consumers_for(c).contains(&left));
+            assert!(!p.reactive_consumers_for(c).contains(&left));
+        }
+    }
+    #[test]
+    fn activation_scope_local_outputs_are_reactive() {
+        let i = load();
+        let p = i.plan();
+        assert!(
+            p.borrow()
+                .node(nodes(&i)[1])
+                .unwrap()
+                .inputs
+                .iter()
+                .any(|d| d.cell == cell(&i, "left") && d.kind == ReactiveDependencyKind::Reactive)
+        );
+    }
+    #[test]
+    fn activation_scope_runs_once_on_trigger() {
+        let mut i = load();
+        let body = nodes(&i);
+        let t = cell(&i, "tick");
+        let o = i.advance_reactive_turn(&[t]).unwrap();
+        let executed = o
+            .before_commit
+            .executed_nodes
+            .iter()
+            .chain(o.after_commit.executed_nodes.iter())
+            .copied()
+            .collect::<Vec<_>>();
+        let unique = executed.iter().copied().collect::<HashSet<_>>();
+        assert_eq!(unique.len(), executed.len(), "no node runs twice");
+        for node in body {
+            assert_eq!(
+                executed.iter().filter(|id| **id == node).count(),
+                1,
+                "body node {node} runs exactly once"
+            );
+        }
+        assert_eq!((value(&i, "left"), value(&i, "doubled")), (8., 16.));
+    }
+    #[test]
+    fn activation_scope_ignores_external_value_change() {
+        let mut i = load();
+        let x = cell(&i, "x");
+        let o = i.advance_reactive_turn(&[x]).unwrap();
+        assert!(
+            nodes(&i)
+                .iter()
+                .all(|n| !o.before_commit.executed_nodes.contains(n))
+        );
+    }
+    #[test]
+    fn activation_scope_samples_latest_external_value() {
+        let mut i = load();
+        let x = i
+            .symbols()
+            .borrow()
+            .get(hash_str("x"))
+            .unwrap()
+            .borrow()
+            .clone();
+        *x.as_f64().unwrap().borrow_mut() = 20.;
+        let t = cell(&i, "tick");
+        i.advance_reactive_turn(&[t]).unwrap();
+        assert_eq!(
+            *i.symbols()
+                .borrow()
+                .get(hash_str("left"))
+                .unwrap()
+                .borrow()
+                .as_f64()
+                .unwrap()
+                .borrow(),
+            18.
+        );
+    }
+    #[test]
+    fn activation_scope_registers_commit_atomically() {
+        let mut i = interpret(TWO_REGISTERS);
+        let registers = two_register_nodes(&i);
+        assert_eq!((value(&i, "x"), value(&i, "y")), (0., 0.));
+        let o = i.advance_reactive_turn(&[cell(&i, "tick")]).unwrap();
+        assert_eq!(o.before_commit.pending_register_nodes, registers);
+        assert_eq!(o.register_commit.staged_nodes, registers);
+        assert_eq!(o.register_commit.committed_nodes, registers);
+        assert_eq!(
+            o.register_commit.dirty_cells,
+            vec![cell(&i, "x"), cell(&i, "y")]
+        );
+        assert_eq!((value(&i, "x"), value(&i, "y")), (1., 2.));
+    }
+    #[test]
+    fn activation_scope_register_commit_does_not_reactivate_body() {
+        let mut i = interpret(TWO_REGISTERS);
+        let body = vec![
+            node_for(&i, "next-x", ReactiveNodeKind::Combinational),
+            node_for(&i, "next-y", ReactiveNodeKind::Combinational),
+            node_for(&i, "x", ReactiveNodeKind::Register),
+            node_for(&i, "y", ReactiveNodeKind::Register),
+        ];
+        let o = i.advance_reactive_turn(&[cell(&i, "tick")]).unwrap();
+        assert!(
+            body[..2]
+                .iter()
+                .all(|id| o.before_commit.executed_nodes.contains(id))
+        );
+        assert_eq!(o.before_commit.pending_register_nodes, body[2..]);
+        assert_eq!(o.register_commit.committed_nodes, body[2..]);
+        assert_eq!((value(&i, "x"), value(&i, "y")), (1., 2.));
+        assert!(
+            body[..2]
+                .iter()
+                .all(|id| !o.after_commit.executed_nodes.contains(id))
+        );
+    }
+    #[test]
+    fn activation_scope_failed_elaboration_clears_registration_state() {
+        let mut i = Interpreter::new_with_full_stdlib(0);
+        let failing=mech_syntax::parser::parse("tick := 0.0\nx := 1.0\n\n~> tick {\n  registered-first := x + 1.0\n  fails-later := function-that-does-not-exist(registered-first)\n}").unwrap();
+        let error = i.interpret(&failing).unwrap_err();
+        assert!(format!("{error:?}").contains("Function"));
+        assert!(
+            i.plan()
+                .borrow()
+                .node(node_for(
+                    &i,
+                    "registered-first",
+                    ReactiveNodeKind::Combinational
+                ))
+                .is_some()
+        );
+        assert!(!i.plan().activation_registration_active());
+        let ordinary = mech_syntax::parser::parse("ordinary := x + 2.0").unwrap();
+        i.interpret(&ordinary).unwrap();
+        let ordinary_node = node_for(&i, "ordinary", ReactiveNodeKind::Combinational);
+        let p = i.plan();
+        let p = p.borrow();
+        assert!(
+            !p.node(ordinary_node)
+                .unwrap()
+                .inputs
+                .iter()
+                .any(|d| d.cell == cell(&i, "tick"))
+        );
+        assert!(
+            p.node(ordinary_node)
+                .unwrap()
+                .inputs
+                .iter()
+                .any(|d| d.cell == cell(&i, "x") && d.kind == ReactiveDependencyKind::Reactive)
+        );
+        assert!(!i.plan().activation_registration_active());
+    }
+    #[test]
+    fn activation_scope_rejects_whole_assignment_to_trigger() {
+        let t = mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick = tick + 1.0 }").unwrap();
+        let mut i = Interpreter::new_with_full_stdlib(0);
+        assert!(
+            format!("{:?}", i.interpret(&t).unwrap_err())
+                .contains("ActivationScopeTriggerWriteUnsupported")
+        );
+        assert!(i.plan().borrow().nodes.is_empty());
+    }
+    #[test]
+    fn activation_scope_rejects_operator_assignment_to_trigger() {
+        let t = mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick += 1.0 }").unwrap();
+        let mut i = Interpreter::new_with_full_stdlib(0);
+        assert!(
+            format!("{:?}", i.interpret(&t).unwrap_err())
+                .contains("ActivationScopeTriggerWriteUnsupported")
+        );
+        assert!(i.plan().borrow().nodes.is_empty());
+    }
+    #[test]
+    fn activation_scope_plan_is_stable_across_triggers() {
+        let mut i = load();
+        let before = snapshot(&i);
+        let t = cell(&i, "tick");
+        for _ in 0..3 {
+            i.advance_reactive_turn(&[t]).unwrap();
+        }
+        assert_eq!(snapshot(&i), before);
+    }
 }
 
 // Interpreter-local context bindings are for direct interpreter execution.
