@@ -161,7 +161,7 @@ struct RuntimePersistentSend {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum RuntimePersistentSendSchedule {
   EveryAcceptedTurn,
-  Activation { interpreter_id: u64, marker_node_id: mech_core::ReactiveNodeId },
+  Activation { interpreter_id: u64, barrier_node_id: mech_core::ReactiveNodeId },
 }
 
 use crate::capability::{

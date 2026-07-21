@@ -194,3 +194,23 @@ impl MechErrorKind for RuntimeHostFunctionNotBytecodeCompilableError {
     )
   }
 }
+#[derive(Debug, Clone)]
+pub struct ActivationScopeEffectWithRegisterUnsupported;
+impl MechErrorKind for ActivationScopeEffectWithRegisterUnsupported {
+  fn name(&self) -> &str { "ActivationScopeEffectWithRegisterUnsupported" }
+  fn message(&self) -> String { "activation scopes cannot mix local register writes and context sends".to_string() }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeIsolatedActivationSendUnsupported;
+impl MechErrorKind for RuntimeIsolatedActivationSendUnsupported {
+  fn name(&self) -> &str { "RuntimeIsolatedActivationSendUnsupported" }
+  fn message(&self) -> String { "activation-scoped context sends require retained live registration".to_string() }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeActivationEffectBarrierInvariantError { pub reason: String }
+impl MechErrorKind for RuntimeActivationEffectBarrierInvariantError {
+  fn name(&self) -> &str { "RuntimeActivationEffectBarrierInvariant" }
+  fn message(&self) -> String { self.reason.clone() }
+}
