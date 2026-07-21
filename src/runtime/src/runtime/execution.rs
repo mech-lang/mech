@@ -96,22 +96,28 @@ struct ResolvedContextResourceRequest {
   context_path: String,
 }
 
-pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "mech/runtime/activation-effect-barrier";
+// This name deliberately starts with a NUL byte.  It is an identifier we can
+// construct in the lowered tree, but it cannot be produced by the Mech lexer.
+// Keeping the compiler registered on the program is therefore not a public
+// source-level API.
+pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "\0mech/runtime/activation-effect-barrier";
 
 #[derive(Clone, Debug)]
 pub(super) struct ActivationEffectBarrierCompiler;
 impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
     if !arguments.is_empty() { return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier accepts no arguments".into() }, None)); }
-    Ok(Box::new(ActivationEffectBarrier { value: mech_core::Ref::new(Value::U64(mech_core::Ref::new(0))) }))
+    Ok(Box::new(ActivationEffectBarrier))
   }
 }
 #[derive(Clone, Debug)]
-struct ActivationEffectBarrier { value: mech_core::Ref<Value> }
+struct ActivationEffectBarrier;
 impl MechFunctionImpl for ActivationEffectBarrier {
   fn solve(&self) {}
   fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> { Ok(mech_core::ReactiveSolveStatus::Unchanged) }
-  fn out(&self) -> Value { self.value.borrow().clone() }
+  // The barrier is a scheduling node, not a value producer.  Its node id and
+  // reactive execution record are the observable state used by send replay.
+  fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { ACTIVATION_EFFECT_BARRIER_NAME.to_string() }
 }
 impl MechFunctionCompiler for ActivationEffectBarrier {
@@ -1456,7 +1462,14 @@ impl MechRuntime {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
         let has_send = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
-        let has_register = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(_) | mech_core::Statement::OpAssign(_))));
+        // Only writes to local registers conflict with an effectful activation.
+        // Context-addressed assignments have their own, operation-specific
+        // placement error below (they are top-level only).
+        let has_register = scope.body.iter().any(|(code, _)| match code {
+          mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => assign.target.context.is_none(),
+          mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => assign.target.context.is_none(),
+          _ => false,
+        });
         if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
         if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
         for (body_code, _) in &scope.body {
