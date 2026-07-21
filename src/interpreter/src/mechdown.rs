@@ -416,12 +416,6 @@ impl MechErrorKind for ActivationScopeMutableDefinitionUnsupported {
   fn name(&self) -> &str { "ActivationScopeMutableDefinitionUnsupported" }
   fn message(&self) -> String { "Mutable variable definitions are not supported inside an activation scope.".to_string() }
 }
-#[derive(Debug, Clone)]
-struct ActivationScopeExecutionUnsupported;
-impl MechErrorKind for ActivationScopeExecutionUnsupported {
-  fn name(&self) -> &str { "ActivationScopeExecutionUnsupported" }
-  fn message(&self) -> String { "Activation-scope execution has not yet been implemented.".to_string() }
-}
 
 /// Validate source-only restrictions without evaluating or registering body code.
 fn validate_activation_body(body: &[(MechCode, Option<Comment>)]) -> MResult<()> {
@@ -458,5 +452,13 @@ fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> 
   };
   validate_activation_body(&scope.body)?;
   validate_activation_trigger_storage(scope, var, p)?;
-  Err(MechError::new(ActivationScopeExecutionUnsupported, None).with_tokens(scope.tokens()))
+  #[cfg(feature = "symbol_table")]
+  let trigger_cells = p.state.borrow().get_symbol(var.name.hash()).ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?.borrow().reactive_root_cell_ids();
+  #[cfg(not(feature = "symbol_table"))]
+  let trigger_cells = Vec::new();
+  let plan = p.plan();
+  plan.push_activation_registration_scope(trigger_cells);
+  let result = (|| -> MResult<Value> { for (code, _) in &scope.body { mech_code(code, p)?; } Ok(Value::Empty) })();
+  plan.pop_activation_registration_scope();
+  result
 }

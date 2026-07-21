@@ -183,7 +183,7 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      new_fxn.solve();                   // run the function once to initialise its output
+      if !plan.activation_registration_active() { new_fxn.solve(); }
       let result = new_fxn.out();
       trace_println!(
         p,
@@ -207,7 +207,7 @@ pub fn execute_initialized_indexed_compiler_with_registration_arguments(
   registration_arguments: Vec<Value>,
 ) -> MResult<Value> {
   let function = compiler.compile(&compile_arguments)?;
-  function.solve_result()?;
+  if !plan.activation_registration_active() { function.solve_result()?; }
   let output = function.out();
   plan.register_function(function, &registration_arguments)?;
   Ok(output)

@@ -466,6 +466,12 @@ pub struct ReactiveTurnOutcome {
   pub after_commit: ReactivePlanSolveOutcome,
 }
 
+#[derive(Clone, Debug)]
+pub struct ActivationRegistrationScope {
+  pub trigger_cells: Vec<ReactiveCellId>,
+  pub local_combinational_cells: Vec<ReactiveCellId>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReactiveDependency {
   pub cell: ReactiveCellId,
@@ -644,6 +650,15 @@ impl ReactivePlan {
     function: Box<dyn MechFunction>,
     arguments: &[Value],
   ) -> MResult<ReactiveNodeId> {
+    self.register_with_activation(function, arguments, None)
+  }
+
+  pub fn register_with_activation(
+    &mut self,
+    function: Box<dyn MechFunction>,
+    arguments: &[Value],
+    activation: Option<&ActivationRegistrationScope>,
+  ) -> MResult<ReactiveNodeId> {
     let node_id = self.nodes.len();
     let plan_index = node_id;
     let function_description = function.to_string();
@@ -710,13 +725,14 @@ impl ReactivePlan {
       };
 
       for cell in cells {
+        let kind = activation.map_or(*kind, |scope| if scope.trigger_cells.contains(&cell) || scope.local_combinational_cells.contains(&cell) { ReactiveDependencyKind::Reactive } else { ReactiveDependencyKind::Sampled });
         match inputs.iter().find(|dependency| dependency.cell == cell) {
-          Some(dependency) if dependency.kind == *kind => {}
+          Some(dependency) if dependency.kind == kind => {}
           Some(dependency)
             if node_kind == ReactiveNodeKind::Register
               && outputs.contains(&cell)
               && (dependency.kind == ReactiveDependencyKind::Sampled
-                || *kind == ReactiveDependencyKind::Sampled) => {}
+                || kind == ReactiveDependencyKind::Sampled) => {}
           Some(_) => {
             return Err(MechError::new(
               ReactiveDependencyKindConflictError {
@@ -728,9 +744,15 @@ impl ReactivePlan {
           }
           None => inputs.push(ReactiveDependency {
             cell,
-            kind: *kind,
+            kind,
           }),
         }
+      }
+    }
+
+    if let Some(scope) = activation {
+      for cell in &scope.trigger_cells {
+        if !inputs.iter().any(|dependency| dependency.cell == *cell) { inputs.push(ReactiveDependency { cell: *cell, kind: ReactiveDependencyKind::Reactive }); }
       }
     }
 
@@ -936,10 +958,10 @@ impl core::ops::IndexMut<usize> for ReactivePlan {
   }
 }
 
-pub struct Plan(pub Ref<ReactivePlan>);
+pub struct Plan(pub Ref<ReactivePlan>, pub Ref<Vec<ActivationRegistrationScope>>);
 
 impl Clone for Plan {
-  fn clone(&self) -> Self { Plan(self.0.clone()) }
+  fn clone(&self) -> Self { Plan(self.0.clone(), self.1.clone()) }
 }
 
 impl fmt::Debug for Plan {
@@ -953,7 +975,7 @@ impl fmt::Debug for Plan {
 
 impl Plan {
   pub fn new() -> Self {
-    Self(Ref::new(ReactivePlan::new()))
+    Self(Ref::new(ReactivePlan::new()), Ref::new(Vec::new()))
   }
 
   pub fn borrow(&self) -> std::cell::Ref<'_, ReactivePlan> {
@@ -968,17 +990,14 @@ impl Plan {
     self.0.borrow_mut().push(function)
   }
 
-  pub fn register_function(
-    &self,
-    function: Box<dyn MechFunction>,
-    arguments: &[Value],
-  ) -> MResult<ReactiveNodeId> {
-    self.0
-      .borrow_mut()
-      .register(
-        function,
-        arguments,
-      )
+  pub fn activation_registration_active(&self) -> bool { !self.1.borrow().is_empty() }
+  pub fn push_activation_registration_scope(&self, trigger_cells: Vec<ReactiveCellId>) { self.1.borrow_mut().push(ActivationRegistrationScope { trigger_cells, local_combinational_cells: Vec::new() }); }
+  pub fn pop_activation_registration_scope(&self) { self.1.borrow_mut().pop(); }
+  pub fn register_function(&self, function: Box<dyn MechFunction>, arguments: &[Value]) -> MResult<ReactiveNodeId> {
+    let scope = self.1.borrow().last().cloned(); let kind = function.reactive_node_kind(); let outputs = function.reactive_output_cell_ids();
+    let node = self.0.borrow_mut().register_with_activation(function, arguments, scope.as_ref())?;
+    if scope.is_some() && kind == ReactiveNodeKind::Combinational { if let Some(active) = self.1.borrow_mut().last_mut() { for cell in outputs { if !active.local_combinational_cells.contains(&cell) { active.local_combinational_cells.push(cell); } } } }
+    Ok(node)
   }
 
   pub fn solve_dirty_cells(
