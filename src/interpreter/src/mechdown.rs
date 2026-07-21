@@ -438,7 +438,7 @@ fn validate_activation_body(body: &[(MechCode, Option<Comment>)]) -> MResult<()>
 fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
   let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
   let trigger = p.state.borrow().get_symbol(hash_str(&var.name.to_string())).ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?;
-  if trigger.reactive_root_cell_ids().is_empty() { return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())); }
+  if trigger.borrow().reactive_root_cell_ids().is_empty() { return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())); }
   validate_activation_body(&scope.body)?;
   Err(MechError::new(ActivationScopeExecutionUnsupported, None).with_tokens(scope.tokens()))
 }
