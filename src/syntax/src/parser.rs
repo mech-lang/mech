@@ -318,10 +318,11 @@ where
 // 4. Public interface
 // ---------------------
 
-// mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
+// mech_code_alt := activation_scope | fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   let (input, _) = whitespace0(input)?;
   let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
+    ("activation_scope", Box::new(|i| activation_scope(i).map(|(i, v)| (i, MechCode::ActivationScope(v))))),
     ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
     ("fsm_implementation", Box::new(|i| fsm_implementation(i).map(|(i, v)| (i, MechCode::FsmImplementation(v))))),
     ("function_define", Box::new(|i| function_define(i).map(|(i, v)| (i, MechCode::FunctionDefine(v))))),

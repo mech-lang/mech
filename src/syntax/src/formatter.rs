@@ -680,6 +680,7 @@ impl Formatter {
     for (code,cmmnt) in &block.code {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
+        MechCode::ActivationScope(scope) => format!("~> {} {{ … }}", self.expression(&scope.trigger)),
         MechCode::Expression(expr) => self.expression(expr),
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
@@ -1541,6 +1542,7 @@ impl Formatter {
     for (code,cmmnt) in node {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
+        MechCode::ActivationScope(scope) => format!("~> {} {{ … }}", self.expression(&scope.trigger)),
         MechCode::Expression(expr) => self.expression(expr),
         MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
