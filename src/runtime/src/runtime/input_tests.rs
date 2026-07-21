@@ -960,6 +960,7 @@ fn mock_error(name: &'static str, message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod persistent_send_tests {
   use super::*;
+  use crate::runtime::execution::ACTIVATION_EFFECT_BARRIER_NAME;
   use crate::RuntimeResourceWritePreflightRequest;
 
   const TEST_TIME_BASE_URI: &str =
@@ -1293,7 +1294,7 @@ render-tick := @clock/hour
     // Equal admitted values still execute the barrier and replay every send.
     publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
     publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
-    assert_eq!(console.lines(), vec!["first", "second", "third", "first", "second", "third"]);
+    assert_eq!(console.lines(), vec!["\"first\"", "\"second\"", "\"third\"", "\"first\"", "\"second\"", "\"third\""]);
   }
 
   #[test]
