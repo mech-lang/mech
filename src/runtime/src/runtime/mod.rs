@@ -155,6 +155,13 @@ struct RuntimePersistentSend {
   binding: RuntimeContextBinding,
   path: String,
   value: ValRef,
+  schedule: RuntimePersistentSendSchedule,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum RuntimePersistentSendSchedule {
+  EveryAcceptedTurn,
+  Activation { interpreter_id: u64, marker_node_id: mech_core::ReactiveNodeId },
 }
 
 use crate::capability::{

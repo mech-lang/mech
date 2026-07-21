@@ -25,6 +25,7 @@ enum RuntimeAddressTarget {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum DirectContextEffectPlacement {
   TopLevel,
+  ActivationScope,
   FunctionBody,
   FsmTransition,
 }
@@ -45,13 +46,14 @@ impl DirectContextEffectPlacement {
   fn description(self) -> &'static str {
     match self {
       DirectContextEffectPlacement::TopLevel => "module top level",
+      DirectContextEffectPlacement::ActivationScope => "an activation scope",
       DirectContextEffectPlacement::FunctionBody => "a function body",
       DirectContextEffectPlacement::FsmTransition => "an FSM transition",
     }
   }
 
   fn allows_direct_context_effect(self) -> bool {
-    matches!(self, DirectContextEffectPlacement::TopLevel)
+    matches!(self, DirectContextEffectPlacement::TopLevel | DirectContextEffectPlacement::ActivationScope)
   }
 }
 
@@ -1148,7 +1150,12 @@ impl MechRuntime {
     code: &mech_core::MechCode,
   ) -> MResult<mech_core::MechCode> {
     match code {
-      mech_core::MechCode::ActivationScope(_) => Err(MechError::new(mech_core::GenericError { msg: "ActivationScopeBytecodeUnsupported".to_string() }, None)),
+      mech_core::MechCode::ActivationScope(scope) => {
+        let mut scope = scope.clone();
+        scope.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        scope.body = scope.body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?;
+        Ok(mech_core::MechCode::ActivationScope(scope))
+      },
       mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
         self.resolve_context_reads_in_statement(context, program, registry, statement)?,
       )),
@@ -1243,6 +1250,45 @@ impl MechRuntime {
         }
         Ok(())
       }
+      mech_core::MechCode::ActivationScope(scope) => {
+        if !pending_codes.is_empty() { pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes))); }
+        self.flush_direct_execution(program, pending, result)?;
+        let mut lowered = scope.clone();
+        lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        let mut registrations = Vec::new();
+        lowered.body.clear();
+        for (body_code, body_comment) in &scope.body {
+          match body_code {
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+              let context_name = send.target.context.as_ref().unwrap().to_string();
+              let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
+              let index = self.persistent_sends.len() + registrations.len();
+              let value_name = format!("mech-internal-activation-send-value-{index}");
+              let marker_name = format!("mech-internal-activation-send-marker-{index}");
+              let value = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&value_name), context: None, kind: None }, expression: self.resolve_context_reads_in_expression(context, program, registry, &send.expression)? };
+              // The marker is deliberately a normal reactive binding.  Its trigger input
+              // makes it an activation node even when the payload is a constant.
+              let marker = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&marker_name), context: None, kind: None }, expression: lowered.trigger.clone() };
+              lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
+              lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(marker)), None));
+              registrations.push((binding, send.target.name.to_string(), hash_str(&value_name), hash_str(&marker_name)));
+            }
+            _ => lowered.body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+          }
+        }
+        program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+        let interpreter_id = program.interpreter().id;
+        for (binding, path, value_id, marker_id) in registrations {
+          let symbols = program.interpreter().symbols();
+          let value = symbols.borrow().get(value_id).ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "missing lowered payload".to_string() }, None))?;
+          let marker = symbols.borrow().get(marker_id).ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "missing lowered marker".to_string() }, None))?;
+          let marker_cells = marker.borrow().reactive_root_cell_ids();
+          let marker_cell = *marker_cells.first().ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "marker has no reactive cell".to_string() }, None))?;
+          let marker_node_id = program.interpreter().plan().borrow().nodes.iter().find(|node| node.outputs.contains(&marker_cell)).map(|node| node.id).ok_or_else(|| MechError::new(RuntimeInvalidOperationError { operation: "activation_context_send", reason: "missing marker plan node".to_string() }, None))?;
+          self.persistent_sends.push(RuntimePersistentSend { binding, path, value, schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, marker_node_id } });
+        }
+        Ok(())
+      }
       mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
         if let Some(context_name) = &var_def.var.context {
           let target = context_name.to_string();
@@ -1297,7 +1343,7 @@ impl MechRuntime {
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
         self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
-        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
+        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell, schedule: RuntimePersistentSendSchedule::EveryAcceptedTurn });
         self.commit_live_context_candidate(context);
         *result = value;
         return Ok(());
@@ -1385,8 +1431,11 @@ impl MechRuntime {
     match code {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
+        let has_send = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
+        let has_register = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(_))));
+        if has_send && has_register { return Err(MechError::new(RuntimeInvalidOperationError { operation: "ActivationScopeEffectWithRegisterUnsupported", reason: "activation scopes cannot mix register assignments and context sends".to_string() }, None)); }
         for (body_code, _) in &scope.body {
-          self.preflight_code_context_capabilities(context, registry, body_code, placement, addressed_read_preflight)?;
+          self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
         }
         Ok(())
       }
@@ -3975,7 +4024,7 @@ impl MechRuntime {
         program.update_inputs_and_advance_turn(
           &target_updates,
         )?;
-      self.execute_persistent_sends(&context)?;
+      self.execute_persistent_sends(&context, &turn)?;
       self.enforce_turn_duration(turn_started)?;
 
       Ok(crate::RuntimeHostInputOutcome {
@@ -3991,8 +4040,15 @@ impl MechRuntime {
     result
   }
 
-  fn execute_persistent_sends(&mut self, context: &RuntimeContext) -> MResult<()> {
+  fn execute_persistent_sends(&mut self, context: &RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
     for send in self.persistent_sends.clone() {
+      let should_send = match send.schedule {
+        RuntimePersistentSendSchedule::EveryAcceptedTurn => true,
+        RuntimePersistentSendSchedule::Activation { interpreter_id, marker_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
+          outcome.turn.before_commit.executed_nodes.contains(&marker_node_id) || outcome.turn.after_commit.executed_nodes.contains(&marker_node_id)
+        }).unwrap_or(false),
+      };
+      if !should_send { continue; }
       let value = resolve_runtime_value(send.value.borrow().clone());
       self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
     }
