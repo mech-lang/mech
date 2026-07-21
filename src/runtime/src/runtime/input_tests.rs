@@ -376,11 +376,19 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
     runtime.register_mech_host_function(ClosureHostFunction::new(name, move |_services, _context, args| { calls.fetch_add(1, Ordering::SeqCst); let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + add))) })).unwrap();
   }
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(left), :read(right)}\nleft-output := demo/left-branch(@pulse/left)\nright-output := demo/right-branch(@pulse/right)").unwrap();
+  let left_calls_before = left_calls.load(Ordering::SeqCst);
+  let right_calls_before = right_calls.load(Ordering::SeqCst);
   assert_eq!(f64_value(&symbol_value(&runtime, "left-output")), 101.0); assert_eq!(f64_value(&symbol_value(&runtime, "right-output")), 202.0);
   let left_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "left").unwrap(); let right_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "right").unwrap();
   let plan = runtime.program.interpreter().plan(); let left_consumers = plan.borrow().reactive_consumers_for(source_cell(&runtime, &left_source)).to_vec(); let right_consumers = plan.borrow().reactive_consumers_for(source_cell(&runtime, &right_source)).to_vec(); drop(plan);
-  let outcome = runtime.apply_host_input(RuntimeHostInput::single(left_source, RuntimeHostInputValue::F64(10.0))).unwrap(); let reactive_turn = &outcome.turn.as_ref().unwrap().interpreter_turns[0].turn;
-  assert_eq!((left_calls.load(Ordering::SeqCst), right_calls.load(Ordering::SeqCst)), (2, 1)); assert!(left_consumers.iter().any(|id| reactive_turn.before_commit.executed_nodes.contains(id))); assert!(!right_consumers.iter().any(|id| reactive_turn.before_commit.executed_nodes.contains(id))); assert_eq!(f64_value(&symbol_value(&runtime, "left-output")), 110.0); assert_eq!(f64_value(&symbol_value(&runtime, "right-output")), 202.0);
+  let outcome = runtime.apply_host_input(RuntimeHostInput::single(left_source, RuntimeHostInputValue::F64(10.0))).unwrap();
+  let program_turn = outcome.turn.as_ref().unwrap();
+  assert_eq!(program_turn.interpreter_turns.len(), 1);
+  let reactive_turn = &program_turn.interpreter_turns[0].turn;
+  assert_eq!(left_calls.load(Ordering::SeqCst), left_calls_before + 1);
+  assert_eq!(right_calls.load(Ordering::SeqCst), right_calls_before);
+  assert!(reactive_turn.register_commit.staged_nodes.is_empty()); assert!(reactive_turn.register_commit.committed_nodes.is_empty()); assert!(reactive_turn.register_commit.dirty_cells.is_empty());
+  assert!(left_consumers.iter().any(|id| reactive_turn.before_commit.executed_nodes.contains(id))); assert!(!right_consumers.iter().any(|id| reactive_turn.before_commit.executed_nodes.contains(id))); assert_eq!(f64_value(&symbol_value(&runtime, "left-output")), 110.0); assert_eq!(f64_value(&symbol_value(&runtime, "right-output")), 202.0);
 }
 
 #[test]
@@ -1261,6 +1269,7 @@ fn runtime_reactive_host_input_preserves_deferred_registers_across_packets() {
   let mut runtime = test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0)); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\n~a := 0.0\n~b := 0.0\na = @pulse/value\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();
   let a = register_node_for_symbol(&runtime, "a"); let b = register_node_for_symbol(&runtime, "b"); let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
-  let first = runtime.apply_host_input(RuntimeHostInput::single(source.clone(), RuntimeHostInputValue::F64(10.0))).unwrap(); let turn = &first.turn.as_ref().unwrap().interpreter_turns[0].turn; assert_eq!(turn.register_commit.committed_nodes, vec![a]); assert_eq!(turn.after_commit.pending_register_nodes, vec![b]); assert_eq!(f64_value(&symbol_value(&runtime, "b")), 2.0);
-  let second = runtime.apply_host_input(RuntimeHostInput::single(source, RuntimeHostInputValue::F64(20.0))).unwrap(); let turn = &second.turn.as_ref().unwrap().interpreter_turns[0].turn; assert_eq!(turn.register_commit.committed_nodes, vec![a, b]); assert_eq!(turn.after_commit.pending_register_nodes, vec![b]); assert_eq!(f64_value(&symbol_value(&runtime, "b")), 11.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "a")), 1.0); assert_eq!(f64_value(&symbol_value(&runtime, "middle")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "b")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 3.0);
+  let first = runtime.apply_host_input(RuntimeHostInput::single(source.clone(), RuntimeHostInputValue::F64(10.0))).unwrap(); let turn = &first.turn.as_ref().unwrap().interpreter_turns[0].turn; assert_eq!(turn.register_commit.committed_nodes, vec![a]); assert_eq!(turn.after_commit.pending_register_nodes, vec![b]); assert_eq!((f64_value(&symbol_value(&runtime, "a")), f64_value(&symbol_value(&runtime, "middle")), f64_value(&symbol_value(&runtime, "b")), f64_value(&symbol_value(&runtime, "output"))), (10.0, 11.0, 2.0, 3.0)); assert!(runtime.program.interpreter().has_pending_reactive_registers());
+  let second = runtime.apply_host_input(RuntimeHostInput::single(source, RuntimeHostInputValue::F64(20.0))).unwrap(); let turn = &second.turn.as_ref().unwrap().interpreter_turns[0].turn; assert_eq!(turn.before_commit.pending_register_nodes, vec![a]); assert_eq!(turn.register_commit.committed_nodes, vec![a, b]); assert_eq!(turn.after_commit.pending_register_nodes, vec![b]); assert_eq!((f64_value(&symbol_value(&runtime, "a")), f64_value(&symbol_value(&runtime, "middle")), f64_value(&symbol_value(&runtime, "b")), f64_value(&symbol_value(&runtime, "output"))), (20.0, 21.0, 11.0, 12.0)); assert!(runtime.program.interpreter().has_pending_reactive_registers());
 }
