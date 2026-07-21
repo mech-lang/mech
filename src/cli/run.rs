@@ -118,7 +118,8 @@ fn section_element_contains_executable_run_source(element: &SectionElement) -> b
 
 fn mech_code_is_executable_run_source(code: &MechCode) -> bool {
     match code {
-        MechCode::Statement(_)
+        MechCode::ActivationScope(_)
+        | MechCode::Statement(_)
         | MechCode::Expression(_)
         | MechCode::FunctionDefine(_)
         | MechCode::FsmImplementation(_)
@@ -158,6 +159,10 @@ fn section_element_contains_context_addressed_source(element: &SectionElement) -
 
 fn mech_code_contains_context_addressed_source(code: &MechCode) -> bool {
     match code {
+        MechCode::ActivationScope(scope) => {
+            expression_contains_context_addressed_source(&scope.trigger)
+                || scope.body.iter().any(|(body_code, _)| mech_code_contains_context_addressed_source(body_code))
+        }
         MechCode::Import(import) => matches!(import.alias, Some(ModuleImportAlias::Context(_))),
         MechCode::Statement(statement) => statement_contains_context_addressed_source(statement),
         MechCode::Expression(expression) => {
