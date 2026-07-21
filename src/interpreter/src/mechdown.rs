@@ -452,16 +452,21 @@ fn activation_trigger_cells(scope: &ActivationScope, _var: &Var, _p: &Interprete
 
 #[cfg(all(feature = "functions", feature = "symbol_table"))]
 fn elaborate_activation_scope(scope: &ActivationScope, p: &Interpreter, trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> {
- let plan=p.plan(); plan.push_activation_registration_scope(trigger_cells);
- let result=(|| -> MResult<Value> { for (code,_) in &scope.body { mech_code(code,p)?; } Ok(Value::Empty) })();
- plan.pop_activation_registration_scope(); result
+  let ActivationBody::Block(body) = &scope.body else {
+    return Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens()));
+  };
+  let plan=p.plan(); plan.push_activation_registration_scope(trigger_cells);
+  let result=(|| -> MResult<Value> { for (code,_) in body { mech_code(code,p)?; } Ok(Value::Empty) })();
+  plan.pop_activation_registration_scope(); result
 }
 #[cfg(not(all(feature = "functions", feature = "symbol_table")))]
 fn elaborate_activation_scope(scope: &ActivationScope, _p: &Interpreter, _trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> { Err(MechError::new(ActivationScopeRegistrationUnsupported,None).with_tokens(scope.tokens())) }
 
 fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
   let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
-  validate_activation_body(&scope.body, var.name.hash())?;
+  if let ActivationBody::Block(body) = &scope.body {
+    validate_activation_body(body, var.name.hash())?;
+  }
   let trigger_cells = activation_trigger_cells(scope, var, p)?;
   elaborate_activation_scope(scope, p, trigger_cells)
 }

@@ -2011,24 +2011,36 @@ impl Formatter {
   }
 
   pub fn activation_scope(&mut self, node: &ActivationScope) -> String {
-    let mut lines = vec![format!("{} {} {{", node.operator.to_string(), self.expression(&node.trigger))];
-    for (code, comment) in &node.body {
-      let source = match code {
-        MechCode::Comment(value) => self.comment(value),
-        MechCode::ActivationScope(value) => self.activation_scope(value),
-        MechCode::Expression(value) => self.expression(value),
-        MechCode::FsmSpecification(value) => self.fsm_specification(value),
-        MechCode::FsmImplementation(value) => self.fsm_implementation(value),
-        MechCode::FunctionDefine(value) => self.function_define(value),
-        MechCode::Import(value) => self.module_import(value),
-        MechCode::Statement(value) => self.statement(value),
-        MechCode::Error(token, _) => token.to_string(),
-      };
-      lines.extend(source.lines().map(|line| format!("  {line}")));
-      if let Some(value) = comment { lines.push(format!("  {}", self.comment(value))); }
+    let header = format!("{} {}", node.operator.to_string(), self.expression(&node.trigger));
+    match &node.body {
+      ActivationBody::Block(body) => {
+        let mut lines = vec![format!("{header} {{")];
+        lines.extend(self.activation_block_lines(body, 2));
+        lines.push("}".to_string());
+        lines.join("\n")
+      }
+      ActivationBody::PatternArms(arms) => {
+        let mut lines = vec![header];
+        for (index, arm) in arms.iter().enumerate() {
+          let guard = arm.guard.as_ref().map(|guard| format!(", {}", self.expression(guard))).unwrap_or_default();
+          let prefix = format!("  | {}{} =>", self.pattern(&arm.pattern), guard);
+          match &arm.body {
+            ActivationArmBody::Block(body) => { lines.push(format!("{prefix} {{")); lines.extend(self.activation_block_lines(body, 6)); lines.push("  }".to_string()); }
+            ActivationArmBody::Expression(expression) => { let period = if index + 1 == arms.len() { "." } else { "" }; lines.push(format!("{prefix} {}{period}", self.expression(expression))); }
+          }
+        }
+        lines.join("\n")
+      }
     }
-    lines.push("}".to_string());
-    lines.join("\n")
+  }
+
+  fn activation_block_lines(&mut self, body: &Vec<(MechCode, Option<Comment>)>, indent: usize) -> Vec<String> {
+    let padding = " ".repeat(indent); let mut lines = vec![];
+    for (code, comment) in body {
+      let source = match code { MechCode::Comment(value) => self.comment(value), MechCode::ActivationScope(value) => self.activation_scope(value), MechCode::Expression(value) => self.expression(value), MechCode::FsmSpecification(value) => self.fsm_specification(value), MechCode::FsmImplementation(value) => self.fsm_implementation(value), MechCode::FunctionDefine(value) => self.function_define(value), MechCode::Import(value) => self.module_import(value), MechCode::Statement(value) => self.statement(value), MechCode::Error(token, _) => token.to_string() };
+      lines.extend(source.lines().map(|line| format!("{padding}{line}"))); if let Some(value) = comment { lines.push(format!("{padding}{}", self.comment(value))); }
+    }
+    lines
   }
 
   pub fn statement(&mut self, node: &Statement) -> String {

@@ -1194,7 +1194,10 @@ impl MechRuntime {
       mech_core::MechCode::ActivationScope(scope) => {
         let mut scope = scope.clone();
         scope.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
-        scope.body = scope.body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?;
+        scope.body = match scope.body {
+          mech_core::ActivationBody::Block(body) => mech_core::ActivationBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
+          mech_core::ActivationBody::PatternArms(arms) => mech_core::ActivationBody::PatternArms(arms),
+        };
         Ok(mech_core::MechCode::ActivationScope(scope))
       },
       mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
@@ -1297,8 +1300,10 @@ impl MechRuntime {
         let mut lowered = scope.clone();
         lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
         let mut registrations = Vec::new();
-        lowered.body.clear();
-        for (body_code, body_comment) in &scope.body {
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => { return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: "patterned activation bodies are not yet lowered".to_string() }, None)); } };
+        lowered.body = mech_core::ActivationBody::Block(vec![]);
+        let lowered_body = match &mut lowered.body { mech_core::ActivationBody::Block(body) => body, _ => unreachable!() };
+        for (body_code, body_comment) in scope_body {
           match body_code {
             mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
               let context_name = send.target.context.as_ref().unwrap().to_string();
@@ -1306,17 +1311,17 @@ impl MechRuntime {
               let index = self.persistent_sends.len() + registrations.len();
               let value_name = format!("{ACTIVATION_SEND_PAYLOAD_NAME_PREFIX}{index}");
               let value = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&value_name), context: None, kind: None }, expression: self.resolve_context_reads_in_expression(context, program, registry, &send.expression)? };
-              lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
+              lowered_body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
               registrations.push((binding, send.target.name.to_string(), hash_str(&value_name)));
             }
-            _ => lowered.body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+            _ => lowered_body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
           }
         }
         if registrations.is_empty() {
           program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
           return Ok(());
         }
-        lowered.body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
+        lowered_body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
         self.validate_live_context_candidate(context)?;
         let plan_start = program.interpreter().plan().borrow().nodes.len();
         program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
@@ -1477,18 +1482,19 @@ impl MechRuntime {
     match code {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
-        let has_send = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: "patterned activation bodies are not yet supported".to_string() }, None)) };
+        let has_send = scope_body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
         // Only writes to local registers conflict with an effectful activation.
         // Context-addressed assignments have their own, operation-specific
         // placement error below (they are top-level only).
-        let has_register = scope.body.iter().any(|(code, _)| match code {
+        let has_register = scope_body.iter().any(|(code, _)| match code {
           mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => assign.target.context.is_none(),
           mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => assign.target.context.is_none(),
           _ => false,
         });
         if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
         if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
-        for (body_code, _) in &scope.body {
+        for (body_code, _) in scope_body {
           self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
         }
         Ok(())

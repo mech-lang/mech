@@ -1007,18 +1007,54 @@ impl MechCode {
 pub struct ActivationScope {
   pub operator: Token,
   pub trigger: Expression,
-  pub body: Vec<(MechCode, Option<Comment>)>,
+  pub body: ActivationBody,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ActivationBody {
+  Block(Vec<(MechCode, Option<Comment>)>),
+  PatternArms(Vec<ActivationArm>),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ActivationArm {
+  pub pattern: Pattern,
+  pub guard: Option<Expression>,
+  pub body: ActivationArmBody,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ActivationArmBody {
+  Block(Vec<(MechCode, Option<Comment>)>),
+  Expression(Expression),
 }
 
 impl ActivationScope {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = vec![self.operator.clone()];
     tokens.append(&mut self.trigger.tokens());
-    for (code, comment) in &self.body {
-      tokens.append(&mut code.tokens());
-      if let Some(comment) = comment { tokens.append(&mut comment.tokens()); }
+    match &self.body {
+      ActivationBody::Block(body) => append_activation_block_tokens(&mut tokens, body),
+      ActivationBody::PatternArms(arms) => for arm in arms {
+        tokens.append(&mut arm.pattern.tokens());
+        if let Some(guard) = &arm.guard { tokens.append(&mut guard.tokens()); }
+        match &arm.body {
+          ActivationArmBody::Block(body) => append_activation_block_tokens(&mut tokens, body),
+          ActivationArmBody::Expression(expression) => tokens.append(&mut expression.tokens()),
+        }
+      },
     }
     tokens
+  }
+}
+
+fn append_activation_block_tokens(tokens: &mut Vec<Token>, body: &[(MechCode, Option<Comment>)]) {
+  for (code, comment) in body {
+    tokens.append(&mut code.tokens());
+    if let Some(comment) = comment { tokens.append(&mut comment.tokens()); }
   }
 }
 
