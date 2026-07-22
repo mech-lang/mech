@@ -65,6 +65,12 @@ jobs:
           cargo test -p mech-interpreter dirty_scheduler_updates_only_reachable_combinational_nodes -- --nocapture
           cargo test -p mech-interpreter dirty_scheduler_stops_at_register_boundary -- --nocapture
 
+          # Patterned activation and transactional rollback coverage.
+          cargo test -p mech-core reactive_plan_rollback_ -- --nocapture
+          cargo test -p mech-core plan_rollback_ -- --nocapture
+          cargo test -p mech-interpreter activation_capture_slot_ -- --nocapture
+          cargo test -p mech-interpreter activation_pattern_ -- --nocapture
+
           # Two-phase register staging and atomic commit coverage.
           cargo test -p mech-core reactive_register_commit_ -- --nocapture
           cargo test -p mech-interpreter register_commit_ -- --nocapture

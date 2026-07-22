@@ -1435,11 +1435,11 @@ mod tests {
     }
 
     const ENUM_ACTIVATION: &str = r#"
-<Event> := :pressed(f64)
-  | :released(f64)
-  | :other(f64)
+<event-kind> := :pressed<f64>
+  | :released<f64>
+  | :other<f64>
 
-event := :pressed(0.0)
+event<event-kind> := :pressed(0.0)
 
 ~> event
   | :pressed(x) => {
