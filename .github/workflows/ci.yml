@@ -30,7 +30,7 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Build and test
+      - name: Check feature boundaries and examples
         run: |
           # Linked-stdlib CLI build for examples that import named modules.
           cargo build --bin mech --features linked_stdlib
@@ -49,168 +49,70 @@ jobs:
           cargo check -p mech-interpreter --no-default-features --features program
           cargo check -p mech-program --no-default-features --features program
 
-          cargo test interpret
-          cargo test bytecode
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
 
-          # Whole-value assignment reactive graph coverage.
-          cargo test -p mech-interpreter whole_variable_assignment_registers_state_node -- --nocapture
-          cargo test -p mech-interpreter whole_add_assignment_registers_state_node -- --nocapture
-          cargo test -p mech-interpreter whole_add_assignment_alias_is_sampled_once -- --nocapture
-          cargo test -p mech-interpreter decoded_whole_variable_assignment_matches_source_graph -- --nocapture
-          cargo test -p mech-interpreter decoded_whole_add_assignment_matches_source_graph -- --nocapture
-          cargo test -p mech-interpreter whole_matrix_assignment_uses_root_cells -- --nocapture
+  cargo-language:
+    name: Cargo language tests
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          # Deterministic dirty-cell scheduler coverage.
-          cargo test -p mech-core reactive_dirty_scheduler_ -- --nocapture
-          cargo test -p mech-interpreter dirty_scheduler_updates_only_reachable_combinational_nodes -- --nocapture
-          cargo test -p mech-interpreter dirty_scheduler_stops_at_register_boundary -- --nocapture
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
 
-          # Patterned activation and transactional rollback coverage.
-          cargo test -p mech-core reactive_plan_rollback_ -- --nocapture
-          cargo test -p mech-core plan_rollback_ -- --nocapture
-          cargo test -p mech-interpreter activation_capture_slot_ -- --nocapture
-          cargo test -p mech-interpreter activation_pattern_ -- --nocapture
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
 
-          # Two-phase register staging and atomic commit coverage.
-          cargo test -p mech-core reactive_register_commit_ -- --nocapture
-          cargo test -p mech-interpreter register_commit_ -- --nocapture
-          cargo test -p mech-core reactive_turn_ -- --nocapture
-          interpreter_state_tests="$(
-            cargo test \
-              -p mech-interpreter \
-              --lib \
-              reactive_turn_interpreter_state_ \
-              -- --list
-          )"
-          printf '%s\n' "$interpreter_state_tests"
-          for test_name in \
-            reactive_turn_interpreter_state_persists_between_calls \
-            reactive_turn_interpreter_state_clear_plan_resets_pending \
-            reactive_turn_interpreter_state_clone_preserves_pending
-          do
-            if ! grep -Fq "${test_name}: test" <<<"$interpreter_state_tests"; then
-              echo "::error::missing interpreter test ${test_name}"
-              exit 1
-            fi
-          done
-          cargo test \
-            -p mech-interpreter \
-            --lib \
-            reactive_turn_interpreter_state_ \
-            -- --nocapture
-          decoded_symbol_tests="$(
-            cargo test \
-              -p mech-interpreter \
-              --lib \
-              decoded_variable_definition_symbol_metadata_ \
-              -- --list
-          )"
-          printf '%s\n' "$decoded_symbol_tests"
-          if ! grep -Fq "decoded_variable_definition_symbol_metadata_round_trips: test" <<<"$decoded_symbol_tests"
-          then
-            echo "::error::missing decoded variable-definition symbol metadata test"
-            exit 1
-          fi
-          cargo test \
-            -p mech-interpreter \
-            --lib \
-            decoded_variable_definition_symbol_metadata_ \
-            -- --nocapture
-          cargo test -p mech-interpreter reactive_turn_ -- --nocapture
-          cargo test -p mech-interpreter decoded_reactive_turn_ -- --nocapture
-          program_turn_tests="$(
-            cargo test \
-              -p mech-program \
-              --lib \
-              program_reactive_turn_ \
-              -- --list
-          )"
-          printf '%s\n' "$program_turn_tests"
-          for test_name in \
-            program_reactive_turn_updates_only_reachable_branch \
-            program_reactive_turn_batches_inputs_into_one_turn \
-            program_reactive_turn_preserves_deferred_registers_between_calls \
-            program_reactive_turn_legacy_update_api_does_not_execute_plan \
-            program_reactive_turn_preflight_failure_mutates_nothing \
-            program_reactive_turn_rejects_root_alias_duplicate \
-            program_reactive_turn_empty_batch_is_noop \
-            program_reactive_turn_orders_nested_interpreters_deterministically \
-            program_reactive_turn_decoded_plan_reuses_identity
-          do
-            if ! grep -Fq "${test_name}: test" <<<"$program_turn_tests"; then
-              echo "::error::missing program test ${test_name}"
-              exit 1
-            fi
-          done
-          cargo test \
-            -p mech-program \
-            --lib \
-            program_reactive_turn_ \
-            -- --nocapture
+      - name: Run root interpreter and bytecode tests
+        run: |
+          cargo test --test interpreter --test bytecode
+          cargo test --lib bytecode
 
-          # Pointer-register initialization identity coverage.
-          cargo test \
-            -p mech-core \
-            compile_context_initializes_pointer_register_once \
-            -- --nocapture
-          cargo test \
-            -p mech-core \
-            pointer_register_scalar_initializes_once \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            pointer_register_matrix_initializes_once \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            horizontal_concatenate_four_args_reuses_repeated_matrix_register \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            horizontal_concatenate_n_args_reuses_repeated_matrix_register \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            horizontal_concatenate_rdn_reuses_repeated_matrix_register \
-            -- --nocapture
-          cargo test \
-            -p mech-interpreter \
-            vertical_concatenate_n_args_reuses_repeated_matrix_register \
-            -- --nocapture
+      - name: Run complete core and interpreter suites
+        run: cargo test -p mech-core -p mech-interpreter
 
-          # Runtime package tests.
-          runtime_turn_tests="$(
-            cargo test \
-              -p mech-runtime \
-              --lib \
-              runtime_reactive_host_input_ \
-              -- --list
-          )"
+      - name: Run complete program library suite
+        run: cargo test -p mech-program --lib
 
-          printf '%s\n' "$runtime_turn_tests"
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
 
-          for test_name in \
-            runtime_reactive_host_input_batches_bound_updates_into_one_turn \
-            runtime_reactive_host_input_executes_only_reachable_branch \
-            runtime_reactive_host_input_preserves_deferred_registers_across_packets \
-            runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers \
-            runtime_reactive_host_input_preflight_failure_mutates_nothing \
-            runtime_reactive_host_input_turn_failure_preserves_admitted_inputs
-          do
-            grep -Fq \
-              "${test_name}: test" \
-              <<<"$runtime_turn_tests" \
-              || {
-                echo \
-                  "::error::missing runtime reactive host-input test ${test_name}"
-                exit 1
-              }
-          done
+  cargo-runtime:
+    name: Cargo runtime and host tests
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          # The complete runtime suite executes the six guarded tests.
-          cargo test -p mech-runtime --lib --tests
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
 
-          # CLI host and context-send regression coverage.
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Run complete runtime suite
+        run: cargo test -p mech-runtime --lib --tests
+
+      - name: Run CLI host and context-send regression coverage
+        run: |
           cargo test -p mech-syntax --test context_parser
           cargo test -p mech-host-cli --features provider --test provider
           cargo test --features "run repl pretty_print" --test mech_cli_host
@@ -220,10 +122,6 @@ jobs:
 
       - name: Disk report at end
         if: always()
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Disk report on failure
-        if: failure()
         run: bash scripts/ci-disk-report.sh
 
   project-native:
