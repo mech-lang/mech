@@ -1127,3 +1127,91 @@ pub(crate) fn elaborate_patterned_activation(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scalar_capture_cases() -> Vec<(ValueKind, Value)> {
+        let mut cases = Vec::new();
+        #[cfg(feature = "u8")]
+        cases.push((ValueKind::U8, Value::U8(Ref::new(8))));
+        #[cfg(feature = "u16")]
+        cases.push((ValueKind::U16, Value::U16(Ref::new(16))));
+        #[cfg(feature = "u32")]
+        cases.push((ValueKind::U32, Value::U32(Ref::new(32))));
+        #[cfg(feature = "u64")]
+        cases.push((ValueKind::U64, Value::U64(Ref::new(64))));
+        #[cfg(feature = "u128")]
+        cases.push((ValueKind::U128, Value::U128(Ref::new(128))));
+        #[cfg(feature = "i8")]
+        cases.push((ValueKind::I8, Value::I8(Ref::new(-8))));
+        #[cfg(feature = "i16")]
+        cases.push((ValueKind::I16, Value::I16(Ref::new(-16))));
+        #[cfg(feature = "i32")]
+        cases.push((ValueKind::I32, Value::I32(Ref::new(-32))));
+        #[cfg(feature = "i64")]
+        cases.push((ValueKind::I64, Value::I64(Ref::new(-64))));
+        #[cfg(feature = "i128")]
+        cases.push((ValueKind::I128, Value::I128(Ref::new(-128))));
+        #[cfg(feature = "f32")]
+        cases.push((ValueKind::F32, Value::F32(Ref::new(3.25))));
+        #[cfg(feature = "f64")]
+        cases.push((ValueKind::F64, Value::F64(Ref::new(6.5))));
+        #[cfg(feature = "complex")]
+        cases.push((ValueKind::C64, Value::C64(Ref::new(C64::new(3.0, 4.0)))));
+        #[cfg(feature = "rational")]
+        cases.push((ValueKind::R64, Value::R64(Ref::new(R64::new(3, 4)))));
+        #[cfg(any(feature = "bool", feature = "variable_define"))]
+        cases.push((ValueKind::Bool, Value::Bool(Ref::new(true))));
+        #[cfg(any(feature = "string", feature = "variable_define"))]
+        cases.push((
+            ValueKind::String,
+            Value::String(Ref::new("captured".to_string())),
+        ));
+        cases.push((ValueKind::Index, Value::Index(Ref::new(42))));
+        #[cfg(feature = "atom")]
+        {
+            let atom = MechAtom::from_name("captured");
+            cases.push((
+                ValueKind::Atom(atom.id(), atom.name()),
+                Value::Atom(Ref::new(atom)),
+            ));
+        }
+        cases
+    }
+
+    #[test]
+    fn activation_capture_slot_supports_all_enabled_scalar_kinds() {
+        for (kind, source) in scalar_capture_cases() {
+            let slot = create_capture_slot_for_kind(&kind).unwrap();
+            let cells_before = slot.reactive_root_cell_ids();
+            assert_eq!(cells_before.len(), 1);
+            commit_capture_slot(&slot, &source).unwrap();
+            assert_eq!(slot, source);
+            assert_eq!(slot.reactive_root_cell_ids(), cells_before);
+        }
+    }
+
+    #[cfg(any(feature = "string", feature = "variable_define"))]
+    #[test]
+    fn activation_capture_slot_preserves_identity_across_updates() {
+        let slot = create_capture_slot_for_kind(&ValueKind::String).unwrap();
+        let cells = slot.reactive_root_cell_ids();
+        commit_capture_slot(&slot, &Value::String(Ref::new("first".to_string()))).unwrap();
+        assert_eq!(slot, Value::String(Ref::new("first".to_string())));
+        assert_eq!(slot.reactive_root_cell_ids(), cells);
+        commit_capture_slot(&slot, &Value::String(Ref::new("second".to_string()))).unwrap();
+        assert_eq!(slot, Value::String(Ref::new("second".to_string())));
+        assert_eq!(slot.reactive_root_cell_ids(), cells);
+    }
+
+    #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
+    #[test]
+    fn activation_capture_slot_rejects_kind_mismatch() {
+        let slot = create_capture_slot_for_kind(&ValueKind::F64).unwrap();
+        let error =
+            commit_capture_slot(&slot, &Value::String(Ref::new("wrong".to_string()))).unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+    }
+}
