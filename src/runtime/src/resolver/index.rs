@@ -1025,7 +1025,7 @@ result := x?
     #[test]
     fn source_index_records_activation_body_and_arm_address_references() {
         let activation = MechCode::ActivationScope(mech_core::ActivationScope {
-            operator: Token::new(mech_core::TokenKind::Activation, SourceRange::default(), vec![]),
+            operator: Token::new(mech_core::TokenKind::AsyncTransitionOperator, SourceRange::default(), vec!['~', '>']),
             trigger: addressed_var("trigger", "EVENT"),
             body: ActivationBody::PatternArms(vec![
                 mech_core::ActivationArm {
@@ -1048,7 +1048,7 @@ result := x?
             ]),
         });
         let fixed = MechCode::ActivationScope(mech_core::ActivationScope {
-            operator: Token::new(mech_core::TokenKind::Activation, SourceRange::default(), vec![]),
+            operator: Token::new(mech_core::TokenKind::AsyncTransitionOperator, SourceRange::default(), vec!['~', '>']),
             trigger: addressed_var("fixed_trigger", "EVENT"),
             body: ActivationBody::Block(vec![(
                 MechCode::Expression(addressed_var("fixed", "VALUE")),
@@ -1062,7 +1062,9 @@ result := x?
 
         let index = SourceIndex::from_program(&program);
         for (target, name) in [
+            ("trigger", "EVENT"),
             ("fixed", "VALUE"),
+            ("fixed_trigger", "EVENT"),
             ("guard", "ENABLED"),
             ("block", "VALUE"),
             ("expression", "VALUE"),
