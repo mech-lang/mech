@@ -84,7 +84,7 @@ mod activation_scope_tests {
     use super::*;
     use std::collections::HashSet;
 
-    const PURE: &str = "tick := 0.0\nx := 10.0\nradius := 2.0\n~> tick { left := x - radius\n doubled := left * 2.0 }";
+    const PURE: &str = "tick := 0.0\nx := 10.0\nradius := 2.0\n~> tick {\n left := x - radius\n doubled := left * 2.0\n}";
     const REGISTER: &str =
         "tick := 0.0\n~x := 10.0\n\n~> tick {\n  next-x := x + 1.0\n  x = next-x\n}";
     const TWO_REGISTERS: &str = "tick := 0.0\n\n~x := 0.0\n~y := 0.0\n\n~> tick {\n  next-x := x + 1.0\n  next-y := y + 2.0\n\n  x = next-x\n  y = next-y\n}";
@@ -371,23 +371,31 @@ mod activation_scope_tests {
     }
     #[test]
     fn activation_scope_rejects_whole_assignment_to_trigger() {
-        let t = mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick = tick + 1.0 }").unwrap();
         let mut i = Interpreter::new_with_full_stdlib(0);
+        let setup = mech_syntax::parser::parse("~tick := 0.0").unwrap();
+        i.interpret(&setup).unwrap();
+        let before = snapshot(&i);
+        let t = mech_syntax::parser::parse("~> tick {\n tick = tick + 1.0\n}").unwrap();
         assert!(
             format!("{:?}", i.interpret(&t).unwrap_err())
                 .contains("ActivationScopeTriggerWriteUnsupported")
         );
-        assert!(i.plan().borrow().nodes.is_empty());
+        assert_eq!(snapshot(&i), before);
+        assert!(!i.plan().activation_registration_active());
     }
     #[test]
     fn activation_scope_rejects_operator_assignment_to_trigger() {
-        let t = mech_syntax::parser::parse("~tick := 0.0\n~> tick { tick += 1.0 }").unwrap();
         let mut i = Interpreter::new_with_full_stdlib(0);
+        let setup = mech_syntax::parser::parse("~tick := 0.0").unwrap();
+        i.interpret(&setup).unwrap();
+        let before = snapshot(&i);
+        let t = mech_syntax::parser::parse("~> tick {\n tick += 1.0\n}").unwrap();
         assert!(
             format!("{:?}", i.interpret(&t).unwrap_err())
                 .contains("ActivationScopeTriggerWriteUnsupported")
         );
-        assert!(i.plan().borrow().nodes.is_empty());
+        assert_eq!(snapshot(&i), before);
+        assert!(!i.plan().activation_registration_active());
     }
     #[test]
     fn activation_scope_plan_is_stable_across_triggers() {
