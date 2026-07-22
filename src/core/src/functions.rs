@@ -1919,10 +1919,23 @@ mod reactive_plan_tests {
   fn reactive_dirty_scheduler_empty_dirty_set_is_noop() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,_,c)=scheduler_node(&mut p,"A",&[d],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);assert_eq!(p.solve_dirty_cells(&[]).unwrap(),ReactivePlanSolveOutcome::default());assert_eq!(*c.borrow(),0); }
   #[test]
   fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
-    let a = Value::Index(Ref::new(1)); let b = Value::Index(Ref::new(2)); let ac = a.reactive_root_cell_ids()[0]; let bc = b.reactive_root_cell_ids()[0];
-    let mut plan = ReactivePlan::new(); let base = plan.register(Box::new(TestFunction::new("base")), &[a]).unwrap(); let checkpoint = plan.checkpoint();
-    let tail = plan.register(Box::new(TestFunction::new("tail").with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled]))), &[b]).unwrap();
-    plan.rollback(checkpoint).unwrap(); assert_eq!(plan.len(), 1); assert_eq!(plan.nodes[0].id, base); assert_eq!(plan.reactive_consumers_for(ac), &[base]); assert!(plan.sampled_consumers_for(bc).is_empty()); assert!(plan.reactive_consumers.values().all(|nodes| !nodes.contains(&tail))); assert!(plan.sampled_consumers.values().all(|nodes| !nodes.contains(&tail)));
+    let reactive_input = Value::Index(Ref::new(1));
+    let sampled_input = Value::Index(Ref::new(2));
+    let reactive_cell = reactive_input.reactive_root_cell_ids()[0];
+    let sampled_cell = sampled_input.reactive_root_cell_ids()[0];
+    let mut plan = ReactivePlan::new();
+    let base = plan.register(Box::new(TestFunction::new("base")), &[reactive_input]).unwrap();
+    let checkpoint = plan.checkpoint();
+    let tail = plan.register(Box::new(TestFunction::new("tail").with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled]))), &[sampled_input]).unwrap();
+    plan.rollback(checkpoint).unwrap();
+    assert_eq!(plan.len(), 1);
+    assert_eq!(plan.nodes[0].id, base);
+    assert_eq!(plan.nodes[0].plan_index, 0);
+    assert_eq!(plan.nodes[0].inputs, vec![ReactiveDependency { cell: reactive_cell, kind: ReactiveDependencyKind::Reactive }]);
+    assert_eq!(plan.reactive_consumers_for(reactive_cell), &[base]);
+    assert!(plan.sampled_consumers_for(sampled_cell).is_empty());
+    assert!(plan.reactive_consumers.values().all(|nodes| !nodes.contains(&tail)));
+    assert!(plan.sampled_consumers.values().all(|nodes| !nodes.contains(&tail)));
   }
   #[test]
   fn reactive_plan_rollback_truncates_pattern_registrations() {
@@ -1938,7 +1951,9 @@ mod reactive_plan_tests {
     let nodes_before = plan.len(); let reactive_before = plan.borrow().reactive_consumers.clone(); let sampled_before = plan.borrow().sampled_consumers.clone(); let registrations_before = plan.pattern_activation_registrations().clone(); let depth_before = plan.activation_registration_depth();
     let error = plan.rollback(PlanCheckpoint { reactive: ReactivePlanCheckpoint { node_len: nodes_before + 1, pattern_activation_registration_len: registrations_before.len() }, activation_registration_depth: depth_before }).unwrap_err(); assert_eq!(error.kind_name(), "ReactivePlanRollbackInvariant");
     assert_eq!(plan.len(), nodes_before); assert_eq!(plan.borrow().reactive_consumers, reactive_before); assert_eq!(plan.borrow().sampled_consumers, sampled_before); assert_eq!(*plan.pattern_activation_registrations(), registrations_before); assert_eq!(plan.activation_registration_depth(), depth_before);
-    let error = plan.rollback(PlanCheckpoint { reactive: plan.borrow().checkpoint(), activation_registration_depth: depth_before + 1 }).unwrap_err(); assert_eq!(error.kind_name(), "ActivationRegistrationRollbackInvariant");
+    let valid_reactive_checkpoint = { let reactive_plan = plan.borrow(); reactive_plan.checkpoint() };
+    let invalid_scope_checkpoint = PlanCheckpoint { reactive: valid_reactive_checkpoint, activation_registration_depth: depth_before + 1 };
+    let error = plan.rollback(invalid_scope_checkpoint).unwrap_err(); assert_eq!(error.kind_name(), "ActivationRegistrationRollbackInvariant");
     assert_eq!(plan.len(), nodes_before); assert_eq!(plan.borrow().reactive_consumers, reactive_before); assert_eq!(plan.borrow().sampled_consumers, sampled_before); assert_eq!(*plan.pattern_activation_registrations(), registrations_before); assert_eq!(plan.activation_registration_depth(), depth_before);
   }
 }

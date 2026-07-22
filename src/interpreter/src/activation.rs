@@ -1231,14 +1231,14 @@ mod tests {
     );
 
     fn interpret(source: &str) -> Interpreter {
-        let tree = mech_syntax::parser::parse(source).unwrap();
+        let tree = mech_syntax::parser::parse(source.trim_start()).unwrap();
         let mut interpreter = Interpreter::new_with_full_stdlib(0);
         interpreter.interpret(&tree).unwrap();
         interpreter
     }
 
     fn interpret_more(interpreter: &mut Interpreter, source: &str) -> MResult<Value> {
-        let tree = mech_syntax::parser::parse(source).unwrap();
+        let tree = mech_syntax::parser::parse(source.trim_start()).unwrap();
         interpreter.interpret(&tree)
     }
 
@@ -1342,26 +1342,23 @@ mod tests {
         panic!("no f64 output")
     }
     fn set_enum_event(interpreter: &Interpreter, variant: &str, payload: f64) {
-        match symbol(interpreter, "event") {
-            Value::Enum(event) => {
-                let id = event.borrow().id;
-                let names = interpreter
-                    .state
-                    .borrow()
-                    .enums
-                    .get(&id)
-                    .unwrap()
-                    .names
-                    .clone();
-                *event.borrow_mut() = MechEnum {
-                    id,
-                    variants: vec![(hash_str(variant), Some(Value::F64(Ref::new(payload))))],
-                    names,
-                };
-            }
-            Value::Tuple(_) => set_atom_tuple_event(interpreter, variant, payload),
-            _ => panic!("event is neither enum nor tagged tuple"),
-        }
+        let Value::Enum(event) = symbol(interpreter, "event") else {
+            panic!("event is not an enum");
+        };
+        let enum_id = event.borrow().id;
+        let names = interpreter
+            .state
+            .borrow()
+            .enums
+            .get(&enum_id)
+            .expect("event enum definition is missing")
+            .names
+            .clone();
+        *event.borrow_mut() = MechEnum {
+            id: enum_id,
+            variants: vec![(hash_str(variant), Some(Value::F64(Ref::new(payload))))],
+            names,
+        };
     }
     fn set_atom_tuple_event(interpreter: &Interpreter, tag: &str, payload: f64) {
         let Value::Tuple(event) = symbol(interpreter, "event") else {
@@ -1437,7 +1434,12 @@ mod tests {
         assert_eq!(&plan_snapshot(interpreter), topology);
     }
 
-    const ENUM_ACTIVATION: &str = r#"event := (:pressed, 0.0)
+    const ENUM_ACTIVATION: &str = r#"
+<Event> := :pressed(f64)
+  | :released(f64)
+  | :other(f64)
+
+event := :pressed(0.0)
 
 ~> event
   | :pressed(x) => {
@@ -1457,11 +1459,34 @@ mod tests {
         PlanSnapshot,
     ) {
         let interpreter = interpret(ENUM_ACTIVATION);
+        assert!(matches!(symbol(&interpreter, "event"), Value::Enum(_)));
+        let enum_id = match symbol(&interpreter, "event") {
+            Value::Enum(event) => event.borrow().id,
+            value => panic!("expected enum event, found {:?}", value.kind()),
+        };
+        let enum_definition = interpreter
+            .state
+            .borrow()
+            .enums
+            .get(&enum_id)
+            .cloned()
+            .expect("event enum definition is missing");
+        for variant in ["pressed", "released", "other"] {
+            assert!(
+                enum_definition
+                    .variants
+                    .iter()
+                    .any(|(variant_id, _)| *variant_id == hash_str(variant)),
+                "missing enum variant `{variant}`"
+            );
+        }
         let trigger = root_cell(&interpreter, "event");
         let registration = registration(&interpreter);
         assert_eq!(registration.arms.len(), 3);
         assert_eq!(registration.arms[0].captures.len(), 1);
         assert_eq!(registration.arms[1].captures.len(), 1);
+        assert_eq!(registration.arms[0].captures[0].kind, ValueKind::F64);
+        assert_eq!(registration.arms[1].captures[0].kind, ValueKind::F64);
         assert!(registration.arms[2].captures.is_empty());
         assert!(!interpreter.symbols().borrow().contains(hash_str("x")));
         assert!(
@@ -1885,6 +1910,7 @@ event := (1.0, 1.0)
         let symbols = i.symbols().borrow().snapshot();
         let dictionary = i.dictionary().borrow().clone();
         let topology = plan_snapshot(&i);
+        let context_bindings = i.context_bindings.borrow().clone();
         let error = interpret_more(
             &mut i,
             "~> event\n  | 1.0 => {
@@ -1898,6 +1924,13 @@ event := (1.0, 1.0)
         assert_eq!(i.symbols().borrow().snapshot(), symbols);
         assert_eq!(*i.dictionary().borrow(), dictionary);
         assert_eq!(plan_snapshot(&i), topology);
+        assert_eq!(*i.context_bindings.borrow(), context_bindings);
+        assert!(
+            !i.context_bindings
+                .borrow()
+                .contains_key(&hash_str("temporary"))
+        );
+        assert!(i.plan().pattern_activation_registrations().is_empty());
         assert!(!i.symbols().borrow().contains(hash_str("fallback")));
     }
 }
