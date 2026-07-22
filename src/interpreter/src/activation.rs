@@ -17,10 +17,6 @@ macro_rules! activation_error {
     };
 }
 activation_error!(
-    ActivationPatternExpressionUnsupported,
-    "This activation pattern is not supported."
-);
-activation_error!(
     ActivationPatternCaptureKindUnsupported,
     "The capture kind cannot be inferred from the activation trigger."
 );
@@ -49,28 +45,6 @@ activation_error!(
     "Activation trigger root cells disagree with the resolved trigger."
 );
 
-#[derive(Clone, Debug)]
-enum CompiledActivationPattern {
-    Wildcard,
-    Literal {
-        expected: Value,
-    },
-    Capture {
-        capture_index: usize,
-    },
-    Tuple {
-        elements: Vec<CompiledActivationPattern>,
-    },
-    EnumVariant {
-        enum_id: u64,
-        variant_id: u64,
-        payload: Option<Box<CompiledActivationPattern>>,
-    },
-    AtomTuple {
-        tag_id: u64,
-        payload: Vec<CompiledActivationPattern>,
-    },
-}
 #[derive(Clone)]
 struct ActivationPatternCapture {
     id: u64,
@@ -80,7 +54,7 @@ struct ActivationPatternCapture {
 }
 #[derive(Clone)]
 struct PreflightActivationArm {
-    pattern: CompiledActivationPattern,
+    pattern: CompiledPattern,
     captures: Vec<ActivationPatternCapture>,
 }
 struct PreflightPatternedActivation {
@@ -247,257 +221,54 @@ fn commit_capture_slot(destination: &Value, source: &Value) -> MResult<()> {
         )),
     }
 }
-fn compile_activation_literal(l: &Literal, i: &Interpreter) -> MResult<Value> {
-    match l {
-        Literal::Empty(_) => Ok(Value::Empty),
-        #[cfg(feature = "bool")]
-        Literal::Boolean(t) => Ok(crate::boolean(t)),
-        #[cfg(feature = "string")]
-        Literal::String(v) => Ok(crate::string(v)),
-        #[cfg(feature = "atom")]
-        Literal::Atom(a) => Ok(Value::Atom(Ref::new(MechAtom::new(a.name.hash())))),
-        Literal::Number(Number::Real(RealNumber::TypedInteger(_)))
-        | Literal::TypedLiteral(_)
-        | Literal::Kind(_) => Err(MechError::new(ActivationPatternExpressionUnsupported, None)),
-        Literal::Number(n) => crate::number(n, i),
-        _ => Err(MechError::new(ActivationPatternExpressionUnsupported, None)),
+
+fn capture_kinds_are_storage_compatible(destination: &ValueKind, source: &ValueKind) -> bool {
+    let destination = destination.deref_kind();
+    let source = source.deref_kind();
+    #[cfg(feature = "atom")]
+    if matches!(
+        (&destination, &source),
+        (ValueKind::Atom(_, _), ValueKind::Atom(_, _))
+    ) {
+        return true;
     }
+    destination == source
 }
-#[cfg(feature = "enum")]
-fn compile_enum_variant_pattern(
-    t: &PatternTupleStruct,
-    enum_id: u64,
-    i: &Interpreter,
-    c: &mut Vec<ActivationPatternCapture>,
-) -> MResult<CompiledActivationPattern> {
-    let variant_id = t.name.hash();
-    let def = i
-        .state
-        .borrow()
-        .enums
-        .get(&enum_id)
-        .cloned()
-        .ok_or_else(|| {
-            MechError::new(ActivationPatternCaptureKindUnsupported, None).with_tokens(t.tokens())
-        })?;
-    let declared = def
-        .variants
-        .iter()
-        .find(|(id, _)| *id == variant_id)
-        .map(|(_, p)| p.clone())
-        .ok_or_else(|| {
-            MechError::new(ActivationPatternCaptureKindUnsupported, None).with_tokens(t.tokens())
-        })?;
-    let payload = match (t.patterns.as_slice(), declared) {
-        ([], None) => None,
-        ([p], Some(Value::Kind(k))) => Some(Box::new(compile_activation_pattern(p, &k, i, c)?)),
-        _ => {
-            return Err(
+
+struct ReactiveBindingSink<'a> {
+    captures: &'a [ActivationPatternCapture],
+}
+
+impl PatternBindingSink for ReactiveBindingSink<'_> {
+    fn commit(&mut self, pattern_match: &PatternMatch) -> MResult<()> {
+        if !pattern_match.matched {
+            return Ok(());
+        }
+
+        // Validate every destination before mutating any stable capture cell.
+        for binding in &pattern_match.bindings {
+            let capture = self.captures.get(binding.index).ok_or_else(|| {
                 MechError::new(ActivationPatternCaptureKindUnsupported, None)
-                    .with_tokens(t.tokens()),
-            );
-        }
-    };
-    Ok(CompiledActivationPattern::EnumVariant {
-        enum_id,
-        variant_id,
-        payload,
-    })
-}
-#[cfg(all(feature = "tuple", feature = "atom"))]
-fn compile_atom_tuple_pattern(
-    t: &PatternTupleStruct,
-    kinds: &[ValueKind],
-    i: &Interpreter,
-    c: &mut Vec<ActivationPatternCapture>,
-) -> MResult<CompiledActivationPattern> {
-    let Some(first) = kinds.first() else {
-        return Err(
-            MechError::new(ActivationPatternCaptureKindUnsupported, None).with_tokens(t.tokens()),
-        );
-    };
-    if !matches!(first.deref_kind(), ValueKind::Atom(_, _)) || t.patterns.len() != kinds.len() - 1 {
-        return Err(
-            MechError::new(ActivationPatternCaptureKindUnsupported, None).with_tokens(t.tokens()),
-        );
-    };
-    let payload = t
-        .patterns
-        .iter()
-        .zip(kinds.iter().skip(1))
-        .map(|(p, k)| compile_activation_pattern(p, k, i, c))
-        .collect::<MResult<_>>()?;
-    Ok(CompiledActivationPattern::AtomTuple {
-        tag_id: t.name.hash(),
-        payload,
-    })
-}
-fn compile_activation_pattern(
-    p: &Pattern,
-    kind: &ValueKind,
-    i: &Interpreter,
-    c: &mut Vec<ActivationPatternCapture>,
-) -> MResult<CompiledActivationPattern> {
-    let kind = kind.deref_kind();
-    match p {
-        Pattern::Wildcard => Ok(CompiledActivationPattern::Wildcard),
-        Pattern::Expression(Expression::Literal(l)) => {
-            let expected = compile_activation_literal(l, i)?;
-            if expected.kind().deref_kind() != kind {
-                return Err(
-                    MechError::new(ActivationPatternCaptureKindUnsupported, None)
-                        .with_tokens(p.tokens()),
-                );
+            })?;
+            let source = detached(&binding.value);
+            if capture.id != binding.id
+                || !capture_kinds_are_storage_compatible(&capture.kind, &binding.kind)
+                || std::mem::discriminant(&capture.slot) != std::mem::discriminant(&source)
+            {
+                return Err(MechError::new(
+                    ActivationPatternCaptureKindUnsupported,
+                    None,
+                ));
             }
-            Ok(CompiledActivationPattern::Literal { expected })
         }
-        Pattern::Expression(Expression::Var(v)) => {
-            let id = v.name.hash();
-            if let Some(n) = c.iter().position(|x| x.id == id) {
-                if c[n].kind.deref_kind() != kind {
-                    return Err(
-                        MechError::new(ActivationPatternCaptureKindUnsupported, None)
-                            .with_tokens(p.tokens()),
-                    );
-                }
-                return Ok(CompiledActivationPattern::Capture { capture_index: n });
-            }
-            let slot =
-                create_capture_slot_for_kind(&kind).map_err(|e| e.with_tokens(p.tokens()))?;
-            c.push(ActivationPatternCapture {
-                id,
-                name: v.name.to_string(),
-                kind,
-                slot,
-            });
-            Ok(CompiledActivationPattern::Capture {
-                capture_index: c.len() - 1,
-            })
+
+        for binding in &pattern_match.bindings {
+            commit_capture_slot(&self.captures[binding.index].slot, &binding.value)?;
         }
-        #[cfg(feature = "tuple")]
-        Pattern::Tuple(t) => {
-            let ValueKind::Tuple(k) = kind else {
-                return Err(
-                    MechError::new(ActivationPatternCaptureKindUnsupported, None)
-                        .with_tokens(p.tokens()),
-                );
-            };
-            if t.0.len() != k.len() {
-                return Err(
-                    MechError::new(ActivationPatternCaptureKindUnsupported, None)
-                        .with_tokens(p.tokens()),
-                );
-            }
-            Ok(CompiledActivationPattern::Tuple {
-                elements: t
-                    .0
-                    .iter()
-                    .zip(k.iter())
-                    .map(|(p, k)| compile_activation_pattern(p, k, i, c))
-                    .collect::<MResult<_>>()?,
-            })
-        }
-        Pattern::TupleStruct(t) => match kind {
-            #[cfg(feature = "enum")]
-            ValueKind::Enum(id, _) => compile_enum_variant_pattern(t, id, i, c),
-            #[cfg(all(feature = "tuple", feature = "atom"))]
-            ValueKind::Tuple(k) => compile_atom_tuple_pattern(t, &k, i, c),
-            _ => Err(
-                MechError::new(ActivationPatternCaptureKindUnsupported, None)
-                    .with_tokens(p.tokens()),
-            ),
-        },
-        _ => {
-            Err(MechError::new(ActivationPatternExpressionUnsupported, None)
-                .with_tokens(p.tokens()))
-        }
+        Ok(())
     }
 }
-fn matches_pattern(
-    p: &CompiledActivationPattern,
-    v: &Value,
-    proposed: &mut Vec<Option<Value>>,
-) -> bool {
-    match p {
-        CompiledActivationPattern::Wildcard => true,
-        CompiledActivationPattern::Literal { expected } => expected == &detached(v),
-        CompiledActivationPattern::Capture { capture_index } => {
-            let x = detached(v);
-            match &proposed[*capture_index] {
-                Some(y) => y == &x,
-                None => {
-                    proposed[*capture_index] = Some(x);
-                    true
-                }
-            }
-        }
-        #[cfg(feature = "tuple")]
-        CompiledActivationPattern::Tuple { elements } => match detached(v) {
-            Value::Tuple(t) => {
-                let t = t.borrow();
-                t.elements.len() == elements.len()
-                    && elements
-                        .iter()
-                        .zip(t.elements.iter())
-                        .all(|(p, v)| matches_pattern(p, v, proposed))
-            }
-            _ => false,
-        },
-        CompiledActivationPattern::EnumVariant {
-            enum_id,
-            variant_id,
-            payload,
-        } => {
-            #[cfg(feature = "enum")]
-            {
-                let Value::Enum(e) = detached(v) else {
-                    return false;
-                };
-                let e = e.borrow();
-                if e.id != *enum_id || e.variants.len() != 1 {
-                    return false;
-                }
-                let (id, value) = &e.variants[0];
-                id == variant_id
-                    && match (payload, value) {
-                        (None, None) => true,
-                        (Some(p), Some(v)) => matches_pattern(p, v, proposed),
-                        _ => false,
-                    }
-            }
-            #[cfg(not(feature = "enum"))]
-            {
-                false
-            }
-        }
-        CompiledActivationPattern::AtomTuple { tag_id, payload } => {
-            #[cfg(all(feature = "tuple", feature = "atom"))]
-            {
-                let Value::Tuple(t) = detached(v) else {
-                    return false;
-                };
-                let t = t.borrow();
-                if t.elements.len() != payload.len() + 1 {
-                    return false;
-                }
-                let Value::Atom(tag) = detached(&t.elements[0]) else {
-                    return false;
-                };
-                tag.borrow().id() == *tag_id
-                    && payload
-                        .iter()
-                        .zip(t.elements.iter().skip(1))
-                        .all(|(p, v)| matches_pattern(p, v, proposed))
-            }
-            #[cfg(not(all(feature = "tuple", feature = "atom")))]
-            {
-                false
-            }
-        }
-        #[cfg(not(feature = "tuple"))]
-        CompiledActivationPattern::Tuple { .. } => false,
-    }
-}
+
 fn generation() -> (Ref<usize>, Value) {
     let r = Ref::new(0);
     (r.clone(), Value::Index(r))
@@ -522,8 +293,9 @@ impl MechFunctionImpl for ScopePulse {
     }
 }
 struct Matcher {
-    pattern: CompiledActivationPattern,
+    pattern: CompiledPattern,
     trigger: Value,
+    expression_values: Vec<Value>,
     captures: Vec<ActivationPatternCapture>,
     matched: Ref<bool>,
     out: Ref<usize>,
@@ -531,27 +303,28 @@ struct Matcher {
 impl MechFunctionImpl for Matcher {
     fn solve(&self) {}
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        let mut p = vec![None; self.captures.len()];
-        let ok = matches_pattern(&self.pattern, &self.trigger, &mut p);
-        if ok {
-            for (c, v) in self.captures.iter().zip(p.iter()) {
-                if let Some(v) = v {
-                    commit_capture_slot(&c.slot, v)?
-                }
-            }
+        let pattern_match = match_compiled_pattern_with_values(
+            &self.pattern,
+            &self.trigger,
+            &self.expression_values,
+        )?;
+        ReactiveBindingSink {
+            captures: &self.captures,
         }
-        *self.matched.borrow_mut() = ok;
+        .commit(&pattern_match)?;
+        *self.matched.borrow_mut() = pattern_match.matched;
         *self.out.borrow_mut() += 1;
         Ok(ReactiveSolveStatus::Changed)
     }
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
     }
-    fn reactive_dependency_kinds(&self, _: usize) -> Option<Vec<ReactiveDependencyKind>> {
-        Some(vec![
-            ReactiveDependencyKind::Reactive,
-            ReactiveDependencyKind::Sampled,
-        ])
+    fn reactive_dependency_kinds(&self, argument_count: usize) -> Option<Vec<ReactiveDependencyKind>> {
+        let mut kinds = vec![ReactiveDependencyKind::Sampled; argument_count];
+        if let Some(scope_pulse) = kinds.first_mut() {
+            *scope_pulse = ReactiveDependencyKind::Reactive;
+        }
+        Some(kinds)
     }
     fn to_string(&self) -> String {
         "ActivationPatternMatcher".into()
@@ -687,8 +460,25 @@ fn preflight_patterned_activation(
     let trigger_kind = trigger.kind().deref_kind();
     let mut compiled = Vec::new();
     for a in arms {
-        let mut captures = Vec::new();
-        let pattern = compile_activation_pattern(&a.pattern, &trigger_kind, i, &mut captures)?;
+        let pattern = compile_pattern(&a.pattern, Some(&trigger_kind), i)?;
+        let captures = pattern
+            .binding_specs()
+            .into_iter()
+            .map(|binding| {
+                let kind = binding.kind.ok_or_else(|| {
+                    MechError::new(ActivationPatternCaptureKindUnsupported, None)
+                        .with_tokens(a.pattern.tokens())
+                })?;
+                let slot = create_capture_slot_for_kind(&kind)
+                    .map_err(|error| error.with_tokens(a.pattern.tokens()))?;
+                Ok(ActivationPatternCapture {
+                    id: binding.id,
+                    name: binding.name,
+                    kind,
+                    slot,
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?;
         compiled.push(PreflightActivationArm { pattern, captures });
     }
     Ok(PreflightPatternedActivation {
@@ -1007,23 +797,38 @@ fn elaborate_patterned_activation_inner(
     }
     let compiled = preflight.arms;
     let plan = i.plan();
+    let pattern_expression_values = compiled
+        .iter()
+        .map(|arm| {
+            arm.pattern
+                .expressions()
+                .iter()
+                .map(|expression| crate::expression(expression, None, i))
+                .collect::<MResult<Vec<_>>>()
+        })
+        .collect::<MResult<Vec<_>>>()?;
     let (scope_gen, scope_v) = generation();
     let scope_node = plan
         .borrow_mut()
         .register(Box::new(ScopePulse { out: scope_gen }), &[trigger.clone()])?;
     let (mut matcher_nodes, mut completions, mut matched) = (Vec::new(), Vec::new(), Vec::new());
-    for arm in &compiled {
+    for (arm, expression_values) in compiled.iter().zip(&pattern_expression_values) {
         let (o, v) = generation();
         let f = Ref::new(false);
+        let mut inputs = Vec::with_capacity(2 + expression_values.len());
+        inputs.push(scope_v.clone());
+        inputs.push(trigger.clone());
+        inputs.extend(expression_values.iter().cloned());
         let n = plan.borrow_mut().register(
             Box::new(Matcher {
                 pattern: arm.pattern.clone(),
                 trigger: trigger.clone(),
+                expression_values: expression_values.clone(),
                 captures: arm.captures.clone(),
                 matched: f.clone(),
                 out: o,
             }),
-            &[scope_v.clone(), trigger.clone()],
+            &inputs,
         )?;
         matcher_nodes.push(n);
         completions.push(v);
@@ -1206,6 +1011,46 @@ mod tests {
         assert_eq!(slot.reactive_root_cell_ids(), cells);
     }
 
+    #[cfg(feature = "atom")]
+    #[test]
+    fn activation_atom_capture_accepts_a_new_atom_value() {
+        let mut interpreter = interpret(
+            r#"
+event := :first
+~> event
+  | captured => {
+      selected := captured
+    }
+  | * => {
+      selected := :fallback
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "event");
+        let topology = plan_snapshot(&interpreter);
+        let registration = registration(&interpreter);
+        let Value::Atom(event) = symbol(&interpreter, "event") else {
+            panic!("event is not an atom")
+        };
+        *event.borrow_mut() = MechAtom::from_name("second");
+
+        let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&registration, &outcome), 0);
+        let selected_atom = {
+            let plan = interpreter.plan();
+            let plan = plan.borrow();
+            (registration.arms[0].body_node_start..registration.arms[0].body_node_end)
+                .rev()
+                .find_map(|node| match detached(&plan.node(node).unwrap().function.out()) {
+                    Value::Atom(atom) => Some(atom.borrow().id()),
+                    _ => None,
+                })
+                .expect("no atom output in selected arm body")
+        };
+        assert_eq!(selected_atom, hash_str("second"));
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
     #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
     #[test]
     fn activation_capture_slot_rejects_kind_mismatch() {
@@ -1360,6 +1205,30 @@ mod tests {
             names,
         };
     }
+    fn set_unit_enum_event(interpreter: &Interpreter, variant: &str) {
+        let event_value = symbol(interpreter, "event");
+        if let Value::Atom(event) = &event_value {
+            *event.borrow_mut() = MechAtom::from_name(variant);
+            return;
+        }
+        let Value::Enum(event) = event_value else {
+            panic!("event is neither an atom nor an enum");
+        };
+        let enum_id = event.borrow().id;
+        let names = interpreter
+            .state
+            .borrow()
+            .enums
+            .get(&enum_id)
+            .expect("event enum definition is missing")
+            .names
+            .clone();
+        *event.borrow_mut() = MechEnum {
+            id: enum_id,
+            variants: vec![(hash_str(variant), None)],
+            names,
+        };
+    }
     fn set_atom_tuple_event(interpreter: &Interpreter, tag: &str, payload: f64) {
         let Value::Tuple(event) = symbol(interpreter, "event") else {
             panic!("event is not tuple")
@@ -1374,6 +1243,13 @@ mod tests {
             panic!("event is not tuple")
         };
         *event.borrow_mut() = MechTuple::from_vec(values);
+    }
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    fn set_f64_matrix_event(interpreter: &Interpreter, values: Vec<f64>) {
+        let Value::MatrixF64(event) = symbol(interpreter, "event") else {
+            panic!("event is not an f64 matrix")
+        };
+        event.set(values);
     }
     fn selected_arm_index(
         registration: &PatternActivationRegistration,
@@ -1570,6 +1446,28 @@ event<event-kind> := :pressed(0.0)
             assert_eq!(plan_snapshot(&i), topology);
         }
     }
+
+    #[test]
+    fn activation_pattern_matches_payload_free_enum_variant() {
+        let mut i = interpret(
+            r#"
+<signal> := :ready | :other
+event<signal> := :other
+~> event
+  | :ready => {
+      selected := 1.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        set_unit_enum_event(&i, "ready");
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
+    }
     #[test]
     fn activation_pattern_capture_storage_identity_is_stable() {
         let (mut i, trigger, r, topology) = load_enum_activation();
@@ -1724,8 +1622,166 @@ event := (1.0, 1.0)
         let o = i.advance_reactive_turn(&[trigger]).unwrap();
         assert_dispatch_turn(&i, &topology, &o, 1, -1.);
     }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
-    fn activation_pattern_repeated_capture_kind_mismatch_is_structured() {
+    fn activation_array_pattern_samples_expression_only_on_trigger() {
+        let mut i = interpret(
+            r#"
+event := [1.0 2.0 1.0]
+threshold := 2.0
+~> event
+  | [x, threshold + 0.0, x] => {
+      selected := x + 100.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let threshold_cell = root_cell(&i, "threshold");
+        let topology = plan_snapshot(&i);
+        let registration = registration(&i);
+
+        let Value::F64(threshold) = symbol(&i, "threshold") else {
+            panic!("threshold is not f64")
+        };
+        *threshold.borrow_mut() = 3.0;
+        let dependency_turn = i.advance_reactive_turn(&[threshold_cell]).unwrap();
+        let dependency_nodes = turn_executed_nodes(&dependency_turn);
+        assert!(!dependency_nodes.contains(&registration.scope_pulse_node));
+        assert!(!dependency_nodes.contains(&registration.selector_node));
+        for arm in &registration.arms {
+            assert!(!dependency_nodes.contains(&arm.matcher_node));
+            assert!(!dependency_nodes.contains(&arm.finalizer_node));
+            assert!(!dependency_nodes.contains(&arm.gate_node));
+        }
+
+        set_f64_matrix_event(&i, vec![4.0, 3.0, 4.0]);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 104.0);
+
+        set_f64_matrix_event(&i, vec![4.0, 3.0, 5.0]);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_array_pattern_supports_prefix_suffix_and_anonymous_spread() {
+        let mut i = interpret(
+            r#"
+event := [1.0 2.0 3.0 1.0]
+~> event
+  | [x, ..., x] => {
+      selected := x + 10.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 11.0);
+
+        set_f64_matrix_event(&i, vec![1.0, 2.0, 3.0, 4.0]);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_array_rest_segment_accepts_nested_array_pattern() {
+        let mut i = interpret(
+            r#"
+event := [1.0 2.0 3.0 4.0]
+~> event
+  | [head | [second, ..., last]] => {
+      selected := head * 100.0 + second * 10.0 + last
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 124.0);
+    }
+
+    #[cfg(feature = "u64")]
+    #[test]
+    fn activation_typed_literal_pattern_uses_shared_value_matching() {
+        let mut i = interpret(
+            r#"
+event := 1u64
+~> event
+  | 1u64 => {
+      selected := 1.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
+    }
+
+    #[test]
+    fn activation_whole_composite_capture_fails_before_plan_mutation() {
+        let mut i = interpret("event := (1.0, 2.0)");
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | whole => {
+      selected := 1.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(!i.symbols().borrow().contains(hash_str("whole")));
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_array_rest_capture_reports_storage_gap_before_plan_mutation() {
+        let mut i = interpret("event := [1.0 2.0 3.0]");
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | [head | rest] => {
+      selected := head
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(!i.symbols().borrow().contains(hash_str("head")));
+        assert!(!i.symbols().borrow().contains(hash_str("rest")));
+    }
+    #[test]
+    fn activation_pattern_repeated_capture_kind_mismatch_uses_canonical_error() {
         let mut i = interpret("event := (1.0, \"one\")");
         let topology = plan_snapshot(&i);
         let error = interpret_more(
@@ -1737,7 +1793,7 @@ event := (1.0, 1.0)
     }",
         )
         .unwrap_err();
-        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(error.kind_name(), "PatternCompileError");
         assert_eq!(plan_snapshot(&i), topology);
         assert!(!i.symbols().borrow().contains(hash_str("x")));
         assert!(!i.symbols().borrow().contains(hash_str("selected")));
@@ -1883,7 +1939,7 @@ event := (1.0, 1.0)
     }",
         )
         .unwrap_err();
-        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(error.kind_name(), "PatternCompileError");
         assert_eq!(plan_snapshot(&i), topology);
     }
     #[test]

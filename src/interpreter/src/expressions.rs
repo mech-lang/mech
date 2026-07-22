@@ -1406,19 +1406,21 @@ pub fn match_expression(
         let mut guard_env = base_env.clone();
         let matched = match &arm.pattern {
             Pattern::Wildcard => true,
-            _ => crate::patterns::pattern_matches_value_with_semantics(
+            _ => crate::patterns::pattern_matches_value(
                 &arm.pattern,
                 &detached_source,
                 &mut guard_env,
                 p,
-                crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
+        if !matched {
+            continue;
+        }
         let passed_guard = match &arm.guard {
             Some(guard) => guard_expression_true(guard, &guard_env, p)?,
             None => true,
         };
-        if matched && passed_guard {
+        if passed_guard {
             #[cfg(feature = "matrix")]
             if value_contains_empty(&detached_source) && is_identity_option_matrix_arm(arm) {
                 if let Some(wildcard_arm) = match_expr
@@ -1561,19 +1563,21 @@ fn match_validate_arm_kinds(
         let mut arm_env = base_env.clone();
         let applicable = match arm.pattern {
             Pattern::Wildcard => true,
-            _ => crate::patterns::pattern_matches_value_with_semantics(
+            _ => crate::patterns::pattern_matches_value(
                 &arm.pattern,
                 source,
                 &mut arm_env,
                 p,
-                crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
+        if !applicable {
+            continue;
+        }
         let passed_guard = match &arm.guard {
             Some(guard) => guard_expression_true(guard, &arm_env, p)?,
             None => true,
         };
-        if !(applicable && passed_guard) {
+        if !passed_guard {
             continue;
         }
         let arm_value = expression(&arm.expression, Some(&arm_env), p)?;

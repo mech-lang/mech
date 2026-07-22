@@ -45,6 +45,6 @@ mod tests {
   #[test] fn activation_scope_parses_fixed_block_body() { assert!(parse("~> tick {\n output := x + 1\n}").is_ok()); }
   #[test] fn activation_scope_parses_pattern_block_and_expression_arms() { assert!(parse("~> event\n | :pressed(x) => {\n output := x\n }\n | * => 0.").is_ok()); }
   #[test] fn activation_scope_parses_pattern_guard() { assert!(parse("~> event\n | (x, y), x > y => { output := x }\n | * => { output := 0 }").is_ok()); }
-  #[test] fn activation_scope_pattern_body_does_not_parse_as_match_expression() { let p=parse("~> event | * => 0.").unwrap(); assert!(matches!(p.body.sections[0].elements[0].0, MechCode::ActivationScope(ActivationScope { body: ActivationBody::PatternArms(_), .. }))); }
+  #[test] fn activation_scope_pattern_body_does_not_parse_as_match_expression() { let p=parse("~> event | * => 0.").unwrap(); let SectionElement::MechCode(code) = &p.body.sections[0].elements[0] else { panic!("expected Mech code") }; assert!(matches!(&code[0].0, MechCode::ActivationScope(ActivationScope { body: ActivationBody::PatternArms(_), .. }))); }
   #[test] fn activation_scope_does_not_conflict_with_mutable_definition() { assert!(parse("~x := 10\n~> tick {\n output := x + 1\n}").is_ok()); }
 }

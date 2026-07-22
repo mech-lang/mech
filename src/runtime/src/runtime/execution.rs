@@ -542,6 +542,8 @@ impl MechRuntime {
     value: Value,
   ) -> MResult<mech_core::Expression> {
     self.validate_live_context_candidate(context)?;
+    // The interpreter recognizes this prefix as a sampled pattern value rather
+    // than a source-level capture name.
     let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
     let symbol_id = hash_str(&name);
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
@@ -949,92 +951,53 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<mech_core::Expression> {
-    if let Some(expression) = self.literalize_match_pattern_context_read_expression(
-      context,
+    if let Some(expression) = self.resolve_interpreter_address_pattern_expression(
       program,
       registry,
       expression,
     )? {
       return Ok(expression);
     }
-
     self.resolve_context_reads_in_expression(context, program, registry, expression)
   }
 
-  fn literalize_match_pattern_context_read_expression(
+  fn resolve_interpreter_address_pattern_expression(
     &mut self,
-    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<Option<mech_core::Expression>> {
     match expression {
       mech_core::Expression::Var(var) => {
-        self.literalize_match_pattern_context_read_var(context, program, registry, var)
+        let Some(var_context) = &var.context else {
+          return Ok(None);
+        };
+        let target = var_context.to_string();
+        if registry.get(&target).is_some() {
+          return Ok(None);
+        }
+
+        let address = format!("@{target}/{}", var.name.to_string());
+        let value = {
+          let symbols = program.interpreter().symbols();
+          let symbols = symbols.borrow();
+          symbols
+            .get(hash_str(&address))
+            .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
+        };
+        match value {
+          Some(value) => self.resolved_pattern_value_expression(value).map(Some),
+          None => Ok(None),
+        }
       }
       mech_core::Expression::Formula(factor) => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, factor)
+        self.resolve_interpreter_address_pattern_factor(program, registry, factor)
       }
       _ => Ok(None),
     }
   }
 
-  fn literalize_match_pattern_context_read_factor(
-    &mut self,
-    context: &RuntimeContext,
-    program: &mut MechProgram,
-    registry: &RuntimeContextRegistry,
-    factor: &mech_core::Factor,
-  ) -> MResult<Option<mech_core::Expression>> {
-    match factor {
-      mech_core::Factor::Expression(expression) => {
-        self.literalize_match_pattern_context_read_expression(context, program, registry, expression)
-      }
-      mech_core::Factor::Parenthetical(inner) => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, inner)
-      }
-      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, &term.lhs)
-      }
-      _ => Ok(None),
-    }
-  }
-
-  fn literalize_match_pattern_context_read_var(
-    &mut self,
-    context: &RuntimeContext,
-    program: &mut MechProgram,
-    registry: &RuntimeContextRegistry,
-    var: &mech_core::Var,
-  ) -> MResult<Option<mech_core::Expression>> {
-    let Some(var_context) = &var.context else {
-      return Ok(None);
-    };
-
-    let target = var_context.to_string();
-    let path = var.name.to_string();
-    if let Some(binding) = registry.get(&target) {
-      let value = self.read_context_resource(context, binding, &path)?;
-      return Ok(Some(self.context_pattern_value_expression(value)?));
-    }
-
-    let address_key = format!("@{target}/{path}");
-    let value = {
-      let symbols = program.interpreter().symbols();
-      let symbols = symbols.borrow();
-      symbols
-        .get(hash_str(&address_key))
-        .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
-    };
-
-    if let Some(value) = value {
-      return Ok(Some(self.context_pattern_value_expression(value)?));
-    }
-
-    Ok(None)
-  }
-
-  fn context_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+  fn resolved_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
     let value = resolve_runtime_value(value);
     match value {
       Value::String(value) => {
@@ -1062,9 +1025,31 @@ impl MechRuntime {
         vec!['_'],
       )))),
       other => Err(MechError::new(RuntimeInvalidOperationError {
-        operation: "context_match_pattern",
-        reason: format!("context match patterns currently support string, bool, and empty values; got {other:?}"),
+        operation: "interpreter_address_pattern",
+        reason: format!(
+          "interpreter-address patterns currently support string, bool, and empty values; got {other:?}",
+        ),
       }, None)),
+    }
+  }
+
+  fn resolve_interpreter_address_pattern_factor(
+    &mut self,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.resolve_interpreter_address_pattern_expression(program, registry, expression)
+      }
+      mech_core::Factor::Parenthetical(inner) => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, inner)
+      }
+      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, &term.lhs)
+      }
+      _ => Ok(None),
     }
   }
 
@@ -1305,12 +1290,18 @@ impl MechRuntime {
           lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
           let mut lowered_arms = Vec::with_capacity(arms.len());
           for arm in arms {
+            let pattern = self.resolve_context_reads_in_match_pattern(
+              context,
+              program,
+              registry,
+              &arm.pattern,
+            )?;
             let guard = arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?;
             let body = match &arm.body {
               mech_core::ActivationArmBody::Block(body) => mech_core::ActivationArmBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
               mech_core::ActivationArmBody::Expression(expression) => mech_core::ActivationArmBody::Expression(self.resolve_context_reads_in_expression(context, program, registry, expression)?),
             };
-            lowered_arms.push(mech_core::ActivationArm { pattern: arm.pattern.clone(), guard, body });
+            lowered_arms.push(mech_core::ActivationArm { pattern, guard, body });
           }
           lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
           program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
@@ -1503,6 +1494,12 @@ impl MechRuntime {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
         if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
           for arm in arms {
+            self.preflight_pattern_context_reads(
+              context,
+              registry,
+              &arm.pattern,
+              addressed_read_preflight,
+            )?;
             if let Some(guard) = &arm.guard { self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?; }
             match &arm.body {
               mech_core::ActivationArmBody::Block(body) => for (code, _) in body { self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?; },
