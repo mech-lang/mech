@@ -100,6 +100,7 @@ pub mod builtins;
 #[cfg(feature = "functions")]
 pub mod modules;
 pub mod expressions;
+pub mod activation;
 #[cfg(feature = "functions")]
 pub mod functions;
 pub mod interpreter;
