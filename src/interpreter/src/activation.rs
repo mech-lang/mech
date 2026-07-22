@@ -1214,4 +1214,690 @@ mod tests {
             commit_capture_slot(&slot, &Value::String(Ref::new("wrong".to_string()))).unwrap_err();
         assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
     }
+
+    type PlanSnapshot = (
+        usize,
+        Vec<(
+            ReactiveNodeId,
+            usize,
+            ReactiveNodeKind,
+            Vec<u64>,
+            Vec<(u64, ReactiveDependencyKind)>,
+        )>,
+        Vec<(u64, Vec<ReactiveNodeId>)>,
+        Vec<(u64, Vec<ReactiveNodeId>)>,
+        Vec<PatternActivationRegistration>,
+        usize,
+    );
+
+    fn interpret(source: &str) -> Interpreter {
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let mut interpreter = Interpreter::new_with_full_stdlib(0);
+        interpreter.interpret(&tree).unwrap();
+        interpreter
+    }
+
+    fn interpret_more(interpreter: &mut Interpreter, source: &str) -> MResult<Value> {
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        interpreter.interpret(&tree)
+    }
+
+    fn symbol_ref(interpreter: &Interpreter, name: &str) -> ValRef {
+        interpreter
+            .symbols()
+            .borrow()
+            .get(hash_str(name))
+            .unwrap_or_else(|| panic!("missing symbol `{name}`"))
+    }
+    fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+        symbol_ref(interpreter, name).borrow().clone()
+    }
+    fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId {
+        symbol(interpreter, name).reactive_root_cell_ids()[0]
+    }
+    fn registration(interpreter: &Interpreter) -> PatternActivationRegistration {
+        let plan = interpreter.plan();
+        let registrations = plan.pattern_activation_registrations();
+        assert_eq!(registrations.len(), 1);
+        registrations[0].clone()
+    }
+    fn plan_snapshot(interpreter: &Interpreter) -> PlanSnapshot {
+        let plan = interpreter.plan();
+        let depth = plan.activation_registration_depth();
+        let plan = plan.borrow();
+        let nodes = plan
+            .nodes
+            .iter()
+            .map(|node| {
+                (
+                    node.id,
+                    node.plan_index,
+                    node.kind,
+                    node.outputs.iter().map(|cell| cell.get()).collect(),
+                    node.inputs
+                        .iter()
+                        .map(|dependency| (dependency.cell.get(), dependency.kind))
+                        .collect(),
+                )
+            })
+            .collect();
+        let mut reactive = plan
+            .reactive_consumers
+            .iter()
+            .map(|(cell, nodes)| (cell.get(), nodes.clone()))
+            .collect::<Vec<_>>();
+        reactive.sort_by_key(|(cell, _)| *cell);
+        let mut sampled = plan
+            .sampled_consumers
+            .iter()
+            .map(|(cell, nodes)| (cell.get(), nodes.clone()))
+            .collect::<Vec<_>>();
+        sampled.sort_by_key(|(cell, _)| *cell);
+        (
+            plan.len(),
+            nodes,
+            reactive,
+            sampled,
+            plan.pattern_activation_registrations().to_vec(),
+            depth,
+        )
+    }
+    fn turn_executed_nodes(outcome: &ReactiveTurnOutcome) -> Vec<ReactiveNodeId> {
+        outcome
+            .before_commit
+            .executed_nodes
+            .iter()
+            .chain(outcome.after_commit.executed_nodes.iter())
+            .copied()
+            .collect()
+    }
+    fn turn_changed_nodes(outcome: &ReactiveTurnOutcome) -> Vec<ReactiveNodeId> {
+        outcome
+            .before_commit
+            .changed_nodes
+            .iter()
+            .chain(outcome.after_commit.changed_nodes.iter())
+            .copied()
+            .collect()
+    }
+    fn turn_unchanged_nodes(outcome: &ReactiveTurnOutcome) -> Vec<ReactiveNodeId> {
+        outcome
+            .before_commit
+            .unchanged_nodes
+            .iter()
+            .chain(outcome.after_commit.unchanged_nodes.iter())
+            .copied()
+            .collect()
+    }
+    fn body_output_f64(interpreter: &Interpreter, arm_index: usize) -> f64 {
+        let registration = registration(interpreter);
+        let arm = &registration.arms[arm_index];
+        let plan = interpreter.plan();
+        let plan = plan.borrow();
+        for id in (arm.body_node_start..arm.body_node_end).rev() {
+            if let Ok(value) = plan.node(id).unwrap().function.out().as_f64() {
+                return *value.borrow();
+            }
+        }
+        panic!("no f64 output")
+    }
+    fn set_enum_event(interpreter: &Interpreter, variant: &str, payload: f64) {
+        match symbol(interpreter, "event") {
+            Value::Enum(event) => {
+                let id = event.borrow().id;
+                let names = interpreter
+                    .state
+                    .borrow()
+                    .enums
+                    .get(&id)
+                    .unwrap()
+                    .names
+                    .clone();
+                *event.borrow_mut() = MechEnum {
+                    id,
+                    variants: vec![(hash_str(variant), Some(Value::F64(Ref::new(payload))))],
+                    names,
+                };
+            }
+            Value::Tuple(_) => set_atom_tuple_event(interpreter, variant, payload),
+            _ => panic!("event is neither enum nor tagged tuple"),
+        }
+    }
+    fn set_atom_tuple_event(interpreter: &Interpreter, tag: &str, payload: f64) {
+        let Value::Tuple(event) = symbol(interpreter, "event") else {
+            panic!("event is not tuple")
+        };
+        *event.borrow_mut() = MechTuple::from_vec(vec![
+            Value::Atom(Ref::new(MechAtom::from_name(tag))),
+            Value::F64(Ref::new(payload)),
+        ]);
+    }
+    fn set_tuple_event(interpreter: &Interpreter, values: Vec<Value>) {
+        let Value::Tuple(event) = symbol(interpreter, "event") else {
+            panic!("event is not tuple")
+        };
+        *event.borrow_mut() = MechTuple::from_vec(values);
+    }
+    fn selected_arm_index(
+        registration: &PatternActivationRegistration,
+        outcome: &ReactiveTurnOutcome,
+    ) -> usize {
+        let changed = turn_changed_nodes(outcome);
+        registration
+            .arms
+            .iter()
+            .position(|arm| changed.contains(&arm.gate_node))
+            .expect("no selected gate")
+    }
+    fn assert_dispatch_turn(
+        interpreter: &Interpreter,
+        topology: &PlanSnapshot,
+        outcome: &ReactiveTurnOutcome,
+        expected_arm: usize,
+        output: f64,
+    ) {
+        let registration = registration(interpreter);
+        let executed = turn_executed_nodes(outcome);
+        let changed = turn_changed_nodes(outcome);
+        let unchanged = turn_unchanged_nodes(outcome);
+        assert_eq!(
+            executed
+                .iter()
+                .filter(|id| **id == registration.scope_pulse_node)
+                .count(),
+            1
+        );
+        assert_eq!(
+            executed
+                .iter()
+                .filter(|id| **id == registration.selector_node)
+                .count(),
+            1
+        );
+        assert_eq!(selected_arm_index(&registration, outcome), expected_arm);
+        for (index, arm) in registration.arms.iter().enumerate() {
+            for node in [arm.matcher_node, arm.finalizer_node, arm.gate_node] {
+                assert_eq!(executed.iter().filter(|id| **id == node).count(), 1);
+            }
+            if index == expected_arm {
+                assert!(changed.contains(&arm.gate_node));
+                assert!(!unchanged.contains(&arm.gate_node));
+                for node in arm.body_node_start..arm.body_node_end {
+                    assert_eq!(executed.iter().filter(|id| **id == node).count(), 1);
+                }
+            } else {
+                assert!(unchanged.contains(&arm.gate_node));
+                assert!(!changed.contains(&arm.gate_node));
+                for node in arm.body_node_start..arm.body_node_end {
+                    assert!(!executed.contains(&node));
+                }
+            }
+        }
+        assert_eq!(body_output_f64(interpreter, expected_arm), output);
+        assert_eq!(&plan_snapshot(interpreter), topology);
+    }
+
+    const ENUM_ACTIVATION: &str = r#"event := (:pressed, 0.0)
+
+~> event
+  | :pressed(x) => {
+      selected := x + 0.0
+    }
+  | :released(x) => {
+      selected := x + 1000.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#;
+    fn load_enum_activation() -> (
+        Interpreter,
+        ReactiveCellId,
+        PatternActivationRegistration,
+        PlanSnapshot,
+    ) {
+        let interpreter = interpret(ENUM_ACTIVATION);
+        let trigger = root_cell(&interpreter, "event");
+        let registration = registration(&interpreter);
+        assert_eq!(registration.arms.len(), 3);
+        assert_eq!(registration.arms[0].captures.len(), 1);
+        assert_eq!(registration.arms[1].captures.len(), 1);
+        assert!(registration.arms[2].captures.is_empty());
+        assert!(!interpreter.symbols().borrow().contains(hash_str("x")));
+        assert!(
+            !interpreter
+                .symbols()
+                .borrow()
+                .contains(hash_str("selected"))
+        );
+        let topology = plan_snapshot(&interpreter);
+        (interpreter, trigger, registration, topology)
+    }
+
+    #[test]
+    fn activation_pattern_selects_pressed_released_and_wildcard() {
+        let (mut i, trigger, _, topology) = load_enum_activation();
+        for (name, payload, arm, output) in [
+            ("pressed", 10., 0, 10.),
+            ("released", 20., 1, 1020.),
+            ("other", 30., 2, -1.),
+        ] {
+            set_enum_event(&i, name, payload);
+            let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_dispatch_turn(&i, &topology, &outcome, arm, output);
+        }
+    }
+    #[test]
+    fn activation_pattern_enum_arms_compile_independent_of_initial_variant() {
+        let (mut i, trigger, r, topology) = load_enum_activation();
+        assert_eq!(r.arms[1].captures[0].kind, ValueKind::F64);
+        set_enum_event(&i, "released", 20.);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 1, 1020.);
+    }
+    #[test]
+    fn activation_pattern_enum_payload_capture_is_available() {
+        let (mut i, trigger, r, topology) = load_enum_activation();
+        let cell = r.arms[0].captures[0].cell;
+        assert!(
+            i.plan().borrow().nodes[r.arms[0].body_node_start..r.arms[0].body_node_end]
+                .iter()
+                .any(|n| n.inputs.iter().any(|d| d.cell == cell))
+        );
+        set_enum_event(&i, "pressed", 10.);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 10.);
+    }
+    #[test]
+    fn activation_pattern_equal_packets_dispatch_repeatedly() {
+        let (mut i, trigger, _, topology) = load_enum_activation();
+        set_enum_event(&i, "pressed", 30.);
+        for _ in 0..2 {
+            let o = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_dispatch_turn(&i, &topology, &o, 0, 30.);
+        }
+    }
+    #[test]
+    fn activation_pattern_unselected_arm_nodes_do_not_execute() {
+        let (mut i, trigger, r, topology) = load_enum_activation();
+        set_enum_event(&i, "released", 20.);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 1, 1020.);
+        let executed = turn_executed_nodes(&o);
+        for arm in [&r.arms[0], &r.arms[2]] {
+            for node in arm.body_node_start..arm.body_node_end {
+                assert!(!executed.contains(&node));
+            }
+        }
+    }
+    #[test]
+    fn activation_pattern_switching_arms_does_not_grow_plan() {
+        let (mut i, trigger, _, topology) = load_enum_activation();
+        for (name, payload) in [
+            ("pressed", 10.),
+            ("released", 20.),
+            ("other", 30.),
+            ("pressed", 30.),
+            ("pressed", 30.),
+        ] {
+            set_enum_event(&i, name, payload);
+            i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_eq!(plan_snapshot(&i), topology);
+        }
+    }
+    #[test]
+    fn activation_pattern_capture_storage_identity_is_stable() {
+        let (mut i, trigger, r, topology) = load_enum_activation();
+        let captures = r
+            .arms
+            .iter()
+            .flat_map(|arm| arm.captures.iter())
+            .map(|capture| (capture.id, capture.kind.clone(), capture.cell))
+            .collect::<Vec<_>>();
+        for (name, payload) in [("pressed", 10.), ("released", 20.), ("other", 30.)] {
+            set_enum_event(&i, name, payload);
+            i.advance_reactive_turn(&[trigger]).unwrap();
+            let current = registration(&i)
+                .arms
+                .iter()
+                .flat_map(|arm| arm.captures.iter())
+                .map(|capture| (capture.id, capture.kind.clone(), capture.cell))
+                .collect::<Vec<_>>();
+            assert_eq!(current, captures);
+            assert_eq!(plan_snapshot(&i), topology);
+        }
+    }
+
+    const ATOM_TUPLE_ACTIVATION: &str = r#"
+event := (:pressed, 0.0)
+~> event
+  | :pressed(x) => {
+      selected := x + 0.0
+    }
+  | :released(x) => {
+      selected := x + 1000.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#;
+    fn load_atom_tuple_activation() -> (
+        Interpreter,
+        ReactiveCellId,
+        PatternActivationRegistration,
+        PlanSnapshot,
+    ) {
+        let i = interpret(ATOM_TUPLE_ACTIVATION);
+        let trigger = root_cell(&i, "event");
+        let r = registration(&i);
+        let topology = plan_snapshot(&i);
+        (i, trigger, r, topology)
+    }
+    #[test]
+    fn activation_pattern_atom_tagged_tuple_selects_arm() {
+        let (mut i, trigger, _, topology) = load_atom_tuple_activation();
+        for (tag, payload, arm, output) in [
+            ("pressed", 10., 0, 10.),
+            ("released", 20., 1, 1020.),
+            ("other", 30., 2, -1.),
+        ] {
+            set_atom_tuple_event(&i, tag, payload);
+            let o = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_dispatch_turn(&i, &topology, &o, arm, output);
+        }
+    }
+    #[test]
+    fn activation_pattern_atom_tagged_tuple_captures_payload() {
+        let (mut i, trigger, r, topology) = load_atom_tuple_activation();
+        assert_eq!(r.arms[0].captures[0].kind, ValueKind::F64);
+        let cell = r.arms[0].captures[0].cell;
+        assert!(
+            i.plan().borrow().nodes[r.arms[0].body_node_start..r.arms[0].body_node_end]
+                .iter()
+                .any(|n| n.inputs.iter().any(|d| d.cell == cell))
+        );
+        set_atom_tuple_event(&i, "pressed", 10.);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 10.);
+    }
+    #[test]
+    fn activation_pattern_atom_tuple_arms_compile_independent_of_initial_tag() {
+        let (mut i, trigger, r, topology) = load_atom_tuple_activation();
+        assert_eq!(r.arms[0].captures[0].kind, ValueKind::F64);
+        assert_eq!(r.arms[1].captures[0].kind, ValueKind::F64);
+        set_atom_tuple_event(&i, "released", 20.);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 1, 1020.);
+    }
+
+    const FLAT_TUPLE_ACTIVATION: &str = r#"
+event := (1.0, 2.0)
+~> event
+  | (x, y) => {
+      selected := x * 10.0 + y
+    }
+  | * => {
+      selected := -1.0
+    }
+"#;
+    const NESTED_TUPLE_ACTIVATION: &str = r#"
+event := ((1.0, 2.0), 3.0)
+~> event
+  | ((x, y), z) => {
+      selected := x * 100.0 + y * 10.0 + z
+    }
+  | * => {
+      selected := -1.0
+    }
+"#;
+    const REPEATED_CAPTURE_ACTIVATION: &str = r#"
+event := (1.0, 1.0)
+~> event
+  | (x, x) => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#;
+    fn tuple_fixture(source: &str) -> (Interpreter, ReactiveCellId, PlanSnapshot) {
+        let i = interpret(source);
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        (i, trigger, topology)
+    }
+    #[test]
+    fn activation_pattern_tuple_captures_elements() {
+        let (mut i, trigger, topology) = tuple_fixture(FLAT_TUPLE_ACTIVATION);
+        set_tuple_event(&i, vec![Value::F64(Ref::new(3.)), Value::F64(Ref::new(4.))]);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 34.);
+    }
+    #[test]
+    fn activation_pattern_nested_tuple_captures_elements() {
+        let (mut i, trigger, topology) = tuple_fixture(NESTED_TUPLE_ACTIVATION);
+        set_tuple_event(
+            &i,
+            vec![
+                Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+                    Value::F64(Ref::new(4.)),
+                    Value::F64(Ref::new(5.)),
+                ]))),
+                Value::F64(Ref::new(6.)),
+            ],
+        );
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 456.);
+    }
+    #[test]
+    fn activation_pattern_repeated_capture_requires_equal_values() {
+        let (mut i, trigger, topology) = tuple_fixture(REPEATED_CAPTURE_ACTIVATION);
+        set_tuple_event(&i, vec![Value::F64(Ref::new(2.)), Value::F64(Ref::new(2.))]);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 2.);
+        set_tuple_event(&i, vec![Value::F64(Ref::new(2.)), Value::F64(Ref::new(3.))]);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 1, -1.);
+    }
+    #[test]
+    fn activation_pattern_repeated_capture_kind_mismatch_is_structured() {
+        let mut i = interpret("event := (1.0, \"one\")");
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            "~> event\n  | (x, x) => {
+      selected := x
+    }\n  | * => {
+      selected := 0.0
+    }",
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(!i.symbols().borrow().contains(hash_str("x")));
+        assert!(!i.symbols().borrow().contains(hash_str("selected")));
+    }
+
+    #[test]
+    fn activation_pattern_capture_does_not_leak() {
+        let (mut i, trigger, topology) = tuple_fixture(FLAT_TUPLE_ACTIVATION);
+        for name in ["x", "y", "selected"] {
+            assert!(!i.symbols().borrow().contains(hash_str(name)));
+        }
+        set_tuple_event(&i, vec![Value::F64(Ref::new(3.)), Value::F64(Ref::new(4.))]);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 34.);
+    }
+    #[test]
+    fn activation_pattern_capture_shadows_and_restores_outer_symbol() {
+        let mut i = interpret("event := (1.0, 2.0)\nx := 99.0");
+        let outer = symbol_ref(&i, "x");
+        let address = outer.addr();
+        interpret_more(
+            &mut i,
+            "~> event\n  | (x, y) => {
+      selected := x + y
+    }\n  | * => {
+      selected := -1.0
+    }",
+        )
+        .unwrap();
+        assert_eq!(*symbol(&i, "x").as_f64().unwrap().borrow(), 99.);
+        assert_eq!(symbol_ref(&i, "x").addr(), address);
+        assert!(!i.symbols().borrow().contains(hash_str("y")));
+        assert!(!i.symbols().borrow().contains(hash_str("selected")));
+        let topology = plan_snapshot(&i);
+        let trigger = root_cell(&i, "event");
+        set_tuple_event(&i, vec![Value::F64(Ref::new(3.)), Value::F64(Ref::new(4.))]);
+        let o = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &o, 0, 7.);
+    }
+    #[test]
+    fn activation_pattern_arm_definitions_do_not_leak_between_arms() {
+        let mut i = interpret("event := (1.0, 2.0)");
+        let symbols = i.symbols().borrow().snapshot();
+        let dictionary = i.dictionary().borrow().clone();
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            "~> event\n  | (x, y) => {
+      first-local := x + y
+    }\n  | (a, b) => {
+      second-local := first-local + a + b
+    }\n  | * => {
+      fallback := 0.0
+    }",
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "UndefinedVariable");
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(*i.dictionary().borrow(), dictionary);
+        assert_eq!(plan_snapshot(&i), topology);
+        for name in [
+            "first-local",
+            "second-local",
+            "fallback",
+            "x",
+            "y",
+            "a",
+            "b",
+        ] {
+            assert!(!i.symbols().borrow().contains(hash_str(name)));
+        }
+    }
+
+    fn failed_elaboration_fixture() -> (
+        Interpreter,
+        SymbolTableSnapshot,
+        Dictionary,
+        PlanSnapshot,
+        ValRef,
+        usize,
+    ) {
+        let i = interpret("event := (1.0, 2.0)\nouter := 99.0");
+        let symbols = i.symbols().borrow().snapshot();
+        let dictionary = i.dictionary().borrow().clone();
+        let topology = plan_snapshot(&i);
+        let outer = symbol_ref(&i, "outer");
+        let address = outer.addr();
+        (i, symbols, dictionary, topology, outer, address)
+    }
+    fn assert_failed_elaboration_restored() -> (
+        Interpreter,
+        SymbolTableSnapshot,
+        Dictionary,
+        PlanSnapshot,
+        usize,
+    ) {
+        let (mut i, symbols, dictionary, topology, outer, address) = failed_elaboration_fixture();
+        let error=interpret_more(&mut i,"~> event\n  | (x, y) => {\n      local-atom := :temporary\n      local-first := x + y\n      local-failure := function-that-does-not-exist(local-first)\n    }\n  | * => {
+      fallback := 0.0
+    }").unwrap_err();
+        assert!(error.kind_name().contains("Function"));
+        assert!(!i.dictionary().borrow().contains_key(&hash_str("temporary")));
+        for name in [
+            "local-atom",
+            "local-first",
+            "local-failure",
+            "fallback",
+            "x",
+            "y",
+        ] {
+            assert!(!i.symbols().borrow().contains(hash_str(name)));
+        }
+        assert_eq!(*symbol(&i, "outer").as_f64().unwrap().borrow(), 99.);
+        assert_eq!(symbol_ref(&i, "outer").addr(), address);
+        drop(outer);
+        (i, symbols, dictionary, topology, address)
+    }
+    #[test]
+    fn activation_pattern_elaboration_error_restores_symbol_table() {
+        let (i, symbols, _, _, _) = assert_failed_elaboration_restored();
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+    }
+    #[test]
+    fn activation_pattern_elaboration_error_restores_program_dictionary() {
+        let (i, _, dictionary, _, _) = assert_failed_elaboration_restored();
+        assert_eq!(*i.dictionary().borrow(), dictionary);
+    }
+    #[test]
+    fn activation_pattern_elaboration_error_restores_plan() {
+        let (i, _, _, topology, _) = assert_failed_elaboration_restored();
+        assert_eq!(plan_snapshot(&i), topology);
+    }
+    #[test]
+    fn activation_pattern_preflight_error_does_not_modify_plan() {
+        let mut i = interpret("event := (1.0, \"one\")");
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            "~> event\n  | (x, x) => {
+      selected := x
+    }\n  | * => {
+      selected := 0.0
+    }",
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(plan_snapshot(&i), topology);
+    }
+    #[test]
+    fn activation_pattern_recursive_preflight_rejects_nested_activation() {
+        let mut i = interpret("event := 1.0\ntick := 0.0");
+        let symbols = i.symbols().borrow().snapshot();
+        let dictionary = i.dictionary().borrow().clone();
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            "~> event\n  | 1.0 => {\n      ~> tick {\n        nested := 1.0\n      }\n    }\n  | * => {\n      fallback := 0.0\n    }",
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternDefinitionUnsupported");
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(*i.dictionary().borrow(), dictionary);
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(!i.symbols().borrow().contains(hash_str("nested")));
+        assert!(!i.symbols().borrow().contains(hash_str("fallback")));
+    }
+    #[test]
+    fn activation_pattern_recursive_preflight_rejects_context_declaration() {
+        let mut i = interpret("event := 1.0");
+        let symbols = i.symbols().borrow().snapshot();
+        let dictionary = i.dictionary().borrow().clone();
+        let topology = plan_snapshot(&i);
+        let error = interpret_more(
+            &mut i,
+            "~> event\n  | 1.0 => {
+      @temporary := test://resource
+    }\n  | * => {
+      fallback := 0.0
+    }",
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternDefinitionUnsupported");
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(*i.dictionary().borrow(), dictionary);
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(!i.symbols().borrow().contains(hash_str("fallback")));
+    }
 }
