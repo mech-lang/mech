@@ -409,6 +409,29 @@ impl MechFunctionCompiler for UserFunction {
 
 pub type ReactiveNodeId = usize;
 
+/// Read-only registration information for a patterned activation.
+///
+/// This belongs to the plan, rather than to a turn, so consumers can inspect
+/// the statically registered dispatch graph without relying on transient
+/// scheduler state.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationRegistration {
+  pub scope_pulse_node: ReactiveNodeId,
+  pub selector_node: ReactiveNodeId,
+  pub arms: Vec<PatternActivationArmRegistration>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationArmRegistration {
+  pub matcher_node: ReactiveNodeId,
+  pub finalizer_node: ReactiveNodeId,
+  pub gate_node: ReactiveNodeId,
+  pub pulse_cell: ReactiveCellId,
+  /// Half-open range of plan nodes registered for this arm's body.
+  pub body_node_start: usize,
+  pub body_node_end: usize,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReactiveDependencyKind {
   Reactive,
@@ -491,6 +514,7 @@ pub struct ReactivePlan {
   pub nodes: Vec<ReactivePlanNode>,
   pub reactive_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
   pub sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
+  pattern_activation_registrations: Vec<PatternActivationRegistration>,
 }
 
 #[derive(Debug, Clone)]
@@ -594,6 +618,7 @@ impl ReactivePlan {
       nodes: Vec::new(),
       reactive_consumers: HashMap::new(),
       sampled_consumers: HashMap::new(),
+      pattern_activation_registrations: Vec::new(),
     }
   }
 
@@ -609,6 +634,7 @@ impl ReactivePlan {
     self.nodes.clear();
     self.reactive_consumers.clear();
     self.sampled_consumers.clear();
+    self.pattern_activation_registrations.clear();
   }
 
   pub fn iter(&self) -> impl Iterator<Item = &Box<dyn MechFunction>> {
@@ -789,6 +815,14 @@ impl ReactivePlan {
 
   pub fn node(&self, node_id: ReactiveNodeId) -> Option<&ReactivePlanNode> {
     self.nodes.get(node_id)
+  }
+
+  pub fn pattern_activation_registrations(&self) -> &[PatternActivationRegistration] {
+    &self.pattern_activation_registrations
+  }
+
+  pub fn register_pattern_activation(&mut self, registration: PatternActivationRegistration) {
+    self.pattern_activation_registrations.push(registration);
   }
 
   pub fn reactive_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
@@ -1022,6 +1056,10 @@ impl Plan {
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
     self.0.borrow()
+  }
+
+  pub fn pattern_activation_registrations(&self) -> std::cell::Ref<'_, Vec<PatternActivationRegistration>> {
+    std::cell::Ref::map(self.0.borrow(), |plan| &plan.pattern_activation_registrations)
   }
 
   pub fn len(&self) -> usize {
