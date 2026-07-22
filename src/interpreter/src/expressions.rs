@@ -36,86 +36,6 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-pub fn pattern_match_value(
-    pattern: &Pattern,
-    value: &Value,
-    env: &mut Environment,
-    p: &Interpreter,
-) -> MResult<()> {
-    match pattern {
-        Pattern::Wildcard => Ok(()),
-        Pattern::Expression(expr) => match expr {
-            Expression::Var(var) => {
-                let id = &var.name.hash();
-                match env.get(id) {
-                    Some(existing) if existing == value => Ok(()),
-                    Some(existing) => Err(MechError::new(
-                        PatternMatchError {
-                            var: var.name.to_string(),
-                            expected: existing.to_string(),
-                            found: value.to_string(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                    None => {
-                        env.insert(id.clone(), value.clone());
-                        Ok(())
-                    }
-                }
-            }
-            _ => {
-                let expected = expression(expr, Some(env), p)?;
-                if detach_comprehension_value(&expected) == detach_comprehension_value(value) {
-                    Ok(())
-                } else {
-                    Err(MechError::new(
-                        PatternMatchError {
-                            var: "<expression>".to_string(),
-                            expected: expected.to_string(),
-                            found: value.to_string(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc())
-                }
-            }
-        },
-        #[cfg(feature = "tuple")]
-        Pattern::Tuple(pat_tuple) => match value {
-            Value::Tuple(values) => {
-                let values_brrw = values.borrow();
-                if pat_tuple.0.len() != values_brrw.elements.len() {
-                    return Err(MechError::new(
-                        ArityMismatchError {
-                            expected: pat_tuple.0.len(),
-                            found: values_brrw.elements.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-                for (pttrn, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
-                    pattern_match_value(pttrn, val, env, p)?;
-                }
-                Ok(())
-            }
-            _ => Err(MechError::new(
-                PatternExpectedTupleError {
-                    found: value.kind(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        },
-        Pattern::TupleStruct(pat_struct) => {
-            todo!("Implement tuple struct pattern matching")
-        }
-        _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
-    }
-}
-
-#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn comprehension_environments(
     qualifiers: &[ComprehensionQualifier],
     comprehension_id: u64,
@@ -128,12 +48,19 @@ fn comprehension_environments(
     for qual in qualifiers {
         envs = match qual {
             ComprehensionQualifier::Generator((pttrn, expr)) => {
+                let compiled = crate::patterns::compile_pattern(pttrn, None, &new_p)?;
                 let mut new_envs = Vec::new();
                 for env in &envs {
                     let collection = expression(expr, Some(env), &new_p)?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
-                        if pattern_match_value(pttrn, &elmnt, &mut new_env, &new_p).is_ok() {
+                        let pattern_match =
+                            crate::patterns::match_compiled_pattern_with_environment_constraints(
+                                &compiled, &elmnt, &new_env, &new_p,
+                            )?;
+                        if pattern_match.matched {
+                            crate::patterns::EnvironmentBindingSink::new(&mut new_env)
+                                .commit(&pattern_match)?;
                             new_envs.push(new_env);
                         }
                     }
@@ -1406,19 +1333,21 @@ pub fn match_expression(
         let mut guard_env = base_env.clone();
         let matched = match &arm.pattern {
             Pattern::Wildcard => true,
-            _ => crate::patterns::pattern_matches_value_with_semantics(
+            _ => crate::patterns::pattern_matches_value(
                 &arm.pattern,
                 &detached_source,
                 &mut guard_env,
                 p,
-                crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
+        if !matched {
+            continue;
+        }
         let passed_guard = match &arm.guard {
             Some(guard) => guard_expression_true(guard, &guard_env, p)?,
             None => true,
         };
-        if matched && passed_guard {
+        if passed_guard {
             #[cfg(feature = "matrix")]
             if value_contains_empty(&detached_source) && is_identity_option_matrix_arm(arm) {
                 if let Some(wildcard_arm) = match_expr
@@ -1561,19 +1490,21 @@ fn match_validate_arm_kinds(
         let mut arm_env = base_env.clone();
         let applicable = match arm.pattern {
             Pattern::Wildcard => true,
-            _ => crate::patterns::pattern_matches_value_with_semantics(
+            _ => crate::patterns::pattern_matches_value(
                 &arm.pattern,
                 source,
                 &mut arm_env,
                 p,
-                crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
+        if !applicable {
+            continue;
+        }
         let passed_guard = match &arm.guard {
             Some(guard) => guard_expression_true(guard, &arm_env, p)?,
             None => true,
         };
-        if !(applicable && passed_guard) {
+        if !passed_guard {
             continue;
         }
         let arm_value = expression(&arm.expression, Some(&arm_env), p)?;

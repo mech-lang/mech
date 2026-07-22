@@ -3360,6 +3360,126 @@ result := \"x\"?
 }
 
 #[test]
+fn activation_arm_pattern_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+event := \"x\"
+~> event
+  | (@env/HOME) => {
+      selected := true
+    }
+  | * => {
+      selected := false
+    }
+",
+  );
+
+  assert!(result.is_err(), "activation arm context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn activation_arm_context_read_pattern_is_lowered_when_allowed() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  state.lock().unwrap().env.insert(
+    "MECH_ACTIVATION_PATTERN".to_string(),
+    "expected".to_string(),
+  );
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "cli://cli/env".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["MECH_ACTIVATION_PATTERN".to_string()],
+  }).unwrap();
+
+  let result = runtime.run_string(
+    "@env := cli://env{:read(MECH_ACTIVATION_PATTERN)}
+event := \"expected\"
+~> event
+  | (@env/MECH_ACTIVATION_PATTERN) => {
+      selected := true
+    }
+  | * => {
+      selected := false
+    }
+",
+  );
+
+  assert!(result.is_ok(), "allowed activation context pattern failed: {result:?}");
+  assert_eq!(runtime.live_input_binding_count(), 1);
+  let registration = {
+    let plan = runtime.program().interpreter().plan();
+    let registrations = plan.pattern_activation_registrations();
+    assert_eq!(registrations.len(), 1);
+    registrations[0].clone()
+  };
+
+  let update = runtime.apply_host_input(RuntimeHostInput::single(
+    RuntimeHostInputSource::new("cli://env", "MECH_ACTIVATION_PATTERN").unwrap(),
+    RuntimeHostInputValue::String("next".to_string()),
+  )).unwrap();
+  assert_eq!(update.binding_count, 1);
+  assert_eq!(update.ignored_update_count, 0);
+  if let Some(turn) = &update.turn {
+    for interpreter_turn in &turn.interpreter_turns {
+      let executed_nodes = interpreter_turn
+        .turn
+        .before_commit
+        .executed_nodes
+        .iter()
+        .chain(interpreter_turn.turn.after_commit.executed_nodes.iter())
+        .copied()
+        .collect::<Vec<_>>();
+      assert!(!executed_nodes.contains(&registration.scope_pulse_node));
+      assert!(!executed_nodes.contains(&registration.selector_node));
+      for arm in &registration.arms {
+        assert!(!executed_nodes.contains(&arm.matcher_node));
+        assert!(!executed_nodes.contains(&arm.finalizer_node));
+        assert!(!executed_nodes.contains(&arm.gate_node));
+      }
+    }
+  }
+
+  let trigger = {
+    let symbols = runtime.program().interpreter().symbols();
+    let event = symbols.borrow().get(hash_str("event")).unwrap().borrow().clone();
+    event.reactive_root_cell_ids()[0]
+  };
+  let trigger_turn = runtime
+    .program_mut()
+    .interpreter_mut()
+    .advance_reactive_turn(&[trigger])
+    .unwrap();
+  let changed_nodes = trigger_turn
+    .before_commit
+    .changed_nodes
+    .iter()
+    .chain(trigger_turn.after_commit.changed_nodes.iter())
+    .copied()
+    .collect::<Vec<_>>();
+  assert!(!changed_nodes.contains(&registration.arms[0].gate_node));
+  assert!(
+    changed_nodes.contains(&registration.arms[1].gate_node),
+    "the trigger did not sample the updated pattern value",
+  );
+}
+
+#[test]
 fn fsm_pipe_transition_context_read_fails_preflight_before_stdout_write() {
   let (mut runtime, state) = runtime_with_recording_cli();
   grant_runtime_stdout_line(&mut runtime);

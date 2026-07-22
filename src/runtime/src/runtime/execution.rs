@@ -542,8 +542,13 @@ impl MechRuntime {
     value: Value,
   ) -> MResult<mech_core::Expression> {
     self.validate_live_context_candidate(context)?;
-    let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
-    let symbol_id = hash_str(&name);
+    let identifier = mech_core::internal_pattern_value_identifier(&format!(
+      "context-{}-{}",
+      hash_str(source.base_uri()),
+      hash_str(source.path())
+    ));
+    let name = identifier.to_string();
+    let symbol_id = identifier.hash();
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
     if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
       let bindings = self.live_input_bindings.entry(source).or_default();
@@ -553,7 +558,7 @@ impl MechRuntime {
       self.commit_live_context_candidate(context);
     }
     let var = mech_core::Var {
-      name: identifier_from_str(&name),
+      name: identifier,
       context: None,
       kind: None,
     };
@@ -949,92 +954,53 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<mech_core::Expression> {
-    if let Some(expression) = self.literalize_match_pattern_context_read_expression(
-      context,
+    if let Some(expression) = self.resolve_interpreter_address_pattern_expression(
       program,
       registry,
       expression,
     )? {
       return Ok(expression);
     }
-
     self.resolve_context_reads_in_expression(context, program, registry, expression)
   }
 
-  fn literalize_match_pattern_context_read_expression(
+  fn resolve_interpreter_address_pattern_expression(
     &mut self,
-    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<Option<mech_core::Expression>> {
     match expression {
       mech_core::Expression::Var(var) => {
-        self.literalize_match_pattern_context_read_var(context, program, registry, var)
+        let Some(var_context) = &var.context else {
+          return Ok(None);
+        };
+        let target = var_context.to_string();
+        if registry.get(&target).is_some() {
+          return Ok(None);
+        }
+
+        let address = format!("@{target}/{}", var.name.to_string());
+        let value = {
+          let symbols = program.interpreter().symbols();
+          let symbols = symbols.borrow();
+          symbols
+            .get(hash_str(&address))
+            .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
+        };
+        match value {
+          Some(value) => self.resolved_pattern_value_expression(value).map(Some),
+          None => Ok(None),
+        }
       }
       mech_core::Expression::Formula(factor) => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, factor)
+        self.resolve_interpreter_address_pattern_factor(program, registry, factor)
       }
       _ => Ok(None),
     }
   }
 
-  fn literalize_match_pattern_context_read_factor(
-    &mut self,
-    context: &RuntimeContext,
-    program: &mut MechProgram,
-    registry: &RuntimeContextRegistry,
-    factor: &mech_core::Factor,
-  ) -> MResult<Option<mech_core::Expression>> {
-    match factor {
-      mech_core::Factor::Expression(expression) => {
-        self.literalize_match_pattern_context_read_expression(context, program, registry, expression)
-      }
-      mech_core::Factor::Parenthetical(inner) => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, inner)
-      }
-      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, &term.lhs)
-      }
-      _ => Ok(None),
-    }
-  }
-
-  fn literalize_match_pattern_context_read_var(
-    &mut self,
-    context: &RuntimeContext,
-    program: &mut MechProgram,
-    registry: &RuntimeContextRegistry,
-    var: &mech_core::Var,
-  ) -> MResult<Option<mech_core::Expression>> {
-    let Some(var_context) = &var.context else {
-      return Ok(None);
-    };
-
-    let target = var_context.to_string();
-    let path = var.name.to_string();
-    if let Some(binding) = registry.get(&target) {
-      let value = self.read_context_resource(context, binding, &path)?;
-      return Ok(Some(self.context_pattern_value_expression(value)?));
-    }
-
-    let address_key = format!("@{target}/{path}");
-    let value = {
-      let symbols = program.interpreter().symbols();
-      let symbols = symbols.borrow();
-      symbols
-        .get(hash_str(&address_key))
-        .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
-    };
-
-    if let Some(value) = value {
-      return Ok(Some(self.context_pattern_value_expression(value)?));
-    }
-
-    Ok(None)
-  }
-
-  fn context_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+  fn resolved_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
     let value = resolve_runtime_value(value);
     match value {
       Value::String(value) => {
@@ -1062,9 +1028,31 @@ impl MechRuntime {
         vec!['_'],
       )))),
       other => Err(MechError::new(RuntimeInvalidOperationError {
-        operation: "context_match_pattern",
-        reason: format!("context match patterns currently support string, bool, and empty values; got {other:?}"),
+        operation: "interpreter_address_pattern",
+        reason: format!(
+          "interpreter-address patterns currently support string, bool, and empty values; got {other:?}",
+        ),
       }, None)),
+    }
+  }
+
+  fn resolve_interpreter_address_pattern_factor(
+    &mut self,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.resolve_interpreter_address_pattern_expression(program, registry, expression)
+      }
+      mech_core::Factor::Parenthetical(inner) => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, inner)
+      }
+      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, &term.lhs)
+      }
+      _ => Ok(None),
     }
   }
 
@@ -1194,7 +1182,10 @@ impl MechRuntime {
       mech_core::MechCode::ActivationScope(scope) => {
         let mut scope = scope.clone();
         scope.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
-        scope.body = scope.body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?;
+        scope.body = match scope.body {
+          mech_core::ActivationBody::Block(body) => mech_core::ActivationBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
+          mech_core::ActivationBody::PatternArms(arms) => mech_core::ActivationBody::PatternArms(arms),
+        };
         Ok(mech_core::MechCode::ActivationScope(scope))
       },
       mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
@@ -1294,11 +1285,38 @@ impl MechRuntime {
       mech_core::MechCode::ActivationScope(scope) => {
         if !pending_codes.is_empty() { pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes))); }
         self.flush_direct_execution(program, pending, result)?;
+        // Pure patterned scopes are lowered structurally and then handed to
+        // the interpreter's static patterned-dispatch elaborator.  Effects
+        // remain intentionally unsupported in this path.
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          let mut lowered = scope.clone();
+          lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+          let mut lowered_arms = Vec::with_capacity(arms.len());
+          for arm in arms {
+            let pattern = self.resolve_context_reads_in_match_pattern(
+              context,
+              program,
+              registry,
+              &arm.pattern,
+            )?;
+            let guard = arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?;
+            let body = match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => mech_core::ActivationArmBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
+              mech_core::ActivationArmBody::Expression(expression) => mech_core::ActivationArmBody::Expression(self.resolve_context_reads_in_expression(context, program, registry, expression)?),
+            };
+            lowered_arms.push(mech_core::ActivationArm { pattern, guard, body });
+          }
+          lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          return Ok(());
+        }
         let mut lowered = scope.clone();
         lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
         let mut registrations = Vec::new();
-        lowered.body.clear();
-        for (body_code, body_comment) in &scope.body {
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
+        lowered.body = mech_core::ActivationBody::Block(vec![]);
+        let lowered_body = match &mut lowered.body { mech_core::ActivationBody::Block(body) => body, _ => unreachable!() };
+        for (body_code, body_comment) in scope_body {
           match body_code {
             mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
               let context_name = send.target.context.as_ref().unwrap().to_string();
@@ -1306,17 +1324,17 @@ impl MechRuntime {
               let index = self.persistent_sends.len() + registrations.len();
               let value_name = format!("{ACTIVATION_SEND_PAYLOAD_NAME_PREFIX}{index}");
               let value = mech_core::VariableDefine { mutable: false, var: mech_core::Var { name: identifier_from_str(&value_name), context: None, kind: None }, expression: self.resolve_context_reads_in_expression(context, program, registry, &send.expression)? };
-              lowered.body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
+              lowered_body.push((mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(value)), body_comment.clone()));
               registrations.push((binding, send.target.name.to_string(), hash_str(&value_name)));
             }
-            _ => lowered.body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+            _ => lowered_body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
           }
         }
         if registrations.is_empty() {
           program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
           return Ok(());
         }
-        lowered.body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
+        lowered_body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
         self.validate_live_context_candidate(context)?;
         let plan_start = program.interpreter().plan().borrow().nodes.len();
         program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
@@ -1477,18 +1495,35 @@ impl MechRuntime {
     match code {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
-        let has_send = scope.body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          for arm in arms {
+            self.preflight_pattern_context_reads(
+              context,
+              registry,
+              &arm.pattern,
+              addressed_read_preflight,
+            )?;
+            if let Some(guard) = &arm.guard { self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?; }
+            match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => for (code, _) in body { self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?; },
+              mech_core::ActivationArmBody::Expression(expression) => self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?,
+            }
+          }
+          return Ok(());
+        }
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
+        let has_send = scope_body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
         // Only writes to local registers conflict with an effectful activation.
         // Context-addressed assignments have their own, operation-specific
         // placement error below (they are top-level only).
-        let has_register = scope.body.iter().any(|(code, _)| match code {
+        let has_register = scope_body.iter().any(|(code, _)| match code {
           mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => assign.target.context.is_none(),
           mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => assign.target.context.is_none(),
           _ => false,
         });
         if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
         if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
-        for (body_code, _) in &scope.body {
+        for (body_code, _) in scope_body {
           self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
         }
         Ok(())
