@@ -1297,10 +1297,29 @@ impl MechRuntime {
       mech_core::MechCode::ActivationScope(scope) => {
         if !pending_codes.is_empty() { pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes))); }
         self.flush_direct_execution(program, pending, result)?;
+        // Pure patterned scopes are lowered structurally and then handed to
+        // the interpreter's static patterned-dispatch elaborator.  Effects
+        // remain intentionally unsupported in this path.
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          let mut lowered = scope.clone();
+          lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+          let mut lowered_arms = Vec::with_capacity(arms.len());
+          for arm in arms {
+            let guard = arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?;
+            let body = match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => mech_core::ActivationArmBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
+              mech_core::ActivationArmBody::Expression(expression) => mech_core::ActivationArmBody::Expression(self.resolve_context_reads_in_expression(context, program, registry, expression)?),
+            };
+            lowered_arms.push(mech_core::ActivationArm { pattern: arm.pattern.clone(), guard, body });
+          }
+          lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          return Ok(());
+        }
         let mut lowered = scope.clone();
         lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
         let mut registrations = Vec::new();
-        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => { return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: "patterned activation bodies are not yet lowered".to_string() }, None)); } };
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
         lowered.body = mech_core::ActivationBody::Block(vec![]);
         let lowered_body = match &mut lowered.body { mech_core::ActivationBody::Block(body) => body, _ => unreachable!() };
         for (body_code, body_comment) in scope_body {
@@ -1482,7 +1501,17 @@ impl MechRuntime {
     match code {
       mech_core::MechCode::ActivationScope(scope) => {
         self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
-        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: "patterned activation bodies are not yet supported".to_string() }, None)) };
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          for arm in arms {
+            if let Some(guard) = &arm.guard { self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?; }
+            match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => for (code, _) in body { self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?; },
+              mech_core::ActivationArmBody::Expression(expression) => self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?,
+            }
+          }
+          return Ok(());
+        }
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
         let has_send = scope_body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
         // Only writes to local registers conflict with an effectful activation.
         // Context-addressed assignments have their own, operation-specific
