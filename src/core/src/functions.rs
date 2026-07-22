@@ -621,10 +621,32 @@ impl MechErrorKind for ReactiveDependencyKindConflictError {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ReactivePlanCheckpoint { node_len:usize, pattern_activation_registration_len:usize }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct PlanCheckpoint { reactive:ReactivePlanCheckpoint, activation_registration_depth:usize }
-#[derive(Debug,Clone)] pub struct ReactivePlanRollbackInvariantError { pub checkpoint_nodes:usize,pub current_nodes:usize,pub checkpoint_registrations:usize,pub current_registrations:usize }
-impl MechErrorKind for ReactivePlanRollbackInvariantError { fn name(&self)->&str{"ReactivePlanRollbackInvariant"} fn message(&self)->String{format!("Cannot roll the reactive plan back from {} nodes and {} patterned registrations to {} nodes and {} patterned registrations.",self.current_nodes,self.current_registrations,self.checkpoint_nodes,self.checkpoint_registrations)} }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReactivePlanCheckpoint {
+  node_len: usize,
+  pattern_activation_registration_len: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PlanCheckpoint {
+  reactive: ReactivePlanCheckpoint,
+  activation_registration_depth: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactivePlanRollbackInvariantError {
+  pub checkpoint_nodes: usize,
+  pub current_nodes: usize,
+  pub checkpoint_registrations: usize,
+  pub current_registrations: usize,
+}
+
+impl MechErrorKind for ReactivePlanRollbackInvariantError {
+  fn name(&self) -> &str { "ReactivePlanRollbackInvariant" }
+  fn message(&self) -> String {
+    format!("Cannot roll the reactive plan back from {} nodes and {} patterned registrations to {} nodes and {} patterned registrations.", self.current_nodes, self.current_registrations, self.checkpoint_nodes, self.checkpoint_registrations)
+  }
+}
 
 impl ReactivePlan {
   fn rebuild_consumer_indexes(&mut self) { self.reactive_consumers.clear(); self.sampled_consumers.clear(); for node in &self.nodes { for dependency in &node.inputs { let consumers=match dependency.kind { ReactiveDependencyKind::Reactive=>&mut self.reactive_consumers, ReactiveDependencyKind::Sampled=>&mut self.sampled_consumers }; consumers.entry(dependency.cell).or_default().push(node.id); } } }

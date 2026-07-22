@@ -109,10 +109,34 @@ fn clone_ref_value<T: Clone>(destination: &Ref<T>, source: &Ref<T>) {
 }
 fn create_capture_slot_for_kind(kind: &ValueKind) -> MResult<Value> {
     match kind.deref_kind() {
+        #[cfg(feature = "u8")]
+        ValueKind::U8 => Ok(Value::U8(Ref::new(0))),
+        #[cfg(feature = "u16")]
+        ValueKind::U16 => Ok(Value::U16(Ref::new(0))),
+        #[cfg(feature = "u32")]
+        ValueKind::U32 => Ok(Value::U32(Ref::new(0))),
+        #[cfg(feature = "u64")]
+        ValueKind::U64 => Ok(Value::U64(Ref::new(0))),
+        #[cfg(feature = "u128")]
+        ValueKind::U128 => Ok(Value::U128(Ref::new(0))),
+        #[cfg(feature = "i8")]
+        ValueKind::I8 => Ok(Value::I8(Ref::new(0))),
+        #[cfg(feature = "i16")]
+        ValueKind::I16 => Ok(Value::I16(Ref::new(0))),
+        #[cfg(feature = "i32")]
+        ValueKind::I32 => Ok(Value::I32(Ref::new(0))),
+        #[cfg(feature = "i64")]
+        ValueKind::I64 => Ok(Value::I64(Ref::new(0))),
+        #[cfg(feature = "i128")]
+        ValueKind::I128 => Ok(Value::I128(Ref::new(0))),
         #[cfg(feature = "f64")]
         ValueKind::F64 => Ok(Value::F64(Ref::new(0.0))),
         #[cfg(feature = "f32")]
         ValueKind::F32 => Ok(Value::F32(Ref::new(0.0))),
+        #[cfg(feature = "complex")]
+        ValueKind::C64 => Ok(Value::C64(Ref::new(C64::default()))),
+        #[cfg(feature = "rational")]
+        ValueKind::R64 => Ok(Value::R64(Ref::new(R64::default()))),
         #[cfg(any(feature = "bool", feature = "variable_define"))]
         ValueKind::Bool => Ok(Value::Bool(Ref::new(false))),
         #[cfg(any(feature = "string", feature = "variable_define"))]
@@ -128,6 +152,56 @@ fn create_capture_slot_for_kind(kind: &ValueKind) -> MResult<Value> {
 }
 fn commit_capture_slot(destination: &Value, source: &Value) -> MResult<()> {
     match (destination, &detached(source)) {
+        #[cfg(feature = "u8")]
+        (Value::U8(a), Value::U8(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "u16")]
+        (Value::U16(a), Value::U16(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "u32")]
+        (Value::U32(a), Value::U32(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "u64")]
+        (Value::U64(a), Value::U64(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "u128")]
+        (Value::U128(a), Value::U128(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "i8")]
+        (Value::I8(a), Value::I8(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "i16")]
+        (Value::I16(a), Value::I16(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "i32")]
+        (Value::I32(a), Value::I32(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "i64")]
+        (Value::I64(a), Value::I64(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "i128")]
+        (Value::I128(a), Value::I128(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
         #[cfg(feature = "f64")]
         (Value::F64(a), Value::F64(b)) => {
             clone_ref_value(a, b);
@@ -135,6 +209,16 @@ fn commit_capture_slot(destination: &Value, source: &Value) -> MResult<()> {
         }
         #[cfg(feature = "f32")]
         (Value::F32(a), Value::F32(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "complex")]
+        (Value::C64(a), Value::C64(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "rational")]
+        (Value::R64(a), Value::R64(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
@@ -592,33 +676,8 @@ fn preflight_patterned_activation(
             MechError::new(ActivationPatternGuardMustBePure, None).with_tokens(scope.tokens())
         );
     }
-    for a in arms {
-        if let ActivationArmBody::Block(body) = &a.body {
-            for (code, _) in body {
-                match code {
-                    MechCode::Statement(Statement::VariableAssign(_))
-                    | MechCode::Statement(Statement::OpAssign(_)) => {
-                        return Err(MechError::new(
-                            ActivationPatternRegisterWriteUnsupported,
-                            None,
-                        )
-                        .with_tokens(code.tokens()));
-                    }
-                    MechCode::Statement(Statement::ContextSend(_)) => {
-                        return Err(MechError::new(
-                            ActivationPatternContextEffectUnsupported,
-                            None,
-                        )
-                        .with_tokens(code.tokens()));
-                    }
-                    MechCode::Statement(Statement::VariableDefine(d)) if d.mutable => {
-                        return Err(MechError::new(ActivationPatternDefinitionUnsupported, None)
-                            .with_tokens(code.tokens()));
-                    }
-                    _ => {}
-                }
-            }
-        }
+    for arm in arms {
+        validate_patterned_arm_body(&arm.body)?;
     }
     if trigger.reactive_root_cell_ids() != trigger_cells {
         return Err(
@@ -638,14 +697,314 @@ fn preflight_patterned_activation(
     })
 }
 
+fn validation_error(kind: impl MechErrorKind + 'static, tokens: Vec<Token>) -> MResult<()> {
+    Err(MechError::new(kind, None).with_tokens(tokens))
+}
+
+fn validate_patterned_arm_body(body: &ActivationArmBody) -> MResult<()> {
+    match body {
+        ActivationArmBody::Block(body) => {
+            for (code, _) in body {
+                validate_patterned_code(code)?;
+            }
+            Ok(())
+        }
+        ActivationArmBody::Expression(expression) => validate_patterned_expression(expression),
+    }
+}
+fn validate_patterned_code(code: &MechCode) -> MResult<()> {
+    match code {
+        MechCode::Comment(_) => Ok(()),
+        MechCode::Expression(expression) => validate_patterned_expression(expression),
+        MechCode::Statement(statement) => validate_patterned_statement(statement),
+        MechCode::ActivationScope(_)
+        | MechCode::FunctionDefine(_)
+        | MechCode::FsmSpecification(_)
+        | MechCode::FsmImplementation(_)
+        | MechCode::Import(_)
+        | MechCode::Error(_, _) => {
+            validation_error(ActivationPatternDefinitionUnsupported, code.tokens())
+        }
+    }
+}
+fn validate_patterned_statement(statement: &Statement) -> MResult<()> {
+    match statement {
+        Statement::VariableDefine(definition)
+            if !definition.mutable && definition.var.context.is_none() =>
+        {
+            validate_patterned_expression(&definition.expression)
+        }
+        Statement::VariableDefine(definition) if definition.var.context.is_some() => {
+            validation_error(
+                ActivationPatternContextEffectUnsupported,
+                statement.tokens(),
+            )
+        }
+        Statement::VariableDefine(_) => {
+            validation_error(ActivationPatternDefinitionUnsupported, statement.tokens())
+        }
+        Statement::VariableAssign(assignment) if assignment.target.context.is_some() => {
+            validation_error(
+                ActivationPatternContextEffectUnsupported,
+                statement.tokens(),
+            )
+        }
+        Statement::VariableAssign(_) => validation_error(
+            ActivationPatternRegisterWriteUnsupported,
+            statement.tokens(),
+        ),
+        Statement::OpAssign(assignment) if assignment.target.context.is_some() => validation_error(
+            ActivationPatternContextEffectUnsupported,
+            statement.tokens(),
+        ),
+        Statement::OpAssign(_) => validation_error(
+            ActivationPatternRegisterWriteUnsupported,
+            statement.tokens(),
+        ),
+        Statement::ContextSend(_) => validation_error(
+            ActivationPatternContextEffectUnsupported,
+            statement.tokens(),
+        ),
+        _ => validation_error(ActivationPatternDefinitionUnsupported, statement.tokens()),
+    }
+}
+fn validate_patterned_expression(expression: &Expression) -> MResult<()> {
+    match expression {
+        Expression::Literal(_) | Expression::Var(_) => Ok(()),
+        Expression::Slice(slice) => validate_patterned_slice(slice),
+        Expression::Formula(factor) => validate_patterned_factor(factor),
+        Expression::FunctionCall(call) => {
+            for (_, expression) in &call.args {
+                validate_patterned_expression(expression)?;
+            }
+            Ok(())
+        }
+        Expression::Match(matched) => {
+            validate_patterned_expression(&matched.source)?;
+            for arm in &matched.arms {
+                validate_patterned_pattern(&arm.pattern)?;
+                if let Some(guard) = &arm.guard {
+                    validate_patterned_expression(guard)?;
+                }
+                validate_patterned_expression(&arm.expression)?;
+            }
+            Ok(())
+        }
+        Expression::Range(range) => validate_patterned_range(range),
+        Expression::Structure(structure) => validate_patterned_structure(structure),
+        Expression::SetComprehension(comprehension) => {
+            validate_patterned_expression(&comprehension.expression)?;
+            for qualifier in &comprehension.qualifiers {
+                validate_patterned_qualifier(qualifier)?;
+            }
+            Ok(())
+        }
+        Expression::MatrixComprehension(comprehension) => {
+            validate_patterned_expression(&comprehension.expression)?;
+            for qualifier in &comprehension.qualifiers {
+                validate_patterned_qualifier(qualifier)?;
+            }
+            Ok(())
+        }
+        Expression::FsmPipe(_) => {
+            validation_error(ActivationPatternDefinitionUnsupported, expression.tokens())
+        }
+    }
+}
+fn validate_patterned_pattern(pattern: &Pattern) -> MResult<()> {
+    match pattern {
+        Pattern::Expression(expression) => validate_patterned_expression(expression),
+        Pattern::Tuple(tuple) => {
+            for pattern in &tuple.0 {
+                validate_patterned_pattern(pattern)?;
+            }
+            Ok(())
+        }
+        Pattern::TupleStruct(tuple) => {
+            for pattern in &tuple.patterns {
+                validate_patterned_pattern(pattern)?;
+            }
+            Ok(())
+        }
+        Pattern::Array(array) => {
+            for pattern in array.prefix.iter().chain(&array.suffix) {
+                validate_patterned_pattern(pattern)?;
+            }
+            if let Some(spread) = &array.spread {
+                if let Some(binding) = &spread.binding {
+                    validate_patterned_pattern(binding)?;
+                }
+            }
+            Ok(())
+        }
+        Pattern::Wildcard => Ok(()),
+    }
+}
+fn validate_patterned_factor(factor: &Factor) -> MResult<()> {
+    match factor {
+        Factor::Expression(expression) => validate_patterned_expression(expression),
+        Factor::Negate(factor)
+        | Factor::Not(factor)
+        | Factor::Parenthetical(factor)
+        | Factor::Transpose(factor) => validate_patterned_factor(factor),
+        Factor::Term(term) => {
+            validate_patterned_factor(&term.lhs)?;
+            for (_, factor) in &term.rhs {
+                validate_patterned_factor(factor)?;
+            }
+            Ok(())
+        }
+    }
+}
+fn validate_patterned_range(range: &RangeExpression) -> MResult<()> {
+    validate_patterned_factor(&range.start)?;
+    if let Some((_, increment)) = &range.increment {
+        validate_patterned_factor(increment)?;
+    }
+    validate_patterned_factor(&range.terminal)
+}
+fn validate_patterned_slice(slice: &Slice) -> MResult<()> {
+    for subscript in &slice.subscript {
+        validate_patterned_subscript(subscript)?;
+    }
+    Ok(())
+}
+fn validate_patterned_subscript(subscript: &Subscript) -> MResult<()> {
+    match subscript {
+        Subscript::Brace(subscripts) | Subscript::Bracket(subscripts) => {
+            for subscript in subscripts {
+                validate_patterned_subscript(subscript)?;
+            }
+            Ok(())
+        }
+        Subscript::Formula(factor) => validate_patterned_factor(factor),
+        Subscript::Range(range) => validate_patterned_range(range),
+        Subscript::All | Subscript::Dot(_) | Subscript::DotInt(_) | Subscript::Swizzle(_) => Ok(()),
+    }
+}
+fn validate_patterned_structure(structure: &Structure) -> MResult<()> {
+    match structure {
+        Structure::Empty => Ok(()),
+        Structure::Map(map) => {
+            for mapping in &map.elements {
+                validate_patterned_expression(&mapping.key)?;
+                validate_patterned_expression(&mapping.value)?;
+            }
+            Ok(())
+        }
+        Structure::Matrix(matrix) => {
+            for row in &matrix.rows {
+                for column in &row.columns {
+                    validate_patterned_expression(&column.element)?;
+                }
+            }
+            Ok(())
+        }
+        Structure::Record(record) => {
+            for binding in &record.bindings {
+                validate_patterned_expression(&binding.value)?;
+            }
+            Ok(())
+        }
+        Structure::Set(set) => {
+            for expression in &set.elements {
+                validate_patterned_expression(expression)?;
+            }
+            Ok(())
+        }
+        Structure::Table(table) => {
+            for row in &table.rows {
+                for column in &row.columns {
+                    validate_patterned_expression(&column.element)?;
+                }
+            }
+            Ok(())
+        }
+        Structure::Tuple(tuple) => {
+            for expression in &tuple.elements {
+                validate_patterned_expression(expression)?;
+            }
+            Ok(())
+        }
+        Structure::TupleStruct(tuple) => validate_patterned_expression(&tuple.value),
+    }
+}
+fn validate_patterned_qualifier(qualifier: &ComprehensionQualifier) -> MResult<()> {
+    match qualifier {
+        ComprehensionQualifier::Generator((pattern, expression)) => {
+            validate_patterned_pattern(pattern)?;
+            validate_patterned_expression(expression)
+        }
+        ComprehensionQualifier::Filter(expression) => validate_patterned_expression(expression),
+        ComprehensionQualifier::Let(definition) if definition.mutable => {
+            validation_error(ActivationPatternDefinitionUnsupported, definition.tokens())
+        }
+        ComprehensionQualifier::Let(definition) if definition.var.context.is_some() => {
+            validation_error(
+                ActivationPatternContextEffectUnsupported,
+                definition.tokens(),
+            )
+        }
+        ComprehensionQualifier::Let(definition) => {
+            validate_patterned_expression(&definition.expression)
+        }
+    }
+}
+
+fn elaborate_patterned_arm_body(
+    arm: &ActivationArm,
+    captures: &[ActivationPatternCapture],
+    pulse: &Value,
+    interpreter: &Interpreter,
+) -> MResult<(usize, usize)> {
+    let symbols = interpreter.symbols();
+    let symbol_snapshot = symbols.borrow().snapshot();
+    let plan = interpreter.plan();
+    let original_scope_depth = plan.activation_registration_depth();
+    {
+        let mut symbols = symbols.borrow_mut();
+        for capture in captures {
+            symbols.mutable_variables.remove(&capture.id);
+            symbols.insert(capture.id, capture.slot.clone(), false);
+            symbols
+                .dictionary
+                .borrow_mut()
+                .insert(capture.id, capture.name.clone());
+        }
+    }
+    let body_node_start = plan.len();
+    plan.push_activation_registration_scope(pulse.reactive_root_cell_ids());
+    let body_result = (|| -> MResult<()> {
+        match &arm.body {
+            ActivationArmBody::Block(body) => {
+                for (code, _) in body {
+                    crate::mech_code(code, interpreter)?;
+                }
+                Ok(())
+            }
+            ActivationArmBody::Expression(expression) => {
+                crate::expression(expression, None, interpreter)?;
+                Ok(())
+            }
+        }
+    })();
+    while plan.activation_registration_depth() > original_scope_depth {
+        plan.pop_activation_registration_scope();
+    }
+    symbols.borrow_mut().restore(symbol_snapshot);
+    body_result?;
+    Ok((body_node_start, plan.len()))
+}
+
 fn elaborate_patterned_activation_inner(
-    scope: &ActivationScope,
     arms: &[ActivationArm],
     trigger: Value,
-    trigger_cells: Vec<ReactiveCellId>,
+    preflight: PreflightPatternedActivation,
     i: &Interpreter,
 ) -> MResult<Value> {
-    let preflight = preflight_patterned_activation(scope, arms, &trigger, &trigger_cells, i)?;
+    if trigger.kind().deref_kind() != preflight.trigger_kind {
+        return Err(MechError::new(ActivationPatternTriggerInvariant, None));
+    }
     let compiled = preflight.arms;
     let plan = i.plan();
     let (scope_gen, scope_v) = generation();
@@ -668,7 +1027,7 @@ fn elaborate_patterned_activation_inner(
         )?;
         matcher_nodes.push(n);
         completions.push(v);
-        matched.push(f)
+        matched.push(f);
     }
     let (mut finalizers, mut eligible, mut done) = (Vec::new(), Vec::new(), Vec::new());
     for (f, c) in matched.iter().zip(completions.iter()) {
@@ -683,7 +1042,7 @@ fn elaborate_patterned_activation_inner(
             &[c.clone()],
         )?);
         eligible.push(e);
-        done.push(v)
+        done.push(v);
     }
     let (o, selection) = generation();
     let selected = Ref::new(usize::MAX);
@@ -706,34 +1065,16 @@ fn elaborate_patterned_activation_inner(
             }),
             &[selection.clone()],
         )?);
-        pulses.push(v)
+        pulses.push(v);
     }
     let mut ranges = Vec::new();
-    for (arm, compiled_arm) in arms.iter().zip(compiled.iter()) {
-        let symbols = i.symbols();
-        let snapshot = symbols.borrow().snapshot();
-        {
-            let mut s = symbols.borrow_mut();
-            for c in &compiled_arm.captures {
-                s.insert(c.id, c.slot.clone(), false);
-                s.dictionary.borrow_mut().insert(c.id, c.name.clone());
-            }
-        }
-        let start = plan.len();
-        plan.push_activation_registration_scope(pulses[ranges.len()].reactive_root_cell_ids());
-        let result = match &arm.body {
-            ActivationArmBody::Block(b) => {
-                for (c, _) in b {
-                    crate::mech_code(c, i)?;
-                }
-                Ok(())
-            }
-            ActivationArmBody::Expression(e) => crate::expression(e, None, i).map(|_| ()),
-        };
-        plan.pop_activation_registration_scope();
-        symbols.borrow_mut().restore(snapshot);
-        result?;
-        ranges.push((start, plan.len()))
+    for (arm, compiled_arm) in arms.iter().zip(&compiled) {
+        ranges.push(elaborate_patterned_arm_body(
+            arm,
+            &compiled_arm.captures,
+            &pulses[ranges.len()],
+            i,
+        )?);
     }
     let registration = PatternActivationRegistration {
         scope_pulse_node: scope_node,
@@ -769,13 +1110,20 @@ pub(crate) fn elaborate_patterned_activation(
     trigger_cells: Vec<ReactiveCellId>,
     interpreter: &Interpreter,
 ) -> MResult<Value> {
+    let preflight =
+        preflight_patterned_activation(scope, arms, &trigger, &trigger_cells, interpreter)?;
     let plan = interpreter.plan();
     let checkpoint = plan.checkpoint();
-    match elaborate_patterned_activation_inner(scope, arms, trigger, trigger_cells, interpreter) {
+    let program_dictionary = interpreter.state.borrow().dictionary.clone();
+    let dictionary_snapshot = program_dictionary.borrow().clone();
+    match elaborate_patterned_activation_inner(arms, trigger, preflight, interpreter) {
         Ok(value) => Ok(value),
         Err(error) => {
-            plan.rollback(checkpoint)?;
-            Err(error)
+            *program_dictionary.borrow_mut() = dictionary_snapshot;
+            match plan.rollback(checkpoint) {
+                Ok(()) => Err(error),
+                Err(rollback_error) => Err(rollback_error),
+            }
         }
     }
 }
