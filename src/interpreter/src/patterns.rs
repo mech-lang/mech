@@ -1220,18 +1220,18 @@ fn build_row_matrix_from_values(values: Vec<Value>) -> Value {
     Value::MatrixValue(Matrix::from_vec(values, 1, cols))
 }
 
+pub(crate) fn pattern_var_is_binding(var: &Var) -> bool {
+    var.context.is_none()
+        // Runtime context inputs are sampled pattern values, never captures.
+        && !var
+            .name
+            .to_string()
+            .starts_with(RUNTIME_CONTEXT_PATTERN_VALUE_PREFIX)
+}
+
 fn extract_pattern_variable(expr: &Expression) -> Option<&Var> {
     match expr {
-        Expression::Var(var)
-            if var.context.is_none()
-                // Runtime context inputs are sampled pattern values, never captures.
-                && !var
-                    .name
-                    .to_string()
-                    .starts_with(RUNTIME_CONTEXT_PATTERN_VALUE_PREFIX) =>
-        {
-            Some(var)
-        }
+        Expression::Var(var) if pattern_var_is_binding(var) => Some(var),
         Expression::Var(_) => None,
         Expression::Formula(factor) => match factor {
             Factor::Expression(inner_expr) => extract_pattern_variable(inner_expr),

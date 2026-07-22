@@ -45,7 +45,7 @@ pub fn pattern_match_value(
     match pattern {
         Pattern::Wildcard => Ok(()),
         Pattern::Expression(expr) => match expr {
-            Expression::Var(var) => {
+            Expression::Var(var) if crate::patterns::pattern_var_is_binding(var) => {
                 let id = &var.name.hash();
                 match env.get(id) {
                     Some(existing) if existing == value => Ok(()),
