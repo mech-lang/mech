@@ -621,15 +621,112 @@ impl MechErrorKind for ReactiveDependencyKindConflictError {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ReactivePlanCheckpoint { node_len:usize, pattern_activation_registration_len:usize }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct PlanCheckpoint { reactive:ReactivePlanCheckpoint, activation_registration_depth:usize }
-#[derive(Debug,Clone)] pub struct ReactivePlanRollbackInvariantError { pub checkpoint_nodes:usize,pub current_nodes:usize,pub checkpoint_registrations:usize,pub current_registrations:usize }
-impl MechErrorKind for ReactivePlanRollbackInvariantError { fn name(&self)->&str{"ReactivePlanRollbackInvariant"} fn message(&self)->String{format!("Cannot roll the reactive plan back from {} nodes and {} patterned registrations to {} nodes and {} patterned registrations.",self.current_nodes,self.current_registrations,self.checkpoint_nodes,self.checkpoint_registrations)} }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReactivePlanCheckpoint {
+  node_len: usize,
+  pattern_activation_registration_len: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PlanCheckpoint {
+  reactive: ReactivePlanCheckpoint,
+  activation_registration_depth: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactivePlanRollbackInvariantError {
+  pub checkpoint_nodes: usize,
+  pub current_nodes: usize,
+  pub checkpoint_registrations: usize,
+  pub current_registrations: usize,
+}
+
+impl MechErrorKind for ReactivePlanRollbackInvariantError {
+  fn name(&self) -> &str { "ReactivePlanRollbackInvariant" }
+  fn message(&self) -> String {
+    format!("Cannot roll the reactive plan back from {} nodes and {} patterned registrations to {} nodes and {} patterned registrations.", self.current_nodes, self.current_registrations, self.checkpoint_nodes, self.checkpoint_registrations)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ActivationRegistrationRollbackInvariantError {
+  pub checkpoint_depth: usize,
+  pub current_depth: usize,
+}
+
+impl MechErrorKind for ActivationRegistrationRollbackInvariantError {
+  fn name(&self) -> &str {
+    "ActivationRegistrationRollbackInvariant"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Cannot roll the activation registration stack back from depth {} to future depth {}.",
+      self.current_depth,
+      self.checkpoint_depth,
+    )
+  }
+}
 
 impl ReactivePlan {
-  fn rebuild_consumer_indexes(&mut self) { self.reactive_consumers.clear(); self.sampled_consumers.clear(); for node in &self.nodes { for dependency in &node.inputs { let consumers=match dependency.kind { ReactiveDependencyKind::Reactive=>&mut self.reactive_consumers, ReactiveDependencyKind::Sampled=>&mut self.sampled_consumers }; consumers.entry(dependency.cell).or_default().push(node.id); } } }
-  pub fn checkpoint(&self)->ReactivePlanCheckpoint { ReactivePlanCheckpoint { node_len:self.nodes.len(), pattern_activation_registration_len:self.pattern_activation_registrations.len() } }
-  pub fn rollback(&mut self, checkpoint:ReactivePlanCheckpoint)->MResult<()> { if checkpoint.node_len>self.nodes.len()||checkpoint.pattern_activation_registration_len>self.pattern_activation_registrations.len(){return Err(MechError::new(ReactivePlanRollbackInvariantError{checkpoint_nodes:checkpoint.node_len,current_nodes:self.nodes.len(),checkpoint_registrations:checkpoint.pattern_activation_registration_len,current_registrations:self.pattern_activation_registrations.len()},None))} self.nodes.truncate(checkpoint.node_len);self.pattern_activation_registrations.truncate(checkpoint.pattern_activation_registration_len);self.rebuild_consumer_indexes();Ok(()) }
+  fn rebuild_consumer_indexes(&mut self) {
+    self.reactive_consumers.clear();
+    self.sampled_consumers.clear();
+
+    for node in &self.nodes {
+      for dependency in &node.inputs {
+        let consumers = match dependency.kind {
+          ReactiveDependencyKind::Reactive => &mut self.reactive_consumers,
+          ReactiveDependencyKind::Sampled => &mut self.sampled_consumers,
+        };
+
+        let consumers = consumers.entry(dependency.cell).or_default();
+
+        if !consumers.contains(&node.id) {
+          consumers.push(node.id);
+        }
+      }
+    }
+  }
+
+  fn validate_rollback(&self, checkpoint: ReactivePlanCheckpoint) -> MResult<()> {
+    if checkpoint.node_len > self.nodes.len()
+      || checkpoint.pattern_activation_registration_len > self.pattern_activation_registrations.len()
+    {
+      return Err(MechError::new(
+        ReactivePlanRollbackInvariantError {
+          checkpoint_nodes: checkpoint.node_len,
+          current_nodes: self.nodes.len(),
+          checkpoint_registrations: checkpoint.pattern_activation_registration_len,
+          current_registrations: self.pattern_activation_registrations.len(),
+        },
+        None,
+      ));
+    }
+
+    Ok(())
+  }
+
+  fn apply_rollback(&mut self, checkpoint: ReactivePlanCheckpoint) {
+    self.nodes.truncate(checkpoint.node_len);
+    self
+      .pattern_activation_registrations
+      .truncate(checkpoint.pattern_activation_registration_len);
+    self.rebuild_consumer_indexes();
+  }
+
+  pub fn checkpoint(&self) -> ReactivePlanCheckpoint {
+    ReactivePlanCheckpoint {
+      node_len: self.nodes.len(),
+      pattern_activation_registration_len: self.pattern_activation_registrations.len(),
+    }
+  }
+
+  pub fn rollback(&mut self, checkpoint: ReactivePlanCheckpoint) -> MResult<()> {
+    self.validate_rollback(checkpoint)?;
+    self.apply_rollback(checkpoint);
+    Ok(())
+  }
 
   pub fn new() -> Self {
     Self {
@@ -1026,9 +1123,46 @@ impl fmt::Debug for Plan {
 }
 
 impl Plan {
-  pub fn checkpoint(&self)->PlanCheckpoint { PlanCheckpoint { reactive:self.0.borrow().checkpoint(),activation_registration_depth:self.1.borrow().len() } }
-  pub fn rollback(&self, checkpoint:PlanCheckpoint)->MResult<()> { {let mut scopes=self.1.borrow_mut();if checkpoint.activation_registration_depth>scopes.len(){let p=self.0.borrow();return Err(MechError::new(ReactivePlanRollbackInvariantError{checkpoint_nodes:checkpoint.reactive.node_len,current_nodes:p.nodes.len(),checkpoint_registrations:checkpoint.reactive.pattern_activation_registration_len,current_registrations:p.pattern_activation_registrations.len()},None))}scopes.truncate(checkpoint.activation_registration_depth);}self.0.borrow_mut().rollback(checkpoint.reactive) }
-  pub fn activation_registration_depth(&self)->usize {self.1.borrow().len()}
+  pub fn checkpoint(&self) -> PlanCheckpoint {
+    PlanCheckpoint {
+      reactive: self.0.borrow().checkpoint(),
+      activation_registration_depth: self.1.borrow().len(),
+    }
+  }
+
+  pub fn rollback(&self, checkpoint: PlanCheckpoint) -> MResult<()> {
+    {
+      let reactive = self.0.borrow();
+      reactive.validate_rollback(checkpoint.reactive)?;
+    }
+
+    {
+      let scopes = self.1.borrow();
+      let current_depth = scopes.len();
+
+      if checkpoint.activation_registration_depth > current_depth {
+        return Err(MechError::new(
+          ActivationRegistrationRollbackInvariantError {
+            checkpoint_depth: checkpoint.activation_registration_depth,
+            current_depth,
+          },
+          None,
+        ));
+      }
+    }
+
+    self.0.borrow_mut().apply_rollback(checkpoint.reactive);
+    self
+      .1
+      .borrow_mut()
+      .truncate(checkpoint.activation_registration_depth);
+
+    Ok(())
+  }
+
+  pub fn activation_registration_depth(&self) -> usize {
+    self.1.borrow().len()
+  }
 
   pub fn new() -> Self {
     Self(Ref::new(ReactivePlan::new()), Ref::new(Vec::new()))
@@ -1783,6 +1917,45 @@ mod reactive_plan_tests {
   fn reactive_dirty_scheduler_stops_on_error() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,ao,ac)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),true);let(_,_,bc)=scheduler_node(&mut p,"B",&[ao],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let e=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap_err();assert!(e.kind_message().contains("A"));assert_eq!(*ac.borrow(),1);assert_eq!(*bc.borrow(),0); }
   #[cfg(feature = "f64")] #[test]
   fn reactive_dirty_scheduler_empty_dirty_set_is_noop() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,_,c)=scheduler_node(&mut p,"A",&[d],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);assert_eq!(p.solve_dirty_cells(&[]).unwrap(),ReactivePlanSolveOutcome::default());assert_eq!(*c.borrow(),0); }
+  #[test]
+  fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
+    let reactive_input = Value::Index(Ref::new(1));
+    let sampled_input = Value::Index(Ref::new(2));
+    let reactive_cell = reactive_input.reactive_root_cell_ids()[0];
+    let sampled_cell = sampled_input.reactive_root_cell_ids()[0];
+    let mut plan = ReactivePlan::new();
+    let base = plan.register(Box::new(TestFunction::new("base")), &[reactive_input]).unwrap();
+    let checkpoint = plan.checkpoint();
+    let tail = plan.register(Box::new(TestFunction::new("tail").with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled]))), &[sampled_input]).unwrap();
+    plan.rollback(checkpoint).unwrap();
+    assert_eq!(plan.len(), 1);
+    assert_eq!(plan.nodes[0].id, base);
+    assert_eq!(plan.nodes[0].plan_index, 0);
+    assert_eq!(plan.nodes[0].inputs, vec![ReactiveDependency { cell: reactive_cell, kind: ReactiveDependencyKind::Reactive }]);
+    assert_eq!(plan.reactive_consumers_for(reactive_cell), &[base]);
+    assert!(plan.sampled_consumers_for(sampled_cell).is_empty());
+    assert!(plan.reactive_consumers.values().all(|nodes| !nodes.contains(&tail)));
+    assert!(plan.sampled_consumers.values().all(|nodes| !nodes.contains(&tail)));
+  }
+  #[test]
+  fn reactive_plan_rollback_truncates_pattern_registrations() {
+    let mut plan = ReactivePlan::new(); let checkpoint = plan.checkpoint(); plan.register_pattern_activation(PatternActivationRegistration { scope_pulse_node: 0, selector_node: 0, arms: Vec::new() }); assert_eq!(plan.pattern_activation_registrations().len(), 1); plan.rollback(checkpoint).unwrap(); assert!(plan.pattern_activation_registrations().is_empty());
+  }
+  #[test]
+  fn plan_rollback_restores_activation_registration_depth() {
+    let plan = Plan::new(); let checkpoint = plan.checkpoint(); plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]); plan.push_activation_registration_scope(vec![ReactiveCellId::new(2)]); assert_eq!(plan.activation_registration_depth(), 2); plan.rollback(checkpoint).unwrap(); assert_eq!(plan.activation_registration_depth(), 0);
+  }
+  #[test]
+  fn plan_rollback_invalid_checkpoint_is_atomic() {
+    let plan = Plan::new(); plan.add_function(Box::new(TestFunction::new("retained"))); plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
+    let nodes_before = plan.len(); let reactive_before = plan.borrow().reactive_consumers.clone(); let sampled_before = plan.borrow().sampled_consumers.clone(); let registrations_before = plan.pattern_activation_registrations().clone(); let depth_before = plan.activation_registration_depth();
+    let error = plan.rollback(PlanCheckpoint { reactive: ReactivePlanCheckpoint { node_len: nodes_before + 1, pattern_activation_registration_len: registrations_before.len() }, activation_registration_depth: depth_before }).unwrap_err(); assert_eq!(error.kind_name(), "ReactivePlanRollbackInvariant");
+    assert_eq!(plan.len(), nodes_before); assert_eq!(plan.borrow().reactive_consumers, reactive_before); assert_eq!(plan.borrow().sampled_consumers, sampled_before); assert_eq!(*plan.pattern_activation_registrations(), registrations_before); assert_eq!(plan.activation_registration_depth(), depth_before);
+    let valid_reactive_checkpoint = { let reactive_plan = plan.borrow(); reactive_plan.checkpoint() };
+    let invalid_scope_checkpoint = PlanCheckpoint { reactive: valid_reactive_checkpoint, activation_registration_depth: depth_before + 1 };
+    let error = plan.rollback(invalid_scope_checkpoint).unwrap_err(); assert_eq!(error.kind_name(), "ActivationRegistrationRollbackInvariant");
+    assert_eq!(plan.len(), nodes_before); assert_eq!(plan.borrow().reactive_consumers, reactive_before); assert_eq!(plan.borrow().sampled_consumers, sampled_before); assert_eq!(*plan.pattern_activation_registrations(), registrations_before); assert_eq!(plan.activation_registration_depth(), depth_before);
+  }
 }
 
 
@@ -1861,6 +2034,9 @@ mod reactive_turn_tests {
   }
   #[test] fn reactive_turn_reuses_existing_plan() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let sink=Ref::new(1.);reg(&mut p,input.clone(),sink.clone(),false);comb(&mut p,sink.clone(),Ref::new(2.),false);let len=p.len();let ids=p.nodes.iter().map(|n|n.id).collect::<Vec<_>>();let outputs=p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>();let mut s=ReactiveTurnState::default();for value in [10.,20.] {*input.borrow_mut()=value;p.advance_reactive_turn(&mut s,&input.to_value().reactive_root_cell_ids()).unwrap();assert_eq!(p.len(),len);assert_eq!(p.nodes.iter().map(|n|n.id).collect::<Vec<_>>(),ids);assert_eq!(p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>(),outputs);} }
   #[test] fn reactive_turn_pre_commit_failure_preserves_carried_registers() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let(carried,solve,stage,commit)=reg(&mut p,Ref::new(2.),Ref::new(3.),false);comb(&mut p,input.clone(),Ref::new(0.),true);let mut state=ReactiveTurnState{pending_register_nodes:vec![carried]};let error=p.advance_reactive_turn(&mut state,&input.to_value().reactive_root_cell_ids()).unwrap_err();assert!(error.kind_message().contains("solve failure"));assert_eq!((*solve.borrow(),*stage.borrow(),*commit.borrow()),(0,0,0));assert_eq!(state.pending_register_nodes,vec![carried]); }
+
+
+
 }
 
 // Function Registry
