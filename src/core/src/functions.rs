@@ -430,6 +430,15 @@ pub struct PatternActivationArmRegistration {
   /// Half-open range of plan nodes registered for this arm's body.
   pub body_node_start: usize,
   pub body_node_end: usize,
+  pub captures: Vec<PatternActivationCaptureRegistration>,
+}
+
+/// Stable storage made available to a single patterned activation arm.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationCaptureRegistration {
+  pub id: u64,
+  pub kind: ValueKind,
+  pub cell: ReactiveCellId,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

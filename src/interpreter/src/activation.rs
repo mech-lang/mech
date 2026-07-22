@@ -1,99 +1,59 @@
-#![cfg(all(
-  feature = "functions",
-  feature = "symbol_table",
-))]
-
-//! Static scheduling support for patterned activation scopes.
-//!
-//! The small dispatch nodes in this file deliberately contain no syntax and
-//! are registered once while a source tree is elaborated.  A reactive turn
-//! only moves generation counters through that already-built graph.
-
+#![cfg(all(feature = "functions", feature = "symbol_table"))]
+//! Statically elaborated structural dispatch for patterned activation scopes.
 use crate::*;
 
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternExpressionUnsupported;
-impl MechErrorKind for ActivationPatternExpressionUnsupported { fn name(&self)->&str{"ActivationPatternExpressionUnsupported"} fn message(&self)->String{"This activation pattern is not supported.".into()} }
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternCaptureKindUnsupported;
-impl MechErrorKind for ActivationPatternCaptureKindUnsupported { fn name(&self)->&str{"ActivationPatternCaptureKindUnsupported"} fn message(&self)->String{"The capture kind cannot be inferred from the activation trigger.".into()} }
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternArmsNonExhaustive;
-impl MechErrorKind for ActivationPatternArmsNonExhaustive { fn name(&self)->&str{"ActivationPatternArmsNonExhaustive"} fn message(&self)->String{"Patterned activations require a final unguarded wildcard arm.".into()} }
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternWildcardMustBeLast;
-impl MechErrorKind for ActivationPatternWildcardMustBeLast { fn name(&self)->&str{"ActivationPatternWildcardMustBeLast"} fn message(&self)->String{"The wildcard activation arm must be last.".into()} }
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternGuardMustBePure;
-impl MechErrorKind for ActivationPatternGuardMustBePure { fn name(&self)->&str{"ActivationPatternGuardMustBePure"} fn message(&self)->String{"Patterned activation guards must be pure.".into()} }
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternRegisterWriteUnsupported;
-impl MechErrorKind for ActivationPatternRegisterWriteUnsupported { fn name(&self)->&str{"ActivationPatternRegisterWriteUnsupported"} fn message(&self)->String{"Patterned activation register writes are not supported.".into()} }
-#[derive(Debug, Clone)] pub(crate) struct ActivationPatternContextEffectUnsupported;
-impl MechErrorKind for ActivationPatternContextEffectUnsupported { fn name(&self)->&str{"ActivationPatternContextEffectUnsupported"} fn message(&self)->String{"Patterned activation context effects are not supported.".into()} }
+macro_rules! activation_error {($n:ident,$m:expr)=>{#[derive(Debug,Clone)] pub(crate) struct $n; impl MechErrorKind for $n {fn name(&self)->&str{stringify!($n)} fn message(&self)->String{$m.into()}}};}
+activation_error!(ActivationPatternExpressionUnsupported,"This activation pattern is not supported.");
+activation_error!(ActivationPatternCaptureKindUnsupported,"The capture kind cannot be inferred from the activation trigger.");
+activation_error!(ActivationPatternArmsNonExhaustive,"Patterned activations require a final unguarded wildcard arm.");
+activation_error!(ActivationPatternWildcardMustBeLast,"The wildcard activation arm must be last.");
+activation_error!(ActivationPatternGuardMustBePure,"Patterned activation guards are not supported yet.");
+activation_error!(ActivationPatternRegisterWriteUnsupported,"Patterned activation register writes are not supported.");
+activation_error!(ActivationPatternContextEffectUnsupported,"Patterned activation context effects are not supported.");
+activation_error!(ActivationPatternTriggerInvariant,"Activation trigger root cells disagree with the resolved trigger.");
 
-#[derive(Clone, Debug)]
-enum CompiledActivationPattern { Wildcard, Literal(Value) }
+#[derive(Clone,Debug)] enum CompiledActivationPattern { Wildcard, Literal{expected:Value}, Capture{capture_index:usize}, Tuple{elements:Vec<Self>}, TupleStruct{tag:u64,payload:Vec<Self>} }
+#[derive(Clone)] struct Capture { id:u64, kind:ValueKind, slot:Value }
+#[derive(Clone)] struct CompiledArm { pattern:CompiledActivationPattern, captures:Vec<Capture> }
+fn detached(v:&Value)->Value { match v {Value::MutableReference(r)=>detached(&r.borrow()), _=>v.clone()} }
+fn slot(v:&Value)->Option<Value> { match detached(v) {
+  Value::F64(_)=>Some(Value::F64(Ref::new(0.))), Value::F32(_)=>Some(Value::F32(Ref::new(0.))),
+  Value::I64(_)=>Some(Value::I64(Ref::new(0))), Value::I32(_)=>Some(Value::I32(Ref::new(0))), Value::I16(_)=>Some(Value::I16(Ref::new(0))), Value::I8(_)=>Some(Value::I8(Ref::new(0))),
+  Value::U64(_)=>Some(Value::U64(Ref::new(0))), Value::U32(_)=>Some(Value::U32(Ref::new(0))), Value::U16(_)=>Some(Value::U16(Ref::new(0))), Value::U8(_)=>Some(Value::U8(Ref::new(0))),
+  Value::Bool(_)=>Some(Value::Bool(Ref::new(false))), Value::String(_)=>Some(Value::String(Ref::new(String::new()))), Value::Index(_)=>Some(Value::Index(Ref::new(0))), Value::Atom(a)=>Some(Value::Atom(Ref::new(a.borrow().clone()))), _=>None } }
+fn compile(pat:&Pattern, sample:&Value, i:&Interpreter, caps:&mut Vec<Capture>)->MResult<CompiledActivationPattern> { match pat {
+ Pattern::Wildcard=>Ok(CompiledActivationPattern::Wildcard), Pattern::Expression(Expression::Literal(x))=>Ok(CompiledActivationPattern::Literal{expected:crate::literal(x,i)?}),
+ Pattern::Expression(Expression::Var(v))=>{let id=v.name.hash(); if let Some(n)=caps.iter().position(|c|c.id==id){return Ok(CompiledActivationPattern::Capture{capture_index:n})}; let value=slot(sample).ok_or_else(||MechError::new(ActivationPatternCaptureKindUnsupported,None).with_tokens(pat.tokens()))?; caps.push(Capture{id,kind:sample.kind(),slot:value}); Ok(CompiledActivationPattern::Capture{capture_index:caps.len()-1})},
+ Pattern::Tuple(t)=> {let Value::Tuple(tv)=detached(sample) else{return Err(MechError::new(ActivationPatternCaptureKindUnsupported,None).with_tokens(pat.tokens()))}; let e=&tv.borrow().elements; if e.len()!=t.0.len(){return Err(MechError::new(ActivationPatternCaptureKindUnsupported,None).with_tokens(pat.tokens()))}; Ok(CompiledActivationPattern::Tuple{elements:t.0.iter().zip(e.iter()).map(|(p,v)|compile(p,v,i,caps)).collect::<MResult<_>>()?})},
+ Pattern::TupleStruct(t)=> { let tag=t.name.hash(); let payload=match detached(sample) { Value::Enum(e)=>{let e=e.borrow(); e.variants.iter().find(|(id,_)|*id==tag).and_then(|(_,x)|x.as_ref()).cloned().into_iter().collect::<Vec<_>>()}, Value::Tuple(x)=>{let x=x.borrow(); if x.elements.first().map(|v|matches!(detached(v),Value::Atom(a) if a.borrow().id()==tag)).unwrap_or(false){x.elements.iter().skip(1).map(|v|(**v).clone()).collect()}else{Vec::new()}}, _=>Vec::new()}; if payload.len()!=t.patterns.len(){return Err(MechError::new(ActivationPatternCaptureKindUnsupported,None).with_tokens(pat.tokens()))}; Ok(CompiledActivationPattern::TupleStruct{tag,payload:t.patterns.iter().zip(payload.iter()).map(|(p,v)|compile(p,v,i,caps)).collect::<MResult<_>>()?})},
+ _=>Err(MechError::new(ActivationPatternExpressionUnsupported,None).with_tokens(pat.tokens())) }}
+fn matches_pattern(p:&CompiledActivationPattern,v:&Value, proposed:&mut Vec<Option<Value>>)->bool {match p {CompiledActivationPattern::Wildcard=>true,CompiledActivationPattern::Literal{expected}=>expected==&detached(v),CompiledActivationPattern::Capture{capture_index}=>{let x=detached(v);match &proposed[*capture_index]{Some(y)=>y==&x,None=>{proposed[*capture_index]=Some(x);true}}},CompiledActivationPattern::Tuple{elements}=>match detached(v){Value::Tuple(t)=>{let t=t.borrow();t.elements.len()==elements.len()&&elements.iter().zip(t.elements.iter()).all(|(p,v)|matches_pattern(p,v,proposed))},_=>false},CompiledActivationPattern::TupleStruct{tag,payload}=>match detached(v){Value::Enum(e)=>{let e=e.borrow();match e.variants.iter().find(|(id,_)|id==tag){Some((_,Some(v))) if payload.len()==1=>matches_pattern(&payload[0],v,proposed),Some((_,None))=>payload.is_empty(),_=>false}},Value::Tuple(t)=>{let t=t.borrow();t.elements.len()==payload.len()+1&&matches!(detached(&t.elements[0]),Value::Atom(a) if a.borrow().id()==*tag)&&payload.iter().zip(t.elements.iter().skip(1)).all(|(p,v)|matches_pattern(p,v,proposed))},_=>false}}}
+macro_rules! copy_slot {($s:expr,$v:expr,$($x:ident),*)=>{match ($s,$v){$((Value::$x(a),Value::$x(b))=>{*a.borrow_mut()=*b.borrow();Ok(())},)* _=>Err(MechError::new(ActivationPatternCaptureKindUnsupported,None))}}}
+fn commit(s:&Value,v:&Value)->MResult<()> {copy_slot!(s,detached(v),F64,F32,I64,I32,I16,I8,U64,U32,U16,U8,Bool,String,Index,Atom)}
+fn generation()->(Ref<usize>,Value){let r=Ref::new(0);(r.clone(),Value::Index(r))}
+struct ScopePulse{out:Ref<usize>} impl MechFunctionImpl for ScopePulse{fn solve(&self){}fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)}fn out(&self)->Value{Value::Index(self.out.clone())}fn reactive_dependency_scopes(&self,_:usize)->Option<Vec<ReactiveDependencyScope>>{Some(vec![ReactiveDependencyScope::Root])}fn to_string(&self)->String{"ActivationPatternScopePulse".into()}}
+struct Matcher{pattern:CompiledActivationPattern,trigger:Value,captures:Vec<Capture>,matched:Ref<bool>,out:Ref<usize>} impl MechFunctionImpl for Matcher{fn solve(&self){}fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{let mut p=vec![None;self.captures.len()];let ok=matches_pattern(&self.pattern,&self.trigger,&mut p);if ok{for(c,v)in self.captures.iter().zip(p.iter()){if let Some(v)=v{commit(&c.slot,v)?}}}*self.matched.borrow_mut()=ok;*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)}fn out(&self)->Value{Value::Index(self.out.clone())}fn reactive_dependency_kinds(&self,_:usize)->Option<Vec<ReactiveDependencyKind>>{Some(vec![ReactiveDependencyKind::Reactive,ReactiveDependencyKind::Sampled])}fn to_string(&self)->String{"ActivationPatternMatcher".into()}}
+struct Finalize{matched:Ref<bool>,eligible:Ref<bool>,out:Ref<usize>} impl MechFunctionImpl for Finalize{fn solve(&self){}fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{*self.eligible.borrow_mut()=*self.matched.borrow();*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)}fn out(&self)->Value{Value::Index(self.out.clone())}fn to_string(&self)->String{"ActivationPatternArmFinalize".into()}}
+struct Select{eligible:Vec<Ref<bool>>,selected:Ref<usize>,out:Ref<usize>} impl MechFunctionImpl for Select{fn solve(&self){}fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{*self.selected.borrow_mut()=self.eligible.iter().position(|x|*x.borrow()).unwrap_or(usize::MAX);*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)}fn out(&self)->Value{Value::Index(self.out.clone())}fn to_string(&self)->String{"ActivationPatternSelectArm".into()}}
+struct Gate{arm:usize,selected:Ref<usize>,out:Ref<usize>} impl MechFunctionImpl for Gate{fn solve(&self){}fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{if*self.selected.borrow()==self.arm{*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)}else{Ok(ReactiveSolveStatus::Unchanged)}}fn out(&self)->Value{Value::Index(self.out.clone())}fn to_string(&self)->String{"ActivationPatternArmGate".into()}}
 
-fn compile_pattern(pattern: &Pattern, interpreter: &Interpreter) -> MResult<CompiledActivationPattern> {
-  match pattern {
-    Pattern::Wildcard => Ok(CompiledActivationPattern::Wildcard),
-    Pattern::Expression(Expression::Literal(literal)) => Ok(CompiledActivationPattern::Literal(crate::literal(literal, interpreter)?)),
-    // A variable is deliberately not treated as a catch-all: doing so loses
-    // the type and stable backing reference required for a capture slot.
-    Pattern::Expression(Expression::Var(_)) => Err(MechError::new(ActivationPatternCaptureKindUnsupported, None).with_tokens(pattern.tokens())),
-    _ => Err(MechError::new(ActivationPatternExpressionUnsupported, None).with_tokens(pattern.tokens())),
-  }
-}
+#[cfg(feature="compiler")] macro_rules! interpreter_only {($t:ty)=>{impl MechFunctionCompiler for $t { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Err(MechError::new(GenericError{msg:"Activation pattern dispatch is interpreter-only.".into()},None))} }};}
+#[cfg(feature="compiler")] interpreter_only!(ScopePulse);
+#[cfg(feature="compiler")] interpreter_only!(Matcher);
+#[cfg(feature="compiler")] interpreter_only!(Finalize);
+#[cfg(feature="compiler")] interpreter_only!(Select);
+#[cfg(feature="compiler")] interpreter_only!(Gate);
 
-fn generation() -> (Ref<usize>, Value) { let cell=Ref::new(0usize); let value=Value::Index(cell.clone()); (cell,value) }
-
-struct ScopePulse { out: Ref<usize> }
-#[cfg(feature="compiler")] impl MechFunctionCompiler for ScopePulse { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Err(MechError::new(GenericError{msg:"Activation pattern dispatch is interpreter-only.".into()},None))} }
-impl MechFunctionImpl for ScopePulse {
-  fn solve(&self) {}
-  fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{ *self.out.borrow_mut()+=1; Ok(ReactiveSolveStatus::Changed) }
-  fn out(&self)->Value { Value::Index(self.out.clone()) }
-  fn reactive_dependency_scopes(&self,_:usize)->Option<Vec<ReactiveDependencyScope>> { Some(vec![ReactiveDependencyScope::Root]) }
-  fn to_string(&self)->String{"ActivationPatternScopePulse".into()}
-}
-struct Matcher { pattern: CompiledActivationPattern, trigger: Value, matched: Ref<bool>, out: Ref<usize> }
-#[cfg(feature="compiler")] impl MechFunctionCompiler for Matcher { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Err(MechError::new(GenericError{msg:"Activation pattern dispatch is interpreter-only.".into()},None))} }
-impl MechFunctionImpl for Matcher {
-  fn solve(&self) {}
-  fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{ *self.matched.borrow_mut()=match &self.pattern { CompiledActivationPattern::Wildcard=>true, CompiledActivationPattern::Literal(value)=>value==&self.trigger }; *self.out.borrow_mut()+=1; Ok(ReactiveSolveStatus::Changed) }
-  fn out(&self)->Value{Value::Index(self.out.clone())}
-  fn reactive_dependency_kinds(&self,_:usize)->Option<Vec<ReactiveDependencyKind>>{Some(vec![ReactiveDependencyKind::Reactive,ReactiveDependencyKind::Sampled])}
-  fn to_string(&self)->String{"ActivationPatternMatcher".into()}
-}
-struct Finalize { matched: Ref<bool>, eligible: Ref<bool>, out: Ref<usize> }
-#[cfg(feature="compiler")] impl MechFunctionCompiler for Finalize { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Err(MechError::new(GenericError{msg:"Activation pattern dispatch is interpreter-only.".into()},None))} }
-impl MechFunctionImpl for Finalize { fn solve(&self){} fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{*self.eligible.borrow_mut()=*self.matched.borrow();*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)} fn out(&self)->Value{Value::Index(self.out.clone())} fn to_string(&self)->String{"ActivationPatternArmFinalize".into()} }
-struct Select { eligible: Vec<Ref<bool>>, selected: Ref<usize>, out: Ref<usize> }
-#[cfg(feature="compiler")] impl MechFunctionCompiler for Select { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Err(MechError::new(GenericError{msg:"Activation pattern dispatch is interpreter-only.".into()},None))} }
-impl MechFunctionImpl for Select { fn solve(&self){} fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{*self.selected.borrow_mut()=self.eligible.iter().position(|x|*x.borrow()).unwrap_or(usize::MAX);*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)} fn out(&self)->Value{Value::Index(self.out.clone())} fn to_string(&self)->String{"ActivationPatternSelectArm".into()} }
-struct Gate { arm: usize, selected: Ref<usize>, out: Ref<usize> }
-#[cfg(feature="compiler")] impl MechFunctionCompiler for Gate { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Err(MechError::new(GenericError{msg:"Activation pattern dispatch is interpreter-only.".into()},None))} }
-impl MechFunctionImpl for Gate { fn solve(&self){} fn solve_reactive(&self)->MResult<ReactiveSolveStatus>{if *self.selected.borrow()==self.arm {*self.out.borrow_mut()+=1;Ok(ReactiveSolveStatus::Changed)} else {Ok(ReactiveSolveStatus::Unchanged)}} fn out(&self)->Value{Value::Index(self.out.clone())} fn to_string(&self)->String{"ActivationPatternArmGate".into()} }
-
-/// Elaborates the static, combinational dispatch graph for literal and
-/// wildcard patterned activation arms.  Unsupported destructuring is rejected
-/// during elaboration rather than deferred to a reactive turn.
-pub(crate) fn elaborate_patterned_activation(scope: &ActivationScope, arms: &[ActivationArm], trigger: Value, trigger_cells: Vec<ReactiveCellId>, interpreter: &Interpreter) -> MResult<Value> {
-  let final_arm=arms.last().ok_or_else(||MechError::new(ActivationPatternArmsNonExhaustive,None).with_tokens(scope.tokens()))?;
-  if !matches!(final_arm.pattern,Pattern::Wildcard) || final_arm.guard.is_some() { return Err(MechError::new(ActivationPatternArmsNonExhaustive,None).with_tokens(scope.tokens())); }
-  if arms[..arms.len()-1].iter().any(|arm|matches!(arm.pattern,Pattern::Wildcard)) { return Err(MechError::new(ActivationPatternWildcardMustBeLast,None).with_tokens(scope.tokens())); }
-  if arms.iter().any(|arm|arm.guard.is_some()) { return Err(MechError::new(ActivationPatternGuardMustBePure,None).with_tokens(scope.tokens())); }
-  for arm in arms { if let ActivationArmBody::Block(body)=&arm.body { for (code,_) in body { match code { MechCode::Statement(Statement::VariableAssign(_)) | MechCode::Statement(Statement::OpAssign(_)) => return Err(MechError::new(ActivationPatternRegisterWriteUnsupported,None).with_tokens(code.tokens())), MechCode::Statement(Statement::ContextSend(_)) => return Err(MechError::new(ActivationPatternContextEffectUnsupported,None).with_tokens(code.tokens())), _=>{} } } } }
-  let patterns=arms.iter().map(|arm|compile_pattern(&arm.pattern,interpreter)).collect::<MResult<Vec<_>>>()?;
-  let plan=interpreter.plan();
-  let (scope_generation,scope_value)=generation();
-  let scope_node=plan.borrow_mut().register(Box::new(ScopePulse{out:scope_generation}), &[trigger.clone()])?;
-  let mut matcher_nodes=Vec::new(); let mut completions=Vec::new(); let mut matched=Vec::new();
-  for pattern in patterns { let (complete,complete_value)=generation(); let flag=Ref::new(false); let id=plan.borrow_mut().register(Box::new(Matcher{pattern,trigger:trigger.clone(),matched:flag.clone(),out:complete}), &[scope_value.clone(),trigger.clone()])?; matcher_nodes.push(id); completions.push(complete_value); matched.push(flag); }
-  let mut finalizer_nodes=Vec::new(); let mut eligible=Vec::new(); let mut arm_complete=Vec::new();
-  for (flag, complete) in matched.iter().zip(completions.iter()) { let (done,done_value)=generation(); let ok=Ref::new(false); let id=plan.borrow_mut().register(Box::new(Finalize{matched:flag.clone(),eligible:ok.clone(),out:done}), &[complete.clone()])?; finalizer_nodes.push(id); eligible.push(ok); arm_complete.push(done_value); }
-  let (selection,selection_value)=generation(); let selected=Ref::new(usize::MAX); let selector_node=plan.borrow_mut().register(Box::new(Select{eligible:eligible.clone(),selected:selected.clone(),out:selection}), &arm_complete)?;
-  let mut gate_nodes=Vec::new(); let mut pulses=Vec::new();
-  for arm in 0..arms.len() { let (pulse,pulse_value)=generation(); let id=plan.borrow_mut().register(Box::new(Gate{arm,selected:selected.clone(),out:pulse}), &[selection_value.clone()])?; gate_nodes.push(id); pulses.push(pulse_value); }
-  let mut registrations=Vec::new();
-  for (arm,pulse) in arms.iter().zip(pulses.iter()) { let start=plan.len(); plan.push_activation_registration_scope(pulse.reactive_root_cell_ids()); let result=match &arm.body { ActivationArmBody::Block(body)=>{for (code,_) in body { crate::mech_code(code,interpreter)?; } Ok(())}, ActivationArmBody::Expression(expression)=>{crate::expression(expression,None,interpreter).map(|_|())} }; plan.pop_activation_registration_scope(); result?; registrations.push((start,plan.len())); }
-  let registration=PatternActivationRegistration { scope_pulse_node:scope_node, selector_node, arms:(0..arms.len()).map(|i|PatternActivationArmRegistration{matcher_node:matcher_nodes[i],finalizer_node:finalizer_nodes[i],gate_node:gate_nodes[i],pulse_cell:pulses[i].reactive_root_cell_ids()[0],body_node_start:registrations[i].0,body_node_end:registrations[i].1}).collect() };
-  plan.borrow_mut().register_pattern_activation(registration);
-  let _=trigger_cells; // The scope pulse's Root dependency is the trigger's root storage.
-  Ok(Value::Empty)
+pub(crate) fn elaborate_patterned_activation(scope:&ActivationScope,arms:&[ActivationArm],trigger:Value,trigger_cells:Vec<ReactiveCellId>,i:&Interpreter)->MResult<Value>{
+ let last=arms.last().ok_or_else(||MechError::new(ActivationPatternArmsNonExhaustive,None).with_tokens(scope.tokens()))?;
+ if !matches!(last.pattern,Pattern::Wildcard)||last.guard.is_some(){return Err(MechError::new(ActivationPatternArmsNonExhaustive,None).with_tokens(scope.tokens()))} if arms[..arms.len()-1].iter().any(|x|matches!(x.pattern,Pattern::Wildcard)){return Err(MechError::new(ActivationPatternWildcardMustBeLast,None).with_tokens(scope.tokens()))} if arms.iter().any(|x|x.guard.is_some()){return Err(MechError::new(ActivationPatternGuardMustBePure,None).with_tokens(scope.tokens()))}
+ for arm in arms {if let ActivationArmBody::Block(body)=&arm.body{for(code,_)in body{match code{MechCode::Statement(Statement::VariableAssign(_))|MechCode::Statement(Statement::OpAssign(_))=>return Err(MechError::new(ActivationPatternRegisterWriteUnsupported,None).with_tokens(code.tokens())),MechCode::Statement(Statement::ContextSend(_))=>return Err(MechError::new(ActivationPatternContextEffectUnsupported,None).with_tokens(code.tokens())),_=>{}}}}}
+ let mut compiled=Vec::new();for arm in arms{let mut captures=Vec::new();let pattern=compile(&arm.pattern,&trigger,i,&mut captures)?;compiled.push(CompiledArm{pattern,captures})}
+ if trigger.reactive_root_cell_ids()!=trigger_cells{return Err(MechError::new(ActivationPatternTriggerInvariant,None).with_tokens(scope.tokens()))}
+ let plan=i.plan();let(scope_gen,scope_v)=generation();let scope_node=plan.borrow_mut().register(Box::new(ScopePulse{out:scope_gen}),&[trigger.clone()])?;
+ let(mut matcher_nodes,mut completions,mut matched)=(Vec::new(),Vec::new(),Vec::new());for arm in &compiled{let(o,v)=generation();let f=Ref::new(false);let n=plan.borrow_mut().register(Box::new(Matcher{pattern:arm.pattern.clone(),trigger:trigger.clone(),captures:arm.captures.clone(),matched:f.clone(),out:o}),&[scope_v.clone(),trigger.clone()])?;matcher_nodes.push(n);completions.push(v);matched.push(f)}
+ let(mut finalizers,mut eligible,mut done)=(Vec::new(),Vec::new(),Vec::new());for(f,c)in matched.iter().zip(completions.iter()){let(o,v)=generation();let e=Ref::new(false);finalizers.push(plan.borrow_mut().register(Box::new(Finalize{matched:f.clone(),eligible:e.clone(),out:o}),&[c.clone()])?);eligible.push(e);done.push(v)} let(o,selection)=generation();let selected=Ref::new(usize::MAX);let selector=plan.borrow_mut().register(Box::new(Select{eligible:eligible.clone(),selected:selected.clone(),out:o}),&done)?;
+ let(mut gates,mut pulses)=(Vec::new(),Vec::new());for arm in 0..arms.len(){let(o,v)=generation();gates.push(plan.borrow_mut().register(Box::new(Gate{arm,selected:selected.clone(),out:o}),&[selection.clone()])?);pulses.push(v)}
+ let mut ranges=Vec::new();for(arm,compiled_arm)in arms.iter().zip(compiled.iter()){let symbols=i.symbols();let mut s=symbols.borrow_mut();let old=compiled_arm.captures.iter().map(|c|(c.id,s.symbols.get(&c.id).cloned(),s.mutable_variables.get(&c.id).cloned())).collect::<Vec<_>>();for c in &compiled_arm.captures{s.insert(c.id,c.slot.clone(),false);}drop(s);let start=plan.len();plan.push_activation_registration_scope(pulses[ranges.len()].reactive_root_cell_ids());let result=match &arm.body{ActivationArmBody::Block(b)=>{for(c,_)in b{crate::mech_code(c,i)?;}Ok(())},ActivationArmBody::Expression(e)=>crate::expression(e,None,i).map(|_|())};plan.pop_activation_registration_scope();let mut s=symbols.borrow_mut();for(id,oldv,oldm)in old{s.symbols.remove(&id);s.mutable_variables.remove(&id);if let Some(v)=oldv{s.symbols.insert(id,v);}if let Some(v)=oldm{s.mutable_variables.insert(id,v);}}drop(s);result?;ranges.push((start,plan.len()))}
+ let registration=PatternActivationRegistration{scope_pulse_node:scope_node,selector_node:selector,arms:(0..arms.len()).map(|n|PatternActivationArmRegistration{matcher_node:matcher_nodes[n],finalizer_node:finalizers[n],gate_node:gates[n],pulse_cell:pulses[n].reactive_root_cell_ids()[0],body_node_start:ranges[n].0,body_node_end:ranges[n].1,captures:compiled[n].captures.iter().map(|c|PatternActivationCaptureRegistration{id:c.id,kind:c.kind.clone(),cell:c.slot.reactive_root_cell_ids()[0]}).collect()}).collect()};plan.borrow_mut().register_pattern_activation(registration);Ok(Value::Empty)
 }
