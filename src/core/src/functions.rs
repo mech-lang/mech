@@ -940,6 +940,31 @@ impl ReactivePlan {
     self.pattern_activation_registrations.push(registration);
   }
 
+  /// Records an input that is read when another reactive cause schedules the
+  /// node. Updating this cell alone must not schedule the node.
+  pub fn add_sampled_dependency(
+    &mut self,
+    node_id: ReactiveNodeId,
+    cell: ReactiveCellId,
+  ) -> bool {
+    let Some(node) = self.nodes.get_mut(node_id) else {
+      return false;
+    };
+    if let Some(existing) = node.inputs.iter().find(|dependency| dependency.cell == cell) {
+      return existing.kind == ReactiveDependencyKind::Sampled
+        || existing.kind == ReactiveDependencyKind::Reactive;
+    }
+    node.inputs.push(ReactiveDependency {
+      cell,
+      kind: ReactiveDependencyKind::Sampled,
+    });
+    let consumers = self.sampled_consumers.entry(cell).or_default();
+    if !consumers.contains(&node_id) {
+      consumers.push(node_id);
+    }
+    true
+  }
+
   pub fn reactive_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
     self.reactive_consumers
       .get(&cell)

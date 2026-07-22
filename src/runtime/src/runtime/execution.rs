@@ -542,10 +542,13 @@ impl MechRuntime {
     value: Value,
   ) -> MResult<mech_core::Expression> {
     self.validate_live_context_candidate(context)?;
-    // The interpreter recognizes this prefix as a sampled pattern value rather
-    // than a source-level capture name.
-    let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
-    let symbol_id = hash_str(&name);
+    let identifier = mech_core::internal_pattern_value_identifier(&format!(
+      "context-{}-{}",
+      hash_str(source.base_uri()),
+      hash_str(source.path())
+    ));
+    let name = identifier.to_string();
+    let symbol_id = identifier.hash();
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
     if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
       let bindings = self.live_input_bindings.entry(source).or_default();
@@ -555,7 +558,7 @@ impl MechRuntime {
       self.commit_live_context_candidate(context);
     }
     let var = mech_core::Var {
-      name: identifier_from_str(&name),
+      name: identifier,
       context: None,
       kind: None,
     };

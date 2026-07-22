@@ -81,7 +81,19 @@ fn detached(v: &Value) -> Value {
 fn clone_ref_value<T: Clone>(destination: &Ref<T>, source: &Ref<T>) {
     destination.borrow_mut().clone_from(&*source.borrow())
 }
-fn create_capture_slot_for_kind(kind: &ValueKind) -> MResult<Value> {
+#[cfg(feature = "matrix")]
+fn capture_matrix_dimensions(shape: &[usize]) -> MResult<(usize, usize)> {
+    match shape {
+        [] => Ok((1, 0)),
+        [rows, cols] => Ok((*rows, *cols)),
+        _ => Err(MechError::new(
+            ActivationPatternCaptureKindUnsupported,
+            None,
+        )),
+    }
+}
+
+fn create_capture_slot_for_kind(kind: &ValueKind, interpreter: &Interpreter) -> MResult<Value> {
     match kind.deref_kind() {
         #[cfg(feature = "u8")]
         ValueKind::U8 => Ok(Value::U8(Ref::new(0))),
@@ -118,13 +130,309 @@ fn create_capture_slot_for_kind(kind: &ValueKind) -> MResult<Value> {
         ValueKind::Index => Ok(Value::Index(Ref::new(0))),
         #[cfg(feature = "atom")]
         ValueKind::Atom(id, _) => Ok(Value::Atom(Ref::new(MechAtom::new(id)))),
+        #[cfg(feature = "tuple")]
+        ValueKind::Tuple(kinds) => Ok(Value::Tuple(Ref::new(MechTuple::from_vec(
+            kinds
+                .iter()
+                .map(|kind| create_capture_slot_for_kind(kind, interpreter))
+                .collect::<MResult<Vec<_>>>()?,
+        )))),
+        #[cfg(feature = "enum")]
+        ValueKind::Enum(id, _) => Ok(Value::Enum(Ref::new(MechEnum {
+            id,
+            variants: Vec::new(),
+            names: interpreter.dictionary(),
+        }))),
+        #[cfg(feature = "record")]
+        ValueKind::Record(fields) => {
+            let values = fields
+                .iter()
+                .map(|(name, kind)| {
+                    Ok(((hash_str(name), name.clone()), create_capture_slot_for_kind(kind, interpreter)?))
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            Ok(Value::Record(Ref::new(MechRecord::from_vec(values))))
+        }
+        #[cfg(feature = "map")]
+        ValueKind::Map(key_kind, value_kind) => Ok(Value::Map(Ref::new(MechMap {
+            key_kind: *key_kind,
+            value_kind: *value_kind,
+            num_elements: 0,
+            map: Default::default(),
+        }))),
+        #[cfg(feature = "set")]
+        ValueKind::Set(element_kind, size) => Ok(Value::Set(Ref::new(MechSet::new(
+            *element_kind,
+            size.unwrap_or(0),
+        )))),
+        #[cfg(feature = "table")]
+        ValueKind::Table(columns, rows) => {
+            let mut names = Vec::with_capacity(columns.len());
+            let mut kinds = Vec::with_capacity(columns.len());
+            let mut values = Vec::with_capacity(columns.len());
+            for (name, kind) in columns {
+                names.push(name);
+                kinds.push(kind.clone());
+                let default = create_capture_slot_for_kind(&kind, interpreter)?;
+                values.push(vec![default; rows]);
+            }
+            Ok(Value::Table(Ref::new(MechTable::new_table(
+                names, kinds, values,
+            ))))
+        }
+        #[cfg(feature = "matrix")]
+        ValueKind::Matrix(element_kind, shape) => {
+            let (rows, cols) = capture_matrix_dimensions(&shape)?;
+            let count = rows.saturating_mul(cols);
+            match *element_kind {
+                ValueKind::Index => Ok(Value::MatrixIndex(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
+                #[cfg(feature = "bool")]
+                ValueKind::Bool => Ok(Value::MatrixBool(Matrix::from_vec(
+                    vec![false; count],
+                    rows,
+                    cols,
+                ))),
+                #[cfg(feature = "u8")]
+                ValueKind::U8 => Ok(Value::MatrixU8(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "u16")]
+                ValueKind::U16 => Ok(Value::MatrixU16(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "u32")]
+                ValueKind::U32 => Ok(Value::MatrixU32(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "u64")]
+                ValueKind::U64 => Ok(Value::MatrixU64(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "u128")]
+                ValueKind::U128 => Ok(Value::MatrixU128(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "i8")]
+                ValueKind::I8 => Ok(Value::MatrixI8(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "i16")]
+                ValueKind::I16 => Ok(Value::MatrixI16(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "i32")]
+                ValueKind::I32 => Ok(Value::MatrixI32(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "i64")]
+                ValueKind::I64 => Ok(Value::MatrixI64(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "i128")]
+                ValueKind::I128 => Ok(Value::MatrixI128(Matrix::from_vec(vec![0; count], rows, cols))),
+                #[cfg(feature = "f32")]
+                ValueKind::F32 => Ok(Value::MatrixF32(Matrix::from_vec(vec![0.0; count], rows, cols))),
+                #[cfg(feature = "f64")]
+                ValueKind::F64 => Ok(Value::MatrixF64(Matrix::from_vec(vec![0.0; count], rows, cols))),
+                #[cfg(feature = "string")]
+                ValueKind::String => Ok(Value::MatrixString(Matrix::from_vec(
+                    vec![String::new(); count],
+                    rows,
+                    cols,
+                ))),
+                #[cfg(feature = "rational")]
+                ValueKind::R64 => Ok(Value::MatrixR64(Matrix::from_vec(
+                    vec![R64::default(); count],
+                    rows,
+                    cols,
+                ))),
+                #[cfg(feature = "complex")]
+                ValueKind::C64 => Ok(Value::MatrixC64(Matrix::from_vec(
+                    vec![C64::default(); count],
+                    rows,
+                    cols,
+                ))),
+                element_kind => {
+                    let default = create_capture_slot_for_kind(&element_kind, interpreter)
+                        .unwrap_or(Value::EmptyKind(element_kind));
+                    Ok(Value::MatrixValue(Matrix::from_vec(
+                        vec![default; count],
+                        rows,
+                        cols,
+                    )))
+                }
+            }
+        }
         _ => Err(MechError::new(
             ActivationPatternCaptureKindUnsupported,
             None,
         )),
     }
 }
+
+fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
+    let source = detached(source);
+    match (destination, &source) {
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(destination), Value::Tuple(source)) => {
+            let destination = destination.borrow();
+            let source = source.borrow();
+            destination.elements.len() == source.elements.len()
+                && destination
+                    .elements
+                    .iter()
+                    .zip(&source.elements)
+                    .all(|(destination, source)| {
+                        capture_slot_accepts_payload(destination, source)
+                    })
+        }
+        #[cfg(feature = "enum")]
+        (Value::Enum(destination), Value::Enum(source)) => {
+            let destination = destination.borrow();
+            let source = source.borrow();
+            if destination.id != source.id || destination.variants.is_empty() {
+                return destination.id == source.id;
+            }
+            let same_variants = destination.variants.len() == source.variants.len()
+                && destination
+                    .variants
+                    .iter()
+                    .zip(&source.variants)
+                    .all(|((destination_id, _), (source_id, _))| {
+                        destination_id == source_id
+                    });
+            !same_variants
+                || destination.variants.iter().zip(&source.variants).all(
+                    |((_, destination), (_, source))| match (destination, source) {
+                        (Some(destination), Some(source)) => {
+                            capture_slot_accepts_payload(destination, source)
+                        }
+                        (None, None) => true,
+                        _ => false,
+                    },
+                )
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(destination), Value::Record(source)) => {
+            let destination = destination.borrow();
+            let source = source.borrow();
+            destination.data.len() == source.data.len()
+                && destination.data.iter().zip(&source.data).all(
+                    |((destination_id, destination), (source_id, source))| {
+                        destination_id == source_id
+                            && capture_slot_accepts_payload(destination, source)
+                    },
+                )
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(destination), Value::Map(source)) => {
+            let destination = destination.borrow();
+            let source = source.borrow();
+            if destination.map.is_empty() || destination.map.len() != source.map.len() {
+                return true;
+            }
+            let same_keys = destination
+                .map
+                .keys()
+                .zip(source.map.keys())
+                .all(|(destination, source)| destination == source);
+            !same_keys
+                || destination
+                    .map
+                    .values()
+                    .zip(source.map.values())
+                    .all(|(destination, source)| {
+                        capture_slot_accepts_payload(destination, source)
+                    })
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(destination), Value::Table(source)) => {
+            let destination = destination.borrow();
+            let source = source.borrow();
+            destination.rows == source.rows
+                && destination.data.len() == source.data.len()
+                && destination.data.iter().zip(&source.data).all(
+                    |(
+                        (destination_id, (destination_kind, destination)),
+                        (source_id, (source_kind, source)),
+                    )| {
+                        destination_id == source_id
+                            && destination_kind == source_kind
+                            && destination.can_replace_payload_from(source)
+                    },
+                )
+        }
+        #[cfg(feature = "matrix")]
+        (Value::MatrixIndex(destination), Value::MatrixIndex(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "bool"))]
+        (Value::MatrixBool(destination), Value::MatrixBool(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "u8"))]
+        (Value::MatrixU8(destination), Value::MatrixU8(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "u16"))]
+        (Value::MatrixU16(destination), Value::MatrixU16(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "u32"))]
+        (Value::MatrixU32(destination), Value::MatrixU32(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "u64"))]
+        (Value::MatrixU64(destination), Value::MatrixU64(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "u128"))]
+        (Value::MatrixU128(destination), Value::MatrixU128(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "i8"))]
+        (Value::MatrixI8(destination), Value::MatrixI8(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "i16"))]
+        (Value::MatrixI16(destination), Value::MatrixI16(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "i32"))]
+        (Value::MatrixI32(destination), Value::MatrixI32(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "i64"))]
+        (Value::MatrixI64(destination), Value::MatrixI64(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "i128"))]
+        (Value::MatrixI128(destination), Value::MatrixI128(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "f32"))]
+        (Value::MatrixF32(destination), Value::MatrixF32(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "f64"))]
+        (Value::MatrixF64(destination), Value::MatrixF64(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "string"))]
+        (Value::MatrixString(destination), Value::MatrixString(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "rational"))]
+        (Value::MatrixR64(destination), Value::MatrixR64(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(all(feature = "matrix", feature = "complex"))]
+        (Value::MatrixC64(destination), Value::MatrixC64(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        #[cfg(feature = "matrix")]
+        (Value::MatrixValue(destination), Value::MatrixValue(source)) => {
+            destination.can_replace_payload_from(source)
+        }
+        (destination, source) => {
+            std::mem::discriminant(destination) == std::mem::discriminant(source)
+        }
+    }
+}
+
 fn commit_capture_slot(destination: &Value, source: &Value) -> MResult<()> {
+    if !capture_slot_accepts_payload(destination, source) {
+        return Err(MechError::new(
+            ActivationPatternCaptureKindUnsupported,
+            None,
+        ));
+    }
     match (destination, &detached(source)) {
         #[cfg(feature = "u8")]
         (Value::U8(a), Value::U8(b)) => {
@@ -215,6 +523,124 @@ fn commit_capture_slot(destination: &Value, source: &Value) -> MResult<()> {
             clone_ref_value(a, b);
             Ok(())
         }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(a), Value::Tuple(b)) => {
+            let a = a.borrow();
+            let b = b.borrow();
+            for (destination, source) in a.elements.iter().zip(&b.elements) {
+                commit_capture_slot(destination, source)?;
+            }
+            Ok(())
+        }
+        #[cfg(feature = "enum")]
+        (Value::Enum(a), Value::Enum(b)) => {
+            let preserve_payload_cells = {
+                let a = a.borrow();
+                let b = b.borrow();
+                !a.variants.is_empty()
+                    && a.variants.len() == b.variants.len()
+                    && a.variants
+                        .iter()
+                        .zip(&b.variants)
+                        .all(|((a, _), (b, _))| a == b)
+            };
+            if preserve_payload_cells {
+                let a = a.borrow();
+                let b = b.borrow();
+                for ((_, destination), (_, source)) in a.variants.iter().zip(&b.variants) {
+                    if let (Some(destination), Some(source)) = (destination, source) {
+                        commit_capture_slot(destination, source)?;
+                    }
+                }
+            } else {
+                clone_ref_value(a, b);
+            }
+            Ok(())
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(a), Value::Record(b)) => {
+            let a = a.borrow();
+            let b = b.borrow();
+            for ((_, destination), (_, source)) in a.data.iter().zip(&b.data) {
+                commit_capture_slot(destination, source)?;
+            }
+            Ok(())
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(a), Value::Map(b)) => {
+            let preserve_value_cells = {
+                let a = a.borrow();
+                let b = b.borrow();
+                !a.map.is_empty()
+                    && a.map.len() == b.map.len()
+                    && a.map.keys().zip(b.map.keys()).all(|(a, b)| a == b)
+            };
+            if preserve_value_cells {
+                let a = a.borrow();
+                let b = b.borrow();
+                for ((_, destination), (_, source)) in a.map.iter().zip(&b.map) {
+                    commit_capture_slot(destination, source)?;
+                }
+            } else {
+                clone_ref_value(a, b);
+            }
+            Ok(())
+        }
+        #[cfg(feature = "set")]
+        (Value::Set(a), Value::Set(b)) => {
+            clone_ref_value(a, b);
+            Ok(())
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(a), Value::Table(b)) => {
+            let a = a.borrow();
+            let b = b.borrow();
+            for ((_, (_, destination)), (_, (_, source))) in a.data.iter().zip(&b.data) {
+                if !destination.replace_payload_from(source) {
+                    return Err(MechError::new(
+                        ActivationPatternCaptureKindUnsupported,
+                        None,
+                    ));
+                }
+            }
+            Ok(())
+        }
+        #[cfg(feature = "matrix")]
+        (Value::MatrixIndex(a), Value::MatrixIndex(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "bool"))]
+        (Value::MatrixBool(a), Value::MatrixBool(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "u8"))]
+        (Value::MatrixU8(a), Value::MatrixU8(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "u16"))]
+        (Value::MatrixU16(a), Value::MatrixU16(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "u32"))]
+        (Value::MatrixU32(a), Value::MatrixU32(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "u64"))]
+        (Value::MatrixU64(a), Value::MatrixU64(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "u128"))]
+        (Value::MatrixU128(a), Value::MatrixU128(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "i8"))]
+        (Value::MatrixI8(a), Value::MatrixI8(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "i16"))]
+        (Value::MatrixI16(a), Value::MatrixI16(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "i32"))]
+        (Value::MatrixI32(a), Value::MatrixI32(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "i64"))]
+        (Value::MatrixI64(a), Value::MatrixI64(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "i128"))]
+        (Value::MatrixI128(a), Value::MatrixI128(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "f32"))]
+        (Value::MatrixF32(a), Value::MatrixF32(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "f64"))]
+        (Value::MatrixF64(a), Value::MatrixF64(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "string"))]
+        (Value::MatrixString(a), Value::MatrixString(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "rational"))]
+        (Value::MatrixR64(a), Value::MatrixR64(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(all(feature = "matrix", feature = "complex"))]
+        (Value::MatrixC64(a), Value::MatrixC64(b)) if a.replace_payload_from(b) => Ok(()),
+        #[cfg(feature = "matrix")]
+        (Value::MatrixValue(a), Value::MatrixValue(b)) if a.replace_payload_from(b) => Ok(()),
         _ => Err(MechError::new(
             ActivationPatternCaptureKindUnsupported,
             None,
@@ -229,6 +655,23 @@ fn capture_kinds_are_storage_compatible(destination: &ValueKind, source: &ValueK
     if matches!(
         (&destination, &source),
         (ValueKind::Atom(_, _), ValueKind::Atom(_, _))
+    ) {
+        return true;
+    }
+    #[cfg(feature = "enum")]
+    if matches!(
+        (&destination, &source),
+        (ValueKind::Enum(destination, _), ValueKind::Enum(source, _)) if destination == source
+    ) {
+        return true;
+    }
+    #[cfg(feature = "matrix")]
+    if matches!(
+        (&destination, &source),
+        (
+            ValueKind::Matrix(destination_element, destination_shape),
+            ValueKind::Matrix(source_element, _)
+        ) if destination_shape.is_empty() && destination_element == source_element
     ) {
         return true;
     }
@@ -253,7 +696,7 @@ impl PatternBindingSink for ReactiveBindingSink<'_> {
             let source = detached(&binding.value);
             if capture.id != binding.id
                 || !capture_kinds_are_storage_compatible(&capture.kind, &binding.kind)
-                || std::mem::discriminant(&capture.slot) != std::mem::discriminant(&source)
+                || !capture_slot_accepts_payload(&capture.slot, &source)
             {
                 return Err(MechError::new(
                     ActivationPatternCaptureKindUnsupported,
@@ -469,7 +912,7 @@ fn preflight_patterned_activation(
                     MechError::new(ActivationPatternCaptureKindUnsupported, None)
                         .with_tokens(a.pattern.tokens())
                 })?;
-                let slot = create_capture_slot_for_kind(&kind)
+                let slot = create_capture_slot_for_kind(&kind, i)
                     .map_err(|error| error.with_tokens(a.pattern.tokens()))?;
                 Ok(ActivationPatternCapture {
                     id: binding.id,
@@ -783,7 +1226,17 @@ fn elaborate_patterned_arm_body(
     }
     symbols.borrow_mut().restore(symbol_snapshot);
     body_result?;
-    Ok((body_node_start, plan.len()))
+    let body_node_end = plan.len();
+    {
+        let mut plan = plan.borrow_mut();
+        for node in body_node_start..body_node_end {
+            for capture in captures {
+                let cell = capture.slot.reactive_root_cell_ids()[0];
+                debug_assert!(plan.add_sampled_dependency(node, cell));
+            }
+        }
+    }
+    Ok((body_node_start, body_node_end))
 }
 
 fn elaborate_patterned_activation_inner(
@@ -797,6 +1250,8 @@ fn elaborate_patterned_activation_inner(
     }
     let compiled = preflight.arms;
     let plan = i.plan();
+    let _persistent_user_function_plan =
+        crate::functions::PersistentUserFunctionPlanScope::enter(i);
     let pattern_expression_values = compiled
         .iter()
         .map(|arm| {
@@ -807,6 +1262,15 @@ fn elaborate_patterned_activation_inner(
                 .collect::<MResult<Vec<_>>>()
         })
         .collect::<MResult<Vec<_>>>()?;
+    drop(_persistent_user_function_plan);
+    for (arm, expression_values) in compiled.iter().zip(&pattern_expression_values) {
+        let pattern_match =
+            match_compiled_pattern_with_values(&arm.pattern, &trigger, expression_values)?;
+        ReactiveBindingSink {
+            captures: &arm.captures,
+        }
+        .commit(&pattern_match)?;
+    }
     let (scope_gen, scope_v) = generation();
     let scope_node = plan
         .borrow_mut()
@@ -936,6 +1400,7 @@ pub(crate) fn elaborate_patterned_activation(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     fn scalar_capture_cases() -> Vec<(ValueKind, Value)> {
         let mut cases = Vec::new();
@@ -988,8 +1453,9 @@ mod tests {
 
     #[test]
     fn activation_capture_slot_supports_all_enabled_scalar_kinds() {
+        let interpreter = Interpreter::new_with_full_stdlib(0);
         for (kind, source) in scalar_capture_cases() {
-            let slot = create_capture_slot_for_kind(&kind).unwrap();
+            let slot = create_capture_slot_for_kind(&kind, &interpreter).unwrap();
             let cells_before = slot.reactive_root_cell_ids();
             assert_eq!(cells_before.len(), 1);
             commit_capture_slot(&slot, &source).unwrap();
@@ -1001,7 +1467,8 @@ mod tests {
     #[cfg(any(feature = "string", feature = "variable_define"))]
     #[test]
     fn activation_capture_slot_preserves_identity_across_updates() {
-        let slot = create_capture_slot_for_kind(&ValueKind::String).unwrap();
+        let interpreter = Interpreter::new_with_full_stdlib(0);
+        let slot = create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap();
         let cells = slot.reactive_root_cell_ids();
         commit_capture_slot(&slot, &Value::String(Ref::new("first".to_string()))).unwrap();
         assert_eq!(slot, Value::String(Ref::new("first".to_string())));
@@ -1009,6 +1476,108 @@ mod tests {
         commit_capture_slot(&slot, &Value::String(Ref::new("second".to_string()))).unwrap();
         assert_eq!(slot, Value::String(Ref::new("second".to_string())));
         assert_eq!(slot.reactive_root_cell_ids(), cells);
+    }
+
+    #[cfg(all(
+        feature = "tuple",
+        feature = "enum",
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table",
+        feature = "string",
+        feature = "f64"
+    ))]
+    #[test]
+    fn activation_capture_slots_support_enabled_composite_value_kinds() {
+        let interpreter = Interpreter::new_with_full_stdlib(0);
+        let enum_id = hash_str("capture-enum");
+        let variant_id = hash_str("payload");
+        let names = Ref::new(HashMap::from([
+            (enum_id, "capture-enum".to_string()),
+            (variant_id, "payload".to_string()),
+        ]));
+        let cases = vec![
+            Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+                Value::F64(Ref::new(1.0)),
+                Value::String(Ref::new("tuple".to_string())),
+            ]))),
+            Value::Enum(Ref::new(MechEnum {
+                id: enum_id,
+                variants: vec![(variant_id, Some(Value::F64(Ref::new(2.0))))],
+                names,
+            })),
+            Value::Record(Ref::new(MechRecord::new(vec![
+                ("field", Value::F64(Ref::new(3.0))),
+            ]))),
+            Value::Map(Ref::new(MechMap::from_vec(vec![(
+                Value::String(Ref::new("key".to_string())),
+                Value::F64(Ref::new(4.0)),
+            )]))),
+            Value::Set(Ref::new(MechSet::from_vec(vec![Value::String(Ref::new(
+                "member".to_string(),
+            ))]))),
+            Value::Table(Ref::new(MechTable::new_table(
+                vec!["column".to_string()],
+                vec![ValueKind::F64],
+                vec![vec![Value::F64(Ref::new(5.0)), Value::F64(Ref::new(6.0))]],
+            ))),
+        ];
+
+        for source in cases {
+            let kind = source.kind();
+            let slot = create_capture_slot_for_kind(&kind, &interpreter).unwrap();
+            let cells = slot.reactive_root_cell_ids();
+            assert_eq!(cells.len(), 1, "missing stable root for {kind}");
+            commit_capture_slot(&slot, &source).unwrap();
+            assert_eq!(slot, source);
+            assert_eq!(slot.reactive_root_cell_ids(), cells);
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "string"))]
+    #[test]
+    fn activation_capture_commit_validates_every_binding_before_mutation() {
+        let interpreter = Interpreter::new_with_full_stdlib(0);
+        let number = ActivationPatternCapture {
+            id: hash_str("number"),
+            name: "number".to_string(),
+            kind: ValueKind::F64,
+            slot: create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap(),
+        };
+        let text = ActivationPatternCapture {
+            id: hash_str("text"),
+            name: "text".to_string(),
+            kind: ValueKind::String,
+            slot: create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap(),
+        };
+        let captures = vec![number, text];
+        let attempted = PatternMatch {
+            matched: true,
+            bindings: vec![
+                PatternBinding {
+                    index: 0,
+                    id: hash_str("number"),
+                    name: "number".to_string(),
+                    kind: ValueKind::F64,
+                    value: Value::F64(Ref::new(9.0)),
+                },
+                PatternBinding {
+                    index: 1,
+                    id: hash_str("text"),
+                    name: "text".to_string(),
+                    kind: ValueKind::F64,
+                    value: Value::F64(Ref::new(10.0)),
+                },
+            ],
+        };
+
+        let error = ReactiveBindingSink { captures: &captures }
+            .commit(&attempted)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(captures[0].slot, Value::F64(Ref::new(0.0)));
+        assert_eq!(captures[1].slot, Value::String(Ref::new(String::new())));
     }
 
     #[cfg(feature = "atom")]
@@ -1054,7 +1623,8 @@ event := :first
     #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
     #[test]
     fn activation_capture_slot_rejects_kind_mismatch() {
-        let slot = create_capture_slot_for_kind(&ValueKind::F64).unwrap();
+        let interpreter = Interpreter::new_with_full_stdlib(0);
+        let slot = create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap();
         let error =
             commit_capture_slot(&slot, &Value::String(Ref::new("wrong".to_string()))).unwrap_err();
         assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
@@ -1185,6 +1755,19 @@ event := :first
             }
         }
         panic!("no f64 output")
+    }
+    fn body_output(interpreter: &Interpreter, arm_index: usize) -> Value {
+        let registration = registration(interpreter);
+        let arm = &registration.arms[arm_index];
+        let plan = interpreter.plan();
+        let plan = plan.borrow();
+        detached(
+            &plan
+                .node(arm.body_node_end - 1)
+                .expect("missing activation body node")
+                .function
+                .out(),
+        )
     }
     fn set_enum_event(interpreter: &Interpreter, variant: &str, payload: f64) {
         let Value::Enum(event) = symbol(interpreter, "event") else {
@@ -1669,6 +2252,49 @@ threshold := 2.0
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
+    fn activation_pattern_samples_current_user_function_output_on_trigger() {
+        let mut i = interpret(
+            r#"
+sample(value<f64>) => <f64>
+  | value + 0.0.
+
+event := [1.0 2.0 1.0]
+threshold := 2.0
+~> event
+  | [x, sample(threshold), x] => {
+      selected := x + 100.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let threshold_cell = root_cell(&i, "threshold");
+        let topology = plan_snapshot(&i);
+        let activation = registration(&i);
+
+        let Value::F64(threshold) = symbol(&i, "threshold") else {
+            panic!("threshold is not f64")
+        };
+        *threshold.borrow_mut() = 3.0;
+        let dependency_turn = i.advance_reactive_turn(&[threshold_cell]).unwrap();
+        let dependency_nodes = turn_executed_nodes(&dependency_turn);
+        assert!(!dependency_nodes.contains(&activation.scope_pulse_node));
+        assert!(!dependency_nodes.contains(&activation.selector_node));
+        for arm in &activation.arms {
+            assert!(!dependency_nodes.contains(&arm.matcher_node));
+            assert!(!dependency_nodes.contains(&arm.finalizer_node));
+            assert!(!dependency_nodes.contains(&arm.gate_node));
+        }
+
+        set_f64_matrix_event(&i, vec![4.0, 3.0, 4.0]);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 104.0);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
     fn activation_array_pattern_supports_prefix_suffix_and_anonymous_spread() {
         let mut i = interpret(
             r#"
@@ -1736,49 +2362,142 @@ event := 1u64
     }
 
     #[test]
-    fn activation_whole_composite_capture_fails_before_plan_mutation() {
-        let mut i = interpret("event := (1.0, 2.0)");
-        let topology = plan_snapshot(&i);
-        let error = interpret_more(
-            &mut i,
+    fn activation_whole_composite_capture_is_stable_and_visible_to_the_body() {
+        let mut i = interpret(
             r#"
+event := (1.0, 2.0)
 ~> event
   | whole => {
-      selected := 1.0
+      selected := whole
+    }
+  | * => {
+      selected := (-1.0, -1.0)
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let activation = registration(&i);
+        let capture = &activation.arms[0].captures[0];
+        assert_eq!(capture.kind, ValueKind::Tuple(vec![ValueKind::F64, ValueKind::F64]));
+        let body_inputs = i.plan().borrow().nodes
+            [activation.arms[0].body_node_start..activation.arms[0].body_node_end]
+            .iter()
+            .flat_map(|node| node.inputs.iter().map(|dependency| dependency.cell))
+            .collect::<Vec<_>>();
+        assert!(
+            body_inputs.contains(&capture.cell),
+            "capture cell {:?} is absent from body inputs {:?}",
+            capture.cell,
+            body_inputs
+        );
+        let topology = plan_snapshot(&i);
+        for values in [[3.0, 4.0], [5.0, 6.0]] {
+            set_tuple_event(
+                &i,
+                values
+                    .into_iter()
+                    .map(|value| Value::F64(Ref::new(value)))
+                    .collect(),
+            );
+            let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_eq!(selected_arm_index(&activation, &outcome), 0);
+            assert_eq!(
+                body_output(&i, 0),
+                Value::Tuple(Ref::new(MechTuple::from_vec(
+                    values
+                        .into_iter()
+                        .map(|value| Value::F64(Ref::new(value)))
+                        .collect(),
+                )))
+            );
+            assert_eq!(registration(&i).arms[0].captures[0].cell, capture.cell);
+            assert_eq!(plan_snapshot(&i), topology);
+        }
+    }
+
+    #[test]
+    fn activation_whole_tuple_capture_keeps_element_access_attached() {
+        let mut i = interpret(
+            r#"
+event := (1.0, 2.0)
+~> event
+  | whole => {
+      selected := whole.1 * 10.0 + whole.2
     }
   | * => {
       selected := -1.0
     }
 "#,
-        )
-        .unwrap_err();
-        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-        assert_eq!(plan_snapshot(&i), topology);
-        assert!(!i.symbols().borrow().contains(hash_str("whole")));
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        for (values, expected) in [([3.0, 4.0], 34.0), ([5.0, 6.0], 56.0)] {
+            set_tuple_event(
+                &i,
+                values
+                    .into_iter()
+                    .map(|value| Value::F64(Ref::new(value)))
+                    .collect(),
+            );
+            let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_dispatch_turn(&i, &topology, &outcome, 0, expected);
+        }
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
-    fn activation_array_rest_capture_reports_storage_gap_before_plan_mutation() {
-        let mut i = interpret("event := [1.0 2.0 3.0]");
-        let topology = plan_snapshot(&i);
-        let error = interpret_more(
-            &mut i,
+    fn activation_array_rest_capture_preserves_kind_payload_and_identity() {
+        let mut i = interpret(
             r#"
+event := [1.0 2.0 3.0 4.0 5.0]
 ~> event
   | [head | rest] => {
-      selected := head
+      selected := rest
     }
   | * => {
-      selected := -1.0
+      selected := [-1.0]
     }
 "#,
-        )
-        .unwrap_err();
-        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-        assert_eq!(plan_snapshot(&i), topology);
-        assert!(!i.symbols().borrow().contains(hash_str("head")));
-        assert!(!i.symbols().borrow().contains(hash_str("rest")));
+        );
+        let trigger = root_cell(&i, "event");
+        let activation = registration(&i);
+        let rest_capture = &activation.arms[0].captures[1];
+        assert_eq!(
+            rest_capture.kind,
+            ValueKind::Matrix(Box::new(ValueKind::F64), Vec::new())
+        );
+        assert!(
+            i.plan().borrow().nodes
+                [activation.arms[0].body_node_start..activation.arms[0].body_node_end]
+                .iter()
+                .any(|node| node
+                    .inputs
+                    .iter()
+                    .any(|dependency| dependency.cell == rest_capture.cell))
+        );
+        let topology = plan_snapshot(&i);
+        let Value::MatrixF64(event) = symbol(&i, "event") else {
+            panic!("event is not an f64 matrix")
+        };
+        for values in [
+            vec![10.0, 20.0, 30.0, 40.0, 50.0],
+            vec![11.0, 21.0, 31.0, 41.0, 51.0, 61.0],
+        ] {
+            let source = Matrix::from_vec(values.clone(), 1, values.len());
+            assert!(event.replace_payload_from(&source));
+            let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_eq!(selected_arm_index(&activation, &outcome), 0);
+            let Value::MatrixF64(rest) = body_output(&i, 0) else {
+                panic!("rest output is not an f64 matrix")
+            };
+            assert_eq!(rest.shape(), vec![1, values.len() - 1]);
+            assert_eq!(rest.as_vec(), values[1..]);
+            assert_eq!(
+                registration(&i).arms[0].captures[1].cell,
+                rest_capture.cell
+            );
+            assert_eq!(plan_snapshot(&i), topology);
+        }
     }
     #[test]
     fn activation_pattern_repeated_capture_kind_mismatch_uses_canonical_error() {

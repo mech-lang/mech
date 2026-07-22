@@ -1,8 +1,6 @@
 use crate::*;
 use std::collections::HashMap;
 
-const RUNTIME_CONTEXT_PATTERN_VALUE_PREFIX: &str = "mech-internal-context-";
-
 // Patterns
 // ----------------------------------------------------------------------------
 
@@ -795,9 +793,40 @@ pub fn match_compiled_pattern(
     env: &Environment,
     interpreter: &Interpreter,
 ) -> MResult<PatternMatch> {
+    match_compiled_pattern_with_environment(pattern, value, env, interpreter, false)
+}
+
+/// Matches a compiled pattern while treating bindings already present in the
+/// environment as equality constraints. This is used by comprehension
+/// generators, where a later generator may refer to a name introduced by an
+/// earlier qualifier.
+pub fn match_compiled_pattern_with_environment_constraints(
+    pattern: &CompiledPattern,
+    value: &Value,
+    env: &Environment,
+    interpreter: &Interpreter,
+) -> MResult<PatternMatch> {
+    match_compiled_pattern_with_environment(pattern, value, env, interpreter, true)
+}
+
+fn match_compiled_pattern_with_environment(
+    pattern: &CompiledPattern,
+    value: &Value,
+    env: &Environment,
+    interpreter: &Interpreter,
+    seed_existing_bindings: bool,
+) -> MResult<PatternMatch> {
     let specs = pattern.binding_specs();
+    let proposed = if seed_existing_bindings {
+        specs
+            .iter()
+            .map(|spec| env.get(&spec.id).map(deep_detach_value))
+            .collect()
+    } else {
+        vec![None; specs.len()]
+    };
     let mut state = PatternMatchState {
-        proposed: vec![None; specs.len()],
+        proposed,
         binding_specs: specs,
         expression_source: PatternExpressionSource::Interpreter { env, interpreter },
     };
@@ -1221,12 +1250,7 @@ fn build_row_matrix_from_values(values: Vec<Value>) -> Value {
 }
 
 pub(crate) fn pattern_var_is_binding(var: &Var) -> bool {
-    var.context.is_none()
-        // Runtime context inputs are sampled pattern values, never captures.
-        && !var
-            .name
-            .to_string()
-            .starts_with(RUNTIME_CONTEXT_PATTERN_VALUE_PREFIX)
+    var.context.is_none() && !is_internal_pattern_value_identifier(&var.name)
 }
 
 fn extract_pattern_variable(expr: &Expression) -> Option<&Var> {
@@ -1320,5 +1344,90 @@ mod tests {
             .commit(&pattern_match)
             .unwrap();
         assert_eq!(env.get(&id), Some(&Value::U64(Ref::new(9))));
+    }
+
+    #[test]
+    fn existing_environment_bindings_are_constraints_inside_the_matcher() {
+        let x_id = hash_str("x");
+        let y_id = hash_str("y");
+        let pattern = CompiledPattern::Tuple {
+            elements: vec![
+                CompiledPattern::Binding {
+                    binding_index: 0,
+                    id: x_id,
+                    name: "x".to_string(),
+                    expected_kind: Some(ValueKind::U64),
+                },
+                CompiledPattern::Binding {
+                    binding_index: 1,
+                    id: y_id,
+                    name: "y".to_string(),
+                    expected_kind: Some(ValueKind::U64),
+                },
+            ],
+        };
+        let interpreter = Interpreter::new_with_full_stdlib(0);
+        let mut env = Environment::from([(x_id, Value::U64(Ref::new(1)))]);
+
+        let mismatch = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+            Value::U64(Ref::new(2)),
+            Value::U64(Ref::new(3)),
+        ])));
+        let pattern_match = match_compiled_pattern_with_environment_constraints(
+            &pattern,
+            &mismatch,
+            &env,
+            &interpreter,
+        )
+        .unwrap();
+        assert!(!pattern_match.matched);
+        assert!(pattern_match.bindings.is_empty());
+        EnvironmentBindingSink::new(&mut env)
+            .commit(&pattern_match)
+            .unwrap();
+        assert_eq!(env, Environment::from([(x_id, Value::U64(Ref::new(1)))]));
+
+        let match_value = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+            Value::U64(Ref::new(1)),
+            Value::U64(Ref::new(3)),
+        ])));
+        let pattern_match = match_compiled_pattern_with_environment_constraints(
+            &pattern,
+            &match_value,
+            &env,
+            &interpreter,
+        )
+        .unwrap();
+        assert!(pattern_match.matched);
+        EnvironmentBindingSink::new(&mut env)
+            .commit(&pattern_match)
+            .unwrap();
+        assert_eq!(env.get(&x_id), Some(&Value::U64(Ref::new(1))));
+        assert_eq!(env.get(&y_id), Some(&Value::U64(Ref::new(3))));
+    }
+
+    #[test]
+    fn spellable_internal_looking_name_remains_an_ordinary_binding() {
+        let source_name = "mech-internal-context-user-value";
+        let source_identifier = Identifier {
+            name: Token::new(
+                TokenKind::Identifier,
+                SourceRange::default(),
+                source_name.chars().collect(),
+            ),
+        };
+        let source_var = Var {
+            name: source_identifier,
+            context: None,
+            kind: None,
+        };
+        assert!(pattern_var_is_binding(&source_var));
+
+        let internal_var = Var {
+            name: internal_pattern_value_identifier("context-value"),
+            context: None,
+            kind: None,
+        };
+        assert!(!pattern_var_is_binding(&internal_var));
     }
 }
