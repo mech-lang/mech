@@ -161,7 +161,7 @@ fn mech_code_contains_context_addressed_source(code: &MechCode) -> bool {
     match code {
         MechCode::ActivationScope(scope) => {
             expression_contains_context_addressed_source(&scope.trigger)
-                || scope.body.iter().any(|(body_code, _)| mech_code_contains_context_addressed_source(body_code))
+                || activation_body_contains_context_addressed_source(&scope.body)
         }
         MechCode::Import(import) => matches!(import.alias, Some(ModuleImportAlias::Context(_))),
         MechCode::Statement(statement) => statement_contains_context_addressed_source(statement),
@@ -180,6 +180,30 @@ fn mech_code_contains_context_addressed_source(code: &MechCode) -> bool {
         }
         MechCode::FsmImplementation(fsm) => fsm_contains_context_addressed_source(fsm),
         _ => false,
+    }
+}
+
+fn activation_body_contains_context_addressed_source(body: &ActivationBody) -> bool {
+    match body {
+        ActivationBody::Block(codes) => codes
+            .iter()
+            .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
+        ActivationBody::PatternArms(arms) => arms.iter().any(|arm| {
+            pattern_contains_context_addressed_source(&arm.pattern)
+                || arm
+                    .guard
+                    .as_ref()
+                    .map(expression_contains_context_addressed_source)
+                    .unwrap_or(false)
+                || match &arm.body {
+                    ActivationArmBody::Block(codes) => codes
+                        .iter()
+                        .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
+                    ActivationArmBody::Expression(expression) => {
+                        expression_contains_context_addressed_source(expression)
+                    }
+                }
+        }),
     }
 }
 
