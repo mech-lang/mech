@@ -100,6 +100,10 @@ pub mod builtins;
 #[cfg(feature = "functions")]
 pub mod modules;
 pub mod expressions;
+#[cfg(all(
+  feature = "functions",
+  feature = "symbol_table",
+))]
 pub mod activation;
 #[cfg(feature = "functions")]
 pub mod functions;

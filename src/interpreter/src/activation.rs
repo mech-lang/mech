@@ -1,3 +1,8 @@
+#![cfg(all(
+  feature = "functions",
+  feature = "symbol_table",
+))]
+
 //! Static scheduling support for patterned activation scopes.
 //!
 //! The small dispatch nodes in this file deliberately contain no syntax and
