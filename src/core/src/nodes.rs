@@ -1982,6 +1982,22 @@ impl Identifier {
   }
 }
 
+/// Constructs an identifier reserved for sampled runtime pattern values. The
+/// leading NUL cannot be produced by Mech source syntax, so source names always
+/// retain ordinary binding semantics.
+pub fn internal_pattern_value_identifier(name: &str) -> Identifier {
+  let mut chars = Vec::with_capacity(name.chars().count() + 1);
+  chars.push('\0');
+  chars.extend(name.chars());
+  Identifier {
+    name: Token::new(TokenKind::Identifier, SourceRange::default(), chars),
+  }
+}
+
+pub fn is_internal_pattern_value_identifier(identifier: &Identifier) -> bool {
+  identifier.name.chars.first() == Some(&'\0')
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Emoji {
