@@ -1254,6 +1254,8 @@ impl Value {
       Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
       #[cfg(feature = "table")]
       Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
+      #[cfg(feature = "tuple")]
+      Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),
       x => panic!("Unsupported type for as_unchecked: {:?}.", x),
     }
   }
