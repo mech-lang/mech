@@ -621,7 +621,16 @@ impl MechErrorKind for ReactiveDependencyKindConflictError {
   }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ReactivePlanCheckpoint { node_len:usize, pattern_activation_registration_len:usize }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct PlanCheckpoint { reactive:ReactivePlanCheckpoint, activation_registration_depth:usize }
+#[derive(Debug,Clone)] pub struct ReactivePlanRollbackInvariantError { pub checkpoint_nodes:usize,pub current_nodes:usize,pub checkpoint_registrations:usize,pub current_registrations:usize }
+impl MechErrorKind for ReactivePlanRollbackInvariantError { fn name(&self)->&str{"ReactivePlanRollbackInvariant"} fn message(&self)->String{format!("Cannot roll the reactive plan back from {} nodes and {} patterned registrations to {} nodes and {} patterned registrations.",self.current_nodes,self.current_registrations,self.checkpoint_nodes,self.checkpoint_registrations)} }
+
 impl ReactivePlan {
+  fn rebuild_consumer_indexes(&mut self) { self.reactive_consumers.clear(); self.sampled_consumers.clear(); for node in &self.nodes { for dependency in &node.inputs { let consumers=match dependency.kind { ReactiveDependencyKind::Reactive=>&mut self.reactive_consumers, ReactiveDependencyKind::Sampled=>&mut self.sampled_consumers }; consumers.entry(dependency.cell).or_default().push(node.id); } } }
+  pub fn checkpoint(&self)->ReactivePlanCheckpoint { ReactivePlanCheckpoint { node_len:self.nodes.len(), pattern_activation_registration_len:self.pattern_activation_registrations.len() } }
+  pub fn rollback(&mut self, checkpoint:ReactivePlanCheckpoint)->MResult<()> { if checkpoint.node_len>self.nodes.len()||checkpoint.pattern_activation_registration_len>self.pattern_activation_registrations.len(){return Err(MechError::new(ReactivePlanRollbackInvariantError{checkpoint_nodes:checkpoint.node_len,current_nodes:self.nodes.len(),checkpoint_registrations:checkpoint.pattern_activation_registration_len,current_registrations:self.pattern_activation_registrations.len()},None))} self.nodes.truncate(checkpoint.node_len);self.pattern_activation_registrations.truncate(checkpoint.pattern_activation_registration_len);self.rebuild_consumer_indexes();Ok(()) }
+
   pub fn new() -> Self {
     Self {
       nodes: Vec::new(),
@@ -1017,6 +1026,10 @@ impl fmt::Debug for Plan {
 }
 
 impl Plan {
+  pub fn checkpoint(&self)->PlanCheckpoint { PlanCheckpoint { reactive:self.0.borrow().checkpoint(),activation_registration_depth:self.1.borrow().len() } }
+  pub fn rollback(&self, checkpoint:PlanCheckpoint)->MResult<()> { {let mut scopes=self.1.borrow_mut();if checkpoint.activation_registration_depth>scopes.len(){let p=self.0.borrow();return Err(MechError::new(ReactivePlanRollbackInvariantError{checkpoint_nodes:checkpoint.reactive.node_len,current_nodes:p.nodes.len(),checkpoint_registrations:checkpoint.reactive.pattern_activation_registration_len,current_registrations:p.pattern_activation_registrations.len()},None))}scopes.truncate(checkpoint.activation_registration_depth);}self.0.borrow_mut().rollback(checkpoint.reactive) }
+  pub fn activation_registration_depth(&self)->usize {self.1.borrow().len()}
+
   pub fn new() -> Self {
     Self(Ref::new(ReactivePlan::new()), Ref::new(Vec::new()))
   }

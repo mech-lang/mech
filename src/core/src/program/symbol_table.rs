@@ -1,9 +1,12 @@
 use crate::*;
 
-// Symbol Table 
+// Symbol Table
 // ----------------------------------------------------------------------------
 
 pub type SymbolTableRef= Ref<SymbolTable>;
+
+#[derive(Clone, Debug)]
+pub struct SymbolTableSnapshot { symbols: HashMap<u64, ValRef>, mutable_variables: HashMap<u64, ValRef>, dictionary: Dictionary, reverse_lookup: HashMap<*const Ref<Value>, u64> }
 
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
@@ -14,6 +17,9 @@ pub struct SymbolTable {
 }
 
 impl SymbolTable {
+  pub fn snapshot(&self) -> SymbolTableSnapshot { SymbolTableSnapshot { symbols:self.symbols.clone(), mutable_variables:self.mutable_variables.clone(), dictionary:self.dictionary.borrow().clone(), reverse_lookup:self.reverse_lookup.clone() } }
+  pub fn restore(&mut self, snapshot: SymbolTableSnapshot) { self.symbols=snapshot.symbols; self.mutable_variables=snapshot.mutable_variables; *self.dictionary.borrow_mut()=snapshot.dictionary; self.reverse_lookup=snapshot.reverse_lookup; }
+
 
   pub fn new() -> SymbolTable {
     Self {
