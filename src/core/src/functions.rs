@@ -424,13 +424,27 @@ pub struct PatternActivationRegistration {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PatternActivationArmRegistration {
   pub matcher_node: ReactiveNodeId,
+  /// The structural-only finalizer for an unguarded arm, or the unmatched
+  /// finalization path for a guarded arm.
   pub finalizer_node: ReactiveNodeId,
+  pub guard: Option<PatternActivationGuardRegistration>,
   pub gate_node: ReactiveNodeId,
   pub pulse_cell: ReactiveCellId,
   /// Half-open range of plan nodes registered for this arm's body.
   pub body_node_start: usize,
   pub body_node_end: usize,
   pub captures: Vec<PatternActivationCaptureRegistration>,
+}
+
+/// Static graph information for one guarded patterned-activation arm.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationGuardRegistration {
+  pub match_gate_node: ReactiveNodeId,
+  pub guard_finalizer_node: ReactiveNodeId,
+  /// Half-open range containing the ordinary guard-expression graph followed
+  /// by its guard finalizer.
+  pub guard_node_start: usize,
+  pub guard_node_end: usize,
 }
 
 /// Stable storage made available to a single patterned activation arm.
@@ -959,6 +973,31 @@ impl ReactivePlan {
       kind: ReactiveDependencyKind::Sampled,
     });
     let consumers = self.sampled_consumers.entry(cell).or_default();
+    if !consumers.contains(&node_id) {
+      consumers.push(node_id);
+    }
+    true
+  }
+
+  /// Records a cell that schedules this node. This is also used to repair
+  /// legacy combinational expression nodes that were appended directly while
+  /// an activation-registration scope was active.
+  pub fn add_reactive_dependency(
+    &mut self,
+    node_id: ReactiveNodeId,
+    cell: ReactiveCellId,
+  ) -> bool {
+    let Some(node) = self.nodes.get_mut(node_id) else {
+      return false;
+    };
+    if let Some(existing) = node.inputs.iter().find(|dependency| dependency.cell == cell) {
+      return existing.kind == ReactiveDependencyKind::Reactive;
+    }
+    node.inputs.push(ReactiveDependency {
+      cell,
+      kind: ReactiveDependencyKind::Reactive,
+    });
+    let consumers = self.reactive_consumers.entry(cell).or_default();
     if !consumers.contains(&node_id) {
       consumers.push(node_id);
     }

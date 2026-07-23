@@ -42,6 +42,7 @@ pub struct Interpreter {
   reactive_turn_state: ReactiveTurnState,
   #[cfg(feature = "functions")]
   pub(crate) persistent_user_function_plan_depth: Ref<usize>,
+  pub(crate) deferred_expression_solve_depth: Ref<usize>,
   #[cfg(feature = "functions")]
   pub stack: Vec<Frame>,
   registers: Vec<Value>,
@@ -83,6 +84,7 @@ impl Clone for Interpreter {
       reactive_turn_state: self.reactive_turn_state.clone(),
       #[cfg(feature = "functions")]
       persistent_user_function_plan_depth: self.persistent_user_function_plan_depth.clone(),
+      deferred_expression_solve_depth: self.deferred_expression_solve_depth.clone(),
       #[cfg(feature = "functions")]
       stack: self.stack.clone(),
       registers: self.registers.clone(),
@@ -145,6 +147,7 @@ impl Interpreter {
       reactive_turn_state: ReactiveTurnState::default(),
       #[cfg(feature = "functions")]
       persistent_user_function_plan_depth: Ref::new(0),
+      deferred_expression_solve_depth: Ref::new(0),
       #[cfg(feature = "functions")]
       stack: Vec::new(),
       registers: Vec::new(),
