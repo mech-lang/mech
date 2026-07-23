@@ -926,10 +926,20 @@ fn runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
     .build()
 }
 
+fn bind_single_mock_input(runtime: &mut MechRuntime) {
+  runtime
+    .live_input_bindings
+    .insert(
+      RuntimeHostInputSource::new(MOCK_DRIVER_BASE_URI, MOCK_DRIVER_PATH).unwrap(),
+      vec![mech_program::ProgramInputId { interpreter_id: 1, symbol_id: 1 }],
+    );
+}
+
 #[test]
-fn build_attaches_but_does_not_start_input_drivers() {
+fn build_attaches_and_starts_driven_input_drivers() {
   let state = Rc::new(RefCell::new(MockDriverState::default()));
   let mut runtime = runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
+  bind_single_mock_input(&mut runtime);
   assert_eq!(state.borrow().attach_count, 1);
   assert_eq!(state.borrow().start_count, 0);
   assert_eq!(state.borrow().stop_count, 0);
@@ -965,6 +975,7 @@ fn start_failure_stops_every_driver_in_reverse_order() {
   let c = Rc::new(RefCell::new(MockDriverState::default()));
   let (drivers, events) = drivers_with_events(&[("a", a.clone()), ("b", b.clone()), ("c", c.clone())]);
   let mut runtime = runtime_with_drivers(drivers).unwrap();
+  bind_single_mock_input(&mut runtime);
   let error = format!("{:?}", runtime.start_input_drivers().unwrap_err());
   assert!(error.contains("MockStartError"));
   let stop_events: Vec<String> = events.borrow().iter().filter(|event| event.starts_with("stop:")).cloned().collect();
@@ -979,6 +990,7 @@ fn stop_input_drivers_attempts_every_driver() {
   let c = Rc::new(RefCell::new(MockDriverState::default()));
   let (drivers, events) = drivers_with_events(&[("a", a.clone()), ("b", b.clone()), ("c", c.clone())]);
   let mut runtime = runtime_with_drivers(drivers).unwrap();
+  bind_single_mock_input(&mut runtime);
   runtime.start_input_drivers().unwrap();
   let error = format!("{:?}", runtime.stop_input_drivers().unwrap_err());
   assert!(error.contains("MockStopError"));
@@ -993,6 +1005,7 @@ fn stop_input_drivers_attempts_every_driver() {
 fn shutdown_closes_ingress_before_stopping_drivers() {
   let state = Rc::new(RefCell::new(MockDriverState::default()));
   let mut runtime = runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
+  bind_single_mock_input(&mut runtime);
   runtime.start_input_drivers().unwrap();
   let ingress = state.borrow().attached_ingress.clone().unwrap();
   runtime.shutdown().unwrap();
@@ -1010,6 +1023,7 @@ fn drop_stops_live_input_drivers() {
   let state = Rc::new(RefCell::new(MockDriverState::default()));
   {
     let mut runtime = runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
+    bind_single_mock_input(&mut runtime);
     runtime.start_input_drivers().unwrap();
     assert!(state.borrow().live);
   }

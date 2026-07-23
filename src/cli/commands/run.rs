@@ -227,35 +227,35 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         &std::env::current_dir()?,
     )?;
 
-    if let RunInputMode::InlineSource(source) = &plan.input_mode {
-        match run_cli_source_with_events(&mut runtime, source.trim()) {
-            Ok((value, events)) => {
-                print_run_runtime_events(&events);
-                print_value(&value);
-                return Ok(CliOutcome::exit(0));
-            }
-            Err(err) => return Err(err),
+    let result: MResult<Value> = match &plan.input_mode {
+        RunInputMode::InlineSource(source) => {
+            run_cli_source_with_events(&mut runtime, source.trim())
+                .map(|(value, events)| {
+                    print_run_runtime_events(&events);
+                    value
+                })
         }
-    }
-
-    let result: MResult<Value> = if plan.run_paths.is_empty() {
-        Ok(Value::Empty)
-    } else {
-        let fs_kernel = plan.filesystem_access.kernel.clone();
-        let mut last = Value::Empty;
-        for p in &plan.run_paths {
-            for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
-                let src = mech_runtime::read_runtime_source_file_with_capabilities(
-                    &target,
-                    Some(&fs_kernel),
-                    Some(MECH_TOOL_SUBJECT),
-                )?;
-                let (value, events) = run_cli_source_code_with_events(&mut runtime, &src)?;
-                print_run_runtime_events(&events);
-                last = value;
+        _ => {
+            if plan.run_paths.is_empty() {
+                Ok(Value::Empty)
+            } else {
+                let fs_kernel = plan.filesystem_access.kernel.clone();
+                let mut last = Value::Empty;
+                for p in &plan.run_paths {
+                    for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
+                        let src = mech_runtime::read_runtime_source_file_with_capabilities(
+                            &target,
+                            Some(&fs_kernel),
+                            Some(MECH_TOOL_SUBJECT),
+                        )?;
+                        let (value, events) = run_cli_source_code_with_events(&mut runtime, &src)?;
+                        print_run_runtime_events(&events);
+                        last = value;
+                    }
+                }
+                Ok(last)
             }
         }
-        Ok(last)
     };
 
     let repl_flag = plan.repl_requested || plan.missing_run_options;

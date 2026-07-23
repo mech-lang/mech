@@ -64,6 +64,11 @@ function frame() {
     project.frame(maxInputsPerFrame);
   } catch (error) {
     running = false;
+    try {
+      project.stop();
+    } catch (stopError) {
+      console.error(stopError);
+    }
     console.error(error);
     return;
   }
