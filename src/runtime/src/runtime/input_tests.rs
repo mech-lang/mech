@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use std::thread;
@@ -1486,6 +1486,478 @@ render-tick := @clock/hour
     publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
     publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
     assert_eq!(console.lines(), vec!["\"first\"", "\"second\"", "\"third\"", "\"first\"", "\"second\"", "\"third\""]);
+  }
+
+  #[test]
+  fn activation_send_snapshots_fixed_payloads_before_same_trigger_register_commit() {
+    let provider = TestResourceProvider::new().with_value(
+      "test://render/timer",
+      "tick",
+      Value::F64(Ref::new(0.0)),
+    );
+    let (mut runtime, output) = test_runtime_with_output(provider);
+    grant_read(&mut runtime, "test://render/timer", "tick");
+    grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+~state := 0.0
+
+~> render-tick {
+  state = state + 1.0
+}
+
+~> render-tick {
+  @out/line <- state
+  @out/line <- state + 0.0
+}
+"#).unwrap();
+
+    let plan = activation_plan_snapshot(&runtime);
+    let register = register_node_for_symbol(&runtime, "state");
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 0.0);
+    assert!(output.lines().is_empty());
+    assert_eq!(activation_send_count(&runtime), 2);
+
+    let first = apply_f64_input(
+      &mut runtime,
+      "test://render/timer",
+      "tick",
+      1.0,
+    );
+    assert_eq!(
+      only_reactive_turn(&first).register_commit.committed_nodes,
+      vec![register]
+    );
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 1.0);
+    assert_eq!(output.lines(), vec!["0", "0"]);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+
+    let equal = apply_f64_input(
+      &mut runtime,
+      "test://render/timer",
+      "tick",
+      1.0,
+    );
+    assert_eq!(
+      only_reactive_turn(&equal).register_commit.committed_nodes,
+      vec![register]
+    );
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 2.0);
+    assert_eq!(output.lines(), vec!["0", "0", "1", "1"]);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+    assert_eq!(activation_send_count(&runtime), 2);
+  }
+
+  #[test]
+  fn activation_send_registration_is_atomic_on_fixed_elaboration_failure() {
+    let (mut runtime, output) = activation_rejection_runtime();
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+render-tick := @tick/tick
+"#).unwrap();
+    let plan = activation_plan_snapshot(&runtime);
+    let sends = runtime.persistent_sends.len();
+    let bindings = runtime.live_input_bindings.clone();
+
+    let error = runtime.run_string(r#"@out := test://effects/output{:write(line)}
+~> render-tick {
+  @out/line <- render-tick
+  registered-first := render-tick + 1.0
+  failure :=
+    function-that-does-not-exist(registered-first)
+}
+"#).unwrap_err();
+
+    assert!(
+      error.kind_name().contains("Function"),
+      "unexpected elaboration error: {error:?}"
+    );
+    assert_rejected_activation_left_no_state(
+      &runtime,
+      &output,
+      &plan,
+      sends,
+      &bindings,
+    );
+    assert!(
+      !runtime
+        .program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .contains(hash_str("registered-first"))
+    );
+    assert!(
+      !runtime
+        .program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .contains(hash_str("failure"))
+    );
+  }
+
+  #[test]
+  fn activation_send_duration_failure_does_not_release_fixed_or_patterned_effects() {
+    let provider = TestResourceProvider::new().with_value(
+      "test://render/timer",
+      "tick",
+      Value::F64(Ref::new(0.0)),
+    );
+    let (mut runtime, output) = test_runtime_with_output(provider);
+    grant_read(&mut runtime, "test://render/timer", "tick");
+    grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    let subject = runtime.runtime_context().unwrap().subject;
+    grant_host_call(
+      &mut runtime,
+      &subject,
+      195,
+      "host:demo/activation-duration-sleep",
+    );
+    register_sleep_host(
+      &mut runtime,
+      "demo/activation-duration-sleep",
+    );
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+
+~> render-tick {
+  @out/line <-
+    demo/activation-duration-sleep(render-tick)
+}
+
+~> render-tick
+  | selected => {
+      @out/line <- selected + 10.0
+    }
+"#).unwrap();
+
+    let plan = activation_plan_snapshot(&runtime);
+    assert!(output.lines().is_empty());
+    assert_eq!(activation_send_count(&runtime), 2);
+
+    runtime.config.limits.max_turn_duration_ms = Some(1);
+    let error = runtime.apply_host_input(RuntimeHostInput::single(
+      RuntimeHostInputSource::new(
+        "test://render/timer",
+        "tick",
+      ).unwrap(),
+      RuntimeHostInputValue::F64(1.0),
+    )).unwrap_err();
+    let error = format!("{error:?}");
+    assert!(
+      error.contains("turn_duration_ms")
+        || error.contains("ResourceBudgetExceeded"),
+      "{error}"
+    );
+    assert!(output.lines().is_empty());
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+    assert_eq!(activation_send_count(&runtime), 2);
+
+    runtime.config.limits.max_turn_duration_ms = None;
+    let retry = apply_f64_input(
+      &mut runtime,
+      "test://render/timer",
+      "tick",
+      1.0,
+    );
+    assert!(retry.turn.is_some());
+    assert_eq!(output.lines(), vec!["1", "11"]);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+    assert_eq!(activation_send_count(&runtime), 2);
+  }
+
+  #[test]
+  fn patterned_activation_sends_only_from_the_selected_arm() {
+    let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);grant_read(&mut runtime,"test://render/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+~> render-tick
+  | 99.0 => {
+      @out/line <- 99.0
+    }
+  | selected, selected > 0.0 => {
+      @out/line <- selected
+    }
+  | * => {
+      @out/line <- -1.0
+    }
+"#).unwrap();
+    assert!(output.lines().is_empty(),"patterned effects ran during load");assert_eq!(activation_send_count(&runtime),3);
+    let barriers=runtime.persistent_sends.iter().map(|send|match send.schedule{RuntimePersistentSendSchedule::Activation{barrier_node_id,..}=>barrier_node_id,RuntimePersistentSendSchedule::EveryAcceptedTurn=>panic!("patterned activation send used top-level schedule")}).collect::<Vec<_>>();
+    assert_eq!(barriers.iter().copied().collect::<HashSet<_>>().len(),3,"each effectful arm must own a distinct barrier");
+    let plan=activation_plan_snapshot(&runtime);
+    let first=apply_f64_input(&mut runtime,"test://render/timer","tick",5.0);let turn=only_reactive_turn(&first);assert_eq!(output.lines(),vec!["5"]);assert_eq!((executed_count(turn,barriers[0]),executed_count(turn,barriers[1]),executed_count(turn,barriers[2])),(0,1,0));assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let equal=apply_f64_input(&mut runtime,"test://render/timer","tick",5.0);let turn=only_reactive_turn(&equal);assert_eq!(output.lines(),vec!["5","5"]);assert_eq!((executed_count(turn,barriers[0]),executed_count(turn,barriers[1]),executed_count(turn,barriers[2])),(0,1,0));assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let fallback=apply_f64_input(&mut runtime,"test://render/timer","tick",-5.0);let turn=only_reactive_turn(&fallback);assert_eq!(output.lines(),vec!["5","5","-1"]);assert_eq!((executed_count(turn,barriers[0]),executed_count(turn,barriers[1]),executed_count(turn,barriers[2])),(0,0,1));assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),3);
+  }
+
+  #[test]
+  fn patterned_activation_samples_outer_effect_values_only_on_its_trigger() {
+    let provider = TestResourceProvider::new()
+      .with_value(
+        "test://render/timer",
+        "tick",
+        Value::F64(Ref::new(0.0)),
+      )
+      .with_value(
+        TEST_SIGNALS_BASE_URI,
+        "value",
+        Value::F64(Ref::new(1.0)),
+      );
+    let (mut runtime, output) = test_runtime_with_output(provider);
+    grant_read(&mut runtime, "test://render/timer", "tick");
+    grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "value");
+    grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@signals := test://signals/inputs{:read(value)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+scene := @signals/value
+~> render-tick
+  | *, scene > 0.0 => {
+      @out/line <- scene
+    }
+  | * => {}
+"#).unwrap();
+
+    assert!(output.lines().is_empty());
+    assert_eq!(activation_send_count(&runtime), 1);
+    let barrier = runtime
+      .persistent_sends
+      .iter()
+      .find_map(|send| match send.schedule {
+        RuntimePersistentSendSchedule::Activation { barrier_node_id, .. } => {
+          Some(barrier_node_id)
+        }
+        RuntimePersistentSendSchedule::EveryAcceptedTurn => None,
+      })
+      .unwrap();
+    let plan = activation_plan_snapshot(&runtime);
+
+    let scene_only = apply_f64_input(
+      &mut runtime,
+      TEST_SIGNALS_BASE_URI,
+      "value",
+      -1.0,
+    );
+    assert!(output.lines().is_empty());
+    assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+
+    let guard_false = apply_f64_input(
+      &mut runtime,
+      "test://render/timer",
+      "tick",
+      1.0,
+    );
+    assert!(output.lines().is_empty());
+    assert_eq!(executed_count(only_reactive_turn(&guard_false), barrier), 0);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+
+    let scene_only = apply_f64_input(
+      &mut runtime,
+      TEST_SIGNALS_BASE_URI,
+      "value",
+      10.0,
+    );
+    assert!(output.lines().is_empty());
+    assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
+
+    let render = apply_f64_input(
+      &mut runtime,
+      "test://render/timer",
+      "tick",
+      1.0,
+    );
+    assert_eq!(output.lines(), vec!["10"]);
+    assert_eq!(executed_count(only_reactive_turn(&render), barrier), 1);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+
+    let scene_only = apply_f64_input(
+      &mut runtime,
+      TEST_SIGNALS_BASE_URI,
+      "value",
+      20.0,
+    );
+    assert_eq!(output.lines(), vec!["10"]);
+    assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
+
+    let equal_render = apply_f64_input(
+      &mut runtime,
+      "test://render/timer",
+      "tick",
+      1.0,
+    );
+    assert_eq!(output.lines(), vec!["10", "20"]);
+    assert_eq!(executed_count(only_reactive_turn(&equal_render), barrier), 1);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+    assert_eq!(activation_send_count(&runtime), 1);
+  }
+
+  #[test]
+  fn patterned_activation_send_registration_is_atomic_on_elaboration_failure() {
+    let(mut runtime,output)=activation_rejection_runtime();
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+render-tick := @tick/tick
+"#).unwrap();
+    let plan=activation_plan_snapshot(&runtime);let sends=runtime.persistent_sends.len();let bindings=runtime.live_input_bindings.clone();
+    let error=runtime.run_string(r#"@out := test://effects/output{:write(line)}
+~> render-tick
+  | selected => {
+      @out/line <- selected
+    }
+  | * => {
+      failure := function-that-does-not-exist(1.0)
+    }
+"#).unwrap_err();
+    assert!(error.kind_name().contains("Function"),"unexpected elaboration error: {error:?}");
+    assert_rejected_activation_left_no_state(&runtime,&output,&plan,sends,&bindings);
+  }
+
+  #[test]
+  fn patterned_activation_send_rejects_isolated_registration() {
+    let(mut runtime,output)=activation_rejection_runtime();let plan=activation_plan_snapshot(&runtime);let sends=runtime.persistent_sends.len();let bindings=runtime.live_input_bindings.clone();let mut context=runtime.runtime_context().unwrap();
+    let error=runtime.run_string_with_isolated_registration_for_test(&mut context,r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+~> render-tick
+  | selected, selected > 0.0 => {
+      @out/line <- selected
+    }
+  | * => {
+      fallback := 0.0
+    }
+"#).unwrap_err();
+    assert!(error.kind_as::<RuntimeIsolatedActivationSendUnsupported>().is_some(),"unexpected error: {error:?}");
+    assert_rejected_activation_left_no_state(&runtime,&output,&plan,sends,&bindings);
+  }
+
+  #[test]
+  fn patterned_activation_send_preserves_custom_live_authority() {
+    let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);let default_subject=runtime.runtime_context().unwrap().subject;let custom_subject="task:patterned-activation-send-custom";grant_read_to(&mut runtime,custom_subject,"test://render/timer","tick");grant_write_to(&mut runtime,custom_subject,TEST_OUTPUT_BASE_URI,"line");
+    assert!(!runtime.has_capability_grant(&default_subject,"test://render/timer",&RuntimeCapabilityOperation::Read,"tick"));assert!(!runtime.has_capability_grant(&default_subject,TEST_OUTPUT_BASE_URI,&RuntimeCapabilityOperation::Write,"line"));
+    let mut context=runtime.runtime_context().unwrap().with_subject(custom_subject);
+    runtime.run_string_with_context(&mut context,r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+~> render-tick
+  | selected, selected > 0.0 => {
+      @out/line <- selected
+    }
+  | * => {
+      fallback := 0.0
+    }
+"#).unwrap();
+    assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
+    let outcome=apply_f64_input(&mut runtime,"test://render/timer","tick",9.0);assert!(outcome.turn.is_some());assert_eq!(output.lines(),vec!["9"]);assert_eq!(activation_send_count(&runtime),1);
+  }
+
+  #[test]
+  fn patterned_activation_snapshots_effects_before_commit_and_releases_after_success() {
+    let provider = TestResourceProvider::new().with_value(
+      "test://render/timer",
+      "tick",
+      Value::F64(Ref::new(0.0)),
+    );
+    let (mut runtime, output) = test_runtime_with_output(provider);
+    grant_read(&mut runtime, "test://render/timer", "tick");
+    grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+~state := 0.0
+~> render-tick
+  | amount, amount > 0.0 => {
+      state = state + amount
+      @out/line <- state
+      @out/line <- state + 0.0
+    }
+  | ignored => {
+      fallback := ignored
+    }
+"#).unwrap();
+    let plan = activation_plan_snapshot(&runtime);
+    let register = register_node_for_symbol(&runtime, "state");
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 0.0);
+    assert!(output.lines().is_empty());
+
+    let first = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
+    let first_turn = only_reactive_turn(&first);
+    assert_eq!(
+      first_turn.register_commit.committed_nodes,
+      vec![register]
+    );
+    assert!(first_turn.after_commit.pending_register_nodes.is_empty());
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 1.0);
+    assert_eq!(output.lines(), vec!["0", "0"]);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+
+    let equal = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
+    let equal_turn = only_reactive_turn(&equal);
+    assert_eq!(
+      equal_turn.register_commit.committed_nodes,
+      vec![register]
+    );
+    assert!(equal_turn.after_commit.pending_register_nodes.is_empty());
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 2.0);
+    assert_eq!(output.lines(), vec!["0", "0", "1", "1"]);
+    assert_eq!(activation_plan_snapshot(&runtime), plan);
+    assert_eq!(activation_send_count(&runtime), 2);
+  }
+
+  #[test]
+  fn patterned_activation_register_batch_failure_does_not_leak_or_replay_send() {
+    let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0))).with_value("test://other/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);grant_read(&mut runtime,"test://render/timer","tick");grant_read(&mut runtime,"test://other/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@other := test://other/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+other-tick := @other/tick
+other-value := other-tick + 1.0
+~state := 0.0
+~> render-tick
+  | amount, amount > 0.0 => {
+      state = state + amount
+      state = state + amount + 1.0
+      @out/line <- state
+    }
+  | * => {
+      fallback := 0.0
+    }
+"#).unwrap();
+    let plan=activation_plan_snapshot(&runtime);assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
+    let error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://render/timer","tick").unwrap(),RuntimeHostInputValue::F64(1.0))).unwrap_err();assert!(format!("{error:?}").contains("ReactiveRegisterOutputConflict"),"unexpected error: {error:?}");assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let unrelated_error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://other/timer","tick").unwrap(),RuntimeHostInputValue::F64(7.0))).unwrap_err();assert!(format!("{unrelated_error:?}").contains("ReactiveRegisterOutputConflict"),"unexpected carried-batch error: {unrelated_error:?}");assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),1);
+  }
+
+  #[test]
+  fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
+    let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0))).with_value("test://other/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);grant_read(&mut runtime,"test://render/timer","tick");grant_read(&mut runtime,"test://other/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
+    let subject=runtime.runtime_context().unwrap().subject;grant_host_call(&mut runtime,&subject,194,"host:demo/patterned-body-fail-second");let calls=Arc::new(AtomicUsize::new(0));let host_calls=calls.clone();
+    runtime.register_mech_host_function(ClosureHostFunction::new("demo/patterned-body-fail-second",move |_services,_context,args|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==2{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))))})).unwrap();
+    runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
+@other := test://other/timer{:read(tick)}
+@out := test://effects/output{:write(line)}
+render-tick := @tick/tick
+other-tick := @other/tick
+other-value := other-tick + 1.0
+~state := 0.0
+~> render-tick
+  | amount, amount > 0.0 => {
+      state = demo/patterned-body-fail-second(state + amount)
+      @out/line <- state
+    }
+  | * => {
+      fallback := 0.0
+    }
+"#).unwrap();
+    let plan=activation_plan_snapshot(&runtime);assert_eq!(calls.load(Ordering::SeqCst),1);assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
+    let error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://render/timer","tick").unwrap(),RuntimeHostInputValue::F64(1.0))).unwrap_err();assert!(error.kind_as::<DeliberateHostCallError>().is_some());assert_eq!(calls.load(Ordering::SeqCst),2);assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let unrelated=apply_f64_input(&mut runtime,"test://other/timer","tick",7.0);assert!(unrelated.turn.is_some());assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let retry=apply_f64_input(&mut runtime,"test://render/timer","tick",1.0);assert!(retry.turn.is_some());assert_eq!(calls.load(Ordering::SeqCst),3);assert_eq!(f64_value(&symbol_value(&runtime,"state")),1.0);assert_eq!(output.lines(),vec!["0"]);assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),1);
   }
 
   #[test]

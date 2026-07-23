@@ -346,15 +346,14 @@ mod activation_scope_tests {
     }
     #[test]
     fn activation_scope_failed_elaboration_clears_registration_state() {
-        let mut i = Interpreter::new_with_full_stdlib(0);
-        let failing=mech_syntax::parser::parse("tick := 0.0\nx := 1.0\n\n~> tick {\n  registered-first := x + 1.0\n  fails-later := function-that-does-not-exist(registered-first)\n}").unwrap();
+        let mut i = interpret("tick := 0.0\nx := 1.0");
+        let before = snapshot(&i);
+        let failing=mech_syntax::parser::parse("~> tick {\n  registered-first := x + 1.0\n  fails-later := function-that-does-not-exist(registered-first)\n}").unwrap();
         let error = i.interpret(&failing).unwrap_err();
         assert!(format!("{error:?}").contains("Function"));
-        assert!(
-            i.plan()
-                .borrow()
-                .nodes.iter().any(|node|node.kind==ReactiveNodeKind::Combinational&&node.outputs.contains(&cell(&i,"registered-first")))
-        );
+        assert_eq!(snapshot(&i), before);
+        assert!(!i.symbols().borrow().contains(hash_str("registered-first")));
+        assert!(!i.symbols().borrow().contains(hash_str("fails-later")));
         assert!(!i.plan().activation_registration_active());
         let ordinary = mech_syntax::parser::parse("ordinary := x + 2.0").unwrap();
         i.interpret(&ordinary).unwrap();

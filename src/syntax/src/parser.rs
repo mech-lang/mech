@@ -342,11 +342,11 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 
 }
 
-/// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | eof), *whitespace ;
+/// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | right-brace | eof), *whitespace ;
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
-  let (input, _) = alt((null(new_line), null(semicolon), null(eof), null(peek(mika_section_close))))(input)?;
+  let (input, _) = alt((null(new_line), null(semicolon), null(peek(right_brace)), null(eof), null(peek(mika_section_close))))(input)?;
   let (input, _) = whitespace0(input)?;
   let cmmt = match cmmnt {
     Some((_, _, cmnt)) => Some(cmnt),
