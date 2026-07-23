@@ -50,7 +50,8 @@ struct ActivationPatternCapture {
     id: u64,
     name: String,
     kind: ValueKind,
-    slot: Value,
+    proposed: Value,
+    committed: Value,
 }
 #[derive(Clone)]
 struct PreflightActivationArm {
@@ -696,7 +697,7 @@ impl PatternBindingSink for ReactiveBindingSink<'_> {
             let source = detached(&binding.value);
             if capture.id != binding.id
                 || !capture_kinds_are_storage_compatible(&capture.kind, &binding.kind)
-                || !capture_slot_accepts_payload(&capture.slot, &source)
+                || !capture_slot_accepts_payload(&capture.proposed, &source)
             {
                 return Err(MechError::new(
                     ActivationPatternCaptureKindUnsupported,
@@ -706,10 +707,31 @@ impl PatternBindingSink for ReactiveBindingSink<'_> {
         }
 
         for binding in &pattern_match.bindings {
-            commit_capture_slot(&self.captures[binding.index].slot, &binding.value)?;
+            commit_capture_slot(&self.captures[binding.index].proposed, &binding.value)?;
         }
         Ok(())
     }
+}
+
+fn commit_proposed_captures(captures: &[ActivationPatternCapture]) -> MResult<()> {
+    // Preflight the complete batch so a later incompatible destination cannot
+    // leave an arm body observing only some captures from the current trigger.
+    for capture in captures {
+        let proposed = detached(&capture.proposed);
+        if !capture_kinds_are_storage_compatible(&capture.kind, &proposed.kind())
+            || !capture_slot_accepts_payload(&capture.committed, &proposed)
+        {
+            return Err(MechError::new(
+                ActivationPatternCaptureKindUnsupported,
+                None,
+            ));
+        }
+    }
+
+    for capture in captures {
+        commit_capture_slot(&capture.committed, &capture.proposed)?;
+    }
+    Ok(())
 }
 
 fn generation() -> (Ref<usize>, Value) {
@@ -761,6 +783,11 @@ impl MechFunctionImpl for Matcher {
     }
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
+    }
+    fn reactive_output_values(&self) -> Vec<Value> {
+        let mut outputs = vec![self.out()];
+        outputs.extend(self.captures.iter().map(|capture| capture.proposed.clone()));
+        outputs
     }
     fn reactive_dependency_kinds(&self, argument_count: usize) -> Option<Vec<ReactiveDependencyKind>> {
         let mut kinds = vec![ReactiveDependencyKind::Sampled; argument_count];
@@ -818,12 +845,14 @@ impl MechFunctionImpl for Select {
 struct Gate {
     arm: usize,
     selected: Ref<usize>,
+    captures: Vec<ActivationPatternCapture>,
     out: Ref<usize>,
 }
 impl MechFunctionImpl for Gate {
     fn solve(&self) {}
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         if *self.selected.borrow() == self.arm {
+            commit_proposed_captures(&self.captures)?;
             *self.out.borrow_mut() += 1;
             Ok(ReactiveSolveStatus::Changed)
         } else {
@@ -832,6 +861,15 @@ impl MechFunctionImpl for Gate {
     }
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
+    }
+    fn reactive_output_values(&self) -> Vec<Value> {
+        let mut outputs = vec![self.out()];
+        outputs.extend(
+            self.captures
+                .iter()
+                .map(|capture| capture.committed.clone()),
+        );
+        outputs
     }
     fn to_string(&self) -> String {
         "ActivationPatternArmGate".into()
@@ -912,13 +950,16 @@ fn preflight_patterned_activation(
                     MechError::new(ActivationPatternCaptureKindUnsupported, None)
                         .with_tokens(a.pattern.tokens())
                 })?;
-                let slot = create_capture_slot_for_kind(&kind, i)
+                let proposed = create_capture_slot_for_kind(&kind, i)
+                    .map_err(|error| error.with_tokens(a.pattern.tokens()))?;
+                let committed = create_capture_slot_for_kind(&kind, i)
                     .map_err(|error| error.with_tokens(a.pattern.tokens()))?;
                 Ok(ActivationPatternCapture {
                     id: binding.id,
                     name: binding.name,
                     kind,
-                    slot,
+                    proposed,
+                    committed,
                 })
             })
             .collect::<MResult<Vec<_>>>()?;
@@ -1198,7 +1239,7 @@ fn elaborate_patterned_arm_body(
         let mut symbols = symbols.borrow_mut();
         for capture in captures {
             symbols.mutable_variables.remove(&capture.id);
-            symbols.insert(capture.id, capture.slot.clone(), false);
+            symbols.insert(capture.id, capture.committed.clone(), false);
             symbols
                 .dictionary
                 .borrow_mut()
@@ -1231,7 +1272,7 @@ fn elaborate_patterned_arm_body(
         let mut plan = plan.borrow_mut();
         for node in body_node_start..body_node_end {
             for capture in captures {
-                let cell = capture.slot.reactive_root_cell_ids()[0];
+                let cell = capture.committed.reactive_root_cell_ids()[0];
                 debug_assert!(plan.add_sampled_dependency(node, cell));
             }
         }
@@ -1263,13 +1304,18 @@ fn elaborate_patterned_activation_inner(
         })
         .collect::<MResult<Vec<_>>>()?;
     drop(_persistent_user_function_plan);
+    let mut initially_matched = Vec::with_capacity(compiled.len());
     for (arm, expression_values) in compiled.iter().zip(&pattern_expression_values) {
         let pattern_match =
             match_compiled_pattern_with_values(&arm.pattern, &trigger, expression_values)?;
+        initially_matched.push(pattern_match.matched);
         ReactiveBindingSink {
             captures: &arm.captures,
         }
         .commit(&pattern_match)?;
+    }
+    if let Some(selected) = initially_matched.iter().position(|matched| *matched) {
+        commit_proposed_captures(&compiled[selected].captures)?;
     }
     let (scope_gen, scope_v) = generation();
     let scope_node = plan
@@ -1330,6 +1376,7 @@ fn elaborate_patterned_activation_inner(
             Box::new(Gate {
                 arm,
                 selected: selected.clone(),
+                captures: compiled[arm].captures.clone(),
                 out: o,
             }),
             &[selection.clone()],
@@ -1362,7 +1409,7 @@ fn elaborate_patterned_activation_inner(
                     .map(|c| PatternActivationCaptureRegistration {
                         id: c.id,
                         kind: c.kind.clone(),
-                        cell: c.slot.reactive_root_cell_ids()[0],
+                        cell: c.committed.reactive_root_cell_ids()[0],
                     })
                     .collect(),
             })
@@ -1543,13 +1590,15 @@ mod tests {
             id: hash_str("number"),
             name: "number".to_string(),
             kind: ValueKind::F64,
-            slot: create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap(),
+            proposed: create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap(),
+            committed: create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap(),
         };
         let text = ActivationPatternCapture {
             id: hash_str("text"),
             name: "text".to_string(),
             kind: ValueKind::String,
-            slot: create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap(),
+            proposed: create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap(),
+            committed: create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap(),
         };
         let captures = vec![number, text];
         let attempted = PatternMatch {
@@ -1572,12 +1621,61 @@ mod tests {
             ],
         };
 
-        let error = ReactiveBindingSink { captures: &captures }
-            .commit(&attempted)
-            .unwrap_err();
+        let error = ReactiveBindingSink {
+            captures: &captures,
+        }
+        .commit(&attempted)
+        .unwrap_err();
         assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-        assert_eq!(captures[0].slot, Value::F64(Ref::new(0.0)));
-        assert_eq!(captures[1].slot, Value::String(Ref::new(String::new())));
+        assert_eq!(captures[0].proposed, Value::F64(Ref::new(0.0)));
+        assert_eq!(captures[1].proposed, Value::String(Ref::new(String::new())));
+        assert_eq!(captures[0].committed, Value::F64(Ref::new(0.0)));
+        assert_eq!(
+            captures[1].committed,
+            Value::String(Ref::new(String::new()))
+        );
+    }
+
+    #[cfg(all(feature = "f64", feature = "string"))]
+    #[test]
+    fn activation_capture_gate_validates_entire_commit_before_mutation_or_pulse() {
+        let captures = vec![
+            ActivationPatternCapture {
+                id: hash_str("number"),
+                name: "number".to_string(),
+                kind: ValueKind::F64,
+                proposed: Value::F64(Ref::new(9.0)),
+                committed: Value::F64(Ref::new(1.0)),
+            },
+            ActivationPatternCapture {
+                id: hash_str("text"),
+                name: "text".to_string(),
+                kind: ValueKind::String,
+                proposed: Value::F64(Ref::new(10.0)),
+                committed: Value::String(Ref::new("before".to_string())),
+            },
+        ];
+        let selected = Ref::new(0);
+        let pulse = Ref::new(0);
+        let gate = Gate {
+            arm: 0,
+            selected,
+            captures: captures.clone(),
+            out: pulse.clone(),
+        };
+
+        let error = gate.solve_reactive().unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
+        assert_eq!(captures[0].committed, Value::F64(Ref::new(1.0)));
+        assert_eq!(
+            captures[1].committed,
+            Value::String(Ref::new("before".to_string()))
+        );
+        assert_eq!(
+            *pulse.borrow(),
+            0,
+            "body pulse must follow a successful commit"
+        );
     }
 
     #[cfg(feature = "atom")]
@@ -1675,6 +1773,43 @@ event := :first
         let registrations = plan.pattern_activation_registrations();
         assert_eq!(registrations.len(), 1);
         registrations[0].clone()
+    }
+    fn node_output_for_cell(
+        interpreter: &Interpreter,
+        node: ReactiveNodeId,
+        cell: ReactiveCellId,
+    ) -> Value {
+        let plan = interpreter.plan();
+        let plan = plan.borrow();
+        plan.node(node)
+            .expect("missing activation dispatch node")
+            .function
+            .reactive_output_values()
+            .into_iter()
+            .find(|value| value.reactive_root_cell_ids().contains(&cell))
+            .unwrap_or_else(|| panic!("node {node} does not expose cell {cell:?}"))
+    }
+    fn committed_capture_value(interpreter: &Interpreter, arm: usize, capture: usize) -> Value {
+        let registration = registration(interpreter);
+        let arm = &registration.arms[arm];
+        node_output_for_cell(interpreter, arm.gate_node, arm.captures[capture].cell)
+    }
+    fn proposed_capture_value(interpreter: &Interpreter, arm: usize, capture: usize) -> Value {
+        let registration = registration(interpreter);
+        let arm = &registration.arms[arm];
+        arm.captures
+            .get(capture)
+            .expect("missing capture registration");
+        let plan = interpreter.plan();
+        let plan = plan.borrow();
+        plan.node(arm.matcher_node)
+            .expect("missing activation matcher")
+            .function
+            .reactive_output_values()
+            .into_iter()
+            .skip(1)
+            .nth(capture)
+            .expect("missing proposed capture output")
     }
     fn plan_snapshot(interpreter: &Interpreter) -> PlanSnapshot {
         let plan = interpreter.plan();
@@ -2015,6 +2150,145 @@ event<event-kind> := :pressed(0.0)
         }
     }
     #[test]
+    fn activation_only_selected_arm_commits_matching_captures() {
+        let mut i = interpret(
+            r#"
+event := 1.0
+~> event
+  | first => {
+      selected := first
+    }
+  | later => {
+      rejected := later
+    }
+  | * => {
+      fallback := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let activation = registration(&i);
+        let later_before = committed_capture_value(&i, 1, 0);
+        let committed_cell = activation.arms[0].captures[0].cell;
+        let proposed_cell = proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0];
+        assert_ne!(proposed_cell, committed_cell);
+        {
+            let plan = i.plan();
+            let plan = plan.borrow();
+            assert!(
+                plan.nodes[activation.arms[0].matcher_node]
+                    .outputs
+                    .contains(&proposed_cell)
+            );
+            assert!(
+                !plan.nodes[activation.arms[0].matcher_node]
+                    .outputs
+                    .contains(&committed_cell)
+            );
+            assert!(
+                plan.nodes[activation.arms[0].gate_node]
+                    .outputs
+                    .contains(&committed_cell)
+            );
+            let body_inputs = plan.nodes
+                [activation.arms[0].body_node_start..activation.arms[0].body_node_end]
+                .iter()
+                .flat_map(|node| node.inputs.iter().map(|dependency| dependency.cell))
+                .collect::<Vec<_>>();
+            assert!(body_inputs.contains(&committed_cell));
+            assert!(!body_inputs.contains(&proposed_cell));
+        }
+        let Value::F64(event) = symbol(&i, "event") else {
+            panic!("event is not f64")
+        };
+        *event.borrow_mut() = 5.0;
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+
+        assert_eq!(selected_arm_index(&activation, &outcome), 0);
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(5.0)));
+        assert_eq!(proposed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+        assert_eq!(committed_capture_value(&i, 1, 0), later_before);
+        let executed = turn_executed_nodes(&outcome);
+        for node in activation.arms[1].body_node_start..activation.arms[1].body_node_end {
+            assert!(!executed.contains(&node));
+        }
+    }
+    #[test]
+    fn activation_failed_repeated_binding_leaves_proposed_and_committed_unchanged() {
+        let mut i = interpret(
+            r#"
+event := (1.0, 1.0)
+~> event
+  | (x, x) => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let activation = registration(&i);
+        let proposed_before = proposed_capture_value(&i, 0, 0);
+        let committed_before = committed_capture_value(&i, 0, 0);
+        set_tuple_event(
+            &i,
+            vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))],
+        );
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+
+        assert_eq!(selected_arm_index(&activation, &outcome), 1);
+        assert_eq!(proposed_capture_value(&i, 0, 0), proposed_before);
+        assert_eq!(committed_capture_value(&i, 0, 0), committed_before);
+        let executed = turn_executed_nodes(&outcome);
+        for node in activation.arms[0].body_node_start..activation.arms[0].body_node_end {
+            assert!(!executed.contains(&node));
+        }
+    }
+    #[test]
+    fn activation_non_selected_composite_capture_keeps_last_committed_value() {
+        let mut i = interpret(
+            r#"
+event := (0.0, 1.0)
+~> event
+  | (1.0, x) => {
+      selected := x
+    }
+  | later => {
+      rejected := later.2
+    }
+  | * => {
+      fallback := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let activation = registration(&i);
+        let committed_before = committed_capture_value(&i, 1, 0);
+        set_tuple_event(
+            &i,
+            vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(10.0))],
+        );
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+
+        assert_eq!(selected_arm_index(&activation, &outcome), 0);
+        assert_eq!(committed_capture_value(&i, 1, 0), committed_before);
+        assert_eq!(
+            proposed_capture_value(&i, 1, 0),
+            Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+                Value::F64(Ref::new(1.0)),
+                Value::F64(Ref::new(10.0)),
+            ])))
+        );
+        let executed = turn_executed_nodes(&outcome);
+        for node in activation.arms[1].body_node_start..activation.arms[1].body_node_end {
+            assert!(!executed.contains(&node));
+        }
+    }
+    #[test]
     fn activation_pattern_switching_arms_does_not_grow_plan() {
         let (mut i, trigger, _, topology) = load_enum_activation();
         for (name, payload) in [
@@ -2204,6 +2478,46 @@ event := (1.0, 1.0)
         set_tuple_event(&i, vec![Value::F64(Ref::new(2.)), Value::F64(Ref::new(3.))]);
         let o = i.advance_reactive_turn(&[trigger]).unwrap();
         assert_dispatch_turn(&i, &topology, &o, 1, -1.);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_pattern_expression_uses_outer_symbol_when_capture_name_collides() {
+        let mut i = interpret(
+            r#"
+x := 9.0
+event := [1.0 10.0]
+
+~> event
+  | [x, x + 1.0] => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let outer_cell = root_cell(&i, "x");
+        let activation = registration(&i);
+        let proposed_cell = proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0];
+        let committed_cell = activation.arms[0].captures[0].cell;
+        assert_ne!(proposed_cell, committed_cell);
+        assert_ne!(outer_cell, proposed_cell);
+        assert_ne!(outer_cell, committed_cell);
+        let topology = plan_snapshot(&i);
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
+        assert_eq!(symbol(&i, "x"), Value::F64(Ref::new(9.0)));
+        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+        assert_eq!(
+            proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0],
+            proposed_cell
+        );
+        assert_eq!(registration(&i).arms[0].captures[0].cell, committed_cell);
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
