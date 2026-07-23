@@ -454,9 +454,29 @@ fn activation_trigger_cells(scope: &ActivationScope, _var: &Var, _p: &Interprete
 fn elaborate_activation_scope(scope: &ActivationScope, p: &Interpreter, trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> {
   match &scope.body {
     ActivationBody::Block(body) => {
-      let plan=p.plan(); plan.push_activation_registration_scope(trigger_cells);
+      let plan = p.plan();
+      let checkpoint = plan.checkpoint();
+      let symbols = p.symbols();
+      let symbol_snapshot = symbols.borrow().snapshot();
+      let program_dictionary = p.state.borrow().dictionary.clone();
+      let dictionary_snapshot = program_dictionary.borrow().clone();
+      plan.push_activation_registration_scope_with_sampled_cells(
+        trigger_cells,
+        crate::activation::activation_scope_entry_cells(p),
+      );
       let result=(|| -> MResult<Value> { for (code,_) in body { mech_code(code,p)?; } Ok(Value::Empty) })();
-      plan.pop_activation_registration_scope(); result
+      plan.pop_activation_registration_scope();
+      match result {
+        Ok(value) => Ok(value),
+        Err(error) => {
+          symbols.borrow_mut().restore(symbol_snapshot);
+          *program_dictionary.borrow_mut() = dictionary_snapshot;
+          match plan.rollback(checkpoint) {
+            Ok(()) => Err(error),
+            Err(rollback_error) => Err(rollback_error),
+          }
+        }
+      }
     }
     ActivationBody::PatternArms(arms) => {
       let trigger = match &scope.trigger {

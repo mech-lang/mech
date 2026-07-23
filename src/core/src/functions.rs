@@ -559,6 +559,7 @@ pub struct ReactivePlan {
   pub reactive_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
   pub sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
   pattern_activation_registrations: Vec<PatternActivationRegistration>,
+  activation_sampled_cells: Vec<Vec<ReactiveCellId>>,
 }
 
 #[derive(Debug, Clone)]
@@ -769,6 +770,7 @@ impl ReactivePlan {
       reactive_consumers: HashMap::new(),
       sampled_consumers: HashMap::new(),
       pattern_activation_registrations: Vec::new(),
+      activation_sampled_cells: Vec::new(),
     }
   }
 
@@ -785,6 +787,7 @@ impl ReactivePlan {
     self.reactive_consumers.clear();
     self.sampled_consumers.clear();
     self.pattern_activation_registrations.clear();
+    self.activation_sampled_cells.clear();
   }
 
   pub fn iter(&self) -> impl Iterator<Item = &Box<dyn MechFunction>> {
@@ -1236,7 +1239,13 @@ impl Plan {
       }
     }
 
-    self.0.borrow_mut().apply_rollback(checkpoint.reactive);
+    {
+      let mut reactive = self.0.borrow_mut();
+      reactive.apply_rollback(checkpoint.reactive);
+      reactive
+        .activation_sampled_cells
+        .truncate(checkpoint.activation_registration_depth);
+    }
     self
       .1
       .borrow_mut()
@@ -1266,12 +1275,48 @@ impl Plan {
   }
 
   pub fn activation_registration_active(&self) -> bool { !self.1.borrow().is_empty() }
-  pub fn push_activation_registration_scope(&self, trigger_cells: Vec<ReactiveCellId>) { self.1.borrow_mut().push(ActivationRegistrationScope { trigger_cells, local_combinational_cells: Vec::new() }); }
-  pub fn pop_activation_registration_scope(&self) { self.1.borrow_mut().pop(); }
+  pub fn push_activation_registration_scope(&self, trigger_cells: Vec<ReactiveCellId>) {
+    self.push_activation_registration_scope_with_sampled_cells(
+      trigger_cells,
+      Vec::new(),
+    );
+  }
+  pub fn push_activation_registration_scope_with_sampled_cells(&self, trigger_cells: Vec<ReactiveCellId>, sampled_cells: Vec<ReactiveCellId>) {
+    self.1.borrow_mut().push(ActivationRegistrationScope {
+      trigger_cells,
+      local_combinational_cells: Vec::new(),
+    });
+    self
+      .0
+      .borrow_mut()
+      .activation_sampled_cells
+      .push(sampled_cells);
+  }
+  pub fn pop_activation_registration_scope(&self) {
+    self.1.borrow_mut().pop();
+    self.0.borrow_mut().activation_sampled_cells.pop();
+  }
   pub fn register_function(&self, function: Box<dyn MechFunction>, arguments: &[Value]) -> MResult<ReactiveNodeId> {
     let scope = self.1.borrow().last().cloned(); let kind = function.reactive_node_kind(); let outputs = function.reactive_output_cell_ids();
+    let sampled_cells = self
+      .0
+      .borrow()
+      .activation_sampled_cells
+      .last()
+      .cloned()
+      .unwrap_or_default();
     let node = self.0.borrow_mut().register_with_activation(function, arguments, scope.as_ref())?;
-    if scope.is_some() && kind == ReactiveNodeKind::Combinational { if let Some(active) = self.1.borrow_mut().last_mut() { for cell in outputs { if !active.local_combinational_cells.contains(&cell) { active.local_combinational_cells.push(cell); } } } }
+    if scope.is_some() && kind == ReactiveNodeKind::Combinational {
+      if let Some(active) = self.1.borrow_mut().last_mut() {
+        for cell in outputs {
+          if !sampled_cells.contains(&cell)
+            && !active.local_combinational_cells.contains(&cell)
+          {
+            active.local_combinational_cells.push(cell);
+          }
+        }
+      }
+    }
     Ok(node)
   }
 
@@ -1974,6 +2019,70 @@ mod reactive_plan_tests {
     let node = plan.node(node_id).unwrap();
     assert_eq!(node.kind, ReactiveNodeKind::Register);
     assert!(node.outputs.contains(&output_cell));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn activation_registration_does_not_promote_preexisting_alias_cells() {
+    let trigger = Value::F64(Ref::new(0.0));
+    let sampled = Value::F64(Ref::new(1.0));
+    let local = Value::F64(Ref::new(2.0));
+    let trigger_cell = trigger.reactive_root_cell_ids()[0];
+    let sampled_cell = sampled.reactive_root_cell_ids()[0];
+    let local_cell = local.reactive_root_cell_ids()[0];
+    let plan = Plan::new();
+
+    plan.push_activation_registration_scope_with_sampled_cells(
+      vec![trigger_cell],
+      sampled.reactive_cell_ids(),
+    );
+    plan
+      .register_function(
+        Box::new(TestFunction::with_output("sampled alias", sampled.clone())),
+        &[],
+      )
+      .unwrap();
+    let sampled_consumer = plan
+      .register_function(
+        Box::new(TestFunction::new("sampled consumer")),
+        &[sampled],
+      )
+      .unwrap();
+    plan
+      .register_function(
+        Box::new(TestFunction::with_output("local producer", local.clone())),
+        &[],
+      )
+      .unwrap();
+    let local_consumer = plan
+      .register_function(
+        Box::new(TestFunction::new("local consumer")),
+        &[local],
+      )
+      .unwrap();
+    plan.pop_activation_registration_scope();
+
+    let plan = plan.borrow();
+    assert_eq!(
+      plan.node(sampled_consumer)
+        .unwrap()
+        .inputs
+        .iter()
+        .find(|dependency| dependency.cell == sampled_cell)
+        .unwrap()
+        .kind,
+      ReactiveDependencyKind::Sampled,
+    );
+    assert_eq!(
+      plan.node(local_consumer)
+        .unwrap()
+        .inputs
+        .iter()
+        .find(|dependency| dependency.cell == local_cell)
+        .unwrap()
+        .kind,
+      ReactiveDependencyKind::Reactive,
+    );
   }
 
   #[cfg(feature = "f64")]

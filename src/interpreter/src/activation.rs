@@ -23,11 +23,11 @@ activation_error!(
 );
 activation_error!(
     ActivationPatternArmsNonExhaustive,
-    "Patterned activations require a final unguarded wildcard arm."
+    "Patterned activations require a final unguarded irrefutable arm."
 );
 activation_error!(
     ActivationPatternWildcardMustBeLast,
-    "The wildcard activation arm must be last."
+    "An unguarded wildcard activation arm must be last."
 );
 activation_error!(
     ActivationPatternGuardMustBePure,
@@ -43,7 +43,11 @@ activation_error!(
 );
 activation_error!(
     ActivationPatternRegisterWriteUnsupported,
-    "Patterned activation register writes are not supported."
+    "Patterned activation register writes must target a whole local register."
+);
+activation_error!(
+    ActivationScopeTriggerWriteUnsupported,
+    "An activation scope cannot assign to its own trigger."
 );
 activation_error!(
     ActivationPatternContextEffectUnsupported,
@@ -980,6 +984,74 @@ interpreter_only!(Select);
 #[cfg(feature = "compiler")]
 interpreter_only!(Gate);
 
+fn pattern_is_irrefutable(pattern: &CompiledPattern, trigger_kind: &ValueKind) -> bool {
+    fn check(
+        pattern: &CompiledPattern,
+        trigger_kind: &ValueKind,
+        bindings: &mut HashSet<usize>,
+    ) -> bool {
+        match pattern {
+            CompiledPattern::Wildcard => true,
+            CompiledPattern::Binding { binding_index, .. } => {
+                bindings.insert(*binding_index)
+            }
+            CompiledPattern::ExpressionValue { .. }
+            | CompiledPattern::EnumVariant { .. }
+            | CompiledPattern::AtomTuple { .. } => false,
+            CompiledPattern::Tuple { elements } => {
+                let ValueKind::Tuple(kinds) = trigger_kind.deref_kind() else {
+                    return false;
+                };
+                elements.len() == kinds.len()
+                    && elements
+                        .iter()
+                        .zip(&kinds)
+                        .all(|(element, kind)| check(element, kind, bindings))
+            }
+            CompiledPattern::Array {
+                prefix,
+                spread,
+                suffix,
+            } => {
+                let ValueKind::Matrix(element_kind, shape) = trigger_kind.deref_kind() else {
+                    return false;
+                };
+                let minimum_len = prefix.len() + suffix.len();
+                let known_len = (!shape.is_empty()).then(|| shape.iter().product::<usize>());
+                match (known_len, spread) {
+                    (Some(len), None) if len != minimum_len => return false,
+                    (Some(len), Some(_)) if len < minimum_len => return false,
+                    (None, None) => return false,
+                    (None, Some(_)) if minimum_len != 0 => return false,
+                    _ => {}
+                }
+                if !prefix
+                    .iter()
+                    .chain(suffix)
+                    .all(|element| check(element, &element_kind, bindings))
+                {
+                    return false;
+                }
+                spread
+                    .as_ref()
+                    .and_then(|spread| spread.binding.as_deref())
+                    .map_or(true, |binding| {
+                        let middle_shape = known_len
+                            .map(|len| vec![1, len - minimum_len])
+                            .unwrap_or_default();
+                        check(
+                            binding,
+                            &ValueKind::Matrix(element_kind, middle_shape),
+                            bindings,
+                        )
+                    })
+            }
+        }
+    }
+
+    check(pattern, trigger_kind, &mut HashSet::new())
+}
+
 fn preflight_patterned_activation(
     scope: &ActivationScope,
     arms: &[ActivationArm],
@@ -987,27 +1059,23 @@ fn preflight_patterned_activation(
     trigger_cells: &[ReactiveCellId],
     i: &Interpreter,
 ) -> MResult<PreflightPatternedActivation> {
-    let last = arms.last().ok_or_else(|| {
+    arms.last().ok_or_else(|| {
         MechError::new(ActivationPatternArmsNonExhaustive, None).with_tokens(scope.tokens())
     })?;
-    if !matches!(last.pattern, Pattern::Wildcard) || last.guard.is_some() {
-        return Err(
-            MechError::new(ActivationPatternArmsNonExhaustive, None).with_tokens(scope.tokens())
-        );
-    }
-    if arms[..arms.len() - 1]
-        .iter()
-        .any(|a| matches!(a.pattern, Pattern::Wildcard))
-    {
-        return Err(
-            MechError::new(ActivationPatternWildcardMustBeLast, None).with_tokens(scope.tokens())
-        );
-    }
+    let trigger_id = match &scope.trigger {
+        Expression::Var(var) => var.name.hash(),
+        _ => {
+            return Err(
+                MechError::new(ActivationPatternTriggerInvariant, None)
+                    .with_tokens(scope.trigger.tokens()),
+            );
+        }
+    };
     for arm in arms {
         if let Some(guard) = &arm.guard {
             validate_patterned_guard_expression(guard, i)?;
         }
-        validate_patterned_arm_body(&arm.body)?;
+        validate_patterned_arm_body(&arm.body, trigger_id, trigger_cells, i)?;
     }
     if trigger.reactive_root_cell_ids() != trigger_cells {
         return Err(
@@ -1041,6 +1109,23 @@ fn preflight_patterned_activation(
             .collect::<MResult<Vec<_>>>()?;
         compiled.push(PreflightActivationArm { pattern, captures });
     }
+    let last = arms.last().unwrap();
+    if last.guard.is_some()
+        || !pattern_is_irrefutable(&compiled.last().unwrap().pattern, &trigger_kind)
+    {
+        return Err(
+            MechError::new(ActivationPatternArmsNonExhaustive, None).with_tokens(scope.tokens())
+        );
+    }
+    if arms[..arms.len() - 1]
+        .iter()
+        .any(|arm| arm.guard.is_none() && matches!(arm.pattern, Pattern::Wildcard))
+    {
+        return Err(
+            MechError::new(ActivationPatternWildcardMustBeLast, None)
+                .with_tokens(scope.tokens()),
+        );
+    }
     Ok(PreflightPatternedActivation {
         trigger_kind,
         arms: compiled,
@@ -1051,22 +1136,34 @@ fn validation_error(kind: impl MechErrorKind + 'static, tokens: Vec<Token>) -> M
     Err(MechError::new(kind, None).with_tokens(tokens))
 }
 
-fn validate_patterned_arm_body(body: &ActivationArmBody) -> MResult<()> {
+fn validate_patterned_arm_body(
+    body: &ActivationArmBody,
+    trigger_id: u64,
+    trigger_cells: &[ReactiveCellId],
+    interpreter: &Interpreter,
+) -> MResult<()> {
     match body {
         ActivationArmBody::Block(body) => {
             for (code, _) in body {
-                validate_patterned_code(code)?;
+                validate_patterned_code(code, trigger_id, trigger_cells, interpreter)?;
             }
             Ok(())
         }
         ActivationArmBody::Expression(expression) => validate_patterned_expression(expression),
     }
 }
-fn validate_patterned_code(code: &MechCode) -> MResult<()> {
+fn validate_patterned_code(
+    code: &MechCode,
+    trigger_id: u64,
+    trigger_cells: &[ReactiveCellId],
+    interpreter: &Interpreter,
+) -> MResult<()> {
     match code {
         MechCode::Comment(_) => Ok(()),
         MechCode::Expression(expression) => validate_patterned_expression(expression),
-        MechCode::Statement(statement) => validate_patterned_statement(statement),
+        MechCode::Statement(statement) => {
+            validate_patterned_statement(statement, trigger_id, trigger_cells, interpreter)
+        }
         MechCode::ActivationScope(_)
         | MechCode::FunctionDefine(_)
         | MechCode::FsmSpecification(_)
@@ -1077,7 +1174,46 @@ fn validate_patterned_code(code: &MechCode) -> MResult<()> {
         }
     }
 }
-fn validate_patterned_statement(statement: &Statement) -> MResult<()> {
+fn validate_patterned_register_write(
+    target: &SliceRef,
+    expression: &Expression,
+    trigger_id: u64,
+    trigger_cells: &[ReactiveCellId],
+    interpreter: &Interpreter,
+    tokens: Vec<Token>,
+) -> MResult<()> {
+    if target.context.is_some() {
+        return validation_error(ActivationPatternContextEffectUnsupported, tokens);
+    }
+    let target_id = target.name.hash();
+    let aliases_trigger = interpreter
+        .symbols()
+        .borrow()
+        .get(target_id)
+        .is_some_and(|value| {
+            value
+                .borrow()
+                .reactive_root_cell_ids()
+                .iter()
+                .any(|cell| trigger_cells.contains(cell))
+        });
+    if target_id == trigger_id || aliases_trigger {
+        return validation_error(ActivationScopeTriggerWriteUnsupported, tokens);
+    }
+    // Indexed assignment implementations still mutate eagerly and do not
+    // implement the reactive-register staging contract.
+    if target.subscript.is_some() {
+        return validation_error(ActivationPatternRegisterWriteUnsupported, tokens);
+    }
+    validate_patterned_expression(expression)
+}
+
+fn validate_patterned_statement(
+    statement: &Statement,
+    trigger_id: u64,
+    trigger_cells: &[ReactiveCellId],
+    interpreter: &Interpreter,
+) -> MResult<()> {
     match statement {
         Statement::VariableDefine(definition)
             if !definition.mutable && definition.var.context.is_none() =>
@@ -1093,22 +1229,20 @@ fn validate_patterned_statement(statement: &Statement) -> MResult<()> {
         Statement::VariableDefine(_) => {
             validation_error(ActivationPatternDefinitionUnsupported, statement.tokens())
         }
-        Statement::VariableAssign(assignment) if assignment.target.context.is_some() => {
-            validation_error(
-                ActivationPatternContextEffectUnsupported,
-                statement.tokens(),
-            )
-        }
-        Statement::VariableAssign(_) => validation_error(
-            ActivationPatternRegisterWriteUnsupported,
+        Statement::VariableAssign(assignment) => validate_patterned_register_write(
+            &assignment.target,
+            &assignment.expression,
+            trigger_id,
+            trigger_cells,
+            interpreter,
             statement.tokens(),
         ),
-        Statement::OpAssign(assignment) if assignment.target.context.is_some() => validation_error(
-            ActivationPatternContextEffectUnsupported,
-            statement.tokens(),
-        ),
-        Statement::OpAssign(_) => validation_error(
-            ActivationPatternRegisterWriteUnsupported,
+        Statement::OpAssign(assignment) => validate_patterned_register_write(
+            &assignment.target,
+            &assignment.expression,
+            trigger_id,
+            trigger_cells,
+            interpreter,
             statement.tokens(),
         ),
         Statement::ContextSend(_) => validation_error(
@@ -1562,6 +1696,22 @@ struct ElaboratedPatternGuard {
     node_end: usize,
 }
 
+pub(crate) fn activation_scope_entry_cells(
+    interpreter: &Interpreter,
+) -> Vec<ReactiveCellId> {
+    let symbols = interpreter.symbols();
+    let symbols = symbols.borrow();
+    let mut cells = Vec::new();
+    for symbol in symbols.symbols.values() {
+        for cell in symbol.borrow().reactive_cell_ids() {
+            if !cells.contains(&cell) {
+                cells.push(cell);
+            }
+        }
+    }
+    cells
+}
+
 fn elaborate_patterned_arm_guard(
     guard: &Expression,
     captures: &[ActivationPatternCapture],
@@ -1587,7 +1737,10 @@ fn elaborate_patterned_arm_guard(
     }
     let node_start = plan.len();
     let pulse_cells = pulse.reactive_root_cell_ids();
-    plan.push_activation_registration_scope(pulse_cells.clone());
+    plan.push_activation_registration_scope_with_sampled_cells(
+        pulse_cells.clone(),
+        activation_scope_entry_cells(interpreter),
+    );
     let result = (|| -> MResult<ElaboratedPatternGuard> {
         let _deferred_expression_solves =
             crate::expressions::DeferredExpressionSolveScope::enter(interpreter);
@@ -1680,7 +1833,10 @@ fn elaborate_patterned_arm_body(
         }
     }
     let body_node_start = plan.len();
-    plan.push_activation_registration_scope(pulse.reactive_root_cell_ids());
+    plan.push_activation_registration_scope_with_sampled_cells(
+        pulse.reactive_root_cell_ids(),
+        activation_scope_entry_cells(interpreter),
+    );
     let body_result = (|| -> MResult<()> {
         match &arm.body {
             ActivationArmBody::Block(body) => {
@@ -1946,6 +2102,63 @@ mod tests {
         fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
             self.compile_calls.fetch_add(1, Ordering::SeqCst);
             panic!("unsupported guard compiler must not run during preflight")
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct PatternRegisterStageFailure;
+    impl MechErrorKind for PatternRegisterStageFailure {
+        fn name(&self) -> &str {
+            "PatternRegisterStageFailure"
+        }
+        fn message(&self) -> String {
+            "intentional patterned register staging failure".to_string()
+        }
+    }
+
+    struct FailingPatternRegister {
+        sink: Ref<f64>,
+        solve_calls: Arc<AtomicUsize>,
+        stage_calls: Arc<AtomicUsize>,
+    }
+    impl MechFunctionImpl for FailingPatternRegister {
+        fn solve(&self) {
+            self.solve_calls.fetch_add(1, Ordering::SeqCst);
+            *self.sink.borrow_mut() = -999.0;
+        }
+        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+            self.stage_calls.fetch_add(1, Ordering::SeqCst);
+            Err(MechError::new(PatternRegisterStageFailure, None))
+        }
+        fn out(&self) -> Value {
+            Value::F64(self.sink.clone())
+        }
+        fn reactive_node_kind(&self) -> ReactiveNodeKind {
+            ReactiveNodeKind::Register
+        }
+        fn to_string(&self) -> String {
+            "FailingPatternRegister".to_string()
+        }
+    }
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for FailingPatternRegister {
+        fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+            Err(MechError::new(PatternRegisterStageFailure, None))
+        }
+    }
+
+    struct FailingPatternRegisterCompiler {
+        sink: Ref<f64>,
+        solve_calls: Arc<AtomicUsize>,
+        stage_calls: Arc<AtomicUsize>,
+    }
+    impl NativeFunctionCompiler for FailingPatternRegisterCompiler {
+        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+            Ok(Box::new(FailingPatternRegister {
+                sink: self.sink.clone(),
+                solve_calls: self.solve_calls.clone(),
+                stage_calls: self.stage_calls.clone(),
+            }))
         }
     }
 
@@ -2268,6 +2481,18 @@ event := :first
     fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId {
         symbol(interpreter, name).reactive_root_cell_ids()[0]
     }
+    fn f64_symbol(interpreter: &Interpreter, name: &str) -> f64 {
+        *symbol(interpreter, name)
+            .as_f64()
+            .unwrap_or_else(|_| panic!("symbol `{name}` is not f64"))
+            .borrow()
+    }
+    fn set_f64_symbol(interpreter: &Interpreter, name: &str, value: f64) {
+        *symbol(interpreter, name)
+            .as_f64()
+            .unwrap_or_else(|_| panic!("symbol `{name}` is not f64"))
+            .borrow_mut() = value;
+    }
     fn registration(interpreter: &Interpreter) -> PatternActivationRegistration {
         let plan = interpreter.plan();
         let registrations = plan.pattern_activation_registrations();
@@ -2321,6 +2546,20 @@ event := :first
         };
         let value = *generation.borrow();
         value
+    }
+    fn arm_register_nodes(
+        interpreter: &Interpreter,
+        registration: &PatternActivationRegistration,
+        arm: usize,
+    ) -> Vec<ReactiveNodeId> {
+        let arm = &registration.arms[arm];
+        let plan = interpreter.plan();
+        let plan = plan.borrow();
+        plan.nodes[arm.body_node_start..arm.body_node_end]
+            .iter()
+            .filter(|node| node.kind == ReactiveNodeKind::Register)
+            .map(|node| node.id)
+            .collect()
     }
     fn plan_snapshot(interpreter: &Interpreter) -> PlanSnapshot {
         let plan = interpreter.plan();
@@ -2537,6 +2776,564 @@ event := :first
         }
         assert_eq!(body_output_f64(interpreter, expected_arm), output);
         assert_eq!(&plan_snapshot(interpreter), topology);
+    }
+
+    #[test]
+    fn activation_final_binding_is_exhaustive_and_guarded_binding_falls_through_to_it() {
+        let mut interpreter = interpret(
+            r#"
+physics-tick := 0.25
+~position-y := -1.0
+~velocity-y := 0.0
+floor := 0.0
+restitution := 0.5
+gravity := 4.0
+
+~> physics-tick
+  | dt, position-y >= floor => {
+      velocity-y = -velocity-y * restitution
+      position-y = floor
+    }
+  | dt => {
+      velocity-y = velocity-y + gravity * dt
+      position-y = position-y + velocity-y * dt
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "physics-tick");
+        let activation = registration(&interpreter);
+        let topology = plan_snapshot(&interpreter);
+        assert_eq!(activation.arms.len(), 2);
+        assert!(activation.arms[0].guard.is_some());
+        assert!(activation.arms[1].guard.is_none());
+        assert_eq!(activation.arms[0].captures.len(), 1);
+        assert_eq!(activation.arms[1].captures.len(), 1);
+        let arm_registers = (0..activation.arms.len())
+            .map(|arm| arm_register_nodes(&interpreter, &activation, arm))
+            .collect::<Vec<_>>();
+        assert!(arm_registers.iter().all(|registers| registers.len() == 2));
+        assert_eq!(
+            (
+                f64_symbol(&interpreter, "position-y"),
+                f64_symbol(&interpreter, "velocity-y"),
+            ),
+            (-1.0, 0.0),
+        );
+
+        let fallback = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&activation, &fallback), 1);
+        assert_eq!(fallback.register_commit.committed_nodes, arm_registers[1]);
+        assert_eq!(
+            (
+                f64_symbol(&interpreter, "position-y"),
+                f64_symbol(&interpreter, "velocity-y"),
+            ),
+            (-1.0, 1.0),
+        );
+        assert_eq!(
+            committed_capture_value(&interpreter, 1, 0),
+            Value::F64(Ref::new(0.25)),
+        );
+        assert_eq!(plan_snapshot(&interpreter), topology);
+
+        set_f64_symbol(&interpreter, "position-y", 1.0);
+        let guarded = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&activation, &guarded), 0);
+        assert_eq!(guarded.register_commit.committed_nodes, arm_registers[0]);
+        assert_eq!(
+            (
+                f64_symbol(&interpreter, "position-y"),
+                f64_symbol(&interpreter, "velocity-y"),
+            ),
+            (0.0, -0.5),
+        );
+        assert_eq!(
+            committed_capture_value(&interpreter, 0, 0),
+            Value::F64(Ref::new(0.25)),
+        );
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
+    #[test]
+    fn activation_guarded_wildcard_may_precede_an_exhaustive_binding() {
+        let mut interpreter = interpret(
+            r#"
+event := 2.0
+ready := false
+
+~> event
+  | *, ready == true => {
+      selected := -1.0
+    }
+  | value => {
+      selected := value
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "event");
+        let topology = plan_snapshot(&interpreter);
+        let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&interpreter, &topology, &outcome, 1, 2.0);
+    }
+
+    #[test]
+    fn activation_final_irrefutable_tuple_is_exhaustive() {
+        let mut interpreter = interpret(
+            r#"
+event := (1.0, 2.0)
+~> event
+  | (tick, dt) => {
+      selected := tick * 10.0 + dt
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "event");
+        let topology = plan_snapshot(&interpreter);
+        set_tuple_event(
+            &interpreter,
+            vec![Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))],
+        );
+        let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&interpreter, &topology, &outcome, 0, 34.0);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_final_irrefutable_fixed_matrix_pattern_is_exhaustive() {
+        let mut interpreter = interpret(
+            r#"
+event := [1.0 2.0]
+~> event
+  | [left, right] => {
+      selected := left * 10.0 + right
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "event");
+        let topology = plan_snapshot(&interpreter);
+        set_f64_matrix_event(&interpreter, vec![3.0, 4.0]);
+        let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&interpreter, &topology, &outcome, 0, 34.0);
+    }
+
+    #[test]
+    fn activation_final_refutable_pattern_is_non_exhaustive() {
+        for pattern in ["1.0", "(x, x)"] {
+            let mut interpreter = if pattern == "1.0" {
+                interpret("event := 1.0")
+            } else {
+                interpret("event := (1.0, 1.0)")
+            };
+            let topology = plan_snapshot(&interpreter);
+            let error = interpret_more(
+                &mut interpreter,
+                &format!(
+                    "~> event\n  | {pattern} => {{\n      selected := 1.0\n    }}"
+                ),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind_name(), "ActivationPatternArmsNonExhaustive");
+            assert_eq!(plan_snapshot(&interpreter), topology);
+        }
+
+        let mut interpreter = interpret("event := 1.0");
+        let topology = plan_snapshot(&interpreter);
+        let error = interpret_more(
+            &mut interpreter,
+            r#"
+~> event
+  | value, value > 0.0 => {
+      selected := value
+    }
+"#,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternArmsNonExhaustive");
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
+    #[test]
+    fn activation_unguarded_wildcard_before_the_final_arm_is_rejected() {
+        let mut interpreter = interpret("event := 1.0");
+        let topology = plan_snapshot(&interpreter);
+        let error = interpret_more(
+            &mut interpreter,
+            r#"
+~> event
+  | * => {
+      selected := 1.0
+    }
+  | value => {
+      selected := value
+    }
+"#,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationPatternWildcardMustBeLast");
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
+    #[test]
+    fn activation_selected_arm_commits_register_batch_and_other_arms_schedule_nothing() {
+        let mut interpreter = interpret(
+            r#"
+event := 0.0
+~x := 1.0
+~y := 10.0
+
+~> event
+  | first, first > 10.0 => {
+      x = first
+      y += first
+    }
+  | second, second > 0.0 => {
+      x = second * 2.0
+      y = second + 1.0
+    }
+  | * => {
+      x = -1.0
+      y = -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "event");
+        let activation = registration(&interpreter);
+        let topology = plan_snapshot(&interpreter);
+        let arm_registers = (0..activation.arms.len())
+            .map(|arm| arm_register_nodes(&interpreter, &activation, arm))
+            .collect::<Vec<_>>();
+        assert!(arm_registers.iter().all(|registers| registers.len() == 2));
+        {
+            let plan = interpreter.plan();
+            let plan = plan.borrow();
+            for (arm_index, registers) in arm_registers.iter().enumerate() {
+                for register in registers {
+                    let node = plan.node(*register).unwrap();
+                    assert!(node.inputs.iter().any(|dependency| {
+                        dependency.cell == activation.arms[arm_index].pulse_cell
+                            && dependency.kind == ReactiveDependencyKind::Reactive
+                    }));
+                    for (other_arm, registration) in activation.arms.iter().enumerate() {
+                        if other_arm != arm_index {
+                            assert!(!node.inputs.iter().any(|dependency| {
+                                dependency.cell == registration.pulse_cell
+                                    && dependency.kind == ReactiveDependencyKind::Reactive
+                            }));
+                        }
+                    }
+                    for capture in &activation.arms[arm_index].captures {
+                        assert!(node.inputs.iter().any(|dependency| {
+                            dependency.cell == capture.cell
+                                && dependency.kind == ReactiveDependencyKind::Sampled
+                        }));
+                    }
+                }
+            }
+        }
+
+        // Initial dispatch selects the fallback only to seed captures. No arm
+        // body is pulsed while the static graph is being registered.
+        assert_eq!(
+            (f64_symbol(&interpreter, "x"), f64_symbol(&interpreter, "y")),
+            (1.0, 10.0)
+        );
+        assert!(!interpreter.has_pending_reactive_registers());
+        for arm in 0..activation.arms.len() {
+            assert_eq!(arm_pulse_generation(&interpreter, arm), 0);
+        }
+
+        // Both guarded arms are eligible, so source order selects arm zero.
+        // The matching-but-losing arm must not schedule either register.
+        set_f64_symbol(&interpreter, "event", 20.0);
+        let first = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&activation, &first), 0);
+        assert_eq!(first.before_commit.pending_register_nodes, arm_registers[0]);
+        assert_eq!(first.register_commit.staged_nodes, arm_registers[0]);
+        assert_eq!(first.register_commit.committed_nodes, arm_registers[0]);
+        assert_eq!(
+            (f64_symbol(&interpreter, "x"), f64_symbol(&interpreter, "y")),
+            (20.0, 30.0)
+        );
+        for register in arm_registers[1].iter().chain(&arm_registers[2]) {
+            assert!(!first.before_commit.pending_register_nodes.contains(register));
+            assert!(!first.register_commit.staged_nodes.contains(register));
+            assert!(!first.register_commit.committed_nodes.contains(register));
+            assert!(!first.after_commit.pending_register_nodes.contains(register));
+        }
+
+        // Arm zero still matches, but its false guard must leave its register
+        // nodes dormant. Arm one's capture is consumed by both writes from
+        // this same trigger.
+        set_f64_symbol(&interpreter, "event", 5.0);
+        let second = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&activation, &second), 1);
+        assert_eq!(second.before_commit.pending_register_nodes, arm_registers[1]);
+        assert_eq!(second.register_commit.staged_nodes, arm_registers[1]);
+        assert_eq!(second.register_commit.committed_nodes, arm_registers[1]);
+        assert_eq!(
+            (f64_symbol(&interpreter, "x"), f64_symbol(&interpreter, "y")),
+            (10.0, 6.0)
+        );
+        assert_eq!(
+            committed_capture_value(&interpreter, 1, 0),
+            Value::F64(Ref::new(5.0))
+        );
+        for register in arm_registers[0].iter().chain(&arm_registers[2]) {
+            assert!(!second.before_commit.pending_register_nodes.contains(register));
+            assert!(!second.register_commit.staged_nodes.contains(register));
+            assert!(!second.register_commit.committed_nodes.contains(register));
+            assert!(!second.after_commit.pending_register_nodes.contains(register));
+        }
+        assert!(!interpreter.has_pending_reactive_registers());
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
+    #[test]
+    fn activation_equal_trigger_packets_produce_distinct_register_transitions_without_plan_growth() {
+        let mut interpreter = interpret(
+            r#"
+event := 2.0
+~count := 0.0
+
+~> event
+  | amount => {
+      count += amount
+    }
+  | * => {
+      fallback := 0.0
+    }
+"#,
+        );
+        let trigger = root_cell(&interpreter, "event");
+        let activation = registration(&interpreter);
+        let registers = arm_register_nodes(&interpreter, &activation, 0);
+        let topology = plan_snapshot(&interpreter);
+        assert_eq!(registers.len(), 1);
+        assert_eq!(f64_symbol(&interpreter, "count"), 0.0);
+
+        for (expected_count, expected_pulse) in [(2.0, 1usize), (4.0, 2usize)] {
+            let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+            assert_eq!(selected_arm_index(&activation, &outcome), 0);
+            assert_eq!(outcome.before_commit.pending_register_nodes, registers);
+            assert_eq!(outcome.register_commit.staged_nodes, registers);
+            assert_eq!(outcome.register_commit.committed_nodes, registers);
+            assert_eq!(f64_symbol(&interpreter, "count"), expected_count);
+            assert_eq!(arm_pulse_generation(&interpreter, 0), expected_pulse);
+            assert_eq!(plan_snapshot(&interpreter), topology);
+        }
+    }
+
+    #[test]
+    fn activation_arm_alias_of_live_input_remains_sampled_until_trigger() {
+        let mut interpreter = Interpreter::new_with_full_stdlib(0);
+        let outer_id = hash_str("outer");
+        {
+            let symbols = interpreter.symbols();
+            let mut symbols = symbols.borrow_mut();
+            symbols.insert(outer_id, Value::F64(Ref::new(1.0)), true);
+            symbols
+                .dictionary
+                .borrow_mut()
+                .insert(outer_id, "outer".to_string());
+        }
+        interpreter
+            .dictionary()
+            .borrow_mut()
+            .insert(outer_id, "outer".to_string());
+        interpret_more(
+            &mut interpreter,
+            r#"
+event := 0.0
+~state := 0.0
+
+~> event
+  | tick => {
+      sampled := outer
+      state = sampled
+    }
+"#,
+        )
+        .unwrap();
+
+        let trigger = root_cell(&interpreter, "event");
+        let outer = root_cell(&interpreter, "outer");
+        let activation = registration(&interpreter);
+        let registers = arm_register_nodes(&interpreter, &activation, 0);
+        let topology = plan_snapshot(&interpreter);
+        assert_eq!(registers.len(), 1);
+        assert_eq!(f64_symbol(&interpreter, "state"), 0.0);
+        {
+            let plan = interpreter.plan();
+            let plan = plan.borrow();
+            let register = plan.node(registers[0]).unwrap();
+            assert!(register.inputs.iter().any(|dependency| {
+                dependency.cell == outer
+                    && dependency.kind == ReactiveDependencyKind::Sampled
+            }));
+            assert!(register.inputs.iter().any(|dependency| {
+                dependency.cell == activation.arms[0].pulse_cell
+                    && dependency.kind == ReactiveDependencyKind::Reactive
+            }));
+        }
+
+        set_f64_symbol(&interpreter, "outer", 5.0);
+        let sampled_only = interpreter.advance_reactive_turn(&[outer]).unwrap();
+        assert!(!sampled_only
+            .before_commit
+            .pending_register_nodes
+            .contains(&registers[0]));
+        assert!(!sampled_only
+            .register_commit
+            .committed_nodes
+            .contains(&registers[0]));
+        assert_eq!(f64_symbol(&interpreter, "state"), 0.0);
+
+        let tick = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&activation, &tick), 0);
+        assert_eq!(tick.register_commit.committed_nodes, registers);
+        assert_eq!(f64_symbol(&interpreter, "state"), 5.0);
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
+    #[test]
+    fn activation_failed_multi_register_staging_mutates_nothing() {
+        let mut interpreter = interpret(
+            r#"
+event := 0.0
+~first := 1.0
+~second := 2.0
+"#,
+        );
+        let second_sink = symbol(&interpreter, "second").as_f64().unwrap().clone();
+        let solve_calls = Arc::new(AtomicUsize::new(0));
+        let stage_calls = Arc::new(AtomicUsize::new(0));
+        interpreter
+            .functions()
+            .borrow_mut()
+            .insert_function_compiler(
+                "test/failing-pattern-register",
+                Arc::new(FailingPatternRegisterCompiler {
+                    sink: second_sink,
+                    solve_calls: solve_calls.clone(),
+                    stage_calls: stage_calls.clone(),
+                }),
+            );
+        interpret_more(
+            &mut interpreter,
+            r#"
+~> event
+  | value => {
+      first = value
+      test/failing-pattern-register()
+    }
+  | * => {
+      fallback := 0.0
+    }
+"#,
+        )
+        .unwrap();
+
+        let trigger = root_cell(&interpreter, "event");
+        let activation = registration(&interpreter);
+        let registers = arm_register_nodes(&interpreter, &activation, 0);
+        let topology = plan_snapshot(&interpreter);
+        assert_eq!(registers.len(), 2);
+        assert_eq!(
+            (f64_symbol(&interpreter, "first"), f64_symbol(&interpreter, "second")),
+            (1.0, 2.0)
+        );
+        assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
+
+        set_f64_symbol(&interpreter, "event", 9.0);
+        let error = interpreter.advance_reactive_turn(&[trigger]).unwrap_err();
+        assert_eq!(error.kind_name(), "PatternRegisterStageFailure");
+        assert_eq!(stage_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            (f64_symbol(&interpreter, "first"), f64_symbol(&interpreter, "second")),
+            (1.0, 2.0)
+        );
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+
+    #[test]
+    fn activation_patterned_body_rejects_writes_to_its_trigger() {
+        for assignment in ["event = event + 1.0", "event += 1.0"] {
+            let mut interpreter = interpret("~event := 1.0");
+            let topology = plan_snapshot(&interpreter);
+            let error = interpret_more(
+                &mut interpreter,
+                &format!(
+                    r#"
+~> event
+  | * => {{
+      {assignment}
+    }}
+"#
+                ),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind_name(), "ActivationScopeTriggerWriteUnsupported");
+            assert_eq!(f64_symbol(&interpreter, "event"), 1.0);
+            assert_eq!(plan_snapshot(&interpreter), topology);
+            assert_eq!(interpreter.plan().activation_registration_depth(), 0);
+        }
+    }
+
+    #[test]
+    fn activation_patterned_body_rejects_writes_through_a_trigger_alias() {
+        let mut interpreter = interpret(
+            r#"
+~event := 1.0
+alias := event
+"#,
+        );
+        let topology = plan_snapshot(&interpreter);
+        let error = interpret_more(
+            &mut interpreter,
+            r#"
+~> alias
+  | * => {
+      event += 1.0
+    }
+"#,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ActivationScopeTriggerWriteUnsupported");
+        assert_eq!(f64_symbol(&interpreter, "event"), 1.0);
+        assert_eq!(plan_snapshot(&interpreter), topology);
+        assert_eq!(interpreter.plan().activation_registration_depth(), 0);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_patterned_body_rejects_eager_subscript_writes() {
+        for assignment in ["values[1] = 3.0", "values[1] += 3.0"] {
+            let mut interpreter = interpret(
+                r#"
+event := 0.0
+~values := [1.0 2.0]
+"#,
+            );
+            let topology = plan_snapshot(&interpreter);
+            let values_before = symbol(&interpreter, "values");
+            let error = interpret_more(
+                &mut interpreter,
+                &format!(
+                    r#"
+~> event
+  | * => {{
+      {assignment}
+    }}
+"#
+                ),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind_name(), "ActivationPatternRegisterWriteUnsupported");
+            assert_eq!(symbol(&interpreter, "values"), values_before);
+            assert_eq!(plan_snapshot(&interpreter), topology);
+            assert_eq!(interpreter.plan().activation_registration_depth(), 0);
+        }
     }
 
     const ENUM_ACTIVATION: &str = r#"
