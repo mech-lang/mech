@@ -969,7 +969,7 @@ fn attach_failure_closes_ingress_and_rolls_back_in_reverse_order() {
 }
 
 #[test]
-fn start_failure_stops_every_driver_in_reverse_order() {
+fn start_failure_stops_only_drivers_started_by_the_call() {
   let a = Rc::new(RefCell::new(MockDriverState::default()));
   let b = Rc::new(RefCell::new(MockDriverState { fail_start: true, ..Default::default() }));
   let c = Rc::new(RefCell::new(MockDriverState::default()));
@@ -979,7 +979,10 @@ fn start_failure_stops_every_driver_in_reverse_order() {
   let error = format!("{:?}", runtime.start_input_drivers().unwrap_err());
   assert!(error.contains("MockStartError"));
   let stop_events: Vec<String> = events.borrow().iter().filter(|event| event.starts_with("stop:")).cloned().collect();
-  assert_eq!(stop_events, vec!["stop:c", "stop:b", "stop:a"]);
+  assert_eq!(stop_events, vec!["stop:a"]);
+  assert_eq!((a.borrow().start_count, a.borrow().stop_count), (1, 1));
+  assert_eq!((b.borrow().start_count, b.borrow().stop_count), (1, 0));
+  assert_eq!((c.borrow().start_count, c.borrow().stop_count), (0, 0));
   assert!(!a.borrow().live && !b.borrow().live && !c.borrow().live);
 }
 
