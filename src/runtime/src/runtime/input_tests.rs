@@ -407,6 +407,77 @@ fn runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers
 }
 
 #[test]
+fn patterned_activation_guard_rejects_runtime_host_before_elaboration() {
+  let mut runtime = test_runtime(TestResourceProvider::new());
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 43, "host:demo/audit");
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  runtime
+    .register_mech_host_function(ClosureHostFunction::new(
+      "demo/audit",
+      move |_services, _context, _args| {
+        host_calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Bool(Ref::new(true)))
+      },
+    ))
+    .unwrap();
+  runtime
+    .run_string("event := (:released, 1.0)\nsentinel := 7.0")
+    .unwrap();
+  let plan_before = plan_snapshot(&runtime);
+  let symbols_before = runtime.program.interpreter().symbols().borrow().snapshot();
+  let registrations_before = runtime
+    .program
+    .interpreter()
+    .plan()
+    .pattern_activation_registrations()
+    .to_vec();
+
+  let error = runtime
+    .run_string(
+      r#"
+~> event
+  | :pressed(x), demo/audit(x) => {
+      selected := x + 0.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+    )
+    .unwrap_err();
+
+  assert_eq!(error.kind_name(), "ActivationPatternGuardMustBePure");
+  assert_eq!(calls.load(Ordering::SeqCst), 0);
+  assert_eq!(plan_snapshot(&runtime), plan_before);
+  assert_eq!(
+    runtime.program.interpreter().symbols().borrow().snapshot(),
+    symbols_before,
+  );
+  let registrations_after = runtime
+    .program
+    .interpreter()
+    .plan()
+    .pattern_activation_registrations()
+    .to_vec();
+  assert_eq!(registrations_after, registrations_before);
+  assert!(!runtime
+    .program
+    .interpreter()
+    .plan()
+    .activation_registration_active());
+  assert!(!runtime.program.interpreter().has_pending_reactive_registers());
+  assert!(runtime
+    .program
+    .interpreter()
+    .symbols()
+    .borrow()
+    .get(hash_str("selected"))
+    .is_none());
+}
+
+#[test]
 fn live_input_recomputes_runtime_host_function() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
   grant_read(&mut runtime, "test://clock/ticks", "value");

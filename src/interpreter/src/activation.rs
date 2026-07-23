@@ -1,6 +1,7 @@
 #![cfg(all(feature = "functions", feature = "symbol_table"))]
 //! Statically elaborated structural dispatch for patterned activation scopes.
 use crate::*;
+use std::collections::HashSet;
 
 macro_rules! activation_error {
     ($n:ident,$m:expr) => {
@@ -30,7 +31,15 @@ activation_error!(
 );
 activation_error!(
     ActivationPatternGuardMustBePure,
-    "Patterned activation guards are not supported yet."
+    "Patterned activation guards must elaborate to a static pure expression graph."
+);
+activation_error!(
+    ActivationPatternGuardDependencyInvariant,
+    "The activation guard graph could not be attached to its match pulse."
+);
+activation_error!(
+    ActivationPatternBodyDependencyInvariant,
+    "The activation arm body could not sample its committed captures."
 );
 activation_error!(
     ActivationPatternRegisterWriteUnsupported,
@@ -819,6 +828,69 @@ impl MechFunctionImpl for Finalize {
         "ActivationPatternArmFinalize".into()
     }
 }
+struct MatchGate {
+    matched: Ref<bool>,
+    out: Ref<usize>,
+}
+impl MechFunctionImpl for MatchGate {
+    fn solve(&self) {}
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+        if *self.matched.borrow() {
+            *self.out.borrow_mut() += 1;
+            Ok(ReactiveSolveStatus::Changed)
+        } else {
+            Ok(ReactiveSolveStatus::Unchanged)
+        }
+    }
+    fn out(&self) -> Value {
+        Value::Index(self.out.clone())
+    }
+    fn to_string(&self) -> String {
+        "ActivationPatternGuardMatchGate".into()
+    }
+}
+struct UnmatchedFinalize {
+    matched: Ref<bool>,
+    eligible: Ref<bool>,
+    out: Ref<usize>,
+}
+impl MechFunctionImpl for UnmatchedFinalize {
+    fn solve(&self) {}
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+        if *self.matched.borrow() {
+            Ok(ReactiveSolveStatus::Unchanged)
+        } else {
+            *self.eligible.borrow_mut() = false;
+            *self.out.borrow_mut() += 1;
+            Ok(ReactiveSolveStatus::Changed)
+        }
+    }
+    fn out(&self) -> Value {
+        Value::Index(self.out.clone())
+    }
+    fn to_string(&self) -> String {
+        "ActivationPatternGuardUnmatchedFinalize".into()
+    }
+}
+struct GuardFinalize {
+    guard: Ref<bool>,
+    eligible: Ref<bool>,
+    out: Ref<usize>,
+}
+impl MechFunctionImpl for GuardFinalize {
+    fn solve(&self) {}
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+        *self.eligible.borrow_mut() = *self.guard.borrow();
+        *self.out.borrow_mut() += 1;
+        Ok(ReactiveSolveStatus::Changed)
+    }
+    fn out(&self) -> Value {
+        Value::Index(self.out.clone())
+    }
+    fn to_string(&self) -> String {
+        "ActivationPatternGuardFinalize".into()
+    }
+}
 struct Select {
     eligible: Vec<Ref<bool>>,
     selected: Ref<usize>,
@@ -898,6 +970,12 @@ interpreter_only!(Matcher);
 #[cfg(feature = "compiler")]
 interpreter_only!(Finalize);
 #[cfg(feature = "compiler")]
+interpreter_only!(MatchGate);
+#[cfg(feature = "compiler")]
+interpreter_only!(UnmatchedFinalize);
+#[cfg(feature = "compiler")]
+interpreter_only!(GuardFinalize);
+#[cfg(feature = "compiler")]
 interpreter_only!(Select);
 #[cfg(feature = "compiler")]
 interpreter_only!(Gate);
@@ -925,12 +1003,10 @@ fn preflight_patterned_activation(
             MechError::new(ActivationPatternWildcardMustBeLast, None).with_tokens(scope.tokens())
         );
     }
-    if arms.iter().any(|a| a.guard.is_some()) {
-        return Err(
-            MechError::new(ActivationPatternGuardMustBePure, None).with_tokens(scope.tokens())
-        );
-    }
     for arm in arms {
+        if let Some(guard) = &arm.guard {
+            validate_patterned_guard_expression(guard, i)?;
+        }
         validate_patterned_arm_body(&arm.body)?;
     }
     if trigger.reactive_root_cell_ids() != trigger_cells {
@@ -1085,6 +1161,261 @@ fn validate_patterned_expression(expression: &Expression) -> MResult<()> {
         }
     }
 }
+
+fn validate_patterned_guard_expression(
+    expression: &Expression,
+    interpreter: &Interpreter,
+) -> MResult<()> {
+    validate_patterned_expression(expression)?;
+    if guard_expression_is_not_static_pure(
+        expression,
+        interpreter,
+        &mut HashSet::new(),
+    ) {
+        validation_error(ActivationPatternGuardMustBePure, expression.tokens())
+    } else {
+        Ok(())
+    }
+}
+
+fn guard_expression_is_not_static_pure(
+    expression: &Expression,
+    interpreter: &Interpreter,
+    visiting_functions: &mut HashSet<u64>,
+) -> bool {
+    match expression {
+        Expression::Literal(_) | Expression::Var(_) => false,
+        Expression::Slice(slice) => slice
+            .subscript
+            .iter()
+            .any(|subscript| {
+                guard_subscript_is_not_static_pure(
+                    subscript,
+                    interpreter,
+                    visiting_functions,
+                )
+            }),
+        Expression::Formula(factor) => {
+            guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
+        }
+        Expression::FunctionCall(call) => {
+            if call.args.iter().any(|(_, expression)| {
+                guard_expression_is_not_static_pure(
+                    expression,
+                    interpreter,
+                    visiting_functions,
+                )
+            }) {
+                return true;
+            }
+            let function_id = call.name.hash();
+            let functions = interpreter.functions();
+            let functions = functions.borrow();
+            let user_function = functions.user_functions.get(&function_id).cloned();
+            let has_precompiled_function = functions.functions.contains_key(&function_id);
+            let native_guard_safety = functions
+                .function_compilers
+                .get(&function_id)
+                .map(|compiler| compiler.guard_safety());
+            drop(functions);
+            let Some(user_function) = user_function else {
+                if has_precompiled_function {
+                    return true;
+                }
+                return match native_guard_safety {
+                    Some(GuardFunctionSafety::PureStatic) | None => false,
+                    Some(GuardFunctionSafety::Unsupported) => true,
+                };
+            };
+            if !visiting_functions.insert(function_id) {
+                return true;
+            }
+            let eager = match user_function.code.match_arms.as_slice() {
+                [arm] if matches!(arm.pattern, Pattern::Wildcard) => {
+                    guard_expression_is_not_static_pure(
+                        &arm.expression,
+                        interpreter,
+                        visiting_functions,
+                    )
+                }
+                _ => true,
+            };
+            visiting_functions.remove(&function_id);
+            eager
+        }
+        Expression::Match(_)
+        | Expression::SetComprehension(_)
+        | Expression::MatrixComprehension(_)
+        | Expression::FsmPipe(_) => true,
+        Expression::Range(range) => {
+            guard_range_is_not_static_pure(range, interpreter, visiting_functions)
+        }
+        Expression::Structure(structure) => {
+            guard_structure_is_not_static_pure(structure, interpreter, visiting_functions)
+        }
+    }
+}
+
+fn guard_factor_is_not_static_pure(
+    factor: &Factor,
+    interpreter: &Interpreter,
+    visiting_functions: &mut HashSet<u64>,
+) -> bool {
+    match factor {
+        Factor::Expression(expression) => guard_expression_is_not_static_pure(
+            expression,
+            interpreter,
+            visiting_functions,
+        ),
+        Factor::Negate(factor)
+        | Factor::Not(factor)
+        | Factor::Parenthetical(factor)
+        | Factor::Transpose(factor) => {
+            guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
+        }
+        Factor::Term(term) => {
+            guard_factor_is_not_static_pure(
+                &term.lhs,
+                interpreter,
+                visiting_functions,
+            ) || term.rhs.iter().any(|(_, factor)| {
+                guard_factor_is_not_static_pure(
+                    factor,
+                    interpreter,
+                    visiting_functions,
+                )
+            })
+        }
+    }
+}
+
+fn guard_range_is_not_static_pure(
+    range: &RangeExpression,
+    interpreter: &Interpreter,
+    visiting_functions: &mut HashSet<u64>,
+) -> bool {
+    guard_factor_is_not_static_pure(&range.start, interpreter, visiting_functions)
+        || range
+            .increment
+            .as_ref()
+            .map_or(false, |(_, increment)| {
+                guard_factor_is_not_static_pure(
+                    increment,
+                    interpreter,
+                    visiting_functions,
+                )
+            })
+        || guard_factor_is_not_static_pure(
+            &range.terminal,
+            interpreter,
+            visiting_functions,
+        )
+}
+
+fn guard_subscript_is_not_static_pure(
+    subscript: &Subscript,
+    interpreter: &Interpreter,
+    visiting_functions: &mut HashSet<u64>,
+) -> bool {
+    match subscript {
+        Subscript::Brace(subscripts) | Subscript::Bracket(subscripts) => subscripts
+            .iter()
+            .any(|subscript| {
+                guard_subscript_is_not_static_pure(
+                    subscript,
+                    interpreter,
+                    visiting_functions,
+                )
+            }),
+        Subscript::Formula(factor) => {
+            guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
+        }
+        Subscript::Range(range) => {
+            guard_range_is_not_static_pure(range, interpreter, visiting_functions)
+        }
+        Subscript::All | Subscript::Dot(_) | Subscript::DotInt(_) | Subscript::Swizzle(_) => false,
+    }
+}
+
+fn guard_structure_is_not_static_pure(
+    structure: &Structure,
+    interpreter: &Interpreter,
+    visiting_functions: &mut HashSet<u64>,
+) -> bool {
+    match structure {
+        Structure::Empty => false,
+        Structure::Map(map) => map.elements.iter().any(|mapping| {
+            guard_expression_is_not_static_pure(
+                &mapping.key,
+                interpreter,
+                visiting_functions,
+            ) || guard_expression_is_not_static_pure(
+                &mapping.value,
+                interpreter,
+                visiting_functions,
+            )
+        }),
+        Structure::Matrix(matrix) => matrix.rows.iter().any(|row| {
+            row.columns
+                .iter()
+                .any(|column| {
+                    guard_expression_is_not_static_pure(
+                        &column.element,
+                        interpreter,
+                        visiting_functions,
+                    )
+                })
+        }),
+        Structure::Record(record) => record
+            .bindings
+            .iter()
+            .any(|binding| {
+                guard_expression_is_not_static_pure(
+                    &binding.value,
+                    interpreter,
+                    visiting_functions,
+                )
+            }),
+        Structure::Set(set) => set
+            .elements
+            .iter()
+            .any(|expression| {
+                guard_expression_is_not_static_pure(
+                    expression,
+                    interpreter,
+                    visiting_functions,
+                )
+            }),
+        Structure::Table(table) => table.rows.iter().any(|row| {
+            row.columns
+                .iter()
+                .any(|column| {
+                    guard_expression_is_not_static_pure(
+                        &column.element,
+                        interpreter,
+                        visiting_functions,
+                    )
+                })
+        }),
+        Structure::Tuple(tuple) => tuple
+            .elements
+            .iter()
+            .any(|expression| {
+                guard_expression_is_not_static_pure(
+                    expression,
+                    interpreter,
+                    visiting_functions,
+                )
+            }),
+        Structure::TupleStruct(tuple) => {
+            guard_expression_is_not_static_pure(
+                &tuple.value,
+                interpreter,
+                visiting_functions,
+            )
+        }
+    }
+}
 fn validate_patterned_pattern(pattern: &Pattern) -> MResult<()> {
     match pattern {
         Pattern::Expression(expression) => validate_patterned_expression(expression),
@@ -1225,6 +1556,108 @@ fn validate_patterned_qualifier(qualifier: &ComprehensionQualifier) -> MResult<(
     }
 }
 
+struct ElaboratedPatternGuard {
+    finalizer_node: ReactiveNodeId,
+    node_start: usize,
+    node_end: usize,
+}
+
+fn elaborate_patterned_arm_guard(
+    guard: &Expression,
+    captures: &[ActivationPatternCapture],
+    pulse: &Value,
+    eligible: &Ref<bool>,
+    completion: Ref<usize>,
+    interpreter: &Interpreter,
+) -> MResult<ElaboratedPatternGuard> {
+    let symbols = interpreter.symbols();
+    let symbol_snapshot = symbols.borrow().snapshot();
+    let plan = interpreter.plan();
+    let original_scope_depth = plan.activation_registration_depth();
+    {
+        let mut symbols = symbols.borrow_mut();
+        for capture in captures {
+            symbols.mutable_variables.remove(&capture.id);
+            symbols.insert(capture.id, capture.proposed.clone(), false);
+            symbols
+                .dictionary
+                .borrow_mut()
+                .insert(capture.id, capture.name.clone());
+        }
+    }
+    let node_start = plan.len();
+    let pulse_cells = pulse.reactive_root_cell_ids();
+    plan.push_activation_registration_scope(pulse_cells.clone());
+    let result = (|| -> MResult<ElaboratedPatternGuard> {
+        let _deferred_expression_solves =
+            crate::expressions::DeferredExpressionSolveScope::enter(interpreter);
+        let _persistent_user_function_plan =
+            crate::functions::PersistentUserFunctionPlanScope::enter(interpreter);
+        let guard_value = crate::expression(guard, None, interpreter)?;
+        let guard_ref = crate::expressions::validate_guard_expression_result(
+            guard_value.clone(),
+            guard.tokens(),
+        )?;
+        let finalizer_node = plan.register_function(
+            Box::new(GuardFinalize {
+                guard: guard_ref,
+                eligible: eligible.clone(),
+                out: completion,
+            }),
+            &[guard_value],
+        )?;
+        let node_end = plan.len();
+        {
+            let plan_borrow = plan.borrow();
+            if plan_borrow.nodes[node_start..node_end]
+                .iter()
+                .any(|node| node.kind != ReactiveNodeKind::Combinational)
+            {
+                return Err(
+                    MechError::new(ActivationPatternGuardMustBePure, None)
+                        .with_tokens(guard.tokens()),
+                );
+            }
+        }
+        {
+            let Some(pulse_cell) = pulse_cells.first().copied() else {
+                return Err(
+                    MechError::new(ActivationPatternGuardDependencyInvariant, None)
+                        .with_tokens(guard.tokens()),
+                );
+            };
+            let mut plan_borrow = plan.borrow_mut();
+            for node in node_start..node_end {
+                if !plan_borrow.add_reactive_dependency(node, pulse_cell) {
+                    return Err(
+                        MechError::new(ActivationPatternGuardDependencyInvariant, None)
+                            .with_tokens(guard.tokens()),
+                    );
+                }
+                for capture in captures {
+                    let capture_cell = capture.proposed.reactive_root_cell_ids()[0];
+                    if !plan_borrow.add_sampled_dependency(node, capture_cell) {
+                        return Err(
+                            MechError::new(ActivationPatternGuardDependencyInvariant, None)
+                                .with_tokens(guard.tokens()),
+                        );
+                    }
+                }
+            }
+        }
+        Ok(ElaboratedPatternGuard {
+            finalizer_node,
+            node_start,
+            node_end,
+        })
+    })();
+    while plan.activation_registration_depth() > original_scope_depth {
+        plan.pop_activation_registration_scope();
+    }
+    symbols.borrow_mut().restore(symbol_snapshot);
+    result
+}
+
 fn elaborate_patterned_arm_body(
     arm: &ActivationArm,
     captures: &[ActivationPatternCapture],
@@ -1273,7 +1706,12 @@ fn elaborate_patterned_arm_body(
         for node in body_node_start..body_node_end {
             for capture in captures {
                 let cell = capture.committed.reactive_root_cell_ids()[0];
-                debug_assert!(plan.add_sampled_dependency(node, cell));
+                if !plan.add_sampled_dependency(node, cell) {
+                    return Err(MechError::new(
+                        ActivationPatternBodyDependencyInvariant,
+                        None,
+                    ));
+                }
             }
         }
     }
@@ -1304,18 +1742,17 @@ fn elaborate_patterned_activation_inner(
         })
         .collect::<MResult<Vec<_>>>()?;
     drop(_persistent_user_function_plan);
-    let mut initially_matched = Vec::with_capacity(compiled.len());
+    // Seed proposal storage before guard graphs are elaborated. Composite
+    // guard expressions may need the current proposal shape to compile, but
+    // eligibility and selection are still determined by the runtime graph
+    // initialization below.
     for (arm, expression_values) in compiled.iter().zip(&pattern_expression_values) {
         let pattern_match =
             match_compiled_pattern_with_values(&arm.pattern, &trigger, expression_values)?;
-        initially_matched.push(pattern_match.matched);
         ReactiveBindingSink {
             captures: &arm.captures,
         }
         .commit(&pattern_match)?;
-    }
-    if let Some(selected) = initially_matched.iter().position(|matched| *matched) {
-        commit_proposed_captures(&compiled[selected].captures)?;
     }
     let (scope_gen, scope_v) = generation();
     let scope_node = plan
@@ -1344,20 +1781,60 @@ fn elaborate_patterned_activation_inner(
         completions.push(v);
         matched.push(f);
     }
-    let (mut finalizers, mut eligible, mut done) = (Vec::new(), Vec::new(), Vec::new());
-    for (f, c) in matched.iter().zip(completions.iter()) {
-        let (o, v) = generation();
+    let (mut finalizers, mut guards, mut eligible, mut done) =
+        (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    for n in 0..arms.len() {
         let e = Ref::new(false);
-        finalizers.push(plan.borrow_mut().register(
-            Box::new(Finalize {
-                matched: f.clone(),
-                eligible: e.clone(),
-                out: o,
-            }),
-            &[c.clone()],
-        )?);
+        if let Some(guard) = &arms[n].guard {
+            let (match_gate_out, match_gate_pulse) = generation();
+            let match_gate_node = plan.borrow_mut().register(
+                Box::new(MatchGate {
+                    matched: matched[n].clone(),
+                    out: match_gate_out,
+                }),
+                &[completions[n].clone()],
+            )?;
+            let (unmatched_out, unmatched_done) = generation();
+            let unmatched_finalizer = plan.borrow_mut().register(
+                Box::new(UnmatchedFinalize {
+                    matched: matched[n].clone(),
+                    eligible: e.clone(),
+                    out: unmatched_out,
+                }),
+                &[completions[n].clone()],
+            )?;
+            let (guard_out, guard_done) = generation();
+            let elaborated = elaborate_patterned_arm_guard(
+                guard,
+                &compiled[n].captures,
+                &match_gate_pulse,
+                &e,
+                guard_out,
+                i,
+            )?;
+            finalizers.push(unmatched_finalizer);
+            guards.push(Some(PatternActivationGuardRegistration {
+                match_gate_node,
+                guard_finalizer_node: elaborated.finalizer_node,
+                guard_node_start: elaborated.node_start,
+                guard_node_end: elaborated.node_end,
+            }));
+            done.push(unmatched_done);
+            done.push(guard_done);
+        } else {
+            let (out, arm_done) = generation();
+            finalizers.push(plan.borrow_mut().register(
+                Box::new(Finalize {
+                    matched: matched[n].clone(),
+                    eligible: e.clone(),
+                    out,
+                }),
+                &[completions[n].clone()],
+            )?);
+            guards.push(None);
+            done.push(arm_done);
+        }
         eligible.push(e);
-        done.push(v);
     }
     let (o, selection) = generation();
     let selected = Ref::new(usize::MAX);
@@ -1369,6 +1846,13 @@ fn elaborate_patterned_activation_inner(
         }),
         &done,
     )?;
+    let private_scope_cell = scope_v.reactive_root_cell_ids()[0];
+    plan.solve_dirty_cells(&[private_scope_cell])?;
+    let initially_selected = *selected.borrow();
+    if initially_selected >= compiled.len() {
+        return Err(MechError::new(ActivationPatternArmsNonExhaustive, None));
+    }
+    commit_proposed_captures(&compiled[initially_selected].captures)?;
     let (mut gates, mut pulses) = (Vec::new(), Vec::new());
     for arm in 0..arms.len() {
         let (o, v) = generation();
@@ -1399,6 +1883,7 @@ fn elaborate_patterned_activation_inner(
             .map(|n| PatternActivationArmRegistration {
                 matcher_node: matcher_nodes[n],
                 finalizer_node: finalizers[n],
+                guard: guards[n].clone(),
                 gate_node: gates[n],
                 pulse_cell: pulses[n].reactive_root_cell_ids()[0],
                 body_node_start: ranges[n].0,
@@ -1448,6 +1933,21 @@ pub(crate) fn elaborate_patterned_activation(
 mod tests {
     use super::*;
     use std::collections::HashMap;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    struct EagerGuardTestCompiler {
+        compile_calls: Arc<AtomicUsize>,
+    }
+
+    impl NativeFunctionCompiler for EagerGuardTestCompiler {
+        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+            self.compile_calls.fetch_add(1, Ordering::SeqCst);
+            panic!("unsupported guard compiler must not run during preflight")
+        }
+    }
 
     fn scalar_capture_cases() -> Vec<(ValueKind, Value)> {
         let mut cases = Vec::new();
@@ -1810,6 +2310,17 @@ event := :first
             .skip(1)
             .nth(capture)
             .expect("missing proposed capture output")
+    }
+    fn arm_pulse_generation(interpreter: &Interpreter, arm: usize) -> usize {
+        let registration = registration(interpreter);
+        let arm = &registration.arms[arm];
+        let Value::Index(generation) =
+            node_output_for_cell(interpreter, arm.gate_node, arm.pulse_cell)
+        else {
+            panic!("activation arm pulse is not an index")
+        };
+        let value = *generation.borrow();
+        value
     }
     fn plan_snapshot(interpreter: &Interpreter) -> PlanSnapshot {
         let plan = interpreter.plan();
@@ -2480,6 +2991,405 @@ event := (1.0, 1.0)
         assert_dispatch_turn(&i, &topology, &o, 1, -1.);
     }
 
+    #[test]
+    fn activation_guards_fall_through_in_source_order_and_commit_only_the_selected_arm() {
+        let mut i = interpret(
+            r#"
+event := 0.0
+~> event
+  | first, first > 10.0 => {
+      selected := first + 100.0
+    }
+  | second, second > 0.0 => {
+      selected := second + 200.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        let activation = registration(&i);
+        assert!(activation.arms[0].guard.is_some());
+        assert!(activation.arms[1].guard.is_some());
+        assert!(activation.arms[2].guard.is_none());
+
+        let Value::F64(event) = symbol(&i, "event") else {
+            panic!("event is not f64")
+        };
+        *event.borrow_mut() = 20.0;
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 120.0);
+        let changed = turn_changed_nodes(&outcome);
+        let unchanged = turn_unchanged_nodes(&outcome);
+        for arm in &activation.arms[..2] {
+            let guard = arm.guard.as_ref().unwrap();
+            assert!(changed.contains(&guard.match_gate_node));
+            assert!(changed.contains(&guard.guard_finalizer_node));
+            assert!(unchanged.contains(&arm.finalizer_node));
+        }
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(20.0)));
+        assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(0.0)));
+
+        *event.borrow_mut() = 5.0;
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 1, 205.0);
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(20.0)));
+        assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+
+        *event.borrow_mut() = -5.0;
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 2, -1.0);
+        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(-5.0)));
+        assert_eq!(proposed_capture_value(&i, 1, 0), Value::F64(Ref::new(-5.0)));
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(20.0)));
+        assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+    }
+
+    #[test]
+    fn activation_guard_outer_dependencies_are_sampled_until_the_next_trigger() {
+        let mut i = interpret(
+            r#"
+event := (:pressed, 0.0)
+threshold := 10.0
+~> event
+  | :pressed(x), x > threshold => {
+      selected := x + 0.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let threshold_cell = root_cell(&i, "threshold");
+        let topology = plan_snapshot(&i);
+        let activation = registration(&i);
+        let guard = activation.arms[0].guard.as_ref().unwrap();
+        let Value::F64(threshold) = symbol(&i, "threshold") else {
+            panic!("threshold is not f64")
+        };
+        *threshold.borrow_mut() = 3.0;
+
+        let dependency_turn = i.advance_reactive_turn(&[threshold_cell]).unwrap();
+        let executed = turn_executed_nodes(&dependency_turn);
+        assert!(!executed.contains(&activation.scope_pulse_node));
+        assert!(!executed.contains(&guard.match_gate_node));
+        assert!(!executed.contains(&guard.guard_finalizer_node));
+        for node in guard.guard_node_start..guard.guard_node_end {
+            assert!(!executed.contains(&node));
+        }
+        assert_eq!(plan_snapshot(&i), topology);
+
+        set_atom_tuple_event(&i, "pressed", 5.0);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 5.0);
+    }
+
+    #[test]
+    fn activation_guard_user_function_refreshes_on_each_matching_trigger() {
+        let mut i = interpret(
+            r#"
+passes(value<f64>, limit<f64>) => <bool>
+  | value > limit.
+
+event := (:pressed, 0.0)
+threshold := 5.0
+~> event
+  | :pressed(x), passes(x, threshold) => {
+      selected := x + 0.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let threshold_cell = root_cell(&i, "threshold");
+        let topology = plan_snapshot(&i);
+        {
+            let functions = i.functions();
+            let functions = functions.borrow();
+            let passes = functions.user_functions.get(&hash_str("passes")).unwrap();
+            assert_eq!(passes.code.match_arms.len(), 1);
+            assert!(matches!(passes.code.match_arms[0].pattern, Pattern::Wildcard));
+        }
+
+        set_atom_tuple_event(&i, "pressed", 6.0);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 6.0);
+
+        set_atom_tuple_event(&i, "pressed", 4.0);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
+
+        let Value::F64(threshold) = symbol(&i, "threshold") else {
+            panic!("threshold is not f64")
+        };
+        *threshold.borrow_mut() = 3.0;
+        let dependency_turn = i.advance_reactive_turn(&[threshold_cell]).unwrap();
+        assert!(turn_executed_nodes(&dependency_turn).is_empty());
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 4.0);
+    }
+
+    #[test]
+    fn activation_guard_initialization_commits_the_first_eligible_arm_without_pulsing_a_body() {
+        let i = interpret(
+            r#"
+event := 5.0
+~> event
+  | first, first > 10.0 => {
+      selected := first + 100.0
+    }
+  | second, second > 0.0 => {
+      selected := second + 200.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+
+        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(5.0)));
+        assert_eq!(proposed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(0.0)));
+        assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+        assert_eq!(body_output_f64(&i, 1), 205.0);
+        for arm in 0..3 {
+            assert_eq!(arm_pulse_generation(&i, arm), 0);
+        }
+    }
+
+    #[test]
+    fn activation_guard_equal_packets_dispatch_again_without_changing_topology() {
+        let mut i = interpret(
+            r#"
+event := 20.0
+~> event
+  | value, value > 10.0 => {
+      selected := value + 1.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+        for expected_pulse in [1usize, 2] {
+            let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+            assert_dispatch_turn(&i, &topology, &outcome, 0, 21.0);
+            let guard = registration(&i).arms[0].guard.clone().unwrap();
+            let executed = turn_executed_nodes(&outcome);
+            for guard_node in guard.guard_node_start..guard.guard_node_end {
+                assert_eq!(
+                    executed.iter().filter(|node| **node == guard_node).count(),
+                    1
+                );
+            }
+            assert_eq!(arm_pulse_generation(&i, 0), expected_pulse);
+        }
+    }
+
+    #[test]
+    fn activation_guard_non_boolean_result_rolls_back_plan_and_symbols() {
+        let mut i = interpret("event := 1.0\nouter := 9.0");
+        let symbols = i.symbols().borrow().snapshot();
+        let dictionary = i.dictionary().borrow().clone();
+        let topology = plan_snapshot(&i);
+
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | x, x + 1.0 => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "InvalidGuardExpression");
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(*i.dictionary().borrow(), dictionary);
+        assert_eq!(plan_snapshot(&i), topology);
+        assert_eq!(i.plan().activation_registration_depth(), 0);
+    }
+
+    #[test]
+    fn activation_guard_rejects_unclassified_native_compiler_before_compile() {
+        let mut i = interpret("event := (:released, 1.0)");
+        let compile_calls = Arc::new(AtomicUsize::new(0));
+        i.functions().borrow_mut().insert_function_compiler(
+            "test/eager-guard",
+            Arc::new(EagerGuardTestCompiler {
+                compile_calls: compile_calls.clone(),
+            }),
+        );
+        let symbols = i.symbols().borrow().snapshot();
+        let topology = plan_snapshot(&i);
+
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | :pressed(x), test/eager-guard(x) => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "ActivationPatternGuardMustBePure");
+        assert_eq!(compile_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(i.plan().pattern_activation_registrations().is_empty());
+        assert_eq!(i.plan().activation_registration_depth(), 0);
+    }
+
+    #[test]
+    fn activation_guard_rejects_eager_nested_match_control_flow() {
+        let mut i = interpret("event := 1.0");
+        let symbols = i.symbols().borrow().snapshot();
+        let topology = plan_snapshot(&i);
+
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | x, (x? | 0.0 => false | * => true.) => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "ActivationPatternGuardMustBePure");
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(plan_snapshot(&i), topology);
+    }
+
+    #[test]
+    fn activation_guard_rejects_user_function_pattern_dispatch_that_cannot_refresh_statically() {
+        let mut i = interpret(
+            r#"
+passes(value<f64>) => <bool>
+  | 0.0 => false
+  | * => true.
+
+event := 1.0
+"#,
+        );
+        let topology = plan_snapshot(&i);
+
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | x, passes(x) => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "ActivationPatternGuardMustBePure");
+        assert_eq!(plan_snapshot(&i), topology);
+    }
+
+    #[test]
+    fn activation_unmatched_guard_skips_runtime_error_and_guard_error_commits_nothing() {
+        let mut i = interpret(
+            r#"
+event := (:pressed, 1.0)
+text := "abc"
+~index := 1.0
+~> event
+  | :pressed(x), text[index] == "a" => {
+      selected := x + 0.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+
+        set_atom_tuple_event(&i, "pressed", 2.0);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 2.0);
+        let committed_before = committed_capture_value(&i, 0, 0);
+        let pulse_before = arm_pulse_generation(&i, 0);
+        let body_before = body_output_f64(&i, 0);
+
+        let Value::F64(index) = symbol(&i, "index") else {
+            panic!("index is not f64")
+        };
+        *index.borrow_mut() = 4.0;
+        set_atom_tuple_event(&i, "other", 3.0);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
+        let guard = registration(&i).arms[0].guard.clone().unwrap();
+        let executed = turn_executed_nodes(&outcome);
+        let changed = turn_changed_nodes(&outcome);
+        let unchanged = turn_unchanged_nodes(&outcome);
+        assert!(executed.contains(&guard.match_gate_node));
+        assert!(unchanged.contains(&guard.match_gate_node));
+        assert!(changed.contains(&registration(&i).arms[0].finalizer_node));
+        for node in guard.guard_node_start..guard.guard_node_end {
+            assert!(!executed.contains(&node));
+        }
+
+        let pulses_before_error = (0..2)
+            .map(|arm| arm_pulse_generation(&i, arm))
+            .collect::<Vec<_>>();
+        let bodies_before_error = (0..2)
+            .map(|arm| body_output_f64(&i, arm))
+            .collect::<Vec<_>>();
+        set_atom_tuple_event(&i, "pressed", 3.0);
+        let error = i.advance_reactive_turn(&[trigger]).unwrap_err();
+        assert_eq!(error.kind_name(), "IndexOutOfBounds");
+        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(3.0)));
+        assert_eq!(committed_capture_value(&i, 0, 0), committed_before);
+        assert_eq!(arm_pulse_generation(&i, 0), pulse_before);
+        assert_eq!(body_output_f64(&i, 0), body_before);
+        assert_eq!(
+            (0..2)
+                .map(|arm| arm_pulse_generation(&i, arm))
+                .collect::<Vec<_>>(),
+            pulses_before_error
+        );
+        assert_eq!(
+            (0..2)
+                .map(|arm| body_output_f64(&i, arm))
+                .collect::<Vec<_>>(),
+            bodies_before_error
+        );
+        assert_eq!(plan_snapshot(&i), topology);
+
+        *index.borrow_mut() = 1.0;
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 3.0);
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(3.0)));
+    }
+
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
     fn activation_pattern_expression_uses_outer_symbol_when_capture_name_collides() {
@@ -2518,6 +3428,100 @@ event := [1.0 10.0]
             proposed_cell
         );
         assert_eq!(registration(&i).arms[0].captures[0].cell, committed_cell);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_guard_capture_shadows_outer_name_while_pattern_expression_keeps_outer_name() {
+        let mut i = interpret(
+            r#"
+x := 9.0
+event := [1.0 10.0]
+
+~> event
+  | [x, x + 1.0], x < 2.0 => {
+      selected := x + 0.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let outer_cell = root_cell(&i, "x");
+        let activation = registration(&i);
+        let proposed_cell = proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0];
+        let committed_cell = activation.arms[0].captures[0].cell;
+        assert_ne!(outer_cell, proposed_cell);
+        assert_ne!(outer_cell, committed_cell);
+        assert_ne!(proposed_cell, committed_cell);
+        let guard = activation.arms[0].guard.as_ref().unwrap();
+        {
+            let plan = i.plan();
+            let plan = plan.borrow();
+            let guard_pulse_cell = plan.node(guard.match_gate_node).unwrap().outputs[0];
+            for node in &plan.nodes[guard.guard_node_start..guard.guard_node_end] {
+                assert!(node.inputs.iter().any(|dependency| {
+                    dependency.cell == guard_pulse_cell
+                        && dependency.kind == ReactiveDependencyKind::Reactive
+                }));
+                assert!(node.inputs.iter().any(|dependency| {
+                    dependency.cell == proposed_cell
+                        && dependency.kind == ReactiveDependencyKind::Sampled
+                }));
+                assert!(!node
+                    .inputs
+                    .iter()
+                    .any(|dependency| dependency.cell == committed_cell));
+            }
+        }
+        let topology = plan_snapshot(&i);
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
+        assert_eq!(symbol(&i, "x"), Value::F64(Ref::new(9.0)));
+        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_guard_composite_rest_proposal_commits_only_when_the_guard_passes() {
+        let mut i = interpret(
+            r#"
+event := [1.0 2.0 3.0]
+~> event
+  | [head | rest], head < rest[1] && rest[2] > rest[1] => {
+      selected := head + 0.0
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let topology = plan_snapshot(&i);
+
+        set_f64_matrix_event(&i, vec![4.0, 5.0, 6.0]);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&registration(&i), &outcome), 0);
+        assert_eq!(body_output_f64(&i, 0), 4.0);
+        assert_eq!(plan_snapshot(&i), topology);
+        let committed_before = committed_capture_value(&i, 0, 1);
+        let pulse_before = arm_pulse_generation(&i, 0);
+
+        set_f64_matrix_event(&i, vec![7.0, 6.0, 5.0]);
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
+        let Value::MatrixF64(proposed_rest) = proposed_capture_value(&i, 0, 1) else {
+            panic!("proposed rest is not an f64 matrix")
+        };
+        assert_eq!(proposed_rest.as_vec(), vec![6.0, 5.0]);
+        assert_eq!(committed_capture_value(&i, 0, 1), committed_before);
+        assert_eq!(arm_pulse_generation(&i, 0), pulse_before);
+        assert_eq!(body_output_f64(&i, 0), 4.0);
+        assert_eq!(plan_snapshot(&i), topology);
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]

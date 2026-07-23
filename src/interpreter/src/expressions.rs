@@ -1,4 +1,28 @@
 use crate::*;
+
+pub(crate) struct DeferredExpressionSolveScope {
+  depth: Ref<usize>,
+}
+
+impl DeferredExpressionSolveScope {
+  pub(crate) fn enter(interpreter: &Interpreter) -> Self {
+    let depth = interpreter.deferred_expression_solve_depth.clone();
+    *depth.borrow_mut() += 1;
+    Self { depth }
+  }
+}
+
+impl Drop for DeferredExpressionSolveScope {
+  fn drop(&mut self) {
+    let mut depth = self.depth.borrow_mut();
+    debug_assert!(*depth > 0);
+    *depth -= 1;
+  }
+}
+
+fn expression_solves_deferred(interpreter: &Interpreter) -> bool {
+  *interpreter.deferred_expression_solve_depth.borrow() > 0
+}
 use std::collections::HashMap;
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
@@ -928,7 +952,9 @@ pub fn subscript(
                 return register_initialized_expression_function(&plan, function, &[]);
             }
             let new_fxn = AccessColumn {}.compile(&fxn_input)?;
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
@@ -941,7 +967,9 @@ pub fn subscript(
                 #[cfg(feature = "matrix")]
                 ValueKind::Matrix(..) => {
                     let new_fxn = MatrixAccessScalar {}.compile(&fxn_input)?;
-                    new_fxn.solve();
+                    if !expression_solves_deferred(p) {
+                      new_fxn.solve();
+                    }
                     let res = new_fxn.out();
                     plan.borrow_mut().push(new_fxn);
                     return Ok(res);
@@ -970,7 +998,9 @@ pub fn subscript(
             let mut fxn_input: Vec<Value> = vec![val.clone()];
             fxn_input.append(&mut keys);
             let new_fxn = AccessSwizzle {}.compile(&fxn_input)?;
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
@@ -1009,7 +1039,9 @@ pub fn subscript(
             }
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             return Ok(res);
         }
@@ -1187,7 +1219,9 @@ pub fn subscript(
             };
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             return Ok(res);
         }
@@ -1556,9 +1590,18 @@ fn validate_match_arm_output_kinds(
 
 fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter) -> MResult<bool> {
   let guard_result = expression(guard, Some(env), p)?;
+  let flag = validate_guard_expression_result(guard_result, guard.tokens())?;
+  let result = *flag.borrow();
+  Ok(result)
+}
+
+pub(crate) fn validate_guard_expression_result(
+  guard_result: Value,
+  tokens: Vec<Token>,
+) -> MResult<Ref<bool>> {
   match guard_result {
-      #[cfg(feature = "bool")]
-    Value::Bool(flag) => Ok(*flag.borrow()),
+    #[cfg(feature = "bool")]
+    Value::Bool(flag) => Ok(flag),
     _ => Err(MechError::new(
       InvalidGuardExpressionError {
         found: guard_result.kind(),
@@ -1566,7 +1609,7 @@ fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter)
       None,
     )
     .with_compiler_loc()
-    .with_tokens(guard.tokens())),
+    .with_tokens(tokens)),
   }
 }
 
@@ -1872,7 +1915,9 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
         .with_tokens(trm.tokens()));
       }
     };
-    new_fxn.solve();
+    if !expression_solves_deferred(p) {
+      new_fxn.solve();
+    }
     let res = new_fxn.out();
     #[cfg(feature = "subscript_formula")]
     if new_fxn_is_live {
