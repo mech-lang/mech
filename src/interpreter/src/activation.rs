@@ -1167,7 +1167,7 @@ fn validate_patterned_guard_expression(
     interpreter: &Interpreter,
 ) -> MResult<()> {
     validate_patterned_expression(expression)?;
-    if guard_expression_has_eager_control_flow(
+    if guard_expression_is_not_static_pure(
         expression,
         interpreter,
         &mut HashSet::new(),
@@ -1178,7 +1178,7 @@ fn validate_patterned_guard_expression(
     }
 }
 
-fn guard_expression_has_eager_control_flow(
+fn guard_expression_is_not_static_pure(
     expression: &Expression,
     interpreter: &Interpreter,
     visiting_functions: &mut HashSet<u64>,
@@ -1189,18 +1189,18 @@ fn guard_expression_has_eager_control_flow(
             .subscript
             .iter()
             .any(|subscript| {
-                guard_subscript_has_eager_control_flow(
+                guard_subscript_is_not_static_pure(
                     subscript,
                     interpreter,
                     visiting_functions,
                 )
             }),
         Expression::Formula(factor) => {
-            guard_factor_has_eager_control_flow(factor, interpreter, visiting_functions)
+            guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
         }
         Expression::FunctionCall(call) => {
             if call.args.iter().any(|(_, expression)| {
-                guard_expression_has_eager_control_flow(
+                guard_expression_is_not_static_pure(
                     expression,
                     interpreter,
                     visiting_functions,
@@ -1209,21 +1209,30 @@ fn guard_expression_has_eager_control_flow(
                 return true;
             }
             let function_id = call.name.hash();
-            let user_function = interpreter
-                .functions()
-                .borrow()
-                .user_functions
+            let functions = interpreter.functions();
+            let functions = functions.borrow();
+            let user_function = functions.user_functions.get(&function_id).cloned();
+            let has_precompiled_function = functions.functions.contains_key(&function_id);
+            let native_guard_safety = functions
+                .function_compilers
                 .get(&function_id)
-                .cloned();
+                .map(|compiler| compiler.guard_safety());
+            drop(functions);
             let Some(user_function) = user_function else {
-                return false;
+                if has_precompiled_function {
+                    return true;
+                }
+                return match native_guard_safety {
+                    Some(GuardFunctionSafety::PureStatic) | None => false,
+                    Some(GuardFunctionSafety::Unsupported) => true,
+                };
             };
             if !visiting_functions.insert(function_id) {
                 return true;
             }
             let eager = match user_function.code.match_arms.as_slice() {
                 [arm] if matches!(arm.pattern, Pattern::Wildcard) => {
-                    guard_expression_has_eager_control_flow(
+                    guard_expression_is_not_static_pure(
                         &arm.expression,
                         interpreter,
                         visiting_functions,
@@ -1239,21 +1248,21 @@ fn guard_expression_has_eager_control_flow(
         | Expression::MatrixComprehension(_)
         | Expression::FsmPipe(_) => true,
         Expression::Range(range) => {
-            guard_range_has_eager_control_flow(range, interpreter, visiting_functions)
+            guard_range_is_not_static_pure(range, interpreter, visiting_functions)
         }
         Expression::Structure(structure) => {
-            guard_structure_has_eager_control_flow(structure, interpreter, visiting_functions)
+            guard_structure_is_not_static_pure(structure, interpreter, visiting_functions)
         }
     }
 }
 
-fn guard_factor_has_eager_control_flow(
+fn guard_factor_is_not_static_pure(
     factor: &Factor,
     interpreter: &Interpreter,
     visiting_functions: &mut HashSet<u64>,
 ) -> bool {
     match factor {
-        Factor::Expression(expression) => guard_expression_has_eager_control_flow(
+        Factor::Expression(expression) => guard_expression_is_not_static_pure(
             expression,
             interpreter,
             visiting_functions,
@@ -1262,15 +1271,15 @@ fn guard_factor_has_eager_control_flow(
         | Factor::Not(factor)
         | Factor::Parenthetical(factor)
         | Factor::Transpose(factor) => {
-            guard_factor_has_eager_control_flow(factor, interpreter, visiting_functions)
+            guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
         }
         Factor::Term(term) => {
-            guard_factor_has_eager_control_flow(
+            guard_factor_is_not_static_pure(
                 &term.lhs,
                 interpreter,
                 visiting_functions,
             ) || term.rhs.iter().any(|(_, factor)| {
-                guard_factor_has_eager_control_flow(
+                guard_factor_is_not_static_pure(
                     factor,
                     interpreter,
                     visiting_functions,
@@ -1280,30 +1289,30 @@ fn guard_factor_has_eager_control_flow(
     }
 }
 
-fn guard_range_has_eager_control_flow(
+fn guard_range_is_not_static_pure(
     range: &RangeExpression,
     interpreter: &Interpreter,
     visiting_functions: &mut HashSet<u64>,
 ) -> bool {
-    guard_factor_has_eager_control_flow(&range.start, interpreter, visiting_functions)
+    guard_factor_is_not_static_pure(&range.start, interpreter, visiting_functions)
         || range
             .increment
             .as_ref()
             .map_or(false, |(_, increment)| {
-                guard_factor_has_eager_control_flow(
+                guard_factor_is_not_static_pure(
                     increment,
                     interpreter,
                     visiting_functions,
                 )
             })
-        || guard_factor_has_eager_control_flow(
+        || guard_factor_is_not_static_pure(
             &range.terminal,
             interpreter,
             visiting_functions,
         )
 }
 
-fn guard_subscript_has_eager_control_flow(
+fn guard_subscript_is_not_static_pure(
     subscript: &Subscript,
     interpreter: &Interpreter,
     visiting_functions: &mut HashSet<u64>,
@@ -1312,23 +1321,23 @@ fn guard_subscript_has_eager_control_flow(
         Subscript::Brace(subscripts) | Subscript::Bracket(subscripts) => subscripts
             .iter()
             .any(|subscript| {
-                guard_subscript_has_eager_control_flow(
+                guard_subscript_is_not_static_pure(
                     subscript,
                     interpreter,
                     visiting_functions,
                 )
             }),
         Subscript::Formula(factor) => {
-            guard_factor_has_eager_control_flow(factor, interpreter, visiting_functions)
+            guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
         }
         Subscript::Range(range) => {
-            guard_range_has_eager_control_flow(range, interpreter, visiting_functions)
+            guard_range_is_not_static_pure(range, interpreter, visiting_functions)
         }
         Subscript::All | Subscript::Dot(_) | Subscript::DotInt(_) | Subscript::Swizzle(_) => false,
     }
 }
 
-fn guard_structure_has_eager_control_flow(
+fn guard_structure_is_not_static_pure(
     structure: &Structure,
     interpreter: &Interpreter,
     visiting_functions: &mut HashSet<u64>,
@@ -1336,11 +1345,11 @@ fn guard_structure_has_eager_control_flow(
     match structure {
         Structure::Empty => false,
         Structure::Map(map) => map.elements.iter().any(|mapping| {
-            guard_expression_has_eager_control_flow(
+            guard_expression_is_not_static_pure(
                 &mapping.key,
                 interpreter,
                 visiting_functions,
-            ) || guard_expression_has_eager_control_flow(
+            ) || guard_expression_is_not_static_pure(
                 &mapping.value,
                 interpreter,
                 visiting_functions,
@@ -1350,7 +1359,7 @@ fn guard_structure_has_eager_control_flow(
             row.columns
                 .iter()
                 .any(|column| {
-                    guard_expression_has_eager_control_flow(
+                    guard_expression_is_not_static_pure(
                         &column.element,
                         interpreter,
                         visiting_functions,
@@ -1361,7 +1370,7 @@ fn guard_structure_has_eager_control_flow(
             .bindings
             .iter()
             .any(|binding| {
-                guard_expression_has_eager_control_flow(
+                guard_expression_is_not_static_pure(
                     &binding.value,
                     interpreter,
                     visiting_functions,
@@ -1371,7 +1380,7 @@ fn guard_structure_has_eager_control_flow(
             .elements
             .iter()
             .any(|expression| {
-                guard_expression_has_eager_control_flow(
+                guard_expression_is_not_static_pure(
                     expression,
                     interpreter,
                     visiting_functions,
@@ -1381,7 +1390,7 @@ fn guard_structure_has_eager_control_flow(
             row.columns
                 .iter()
                 .any(|column| {
-                    guard_expression_has_eager_control_flow(
+                    guard_expression_is_not_static_pure(
                         &column.element,
                         interpreter,
                         visiting_functions,
@@ -1392,14 +1401,14 @@ fn guard_structure_has_eager_control_flow(
             .elements
             .iter()
             .any(|expression| {
-                guard_expression_has_eager_control_flow(
+                guard_expression_is_not_static_pure(
                     expression,
                     interpreter,
                     visiting_functions,
                 )
             }),
         Structure::TupleStruct(tuple) => {
-            guard_expression_has_eager_control_flow(
+            guard_expression_is_not_static_pure(
                 &tuple.value,
                 interpreter,
                 visiting_functions,
@@ -1924,6 +1933,21 @@ pub(crate) fn elaborate_patterned_activation(
 mod tests {
     use super::*;
     use std::collections::HashMap;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    struct EagerGuardTestCompiler {
+        compile_calls: Arc<AtomicUsize>,
+    }
+
+    impl NativeFunctionCompiler for EagerGuardTestCompiler {
+        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+            self.compile_calls.fetch_add(1, Ordering::SeqCst);
+            panic!("unsupported guard compiler must not run during preflight")
+        }
+    }
 
     fn scalar_capture_cases() -> Vec<(ValueKind, Value)> {
         let mut cases = Vec::new();
@@ -3195,6 +3219,41 @@ event := 20.0
         assert_eq!(i.symbols().borrow().snapshot(), symbols);
         assert_eq!(*i.dictionary().borrow(), dictionary);
         assert_eq!(plan_snapshot(&i), topology);
+        assert_eq!(i.plan().activation_registration_depth(), 0);
+    }
+
+    #[test]
+    fn activation_guard_rejects_unclassified_native_compiler_before_compile() {
+        let mut i = interpret("event := (:released, 1.0)");
+        let compile_calls = Arc::new(AtomicUsize::new(0));
+        i.functions().borrow_mut().insert_function_compiler(
+            "test/eager-guard",
+            Arc::new(EagerGuardTestCompiler {
+                compile_calls: compile_calls.clone(),
+            }),
+        );
+        let symbols = i.symbols().borrow().snapshot();
+        let topology = plan_snapshot(&i);
+
+        let error = interpret_more(
+            &mut i,
+            r#"
+~> event
+  | :pressed(x), test/eager-guard(x) => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "ActivationPatternGuardMustBePure");
+        assert_eq!(compile_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(i.symbols().borrow().snapshot(), symbols);
+        assert_eq!(plan_snapshot(&i), topology);
+        assert!(i.plan().pattern_activation_registrations().is_empty());
         assert_eq!(i.plan().activation_registration_depth(), 0);
     }
 

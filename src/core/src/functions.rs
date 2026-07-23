@@ -231,8 +231,25 @@ pub trait MechFunction: MechFunctionImpl {}
 #[cfg(not(feature = "compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuardFunctionSafety {
+  /// Compilation constructs only the static graph (including kind and shape
+  /// selection) without executing function behavior or reading live contents;
+  /// reactive solving is deferred to the guard pulse.
+  PureStatic,
+  /// Compilation may execute work or lacks an explicit purity contract.
+  Unsupported,
+}
+
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
+
+  /// Whether this compiler can be elaborated into a static activation-guard
+  /// graph without executing eager or effectful work. Native compilers are
+  /// rejected by default and must opt in explicitly.
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    GuardFunctionSafety::Unsupported
+  }
 }
 
 
@@ -247,6 +264,10 @@ impl StaticNativeFunctionCompiler {
 impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     self.inner.compile(arguments)
+  }
+
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    self.inner.guard_safety()
   }
 }
 
@@ -1358,6 +1379,27 @@ impl PrettyPrint for Plan {
 mod reactive_plan_tests {
   use super::*;
 
+  struct PureStaticTestCompiler;
+  struct DefaultTestCompiler;
+
+  impl NativeFunctionCompiler for DefaultTestCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      unreachable!("safety metadata test must not compile the function")
+    }
+  }
+
+  impl NativeFunctionCompiler for PureStaticTestCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      unreachable!("safety metadata test must not compile the function")
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+      GuardFunctionSafety::PureStatic
+    }
+  }
+
+  static PURE_STATIC_TEST_COMPILER: PureStaticTestCompiler = PureStaticTestCompiler;
+
   struct TestFunction {
     name: &'static str,
     output: Value,
@@ -1445,6 +1487,20 @@ mod reactive_plan_tests {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
       Ok(0)
     }
+  }
+
+  #[test]
+  fn native_compiler_guard_safety_defaults_to_unsupported() {
+    let compiler = DefaultTestCompiler;
+
+    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::Unsupported);
+  }
+
+  #[test]
+  fn static_native_compiler_preserves_guard_safety_metadata() {
+    let compiler = StaticNativeFunctionCompiler::new(&PURE_STATIC_TEST_COMPILER);
+
+    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::PureStatic);
   }
 
   #[test]

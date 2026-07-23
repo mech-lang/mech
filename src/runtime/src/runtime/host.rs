@@ -35,7 +35,7 @@
 
 use super::*;
 use super::execution::{ACTIVATION_EFFECT_BARRIER_NAME, ActivationEffectBarrierCompiler};
-use mech_core::{Ref, ValueKind};
+use mech_core::{GuardFunctionSafety, Ref, ValueKind};
 
 impl MechRuntime {
 
@@ -190,6 +190,10 @@ impl RuntimeHostNativeFunctionCompiler {
 }
 
 impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    GuardFunctionSafety::Unsupported
+  }
+
   fn compile(
     &self,
     arguments: &Vec<Value>,
