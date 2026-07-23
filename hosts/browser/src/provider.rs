@@ -217,6 +217,7 @@ impl<B: BrowserDomBackend + Clone + 'static> mech_runtime::RuntimeHostFactory fo
     }.into_browser_authority()?;
     Ok(mech_runtime::RuntimeHostInstallation {
       interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(BrowserResourceProvider::for_instance(instance_name, authority, self.backend.clone()))],
     })
   }

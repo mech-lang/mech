@@ -51,6 +51,9 @@ stdlib = ["bool", "string",
       "functions", "formulas"
     ]
 
+sample_hold = ["mech-program/sample_hold"]
+state_step = ["mech-program/state_step"]
+
 baselib = ["bool", "string", 
       "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",
@@ -170,11 +173,12 @@ rand_core = { version = "0.6.4", optional = true }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 uuid = { version = "1.23.1", features = ["js"] }
+web-time = "1.1.0"
 
 [[bin]]
 name = "address_target_diagnostics"
 path = "src/bin/address_target_diagnostics.rs"
-required-features = ["program"]
+required-features = ["program", "bool"]
 
 [[bin]]
 name = "module_smoke"

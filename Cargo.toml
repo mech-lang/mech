@@ -51,7 +51,7 @@ cli = ["cli_core", "build", "formatter", "serve", "bundle_web", "run", "test", "
 formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 build = ["cli_core", "compiler", "mech-runtime", "mech-runtime/default"]
 repl = ["cli_core", "program"]
-run = ["cli_core", "mech-program/program", "cli_host", "project"]
+run = ["cli_core", "mech-program/program", "cli_host", "time_host_native", "timer_host_native", "console_host_native", "scene_host_native", "project"]
 test = ["cli_core", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 project = ["mech-runtime", "mech-runtime/default"]
 cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
@@ -69,10 +69,17 @@ linked_stdlib = ["mech-program/linked_stdlib"]
 linked_math = ["mech-program/linked_math"]
 linked_combinatorics = ["mech-program/linked_combinatorics"]
 linked_compare = ["mech-program/linked_compare"]
-linked_io = ["mech-program/linked_io"]
 linked_stats = ["mech-program/linked_stats"]
 linked_string = ["mech-program/linked_string"]
 dynamic-modules = ["mech-program/dynamic-modules"]
+time_host_native = ["dep:mech-host-time", "mech-host-time/native"]
+time_host_browser = ["dep:mech-host-time", "mech-host-time/browser"]
+console_host_native = ["dep:mech-host-console", "mech-host-console/native"]
+console_host_browser = ["dep:mech-host-console", "mech-host-console/browser"]
+timer_host_native = ["dep:mech-host-timer", "mech-host-timer/native"]
+timer_host_browser = ["dep:mech-host-timer", "mech-host-timer/browser"]
+scene_host_native = ["dep:mech-host-scene", "mech-host-scene/native"]
+scene_host_browser = ["dep:mech-host-scene", "mech-host-scene/browser"]
 
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -92,6 +99,9 @@ stdlib = ["bool", "string",
       "kind_annotation", "variables",
       "functions", "formulas"
     ]
+
+sample_hold = ["mech-program/sample_hold"]
+state_step = ["mech-program/state_step"]
 
 baselib = ["bool", "string", 
       "f64", "c64", "r64",
@@ -203,6 +213,10 @@ mech-program = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
 mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-host-cli = { version = "0.3.5", default-features = false, optional = true }
+mech-host-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
+mech-host-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
+mech-host-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
+mech-host-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
@@ -246,7 +260,11 @@ members = [
   "src/wasm",
   "hosts/browser",
   "hosts/cli",
+  "hosts/console",
   "hosts/robot-arm",
+  "hosts/time",
+  "hosts/timer",
+  "hosts/scene",
 ]
 
 [build-dependencies]
@@ -266,13 +284,16 @@ mech-wasm = { path = 'src/wasm'}
 mech-host-browser = { path = 'hosts/browser'}
 mech-host-cli = { path = 'hosts/cli'}
 mech-host-robot-arm = { path = 'hosts/robot-arm'}
+mech-host-time = { path = 'hosts/time'}
+mech-host-console = { path = 'hosts/console'}
+mech-host-timer = { path = 'hosts/timer'}
+mech-host-scene = { path = 'hosts/scene'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }
 mech-matrix = { path = 'machines/matrix' }
 mech-stats = { path = 'machines/stats' }
 mech-math = { path = 'machines/math' }
-mech-io = { path = 'machines/io' }
 mech-range = { path = 'machines/range' }
 mech-logic = { path = 'machines/logic' }
 mech-set = { path = 'machines/set' }

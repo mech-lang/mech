@@ -1,7 +1,7 @@
 // Host Calls
 // -----------------------------------------------------------------------------
 
-// This file defines the logic for handling host calls in the Mech runtime. Host calls are a mechanism for Mech programs to interact with the host environment, allowing them to call functions that are implemented outside of the Mech program itself, typically in Rust. This is a crucial part of the runtime, as it enables Mech to be extended and embedded in other programming environments. 
+// This file defines the logic for handling host calls in the Mech runtime. Host calls are a mechanism for Mech programs to interact with the host environment, allowing them to call functions that are implemented outside of the Mech program itself, typically in Rust. This is a crucial part of the runtime, as it enables Mech to be extended and embedded in other programming environments.
 
 // The runtime provides the following host methods:
 
@@ -34,7 +34,13 @@
 
 
 use super::*;
-use mech_core::Ref;
+use super::execution::{
+  ACTIVATION_EFFECT_BARRIER_NAME,
+  ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
+  ActivationEffectBarrierCompiler,
+  ActivationEffectPayloadCaptureCompiler,
+};
+use mech_core::{GuardFunctionSafety, Ref, ValueKind};
 
 impl MechRuntime {
 
@@ -43,6 +49,14 @@ impl MechRuntime {
     _context: &mut RuntimeContext,
     program: &mut MechProgram,
   ) -> MResult<()> {
+    program.register_native_function_compiler(
+      ACTIVATION_EFFECT_BARRIER_NAME,
+      Arc::new(ActivationEffectBarrierCompiler),
+    );
+    program.register_native_function_compiler(
+      ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
+      Arc::new(ActivationEffectPayloadCaptureCompiler),
+    );
     for name in self.host_registry.list_functions()? {
       program.register_native_function_compiler(
         name.clone(),
@@ -185,6 +199,10 @@ impl RuntimeHostNativeFunctionCompiler {
 }
 
 impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    GuardFunctionSafety::Unsupported
+  }
+
   fn compile(
     &self,
     arguments: &Vec<Value>,
@@ -229,17 +247,55 @@ pub struct RuntimeHostNativeFunction {
   pub value: Ref<Value>,
 }
 
-impl MechFunctionImpl for RuntimeHostNativeFunction {
-  fn solve(&self) {
-    let result = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      let Some(target) = *slot.borrow() else {
-        return Err(MechError::new(
+#[derive(Debug, Clone)]
+pub struct RuntimeHostOutputUpdateError {
+  pub function: String,
+  pub expected: ValueKind,
+  pub actual: ValueKind,
+  pub reason: String,
+}
+impl MechErrorKind for RuntimeHostOutputUpdateError {
+  fn name(&self) -> &str { "RuntimeHostOutputUpdateError" }
+  fn message(&self) -> String {
+    format!(
+      "host function `{}` returned unsupported or incompatible output kind {:?}; expected {:?}: {}",
+      self.function,
+      self.actual,
+      self.expected,
+      self.reason,
+    )
+  }
+}
+
+impl RuntimeHostNativeFunction {
+  fn update_output(&self, next: Value) -> MResult<()> {
+    let expected = self.value.borrow().kind();
+    let actual = next.kind();
+    mech_program::apply_stable_value_update(self.value.clone(), next)
+      .map(|_| ())
+      .map_err(|error| {
+        MechError::new(
+          RuntimeHostOutputUpdateError {
+            function: self.name.clone(),
+            expected,
+            actual,
+            reason: format!("{error:?}"),
+          },
+          None,
+        )
+      })
+  }
+
+  fn solve_inner(&self) -> MResult<()> {
+    let next = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      let target = slot.borrow().ok_or_else(|| {
+        MechError::new(
           RuntimeProgramHostNotActiveError {
             function: self.name.clone(),
           },
           None,
-        ));
-      };
+        )
+      })?;
 
       // Safety: callers install the active runtime-program host target around
       // program execution/stepping. Runtime host functions intentionally do not
@@ -251,18 +307,25 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
           HostCall::new(&self.host_name, self.arguments.clone()),
         )
       }
-    });
+    })?;
 
-    match result {
-      Ok(value) => *self.value.borrow_mut() = value,
-      Err(error) => {
-        eprintln!(
-          "[Mech Runtime Host Error] function `{}` failed during solve; preserving previous output: {:?}",
-          self.name,
-          error,
-        );
-      }
+    self.update_output(next)
+  }
+}
+
+impl MechFunctionImpl for RuntimeHostNativeFunction {
+  fn solve(&self) {
+    if let Err(error) = self.solve_inner() {
+      eprintln!(
+        "[Mech Runtime Host Error] function `{}` failed during solve; preserving previous output: {:?}",
+        self.name,
+        error,
+      );
     }
+  }
+
+  fn solve_result(&self) -> MResult<()> {
+    self.solve_inner()
   }
 
   fn out(&self) -> Value {

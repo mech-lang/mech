@@ -318,10 +318,11 @@ where
 // 4. Public interface
 // ---------------------
 
-// mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
+// mech_code_alt := activation_scope | fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   let (input, _) = whitespace0(input)?;
   let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
+    ("activation_scope", Box::new(|i| activation_scope(i).map(|(i, v)| (i, MechCode::ActivationScope(v))))),
     ("fsm_specification", Box::new(|i| fsm_specification(i).map(|(i, v)| (i, MechCode::FsmSpecification(v))))),
     ("fsm_implementation", Box::new(|i| fsm_implementation(i).map(|(i, v)| (i, MechCode::FsmImplementation(v))))),
     ("function_define", Box::new(|i| function_define(i).map(|(i, v)| (i, MechCode::FunctionDefine(v))))),
@@ -341,11 +342,11 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 
 }
 
-/// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | eof), *whitespace ;
+/// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | right-brace | eof), *whitespace ;
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
-  let (input, _) = alt((null(new_line), null(semicolon), null(eof), null(peek(mika_section_close))))(input)?;
+  let (input, _) = alt((null(new_line), null(semicolon), null(peek(right_brace)), null(eof), null(peek(mika_section_close))))(input)?;
   let (input, _) = whitespace0(input)?;
   let cmmt = match cmmnt {
     Some((_, _, cmnt)) => Some(cmnt),

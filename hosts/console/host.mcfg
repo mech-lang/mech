@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "console"
+    contexts: [
+      {
+        name: "output"
+        base-uri: "console://{instance}/output"
+        operations: ["write"]
+      }
+    ]
+  }
+}

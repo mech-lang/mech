@@ -1625,6 +1625,7 @@ config := {
       self.validate_settings(instance_name, settings)?;
       Ok(RuntimeHostInstallation {
         interface: materialize_host_manifest(instance_name, &self.manifest)?,
+        input_drivers: Vec::new(),
         resource_providers: vec![Box::new(RecordingBrowserProvider {
           instance: instance_name.to_string(),
           writes: self.writes.clone(),

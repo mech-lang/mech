@@ -61,7 +61,6 @@ fn program_browser_resource_write() {
 }
 
 #[test]
-fn program_browser_resource_define_does_not_write() {
-  let stmts = statements("@browser/title := \"Hello\"");
-  assert!(matches!(&stmts[0], Statement::VariableDefine(_)));
+fn program_browser_resource_define_syntax_is_rejected() {
+  assert!(mech_syntax::parser::parse("@browser/title := \"Hello\"").is_err());
 }

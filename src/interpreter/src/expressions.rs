@@ -1,4 +1,28 @@
 use crate::*;
+
+pub(crate) struct DeferredExpressionSolveScope {
+  depth: Ref<usize>,
+}
+
+impl DeferredExpressionSolveScope {
+  pub(crate) fn enter(interpreter: &Interpreter) -> Self {
+    let depth = interpreter.deferred_expression_solve_depth.clone();
+    *depth.borrow_mut() += 1;
+    Self { depth }
+  }
+}
+
+impl Drop for DeferredExpressionSolveScope {
+  fn drop(&mut self) {
+    let mut depth = self.depth.borrow_mut();
+    debug_assert!(*depth > 0);
+    *depth -= 1;
+  }
+}
+
+fn expression_solves_deferred(interpreter: &Interpreter) -> bool {
+  *interpreter.deferred_expression_solve_depth.borrow() > 0
+}
 use std::collections::HashMap;
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
@@ -36,86 +60,6 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-pub fn pattern_match_value(
-    pattern: &Pattern,
-    value: &Value,
-    env: &mut Environment,
-    p: &Interpreter,
-) -> MResult<()> {
-    match pattern {
-        Pattern::Wildcard => Ok(()),
-        Pattern::Expression(expr) => match expr {
-            Expression::Var(var) => {
-                let id = &var.name.hash();
-                match env.get(id) {
-                    Some(existing) if existing == value => Ok(()),
-                    Some(existing) => Err(MechError::new(
-                        PatternMatchError {
-                            var: var.name.to_string(),
-                            expected: existing.to_string(),
-                            found: value.to_string(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()),
-                    None => {
-                        env.insert(id.clone(), value.clone());
-                        Ok(())
-                    }
-                }
-            }
-            _ => {
-                let expected = expression(expr, Some(env), p)?;
-                if detach_comprehension_value(&expected) == detach_comprehension_value(value) {
-                    Ok(())
-                } else {
-                    Err(MechError::new(
-                        PatternMatchError {
-                            var: "<expression>".to_string(),
-                            expected: expected.to_string(),
-                            found: value.to_string(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc())
-                }
-            }
-        },
-        #[cfg(feature = "tuple")]
-        Pattern::Tuple(pat_tuple) => match value {
-            Value::Tuple(values) => {
-                let values_brrw = values.borrow();
-                if pat_tuple.0.len() != values_brrw.elements.len() {
-                    return Err(MechError::new(
-                        ArityMismatchError {
-                            expected: pat_tuple.0.len(),
-                            found: values_brrw.elements.len(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
-                for (pttrn, val) in pat_tuple.0.iter().zip(values_brrw.elements.iter()) {
-                    pattern_match_value(pttrn, val, env, p)?;
-                }
-                Ok(())
-            }
-            _ => Err(MechError::new(
-                PatternExpectedTupleError {
-                    found: value.kind(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        },
-        Pattern::TupleStruct(pat_struct) => {
-            todo!("Implement tuple struct pattern matching")
-        }
-        _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
-    }
-}
-
-#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn comprehension_environments(
     qualifiers: &[ComprehensionQualifier],
     comprehension_id: u64,
@@ -128,12 +72,19 @@ fn comprehension_environments(
     for qual in qualifiers {
         envs = match qual {
             ComprehensionQualifier::Generator((pttrn, expr)) => {
+                let compiled = crate::patterns::compile_pattern(pttrn, None, &new_p)?;
                 let mut new_envs = Vec::new();
                 for env in &envs {
                     let collection = expression(expr, Some(env), &new_p)?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
-                        if pattern_match_value(pttrn, &elmnt, &mut new_env, &new_p).is_ok() {
+                        let pattern_match =
+                            crate::patterns::match_compiled_pattern_with_environment_constraints(
+                                &compiled, &elmnt, &new_env, &new_p,
+                            )?;
+                        if pattern_match.matched {
+                            crate::patterns::EnvironmentBindingSink::new(&mut new_env)
+                                .commit(&pattern_match)?;
                             new_envs.push(new_env);
                         }
                     }
@@ -469,40 +420,237 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) 
     }
 }
 
+#[cfg(feature = "functions")]
+fn register_initialized_expression_function(
+  plan: &Plan,
+  function: Box<dyn MechFunction>,
+  arguments: &[Value],
+) -> MResult<Value> {
+  let node_id = plan.register_function(function, arguments)?;
+  let plan_borrow = plan.borrow();
+  let function = &plan_borrow[node_id];
+  if !plan.activation_registration_active() { function.solve(); }
+  Ok(function.out())
+}
+
+#[cfg(feature = "functions")]
+fn register_expression_function_batch(
+  plan: &Plan,
+  functions: Vec<(Box<dyn MechFunction>, Vec<Value>)>,
+) -> MResult<()> {
+  for (function, arguments) in functions {
+    plan.register_function(function, &arguments)?;
+  }
+  Ok(())
+}
+
+#[cfg(all(test, feature = "functions", feature = "f64"))]
+mod indexed_expression_registration_tests {
+  use super::*;
+  use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+
+  struct IndexedExpressionTestFunction { output: Value, solve_calls: Arc<AtomicUsize> }
+  impl MechFunctionImpl for IndexedExpressionTestFunction {
+    fn solve(&self) { self.solve_calls.fetch_add(1, Ordering::SeqCst); }
+    fn out(&self) -> Value { self.output.clone() }
+    fn to_string(&self) -> String { "indexed-expression-test".to_string() }
+  }
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for IndexedExpressionTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+  }
+  fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    let reference = Ref::new(value); let cell = ReactiveCellId::new(reference.id());
+    (Value::F64(reference), cell)
+  }
+  fn function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+    Box::new(IndexedExpressionTestFunction { output, solve_calls: calls })
+  }
+  #[test]
+  fn indexed_expression_registration_records_dependencies() {
+    let plan = Plan::new(); let (first, a) = scalar(1.0); let (second, b) = scalar(2.0); let (third, c) = scalar(3.0); let (output, out) = scalar(4.0); let calls = Arc::new(AtomicUsize::new(0));
+    let result = register_initialized_expression_function(&plan, function(output, calls.clone()), &[first, second, third]).unwrap();
+    let plan_borrow = plan.borrow(); let node = plan_borrow.node(0).unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 1); assert_eq!(result.reactive_cell_ids(), vec![out]);
+    assert_eq!(node.inputs.iter().map(|d| d.cell).collect::<Vec<_>>(), vec![a,b,c]);
+    assert!(node.inputs.iter().all(|d| d.kind == ReactiveDependencyKind::Reactive));
+    for cell in [a,b,c] { assert_eq!(plan_borrow.reactive_consumers_for(cell), &[0]); assert!(plan_borrow.sampled_consumers_for(cell).is_empty()); }
+    assert!(node.outputs.contains(&out)); assert!(!node.inputs.iter().any(|d| d.cell == out));
+  }
+  #[test]
+  fn indexed_expression_registration_deduplicates_aliases() {
+    let plan=Plan::new(); let (input, cell)=scalar(1.0); let (output,_)=scalar(2.0); let calls=Arc::new(AtomicUsize::new(0));
+    register_initialized_expression_function(&plan, function(output,calls.clone()), &[input.clone(),input]).unwrap();
+    let p=plan.borrow(); assert_eq!(calls.load(Ordering::SeqCst),1); assert_eq!(p.node(0).unwrap().inputs.len(),1); assert_eq!(p.reactive_consumers_for(cell),&[0]);
+  }
+  #[test]
+  fn binary_term_batch_registration_preserves_order_and_edges() {
+    let plan=Plan::new(); let (a,ac)=scalar(1.0); let (b,bc)=scalar(2.0); let (c,cc)=scalar(3.0); let (mid,mc)=scalar(4.0); let (final_out,fc)=scalar(5.0); let first=Arc::new(AtomicUsize::new(0)); let second=Arc::new(AtomicUsize::new(0)); let f1=function(mid.clone(),first.clone()); let f2=function(final_out,second.clone()); f1.solve(); f2.solve();
+    register_expression_function_batch(&plan,vec![(f1,vec![a,b]),(f2,vec![mid,c])]).unwrap(); let p=plan.borrow();
+    assert_eq!(p.len(),2); assert_eq!(p.node(0).unwrap().inputs.iter().map(|d|d.cell).collect::<Vec<_>>(),vec![ac,bc]); assert_eq!(p.node(1).unwrap().inputs.iter().map(|d|d.cell).collect::<Vec<_>>(),vec![mc,cc]); assert!(p.node(1).unwrap().outputs.contains(&fc)); assert_eq!(p.reactive_consumers_for(mc),&[1]); assert_eq!(first.load(Ordering::SeqCst),1); assert_eq!(second.load(Ordering::SeqCst),1);
+  }
+}
+
+#[cfg(all(test, feature = "functions", feature = "record", feature = "tuple", feature = "f64", feature = "program", feature = "compiler"))]
+mod structural_alias_access_tests {
+  use super::*;
+
+  fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+    interpreter.symbols().borrow().get(hash_str(name)).unwrap().borrow().clone()
+  }
+
+  fn alias_node(plan: &Plan, name: &str) -> usize {
+    let plan = plan.borrow();
+    (0..plan.len()).find_map(|node_id| {
+      let node = plan.node(node_id).unwrap();
+      node.function.to_string().contains(name).then_some(node_id)
+    }).unwrap_or_else(|| panic!("missing {name} node"))
+  }
+
+  fn assert_alias_node(plan: &Plan, name: &str, output: &Value, container: &Value) {
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let container_cell = container.reactive_root_cell_ids()[0];
+    let node_id = alias_node(plan, name);
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow.node(node_id).unwrap();
+    assert!(node.inputs.is_empty());
+    assert_eq!(node.outputs.as_slice(), &[output_cell]);
+    assert!(!node.inputs.iter().any(|input| input.cell == container_cell));
+    assert!(!plan_borrow.reactive_consumers_for(container_cell).contains(&node_id));
+    assert!(!plan_borrow.sampled_consumers_for(container_cell).contains(&node_id));
+  }
+
+  #[test]
+  fn record_field_access_registers_structural_node() {
+    let tree = mech_syntax::parser::parse("record := {field: 2}; record.field").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    assert_alias_node(&interpreter.plan(), "RecordAccessField", &output, &symbol(&interpreter, "record"));
+  }
+
+  #[test]
+  fn tuple_element_access_registers_structural_node() {
+    let tree = mech_syntax::parser::parse("tuple := (1, 2); tuple.2").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
+    assert_alias_node(&interpreter.plan(), "TupleAccessElement", &output, &symbol(&interpreter, "tuple"));
+  }
+
+  #[test]
+  fn record_field_consumer_depends_on_member_cell() {
+    let tree = mech_syntax::parser::parse("record := {field: 2}; record.field + 1").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
+    let record = symbol(&interpreter, "record");
+    let record_cell = record.reactive_root_cell_ids()[0];
+    let field_cell = {
+      let Value::Record(record) = record else { panic!("expected record") };
+      record.borrow().get(&hash_str("field")).unwrap().reactive_root_cell_ids()[0]
+    };
+    let plan = interpreter.plan();
+    let alias_id = alias_node(&plan, "RecordAccessField");
+    assert!(plan.borrow().node(alias_id).unwrap().inputs.is_empty());
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let plan = plan.borrow();
+    let (consumer_id, consumer) = (0..plan.len()).find_map(|node_id| {
+      let node = plan.node(node_id).unwrap();
+      (node_id != alias_id && node.outputs.contains(&output_cell)).then_some((node_id, node))
+    }).expect("missing computed field consumer");
+    assert!(consumer.inputs.iter().any(|input| input.cell == field_cell));
+    assert!(plan.reactive_consumers_for(field_cell).contains(&consumer_id));
+    assert!(!consumer.inputs.iter().any(|input| input.cell == record_cell));
+  }
+
+  #[test]
+  fn decoded_structural_alias_access_matches_source() {
+    for (source, name) in [("tuple := (1, 2); tuple.2", "TupleAccessElement")] {
+      let tree = mech_syntax::parser::parse(source).unwrap();
+      let mut interpreter = Interpreter::new_with_full_stdlib(0);
+      let source_output = interpreter.interpret(&tree).unwrap();
+      {
+        let source_plan = interpreter.plan();
+        let source_node = alias_node(&source_plan, name);
+        let source_plan = source_plan.borrow();
+        let source_node = source_plan.node(source_node).unwrap();
+        assert!(source_node.inputs.is_empty());
+        assert_eq!(source_node.outputs.as_slice(), &source_output.reactive_root_cell_ids());
+      }
+      let bytecode = interpreter.compile().unwrap();
+      let program = ParsedProgram::from_bytes(&bytecode).unwrap();
+      interpreter.clear_plan();
+      let decoded_output = interpreter.run_program(&program).unwrap();
+      assert_eq!(decoded_output, source_output);
+      let decoded_node = alias_node(&interpreter.plan(), name);
+      let decoded_plan = interpreter.plan();
+      let decoded_plan = decoded_plan.borrow();
+      let decoded_node = decoded_plan.node(decoded_node).unwrap();
+      assert!(decoded_node.inputs.is_empty());
+      assert_eq!(decoded_node.outputs.as_slice(), &decoded_output.reactive_root_cell_ids());
+    }
+  }
+}
+
+#[cfg(all(test, feature = "functions", feature = "f64", feature = "u64", feature = "convert", feature = "kind_annotation", feature = "variable_define", feature = "variables"))]
+mod variable_kind_cast_dependency_tests {
+  use super::*;
+
+  #[test]
+  fn variable_kind_cast_is_indexed() {
+    let tree = mech_syntax::parser::parse("value := 1; value<f64>").unwrap();
+    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let output = interpreter.interpret(&tree).unwrap();
+    assert_eq!(*output.as_f64().unwrap().borrow(), 1.0);
+    let output_cell = output.reactive_root_cell_ids()[0];
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let (node_id, node) = (0..plan.len()).find_map(|node_id| {
+      let node = plan.node(node_id).unwrap();
+      (node.outputs.contains(&output_cell) && !node.inputs.is_empty()).then_some((node_id, node))
+    }).expect("converted variable read should be registered in the plan");
+    assert!(node.inputs.iter().all(|dependency| dependency.kind == ReactiveDependencyKind::Reactive));
+    assert!(node.outputs.contains(&output_cell));
+    assert!(!node.inputs.iter().any(|dependency| dependency.cell == output_cell));
+    for dependency in &node.inputs {
+      assert!(plan.reactive_consumers_for(dependency.cell).contains(&node_id));
+      assert!(plan.sampled_consumers_for(dependency.cell).is_empty());
+    }
+  }
+}
+
 #[cfg(feature = "range")]
 pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
-    let plan = p.plan();
-    let start = factor(&rng.start, env, p)?;
-    let terminal = factor(&rng.terminal, env, p)?;
-    let new_fxn = match &rng.increment {
-        Some((_, inc)) => {
-            let step = factor(inc, env, p)?;
-            match &rng.operator {
-                #[cfg(feature = "range_exclusive")]
-                RangeOp::Exclusive => {
-                    RangeIncrementExclusive {}.compile(&vec![start, step, terminal])?
-                }
-                #[cfg(feature = "range_inclusive")]
-                RangeOp::Inclusive => {
-                    RangeIncrementInclusive {}.compile(&vec![start, step, terminal])?
-                }
-                x => unreachable!(),
-            }
-        }
-        None => match &rng.operator {
-            #[cfg(feature = "range_exclusive")]
-            RangeOp::Exclusive => RangeExclusive {}.compile(&vec![start, terminal])?,
-            #[cfg(feature = "range_inclusive")]
-            RangeOp::Inclusive => RangeInclusive {}.compile(&vec![start, terminal])?,
-            x => unreachable!(),
-        },
-    };
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.push(new_fxn);
-    let step = plan_brrw.last().unwrap();
-    step.solve();
-    let res = step.out();
-    Ok(res)
+  let plan = p.plan();
+  let start = factor(&rng.start, env, p)?;
+  let terminal = factor(&rng.terminal, env, p)?;
+  let (function, arguments) = match &rng.increment {
+    Some((_, increment)) => {
+      let step = factor(increment, env, p)?;
+      let arguments = vec![start, step, terminal];
+      let function = match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeIncrementExclusive {}.compile(&arguments)?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeIncrementInclusive {}.compile(&arguments)?,
+        _ => unreachable!(),
+      };
+      (function, arguments)
+    }
+    None => {
+      let arguments = vec![start, terminal];
+      let function = match &rng.operator {
+        #[cfg(feature = "range_exclusive")]
+        RangeOp::Exclusive => RangeExclusive {}.compile(&arguments)?,
+        #[cfg(feature = "range_inclusive")]
+        RangeOp::Inclusive => RangeInclusive {}.compile(&arguments)?,
+        _ => unreachable!(),
+      };
+      (function, arguments)
+    }
+  };
+  register_initialized_expression_function(&plan, function, &arguments)
 }
 
 fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
@@ -798,8 +946,15 @@ pub fn subscript(
         Subscript::Dot(x) => {
             let key = x.hash();
             let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
+            #[cfg(feature = "record")]
+            if matches!(val.deref_kind(), ValueKind::Record(..)) {
+                let function = AccessColumn {}.compile(&fxn_input)?;
+                return register_initialized_expression_function(&plan, function, &[]);
+            }
             let new_fxn = AccessColumn {}.compile(&fxn_input)?;
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
@@ -812,18 +967,17 @@ pub fn subscript(
                 #[cfg(feature = "matrix")]
                 ValueKind::Matrix(..) => {
                     let new_fxn = MatrixAccessScalar {}.compile(&fxn_input)?;
-                    new_fxn.solve();
+                    if !expression_solves_deferred(p) {
+                      new_fxn.solve();
+                    }
                     let res = new_fxn.out();
                     plan.borrow_mut().push(new_fxn);
                     return Ok(res);
                 }
                 #[cfg(feature = "tuple")]
                 ValueKind::Tuple(..) => {
-                    let new_fxn = TupleAccess {}.compile(&fxn_input)?;
-                    new_fxn.solve();
-                    let res = new_fxn.out();
-                    plan.borrow_mut().push(new_fxn);
-                    return Ok(res);
+                    let function = TupleAccess {}.compile(&fxn_input)?;
+                    return register_initialized_expression_function(&plan, function, &[]);
                 }
                 /*ValueKind::Record(_) => {
                   let new_fxn = RecordAccessScalar{}.compile(&fxn_input)?;
@@ -844,7 +998,9 @@ pub fn subscript(
             let mut fxn_input: Vec<Value> = vec![val.clone()];
             fxn_input.append(&mut keys);
             let new_fxn = AccessSwizzle {}.compile(&fxn_input)?;
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
@@ -858,11 +1014,11 @@ pub fn subscript(
                     let shape = result.shape();
                     fxn_input.push(result);
                     match shape[..] {
-                        [1, 1] => plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -883,7 +1039,9 @@ pub fn subscript(
             }
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             return Ok(res);
         }
@@ -922,11 +1080,11 @@ pub fn subscript(
                     let shape = index_arg.shape();
                     fxn_input.push(index_arg);
                     match shape[..] {
-                        [1, 1] => plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -953,21 +1111,13 @@ pub fn subscript(
                     fxn_input.push(result);
                     match ((shape1[0], shape1[1]), (shape2[0], shape2[1])) {
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (1, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarScalar {}.compile(&fxn_input)?),
+                        ((1, 1), (1, 1)) => { plan.borrow_mut().push(MatrixAccessScalarScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (m, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarRange {}.compile(&fxn_input)?),
+                        ((1, 1), (m, 1)) => { plan.borrow_mut().push(MatrixAccessScalarRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (1, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeScalar {}.compile(&fxn_input)?),
+                        ((n, 1), (1, 1)) => { plan.borrow_mut().push(MatrixAccessRangeScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (m, 1)) => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        ((n, 1), (m, 1)) => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         _ => unreachable!(),
                     }
                 }
@@ -989,17 +1139,11 @@ pub fn subscript(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessAllScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessAllScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessAllRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessAllRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessAllRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessAllRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1011,17 +1155,11 @@ pub fn subscript(
                     fxn_input.push(Value::IndexAll);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarAll {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessScalarAll {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeAll {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeAll {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeAll {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeAll {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1034,17 +1172,11 @@ pub fn subscript(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeScalar {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessRangeScalar {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1057,17 +1189,11 @@ pub fn subscript(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessScalarRange {}.compile(&fxn_input)?),
+                        [1, 1] => { plan.borrow_mut().push(MatrixAccessScalarRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [1, n] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => plan
-                            .borrow_mut()
-                            .push(MatrixAccessRangeRange {}.compile(&fxn_input)?),
+                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
                         _ => todo!(),
                     }
                 }
@@ -1093,7 +1219,9 @@ pub fn subscript(
             };
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            if !expression_solves_deferred(p) {
+              new_fxn.solve();
+            }
             let res = new_fxn.out();
             return Ok(res);
         }
@@ -1103,6 +1231,7 @@ pub fn subscript(
 
 #[cfg(feature = "symbol_table")]
 pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+    let plan = p.plan();
     let maybe_cast_to_kind = |value: Value| -> MResult<Value> {
         match &v.kind {
             Some(kind_anntn) => {
@@ -1110,11 +1239,11 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                     let state_brrw = p.state.borrow();
                     kind_annotation(&kind_anntn.kind, p)?.to_value_kind(&state_brrw.kinds)?
                 };
-                let convert_fxn = ConvertKind {}.compile(&vec![value, Value::Kind(target_kind)])?;
-                convert_fxn.solve();
-                let out = convert_fxn.out();
-                p.state.borrow_mut().add_plan_step(convert_fxn);
-                Ok(out)
+                execute_initialized_indexed_compiler(
+                    &plan,
+                    &ConvertKind {},
+                    vec![value, Value::Kind(target_kind)],
+                )
             }
             None => Ok(value),
         }
@@ -1238,19 +1367,21 @@ pub fn match_expression(
         let mut guard_env = base_env.clone();
         let matched = match &arm.pattern {
             Pattern::Wildcard => true,
-            _ => crate::patterns::pattern_matches_value_with_semantics(
+            _ => crate::patterns::pattern_matches_value(
                 &arm.pattern,
                 &detached_source,
                 &mut guard_env,
                 p,
-                crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
+        if !matched {
+            continue;
+        }
         let passed_guard = match &arm.guard {
             Some(guard) => guard_expression_true(guard, &guard_env, p)?,
             None => true,
         };
-        if matched && passed_guard {
+        if passed_guard {
             #[cfg(feature = "matrix")]
             if value_contains_empty(&detached_source) && is_identity_option_matrix_arm(arm) {
                 if let Some(wildcard_arm) = match_expr
@@ -1393,19 +1524,21 @@ fn match_validate_arm_kinds(
         let mut arm_env = base_env.clone();
         let applicable = match arm.pattern {
             Pattern::Wildcard => true,
-            _ => crate::patterns::pattern_matches_value_with_semantics(
+            _ => crate::patterns::pattern_matches_value(
                 &arm.pattern,
                 source,
                 &mut arm_env,
                 p,
-                crate::patterns::PatternMatchSemantics::OptionGuard,
             )?,
         };
+        if !applicable {
+            continue;
+        }
         let passed_guard = match &arm.guard {
             Some(guard) => guard_expression_true(guard, &arm_env, p)?,
             None => true,
         };
-        if !(applicable && passed_guard) {
+        if !passed_guard {
             continue;
         }
         let arm_value = expression(&arm.expression, Some(&arm_env), p)?;
@@ -1457,9 +1590,18 @@ fn validate_match_arm_output_kinds(
 
 fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter) -> MResult<bool> {
   let guard_result = expression(guard, Some(env), p)?;
+  let flag = validate_guard_expression_result(guard_result, guard.tokens())?;
+  let result = *flag.borrow();
+  Ok(result)
+}
+
+pub(crate) fn validate_guard_expression_result(
+  guard_result: Value,
+  tokens: Vec<Token>,
+) -> MResult<Ref<bool>> {
   match guard_result {
-      #[cfg(feature = "bool")]
-    Value::Bool(flag) => Ok(*flag.borrow()),
+    #[cfg(feature = "bool")]
+    Value::Bool(flag) => Ok(flag),
     _ => Err(MechError::new(
       InvalidGuardExpressionError {
         found: guard_result.kind(),
@@ -1467,7 +1609,7 @@ fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter)
       None,
     )
     .with_compiler_loc()
-    .with_tokens(guard.tokens())),
+    .with_tokens(tokens)),
   }
 }
 
@@ -1592,15 +1734,15 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
       let value = factor(neg, env, p)?;
       #[cfg(feature = "subscript_formula")]
       let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
-      let new_fxn = MathNegate {}.compile(&vec![value])?;
-      new_fxn.solve();
-      let out = new_fxn.out();
+      let arguments = vec![value];
+      let function = MathNegate {}.compile(&arguments)?;
+      let plan = p.plan();
+      let out = register_initialized_expression_function(&plan, function, &arguments)?;
       #[cfg(feature = "subscript_formula")]
       if value_is_live {
         mark_current_string_access_expression_live(p);
         mark_string_access_value_live(p, &out);
       }
-      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     #[cfg(feature = "logic_not")]
@@ -1608,15 +1750,15 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
       let value = factor(neg, env, p)?;
       #[cfg(feature = "subscript_formula")]
       let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
-      let new_fxn = LogicNot {}.compile(&vec![value])?;
-      new_fxn.solve();
-      let out = new_fxn.out();
+      let arguments = vec![value];
+      let function = LogicNot {}.compile(&arguments)?;
+      let plan = p.plan();
+      let out = register_initialized_expression_function(&plan, function, &arguments)?;
       #[cfg(feature = "subscript_formula")]
       if value_is_live {
         mark_current_string_access_expression_live(p);
         mark_string_access_value_live(p, &out);
       }
-      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     #[cfg(feature = "matrix_transpose")]
@@ -1625,15 +1767,15 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
       let value = factor(fctr, env, p)?;
       #[cfg(feature = "subscript_formula")]
       let value_is_live = current_string_access_expression_live(p) || string_access_input_is_live(&value, p);
-      let new_fxn = MatrixTranspose {}.compile(&vec![value])?;
-      new_fxn.solve();
-      let out = new_fxn.out();
+      let arguments = vec![value];
+      let function = MatrixTranspose {}.compile(&arguments)?;
+      let plan = p.plan();
+      let out = register_initialized_expression_function(&plan, function, &arguments)?;
       #[cfg(feature = "subscript_formula")]
       if value_is_live {
         mark_current_string_access_expression_live(p);
         mark_string_access_value_live(p, &out);
       }
-      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     _ => todo!(),
@@ -1644,9 +1786,10 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
 pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut lhs = factor(&trm.lhs, env, p)?;
-  let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
+  let mut term_plan: Vec<(Box<dyn MechFunction>, Vec<Value>)> = Vec::new();
   for (op, rhs) in &trm.rhs {
     let rhs = factor(&rhs, env, p)?;
+    let dependency_arguments = vec![lhs.clone(), rhs.clone()];
     #[cfg(feature = "subscript_formula")]
     let new_fxn_is_live = current_string_access_expression_live(p)
       || string_access_input_is_live(&lhs, p)
@@ -1772,19 +1915,20 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
         .with_tokens(trm.tokens()));
       }
     };
-    new_fxn.solve();
+    if !expression_solves_deferred(p) {
+      new_fxn.solve();
+    }
     let res = new_fxn.out();
     #[cfg(feature = "subscript_formula")]
     if new_fxn_is_live {
       mark_current_string_access_expression_live(p);
       mark_string_access_value_live(p, &res);
     }
-    term_plan.push(new_fxn);
+    term_plan.push((new_fxn, dependency_arguments));
     lhs = res;
   }
-  let mut plan_brrw = plan.borrow_mut();
-  plan_brrw.append(&mut term_plan);
-  return Ok(lhs);
+  register_expression_function_batch(&plan, term_plan)?;
+  Ok(lhs)
 }
 
 #[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]

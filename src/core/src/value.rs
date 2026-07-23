@@ -11,6 +11,10 @@ use num_rational::Rational64;
 use core::mem;
 #[cfg(not(feature = "no_std"))]
 use std::mem;
+#[cfg(feature = "no_std")]
+use hashbrown::HashSet;
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashSet;
 
 #[cfg(feature = "matrix")]
 use nalgebra::DVector;
@@ -642,6 +646,19 @@ pub enum Value {
 
 impl Eq for Value {}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ReactiveCellId(u64);
+
+impl ReactiveCellId {
+  pub fn new(id: u64) -> Self {
+    Self(id)
+  }
+
+  pub fn get(self) -> u64 {
+    self.0
+  }
+}
+
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     if cfg!(feature = "pretty_print") {
@@ -754,6 +771,540 @@ impl Hash for Value {
   }
 }
 impl Value {
+  pub fn reactive_root_cell_ids(&self) -> Vec<ReactiveCellId> {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u16")]
+      Value::U16(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u32")]
+      Value::U32(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u64")]
+      Value::U64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "u128")]
+      Value::U128(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i8")]
+      Value::I8(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i16")]
+      Value::I16(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i32")]
+      Value::I32(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i64")]
+      Value::I64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "i128")]
+      Value::I128(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "f32")]
+      Value::F32(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "f64")]
+      Value::F64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "complex")]
+      Value::C64(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "rational")]
+      Value::R64(v) => vec![ReactiveCellId::new(v.id())],
+      Value::Index(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "atom")]
+      Value::Atom(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "enum")]
+      Value::Enum(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "set")]
+      Value::Set(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "map")]
+      Value::Map(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "record")]
+      Value::Record(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "table")]
+      Value::Table(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "tuple")]
+      Value::Tuple(v) => vec![ReactiveCellId::new(v.id())],
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+      Value::MutableReference(v) => vec![ReactiveCellId::new(v.id())],
+      Value::Typed(value, _) => value.reactive_root_cell_ids(),
+      Value::Id(_)
+      | Value::Kind(_)
+      | Value::IndexAll
+      | Value::EmptyKind(_)
+      | Value::Empty => Vec::new(),
+    }
+  }
+
+  pub fn reactive_cell_ids(&self) -> Vec<ReactiveCellId> {
+    let mut ids = Vec::new();
+    let mut seen = HashSet::new();
+
+    self.collect_reactive_cell_ids(&mut ids, &mut seen);
+
+    ids
+  }
+
+  fn push_reactive_cell_id(
+    ids: &mut Vec<ReactiveCellId>,
+    seen: &mut HashSet<ReactiveCellId>,
+    id: u64,
+  ) -> bool {
+    let cell = ReactiveCellId::new(id);
+
+    if seen.insert(cell) {
+      ids.push(cell);
+      true
+    } else {
+      false
+    }
+  }
+
+  fn collect_reactive_cell_ids(
+    &self,
+    ids: &mut Vec<ReactiveCellId>,
+    seen: &mut HashSet<ReactiveCellId>,
+  ) {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "u16")]
+      Value::U16(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "u32")]
+      Value::U32(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "u64")]
+      Value::U64(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "u128")]
+      Value::U128(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "i8")]
+      Value::I8(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "i16")]
+      Value::I16(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "i32")]
+      Value::I32(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "i64")]
+      Value::I64(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "i128")]
+      Value::I128(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "f32")]
+      Value::F32(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "f64")]
+      Value::F64(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "complex")]
+      Value::C64(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "rational")]
+      Value::R64(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      Value::Index(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "atom")]
+      Value::Atom(v) => { Self::push_reactive_cell_id(ids, seen, v.id()); }
+      #[cfg(feature = "enum")]
+      Value::Enum(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          let enum_brrw = v.borrow();
+          for (_, payload) in &enum_brrw.variants {
+            if let Some(payload) = payload {
+              payload.collect_reactive_cell_ids(ids, seen);
+            }
+          }
+        }
+      }
+      #[cfg(feature = "set")]
+      Value::Set(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          let set_brrw = v.borrow();
+          for value in &set_brrw.set {
+            value.collect_reactive_cell_ids(ids, seen);
+          }
+        }
+      }
+      #[cfg(feature = "map")]
+      Value::Map(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          let map_brrw = v.borrow();
+          for (key, value) in &map_brrw.map {
+            key.collect_reactive_cell_ids(ids, seen);
+            value.collect_reactive_cell_ids(ids, seen);
+          }
+        }
+      }
+      #[cfg(feature = "record")]
+      Value::Record(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          let record_brrw = v.borrow();
+          for value in record_brrw.data.values() {
+            value.collect_reactive_cell_ids(ids, seen);
+          }
+        }
+      }
+      #[cfg(feature = "table")]
+      Value::Table(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          let table_brrw = v.borrow();
+          for (_, column) in table_brrw.data.values() {
+            if Self::push_reactive_cell_id(ids, seen, column.addr() as u64) {
+              for value in column.as_vec().iter() {
+                value.collect_reactive_cell_ids(ids, seen);
+              }
+            }
+          }
+        }
+      }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          let tuple_brrw = v.borrow();
+          for value in &tuple_brrw.elements {
+            value.collect_reactive_cell_ids(ids, seen);
+          }
+        }
+      }
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(v) => { Self::push_reactive_cell_id(ids, seen, v.addr() as u64); }
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.addr() as u64) {
+          for value in v.as_vec().iter() {
+            value.collect_reactive_cell_ids(ids, seen);
+          }
+        }
+      }
+      Value::MutableReference(v) => {
+        if Self::push_reactive_cell_id(ids, seen, v.id()) {
+          v.borrow().collect_reactive_cell_ids(ids, seen);
+        }
+      }
+      Value::Typed(value, _) => value.collect_reactive_cell_ids(ids, seen),
+      Value::Id(_)
+      | Value::Kind(_)
+      | Value::IndexAll
+      | Value::EmptyKind(_)
+      | Value::Empty => {}
+    }
+  }
+}
+
+pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
+  let mut ids = Vec::new();
+  let mut seen = HashSet::new();
+
+  Value::push_reactive_cell_id(&mut ids, &mut seen, value.id());
+
+  value
+    .borrow()
+    .collect_reactive_cell_ids(&mut ids, &mut seen);
+
+  ids
+}
+impl Value {
+  /// Recursively snapshots this value into storage that is detached from the
+  /// source's reactive cells.
+  ///
+  /// Mutable references are unwrapped, while typed values retain their kind
+  /// annotation. Container metadata is preserved and nested values are
+  /// detached recursively.
+  pub fn deep_snapshot(&self) -> Value {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(value) => Value::U8(Ref::new(*value.borrow())),
+      #[cfg(feature = "u16")]
+      Value::U16(value) => Value::U16(Ref::new(*value.borrow())),
+      #[cfg(feature = "u32")]
+      Value::U32(value) => Value::U32(Ref::new(*value.borrow())),
+      #[cfg(feature = "u64")]
+      Value::U64(value) => Value::U64(Ref::new(*value.borrow())),
+      #[cfg(feature = "u128")]
+      Value::U128(value) => Value::U128(Ref::new(*value.borrow())),
+      #[cfg(feature = "i8")]
+      Value::I8(value) => Value::I8(Ref::new(*value.borrow())),
+      #[cfg(feature = "i16")]
+      Value::I16(value) => Value::I16(Ref::new(*value.borrow())),
+      #[cfg(feature = "i32")]
+      Value::I32(value) => Value::I32(Ref::new(*value.borrow())),
+      #[cfg(feature = "i64")]
+      Value::I64(value) => Value::I64(Ref::new(*value.borrow())),
+      #[cfg(feature = "i128")]
+      Value::I128(value) => Value::I128(Ref::new(*value.borrow())),
+      #[cfg(feature = "f32")]
+      Value::F32(value) => Value::F32(Ref::new(*value.borrow())),
+      #[cfg(feature = "f64")]
+      Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
+      #[cfg(feature = "complex")]
+      Value::C64(value) => Value::C64(Ref::new(value.borrow().clone())),
+      #[cfg(feature = "rational")]
+      Value::R64(value) => Value::R64(Ref::new(value.borrow().clone())),
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(value) => Value::String(Ref::new(value.borrow().clone())),
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(value) => Value::Bool(Ref::new(*value.borrow())),
+      #[cfg(feature = "atom")]
+      Value::Atom(value) => Value::Atom(Ref::new(value.borrow().clone())),
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(value) => Value::MatrixIndex(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(value) => Value::MatrixBool(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(value) => Value::MatrixU8(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(value) => Value::MatrixU16(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(value) => Value::MatrixU32(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(value) => Value::MatrixU64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(value) => Value::MatrixU128(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(value) => Value::MatrixI8(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(value) => Value::MatrixI16(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(value) => Value::MatrixI32(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(value) => Value::MatrixI64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(value) => Value::MatrixI128(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(value) => Value::MatrixF32(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(value) => Value::MatrixF64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(value) => Value::MatrixString(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(value) => Value::MatrixR64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(value) => Value::MatrixC64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(value) => Value::MatrixValue(Matrix::from_vec(
+        value
+          .as_vec()
+          .iter()
+          .map(Value::deep_snapshot)
+          .collect(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(feature = "set")]
+      Value::Set(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.set = snapshot
+          .set
+          .iter()
+          .map(Value::deep_snapshot)
+          .collect();
+        Value::Set(Ref::new(snapshot))
+      }
+      #[cfg(feature = "map")]
+      Value::Map(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.map = snapshot
+          .map
+          .iter()
+          .map(|(key, value)| (key.deep_snapshot(), value.deep_snapshot()))
+          .collect();
+        Value::Map(Ref::new(snapshot))
+      }
+      #[cfg(feature = "record")]
+      Value::Record(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.data = snapshot
+          .data
+          .iter()
+          .map(|(id, value)| (*id, value.deep_snapshot()))
+          .collect();
+        Value::Record(Ref::new(snapshot))
+      }
+      #[cfg(feature = "table")]
+      Value::Table(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.data = snapshot
+          .data
+          .iter()
+          .map(|(id, (kind, values))| {
+            let values = Matrix::from_vec(
+              values
+                .as_vec()
+                .iter()
+                .map(Value::deep_snapshot)
+                .collect(),
+              values.rows(),
+              values.cols(),
+            );
+            (*id, (kind.clone(), values))
+          })
+          .collect();
+        Value::Table(Ref::new(snapshot))
+      }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(value) => Value::Tuple(Ref::new(
+        MechTuple::from_vec(
+          value
+            .borrow()
+            .elements
+            .iter()
+            .map(|value| value.deep_snapshot())
+            .collect(),
+        ),
+      )),
+      #[cfg(feature = "enum")]
+      Value::Enum(value) => {
+        let value = value.borrow();
+        Value::Enum(Ref::new(MechEnum {
+          id: value.id,
+          variants: value
+            .variants
+            .iter()
+            .map(|(id, payload)| {
+              (*id, payload.as_ref().map(Value::deep_snapshot))
+            })
+            .collect(),
+          names: value.names.clone(),
+        }))
+      }
+      Value::Id(value) => Value::Id(*value),
+      Value::Index(value) => Value::Index(Ref::new(*value.borrow())),
+      Value::MutableReference(value) => value.borrow().deep_snapshot(),
+      Value::Typed(value, kind) => {
+        Value::Typed(Box::new(value.deep_snapshot()), kind.clone())
+      }
+      Value::Kind(kind) => Value::Kind(kind.clone()),
+      Value::IndexAll => Value::IndexAll,
+      Value::EmptyKind(kind) => Value::EmptyKind(kind.clone()),
+      Value::Empty => Value::Empty,
+    }
+  }
 
   #[cfg(feature = "matrix")]
   fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {
@@ -947,6 +1498,8 @@ impl Value {
       Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
       #[cfg(feature = "table")]
       Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
+      #[cfg(feature = "tuple")]
+      Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),
       x => panic!("Unsupported type for as_unchecked: {:?}.", x),
     }
   }
@@ -2744,6 +3297,186 @@ impl ToValue for Ref<MechTuple> {
 impl ToValue for Ref<MechRecord> {
   fn to_value(&self) -> Value {
     Value::Record(self.clone())
+  }
+}
+
+#[cfg(test)]
+mod reactive_cell_tests {
+  use super::*;
+  use indexmap::{IndexMap, IndexSet};
+
+  fn cell_ids(ids: &[u64]) -> Vec<ReactiveCellId> {
+    ids.iter().copied().map(ReactiveCellId::new).collect()
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn scalar_reactive_cell_identity_is_stable() {
+    let scalar = Ref::new(1.0);
+    let value = Value::F64(scalar.clone());
+
+    let first = value.reactive_cell_ids();
+    let second = value.reactive_cell_ids();
+
+    assert_eq!(first, second);
+    assert_eq!(first, cell_ids(&[scalar.id()]));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn typed_value_reuses_inner_cell_identity() {
+    let scalar = Ref::new(1.0);
+    let value = Value::Typed(Box::new(Value::F64(scalar.clone())), ValueKind::F64);
+
+    assert_eq!(value.reactive_cell_ids(), cell_ids(&[scalar.id()]));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn mutable_reference_includes_outer_and_inner_cells() {
+    let scalar = Ref::new(1.0);
+    let outer = Ref::new(Value::F64(scalar.clone()));
+    let value = Value::MutableReference(outer.clone());
+
+    assert_eq!(value.reactive_cell_ids(), cell_ids(&[outer.id(), scalar.id()]));
+  }
+
+  #[cfg(all(feature = "set", feature = "f64"))]
+  #[test]
+  fn reactive_root_cells_exclude_nested_container_cells() {
+    let first = Ref::new(1.0);
+    let second = Ref::new(2.0);
+    let mut members = IndexSet::new();
+    members.insert(Value::F64(first.clone()));
+    members.insert(Value::F64(second.clone()));
+    let set = Ref::new(MechSet { kind: ValueKind::F64, num_elements: 2, set: members });
+    let value = Value::Set(set.clone());
+
+    assert_eq!(value.reactive_root_cell_ids(), cell_ids(&[set.id()]));
+    assert_eq!(value.reactive_cell_ids(), cell_ids(&[set.id(), first.id(), second.id()]));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn mutable_reference_root_cell_is_outer_only() {
+    let scalar = Ref::new(1.0);
+    let outer = Ref::new(Value::F64(scalar.clone()));
+    let value = Value::MutableReference(outer.clone());
+
+    assert_eq!(value.reactive_root_cell_ids(), cell_ids(&[outer.id()]));
+    assert_eq!(value.reactive_cell_ids(), cell_ids(&[outer.id(), scalar.id()]));
+  }
+
+  #[cfg(all(feature = "table", feature = "matrix", feature = "f64"))]
+  #[test]
+  fn table_reactive_cells_include_columns_and_nested_values() {
+    let a = Ref::new(1.0);
+    let b = Ref::new(2.0);
+    let c = Ref::new(3.0);
+    let d = Ref::new(4.0);
+    let first_column = Matrix::from_vec(vec![Value::F64(a.clone()), Value::F64(b.clone())], 2, 1);
+    let second_column = Matrix::from_vec(vec![Value::F64(c.clone()), Value::F64(d.clone())], 2, 1);
+    let first_column_id = first_column.addr() as u64;
+    let second_column_id = second_column.addr() as u64;
+    let mut data = IndexMap::new();
+    data.insert(hash_str("first"), (ValueKind::F64, first_column));
+    data.insert(hash_str("second"), (ValueKind::F64, second_column));
+    let table = Ref::new(MechTable { rows: 2, cols: 2, data, col_names: HashMap::new() });
+
+    assert_eq!(
+      Value::Table(table.clone()).reactive_cell_ids(),
+      cell_ids(&[table.id(), first_column_id, a.id(), b.id(), second_column_id, c.id(), d.id()]),
+    );
+  }
+
+  #[cfg(all(feature = "record", feature = "tuple", feature = "f64"))]
+  #[test]
+  fn record_and_tuple_recurse_into_nested_values() {
+    let a = Ref::new(1.0);
+    let b = Ref::new(2.0);
+    let tuple = Ref::new(MechTuple { elements: vec![Box::new(Value::F64(a.clone())), Box::new(Value::F64(b.clone()))] });
+    let mut data = IndexMap::new();
+    data.insert(hash_str("tuple"), Value::Tuple(tuple.clone()));
+    let record = Ref::new(MechRecord { cols: 1, kinds: vec![ValueKind::Tuple(vec![ValueKind::F64, ValueKind::F64])], data, field_names: HashMap::new() });
+
+    assert_eq!(Value::Record(record.clone()).reactive_cell_ids(), cell_ids(&[record.id(), tuple.id(), a.id(), b.id()]));
+  }
+
+  #[cfg(all(feature = "record", feature = "tuple", feature = "f64"))]
+  #[test]
+  fn deep_snapshot_detaches_nested_record_and_tuple_cells() {
+    let live = Ref::new(1.0);
+    let value = Value::Record(Ref::new(MechRecord::new(vec![(
+      "position",
+      Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+        Value::F64(live.clone()),
+        Value::F64(Ref::new(2.0)),
+      ]))),
+    )])));
+
+    let snapshot = value.deep_snapshot();
+    *live.borrow_mut() = 9.0;
+
+    let Value::Record(snapshot) = snapshot else {
+      panic!("expected record snapshot");
+    };
+    let position = {
+      let snapshot = snapshot.borrow();
+      let Value::Tuple(position) = snapshot.data.get(&hash_str("position")).unwrap() else {
+        panic!("expected tuple field");
+      };
+      position.clone()
+    };
+    let position = position.borrow();
+    let Value::F64(x) = position.elements[0].as_ref() else {
+      panic!("expected scalar tuple element");
+    };
+    assert_eq!(*x.borrow(), 1.0);
+    assert_ne!(x.as_ptr(), live.as_ptr());
+  }
+
+  #[cfg(all(feature = "map", feature = "set", feature = "f64"))]
+  #[test]
+  fn map_and_set_recurse_in_container_order() {
+    let key1 = Ref::new(1.0);
+    let value1 = Ref::new(2.0);
+    let key2 = Ref::new(3.0);
+    let value2 = Ref::new(4.0);
+    let mut map_data = IndexMap::new();
+    map_data.insert(Value::F64(key1.clone()), Value::F64(value1.clone()));
+    map_data.insert(Value::F64(key2.clone()), Value::F64(value2.clone()));
+    let map = Ref::new(MechMap { key_kind: ValueKind::F64, value_kind: ValueKind::F64, num_elements: 2, map: map_data });
+    assert_eq!(Value::Map(map.clone()).reactive_cell_ids(), cell_ids(&[map.id(), key1.id(), value1.id(), key2.id(), value2.id()]));
+
+    let set1 = Ref::new(5.0);
+    let set2 = Ref::new(6.0);
+    let mut set_data = IndexSet::new();
+    set_data.insert(Value::F64(set1.clone()));
+    set_data.insert(Value::F64(set2.clone()));
+    let set = Ref::new(MechSet { kind: ValueKind::F64, num_elements: 2, set: set_data });
+    assert_eq!(Value::Set(set.clone()).reactive_cell_ids(), cell_ids(&[set.id(), set1.id(), set2.id()]));
+  }
+
+  #[cfg(all(feature = "enum", feature = "f64"))]
+  #[test]
+  fn enum_recurse_excludes_dictionary() {
+    let payload = Ref::new(1.0);
+    let dictionary = Ref::new(Dictionary::new());
+    let dictionary_id = dictionary.id();
+    let enum_value = Ref::new(MechEnum { id: hash_str("example"), variants: vec![(hash_str("payload"), Some(Value::F64(payload.clone())))], names: dictionary });
+
+    let ids = Value::Enum(enum_value.clone()).reactive_cell_ids();
+    assert_eq!(ids, cell_ids(&[enum_value.id(), payload.id()]));
+    assert!(!ids.contains(&ReactiveCellId::new(dictionary_id)));
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn val_ref_helper_includes_program_cell() {
+    let inner = Ref::new(1.0);
+    let cell = Ref::new(Value::F64(inner.clone()));
+
+    assert_eq!(val_ref_reactive_cell_ids(&cell), cell_ids(&[cell.id(), inner.id()]));
   }
 }
 

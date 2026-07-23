@@ -29,23 +29,140 @@ mod service;
 mod task;
 mod transaction;
 
+#[cfg(test)]
+mod input_tests;
+
 use crate::runtime::errors::*;
 use crate::runtime::host::*;
 
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+#[cfg(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+))]
+use web_time::Instant;
+
+#[cfg(not(all(
+  target_arch = "wasm32",
+  target_os = "unknown",
+)))]
 use std::time::Instant;
 
 use mech_core::{
-  MResult, MechError, MechErrorKind, MechSourceCode, Value,
+  MResult, MechError, MechErrorKind, MechSourceCode, Value, ValRef,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   hash_str, ModuleManifestCatalog, ModuleManifestConfig,
 };
 
 use mech_program::{
-  MechProgram, MechProgramConfig, MechProgramEnvironment
+  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
+
+
+#[derive(Clone, Debug)]
+struct RuntimeLiveContextTemplate {
+  runtime: RuntimeId,
+  subject: String,
+  task: Option<TaskId>,
+  actor: Option<ActorId>,
+  module_version: Option<ModuleVersionId>,
+  capabilities: Vec<CapabilityId>,
+  budget_limits: ResourceBudget,
+  actor_message: Option<MessageRecord>,
+  actor_state: Option<ObjectId>,
+}
+
+impl RuntimeLiveContextTemplate {
+  fn from_context(context: &RuntimeContext) -> Self {
+    let mut capabilities = context.capabilities.clone();
+    capabilities.sort_unstable();
+    capabilities.dedup();
+    Self {
+      runtime: context.runtime,
+      subject: context.subject.clone(),
+      task: context.task,
+      actor: context.actor,
+      module_version: context.module_version,
+      capabilities,
+      budget_limits: ResourceBudget {
+        max_steps: context.budget.max_steps,
+        used_steps: 0,
+        max_bytes: context.budget.max_bytes,
+        used_bytes: 0,
+        max_items: context.budget.max_items,
+        used_items: 0,
+        max_messages: context.budget.max_messages,
+        used_messages: 0,
+      },
+      actor_message: context.actor_message.clone(),
+      actor_state: context.actor_state,
+    }
+  }
+
+  fn fresh_context(&self) -> RuntimeContext {
+    RuntimeContext {
+      runtime: self.runtime,
+      subject: self.subject.clone(),
+      task: self.task,
+      actor: self.actor,
+      access: Default::default(),
+      module_version: self.module_version,
+      transaction: None,
+      capabilities: self.capabilities.clone(),
+      budget: self.budget_limits.clone(),
+      events: Vec::new(),
+      actor_message: self.actor_message.clone(),
+      actor_state: self.actor_state,
+    }
+  }
+
+  fn matches_context(&self, context: &RuntimeContext) -> bool {
+    let mut capabilities = context.capabilities.clone();
+    capabilities.sort_unstable();
+    capabilities.dedup();
+    self.runtime == context.runtime
+      && self.subject == context.subject
+      && self.task == context.task
+      && self.actor == context.actor
+      && self.module_version == context.module_version
+      && self.actor_message == context.actor_message
+      && self.actor_state == context.actor_state
+      && self.capabilities == capabilities
+      && self.budget_limits.max_steps == context.budget.max_steps
+      && self.budget_limits.max_bytes == context.budget.max_bytes
+      && self.budget_limits.max_items == context.budget.max_items
+      && self.budget_limits.max_messages == context.budget.max_messages
+  }
+}
+
+#[derive(Clone)]
+struct RuntimeLiveStateSnapshot {
+  context_template: Option<RuntimeLiveContextTemplate>,
+  input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
+  persistent_sends: Vec<RuntimePersistentSend>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum LiveRegistrationMode {
+  RetainedRoot,
+  IsolatedSnapshot,
+}
+
+#[derive(Clone, Debug)]
+struct RuntimePersistentSend {
+  binding: RuntimeContextBinding,
+  path: String,
+  value: ValRef,
+  schedule: RuntimePersistentSendSchedule,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum RuntimePersistentSendSchedule {
+  EveryAcceptedTurn,
+  Activation { interpreter_id: u64, barrier_node_id: mech_core::ReactiveNodeId },
+}
 
 use crate::capability::{
   BasicCapabilityKernel, Capability, CapabilityGrant, CapabilityKernel,
@@ -99,6 +216,7 @@ use crate::transaction::{
 use crate::actor::ActorTurn;
 
 use crate::{RuntimeServices};
+use crate::input::RuntimeHostInputQueueState;
 
 use crate::actor_behavior::{
   ActorBehaviorDriver, ActorBehaviorRuntime, NoActorBehaviorDriver,
@@ -106,7 +224,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 thread_local! {
   static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
@@ -132,6 +250,8 @@ pub struct RuntimeBuilder {
   module_builder: ModuleBuilder,
   config_specs: Vec<RuntimeConfigSpec>,
   resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+  input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
+  host_input_capacity: usize,
   host_factories: RuntimeHostFactoryRegistry,
   host_instances: Vec<HostInstanceConfig>,
   run_grants: Vec<RunResourceGrantConfig>,
@@ -178,6 +298,8 @@ impl Default for RuntimeBuilder {
       module_builder: ModuleBuilder::new(),
       config_specs: Vec::new(),
       resource_providers: Vec::new(),
+      input_drivers: Vec::new(),
+      host_input_capacity: DEFAULT_HOST_INPUT_CAPACITY,
       host_factories: RuntimeHostFactoryRegistry::new(),
       host_instances: Vec::new(),
       run_grants: Vec::new(),
@@ -308,9 +430,17 @@ impl RuntimeBuilder {
     self
   }
 
+  pub fn host_input_capacity(mut self, capacity: usize) -> Self {
+    self.host_input_capacity = capacity;
+    self
+  }
+
   pub fn build(mut self) -> MResult<MechRuntime> {
     self.config.validate()?;
     self.scheduler_policy.validate()?;
+    if self.host_input_capacity == 0 {
+      return Err(crate::input::input_error("RuntimeHostInputCapacityInvalid", "host input queue capacity must be greater than zero"));
+    }
 
     let runtime_id = self.id_generator.runtime_id();
 
@@ -333,6 +463,7 @@ impl RuntimeBuilder {
       let installation = self.host_factories.instantiate(host_instance)?;
       host_interfaces.register(installation.interface)?;
       self.resource_providers.extend(installation.resource_providers);
+      self.input_drivers.extend(installation.input_drivers);
     }
 
     let max_events = self.config.limits.max_in_memory_events
@@ -358,6 +489,14 @@ impl RuntimeBuilder {
       resources: RuntimeResourceRegistry::new(),
       grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
+      live_registration_mode: LiveRegistrationMode::RetainedRoot,
+      live_input_bindings: HashMap::new(),
+      host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(RuntimeHostInputQueueState::new(self.host_input_capacity))),
+      input_drivers: self.input_drivers,
+      attached_input_driver_count: 0,
+      persistent_sends: Vec::new(),
+      live_context_template: None,
+      input_driver_cleanup_armed: false,
       host_interfaces,
       module_manifests: self.module_manifests,
     };
@@ -374,6 +513,21 @@ impl RuntimeBuilder {
     for grant in &self.run_grants {
       runtime.install_run_resource_grant(grant)?;
     }
+
+    let ingress = runtime.ingress();
+    for index in 0..runtime.input_drivers.len() {
+      if let Err(error) = runtime.input_drivers[index].attach(ingress.clone()) {
+        let _ = runtime.close_ingress();
+        for rollback_index in (0..=index).rev() {
+          let _ = runtime.input_drivers[rollback_index].stop();
+        }
+        runtime.attached_input_driver_count = 0;
+        runtime.input_driver_cleanup_armed = false;
+        return Err(error);
+      }
+      runtime.attached_input_driver_count += 1;
+    }
+    runtime.input_driver_cleanup_armed = true;
 
     let mut context = runtime.runtime_context()?;
 
@@ -411,6 +565,14 @@ pub struct MechRuntime {
   resources: RuntimeResourceRegistry,
   grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
+  live_registration_mode: LiveRegistrationMode,
+  live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
+  host_input_queue: RuntimeHostInputQueue,
+  input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
+  attached_input_driver_count: usize,
+  persistent_sends: Vec<RuntimePersistentSend>,
+  live_context_template: Option<RuntimeLiveContextTemplate>,
+  input_driver_cleanup_armed: bool,
   host_interfaces: HostInterfaceCatalog,
   module_manifests: ModuleManifestCatalog,
 }
@@ -436,6 +598,10 @@ impl std::fmt::Debug for MechRuntime {
       .field("resources", &self.resources)
       .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
+      .field("live_input_bindings", &self.live_input_bindings)
+      .field("input_drivers", &self.input_drivers.len())
+      .field("persistent_sends", &self.persistent_sends.len())
+      .field("live_context_template", &self.live_context_template)
       .field("host_interfaces", &self.host_interfaces)
       .field("module_manifests", &self.module_manifests)
       .finish()
@@ -954,6 +1120,53 @@ impl MechRuntime {
       .build()
   }
 
+  fn validate_live_context_candidate(&self, context: &RuntimeContext) -> MResult<()> {
+    if context.transaction.is_some() {
+      return Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "RuntimeTransactionalLiveProgramUnsupported",
+        reason: "live context reads and persistent sends cannot be armed under an active transaction".to_string(),
+      }, None));
+    }
+    match &self.live_context_template {
+      Some(template) if template.matches_context(context) => Ok(()),
+      Some(_) => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "RuntimeLiveContextMismatch",
+        reason: "source load attempted to change the live program execution identity or budget maxima".to_string(),
+      }, None)),
+      None => Ok(()),
+    }
+  }
+
+  fn commit_live_context_candidate(&mut self, context: &RuntimeContext) {
+    if self.live_context_template.is_none() {
+      self.live_context_template = Some(RuntimeLiveContextTemplate::from_context(context));
+    }
+  }
+
+  fn live_state_snapshot(&self) -> RuntimeLiveStateSnapshot {
+    RuntimeLiveStateSnapshot {
+      context_template: self.live_context_template.clone(),
+      input_bindings: self.live_input_bindings.clone(),
+      persistent_sends: self.persistent_sends.clone(),
+    }
+  }
+
+  fn restore_live_state(&mut self, snapshot: RuntimeLiveStateSnapshot) {
+    self.live_context_template = snapshot.context_template;
+    self.live_input_bindings = snapshot.input_bindings;
+    self.persistent_sends = snapshot.persistent_sends;
+  }
+
+  fn live_turn_context(&self) -> MResult<RuntimeContext> {
+    self.live_context_template
+      .as_ref()
+      .map(RuntimeLiveContextTemplate::fresh_context)
+      .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
+        operation: "RuntimeLiveContextMissing",
+        reason: "host input turn requires a stored live program context".to_string(),
+      }, None))
+  }
+
   pub fn context_for_task(&self, task: &TaskRecord) -> MResult<RuntimeContext> {
     let mut builder = RuntimeContextBuilder::new(self.id)
       .subject(task.subject.clone())
@@ -1119,16 +1332,55 @@ impl MechRuntime {
   // ---------------------------------------------------------------------------
 
   pub fn shutdown(&mut self) -> MResult<()> {
-    let mut context = self.runtime_context()?;
+    let mut first_error = None;
 
-    self.emit_event_to_context(
-      &mut context,
-      RuntimeEventKind::RuntimeShutdown {
-        runtime_id: self.id,
-      },
-    )?;
+    if let Err(error) = self.close_ingress() {
+      first_error = Some(error);
+    }
 
-    Ok(())
+    if let Err(error) = self.stop_input_drivers() {
+      if first_error.is_none() {
+        first_error = Some(error);
+      }
+    }
+    self.input_driver_cleanup_armed = false;
+
+    match self.runtime_context() {
+      Ok(mut context) => {
+        if let Err(error) = self.emit_event_to_context(
+          &mut context,
+          RuntimeEventKind::RuntimeShutdown {
+            runtime_id: self.id,
+          },
+        ) {
+          if first_error.is_none() {
+            first_error = Some(error);
+          }
+        }
+      }
+      Err(error) => {
+        if first_error.is_none() {
+          first_error = Some(error);
+        }
+      }
+    }
+
+    match first_error {
+      Some(error) => Err(error),
+      None => Ok(()),
+    }
+  }
+}
+
+impl Drop for MechRuntime {
+  fn drop(&mut self) {
+    if self.input_driver_cleanup_armed {
+      let _ = self.close_ingress();
+      for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
+        let _ = driver.stop();
+      }
+      self.input_driver_cleanup_armed = false;
+    }
   }
 }
 

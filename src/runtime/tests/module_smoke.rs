@@ -139,6 +139,7 @@ impl RuntimeHostFactory for RecordingCliHostFactory {
   fn instantiate(&self, instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<RuntimeHostInstallation> {
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, RecordingCliBackend { state: self.state.clone() }))],
     })
   }
@@ -2808,6 +2809,7 @@ impl<B: CliBackend + Clone + 'static> RuntimeHostFactory for TestCliFactory<B> {
   fn instantiate(&self, instance_name: &str, _settings: &ConfigValue) -> mech_core::MResult<RuntimeHostInstallation> {
     Ok(RuntimeHostInstallation {
       interface: materialize_host_manifest(instance_name, &self.manifest)?,
+      input_drivers: Vec::new(),
       resource_providers: vec![Box::new(CliResourceProvider::for_instance(instance_name, self.backend.clone()))],
     })
   }
@@ -3358,6 +3360,126 @@ result := \"x\"?
 }
 
 #[test]
+fn activation_arm_pattern_context_read_fails_preflight_before_stdout_write() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  grant_runtime_stdout_line(&mut runtime);
+
+  let result = runtime.run_string(
+    "@out := cli://stdout{:write(line)}
+@env := cli://env{:read(HOME)}
+@out/line <- \"must-not-write\"
+event := \"x\"
+~> event
+  | (@env/HOME) => {
+      selected := true
+    }
+  | * => {
+      selected := false
+    }
+",
+  );
+
+  assert!(result.is_err(), "activation arm context read should fail in preflight");
+  let error = format!("{:?}", result.err().unwrap());
+  assert!(
+    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    "expected context read preflight error, got {error}",
+  );
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "preflight failed after stdout write: {:?}",
+    state.lock().unwrap().stdout,
+  );
+}
+
+#[test]
+fn activation_arm_context_read_pattern_is_lowered_when_allowed() {
+  let (mut runtime, state) = runtime_with_recording_cli();
+  state.lock().unwrap().env.insert(
+    "MECH_ACTIVATION_PATTERN".to_string(),
+    "expected".to_string(),
+  );
+  let subject = runtime.runtime_context().unwrap().subject;
+  runtime.grant_capability(RuntimeCapabilityGrant {
+    subject,
+    resource: "cli://cli/env".to_string(),
+    operations: vec![RuntimeCapabilityOperation::Read],
+    paths: vec!["MECH_ACTIVATION_PATTERN".to_string()],
+  }).unwrap();
+
+  let result = runtime.run_string(
+    "@env := cli://env{:read(MECH_ACTIVATION_PATTERN)}
+event := \"expected\"
+~> event
+  | (@env/MECH_ACTIVATION_PATTERN) => {
+      selected := true
+    }
+  | * => {
+      selected := false
+    }
+",
+  );
+
+  assert!(result.is_ok(), "allowed activation context pattern failed: {result:?}");
+  assert_eq!(runtime.live_input_binding_count(), 1);
+  let registration = {
+    let plan = runtime.program().interpreter().plan();
+    let registrations = plan.pattern_activation_registrations();
+    assert_eq!(registrations.len(), 1);
+    registrations[0].clone()
+  };
+
+  let update = runtime.apply_host_input(RuntimeHostInput::single(
+    RuntimeHostInputSource::new("cli://env", "MECH_ACTIVATION_PATTERN").unwrap(),
+    RuntimeHostInputValue::String("next".to_string()),
+  )).unwrap();
+  assert_eq!(update.binding_count, 1);
+  assert_eq!(update.ignored_update_count, 0);
+  if let Some(turn) = &update.turn {
+    for interpreter_turn in &turn.interpreter_turns {
+      let executed_nodes = interpreter_turn
+        .turn
+        .before_commit
+        .executed_nodes
+        .iter()
+        .chain(interpreter_turn.turn.after_commit.executed_nodes.iter())
+        .copied()
+        .collect::<Vec<_>>();
+      assert!(!executed_nodes.contains(&registration.scope_pulse_node));
+      assert!(!executed_nodes.contains(&registration.selector_node));
+      for arm in &registration.arms {
+        assert!(!executed_nodes.contains(&arm.matcher_node));
+        assert!(!executed_nodes.contains(&arm.finalizer_node));
+        assert!(!executed_nodes.contains(&arm.gate_node));
+      }
+    }
+  }
+
+  let trigger = {
+    let symbols = runtime.program().interpreter().symbols();
+    let event = symbols.borrow().get(hash_str("event")).unwrap().borrow().clone();
+    event.reactive_root_cell_ids()[0]
+  };
+  let trigger_turn = runtime
+    .program_mut()
+    .interpreter_mut()
+    .advance_reactive_turn(&[trigger])
+    .unwrap();
+  let changed_nodes = trigger_turn
+    .before_commit
+    .changed_nodes
+    .iter()
+    .chain(trigger_turn.after_commit.changed_nodes.iter())
+    .copied()
+    .collect::<Vec<_>>();
+  assert!(!changed_nodes.contains(&registration.arms[0].gate_node));
+  assert!(
+    changed_nodes.contains(&registration.arms[1].gate_node),
+    "the trigger did not sample the updated pattern value",
+  );
+}
+
+#[test]
 fn fsm_pipe_transition_context_read_fails_preflight_before_stdout_write() {
   let (mut runtime, state) = runtime_with_recording_cli();
   grant_runtime_stdout_line(&mut runtime);
@@ -3681,6 +3803,7 @@ fn cli_context_module_send_is_not_stripped() {
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   runtime.run_module(version).unwrap();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+  assert_eq!(runtime.persistent_send_count(), 0);
 }
 
 #[derive(Debug, Clone)]
@@ -3917,6 +4040,7 @@ fn named_fenced_context_import_write_uses_context_registry() {
   ).unwrap();
 
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
+  assert_eq!(runtime.persistent_send_count(), 0);
 }
 
 #[test]
@@ -4420,18 +4544,38 @@ result := pick("secret") == "matched"
 #[test]
 fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
   let mut compiler_program = MechProgram::new(MechProgramConfig::default());
-  compiler_program.run_string("x := 2").unwrap();
+  compiler_program.run_string("x := 2.0\nx").unwrap();
   let bytecode = compiler_program.compile_bytecode().unwrap();
 
   let mut runtime = RuntimeBuilder::new().build().unwrap();
   let mut context = runtime.runtime_context().unwrap();
-  runtime.run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode)).unwrap();
+  runtime
+    .run_source_with_context(&mut context, &MechSourceCode::String("y := 1.0".to_string()))
+    .unwrap();
+  let plan_len = runtime.program().interpreter().plan_len();
+  let y = runtime.program().interpreter().symbols().borrow().get(hash_str("y")).unwrap();
+  let y_ptr = y.as_ptr();
+  assert_eq!(*y.borrow().as_f64().unwrap().borrow(), 1.0);
+  assert!(runtime.program().interpreter().symbols().borrow().get(hash_str("x")).is_none());
+
+  let bytecode_result = runtime
+    .run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode))
+    .unwrap();
+  assert_eq!(bytecode_result, Value::F64(Ref::new(2.0)));
+  let symbols = runtime.program().interpreter().symbols();
+  let y_after = symbols.borrow().get(hash_str("y")).unwrap();
+  assert_eq!(y_after.as_ptr(), y_ptr);
+  assert_eq!(*y_after.borrow().as_f64().unwrap().borrow(), 1.0);
+  assert!(symbols.borrow().get(hash_str("x")).is_none());
+  assert_eq!(runtime.program().interpreter().plan_len(), plan_len);
 
   let result = runtime
-    .run_source_with_context(&mut context, &MechSourceCode::String("x := 3".to_string()))
+    .run_source_with_context(&mut context, &MechSourceCode::String("x := 3.0".to_string()))
     .unwrap();
 
   assert_eq!(result, Value::F64(Ref::new(3.0)));
+  assert_eq!(*runtime.program().interpreter().symbols().borrow().get(hash_str("x")).unwrap().borrow().as_f64().unwrap().borrow(), 3.0);
+  assert_eq!(*runtime.program().interpreter().symbols().borrow().get(hash_str("y")).unwrap().borrow().as_f64().unwrap().borrow(), 1.0);
 }
 
 #[test]

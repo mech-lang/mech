@@ -165,6 +165,7 @@ fn is_prelude_name(name: &str) -> bool {
         "SetSize",
         "Set1D",
         "Table",
+        "TupleAccessElement",
     ];
     EXACT.contains(&name) || PREFIXES.iter().any(|prefix| name.starts_with(prefix))
 }

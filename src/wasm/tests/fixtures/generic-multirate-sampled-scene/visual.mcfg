@@ -1,0 +1,27 @@
+config := {
+  hosts: [
+    {
+      name: "update"
+      provider: "timer"
+      settings: { frequency-hz: 73 max-catch-up-steps: 10 }
+    }
+    {
+      name: "sample"
+      provider: "timer"
+      settings: { frequency-hz: 29 max-catch-up-steps: 6 }
+    }
+    {
+      name: "view"
+      provider: "scene"
+      settings: { selector: "#generic-multirate-scene" renderer: "canvas" }
+    }
+  ]
+  run: {
+    paths: ["updates.mec", "sampling.mec"]
+    grants: [
+      { target: "update/tick" operations: ["read"] paths: ["tick", "delta-seconds"] }
+      { target: "sample/tick" operations: ["read"] paths: ["tick", "delta-seconds"] }
+      { target: "view/frame" operations: ["write"] paths: ["replace"] }
+    ]
+  }
+}

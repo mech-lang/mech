@@ -358,6 +358,12 @@ pub fn resource_base_matches(base: &str, candidate: &str) -> bool {
   candidate == base || candidate.strip_prefix(base).is_some_and(|suffix| suffix.starts_with('/'))
 }
 
+pub(crate) fn canonicalize_resource_base_uri(uri: &str) -> MResult<String> {
+  let canonical = uri.trim_end_matches('/');
+  resource_uri_origin(canonical)?;
+  Ok(canonical.to_string())
+}
+
 fn resource_uri_origin(uri: &str) -> MResult<&str> {
   let scheme = resource_uri_scheme(uri)?;
   let rest = &uri[scheme.len() + 3..];

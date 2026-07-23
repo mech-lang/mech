@@ -44,6 +44,7 @@ pub mod mechdown;
 pub mod imports;
 pub mod expressions;
 pub mod statements;
+pub mod activation;
 pub mod structures;
 pub mod base;
 pub mod parser;
@@ -64,6 +65,7 @@ pub use crate::parser::*;
 pub use crate::mechdown::*;
 pub use crate::expressions::*;
 pub use crate::statements::*;
+pub use crate::activation::*;
 pub use crate::structures::*;
 pub use crate::base::*;
 #[cfg(feature = "formatter")]

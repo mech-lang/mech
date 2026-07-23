@@ -183,19 +183,48 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      let mut plan_brrw = plan.borrow_mut();
-      new_fxn.solve();                   // run the function once to initialise its output
+      if !plan.activation_registration_active() { new_fxn.solve(); }
       let result = new_fxn.out();
       trace_println!(
         p,
         "{}",
         format_trace("arm", format!("result {}", summarize_function_value(&result)))
       );
-      plan_brrw.push(new_fxn);          // keep it in the plan for reactive re-evaluation
+      plan.register_function(
+        new_fxn,
+        input_arg_values,
+      )?;                                // keep it in the plan for reactive re-evaluation
       Ok(result)
     }
     Err(err) => Err(err),
   }
+}
+
+pub fn execute_initialized_indexed_compiler_with_registration_arguments(
+  plan: &Plan,
+  compiler: &dyn NativeFunctionCompiler,
+  compile_arguments: Vec<Value>,
+  registration_arguments: Vec<Value>,
+) -> MResult<Value> {
+  let function = compiler.compile(&compile_arguments)?;
+  if !plan.activation_registration_active() { function.solve_result()?; }
+  let output = function.out();
+  plan.register_function(function, &registration_arguments)?;
+  Ok(output)
+}
+
+pub(crate) fn execute_initialized_indexed_compiler(
+  plan: &Plan,
+  compiler: &dyn NativeFunctionCompiler,
+  arguments: Vec<Value>,
+) -> MResult<Value> {
+  let registration_arguments = arguments.clone();
+  execute_initialized_indexed_compiler_with_registration_arguments(
+    plan,
+    compiler,
+    arguments,
+    registration_arguments,
+  )
 }
 
 // Executes a user-defined function. Handles argument count validation,
@@ -574,7 +603,7 @@ fn coerce_function_output_kind(
 struct FunctionScope {
   state: Ref<ProgramState>,
   previous_symbols: SymbolTableRef,
-  previous_plan: Plan,
+  previous_plan: Option<Plan>,
   previous_environment: Option<SymbolTableRef>,
 }
 
@@ -588,7 +617,11 @@ impl FunctionScope {
     local_symbols.dictionary = state_brrw.dictionary.clone();
     let local_symbols = Ref::new(local_symbols);
     let previous_symbols = std::mem::replace(&mut state_brrw.symbol_table, local_symbols);
-    let previous_plan = std::mem::replace(&mut state_brrw.plan, Plan::new());
+    let previous_plan = if *p.persistent_user_function_plan_depth.borrow() > 0 {
+      None
+    } else {
+      Some(std::mem::replace(&mut state_brrw.plan, Plan::new()))
+    };
     let previous_environment = state_brrw.environment.take();
     drop(state_brrw);
 
@@ -606,8 +639,30 @@ impl Drop for FunctionScope {
   fn drop(&mut self) {
     let mut state_brrw = self.state.borrow_mut();
     state_brrw.symbol_table = self.previous_symbols.clone();
-    state_brrw.plan = self.previous_plan.clone();
+    if let Some(previous_plan) = &self.previous_plan {
+      state_brrw.plan = previous_plan.clone();
+    }
     state_brrw.environment = self.previous_environment.clone();
+  }
+}
+
+pub(crate) struct PersistentUserFunctionPlanScope {
+  depth: Ref<usize>,
+}
+
+impl PersistentUserFunctionPlanScope {
+  pub(crate) fn enter(interpreter: &Interpreter) -> Self {
+    let depth = interpreter.persistent_user_function_plan_depth.clone();
+    *depth.borrow_mut() += 1;
+    Self { depth }
+  }
+}
+
+impl Drop for PersistentUserFunctionPlanScope {
+  fn drop(&mut self) {
+    let mut depth = self.depth.borrow_mut();
+    debug_assert!(*depth > 0);
+    *depth -= 1;
   }
 }
 
@@ -939,5 +994,205 @@ impl MechErrorKind for FunctionInputTypeMismatchError {
       "Function '{}' argument '{}' expected {}, found {}",
       self.function_name, self.argument_name, self.expected, self.found
     )
+  }
+}
+
+#[cfg(all(test, feature = "functions", feature = "f64"))]
+mod native_dependency_tests {
+  use super::*;
+  use std::sync::atomic::{AtomicUsize, Ordering};
+
+  struct NativeDependencyTestCompiler;
+
+  impl NativeFunctionCompiler for NativeDependencyTestCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(NativeDependencyTestFunction {
+        output: Value::F64(Ref::new(2.0)),
+      }))
+    }
+  }
+
+  struct NativeDependencyTestFunction {
+    output: Value,
+  }
+
+  impl MechFunctionImpl for NativeDependencyTestFunction {
+    fn solve(&self) {}
+
+    fn out(&self) -> Value {
+      self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+      "native-dependency-test".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for NativeDependencyTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  struct IndexedInitializedCompiler {
+    output: Value,
+    solve_calls: Arc<AtomicUsize>,
+  }
+
+  struct IndexedInitializedFunction {
+    output: Value,
+    solve_calls: Arc<AtomicUsize>,
+  }
+
+  impl NativeFunctionCompiler for IndexedInitializedCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(IndexedInitializedFunction {
+        output: self.output.clone(),
+        solve_calls: self.solve_calls.clone(),
+      }))
+    }
+  }
+
+  impl MechFunctionImpl for IndexedInitializedFunction {
+    fn solve(&self) {
+      self.solve_calls.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn out(&self) -> Value {
+      self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+      "indexed-initialized-test".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for IndexedInitializedFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  #[test]
+  fn initialized_indexed_compiler_records_dependencies() {
+    let plan = Plan::new();
+    let input = Ref::new(1.0);
+    let input_cell = ReactiveCellId::new(input.id());
+    let output = Ref::new(2.0);
+    let output_cell = ReactiveCellId::new(output.id());
+    let solve_calls = Arc::new(AtomicUsize::new(0));
+
+    let result = execute_initialized_indexed_compiler(
+      &plan,
+      &IndexedInitializedCompiler {
+        output: Value::F64(output),
+        solve_calls: solve_calls.clone(),
+      },
+      vec![Value::F64(input)],
+    )
+    .unwrap();
+
+    assert!(result.reactive_cell_ids().contains(&output_cell));
+    assert_eq!(solve_calls.load(Ordering::SeqCst), 1);
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow.node(0).unwrap();
+    assert_eq!(plan_borrow.len(), 1);
+    assert!(node.inputs.iter().any(|dependency| {
+      dependency.cell == input_cell
+        && dependency.kind == ReactiveDependencyKind::Reactive
+    }));
+    assert_eq!(plan_borrow.reactive_consumers_for(input_cell), &[0]);
+    assert!(plan_borrow.sampled_consumers_for(input_cell).is_empty());
+    assert!(node.outputs.contains(&output_cell));
+    assert!(!node.inputs.iter().any(|dependency| dependency.cell == output_cell));
+  }
+
+  #[derive(Debug, Clone)]
+  struct DeferredNativeSolveError;
+
+  impl MechErrorKind for DeferredNativeSolveError {
+    fn name(&self) -> &str { "DeferredNativeSolveError" }
+    fn message(&self) -> String { "deferred native solve error".to_string() }
+  }
+
+  struct DeferredNativeSolveCompiler { solve_calls: Arc<std::sync::atomic::AtomicUsize> }
+  struct DeferredNativeSolveFunction { output: Value, solve_calls: Arc<std::sync::atomic::AtomicUsize> }
+
+  impl NativeFunctionCompiler for DeferredNativeSolveCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(DeferredNativeSolveFunction { output: Value::F64(Ref::new(2.0)), solve_calls: self.solve_calls.clone() }))
+    }
+  }
+  impl MechFunctionImpl for DeferredNativeSolveFunction {
+    fn solve(&self) { self.solve_calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst); }
+    fn solve_result(&self) -> MResult<()> { Err(MechError::new(DeferredNativeSolveError, None)) }
+    fn out(&self) -> Value { self.output.clone() }
+    fn to_string(&self) -> String { "deferred-native-solve".to_string() }
+  }
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for DeferredNativeSolveFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+  }
+
+  #[test]
+  fn native_registration_defers_solve_result_errors() {
+    let interpreter = Interpreter::new(0, 100);
+    let input = Ref::new(1.0);
+    let input_cell = ReactiveCellId::new(input.id());
+    let arguments = vec![Value::F64(input)];
+    let solve_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    assert!(execute_native_function_compiler(Arc::new(DeferredNativeSolveCompiler { solve_calls: solve_calls.clone() }), &arguments, &interpreter).is_ok());
+    assert_eq!(solve_calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    let plan = interpreter.plan();
+    let plan = plan.borrow();
+    let node = plan.last().unwrap();
+    assert!(plan.nodes.last().unwrap().inputs.iter().any(|dependency| dependency.cell == input_cell));
+    assert!(plan.nodes.last().unwrap().function.solve_result().unwrap_err().kind_name().contains("DeferredNativeSolveError"));
+    assert_eq!(plan.len(), 1);
+  }
+
+  #[test]
+  fn native_function_registration_records_operand_cells() {
+    let interpreter = Interpreter::new(0, 100);
+    let input = Ref::new(1.0);
+    let input_cell = ReactiveCellId::new(input.id());
+    let arguments = vec![Value::F64(input)];
+
+    let result = execute_native_function_compiler(
+      Arc::new(NativeDependencyTestCompiler),
+      &arguments,
+      &interpreter,
+    )
+    .unwrap();
+
+    let output_cell = match result {
+      Value::F64(output) => ReactiveCellId::new(output.id()),
+      other => panic!("expected f64 output, found {:?}", other),
+    };
+
+    let plan = interpreter.plan();
+    let plan_borrow = plan.borrow();
+    let node = plan_borrow
+      .nodes
+      .iter()
+      .find(|node| !node.inputs.is_empty())
+      .expect("native compiler path should register indexed inputs");
+
+    assert!(
+      node
+        .inputs
+        .iter()
+        .any(|dependency| {
+          dependency.cell == input_cell
+            && dependency.kind == ReactiveDependencyKind::Reactive
+        })
+    );
+    assert_eq!(
+      plan_borrow.reactive_consumers_for(input_cell),
+      &[node.id],
+    );
+    assert!(node.outputs.contains(&output_cell));
   }
 }

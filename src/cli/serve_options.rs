@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use mech_core::*;
 
@@ -122,32 +122,26 @@ pub(crate) fn effective_serve_options(
   let mut stylesheet_paths = config_stylesheets;
   stylesheet_paths.extend(cli_stylesheets);
 
-  let mut cli_paths: Vec<String> = args.paths.clone();
-
-  if let Some(loaded) = config {
-    if let Some(project_dir) = loaded.discovered_project_dir.as_ref() {
-      if cli_paths.len() == 1 {
-        let current_dir = std::env::current_dir()?;
-        let input = PathBuf::from(&cli_paths[0]);
-        let input_path = if input.is_absolute() {
-          input
-        } else {
-          current_dir.join(input)
-        };
-
-        if input_path.exists()
-          && input_path.is_dir()
-          && input_path.canonicalize()? == *project_dir
-        {
-          cli_paths.clear();
-        }
+  let cli_paths: Vec<String> = args.paths.clone();
+  let sole_discovery_selector = config
+    .and_then(|loaded| loaded.discovered_project_dir.as_ref().map(|project_dir| (loaded, project_dir)))
+    .map(|(_loaded, project_dir)| {
+      if cli_paths.len() != 1 {
+        return false;
       }
-    }
-  }
+      let selector = Path::new(&cli_paths[0]);
+      let selector_abs = if selector.is_absolute() {
+        selector.to_path_buf()
+      } else {
+        std::env::current_dir().unwrap_or_else(|_| Path::new("").to_path_buf()).join(selector)
+      };
+      let selector_resolved = selector_abs.canonicalize().unwrap_or(selector_abs);
+      let project_resolved = project_dir.canonicalize().unwrap_or_else(|_| project_dir.clone());
+      selector_resolved == project_resolved
+    })
+    .unwrap_or(false);
 
-  let paths = if !cli_paths.is_empty() {
-    cli_paths
-  } else {
+  let config_serve_paths = || {
     config
       .and_then(|loaded| {
         loaded.document.serve.as_ref().map(|serve| {
@@ -155,11 +149,26 @@ pub(crate) fn effective_serve_options(
             .paths
             .iter()
             .map(|path| config_path_to_string(loaded, path))
-            .collect()
+            .collect::<Vec<_>>()
         })
       })
-      .filter(|paths: &Vec<String>| !paths.is_empty())
+      .filter(|paths| !paths.is_empty())
       .unwrap_or_default()
+  };
+
+  let paths = if !cli_paths.is_empty() && !sole_discovery_selector {
+    cli_paths
+  } else if sole_discovery_selector {
+    let has_run_paths = config
+      .and_then(|loaded| loaded.document.run.as_ref())
+      .is_some_and(|run| !run.paths.is_empty());
+    if has_run_paths {
+      cli_paths
+    } else {
+      config_serve_paths()
+    }
+  } else {
+    config_serve_paths()
   };
 
   Ok(EffectiveServeOptions {
