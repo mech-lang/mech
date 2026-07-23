@@ -34,7 +34,13 @@
 
 
 use super::*;
-use mech_core::{Ref, ValueKind};
+use super::execution::{
+  ACTIVATION_EFFECT_BARRIER_NAME,
+  ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
+  ActivationEffectBarrierCompiler,
+  ActivationEffectPayloadCaptureCompiler,
+};
+use mech_core::{GuardFunctionSafety, Ref, ValueKind};
 
 impl MechRuntime {
 
@@ -43,6 +49,14 @@ impl MechRuntime {
     _context: &mut RuntimeContext,
     program: &mut MechProgram,
   ) -> MResult<()> {
+    program.register_native_function_compiler(
+      ACTIVATION_EFFECT_BARRIER_NAME,
+      Arc::new(ActivationEffectBarrierCompiler),
+    );
+    program.register_native_function_compiler(
+      ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
+      Arc::new(ActivationEffectPayloadCaptureCompiler),
+    );
     for name in self.host_registry.list_functions()? {
       program.register_native_function_compiler(
         name.clone(),
@@ -185,6 +199,10 @@ impl RuntimeHostNativeFunctionCompiler {
 }
 
 impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    GuardFunctionSafety::Unsupported
+  }
+
   fn compile(
     &self,
     arguments: &Vec<Value>,

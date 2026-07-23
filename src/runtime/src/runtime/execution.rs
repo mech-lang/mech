@@ -25,6 +25,7 @@ enum RuntimeAddressTarget {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum DirectContextEffectPlacement {
   TopLevel,
+  ActivationScope,
   FunctionBody,
   FsmTransition,
 }
@@ -45,14 +46,12 @@ impl DirectContextEffectPlacement {
   fn description(self) -> &'static str {
     match self {
       DirectContextEffectPlacement::TopLevel => "module top level",
+      DirectContextEffectPlacement::ActivationScope => "an activation scope",
       DirectContextEffectPlacement::FunctionBody => "a function body",
       DirectContextEffectPlacement::FsmTransition => "an FSM transition",
     }
   }
 
-  fn allows_direct_context_effect(self) -> bool {
-    matches!(self, DirectContextEffectPlacement::TopLevel)
-  }
 }
 
 struct ActiveRuntimeProgramHostGuard {
@@ -95,6 +94,95 @@ struct ResolvedContextResourceRequest {
   provider_base_uri: String,
   provider_path: String,
   context_path: String,
+}
+
+// This name deliberately starts with a NUL byte.  It is an identifier we can
+// construct in the lowered tree, but it cannot be produced by the Mech lexer.
+// Keeping the compiler registered on the program is therefore not a public
+// source-level API.
+pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "\0mech/runtime/activation-effect-barrier";
+pub(super) const ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME: &str =
+  "\0mech/runtime/activation-effect-payload-capture";
+
+#[derive(Clone, Debug)]
+pub(super) struct ActivationEffectBarrierCompiler;
+impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    if !arguments.is_empty() {
+      return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+        reason: format!(
+          "activation effect barrier expected no payloads, found {}",
+          arguments.len()
+        ),
+      }, None));
+    }
+    Ok(Box::new(ActivationEffectBarrier))
+  }
+}
+#[derive(Clone, Debug)]
+struct ActivationEffectBarrier;
+impl MechFunctionImpl for ActivationEffectBarrier {
+  fn solve(&self) {}
+  fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> { Ok(mech_core::ReactiveSolveStatus::Unchanged) }
+  // The barrier is a scheduling node, not a value producer.  Its node id and
+  // reactive execution record are the observable state used by send replay.
+  fn out(&self) -> Value { Value::Empty }
+  fn reactive_output_values(&self) -> Vec<Value> { Vec::new() }
+  fn to_string(&self) -> String { ACTIVATION_EFFECT_BARRIER_NAME.to_string() }
+}
+impl MechFunctionCompiler for ActivationEffectBarrier {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ActivationEffectPayloadCaptureCompiler;
+impl NativeFunctionCompiler for ActivationEffectPayloadCaptureCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    let [payload] = arguments.as_slice() else {
+      return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+        reason: format!(
+          "activation effect payload capture expected one payload, found {}",
+          arguments.len()
+        ),
+      }, None));
+    };
+    Ok(Box::new(ActivationEffectPayloadCapture {
+      payload: payload.clone(),
+      snapshot: mech_core::Ref::new(snapshot_runtime_value(payload)),
+    }))
+  }
+}
+
+#[derive(Clone, Debug)]
+struct ActivationEffectPayloadCapture {
+  payload: Value,
+  snapshot: mech_core::ValRef,
+}
+
+impl MechFunctionImpl for ActivationEffectPayloadCapture {
+  fn solve(&self) {
+    *self.snapshot.borrow_mut() = snapshot_runtime_value(&self.payload);
+  }
+  fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> {
+    self.solve();
+    Ok(mech_core::ReactiveSolveStatus::Unchanged)
+  }
+  fn out(&self) -> Value { Value::MutableReference(self.snapshot.clone()) }
+  // Payloads are sampled only when the activation pulse schedules this node.
+  // Their own changes must never dispatch an activation effect.
+  fn reactive_dependency_scopes(&self, argument_count: usize) -> Option<Vec<mech_core::ReactiveDependencyScope>> {
+    Some(vec![mech_core::ReactiveDependencyScope::None; argument_count])
+  }
+  fn reactive_output_values(&self) -> Vec<Value> { Vec::new() }
+  fn to_string(&self) -> String { ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME.to_string() }
+}
+
+impl MechFunctionCompiler for ActivationEffectPayloadCapture {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+      reason: "activation effect payload capture cannot be bytecode compiled".into(),
+    }, None))
+  }
 }
 
 fn identifier_from_str(name: &str) -> mech_core::Identifier {
@@ -301,6 +389,13 @@ fn resolve_runtime_value(value: Value) -> Value {
   }
 }
 
+// Activation effects are released after the reactive turn succeeds. Keep the
+// body-time payload separate from any live source cells so a register commit
+// cannot change the value that the selected arm staged for its send.
+fn snapshot_runtime_value(value: &Value) -> Value {
+  value.deep_snapshot()
+}
+
 
 
 impl MechRuntime {
@@ -313,6 +408,20 @@ impl MechRuntime {
     let result = f(self);
     self.live_registration_mode = previous;
     result
+  }
+
+  #[cfg(test)]
+  pub(super) fn run_string_with_isolated_registration_for_test(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
+    self.with_live_registration_mode(
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      |runtime| {
+        runtime.run_string_with_context(context, source)
+      },
+    )
   }
 
   fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
@@ -499,8 +608,13 @@ impl MechRuntime {
     value: Value,
   ) -> MResult<mech_core::Expression> {
     self.validate_live_context_candidate(context)?;
-    let name = format!("mech-internal-context-{}-{}", hash_str(source.base_uri()), hash_str(source.path()));
-    let symbol_id = hash_str(&name);
+    let identifier = mech_core::internal_pattern_value_identifier(&format!(
+      "context-{}-{}",
+      hash_str(source.base_uri()),
+      hash_str(source.path())
+    ));
+    let name = identifier.to_string();
+    let symbol_id = identifier.hash();
     let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
     if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
       let bindings = self.live_input_bindings.entry(source).or_default();
@@ -510,7 +624,7 @@ impl MechRuntime {
       self.commit_live_context_candidate(context);
     }
     let var = mech_core::Var {
-      name: identifier_from_str(&name),
+      name: identifier,
       context: None,
       kind: None,
     };
@@ -906,92 +1020,53 @@ impl MechRuntime {
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<mech_core::Expression> {
-    if let Some(expression) = self.literalize_match_pattern_context_read_expression(
-      context,
+    if let Some(expression) = self.resolve_interpreter_address_pattern_expression(
       program,
       registry,
       expression,
     )? {
       return Ok(expression);
     }
-
     self.resolve_context_reads_in_expression(context, program, registry, expression)
   }
 
-  fn literalize_match_pattern_context_read_expression(
+  fn resolve_interpreter_address_pattern_expression(
     &mut self,
-    context: &RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     expression: &mech_core::Expression,
   ) -> MResult<Option<mech_core::Expression>> {
     match expression {
       mech_core::Expression::Var(var) => {
-        self.literalize_match_pattern_context_read_var(context, program, registry, var)
+        let Some(var_context) = &var.context else {
+          return Ok(None);
+        };
+        let target = var_context.to_string();
+        if registry.get(&target).is_some() {
+          return Ok(None);
+        }
+
+        let address = format!("@{target}/{}", var.name.to_string());
+        let value = {
+          let symbols = program.interpreter().symbols();
+          let symbols = symbols.borrow();
+          symbols
+            .get(hash_str(&address))
+            .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
+        };
+        match value {
+          Some(value) => self.resolved_pattern_value_expression(value).map(Some),
+          None => Ok(None),
+        }
       }
       mech_core::Expression::Formula(factor) => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, factor)
+        self.resolve_interpreter_address_pattern_factor(program, registry, factor)
       }
       _ => Ok(None),
     }
   }
 
-  fn literalize_match_pattern_context_read_factor(
-    &mut self,
-    context: &RuntimeContext,
-    program: &mut MechProgram,
-    registry: &RuntimeContextRegistry,
-    factor: &mech_core::Factor,
-  ) -> MResult<Option<mech_core::Expression>> {
-    match factor {
-      mech_core::Factor::Expression(expression) => {
-        self.literalize_match_pattern_context_read_expression(context, program, registry, expression)
-      }
-      mech_core::Factor::Parenthetical(inner) => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, inner)
-      }
-      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
-        self.literalize_match_pattern_context_read_factor(context, program, registry, &term.lhs)
-      }
-      _ => Ok(None),
-    }
-  }
-
-  fn literalize_match_pattern_context_read_var(
-    &mut self,
-    context: &RuntimeContext,
-    program: &mut MechProgram,
-    registry: &RuntimeContextRegistry,
-    var: &mech_core::Var,
-  ) -> MResult<Option<mech_core::Expression>> {
-    let Some(var_context) = &var.context else {
-      return Ok(None);
-    };
-
-    let target = var_context.to_string();
-    let path = var.name.to_string();
-    if let Some(binding) = registry.get(&target) {
-      let value = self.read_context_resource(context, binding, &path)?;
-      return Ok(Some(self.context_pattern_value_expression(value)?));
-    }
-
-    let address_key = format!("@{target}/{path}");
-    let value = {
-      let symbols = program.interpreter().symbols();
-      let symbols = symbols.borrow();
-      symbols
-        .get(hash_str(&address_key))
-        .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
-    };
-
-    if let Some(value) = value {
-      return Ok(Some(self.context_pattern_value_expression(value)?));
-    }
-
-    Ok(None)
-  }
-
-  fn context_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+  fn resolved_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
     let value = resolve_runtime_value(value);
     match value {
       Value::String(value) => {
@@ -1019,9 +1094,31 @@ impl MechRuntime {
         vec!['_'],
       )))),
       other => Err(MechError::new(RuntimeInvalidOperationError {
-        operation: "context_match_pattern",
-        reason: format!("context match patterns currently support string, bool, and empty values; got {other:?}"),
+        operation: "interpreter_address_pattern",
+        reason: format!(
+          "interpreter-address patterns currently support string, bool, and empty values; got {other:?}",
+        ),
       }, None)),
+    }
+  }
+
+  fn resolve_interpreter_address_pattern_factor(
+    &mut self,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.resolve_interpreter_address_pattern_expression(program, registry, expression)
+      }
+      mech_core::Factor::Parenthetical(inner) => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, inner)
+      }
+      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, &term.lhs)
+      }
+      _ => Ok(None),
     }
   }
 
@@ -1148,6 +1245,15 @@ impl MechRuntime {
     code: &mech_core::MechCode,
   ) -> MResult<mech_core::MechCode> {
     match code {
+      mech_core::MechCode::ActivationScope(scope) => {
+        let mut scope = scope.clone();
+        scope.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        scope.body = match scope.body {
+          mech_core::ActivationBody::Block(body) => mech_core::ActivationBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
+          mech_core::ActivationBody::PatternArms(arms) => mech_core::ActivationBody::PatternArms(arms),
+        };
+        Ok(mech_core::MechCode::ActivationScope(scope))
+      },
       mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
         self.resolve_context_reads_in_statement(context, program, registry, statement)?,
       )),
@@ -1242,6 +1348,253 @@ impl MechRuntime {
         }
         Ok(())
       }
+      mech_core::MechCode::ActivationScope(scope) => {
+        if !pending_codes.is_empty() { pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes))); }
+        self.flush_direct_execution(program, pending, result)?;
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          let mut lowered = scope.clone();
+          lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+          let mut lowered_arms = Vec::with_capacity(arms.len());
+          let mut arm_registrations = Vec::with_capacity(arms.len());
+          let mut registration_count = 0usize;
+          for arm in arms {
+            let pattern = self.resolve_context_reads_in_match_pattern(
+              context,
+              program,
+              registry,
+              &arm.pattern,
+            )?;
+            let guard = arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?;
+            let (body, registrations) = match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => {
+                let mut lowered_body = Vec::with_capacity(body.len() + 1);
+                let mut registrations = Vec::new();
+                for (body_code, body_comment) in body {
+                  match body_code {
+                    mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+                      let context_name = send.target.context.as_ref().unwrap().to_string();
+                      let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
+                      registration_count += 1;
+                      let payload = self.resolve_context_reads_in_expression(
+                        context,
+                        program,
+                        registry,
+                        &send.expression,
+                      )?;
+                      lowered_body.push((
+                        mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(
+                          mech_core::FunctionCall {
+                            name: identifier_from_str(ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME),
+                            args: vec![(None, payload)],
+                          },
+                        )),
+                        body_comment.clone(),
+                      ));
+                      registrations.push((binding, send.target.name.to_string()));
+                    }
+                    _ => lowered_body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+                  }
+                }
+                if !registrations.is_empty() {
+                  // The payload captures remain at their source positions, but
+                  // a single final barrier releases the complete arm effect
+                  // batch only after every body node has succeeded.
+                  lowered_body.push((
+                    mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall {
+                      name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME),
+                      args: vec![],
+                    })),
+                    None,
+                  ));
+                }
+                (mech_core::ActivationArmBody::Block(lowered_body), registrations)
+              }
+              mech_core::ActivationArmBody::Expression(expression) => (
+                mech_core::ActivationArmBody::Expression(self.resolve_context_reads_in_expression(context, program, registry, expression)?),
+                Vec::new(),
+              ),
+            };
+            arm_registrations.push(registrations);
+            lowered_arms.push(mech_core::ActivationArm { pattern, guard, body });
+          }
+          lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
+          if registration_count > 0 {
+            if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+              return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None));
+            }
+            self.validate_live_context_candidate(context)?;
+          }
+          let pattern_registration_start = program.interpreter().plan().pattern_activation_registrations().len();
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          if registration_count == 0 { return Ok(()); }
+          let interpreter_id = program.interpreter().id;
+          let pattern_registration = {
+            let plan = program.interpreter().plan();
+            let registrations = plan.pattern_activation_registrations();
+            if registrations.len() != pattern_registration_start + 1 {
+              return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                reason: format!("expected one patterned activation registration, found {}", registrations.len().saturating_sub(pattern_registration_start)),
+              }, None));
+            }
+            registrations[pattern_registration_start].clone()
+          };
+          if pattern_registration.arms.len() != arm_registrations.len() {
+            return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+              reason: format!("patterned activation arm registration mismatch: expected {}, found {}", arm_registrations.len(), pattern_registration.arms.len()),
+            }, None));
+          }
+          let mut sends = Vec::with_capacity(registration_count);
+          {
+            let plan = program.interpreter().plan();
+            let plan = plan.borrow();
+            for (arm, registrations) in pattern_registration.arms.iter().zip(arm_registrations) {
+              if registrations.is_empty() { continue; }
+              let captures = plan.nodes[arm.body_node_start..arm.body_node_end].iter().filter(|node| {
+                node.kind == mech_core::ReactiveNodeKind::Combinational
+                  && node.function.to_string() == ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME
+                  && node.outputs.is_empty()
+              }).collect::<Vec<_>>();
+              let barriers = plan.nodes[arm.body_node_start..arm.body_node_end].iter().filter(|node| {
+                node.kind == mech_core::ReactiveNodeKind::Combinational
+                  && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
+                  && node.outputs.is_empty()
+              }).collect::<Vec<_>>();
+              if captures.len() != registrations.len() {
+                return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                  reason: format!(
+                    "expected {} patterned-arm activation effect payload captures, found {}",
+                    registrations.len(),
+                    captures.len()
+                  ),
+                }, None));
+              }
+              if barriers.len() != 1 {
+                return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                  reason: format!(
+                    "expected one patterned-arm activation effect barrier, found {}",
+                    barriers.len()
+                  ),
+                }, None));
+              }
+              let barrier_node_id = barriers[0].id;
+              for ((binding, path), capture) in registrations.into_iter().zip(captures) {
+                let snapshot = match capture.function.out() {
+                  Value::MutableReference(snapshot) => snapshot,
+                  other => return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                    reason: format!(
+                      "patterned-arm activation effect payload capture returned {}, expected a snapshot",
+                      other.kind()
+                    ),
+                  }, None)),
+                };
+                sends.push(RuntimePersistentSend {
+                  binding,
+                  path,
+                  value: snapshot,
+                  schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id },
+                });
+              }
+            }
+          }
+          if sends.len() != registration_count {
+            return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+              reason: format!("patterned activation send registration mismatch: expected {}, found {}", registration_count, sends.len()),
+            }, None));
+          }
+          self.persistent_sends.extend(sends);
+          self.commit_live_context_candidate(context);
+          return Ok(());
+        }
+        let mut lowered = scope.clone();
+        lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        let mut registrations = Vec::new();
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
+        lowered.body = mech_core::ActivationBody::Block(vec![]);
+        let lowered_body = match &mut lowered.body { mech_core::ActivationBody::Block(body) => body, _ => unreachable!() };
+        for (body_code, body_comment) in scope_body {
+          match body_code {
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+              let context_name = send.target.context.as_ref().unwrap().to_string();
+              let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
+              let payload = self.resolve_context_reads_in_expression(
+                context,
+                program,
+                registry,
+                &send.expression,
+              )?;
+              lowered_body.push((
+                mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(
+                  mech_core::FunctionCall {
+                    name: identifier_from_str(ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME),
+                    args: vec![(None, payload)],
+                  },
+                )),
+                body_comment.clone(),
+              ));
+              registrations.push((binding, send.target.name.to_string()));
+            }
+            _ => lowered_body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+          }
+        }
+        if registrations.is_empty() {
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          return Ok(());
+        }
+        lowered_body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
+        self.validate_live_context_candidate(context)?;
+        let plan_start = program.interpreter().plan().borrow().nodes.len();
+        program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+        let interpreter_id = program.interpreter().id;
+        let plan = program.interpreter().plan();
+        let plan = plan.borrow();
+        let captures = plan.nodes[plan_start..].iter().filter(|node| {
+          node.kind == mech_core::ReactiveNodeKind::Combinational
+            && node.function.to_string() == ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME
+            && node.outputs.is_empty()
+        }).collect::<Vec<_>>();
+        let barriers = plan.nodes[plan_start..].iter().filter(|node| {
+          node.kind == mech_core::ReactiveNodeKind::Combinational
+            && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
+            && node.outputs.is_empty()
+        }).collect::<Vec<_>>();
+        if captures.len() != registrations.len() {
+          return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+            reason: format!(
+              "expected {} activation effect payload captures, found {}",
+              registrations.len(),
+              captures.len()
+            ),
+          }, None));
+        }
+        if barriers.len() != 1 {
+          return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+            reason: format!("expected one activation effect barrier, found {}", barriers.len()),
+          }, None));
+        }
+        let barrier_node_id = barriers[0].id;
+        let mut sends = Vec::with_capacity(registrations.len());
+        for ((binding, path), capture) in registrations.into_iter().zip(captures) {
+          let snapshot = match capture.function.out() {
+            Value::MutableReference(snapshot) => snapshot,
+            other => return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+              reason: format!(
+                "activation effect payload capture returned {}, expected a snapshot",
+                other.kind()
+              ),
+            }, None)),
+          };
+          sends.push(RuntimePersistentSend {
+            binding,
+            path,
+            value: snapshot,
+            schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id },
+          });
+        }
+        drop(plan);
+        self.persistent_sends.extend(sends);
+        self.commit_live_context_candidate(context);
+        Ok(())
+      }
       mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
         if let Some(context_name) = &var_def.var.context {
           let target = context_name.to_string();
@@ -1296,7 +1649,7 @@ impl MechRuntime {
         let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
         let value = resolve_runtime_value(value_cell.borrow().clone());
         self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
-        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell });
+        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell, schedule: RuntimePersistentSendSchedule::EveryAcceptedTurn });
         self.commit_live_context_candidate(context);
         *result = value;
         return Ok(());
@@ -1382,6 +1735,48 @@ impl MechRuntime {
     addressed_read_preflight: AddressedReadPreflight,
   ) -> MResult<()> {
     match code {
+      mech_core::MechCode::ActivationScope(scope) => {
+        self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          let has_send = arms.iter().any(|arm| match &arm.body {
+            mech_core::ActivationArmBody::Block(body) => body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_)))),
+            mech_core::ActivationArmBody::Expression(_) => false,
+          });
+          if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+            return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None));
+          }
+          for arm in arms {
+            self.preflight_pattern_context_reads(
+              context,
+              registry,
+              &arm.pattern,
+              addressed_read_preflight,
+            )?;
+            if let Some(guard) = &arm.guard { self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?; }
+            match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => for (code, _) in body { self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?; },
+              mech_core::ActivationArmBody::Expression(expression) => self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?,
+            }
+          }
+          return Ok(());
+        }
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
+        let has_send = scope_body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
+        // Only writes to local registers conflict with an effectful activation.
+        // Context-addressed assignments have their own, operation-specific
+        // placement error below (they are top-level only).
+        let has_register = scope_body.iter().any(|(code, _)| match code {
+          mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => assign.target.context.is_none(),
+          mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => assign.target.context.is_none(),
+          _ => false,
+        });
+        if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
+        if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
+        for (body_code, _) in scope_body {
+          self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
       mech_core::MechCode::Statement(statement) => {
         self.preflight_statement_context_capabilities(context, registry, statement, placement, addressed_read_preflight)
       }
@@ -2271,9 +2666,12 @@ impl MechRuntime {
     path: &str,
     placement: DirectContextEffectPlacement,
   ) -> MResult<()> {
-    if placement.allows_direct_context_effect() {
-      return Ok(());
-    }
+    let allowed = match effect {
+      "assignment" => matches!(placement, DirectContextEffectPlacement::TopLevel),
+      "send" => matches!(placement, DirectContextEffectPlacement::TopLevel | DirectContextEffectPlacement::ActivationScope),
+      _ => false,
+    };
+    if allowed { return Ok(()); }
 
     Err(MechError::new(RuntimeInvalidOperationError {
       operation: "direct_context_effect_placement",
@@ -3597,6 +3995,38 @@ mod tests {
     atomic::{AtomicUsize, Ordering},
   };
 
+  #[cfg(all(feature = "record", feature = "tuple", feature = "f64"))]
+  #[test]
+  fn activation_effect_payload_snapshot_deeply_detaches_scene_values() {
+    let live = Ref::new(1.0);
+    let scene = Value::Record(Ref::new(mech_core::MechRecord::new(vec![(
+      "position",
+      Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
+        Value::F64(live.clone()),
+        Value::F64(Ref::new(2.0)),
+      ]))),
+    )])));
+    let snapshot = snapshot_runtime_value(&scene);
+    *live.borrow_mut() = 9.0;
+
+    let Value::Record(snapshot) = snapshot else {
+      panic!("expected record snapshot");
+    };
+    let position = {
+      let snapshot = snapshot.borrow();
+      let Value::Tuple(position) = snapshot.data.get(&hash_str("position")).unwrap() else {
+        panic!("expected tuple field");
+      };
+      position.clone()
+    };
+    let position = position.borrow();
+    let Value::F64(x) = position.elements[0].as_ref() else {
+      panic!("expected scalar tuple element");
+    };
+    assert_eq!(*x.borrow(), 1.0);
+    assert_ne!(x.as_ptr(), live.as_ptr());
+  }
+
   #[test]
   fn runtime_has_interpreter_finds_root_interpreter() {
     let runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
@@ -3967,8 +4397,8 @@ impl MechRuntime {
         program.update_inputs_and_advance_turn(
           &target_updates,
         )?;
-      self.execute_persistent_sends(&context)?;
       self.enforce_turn_duration(turn_started)?;
+      self.execute_persistent_sends(&context, &turn)?;
 
       Ok(crate::RuntimeHostInputOutcome {
         update_count: input.updates.len(),
@@ -3983,8 +4413,15 @@ impl MechRuntime {
     result
   }
 
-  fn execute_persistent_sends(&mut self, context: &RuntimeContext) -> MResult<()> {
+  fn execute_persistent_sends(&mut self, context: &RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
     for send in self.persistent_sends.clone() {
+      let should_send = match send.schedule {
+        RuntimePersistentSendSchedule::EveryAcceptedTurn => true,
+        RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
+          outcome.turn.before_commit.executed_nodes.contains(&barrier_node_id) || outcome.turn.after_commit.executed_nodes.contains(&barrier_node_id)
+        }).unwrap_or(false),
+      };
+      if !should_send { continue; }
       let value = resolve_runtime_value(send.value.borrow().clone());
       self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
     }

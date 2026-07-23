@@ -912,6 +912,47 @@ ys := { x | (x, @env/MECH_GENERATOR_PATTERN_TEST) <- [("keep", "secret") ("drop"
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn mech_run_matrix_generator_context_pattern_is_literal_filter() {
+  let root = temp_root("matrix-generator-pattern-literal");
+  let source = root.join("matrix_generator_pattern_literal.mec");
+
+  std::fs::write(
+    &source,
+    r#"+> @env := cli/env
++> @out := cli/stdout
+
+ys := [ x | (x, @env/MECH_MATRIX_GENERATOR_PATTERN_TEST) <- [("keep", "secret") ("drop", "other")] ]
+@out/line <- ys
+"done"
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg(&source)
+    .current_dir(&root)
+    .env("MECH_MATRIX_GENERATOR_PATTERN_TEST", "secret")
+    .output()
+    .unwrap();
+
+  let combined = combined_output(&output);
+  assert!(
+    output.status.success(),
+    "matrix generator context-pattern program failed:\n{combined}"
+  );
+  assert!(
+    combined.contains("keep"),
+    "matrix generator context pattern should retain matching tuple:\n{combined}"
+  );
+  assert!(
+    !combined.contains("drop"),
+    "matrix generator context pattern should reject nonmatching tuple:\n{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn mech_run_undeclared_context_read_is_preflighted_before_send() {
   let root = temp_root("undeclared-context-read");
   let source = root.join("undeclared_context_read.mec");

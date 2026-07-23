@@ -231,8 +231,25 @@ pub trait MechFunction: MechFunctionImpl {}
 #[cfg(not(feature = "compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuardFunctionSafety {
+  /// Compilation constructs only the static graph (including kind and shape
+  /// selection) without executing function behavior or reading live contents;
+  /// reactive solving is deferred to the guard pulse.
+  PureStatic,
+  /// Compilation may execute work or lacks an explicit purity contract.
+  Unsupported,
+}
+
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
+
+  /// Whether this compiler can be elaborated into a static activation-guard
+  /// graph without executing eager or effectful work. Native compilers are
+  /// rejected by default and must opt in explicitly.
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    GuardFunctionSafety::Unsupported
+  }
 }
 
 
@@ -247,6 +264,10 @@ impl StaticNativeFunctionCompiler {
 impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     self.inner.compile(arguments)
+  }
+
+  fn guard_safety(&self) -> GuardFunctionSafety {
+    self.inner.guard_safety()
   }
 }
 
@@ -409,6 +430,52 @@ impl MechFunctionCompiler for UserFunction {
 
 pub type ReactiveNodeId = usize;
 
+/// Read-only registration information for a patterned activation.
+///
+/// This belongs to the plan, rather than to a turn, so consumers can inspect
+/// the statically registered dispatch graph without relying on transient
+/// scheduler state.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationRegistration {
+  pub scope_pulse_node: ReactiveNodeId,
+  pub selector_node: ReactiveNodeId,
+  pub arms: Vec<PatternActivationArmRegistration>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationArmRegistration {
+  pub matcher_node: ReactiveNodeId,
+  /// The structural-only finalizer for an unguarded arm, or the unmatched
+  /// finalization path for a guarded arm.
+  pub finalizer_node: ReactiveNodeId,
+  pub guard: Option<PatternActivationGuardRegistration>,
+  pub gate_node: ReactiveNodeId,
+  pub pulse_cell: ReactiveCellId,
+  /// Half-open range of plan nodes registered for this arm's body.
+  pub body_node_start: usize,
+  pub body_node_end: usize,
+  pub captures: Vec<PatternActivationCaptureRegistration>,
+}
+
+/// Static graph information for one guarded patterned-activation arm.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationGuardRegistration {
+  pub match_gate_node: ReactiveNodeId,
+  pub guard_finalizer_node: ReactiveNodeId,
+  /// Half-open range containing the ordinary guard-expression graph followed
+  /// by its guard finalizer.
+  pub guard_node_start: usize,
+  pub guard_node_end: usize,
+}
+
+/// Stable storage made available to a single patterned activation arm.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PatternActivationCaptureRegistration {
+  pub id: u64,
+  pub kind: ValueKind,
+  pub cell: ReactiveCellId,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReactiveDependencyKind {
   Reactive,
@@ -466,6 +533,12 @@ pub struct ReactiveTurnOutcome {
   pub after_commit: ReactivePlanSolveOutcome,
 }
 
+#[derive(Clone, Debug)]
+pub struct ActivationRegistrationScope {
+  pub trigger_cells: Vec<ReactiveCellId>,
+  pub local_combinational_cells: Vec<ReactiveCellId>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReactiveDependency {
   pub cell: ReactiveCellId,
@@ -485,6 +558,8 @@ pub struct ReactivePlan {
   pub nodes: Vec<ReactivePlanNode>,
   pub reactive_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
   pub sampled_consumers: HashMap<ReactiveCellId, Vec<ReactiveNodeId>>,
+  pattern_activation_registrations: Vec<PatternActivationRegistration>,
+  activation_sampled_cells: Vec<Vec<ReactiveCellId>>,
 }
 
 #[derive(Debug, Clone)]
@@ -582,12 +657,120 @@ impl MechErrorKind for ReactiveDependencyKindConflictError {
   }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReactivePlanCheckpoint {
+  node_len: usize,
+  pattern_activation_registration_len: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PlanCheckpoint {
+  reactive: ReactivePlanCheckpoint,
+  activation_registration_depth: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReactivePlanRollbackInvariantError {
+  pub checkpoint_nodes: usize,
+  pub current_nodes: usize,
+  pub checkpoint_registrations: usize,
+  pub current_registrations: usize,
+}
+
+impl MechErrorKind for ReactivePlanRollbackInvariantError {
+  fn name(&self) -> &str { "ReactivePlanRollbackInvariant" }
+  fn message(&self) -> String {
+    format!("Cannot roll the reactive plan back from {} nodes and {} patterned registrations to {} nodes and {} patterned registrations.", self.current_nodes, self.current_registrations, self.checkpoint_nodes, self.checkpoint_registrations)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ActivationRegistrationRollbackInvariantError {
+  pub checkpoint_depth: usize,
+  pub current_depth: usize,
+}
+
+impl MechErrorKind for ActivationRegistrationRollbackInvariantError {
+  fn name(&self) -> &str {
+    "ActivationRegistrationRollbackInvariant"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Cannot roll the activation registration stack back from depth {} to future depth {}.",
+      self.current_depth,
+      self.checkpoint_depth,
+    )
+  }
+}
+
 impl ReactivePlan {
+  fn rebuild_consumer_indexes(&mut self) {
+    self.reactive_consumers.clear();
+    self.sampled_consumers.clear();
+
+    for node in &self.nodes {
+      for dependency in &node.inputs {
+        let consumers = match dependency.kind {
+          ReactiveDependencyKind::Reactive => &mut self.reactive_consumers,
+          ReactiveDependencyKind::Sampled => &mut self.sampled_consumers,
+        };
+
+        let consumers = consumers.entry(dependency.cell).or_default();
+
+        if !consumers.contains(&node.id) {
+          consumers.push(node.id);
+        }
+      }
+    }
+  }
+
+  fn validate_rollback(&self, checkpoint: ReactivePlanCheckpoint) -> MResult<()> {
+    if checkpoint.node_len > self.nodes.len()
+      || checkpoint.pattern_activation_registration_len > self.pattern_activation_registrations.len()
+    {
+      return Err(MechError::new(
+        ReactivePlanRollbackInvariantError {
+          checkpoint_nodes: checkpoint.node_len,
+          current_nodes: self.nodes.len(),
+          checkpoint_registrations: checkpoint.pattern_activation_registration_len,
+          current_registrations: self.pattern_activation_registrations.len(),
+        },
+        None,
+      ));
+    }
+
+    Ok(())
+  }
+
+  fn apply_rollback(&mut self, checkpoint: ReactivePlanCheckpoint) {
+    self.nodes.truncate(checkpoint.node_len);
+    self
+      .pattern_activation_registrations
+      .truncate(checkpoint.pattern_activation_registration_len);
+    self.rebuild_consumer_indexes();
+  }
+
+  pub fn checkpoint(&self) -> ReactivePlanCheckpoint {
+    ReactivePlanCheckpoint {
+      node_len: self.nodes.len(),
+      pattern_activation_registration_len: self.pattern_activation_registrations.len(),
+    }
+  }
+
+  pub fn rollback(&mut self, checkpoint: ReactivePlanCheckpoint) -> MResult<()> {
+    self.validate_rollback(checkpoint)?;
+    self.apply_rollback(checkpoint);
+    Ok(())
+  }
+
   pub fn new() -> Self {
     Self {
       nodes: Vec::new(),
       reactive_consumers: HashMap::new(),
       sampled_consumers: HashMap::new(),
+      pattern_activation_registrations: Vec::new(),
+      activation_sampled_cells: Vec::new(),
     }
   }
 
@@ -603,6 +786,8 @@ impl ReactivePlan {
     self.nodes.clear();
     self.reactive_consumers.clear();
     self.sampled_consumers.clear();
+    self.pattern_activation_registrations.clear();
+    self.activation_sampled_cells.clear();
   }
 
   pub fn iter(&self) -> impl Iterator<Item = &Box<dyn MechFunction>> {
@@ -643,6 +828,15 @@ impl ReactivePlan {
     &mut self,
     function: Box<dyn MechFunction>,
     arguments: &[Value],
+  ) -> MResult<ReactiveNodeId> {
+    self.register_with_activation(function, arguments, None)
+  }
+
+  pub fn register_with_activation(
+    &mut self,
+    function: Box<dyn MechFunction>,
+    arguments: &[Value],
+    activation: Option<&ActivationRegistrationScope>,
   ) -> MResult<ReactiveNodeId> {
     let node_id = self.nodes.len();
     let plan_index = node_id;
@@ -710,13 +904,14 @@ impl ReactivePlan {
       };
 
       for cell in cells {
+        let kind = activation.map_or(*kind, |scope| if scope.trigger_cells.contains(&cell) || scope.local_combinational_cells.contains(&cell) { ReactiveDependencyKind::Reactive } else { ReactiveDependencyKind::Sampled });
         match inputs.iter().find(|dependency| dependency.cell == cell) {
-          Some(dependency) if dependency.kind == *kind => {}
+          Some(dependency) if dependency.kind == kind => {}
           Some(dependency)
             if node_kind == ReactiveNodeKind::Register
               && outputs.contains(&cell)
               && (dependency.kind == ReactiveDependencyKind::Sampled
-                || *kind == ReactiveDependencyKind::Sampled) => {}
+                || kind == ReactiveDependencyKind::Sampled) => {}
           Some(_) => {
             return Err(MechError::new(
               ReactiveDependencyKindConflictError {
@@ -728,9 +923,15 @@ impl ReactivePlan {
           }
           None => inputs.push(ReactiveDependency {
             cell,
-            kind: *kind,
+            kind,
           }),
         }
+      }
+    }
+
+    if let Some(scope) = activation {
+      for cell in &scope.trigger_cells {
+        if !inputs.iter().any(|dependency| dependency.cell == *cell) { inputs.push(ReactiveDependency { cell: *cell, kind: ReactiveDependencyKind::Reactive }); }
       }
     }
 
@@ -767,6 +968,64 @@ impl ReactivePlan {
 
   pub fn node(&self, node_id: ReactiveNodeId) -> Option<&ReactivePlanNode> {
     self.nodes.get(node_id)
+  }
+
+  pub fn pattern_activation_registrations(&self) -> &[PatternActivationRegistration] {
+    &self.pattern_activation_registrations
+  }
+
+  pub fn register_pattern_activation(&mut self, registration: PatternActivationRegistration) {
+    self.pattern_activation_registrations.push(registration);
+  }
+
+  /// Records an input that is read when another reactive cause schedules the
+  /// node. Updating this cell alone must not schedule the node.
+  pub fn add_sampled_dependency(
+    &mut self,
+    node_id: ReactiveNodeId,
+    cell: ReactiveCellId,
+  ) -> bool {
+    let Some(node) = self.nodes.get_mut(node_id) else {
+      return false;
+    };
+    if let Some(existing) = node.inputs.iter().find(|dependency| dependency.cell == cell) {
+      return existing.kind == ReactiveDependencyKind::Sampled
+        || existing.kind == ReactiveDependencyKind::Reactive;
+    }
+    node.inputs.push(ReactiveDependency {
+      cell,
+      kind: ReactiveDependencyKind::Sampled,
+    });
+    let consumers = self.sampled_consumers.entry(cell).or_default();
+    if !consumers.contains(&node_id) {
+      consumers.push(node_id);
+    }
+    true
+  }
+
+  /// Records a cell that schedules this node. This is also used to repair
+  /// legacy combinational expression nodes that were appended directly while
+  /// an activation-registration scope was active.
+  pub fn add_reactive_dependency(
+    &mut self,
+    node_id: ReactiveNodeId,
+    cell: ReactiveCellId,
+  ) -> bool {
+    let Some(node) = self.nodes.get_mut(node_id) else {
+      return false;
+    };
+    if let Some(existing) = node.inputs.iter().find(|dependency| dependency.cell == cell) {
+      return existing.kind == ReactiveDependencyKind::Reactive;
+    }
+    node.inputs.push(ReactiveDependency {
+      cell,
+      kind: ReactiveDependencyKind::Reactive,
+    });
+    let consumers = self.reactive_consumers.entry(cell).or_default();
+    if !consumers.contains(&node_id) {
+      consumers.push(node_id);
+    }
+    true
   }
 
   pub fn reactive_consumers_for(&self, cell: ReactiveCellId) -> &[ReactiveNodeId] {
@@ -936,10 +1195,10 @@ impl core::ops::IndexMut<usize> for ReactivePlan {
   }
 }
 
-pub struct Plan(pub Ref<ReactivePlan>);
+pub struct Plan(pub Ref<ReactivePlan>, pub Ref<Vec<ActivationRegistrationScope>>);
 
 impl Clone for Plan {
-  fn clone(&self) -> Self { Plan(self.0.clone()) }
+  fn clone(&self) -> Self { Plan(self.0.clone(), self.1.clone()) }
 }
 
 impl fmt::Debug for Plan {
@@ -952,8 +1211,55 @@ impl fmt::Debug for Plan {
 }
 
 impl Plan {
+  pub fn checkpoint(&self) -> PlanCheckpoint {
+    PlanCheckpoint {
+      reactive: self.0.borrow().checkpoint(),
+      activation_registration_depth: self.1.borrow().len(),
+    }
+  }
+
+  pub fn rollback(&self, checkpoint: PlanCheckpoint) -> MResult<()> {
+    {
+      let reactive = self.0.borrow();
+      reactive.validate_rollback(checkpoint.reactive)?;
+    }
+
+    {
+      let scopes = self.1.borrow();
+      let current_depth = scopes.len();
+
+      if checkpoint.activation_registration_depth > current_depth {
+        return Err(MechError::new(
+          ActivationRegistrationRollbackInvariantError {
+            checkpoint_depth: checkpoint.activation_registration_depth,
+            current_depth,
+          },
+          None,
+        ));
+      }
+    }
+
+    {
+      let mut reactive = self.0.borrow_mut();
+      reactive.apply_rollback(checkpoint.reactive);
+      reactive
+        .activation_sampled_cells
+        .truncate(checkpoint.activation_registration_depth);
+    }
+    self
+      .1
+      .borrow_mut()
+      .truncate(checkpoint.activation_registration_depth);
+
+    Ok(())
+  }
+
+  pub fn activation_registration_depth(&self) -> usize {
+    self.1.borrow().len()
+  }
+
   pub fn new() -> Self {
-    Self(Ref::new(ReactivePlan::new()))
+    Self(Ref::new(ReactivePlan::new()), Ref::new(Vec::new()))
   }
 
   pub fn borrow(&self) -> std::cell::Ref<'_, ReactivePlan> {
@@ -968,17 +1274,50 @@ impl Plan {
     self.0.borrow_mut().push(function)
   }
 
-  pub fn register_function(
-    &self,
-    function: Box<dyn MechFunction>,
-    arguments: &[Value],
-  ) -> MResult<ReactiveNodeId> {
-    self.0
+  pub fn activation_registration_active(&self) -> bool { !self.1.borrow().is_empty() }
+  pub fn push_activation_registration_scope(&self, trigger_cells: Vec<ReactiveCellId>) {
+    self.push_activation_registration_scope_with_sampled_cells(
+      trigger_cells,
+      Vec::new(),
+    );
+  }
+  pub fn push_activation_registration_scope_with_sampled_cells(&self, trigger_cells: Vec<ReactiveCellId>, sampled_cells: Vec<ReactiveCellId>) {
+    self.1.borrow_mut().push(ActivationRegistrationScope {
+      trigger_cells,
+      local_combinational_cells: Vec::new(),
+    });
+    self
+      .0
       .borrow_mut()
-      .register(
-        function,
-        arguments,
-      )
+      .activation_sampled_cells
+      .push(sampled_cells);
+  }
+  pub fn pop_activation_registration_scope(&self) {
+    self.1.borrow_mut().pop();
+    self.0.borrow_mut().activation_sampled_cells.pop();
+  }
+  pub fn register_function(&self, function: Box<dyn MechFunction>, arguments: &[Value]) -> MResult<ReactiveNodeId> {
+    let scope = self.1.borrow().last().cloned(); let kind = function.reactive_node_kind(); let outputs = function.reactive_output_cell_ids();
+    let sampled_cells = self
+      .0
+      .borrow()
+      .activation_sampled_cells
+      .last()
+      .cloned()
+      .unwrap_or_default();
+    let node = self.0.borrow_mut().register_with_activation(function, arguments, scope.as_ref())?;
+    if scope.is_some() && kind == ReactiveNodeKind::Combinational {
+      if let Some(active) = self.1.borrow_mut().last_mut() {
+        for cell in outputs {
+          if !sampled_cells.contains(&cell)
+            && !active.local_combinational_cells.contains(&cell)
+          {
+            active.local_combinational_cells.push(cell);
+          }
+        }
+      }
+    }
+    Ok(node)
   }
 
   pub fn solve_dirty_cells(
@@ -1003,6 +1342,10 @@ impl Plan {
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {
     self.0.borrow()
+  }
+
+  pub fn pattern_activation_registrations(&self) -> std::cell::Ref<'_, Vec<PatternActivationRegistration>> {
+    std::cell::Ref::map(self.0.borrow(), |plan| &plan.pattern_activation_registrations)
   }
 
   pub fn len(&self) -> usize {
@@ -1080,6 +1423,27 @@ impl PrettyPrint for Plan {
 #[cfg(test)]
 mod reactive_plan_tests {
   use super::*;
+
+  struct PureStaticTestCompiler;
+  struct DefaultTestCompiler;
+
+  impl NativeFunctionCompiler for DefaultTestCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      unreachable!("safety metadata test must not compile the function")
+    }
+  }
+
+  impl NativeFunctionCompiler for PureStaticTestCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      unreachable!("safety metadata test must not compile the function")
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+      GuardFunctionSafety::PureStatic
+    }
+  }
+
+  static PURE_STATIC_TEST_COMPILER: PureStaticTestCompiler = PureStaticTestCompiler;
 
   struct TestFunction {
     name: &'static str,
@@ -1168,6 +1532,20 @@ mod reactive_plan_tests {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
       Ok(0)
     }
+  }
+
+  #[test]
+  fn native_compiler_guard_safety_defaults_to_unsupported() {
+    let compiler = DefaultTestCompiler;
+
+    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::Unsupported);
+  }
+
+  #[test]
+  fn static_native_compiler_preserves_guard_safety_metadata() {
+    let compiler = StaticNativeFunctionCompiler::new(&PURE_STATIC_TEST_COMPILER);
+
+    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::PureStatic);
   }
 
   #[test]
@@ -1644,6 +2022,70 @@ mod reactive_plan_tests {
   }
 
   #[cfg(feature = "f64")]
+  #[test]
+  fn activation_registration_does_not_promote_preexisting_alias_cells() {
+    let trigger = Value::F64(Ref::new(0.0));
+    let sampled = Value::F64(Ref::new(1.0));
+    let local = Value::F64(Ref::new(2.0));
+    let trigger_cell = trigger.reactive_root_cell_ids()[0];
+    let sampled_cell = sampled.reactive_root_cell_ids()[0];
+    let local_cell = local.reactive_root_cell_ids()[0];
+    let plan = Plan::new();
+
+    plan.push_activation_registration_scope_with_sampled_cells(
+      vec![trigger_cell],
+      sampled.reactive_cell_ids(),
+    );
+    plan
+      .register_function(
+        Box::new(TestFunction::with_output("sampled alias", sampled.clone())),
+        &[],
+      )
+      .unwrap();
+    let sampled_consumer = plan
+      .register_function(
+        Box::new(TestFunction::new("sampled consumer")),
+        &[sampled],
+      )
+      .unwrap();
+    plan
+      .register_function(
+        Box::new(TestFunction::with_output("local producer", local.clone())),
+        &[],
+      )
+      .unwrap();
+    let local_consumer = plan
+      .register_function(
+        Box::new(TestFunction::new("local consumer")),
+        &[local],
+      )
+      .unwrap();
+    plan.pop_activation_registration_scope();
+
+    let plan = plan.borrow();
+    assert_eq!(
+      plan.node(sampled_consumer)
+        .unwrap()
+        .inputs
+        .iter()
+        .find(|dependency| dependency.cell == sampled_cell)
+        .unwrap()
+        .kind,
+      ReactiveDependencyKind::Sampled,
+    );
+    assert_eq!(
+      plan.node(local_consumer)
+        .unwrap()
+        .inputs
+        .iter()
+        .find(|dependency| dependency.cell == local_cell)
+        .unwrap()
+        .kind,
+      ReactiveDependencyKind::Reactive,
+    );
+  }
+
+  #[cfg(feature = "f64")]
   struct SchedulerFunction {
     label: &'static str, output: Value, kind: ReactiveNodeKind,
     status: ReactiveSolveStatus, count: Rc<RefCell<usize>>, log: Rc<RefCell<Vec<&'static str>>>, error: bool,
@@ -1704,6 +2146,45 @@ mod reactive_plan_tests {
   fn reactive_dirty_scheduler_stops_on_error() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,ao,ac)=scheduler_node(&mut p,"A",&[d.clone()],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l.clone(),true);let(_,_,bc)=scheduler_node(&mut p,"B",&[ao],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);let e=p.solve_dirty_cells(&d.reactive_root_cell_ids()).unwrap_err();assert!(e.kind_message().contains("A"));assert_eq!(*ac.borrow(),1);assert_eq!(*bc.borrow(),0); }
   #[cfg(feature = "f64")] #[test]
   fn reactive_dirty_scheduler_empty_dirty_set_is_noop() { let mut p=ReactivePlan::new();let l=Rc::new(RefCell::new(vec![]));let d=scheduler_source();let(_,_,c)=scheduler_node(&mut p,"A",&[d],ReactiveNodeKind::Combinational,ReactiveSolveStatus::Changed,l,false);assert_eq!(p.solve_dirty_cells(&[]).unwrap(),ReactivePlanSolveOutcome::default());assert_eq!(*c.borrow(),0); }
+  #[test]
+  fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
+    let reactive_input = Value::Index(Ref::new(1));
+    let sampled_input = Value::Index(Ref::new(2));
+    let reactive_cell = reactive_input.reactive_root_cell_ids()[0];
+    let sampled_cell = sampled_input.reactive_root_cell_ids()[0];
+    let mut plan = ReactivePlan::new();
+    let base = plan.register(Box::new(TestFunction::new("base")), &[reactive_input]).unwrap();
+    let checkpoint = plan.checkpoint();
+    let tail = plan.register(Box::new(TestFunction::new("tail").with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled]))), &[sampled_input]).unwrap();
+    plan.rollback(checkpoint).unwrap();
+    assert_eq!(plan.len(), 1);
+    assert_eq!(plan.nodes[0].id, base);
+    assert_eq!(plan.nodes[0].plan_index, 0);
+    assert_eq!(plan.nodes[0].inputs, vec![ReactiveDependency { cell: reactive_cell, kind: ReactiveDependencyKind::Reactive }]);
+    assert_eq!(plan.reactive_consumers_for(reactive_cell), &[base]);
+    assert!(plan.sampled_consumers_for(sampled_cell).is_empty());
+    assert!(plan.reactive_consumers.values().all(|nodes| !nodes.contains(&tail)));
+    assert!(plan.sampled_consumers.values().all(|nodes| !nodes.contains(&tail)));
+  }
+  #[test]
+  fn reactive_plan_rollback_truncates_pattern_registrations() {
+    let mut plan = ReactivePlan::new(); let checkpoint = plan.checkpoint(); plan.register_pattern_activation(PatternActivationRegistration { scope_pulse_node: 0, selector_node: 0, arms: Vec::new() }); assert_eq!(plan.pattern_activation_registrations().len(), 1); plan.rollback(checkpoint).unwrap(); assert!(plan.pattern_activation_registrations().is_empty());
+  }
+  #[test]
+  fn plan_rollback_restores_activation_registration_depth() {
+    let plan = Plan::new(); let checkpoint = plan.checkpoint(); plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]); plan.push_activation_registration_scope(vec![ReactiveCellId::new(2)]); assert_eq!(plan.activation_registration_depth(), 2); plan.rollback(checkpoint).unwrap(); assert_eq!(plan.activation_registration_depth(), 0);
+  }
+  #[test]
+  fn plan_rollback_invalid_checkpoint_is_atomic() {
+    let plan = Plan::new(); plan.add_function(Box::new(TestFunction::new("retained"))); plan.push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
+    let nodes_before = plan.len(); let reactive_before = plan.borrow().reactive_consumers.clone(); let sampled_before = plan.borrow().sampled_consumers.clone(); let registrations_before = plan.pattern_activation_registrations().clone(); let depth_before = plan.activation_registration_depth();
+    let error = plan.rollback(PlanCheckpoint { reactive: ReactivePlanCheckpoint { node_len: nodes_before + 1, pattern_activation_registration_len: registrations_before.len() }, activation_registration_depth: depth_before }).unwrap_err(); assert_eq!(error.kind_name(), "ReactivePlanRollbackInvariant");
+    assert_eq!(plan.len(), nodes_before); assert_eq!(plan.borrow().reactive_consumers, reactive_before); assert_eq!(plan.borrow().sampled_consumers, sampled_before); assert_eq!(*plan.pattern_activation_registrations(), registrations_before); assert_eq!(plan.activation_registration_depth(), depth_before);
+    let valid_reactive_checkpoint = { let reactive_plan = plan.borrow(); reactive_plan.checkpoint() };
+    let invalid_scope_checkpoint = PlanCheckpoint { reactive: valid_reactive_checkpoint, activation_registration_depth: depth_before + 1 };
+    let error = plan.rollback(invalid_scope_checkpoint).unwrap_err(); assert_eq!(error.kind_name(), "ActivationRegistrationRollbackInvariant");
+    assert_eq!(plan.len(), nodes_before); assert_eq!(plan.borrow().reactive_consumers, reactive_before); assert_eq!(plan.borrow().sampled_consumers, sampled_before); assert_eq!(*plan.pattern_activation_registrations(), registrations_before); assert_eq!(plan.activation_registration_depth(), depth_before);
+  }
 }
 
 
@@ -1782,6 +2263,9 @@ mod reactive_turn_tests {
   }
   #[test] fn reactive_turn_reuses_existing_plan() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let sink=Ref::new(1.);reg(&mut p,input.clone(),sink.clone(),false);comb(&mut p,sink.clone(),Ref::new(2.),false);let len=p.len();let ids=p.nodes.iter().map(|n|n.id).collect::<Vec<_>>();let outputs=p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>();let mut s=ReactiveTurnState::default();for value in [10.,20.] {*input.borrow_mut()=value;p.advance_reactive_turn(&mut s,&input.to_value().reactive_root_cell_ids()).unwrap();assert_eq!(p.len(),len);assert_eq!(p.nodes.iter().map(|n|n.id).collect::<Vec<_>>(),ids);assert_eq!(p.nodes.iter().map(|n|n.outputs.clone()).collect::<Vec<_>>(),outputs);} }
   #[test] fn reactive_turn_pre_commit_failure_preserves_carried_registers() { let mut p=ReactivePlan::new();let input=Ref::new(1.);let(carried,solve,stage,commit)=reg(&mut p,Ref::new(2.),Ref::new(3.),false);comb(&mut p,input.clone(),Ref::new(0.),true);let mut state=ReactiveTurnState{pending_register_nodes:vec![carried]};let error=p.advance_reactive_turn(&mut state,&input.to_value().reactive_root_cell_ids()).unwrap_err();assert!(error.kind_message().contains("solve failure"));assert_eq!((*solve.borrow(),*stage.borrow(),*commit.borrow()),(0,0,0));assert_eq!(state.pending_register_nodes,vec![carried]); }
+
+
+
 }
 
 // Function Registry

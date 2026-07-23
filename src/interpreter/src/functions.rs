@@ -183,7 +183,7 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      new_fxn.solve();                   // run the function once to initialise its output
+      if !plan.activation_registration_active() { new_fxn.solve(); }
       let result = new_fxn.out();
       trace_println!(
         p,
@@ -207,7 +207,7 @@ pub fn execute_initialized_indexed_compiler_with_registration_arguments(
   registration_arguments: Vec<Value>,
 ) -> MResult<Value> {
   let function = compiler.compile(&compile_arguments)?;
-  function.solve_result()?;
+  if !plan.activation_registration_active() { function.solve_result()?; }
   let output = function.out();
   plan.register_function(function, &registration_arguments)?;
   Ok(output)
@@ -603,7 +603,7 @@ fn coerce_function_output_kind(
 struct FunctionScope {
   state: Ref<ProgramState>,
   previous_symbols: SymbolTableRef,
-  previous_plan: Plan,
+  previous_plan: Option<Plan>,
   previous_environment: Option<SymbolTableRef>,
 }
 
@@ -617,7 +617,11 @@ impl FunctionScope {
     local_symbols.dictionary = state_brrw.dictionary.clone();
     let local_symbols = Ref::new(local_symbols);
     let previous_symbols = std::mem::replace(&mut state_brrw.symbol_table, local_symbols);
-    let previous_plan = std::mem::replace(&mut state_brrw.plan, Plan::new());
+    let previous_plan = if *p.persistent_user_function_plan_depth.borrow() > 0 {
+      None
+    } else {
+      Some(std::mem::replace(&mut state_brrw.plan, Plan::new()))
+    };
     let previous_environment = state_brrw.environment.take();
     drop(state_brrw);
 
@@ -635,8 +639,30 @@ impl Drop for FunctionScope {
   fn drop(&mut self) {
     let mut state_brrw = self.state.borrow_mut();
     state_brrw.symbol_table = self.previous_symbols.clone();
-    state_brrw.plan = self.previous_plan.clone();
+    if let Some(previous_plan) = &self.previous_plan {
+      state_brrw.plan = previous_plan.clone();
+    }
     state_brrw.environment = self.previous_environment.clone();
+  }
+}
+
+pub(crate) struct PersistentUserFunctionPlanScope {
+  depth: Ref<usize>,
+}
+
+impl PersistentUserFunctionPlanScope {
+  pub(crate) fn enter(interpreter: &Interpreter) -> Self {
+    let depth = interpreter.persistent_user_function_plan_depth.clone();
+    *depth.borrow_mut() += 1;
+    Self { depth }
+  }
+}
+
+impl Drop for PersistentUserFunctionPlanScope {
+  fn drop(&mut self) {
+    let mut depth = self.depth.borrow_mut();
+    debug_assert!(*depth > 0);
+    *depth -= 1;
   }
 }
 

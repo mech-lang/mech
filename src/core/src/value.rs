@@ -1062,6 +1062,250 @@ pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
   ids
 }
 impl Value {
+  /// Recursively snapshots this value into storage that is detached from the
+  /// source's reactive cells.
+  ///
+  /// Mutable references are unwrapped, while typed values retain their kind
+  /// annotation. Container metadata is preserved and nested values are
+  /// detached recursively.
+  pub fn deep_snapshot(&self) -> Value {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(value) => Value::U8(Ref::new(*value.borrow())),
+      #[cfg(feature = "u16")]
+      Value::U16(value) => Value::U16(Ref::new(*value.borrow())),
+      #[cfg(feature = "u32")]
+      Value::U32(value) => Value::U32(Ref::new(*value.borrow())),
+      #[cfg(feature = "u64")]
+      Value::U64(value) => Value::U64(Ref::new(*value.borrow())),
+      #[cfg(feature = "u128")]
+      Value::U128(value) => Value::U128(Ref::new(*value.borrow())),
+      #[cfg(feature = "i8")]
+      Value::I8(value) => Value::I8(Ref::new(*value.borrow())),
+      #[cfg(feature = "i16")]
+      Value::I16(value) => Value::I16(Ref::new(*value.borrow())),
+      #[cfg(feature = "i32")]
+      Value::I32(value) => Value::I32(Ref::new(*value.borrow())),
+      #[cfg(feature = "i64")]
+      Value::I64(value) => Value::I64(Ref::new(*value.borrow())),
+      #[cfg(feature = "i128")]
+      Value::I128(value) => Value::I128(Ref::new(*value.borrow())),
+      #[cfg(feature = "f32")]
+      Value::F32(value) => Value::F32(Ref::new(*value.borrow())),
+      #[cfg(feature = "f64")]
+      Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
+      #[cfg(feature = "complex")]
+      Value::C64(value) => Value::C64(Ref::new(value.borrow().clone())),
+      #[cfg(feature = "rational")]
+      Value::R64(value) => Value::R64(Ref::new(value.borrow().clone())),
+      #[cfg(any(feature = "string", feature = "variable_define"))]
+      Value::String(value) => Value::String(Ref::new(value.borrow().clone())),
+      #[cfg(any(feature = "bool", feature = "variable_define"))]
+      Value::Bool(value) => Value::Bool(Ref::new(*value.borrow())),
+      #[cfg(feature = "atom")]
+      Value::Atom(value) => Value::Atom(Ref::new(value.borrow().clone())),
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(value) => Value::MatrixIndex(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(value) => Value::MatrixBool(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(value) => Value::MatrixU8(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      Value::MatrixU16(value) => Value::MatrixU16(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(value) => Value::MatrixU32(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(value) => Value::MatrixU64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(value) => Value::MatrixU128(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(value) => Value::MatrixI8(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(value) => Value::MatrixI16(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(value) => Value::MatrixI32(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(value) => Value::MatrixI64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(value) => Value::MatrixI128(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      Value::MatrixF32(value) => Value::MatrixF32(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(value) => Value::MatrixF64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      Value::MatrixString(value) => Value::MatrixString(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "rational"))]
+      Value::MatrixR64(value) => Value::MatrixR64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(all(feature = "matrix", feature = "complex"))]
+      Value::MatrixC64(value) => Value::MatrixC64(Matrix::from_vec(
+        value.as_vec(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(value) => Value::MatrixValue(Matrix::from_vec(
+        value
+          .as_vec()
+          .iter()
+          .map(Value::deep_snapshot)
+          .collect(),
+        value.rows(),
+        value.cols(),
+      )),
+      #[cfg(feature = "set")]
+      Value::Set(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.set = snapshot
+          .set
+          .iter()
+          .map(Value::deep_snapshot)
+          .collect();
+        Value::Set(Ref::new(snapshot))
+      }
+      #[cfg(feature = "map")]
+      Value::Map(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.map = snapshot
+          .map
+          .iter()
+          .map(|(key, value)| (key.deep_snapshot(), value.deep_snapshot()))
+          .collect();
+        Value::Map(Ref::new(snapshot))
+      }
+      #[cfg(feature = "record")]
+      Value::Record(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.data = snapshot
+          .data
+          .iter()
+          .map(|(id, value)| (*id, value.deep_snapshot()))
+          .collect();
+        Value::Record(Ref::new(snapshot))
+      }
+      #[cfg(feature = "table")]
+      Value::Table(value) => {
+        let mut snapshot = value.borrow().clone();
+        snapshot.data = snapshot
+          .data
+          .iter()
+          .map(|(id, (kind, values))| {
+            let values = Matrix::from_vec(
+              values
+                .as_vec()
+                .iter()
+                .map(Value::deep_snapshot)
+                .collect(),
+              values.rows(),
+              values.cols(),
+            );
+            (*id, (kind.clone(), values))
+          })
+          .collect();
+        Value::Table(Ref::new(snapshot))
+      }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(value) => Value::Tuple(Ref::new(
+        MechTuple::from_vec(
+          value
+            .borrow()
+            .elements
+            .iter()
+            .map(|value| value.deep_snapshot())
+            .collect(),
+        ),
+      )),
+      #[cfg(feature = "enum")]
+      Value::Enum(value) => {
+        let value = value.borrow();
+        Value::Enum(Ref::new(MechEnum {
+          id: value.id,
+          variants: value
+            .variants
+            .iter()
+            .map(|(id, payload)| {
+              (*id, payload.as_ref().map(Value::deep_snapshot))
+            })
+            .collect(),
+          names: value.names.clone(),
+        }))
+      }
+      Value::Id(value) => Value::Id(*value),
+      Value::Index(value) => Value::Index(Ref::new(*value.borrow())),
+      Value::MutableReference(value) => value.borrow().deep_snapshot(),
+      Value::Typed(value, kind) => {
+        Value::Typed(Box::new(value.deep_snapshot()), kind.clone())
+      }
+      Value::Kind(kind) => Value::Kind(kind.clone()),
+      Value::IndexAll => Value::IndexAll,
+      Value::EmptyKind(kind) => Value::EmptyKind(kind.clone()),
+      Value::Empty => Value::Empty,
+    }
+  }
+
   #[cfg(feature = "matrix")]
   fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {
     let mut base_kind: Option<ValueKind> = None;
@@ -1254,6 +1498,8 @@ impl Value {
       Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
       #[cfg(feature = "table")]
       Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
+      #[cfg(feature = "tuple")]
+      Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),
       x => panic!("Unsupported type for as_unchecked: {:?}.", x),
     }
   }
@@ -3154,6 +3400,39 @@ mod reactive_cell_tests {
     let record = Ref::new(MechRecord { cols: 1, kinds: vec![ValueKind::Tuple(vec![ValueKind::F64, ValueKind::F64])], data, field_names: HashMap::new() });
 
     assert_eq!(Value::Record(record.clone()).reactive_cell_ids(), cell_ids(&[record.id(), tuple.id(), a.id(), b.id()]));
+  }
+
+  #[cfg(all(feature = "record", feature = "tuple", feature = "f64"))]
+  #[test]
+  fn deep_snapshot_detaches_nested_record_and_tuple_cells() {
+    let live = Ref::new(1.0);
+    let value = Value::Record(Ref::new(MechRecord::new(vec![(
+      "position",
+      Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+        Value::F64(live.clone()),
+        Value::F64(Ref::new(2.0)),
+      ]))),
+    )])));
+
+    let snapshot = value.deep_snapshot();
+    *live.borrow_mut() = 9.0;
+
+    let Value::Record(snapshot) = snapshot else {
+      panic!("expected record snapshot");
+    };
+    let position = {
+      let snapshot = snapshot.borrow();
+      let Value::Tuple(position) = snapshot.data.get(&hash_str("position")).unwrap() else {
+        panic!("expected tuple field");
+      };
+      position.clone()
+    };
+    let position = position.borrow();
+    let Value::F64(x) = position.elements[0].as_ref() else {
+      panic!("expected scalar tuple element");
+    };
+    assert_eq!(*x.borrow(), 1.0);
+    assert_ne!(x.as_ptr(), live.as_ptr());
   }
 
   #[cfg(all(feature = "map", feature = "set", feature = "f64"))]

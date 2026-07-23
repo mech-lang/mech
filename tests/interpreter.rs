@@ -118,7 +118,7 @@ test_interpreter!(
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_scalar_some,
-  "x<u64?> := 4u64; x? | x > 3u64 => x | * => 0u64.",
+  "x<u64?> := 4u64; x? | value, value > 3u64 => value | * => 0u64.",
   Value::U64(Ref::new(4))
 );
 #[cfg(feature = "u64")]
@@ -353,6 +353,20 @@ test_interpreter!(
   Value::U64(Ref::new(3))
 );
 
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_structural_failure_skips_guard,
+  "pair := (1u64, 2u64)\nresult := pair?\n  | (x, 0u64), missing-capture > 0u64 => x\n  | * => 9u64.\nresult + 0u64",
+  Value::U64(Ref::new(9))
+);
+
+#[cfg(all(feature = "u64", feature = "f64"))]
+test_interpreter!(
+  interpret_match_fractional_f64_literal_does_not_equal_u64,
+  "value := 1u64\nresult := value?\n  | 1.5 => 99u64\n  | * => 7u64.\nresult + 0u64",
+  Value::U64(Ref::new(7))
+);
+
 test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) => x | * => 0u64.; y + 0u64", Value::U64(Ref::new(9)));
 #[test]
 fn interpret_tagged_union_match_requires_exhaustive_arms() {
@@ -377,10 +391,82 @@ test_interpreter!(
   "add-one(x<f64>) => <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
   Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
 );
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_function_multi_argument_wildcard_arm_matches,
+  "multi-default(left<u64>, right<u64>) => <u64>\n  | * => 9u64.\n\nmulti-default(1u64, 2u64)",
+  Value::U64(Ref::new(9))
+);
 test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x …] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x … y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_fsm_pattern_binding_does_not_replace_input,
+  "#RestoreInput(input<u64>) => <u64>\n  ├ :Start(value<u64>)\n  └ :Done(value<u64>).\n\n#RestoreInput(input<u64>) -> :Start(7u64)\n  :Start(input) -> :Done(0u64)\n  :Done(*) => input.\n\n#RestoreInput(42u64)",
+  Value::U64(Ref::new(42))
+);
 test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a tail])\n    └ * -> :Done(0u64)\n  :Pass([x …]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_recursive_rest_across_function_fsm_match_and_comprehension,
+  r#"
+probe(xs<[u64]>) => <u64>
+  | [head | [second, ..., last]] => head + second + last
+  | * => 0u64.
+
+#Probe(xs<[u64]>) => <u64>
+  ├ :Scan(xs<[u64]>)
+  └ :Done(out<u64>).
+
+#Probe(xs) -> :Scan(xs)
+  :Scan([head | [second, ..., last]]) -> :Done(head + second + last)
+  :Scan(*) -> :Done(0u64)
+  :Done(out) => out.
+
+value := [1u64 2u64 3u64 4u64]
+function-result := probe(value)
+fsm-result := #Probe(value)
+match-result := value?
+  | [head | [second, ..., last]] => head + second + last
+  | * => 0u64.
+comprehension-result := [head + second + last | [head | [second, ..., last]] <- {value}]
+function-result + fsm-result + match-result + comprehension-result[1]
+"#,
+  Value::U64(Ref::new(28))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_repeated_binding_and_first_arm_across_dispatch_contexts,
+  r#"
+probe(xs<[u64]>) => <u64>
+  | [x, x] => x
+  | [x, ...] => 99u64
+  | * => 0u64.
+
+#Probe(xs<[u64]>) => <u64>
+  ├ :Scan(xs<[u64]>)
+  └ :Done(out<u64>).
+
+#Probe(xs) -> :Scan(xs)
+  :Scan([x, x]) -> :Done(x)
+  :Scan([x, ...]) -> :Done(99u64)
+  :Scan(*) -> :Done(0u64)
+  :Done(out) => out.
+
+equal := [3u64 3u64]
+unequal := [3u64 4u64]
+function-result := probe(equal)
+fsm-result := #Probe(equal)
+match-equal := equal? | [x, x] => x | [x, ...] => 99u64 | * => 0u64.
+match-unequal := unequal? | [x, x] => x | [x, ...] => 99u64 | * => 0u64.
+generated := [x | [x, x] <- {equal, unequal}]
+function-result + fsm-result + match-equal + match-unequal + generated[1]
+"#,
+  Value::U64(Ref::new(111))
+);
 test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)\n    └ *     -> :Pass([b tail], [a acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(arr<[u64]>) => <[u64]>
   ├ :Start(arr<[u64]>)
@@ -1609,6 +1695,65 @@ test_interpreter!(interpret_set_comprehension, r#"{ x * x | x <- {1,2,3,4}, y :=
 test_interpreter!(interpret_set_comprehension_variable, r#"qq := {1,2,3,4}; { x * x | x <- qq, y := 2, (x % 2) != 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0))]))));
 test_interpreter!(interpret_set_comprehension_tuple, r#"qq := {(1,2),(3,4),(5,6),(7,8)}; { x * x | (x, *) <- qq }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(25.0)), Value::F64(Ref::new(49.0))]))));
 test_interpreter!(interpret_set_comprehension_fof, r#"pairs:= {(1,2), (1,3), (2,8), (3,5), (3,9)}; user := 1; {fof | ( u, f ) <- pairs, ( f, fof ) <- pairs, u ⩵ user}"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(5.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(8.0))]))));
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  pattern_conformance_comprehension_repeated_binding,
+  r#"pairs := {(1u64, 1u64), (1u64, 2u64), (3u64, 3u64)}; {x | (x, x) <- pairs}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(1)), Value::U64(Ref::new(3))])))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  pattern_conformance_comprehension_typed_and_expression_values,
+  r#"pairs := {(1u64, 10u64), (2u64, 20u64)}; expected := 1u64; {x | (expected + 0u64, x) <- pairs}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(10))])))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  pattern_conformance_comprehension_nested_tuple,
+  r#"values := {((1u64, 2u64), 3u64), ((4u64, 5u64), 6u64)}; {a + b + c | ((a, b), c) <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(6)), Value::U64(Ref::new(15))])))
+);
+
+#[cfg(all(feature = "u64", feature = "atom"))]
+test_interpreter!(
+  pattern_conformance_comprehension_atom_tuple,
+  r#"events := {(:ready, 7u64), (:ready, 9u64)}; {x | :ready(x) <- events}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(7)), Value::U64(Ref::new(9))])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_exact_array,
+  r#"values := {[1u64 2u64], [3u64 4u64]}; {a + b | [a, b] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(3)), Value::U64(Ref::new(7))])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_prefix_suffix_spread,
+  r#"values := {[1u64 2u64 3u64 4u64], [5u64 6u64 7u64 8u64]}; {head + last | [head, ..., last] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(5)), Value::U64(Ref::new(13))])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_bound_rest,
+  r#"values := {[1u64 2u64 3u64], [4u64 5u64 6u64]}; {tail | [head | tail] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![
+    Value::MatrixU64(Matrix::from_vec(vec![2, 3], 1, 2)),
+    Value::MatrixU64(Matrix::from_vec(vec![5, 6], 1, 2)),
+  ])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_recursive_rest_pattern,
+  r#"values := {[1u64 2u64 3u64 4u64], [5u64 6u64 7u64 8u64]}; {head + second + last | [head | [second, ..., last]] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(7)), Value::U64(Ref::new(19))])))
+);
 
 test_interpreter!(interpret_matrix_comprehension, r#"[ x * x | x <- [1 2 3 4], y := 2, (x % 2) == 0 ]"#, Value::MatrixF64(Matrix::from_vec(vec![4.0, 16.0], 1, 2)));
 test_interpreter!(interpret_matrix_comprehension_variable, r#"qq := [1 2 3 4]; [ x * x | x <- qq, y := 2, (x % 2) != 0 ]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0, 9.0], 1, 2)));
