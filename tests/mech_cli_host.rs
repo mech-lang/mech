@@ -108,6 +108,36 @@ fn mech_run_subcommand_loads_cli_host_provider() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn mech_run_file_resolves_relative_source_import() {
+  let root = temp_root("relative-source-import");
+  std::fs::write(
+    root.join("dep.mec"),
+    "message := \"relative-source-import-ok\"\n<+ message\n",
+  )
+  .unwrap();
+  std::fs::write(
+    root.join("main.mec"),
+    r#"+> ./dep.mec
++> @out := cli/stdout
+
+@out/line <- dep/message
+"#,
+  )
+  .unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--time")
+    .arg("main.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "relative-source-import-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn mech_run_uses_config_run_paths() {
   let root = temp_root("config-run");
   write_cli_host_source(&root);

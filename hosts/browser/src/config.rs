@@ -52,7 +52,7 @@ impl BrowserRuntimeInjectionConfig {
     let mut hosts: Vec<HostInstanceConfig> = document
       .hosts
       .iter()
-      .filter(|host| host.provider == "browser")
+      .filter(|host| browser_runtime_supports_provider(&host.provider))
       .cloned()
       .collect();
     if !hosts.iter().any(|host| host.name == "browser") {
@@ -438,33 +438,45 @@ fn injected_host_context_operations(
   host: &HostInstanceConfig,
   context_name: &str,
 ) -> MResult<Vec<String>> {
-  match host.provider.as_str() {
-    "browser" => {
-      if context_name != "dom" {
-        return Err(invalid_error(
-          "run.grants.target",
-          format!(
-            "browser host instance `{}` does not expose context `{}`; supported browser contexts: dom",
-            host.name,
-            context_name,
-          ),
-        ));
-      }
-      Ok(vec!["read".to_string(), "write".to_string()])
+  let (supported_context, operations): (&str, &[&str]) = match host.provider.as_str() {
+    "browser" => ("dom", &["read", "write"]),
+    "time" => ("clock", &["read"]),
+    "timer" => ("tick", &["read"]),
+    "console" => ("output", &["write"]),
+    "scene" => ("frame", &["write"]),
+    other => {
+      return Err(invalid_error(
+        "hosts.provider",
+        format!(
+          "cannot validate injected host provider `{other}` because no injection validator is registered"
+        ),
+      ));
     }
-
-    other => Err(invalid_error(
-      "hosts.provider",
+  };
+  if context_name != supported_context {
+    return Err(invalid_error(
+      "run.grants.target",
       format!(
-        "cannot validate injected host provider `{other}` because no injection validator is registered"
+        "{} host instance `{}` does not expose context `{}`; supported {} contexts: {}",
+        host.provider,
+        host.name,
+        context_name,
+        host.provider,
+        supported_context,
       ),
-    )),
+    ));
   }
+  Ok(operations.iter().map(|operation| (*operation).to_string()).collect())
+}
+
+fn browser_runtime_supports_provider(provider: &str) -> bool {
+  matches!(provider, "browser" | "time" | "timer" | "console" | "scene")
 }
 
 fn validate_injected_host_settings(host: &HostInstanceConfig) -> MResult<()> {
   match host.provider.as_str() {
     "browser" => browser_config_from_settings(&host.settings).map(|_| ()),
+    // Browser-capable provider factories validate their own opaque settings.
     _ => Ok(()),
   }
 }
@@ -1187,6 +1199,55 @@ config := {
     assert!(injected.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
     assert_eq!(injected.run_grants.len(), 1);
     assert_eq!(injected.run_grants[0].target, "ui/dom");
+  }
+
+  #[test]
+  fn browser_runtime_injection_preserves_standard_browser_capable_hosts_and_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "clock" provider: "time" settings: { interval-ms: 1000 } }
+    { name: "timer" provider: "timer" settings: { frequency-hz: 60 } }
+    { name: "console" provider: "console" settings: {} }
+    { name: "view" provider: "scene" settings: { selector: "#clock" renderer: "svg" } }
+    { name: "arm" provider: "native-robot" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "clock/clock" operations: ["read"] paths: ["second"] }
+      { target: "timer/tick" operations: ["read"] paths: ["tick"] }
+      { target: "console/output" operations: ["write"] paths: ["line"] }
+      { target: "view/frame" operations: ["write"] paths: ["replace"] }
+      { target: "arm/commands" operations: ["write"] paths: ["move"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+
+    let injected =
+      BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &RuntimeConfig::default()).unwrap();
+
+    for (name, provider) in [
+      ("browser", "browser"),
+      ("clock", "time"),
+      ("timer", "timer"),
+      ("console", "console"),
+      ("view", "scene"),
+    ] {
+      assert!(
+        injected.hosts.iter().any(|host| host.name == name && host.provider == provider),
+        "missing browser-capable host `{name}` provider `{provider}`",
+      );
+    }
+    assert!(!injected.hosts.iter().any(|host| host.name == "arm"));
+    assert_eq!(
+      injected.run_grants.iter().map(|grant| grant.target.as_str()).collect::<Vec<_>>(),
+      vec!["clock/clock", "timer/tick", "console/output", "view/frame"],
+    );
   }
 
   #[test]

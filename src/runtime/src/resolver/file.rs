@@ -70,10 +70,12 @@ impl FileSourceResolver {
     &self,
     request: &SourceRequest,
   ) -> MResult<Option<PathBuf>> {
-    let specifier = Path::new(&request.specifier);
+    let Some((specifier, use_referrer)) = normalize_file_specifier(&request.specifier) else {
+      return Ok(None);
+    };
 
     if specifier.is_absolute() {
-      for candidate in absolute_path_candidates(specifier) {
+      for candidate in absolute_path_candidates(&specifier) {
         if candidate.is_file() {
           return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
         }
@@ -81,26 +83,31 @@ impl FileSourceResolver {
       return Ok(None);
     }
 
-    if let Some(referrer) = &request.referrer {
-      let referrer_path = Path::new(referrer);
+    if use_referrer {
+      let referrer_path = request
+        .referrer
+        .as_deref()
+        .and_then(normalize_file_referrer);
 
-      let parent = if referrer_path.is_dir() {
-        Some(referrer_path)
-      } else {
-        referrer_path.parent()
-      };
+      if let Some(referrer_path) = referrer_path {
+        let parent = if referrer_path.is_dir() {
+          Some(referrer_path.as_path())
+        } else {
+          referrer_path.parent()
+        };
 
-      if let Some(parent) = parent {
-        for candidate in path_candidates(parent, specifier) {
-          if candidate.is_file() {
-            return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+        if let Some(parent) = parent {
+          for candidate in path_candidates(parent, &specifier) {
+            if candidate.is_file() {
+              return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+            }
           }
         }
       }
     }
 
     for root in &self.roots {
-      for candidate in path_candidates(root, specifier) {
+      for candidate in path_candidates(root, &specifier) {
         if candidate.is_file() {
           return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
         }
@@ -115,6 +122,66 @@ impl FileSourceResolver {
     if request.referrer.is_some() { self.check(FS_IMPORT, &path)?; }
     Ok(Some(path))
   }
+}
+
+fn normalize_file_specifier(specifier: &str) -> Option<(PathBuf, bool)> {
+  if let Some(path) = specifier.strip_prefix("fs://") {
+    return normalize_fs_path(path).map(|path| (path, false));
+  }
+  if let Some(path) = specifier.strip_prefix("file://") {
+    return absolute_file_uri_path(path).map(|path| (path, false));
+  }
+  if specifier.contains("://") {
+    return None;
+  }
+  Some((PathBuf::from(specifier), true))
+}
+
+fn normalize_file_referrer(referrer: &str) -> Option<PathBuf> {
+  if let Some(path) = referrer.strip_prefix("file://") {
+    return absolute_file_uri_path(path);
+  }
+  if referrer.contains("://") {
+    return None;
+  }
+  Some(PathBuf::from(referrer))
+}
+
+fn normalize_fs_path(path: &str) -> Option<PathBuf> {
+  let path = Path::new(path);
+  if path.as_os_str().is_empty() || path.is_absolute() {
+    return None;
+  }
+  if path.components().any(|component| {
+    matches!(
+      component,
+      std::path::Component::ParentDir
+        | std::path::Component::RootDir
+        | std::path::Component::Prefix(_)
+    )
+  }) {
+    return None;
+  }
+  Some(path.to_path_buf())
+}
+
+#[cfg(not(windows))]
+fn absolute_file_uri_path(path: &str) -> Option<PathBuf> {
+  let path = PathBuf::from(path);
+  path.is_absolute().then_some(path)
+}
+
+#[cfg(windows)]
+fn absolute_file_uri_path(path: &str) -> Option<PathBuf> {
+  if let Some(path) = path.strip_prefix("//?/") {
+    return Some(PathBuf::from(format!(
+      r"\\?\{}",
+      path.replace('/', r"\"),
+    )));
+  }
+  let path = path.strip_prefix('/')?;
+  let path = PathBuf::from(path.replace('/', r"\"));
+  path.is_absolute().then_some(path)
 }
 
 impl SourceResolver for FileSourceResolver {
@@ -511,6 +578,56 @@ mod tests {
     assert_eq!(resolved.name, "math.mec");
   }
 
+  #[test]
+  fn resolves_fs_uri_from_configured_root() {
+    let root = temp_root("resolve-fs-uri");
+    std::fs::create_dir_all(root.join("lib")).unwrap();
+    std::fs::write(root.join("lib/geometry.mec"), "x := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+
+    let resolved = resolver
+      .resolve(&SourceRequest::new("fs://lib/geometry.mec"))
+      .unwrap()
+      .unwrap();
+
+    assert_eq!(resolved.name, "geometry.mec");
+    assert!(
+      resolver
+        .resolve(&SourceRequest::new("fs://../outside.mec"))
+        .unwrap()
+        .is_none(),
+    );
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn resolves_file_uri_and_relative_import_from_file_uri_referrer() {
+    let root = temp_root("resolve-file-uri");
+    std::fs::create_dir_all(&root).unwrap();
+    let main = root.join("main.mec");
+    let dependency = root.join("dependency.mec");
+    std::fs::write(&main, "+> ./dependency.mec").unwrap();
+    std::fs::write(&dependency, "x := 1").unwrap();
+    let main = main.canonicalize().unwrap();
+    let resolver = FileSourceResolver::empty();
+
+    assert!(
+      resolver
+        .resolve(&SourceRequest::new(file_uri(&main)))
+        .unwrap()
+        .is_some(),
+    );
+    let resolved = resolver
+      .resolve(
+        &SourceRequest::new("./dependency.mec")
+          .with_referrer(file_uri(&main)),
+      )
+      .unwrap()
+      .unwrap();
+
+    assert_eq!(resolved.name, "dependency.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
 
   #[test]
   fn resolves_absolute_file_directory_index_extensionless_and_missing() {

@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use clap::{Arg, ArgAction, Command};
 use mech_core::*;
-use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
+use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT, ModuleBuildOptions, SourceKind};
 
 use crate::cli::capabilities;
 use crate::cli::config;
@@ -210,9 +210,56 @@ fn print_run_runtime_events(events: &[RuntimeEvent]) {
     }
 }
 
+fn run_file_target_with_events(
+    runtime: &mut mech_runtime::MechRuntime,
+    target: &Path,
+    fs_kernel: &mech_runtime::SharedCapabilityKernel,
+    profile_enabled: bool,
+) -> MResult<(Value, Vec<RuntimeEvent>)> {
+    if !matches!(SourceKind::from_path(target), SourceKind::Mech) {
+        let source = mech_runtime::read_runtime_source_file_with_capabilities(
+            target,
+            Some(fs_kernel),
+            Some(MECH_TOOL_SUBJECT),
+        )?;
+        return run_cli_source_code_with_events(runtime, &source);
+    }
+
+    let specifier = target.canonicalize()?.to_string_lossy().into_owned();
+    let options = ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        "mech-current",
+        "native",
+        &[],
+        &[],
+    );
+    let version = runtime
+        .resolve_and_store_module_source(specifier, options)?
+        .ok_or_else(|| {
+            MechError::new(
+                CliRunError {
+                    operation: "resolve_run_target".to_string(),
+                    reason: format!(
+                        "runtime module resolver could not resolve `{}`",
+                        target.display(),
+                    ),
+                },
+                None,
+            )
+        })?;
+    let started = Instant::now();
+    let mut context = runtime.runtime_context()?;
+    let value = runtime.run_module_in_program_with_context(&mut context, version)?;
+    if profile_enabled {
+        println!("Cycle Time: {:.3}ms", started.elapsed().as_secs_f64() * 1_000.0);
+    }
+    Ok((value, context.events))
+}
+
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
+    let profile_enabled = plan.runtime_config.diagnostics.profile_enabled;
     #[cfg(feature = "repl")]
     let repl_runtime_config = Some(plan.runtime_config.clone());
     let mut runtime = new_cli_runtime(
@@ -243,12 +290,13 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                 let mut last = Value::Empty;
                 for p in &plan.run_paths {
                     for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
-                        let src = mech_runtime::read_runtime_source_file_with_capabilities(
-                            &target,
-                            Some(&fs_kernel),
-                            Some(MECH_TOOL_SUBJECT),
-                        )?;
-                        let (value, events) = run_cli_source_code_with_events(&mut runtime, &src)?;
+                        let (value, events) =
+                            run_file_target_with_events(
+                                &mut runtime,
+                                &target,
+                                &fs_kernel,
+                                profile_enabled,
+                            )?;
                         print_run_runtime_events(&events);
                         last = value;
                     }

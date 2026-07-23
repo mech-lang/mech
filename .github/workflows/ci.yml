@@ -260,6 +260,9 @@ jobs:
       - name: Remove browser release intermediates
         run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
 
+      - name: Build served browser smoke runner
+        run: cargo build --bin mech --no-default-features --features serve
+
       - name: Run headless Chrome WASM tests
         run: |
           wasm-pack test \
@@ -270,6 +273,9 @@ jobs:
             --features browser_project \
             -- \
             --nocapture
+
+      - name: Smoke test served analog clock in headless Chrome
+        run: bash scripts/smoke-analog-clock-browser.sh
 
       - name: Remove generated browser package
         if: always()

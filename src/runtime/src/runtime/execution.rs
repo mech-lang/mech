@@ -3370,6 +3370,159 @@ impl MechRuntime {
     self.run_module_scope_with_context(context, version, SourceScope::Program)
   }
 
+  /// Executes a resolved module graph while appending the root source to the
+  /// runtime's active program. Dependency modules remain isolated.
+  pub fn run_module_in_program_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    let live_state_before = self.live_state_snapshot();
+    let result = (|| {
+      let scope = SourceScope::Program;
+      let mut preflight_seen = HashSet::new();
+      self.preflight_module_graph_for_scope(
+        context,
+        version,
+        &scope,
+        &mut preflight_seen,
+      )?;
+      context.charge_step()?;
+
+      let Some(record) = self.store.get_module_version(version)? else {
+        return Err(MechError::new(
+          RuntimeRecordNotFoundError {
+            record_type: "module_version",
+            id: version.to_string(),
+          },
+          None,
+        ));
+      };
+      validate_module_import_edges(&record)?;
+      let Some(source) = record.source.clone() else {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "run_module_in_program",
+            reason: "module version has no source".to_string(),
+          },
+          None,
+        ));
+      };
+
+      let context_registry = context_registry_for_scope(&record, &scope)?;
+      let mut seen = HashSet::from([(version, scope.clone())]);
+      let mut module_instances = HashMap::new();
+      for edge in &record.import_edges {
+        if edge.scope != scope {
+          continue;
+        }
+        self.execute_module_isolated_for_scope(
+          context,
+          edge.dependency,
+          &SourceScope::Program,
+          &mut seen,
+          &mut module_instances,
+        )?;
+      }
+
+      let mut environment = self.build_import_environment_for_scope(
+        context,
+        &record,
+        &scope,
+        &module_instances,
+      )?;
+      environment.extend(self.build_address_environment_for_scope(
+        context,
+        version,
+        &record,
+        &scope,
+        &context_registry,
+        &mut seen,
+        &mut module_instances,
+      )?);
+
+      {
+        let symbols = self.program.interpreter().symbols();
+        let symbols = symbols.borrow();
+        if let Some(name) = environment
+          .keys()
+          .find(|name| symbols.contains(hash_str(name)))
+        {
+          return Err(MechError::new(
+            RuntimeInvalidOperationError {
+              operation: "run_module_in_program",
+              reason: format!(
+                "imported binding `{name}` is already defined in the active program"
+              ),
+            },
+            None,
+          ));
+        }
+      }
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleExecutionStarted {
+          module_version: version,
+        },
+      )?;
+
+      let scoped_source = module_source_for_scope(&source, &scope)?;
+      let program_config = self.program.config.clone();
+      let mut program = std::mem::replace(
+        &mut self.program,
+        MechProgram::new(program_config),
+      );
+      {
+        let symbols = program.interpreter_mut().symbols();
+        let mut symbols = symbols.borrow_mut();
+        for (name, value_ref) in environment {
+          let id = hash_str(&name);
+          symbols.symbols.insert(id, value_ref);
+          symbols.dictionary.borrow_mut().insert(id, name);
+        }
+      }
+
+      let source_result = self.run_module_source_on_program(
+        context,
+        &mut program,
+        &scoped_source,
+        &scope,
+        crate::runtime::LiveRegistrationMode::RetainedRoot,
+      );
+      self.program = program;
+
+      let value = match source_result {
+        Ok(value) => value,
+        Err(error) => {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ModuleExecutionFailed {
+              module_version: version,
+              message: format!("{error:?}"),
+            },
+          )?;
+          return Err(error);
+        }
+      };
+
+      self.enforce_turn_duration(turn_started)?;
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleExecutionCompleted {
+          module_version: version,
+        },
+      )?;
+      Ok(value)
+    })();
+
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
+    result
+  }
+
   pub fn run_module_scope_with_context(
     &mut self,
     context: &mut RuntimeContext,
@@ -3581,7 +3734,13 @@ impl MechRuntime {
       RuntimeEventKind::ModuleExecutionStarted { module_version: version },
     )?;
     let scoped_source = module_source_for_scope(&source, scope)?;
-    let result = self.run_module_source_on_program(context, &mut module_program, &scoped_source, scope);
+    let result = self.run_module_source_on_program(
+      context,
+      &mut module_program,
+      &scoped_source,
+      scope,
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+    );
     let result = match result {
       Ok(value) => value,
       Err(error) => {
@@ -3631,6 +3790,7 @@ impl MechRuntime {
     program: &mut MechProgram,
     source: &MechSourceCode,
     scope: &SourceScope,
+    registration_mode: crate::runtime::LiveRegistrationMode,
   ) -> MResult<Value> {
     self.register_runtime_program_host_functions(context, program)?;
 
@@ -3652,7 +3812,7 @@ impl MechRuntime {
     // exports, address environment, and ModuleInstance identity.
     let execution_scope = execution_scope_for_extracted_module_source(scope);
 
-    let result = self.with_live_registration_mode(crate::runtime::LiveRegistrationMode::IsolatedSnapshot, |runtime| {
+    let result = self.with_live_registration_mode(registration_mode, |runtime| {
       match source {
       MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
         Ok(tree) => {
@@ -3686,7 +3846,13 @@ impl MechRuntime {
       MechSourceCode::Program(sources) => {
         let mut result = Ok(Value::Empty);
         for source in sources {
-          result = runtime.run_module_source_on_program(context, program, source, scope);
+          result = runtime.run_module_source_on_program(
+            context,
+            program,
+            source,
+            scope,
+            registration_mode,
+          );
           if result.is_err() {
             break;
           }
