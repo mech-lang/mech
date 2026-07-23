@@ -1225,33 +1225,6 @@ fn validate_patterned_qualifier(qualifier: &ComprehensionQualifier) -> MResult<(
     }
 }
 
-fn elaborate_patterned_expression_values(
-    arm: &PreflightActivationArm,
-    interpreter: &Interpreter,
-) -> MResult<Vec<Value>> {
-    let symbols = interpreter.symbols();
-    let symbol_snapshot = symbols.borrow().snapshot();
-    {
-        let mut symbols = symbols.borrow_mut();
-        for capture in &arm.captures {
-            symbols.mutable_variables.remove(&capture.id);
-            symbols.insert(capture.id, capture.proposed.clone(), false);
-            symbols
-                .dictionary
-                .borrow_mut()
-                .insert(capture.id, capture.name.clone());
-        }
-    }
-    let result = arm
-        .pattern
-        .expressions()
-        .iter()
-        .map(|expression| crate::expression(expression, None, interpreter))
-        .collect::<MResult<Vec<_>>>();
-    symbols.borrow_mut().restore(symbol_snapshot);
-    result
-}
-
 fn elaborate_patterned_arm_body(
     arm: &ActivationArm,
     captures: &[ActivationPatternCapture],
@@ -1322,7 +1295,13 @@ fn elaborate_patterned_activation_inner(
         crate::functions::PersistentUserFunctionPlanScope::enter(i);
     let pattern_expression_values = compiled
         .iter()
-        .map(|arm| elaborate_patterned_expression_values(arm, i))
+        .map(|arm| {
+            arm.pattern
+                .expressions()
+                .iter()
+                .map(|expression| crate::expression(expression, None, i))
+                .collect::<MResult<Vec<_>>>()
+        })
         .collect::<MResult<Vec<_>>>()?;
     drop(_persistent_user_function_plan);
     let mut initially_matched = Vec::with_capacity(compiled.len());
@@ -2499,6 +2478,46 @@ event := (1.0, 1.0)
         set_tuple_event(&i, vec![Value::F64(Ref::new(2.)), Value::F64(Ref::new(3.))]);
         let o = i.advance_reactive_turn(&[trigger]).unwrap();
         assert_dispatch_turn(&i, &topology, &o, 1, -1.);
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn activation_pattern_expression_uses_outer_symbol_when_capture_name_collides() {
+        let mut i = interpret(
+            r#"
+x := 9.0
+event := [1.0 10.0]
+
+~> event
+  | [x, x + 1.0] => {
+      selected := x
+    }
+  | * => {
+      selected := -1.0
+    }
+"#,
+        );
+        let trigger = root_cell(&i, "event");
+        let outer_cell = root_cell(&i, "x");
+        let activation = registration(&i);
+        let proposed_cell = proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0];
+        let committed_cell = activation.arms[0].captures[0].cell;
+        assert_ne!(proposed_cell, committed_cell);
+        assert_ne!(outer_cell, proposed_cell);
+        assert_ne!(outer_cell, committed_cell);
+        let topology = plan_snapshot(&i);
+
+        let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
+
+        assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
+        assert_eq!(symbol(&i, "x"), Value::F64(Ref::new(9.0)));
+        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+        assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+        assert_eq!(
+            proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0],
+            proposed_cell
+        );
+        assert_eq!(registration(&i).arms[0].captures[0].cell, committed_cell);
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
