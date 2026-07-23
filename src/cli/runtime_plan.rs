@@ -64,7 +64,8 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
             explicit_run_command,
         )?
     };
-    let missing_run_options = effective_options.is_none();
+    let missing_run_options =
+        effective_options.is_none() && !matches!(input_mode, RunInputMode::InlineSource(_));
     let run_paths = effective_options
         .map(|options| options.paths)
         .unwrap_or_default();
@@ -176,5 +177,28 @@ mod tests {
 
         drop(guard);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn inline_source_is_not_marked_as_missing_run_options() {
+        let filesystem_access =
+            build_filesystem_runtime_access(&FilesystemCapabilityArgs::default(), None).unwrap();
+        let plan = build_run_execution_plan(PreparedRunOptions {
+            input_mode: RunInputMode::InlineSource("x := 1".to_string()),
+            explicit_run_command: true,
+            debug: false,
+            trace: false,
+            time: false,
+            repl: false,
+            rounds_per_step: None,
+            loaded_config: None,
+            config_event: ConfigLoadEvent::NotFound,
+            cli_capability_selection: CliHostCapabilitySelection::default(),
+            filesystem_access,
+        })
+        .unwrap();
+
+        assert!(!plan.missing_run_options);
+        assert!(plan.run_paths.is_empty());
     }
 }
