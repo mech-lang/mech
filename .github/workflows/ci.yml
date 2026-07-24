@@ -120,6 +120,18 @@ jobs:
           cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
           cargo check -p mech-host-cli --no-default-features
 
+      - name: Run REPL Ctrl-C regression
+        run: |
+          cargo test \
+            --no-default-features \
+            --features repl \
+            --test mech_repl_ctrlc
+
+          cargo test \
+            --no-default-features \
+            --features "repl mika" \
+            --test mech_repl_ctrlc
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
