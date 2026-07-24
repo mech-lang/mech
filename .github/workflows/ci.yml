@@ -271,6 +271,16 @@ jobs:
             -- \
             --nocapture
 
+      - name: Smoke test served analog clock in Chrome
+        run: |
+          cargo build \
+            --bin mech \
+            --no-default-features \
+            --features serve
+
+          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+            bash scripts/smoke-served-analog-clock-browser.sh
+
       - name: Remove generated browser package
         if: always()
         run: rm -rf src/wasm/pkg

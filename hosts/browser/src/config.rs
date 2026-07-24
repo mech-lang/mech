@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::BTreeMap;
 
+use crate::browser_host_manifest;
 use mech_core::{
   BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
   BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
@@ -11,9 +12,54 @@ use mech_core::{
 };
 
 use mech_runtime::{
-  parse_host_context_target, ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,
-  MechConfigDocument, RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
+  materialize_host_manifest, parse_host_context_target, validate_host_manifest, ConfigValue,
+  DiagnosticsConfig, HostInstanceConfig, HostManifestConfig, LogLevel, MechConfigDocument,
+  RunResourceGrantConfig, RuntimeConfig, RuntimeLimits,
 };
+
+pub type BrowserProviderSettingsValidator = fn(&ConfigValue) -> MResult<()>;
+
+#[derive(Clone)]
+pub struct BrowserRuntimeProviderSpec {
+  pub manifest: HostManifestConfig,
+  pub validate_settings: BrowserProviderSettingsValidator,
+}
+
+#[derive(Clone, Default)]
+pub struct BrowserRuntimeProviderProfile {
+  providers: BTreeMap<String, BrowserRuntimeProviderSpec>,
+}
+
+impl BrowserRuntimeProviderProfile {
+  pub fn new() -> Self {
+    Self::default()
+  }
+
+  pub fn register(
+    &mut self,
+    manifest: HostManifestConfig,
+    validate_settings: BrowserProviderSettingsValidator,
+  ) -> MResult<()> {
+    validate_host_manifest(&manifest)?;
+    let provider = manifest.provider.clone();
+    if self.providers.contains_key(&provider) {
+      return Err(invalid_error(
+        "hosts.provider",
+        format!("browser runtime provider `{provider}` is already registered"),
+      ));
+    }
+    self.providers.insert(provider, BrowserRuntimeProviderSpec { manifest, validate_settings });
+    Ok(())
+  }
+
+  pub fn provider(&self, provider: &str) -> Option<&BrowserRuntimeProviderSpec> {
+    self.providers.get(provider)
+  }
+
+  pub fn supports(&self, provider: &str) -> bool {
+    self.providers.contains_key(provider)
+  }
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
@@ -37,6 +83,16 @@ impl BrowserRuntimeInjectionConfig {
     document: &MechConfigDocument,
     runtime_config: &RuntimeConfig,
   ) -> MResult<Self> {
+    let mut profile = BrowserRuntimeProviderProfile::new();
+    profile.register(browser_host_manifest()?, validate_browser_settings)?;
+    Self::from_document_and_runtime_with_profile(document, runtime_config, &profile)
+  }
+
+  pub fn from_document_and_runtime_with_profile(
+    document: &MechConfigDocument,
+    runtime_config: &RuntimeConfig,
+    profile: &BrowserRuntimeProviderProfile,
+  ) -> MResult<Self> {
     for host in &document.hosts {
       if host.name == "browser" && host.provider != "browser" {
         return Err(invalid_error(
@@ -49,21 +105,20 @@ impl BrowserRuntimeInjectionConfig {
       }
     }
 
-    let mut hosts: Vec<HostInstanceConfig> = document
-      .hosts
-      .iter()
-      .filter(|host| host.provider == "browser")
-      .cloned()
-      .collect();
-    if !hosts.iter().any(|host| host.name == "browser") {
+    let mut hosts = Vec::new();
+    for host in &document.hosts {
+      let Some(spec) = profile.provider(&host.provider) else {
+        continue;
+      };
+      (spec.validate_settings)(&host.settings)?;
+      hosts.push(host.clone());
+    }
+    if profile.supports("browser") && !hosts.iter().any(|host| host.name == "browser") {
       hosts.push(HostInstanceConfig {
         name: "browser".to_string(),
         provider: "browser".to_string(),
         settings: ConfigValue::Map(Default::default()),
       });
-    }
-    for host in &hosts {
-      validate_injected_host_settings(host)?;
     }
     let injected_hosts_by_name: BTreeMap<String, HostInstanceConfig> =
       hosts.iter().map(|host| (host.name.clone(), host.clone())).collect();
@@ -74,7 +129,8 @@ impl BrowserRuntimeInjectionConfig {
         let Some(host) = injected_hosts_by_name.get(instance) else {
           continue;
         };
-        validate_injected_run_grant(host, grant)?;
+        let spec = profile.provider(&host.provider).expect("retained host provider must be registered");
+        validate_injected_run_grant(host, spec, grant)?;
         run_grants.push(grant.clone());
       }
     }
@@ -399,8 +455,13 @@ fn browser_config_from_browser_hosts<'a>(
   Ok(BrowserHostBrowserConfig { grants, dom_manifest })
 }
 
+fn validate_browser_settings(settings: &ConfigValue) -> MResult<()> {
+  browser_config_from_settings(settings).map(|_| ())
+}
+
 fn validate_injected_run_grant(
   host: &HostInstanceConfig,
+  spec: &BrowserRuntimeProviderSpec,
   grant: &RunResourceGrantConfig,
 ) -> MResult<()> {
   let (instance, context_name) = parse_host_context_target(&grant.target)?;
@@ -416,10 +477,27 @@ fn validate_injected_run_grant(
     ));
   }
 
-  let operations = injected_host_context_operations(host, context_name)?;
+  let interface = materialize_host_manifest(&host.name, &spec.manifest)?;
+  let context = interface.contexts.iter().find(|context| context.name == context_name).ok_or_else(|| {
+    let supported = interface
+      .contexts
+      .iter()
+      .map(|context| context.name.as_str())
+      .collect::<Vec<_>>()
+      .join(", ");
+    invalid_error(
+      "run.grants.target",
+      format!(
+        "host instance `{}` does not expose context `{}`; supported contexts: {}",
+        host.name,
+        context_name,
+        supported,
+      ),
+    )
+  })?;
 
   for operation in &grant.operations {
-    if !operations.iter().any(|allowed| allowed == operation) {
+    if !context.operations.iter().any(|allowed| allowed == operation) {
       return Err(invalid_error(
         "run.grants.operations",
         format!(
@@ -432,41 +510,6 @@ fn validate_injected_run_grant(
   }
 
   Ok(())
-}
-
-fn injected_host_context_operations(
-  host: &HostInstanceConfig,
-  context_name: &str,
-) -> MResult<Vec<String>> {
-  match host.provider.as_str() {
-    "browser" => {
-      if context_name != "dom" {
-        return Err(invalid_error(
-          "run.grants.target",
-          format!(
-            "browser host instance `{}` does not expose context `{}`; supported browser contexts: dom",
-            host.name,
-            context_name,
-          ),
-        ));
-      }
-      Ok(vec!["read".to_string(), "write".to_string()])
-    }
-
-    other => Err(invalid_error(
-      "hosts.provider",
-      format!(
-        "cannot validate injected host provider `{other}` because no injection validator is registered"
-      ),
-    )),
-  }
-}
-
-fn validate_injected_host_settings(host: &HostInstanceConfig) -> MResult<()> {
-  match host.provider.as_str() {
-    "browser" => browser_config_from_settings(&host.settings).map(|_| ()),
-    _ => Ok(()),
-  }
 }
 
 pub fn browser_config_from_settings(settings: &ConfigValue) -> MResult<BrowserHostBrowserConfig> {
@@ -1557,6 +1600,195 @@ config := {
     assert_eq!(injected.run_grants.len(), 1);
     assert_eq!(injected.run_grants[0].target, "browser/dom");
     assert_eq!(injected.hosts.iter().filter(|host| host.name == "browser").count(), 1);
+  }
+
+  fn fake_manifest(provider: &str, context: &str, operations: &[&str]) -> HostManifestConfig {
+    HostManifestConfig {
+      provider: provider.to_string(),
+      contexts: vec![mech_runtime::HostContextManifest {
+        name: context.to_string(),
+        base_uri_template: format!("{provider}://{{instance}}/{context}"),
+        operations: operations.iter().map(|operation| operation.to_string()).collect(),
+      }],
+    }
+  }
+
+  fn validate_map_settings(settings: &ConfigValue) -> MResult<()> {
+    match settings {
+      ConfigValue::Map(_) => Ok(()),
+      _ => invalid("test.settings", "must be a map"),
+    }
+  }
+
+  fn validate_empty_map_settings(settings: &ConfigValue) -> MResult<()> {
+    match settings {
+      ConfigValue::Map(map) if map.is_empty() => Ok(()),
+      _ => invalid("test.settings", "must be an empty map"),
+    }
+  }
+
+  fn browser_only_fake_profile() -> BrowserRuntimeProviderProfile {
+    let mut profile = BrowserRuntimeProviderProfile::new();
+    profile.register(fake_manifest("browser", "dom", &["read", "write"]), validate_map_settings).unwrap();
+    profile
+  }
+
+  fn standard_fake_profile() -> BrowserRuntimeProviderProfile {
+    let mut profile = browser_only_fake_profile();
+    profile.register(fake_manifest("time", "clock", &["read"]), validate_map_settings).unwrap();
+    profile.register(fake_manifest("timer", "tick", &["read"]), validate_map_settings).unwrap();
+    profile.register(fake_manifest("console", "output", &["write"]), validate_map_settings).unwrap();
+    profile.register(fake_manifest("scene", "frame", &["write"]), validate_map_settings).unwrap();
+    profile
+  }
+
+  #[test]
+  fn browser_only_profile_still_filters_non_browser_providers() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "browser" provider: "browser" settings: {} }
+    { name: "clock" provider: "time" settings: { interval-ms: 1000 } }
+  ]
+  run: {
+    grants: [
+      { target: "browser/dom" operations: ["write"] paths: ["output"] }
+      { target: "clock/clock" operations: ["read"] paths: ["second"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+
+    let injected = BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(
+      &document,
+      &RuntimeConfig::default(),
+      &browser_only_fake_profile(),
+    ).unwrap();
+
+    assert_eq!(injected.hosts.len(), 1);
+    assert_eq!(injected.hosts[0].provider, "browser");
+    assert_eq!(injected.run_grants.len(), 1);
+    assert_eq!(injected.run_grants[0].target, "browser/dom");
+  }
+
+  #[test]
+  fn standard_profile_preserves_supported_hosts_aliases_settings_and_grants() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r##"
+config := {
+  hosts: [
+    { name: "browser" provider: "browser" settings: { dom: [] } }
+    { name: "clock" provider: "time" settings: { interval-ms: 1000 } }
+    { name: "ticker" provider: "timer" settings: { frequency-hz: 60 } }
+    { name: "console" provider: "console" settings: {} }
+    { name: "screen" provider: "scene" settings: { selector: "#clock" renderer: "svg" } }
+    { name: "native" provider: "robot" settings: {} }
+  ]
+  run: {
+    grants: [
+      { target: "browser/dom" operations: ["write"] paths: ["output"] }
+      { target: "clock/clock" operations: ["read"] paths: ["second"] }
+      { target: "ticker/tick" operations: ["read"] paths: ["count"] }
+      { target: "console/output" operations: ["write"] paths: ["line"] }
+      { target: "screen/frame" operations: ["write"] paths: ["replace"] }
+      { target: "native/command" operations: ["write"] paths: ["move"] }
+    ]
+  }
+}
+"##,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+
+    let injected = BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(
+      &document,
+      &RuntimeConfig::default(),
+      &standard_fake_profile(),
+    ).unwrap();
+
+    assert_eq!(
+      injected.hosts.iter().map(|host| (host.name.as_str(), host.provider.as_str())).collect::<Vec<_>>(),
+      vec![
+        ("browser", "browser"),
+        ("clock", "time"),
+        ("ticker", "timer"),
+        ("console", "console"),
+        ("screen", "scene"),
+      ],
+    );
+    assert_eq!(injected.hosts[1].settings, document.hosts[1].settings);
+    assert_eq!(injected.hosts[4].settings, document.hosts[4].settings);
+    assert_eq!(injected.run_grants.as_slice(), &document.run.as_ref().unwrap().grants[..5]);
+  }
+
+  #[test]
+  fn profile_rejects_unknown_manifest_context_and_operation() {
+    let profile = standard_fake_profile();
+    for (target, operation) in [("clock/missing", "read"), ("clock/clock", "write")] {
+      let document = parse_config_document(
+        "test.mcfg",
+        &format!(r##"config := {{
+  hosts: [{{ name: "clock" provider: "time" settings: {{}} }}]
+  run: {{ grants: [{{ target: "{target}" operations: ["{operation}"] paths: ["second"] }}] }}
+}}"##),
+        ConfigProfileOptions::default(),
+      ).unwrap();
+      assert!(BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(
+        &document,
+        &RuntimeConfig::default(),
+        &profile,
+      ).is_err());
+    }
+  }
+
+  #[test]
+  fn profile_validates_settings_and_rejects_duplicate_providers() {
+    let mut profile = BrowserRuntimeProviderProfile::new();
+    let manifest = fake_manifest("test", "data", &["read"]);
+    profile.register(manifest.clone(), validate_empty_map_settings).unwrap();
+    let duplicate = profile.register(manifest, validate_empty_map_settings).unwrap_err();
+    assert!(format!("{duplicate:?}").contains("already registered"));
+
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { hosts: [{ name: "test" provider: "test" settings: { unexpected: true } }] }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    let error = BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(
+      &document,
+      &RuntimeConfig::default(),
+      &profile,
+    ).unwrap_err();
+    assert!(format!("{error:?}").contains("empty map"));
+  }
+
+  #[test]
+  fn profile_adds_default_browser_only_when_supported() {
+    let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { hosts: [{ name: "clock" provider: "time" settings: {} }] }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+
+    let with_browser = BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(
+      &document,
+      &RuntimeConfig::default(),
+      &standard_fake_profile(),
+    ).unwrap();
+    assert!(with_browser.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+
+    let mut without_browser_profile = BrowserRuntimeProviderProfile::new();
+    without_browser_profile.register(fake_manifest("time", "clock", &["read"]), validate_map_settings).unwrap();
+    let without_browser = BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(
+      &document,
+      &RuntimeConfig::default(),
+      &without_browser_profile,
+    ).unwrap();
+    assert!(!without_browser.hosts.iter().any(|host| host.name == "browser"));
   }
 
 
