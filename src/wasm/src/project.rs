@@ -26,7 +26,7 @@ use mech_host_time::BrowserTimeHostFactory;
 use mech_host_timer::BrowserTimerHostFactory;
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
-    ModuleBuildOptions, RuntimeBuilder, SourceRequest, parse_config_document,
+    ModuleBuildOptions, RuntimeBuilder, SourceKind, SourceRequest, parse_config_document,
 };
 
 #[cfg(feature = "browser_host_dom")]
@@ -193,6 +193,10 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
         .collect::<Vec<_>>();
     if let Some(serve) = &document.serve {
         for path in &serve.paths {
+            if SourceKind::from_path(path) != SourceKind::Mech {
+                continue;
+            }
+
             let path = path.to_string_lossy().to_string();
             if !paths.contains(&path) {
                 paths.push(path);
@@ -612,16 +616,21 @@ mod tests {
     }
 
     #[test]
-    fn required_paths_adds_deduplicated_serve_sources_after_run_roots() {
+    fn required_paths_omits_directory_serve_paths_after_run_roots() {
         let config = r#"config := {
   hosts: []
-  run: { paths: ["app/main.mec" "other.mec"] grants: [] }
-  serve: { paths: ["app/main.mec" "app/lib.mec" "other.mec" "shared/lib.mec"] }
+  run: {
+    paths: ["app/main.mec" "other.mec"]
+    grants: []
+  }
+  serve: {
+    paths: ["app" "app/main.mec" "app/lib.mec" "shared" "other.mec"]
+  }
 }"#;
 
         assert_eq!(
             required_path_strings(config).unwrap(),
-            vec!["app/main.mec", "other.mec", "app/lib.mec", "shared/lib.mec"]
+            vec!["app/main.mec", "other.mec", "app/lib.mec"]
         );
     }
 
