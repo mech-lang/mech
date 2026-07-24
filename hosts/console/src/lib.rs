@@ -7,7 +7,10 @@ pub mod browser;
 pub mod native;
 
 pub use module::{console_host_manifest, CONSOLE_HOST_MCFG};
-pub use provider::{ConsoleBackend, ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
+pub use provider::{
+  validate_console_settings, ConsoleBackend, ConsoleHostFactory, ConsoleResourceProvider,
+  RecordingConsoleBackend,
+};
 
 #[cfg(feature = "browser")]
 pub use browser::{BrowserConsoleBackend, BrowserConsoleHostFactory};

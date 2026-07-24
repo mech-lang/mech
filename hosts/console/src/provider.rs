@@ -109,6 +109,13 @@ fn value_to_text(value: &Value) -> String {
   }
 }
 
+pub fn validate_console_settings(settings: &ConfigValue) -> MResult<()> {
+  match settings {
+    ConfigValue::Map(map) if map.is_empty() => Ok(()),
+    _ => Err(console_error("console://settings", "console host settings must be an empty map")),
+  }
+}
+
 #[derive(Debug)]
 pub struct ConsoleHostFactory<B: ConsoleBackend + Clone> {
   backend: B,
@@ -125,10 +132,7 @@ impl<B: ConsoleBackend + Clone + 'static> RuntimeHostFactory for ConsoleHostFact
   fn provider_name(&self) -> &str { "console" }
   fn manifest(&self) -> &HostManifestConfig { &self.manifest }
   fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
-    match settings {
-      ConfigValue::Map(map) if map.is_empty() => Ok(()),
-      _ => Err(console_error("console://settings", "console host settings must be an empty map")),
-    }
+    validate_console_settings(settings)
   }
   fn instantiate(&self, instance_name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
     self.validate_settings(instance_name, settings)?;

@@ -705,6 +705,23 @@ mod tests {
         validate_compiled_host_providers_for_hosts(&doc.hosts).unwrap();
     }
 
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn analog_clock_served_authority_is_accepted() {
+        let document = parse_config_document(
+            "examples/analog-clock/mech.mcfg",
+            include_str!("../../../examples/analog-clock/mech.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let authority = authority_config(
+            document.hosts.clone(),
+            document.run.as_ref().unwrap().grants.clone(),
+        );
+
+        validate_served_authority(&document, &authority).unwrap();
+    }
+
 
 
     #[test]

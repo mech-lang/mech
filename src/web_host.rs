@@ -1,7 +1,7 @@
 use std::io::{Error, ErrorKind};
 
 use mech_core::*;
-use mech_host_browser::BrowserRuntimeInjectionConfig;
+use mech_host_browser::{BrowserRuntimeInjectionConfig, BrowserRuntimeProviderProfile};
 use mech_runtime::{MechConfigDocument, RuntimeConfig};
 
 #[cfg(feature = "host_delegation_signing")]
@@ -20,7 +20,33 @@ pub fn web_runtime_injection_config_from_document(
   document: &MechConfigDocument,
   runtime_config: &RuntimeConfig,
 ) -> MResult<BrowserRuntimeInjectionConfig> {
-  mech_host_browser::BrowserRuntimeInjectionConfig::from_document_and_runtime(document, runtime_config)
+  let profile = standard_browser_runtime_provider_profile()?;
+  BrowserRuntimeInjectionConfig::from_document_and_runtime_with_profile(document, runtime_config, &profile)
+}
+
+fn standard_browser_runtime_provider_profile() -> MResult<BrowserRuntimeProviderProfile> {
+  let mut profile = BrowserRuntimeProviderProfile::new();
+  profile.register(
+    mech_host_browser::browser_host_manifest()?,
+    |settings| mech_host_browser::browser_config_from_settings(settings).map(|_| ()),
+  )?;
+  profile.register(
+    mech_host_time::time_host_manifest()?,
+    |settings| mech_host_time::time_settings_from_config(settings).map(|_| ()),
+  )?;
+  profile.register(
+    mech_host_timer::timer_host_manifest()?,
+    |settings| mech_host_timer::timer_settings_from_config(settings).map(|_| ()),
+  )?;
+  profile.register(
+    mech_host_console::console_host_manifest()?,
+    mech_host_console::validate_console_settings,
+  )?;
+  profile.register(
+    mech_host_scene::scene_host_manifest()?,
+    |settings| mech_host_scene::scene_settings_from_config(settings).map(|_| ()),
+  )?;
+  Ok(profile)
 }
 
 #[derive(Clone, Debug)]
@@ -220,7 +246,10 @@ fn json_for_script<T: serde::Serialize>(value: &T) -> MResult<String> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+  use mech_runtime::{
+    parse_config_document, ConfigProfileOptions, ConfigValue, HostInstanceConfig,
+    RunResourceGrantConfig, RuntimeConfig,
+  };
 
   fn empty_runtime_injection_config() -> BrowserRuntimeInjectionConfig {
     BrowserRuntimeInjectionConfig {
@@ -259,6 +288,48 @@ mod tests {
     assert!(script.contains("\"hosts\""));
     assert!(script.contains("\"runGrants\""));
     assert!(!script.contains("\"browser\":"));
+  }
+
+  #[test]
+  fn analog_clock_authority_preserves_browser_runtime_hosts_and_grants() {
+    let mut document = parse_config_document(
+      "examples/analog-clock/mech.mcfg",
+      include_str!("../examples/analog-clock/mech.mcfg"),
+      ConfigProfileOptions::default(),
+    ).unwrap();
+    document.hosts.push(HostInstanceConfig {
+      name: "native".to_string(),
+      provider: "fake-native".to_string(),
+      settings: ConfigValue::Map(Default::default()),
+    });
+    document.run.as_mut().unwrap().grants.push(RunResourceGrantConfig {
+      target: "native/command".to_string(),
+      operations: vec!["write".to_string()],
+      paths: vec!["move".to_string()],
+    });
+
+    let config = web_runtime_injection_config_from_document(&document, &RuntimeConfig::default()).unwrap();
+
+    let clock = config.hosts.iter().find(|host| host.name == "clock" && host.provider == "time").unwrap();
+    assert!(matches!(
+      &clock.settings,
+      ConfigValue::Map(settings) if settings.get("interval-ms") == Some(&ConfigValue::Integer(1000)),
+    ));
+    assert!(config.hosts.iter().any(|host| host.name == "console" && host.provider == "console"));
+    let view = config.hosts.iter().find(|host| host.name == "view" && host.provider == "scene").unwrap();
+    assert!(matches!(
+      &view.settings,
+      ConfigValue::Map(settings)
+        if settings.get("selector") == Some(&ConfigValue::String("#clock".to_string()))
+          && settings.get("renderer") == Some(&ConfigValue::String("svg".to_string())),
+    ));
+    assert!(!config.hosts.iter().any(|host| host.name == "native"));
+
+    assert!(config.run_grants.iter().any(|grant| grant.target == "clock/clock"));
+    assert!(config.run_grants.iter().any(|grant| grant.target == "console/output"));
+    assert!(config.run_grants.iter().any(|grant| grant.target == "view/frame"));
+    assert!(!config.run_grants.iter().any(|grant| grant.target == "native/command"));
+    assert!(browser_runtime_injection_config_script(&config).is_ok());
   }
 
 }
