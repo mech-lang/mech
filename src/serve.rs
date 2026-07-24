@@ -631,10 +631,16 @@ impl MechServer {
       content_encoding: None,
       backing_paths: project.config_path.clone().into_iter().collect(),
     });
-    for source in &project.run_paths {
+    let mut source_entries =
+      Vec::with_capacity(project.source_paths.len());
+    for source in &project.source_paths {
       check_fs_capability(&mut self.authority.kernel().clone(), &self.serve_subject, FS_READ, source)?;
       let relative = source.strip_prefix(&project.root).map_err(|error| Error::new(ErrorKind::InvalidInput, format!("project source is outside root: {}", error)))?;
       let key = url_key(relative).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "invalid project source URL"))?;
+      source_entries.push(serde_json::json!({
+        "specifier": key.clone(),
+        "url": key.clone(),
+      }));
       registry.insert_user_asset(key, ServerAsset {
         bytes: std::fs::read(source)?,
         content_type: content_type_for_path(source.to_string_lossy().as_ref()),
@@ -662,6 +668,27 @@ impl MechServer {
         backing_paths: Vec::new(),
       });
     }
+    let manifest = serde_json::to_vec(&serde_json::json!({
+      "version": 1,
+      "sources": source_entries,
+    }))
+    .map_err(|error| {
+      Error::new(
+        ErrorKind::InvalidData,
+        format!(
+          "failed to serialize project source manifest: {error}"
+        ),
+      )
+    })?;
+    registry.insert_asset(
+      "_mech/project-sources.json",
+      asset(
+        &manifest,
+        "application/json",
+        None,
+        project.source_paths.clone(),
+      ),
+    );
     drop(registry);
     self.workspace_root = Some(project.root);
     println!("{} Project loaded in {:?}.", self.badge(), started.elapsed());
@@ -872,7 +899,7 @@ struct ServedProject {
   root: PathBuf,
   config_path: Option<PathBuf>,
   config_source: String,
-  run_paths: Vec<PathBuf>,
+  source_paths: Vec<PathBuf>,
   index_path: Option<PathBuf>,
 }
 
@@ -906,17 +933,53 @@ fn discover_served_project(paths: &[String]) -> MResult<Option<ServedProject>> {
       }
       run_paths.push(canonical);
     }
+    let source_paths = served_project_source_paths(&root, &run_paths, document.serve.as_ref())?;
     let index_path = root.join("index.html");
-    return Ok(Some(ServedProject { root, config_path: Some(config_path.canonicalize()?), config_source, run_paths, index_path: index_path.exists().then_some(index_path.canonicalize()?) }));
+    return Ok(Some(ServedProject { root, config_path: Some(config_path.canonicalize()?), config_source, source_paths, index_path: index_path.exists().then_some(index_path.canonicalize()?) }));
   }
   if path.is_file() && is_workspace_target_source(&path) {
     let source = path.canonicalize()?;
     let root = source.parent().ok_or_else(|| Error::new(ErrorKind::InvalidInput, "served source has no parent directory"))?.to_path_buf();
     let file_name = source.file_name().and_then(|name| name.to_str()).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "served source file name is not UTF-8"))?.to_string();
     let config_source = format!("config := {{\n  hosts: []\n  run: {{\n    paths: [\"{}\"]\n    grants: []\n  }}\n}}\n", file_name);
-    return Ok(Some(ServedProject { root, config_path: None, config_source, run_paths: vec![source], index_path: None }));
+    return Ok(Some(ServedProject { root, config_path: None, config_source, source_paths: vec![source], index_path: None }));
   }
   Ok(None)
+}
+
+fn served_project_source_paths(
+  root: &Path,
+  run_paths: &[PathBuf],
+  serve: Option<&mech_runtime::ServeHostConfig>,
+) -> MResult<Vec<PathBuf>> {
+  let mut sources = BTreeSet::new();
+  for path in run_paths {
+    sources.insert(path.clone());
+  }
+  for path in serve.into_iter().flat_map(|serve| &serve.paths) {
+    let candidate = root.join(path).canonicalize()?;
+    if !candidate.starts_with(root) {
+      return Err(Error::new(ErrorKind::InvalidInput, format!("serve path `{}` escapes project root", path.display())).into());
+    }
+    if candidate.is_file() {
+      if is_renderable_mech_text_source(&candidate) {
+        sources.insert(candidate);
+      }
+      continue;
+    }
+    for entry in WalkBuilder::new(candidate).build() {
+      let entry = entry.map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?;
+      if !entry.file_type().map(|kind| kind.is_file()).unwrap_or(false) || !is_renderable_mech_text_source(entry.path()) {
+        continue;
+      }
+      let source = entry.path().canonicalize()?;
+      if !source.starts_with(root) {
+        return Err(Error::new(ErrorKind::InvalidInput, format!("serve source `{}` escapes project root", source.display())).into());
+      }
+      sources.insert(source);
+    }
+  }
+  Ok(sources.into_iter().collect())
 }
 
 fn plan_serve_inputs(paths: &[String]) -> MResult<ServeInputPlan> {
@@ -1196,6 +1259,132 @@ mod tests {
     ));
     std::fs::create_dir_all(&root).unwrap();
     root.canonicalize().unwrap()
+  }
+
+  #[test]
+  fn served_project_sources_include_run_roots_and_serve_inventory() {
+    let root = temp_root("source-inventory");
+    std::fs::create_dir_all(root.join("app")).unwrap();
+    std::fs::write(root.join("main.mec"), "main := 1\n").unwrap();
+    std::fs::write(root.join("app/lib.mec"), "lib := 1\n").unwrap();
+    std::fs::write(root.join("app/ignored.txt"), "ignored\n").unwrap();
+    let run_path = root.join("main.mec").canonicalize().unwrap();
+    let serve = mech_runtime::ServeHostConfig {
+      paths: vec![PathBuf::from("app"), PathBuf::from("main.mec")],
+      ..Default::default()
+    };
+
+    assert_eq!(
+      served_project_source_paths(&root, &[run_path.clone()], Some(&serve)).unwrap(),
+      vec![root.join("app/lib.mec").canonicalize().unwrap(), run_path],
+    );
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn served_project_publishes_expanded_source_manifest_after_user_assets() {
+    let root = temp_root("source-manifest");
+    let app = root.join("app");
+    let mech_dir = root.join("_mech");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::create_dir_all(&mech_dir).unwrap();
+
+    let clock_path = app.join("clock.mec");
+    let support_path = app.join("support.mec");
+    std::fs::write(&clock_path, "clock := 1\n").unwrap();
+    std::fs::write(&support_path, "support := 1\n").unwrap();
+    std::fs::write(
+      mech_dir.join("project-sources.json"),
+      r#"{"version":999,"sources":[]}"#,
+    )
+    .unwrap();
+    std::fs::write(root.join("index.html"), "<!doctype html>\n").unwrap();
+    std::fs::write(
+      root.join("mech.mcfg"),
+      r#"config := {
+  hosts: []
+
+  serve: {
+    paths: ["app"]
+  }
+
+  run: {
+    paths: ["app/clock.mec"]
+    grants: []
+  }
+}
+"#,
+    )
+    .unwrap();
+
+    let expected_backing_paths = [
+      clock_path.canonicalize().unwrap(),
+      support_path.canonicalize().unwrap(),
+    ]
+    .into_iter()
+    .collect::<BTreeSet<_>>();
+    let guard = CurrentDirGuard::enter(&root);
+    let project = discover_served_project(&[".".to_string()])
+      .unwrap()
+      .unwrap();
+    let mut server = test_server();
+    server.load_served_project(project).unwrap();
+
+    let registry = server.registry.read().unwrap();
+    assert!(registry.user_assets.contains("_mech/project-sources.json"));
+    let manifest_asset = registry
+      .get_route("/_mech/project-sources.json")
+      .expect("generated project source manifest route should exist");
+    assert_eq!(manifest_asset.content_type, "application/json");
+    assert_ne!(
+      manifest_asset.bytes,
+      br#"{"version":999,"sources":[]}"#.to_vec(),
+    );
+
+    let manifest: serde_json::Value = serde_json::from_slice(&manifest_asset.bytes).unwrap();
+    assert_eq!(manifest.get("version").and_then(serde_json::Value::as_u64), Some(1));
+    let sources = manifest
+      .get("sources")
+      .and_then(serde_json::Value::as_array)
+      .expect("generated project source manifest should contain sources");
+    assert_eq!(sources.len(), 2);
+    let source_pairs = sources
+      .iter()
+      .map(|source| {
+        let specifier = source
+          .get("specifier")
+          .and_then(serde_json::Value::as_str)
+          .expect("manifest source specifier should be a string")
+          .to_string();
+        let url = source
+          .get("url")
+          .and_then(serde_json::Value::as_str)
+          .expect("manifest source URL should be a string")
+          .to_string();
+        (specifier, url)
+      })
+      .collect::<BTreeSet<_>>();
+    assert_eq!(
+      source_pairs,
+      BTreeSet::from([
+        ("app/clock.mec".to_string(), "app/clock.mec".to_string()),
+        ("app/support.mec".to_string(), "app/support.mec".to_string()),
+      ]),
+    );
+    assert!(sources.iter().all(|source| {
+      source.get("specifier").and_then(serde_json::Value::as_str) != Some("app")
+    }));
+    assert!(sources.iter().all(|source| {
+      source.get("url").and_then(serde_json::Value::as_str) != Some("app")
+    }));
+    assert_eq!(
+      manifest_asset.backing_paths.into_iter().collect::<BTreeSet<_>>(),
+      expected_backing_paths,
+    );
+
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   fn snapshot(root: &Path, file: &str) -> RuntimeWorkspaceSnapshot { snapshot_for_sources(root, &[file]) }

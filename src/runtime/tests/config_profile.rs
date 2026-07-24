@@ -11,6 +11,43 @@ fn err_text(source: &str) -> String {
     format!("{} {} {:?}", err.kind_name(), err.kind_message(), err)
 }
 
+fn assert_integer_overflow(source: &str, operation: &str) {
+    let error = parse(source).expect_err("expected config evaluation to overflow");
+    assert_eq!(error.kind_name(), "ConfigProfileViolation");
+    assert!(error.kind_message().contains("integer overflow"));
+    assert!(error.kind_message().contains(operation));
+}
+
+#[test]
+fn config_integer_addition_overflow_is_rejected() {
+    assert_integer_overflow(
+        "x := 9223372036854775807 + 1\nconfig := {:}\n",
+        "addition",
+    );
+}
+
+#[test]
+fn config_integer_subtraction_overflow_is_rejected() {
+    assert_integer_overflow(
+        "x := -9223372036854775807 - 2\nconfig := {:}\n",
+        "subtraction",
+    );
+}
+
+#[test]
+fn config_integer_negation_overflow_is_rejected() {
+    assert_integer_overflow(
+        "x := -(-9223372036854775807 - 1)\nconfig := {:}\n",
+        "negation",
+    );
+}
+
+#[test]
+fn config_integer_boundary_values_succeed() {
+    parse("x := 9223372036854775806 + 1\nconfig := {:}\n").unwrap();
+    parse("x := -9223372036854775807 - 1\nconfig := {:}\n").unwrap();
+}
+
 #[test]
 fn shipped_browser_examples_use_hosts_schema() {
     let resource = parse_config_document(

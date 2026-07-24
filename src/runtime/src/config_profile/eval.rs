@@ -143,7 +143,14 @@ impl ConfigEvaluator {
                 self.sub(lhs, rhs)
             }
             ConfigExpr::Negate(inner) => match self.eval_expr(inner, depth)? {
-                ConfigValue::Integer(value) => Ok(ConfigValue::Integer(-value)),
+                ConfigValue::Integer(value) => value
+                    .checked_neg()
+                    .map(ConfigValue::Integer)
+                    .ok_or_else(|| {
+                        ConfigProfileViolation::error(
+                            "integer overflow in Mech config negation",
+                        )
+                    }),
                 ConfigValue::Float(value) => Ok(ConfigValue::Float(-value)),
                 _ => Err(ConfigProfileViolation::error(
                     "cannot negate non-number in Mech config",
@@ -161,7 +168,13 @@ impl ConfigEvaluator {
     fn add(&mut self, lhs: ConfigValue, rhs: ConfigValue) -> MResult<ConfigValue> {
         match (lhs, rhs) {
             (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => {
-                Ok(ConfigValue::Integer(lhs + rhs))
+                lhs.checked_add(rhs)
+                    .map(ConfigValue::Integer)
+                    .ok_or_else(|| {
+                        ConfigProfileViolation::error(
+                            "integer overflow in Mech config addition",
+                        )
+                    })
             }
             (ConfigValue::Float(lhs), ConfigValue::Float(rhs)) => Ok(ConfigValue::Float(lhs + rhs)),
             (ConfigValue::Integer(lhs), ConfigValue::Float(rhs)) => {
@@ -184,7 +197,13 @@ impl ConfigEvaluator {
     fn sub(&self, lhs: ConfigValue, rhs: ConfigValue) -> MResult<ConfigValue> {
         match (lhs, rhs) {
             (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => {
-                Ok(ConfigValue::Integer(lhs - rhs))
+                lhs.checked_sub(rhs)
+                    .map(ConfigValue::Integer)
+                    .ok_or_else(|| {
+                        ConfigProfileViolation::error(
+                            "integer overflow in Mech config subtraction",
+                        )
+                    })
             }
             (ConfigValue::Float(lhs), ConfigValue::Float(rhs)) => Ok(ConfigValue::Float(lhs - rhs)),
             (ConfigValue::Integer(lhs), ConfigValue::Float(rhs)) => {

@@ -37,10 +37,45 @@ cleanup() {
 }
 trap cleanup EXIT
 
+mkdir -p "$project_dir/app"
+
 cp examples/analog-clock/mech.mcfg "$project_dir/mech.mcfg"
-cp examples/analog-clock/clock.mec "$project_dir/clock.mec"
 cp examples/analog-clock/clock.css "$project_dir/clock.css"
 cp examples/analog-clock/index.html "$project_dir/index.html"
+
+{
+  printf '%s\n\n' \
+    '+> ./support.mec' \
+    'module-support-loaded := support/loaded'
+  cat examples/analog-clock/clock.mec
+} > "$project_dir/app/clock.mec"
+
+cat > "$project_dir/app/support.mec" <<'EOF'
+loaded := true
+<+ loaded
+EOF
+
+python3 - "$project_dir/mech.mcfg" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+config = path.read_text()
+expected = '''  run: {
+    paths: ["clock.mec"]'''
+replacement = '''  serve: {
+    paths: ["app"]
+  }
+
+  run: {
+    paths: ["app/clock.mec"]'''
+matches = config.count(expected)
+if matches != 1:
+    raise SystemExit(
+        f"expected exactly one run-path block prefix in temporary mech.mcfg; found {matches}"
+    )
+path.write_text(config.replace(expected, replacement, 1))
+PY
 
 python3 - "$project_dir/index.html" <<'PY'
 from pathlib import Path
@@ -128,6 +163,57 @@ if ! curl --fail --silent --show-error --output /dev/null "$page_url"; then
   sed -n '1,240p' "$server_log" >&2 || true
   exit 1
 fi
+
+manifest_file="$project_dir/project-sources.json"
+
+curl --fail --silent --show-error \
+  "${page_url}_mech/project-sources.json" \
+  > "$manifest_file"
+
+python3 - "$manifest_file" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+try:
+    manifest = json.loads(path.read_text())
+except json.JSONDecodeError as error:
+    raise SystemExit(f"invalid project source manifest JSON: {error}")
+
+def fail(message):
+    raise SystemExit(f"{message}; parsed manifest: {manifest!r}")
+
+if not isinstance(manifest, dict):
+    fail("project source manifest top-level value is not an object")
+if manifest.get("version") != 1:
+    fail("project source manifest version is not 1")
+
+sources = manifest.get("sources")
+if not isinstance(sources, list):
+    fail("project source manifest sources is not a list")
+if len(sources) != 2:
+    fail("project source manifest does not contain exactly two sources")
+
+pairs = set()
+for source in sources:
+    if not isinstance(source, dict):
+        fail("project source manifest source entry is not an object")
+    specifier = source.get("specifier")
+    url = source.get("url")
+    if not isinstance(specifier, str) or not isinstance(url, str):
+        fail("project source manifest source entry fields are not strings")
+    if specifier == "app" or url == "app":
+        fail("project source manifest contains the directory app")
+    pairs.add((specifier, url))
+
+expected_pairs = {
+    ("app/clock.mec", "app/clock.mec"),
+    ("app/support.mec", "app/support.mec"),
+}
+if pairs != expected_pairs:
+    fail("project source manifest has unexpected source pairs")
+PY
 
 google-chrome \
   --headless=new \

@@ -129,6 +129,32 @@ impl InMemorySourceResolver {
   fn default_canonical_uri(specifier: &str) -> String {
     format!("memory:{}", specifier)
   }
+
+  fn relative_candidate(
+    specifier: &str,
+    referrer: Option<&str>,
+  ) -> Option<String> {
+    if !(specifier.starts_with("./") || specifier.starts_with("../")) {
+      return None;
+    }
+
+    let referrer = referrer?.strip_prefix("memory:")?;
+    let referrer = referrer.strip_prefix("//").unwrap_or(referrer);
+    let base = referrer.rsplit_once('/').map(|(base, _)| base).unwrap_or("");
+    let mut parts = Vec::new();
+
+    for segment in base.split('/').chain(specifier.split('/')) {
+      match segment {
+        "" | "." => {}
+        ".." => {
+          parts.pop()?;
+        }
+        segment => parts.push(segment),
+      }
+    }
+
+    Some(parts.join("/"))
+  }
 }
 
 impl SourceResolver for InMemorySourceResolver {
@@ -137,7 +163,18 @@ impl SourceResolver for InMemorySourceResolver {
 
     let specifier = self.resolve_alias(&request.specifier);
 
-    Ok(self.sources.get(specifier).cloned())
+    if let Some(source) = self.sources.get(specifier) {
+      return Ok(Some(source.clone()));
+    }
+
+    let Some(candidate) = Self::relative_candidate(
+      &request.specifier,
+      request.referrer.as_deref(),
+    ) else {
+      return Ok(None);
+    };
+
+    Ok(self.sources.get(self.resolve_alias(&candidate)).cloned())
   }
 }
 
@@ -211,6 +248,50 @@ mod tests {
 
     assert_eq!(resolved.name, "main.mec");
     assert_eq!(resolved.canonical_uri, "memory:main.mec");
+  }
+
+  #[test]
+  fn resolves_memory_relative_imports() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("lib.mec", "x := 1")
+      .with_string("app/lib.mec", "x := 1")
+      .with_string("shared/lib.mec", "x := 1")
+      .with_string("shared/deep/lib.mec", "x := 1");
+
+    for (specifier, referrer, expected) in [
+      ("./lib.mec", "memory:main.mec", "lib.mec"),
+      ("./lib.mec", "memory:app/main.mec", "app/lib.mec"),
+      ("../shared/lib.mec", "memory:app/main.mec", "shared/lib.mec"),
+      ("../../shared/deep/lib.mec", "memory:app/nested/main.mec", "shared/deep/lib.mec"),
+    ] {
+      let request = SourceRequest::new(specifier).with_referrer(referrer);
+      assert_eq!(resolver.resolve(&request).unwrap().unwrap().name, expected);
+    }
+  }
+  #[test]
+  fn memory_relative_imports_do_not_escape_or_rebase_other_requests() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("lib.mec", "x := 1")
+      .with_string("dep.mec", "x := 1");
+
+    for request in [
+      SourceRequest::new("../../lib.mec").with_referrer("memory:main.mec"),
+      SourceRequest::new("./lib.mec").with_referrer("file:///app/main.mec"),
+      SourceRequest::new("other.mec").with_referrer("memory:app/main.mec"),
+    ] {
+      assert!(resolver.resolve(&request).unwrap().is_none());
+    }
+  }
+
+  #[test]
+  fn aliases_apply_to_normalized_memory_relative_imports() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("lib.mec", "x := 1")
+      .with_alias("app/lib.mec", "lib.mec");
+
+    let request = SourceRequest::new("./lib.mec")
+      .with_referrer("memory:app/main.mec");
+    assert_eq!(resolver.resolve(&request).unwrap().unwrap().name, "lib.mec");
   }
 
   #[test]

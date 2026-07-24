@@ -33,13 +33,63 @@ async function fetchText(path) {
   return await response.text();
 }
 
+async function readProjectSourceManifest(moduleUrl) {
+  const response = await fetch(
+    new URL('project-sources.json', moduleUrl),
+  );
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `failed to fetch project source manifest: ` +
+      `${response.status} ${response.statusText}`,
+    );
+  }
+
+  let manifest;
+
+  try {
+    manifest = await response.json();
+  } catch {
+    throw new Error('invalid project source manifest');
+  }
+
+  if (
+    manifest?.version !== 1 ||
+    !Array.isArray(manifest.sources) ||
+    manifest.sources.some(
+      source =>
+        typeof source?.specifier !== 'string' ||
+        typeof source?.url !== 'string',
+    )
+  ) {
+    throw new Error('invalid project source manifest');
+  }
+
+  return manifest.sources;
+}
+
 async function main() {
   await init();
   const config = await fetchText('mech.mcfg');
-  const paths = WasmProject.requiredPaths(config);
+  const manifestSources =
+    await readProjectSourceManifest(import.meta.url);
+
+  const sourceEntries =
+    manifestSources ??
+    Array.from(WasmProject.requiredPaths(config), path => ({
+      specifier: path,
+      url: path,
+    }));
+
   const sources = {};
-  for (const path of paths) {
-    sources[path] = await fetchText(path);
+
+  for (const source of sourceEntries) {
+    sources[source.specifier] =
+      await fetchText(source.url);
   }
   const hasServedAuthority = Object.prototype.hasOwnProperty.call(window, '__MECH_HOST_CONFIG');
   if (hasServedAuthority) {
