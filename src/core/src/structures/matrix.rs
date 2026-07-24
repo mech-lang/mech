@@ -109,6 +109,8 @@ pub trait ToIndex: Clone {
   fn to_index(elements: Vec<Self>) -> Matrix<Self>;
 }
 
+pub type MechMatrix<T> = Matrix<T>;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
   #[cfg(feature = "row_vector4")]
@@ -363,7 +365,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 fn quoted<T: Display + Any>(val: &T) -> String {
   if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
-    format!("<div class='mech-string'>\"{}\"</div>", s)
+    format!("<div class='mech-string'>\"{}\"</div>", crate::escape_html_text(s))
   } else if let Some(s) = (val as &dyn Any).downcast_ref::<bool>() {
     format!("<div class='mech-boolean'>{}</div<", s)
   } else {
@@ -507,9 +509,64 @@ impl<T> Matrix<T> {
   }
 }
 
-impl<T> Matrix<T> 
+impl<T> Matrix<T>
 where T: Debug + Clone + PartialEq + 'static
 {
+
+  /// Returns whether `replace_payload_from` can update this matrix without
+  /// replacing its reactive root.
+  pub fn can_replace_payload_from(&self, source: &Matrix<T>) -> bool {
+    let rows = source.rows();
+    let cols = source.cols();
+    match self {
+      #[cfg(feature = "row_vectord")]
+      Matrix::RowDVector(_) => rows == 1,
+      #[cfg(feature = "vectord")]
+      Matrix::DVector(_) => cols == 1,
+      #[cfg(feature = "matrixd")]
+      Matrix::DMatrix(_) => true,
+      _ => self.shape() == source.shape(),
+    }
+  }
+
+  /// Replaces the payload stored by this matrix without replacing its reactive
+  /// root. Dynamic matrices may change dimensions; fixed matrices require the
+  /// source shape to remain identical.
+  pub fn replace_payload_from(&self, source: &Matrix<T>) -> bool {
+    if !self.can_replace_payload_from(source) {
+      return false;
+    }
+    let rows = source.rows();
+    let cols = source.cols();
+    let elements = source.as_vec();
+    match self {
+      #[cfg(feature = "row_vectord")]
+      Matrix::RowDVector(destination) if rows == 1 => {
+        destination
+          .borrow_mut()
+          .clone_from(&RowDVector::from_vec(elements));
+        true
+      }
+      #[cfg(feature = "vectord")]
+      Matrix::DVector(destination) if cols == 1 => {
+        destination
+          .borrow_mut()
+          .clone_from(&DVector::from_vec(elements));
+        true
+      }
+      #[cfg(feature = "matrixd")]
+      Matrix::DMatrix(destination) => {
+        destination
+          .borrow_mut()
+          .clone_from(&DMatrix::from_vec(rows, cols, elements));
+        true
+      }
+      _ => {
+        self.set(elements);
+        true
+      }
+    }
+  }
 
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (&self, &other) {

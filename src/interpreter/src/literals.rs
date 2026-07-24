@@ -133,11 +133,8 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
   let value = literal(ltrl,p)?;
   let kind = kind_annotation(&knd_attn.kind, p)?;
   let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
-  let convert_fxn = ConvertKind{}.compile(&args)?;
-  convert_fxn.solve();
-  let converted_result = convert_fxn.out();
-  p.state.borrow_mut().add_plan_step(convert_fxn);
-  Ok(converted_result)
+  let plan = p.plan();
+  execute_initialized_indexed_compiler(&plan, &ConvertKind {}, args)
 }
 
 #[cfg(feature = "atom")]

@@ -1,0 +1,14 @@
+@update := timer://update/tick{:read(tick), :read(delta-seconds)}
+
+update-tick := @update/tick
+update-delta := @update/delta-seconds
+
+state := |id<string> a<f64> b<f64> da<f64> db<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "signal-a" 10 20 2.0 1.0 4 "#ffffff" "#222222" 1 1 |
+  | "signal-b" 30 40 -1.0 0.5 5 "#cccccc" "#444444" 1 0.75 |
+  | "signal-c" 50 64 0.25 -0.75 6 "#999999" "#111111" 1 0.6 |
+
+next-a := state/a + (state/da * update-delta)
+next-b := state/b + (state/db * update-delta)
+
+state/commit(trigger: update-tick, targets: [state/a state/b], values: [next-a next-b])

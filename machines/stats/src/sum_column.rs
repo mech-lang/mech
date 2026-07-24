@@ -179,4 +179,11 @@ fn impl_stats_sum_column_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>>
   )
 }
   
-impl_mech_urnop_fxn!(StatsSumColumn,impl_stats_sum_column_fxn,"stats/sum/column"); 
+impl_mech_urnop_fxn!(StatsSumColumn,impl_stats_sum_column_fxn,"stats/sum/column");
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "stats",
+    item: "sum/column",
+  }
+}

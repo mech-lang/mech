@@ -245,3 +245,10 @@ register_descriptor! {
     ptr: &MathFmod{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "fmod",
+  }
+}

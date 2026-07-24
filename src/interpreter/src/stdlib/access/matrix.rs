@@ -1444,6 +1444,46 @@ macro_rules! impl_access_all_match_arms {
       match $arg {
         $(
             $(
+            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAR4, $target_type, $value_string);
+              Ok(Box::new(Access1DAR4  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAR3, $target_type, $value_string);
+              Ok(Box::new(Access1DAR3  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAR2, $target_type, $value_string);
+              Ok(Box::new(Access1DAR2  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "vector4"))]
+            (Value::$matrix_kind(Matrix::Vector4(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAV4, $target_type, $value_string);
+              Ok(Box::new(Access1DAV4  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "vector3"))]
+            (Value::$matrix_kind(Matrix::Vector3(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAV3, $target_type, $value_string);
+              Ok(Box::new(Access1DAV3  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "vector2"))]
+            (Value::$matrix_kind(Matrix::Vector2(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAV2, $target_type, $value_string);
+              Ok(Box::new(Access1DAV2  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "row_vectord"))]
+            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DARD, $target_type, $value_string);
+              Ok(Box::new(Access1DARD  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
+            #[cfg(all(feature = $value_string, feature = "vectord"))]
+            (Value::$matrix_kind(Matrix::DVector(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAVD, $target_type, $value_string);
+              Ok(Box::new(Access1DAVD  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::IndexAll]) => {
               register_fxn_descriptor_inner!(Access1DAM4, $target_type, $value_string);

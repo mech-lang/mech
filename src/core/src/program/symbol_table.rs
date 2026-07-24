@@ -1,9 +1,17 @@
 use crate::*;
 
-// Symbol Table 
+// Symbol Table
 // ----------------------------------------------------------------------------
 
 pub type SymbolTableRef= Ref<SymbolTable>;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SymbolTableSnapshot {
+  symbols: HashMap<u64, ValRef>,
+  mutable_variables: HashMap<u64, ValRef>,
+  dictionary: Dictionary,
+  reverse_lookup: HashMap<*const Ref<Value>, u64>,
+}
 
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
@@ -14,6 +22,22 @@ pub struct SymbolTable {
 }
 
 impl SymbolTable {
+  pub fn snapshot(&self) -> SymbolTableSnapshot {
+    SymbolTableSnapshot {
+      symbols: self.symbols.clone(),
+      mutable_variables: self.mutable_variables.clone(),
+      dictionary: self.dictionary.borrow().clone(),
+      reverse_lookup: self.reverse_lookup.clone(),
+    }
+  }
+
+  pub fn restore(&mut self, snapshot: SymbolTableSnapshot) {
+    self.symbols = snapshot.symbols;
+    self.mutable_variables = snapshot.mutable_variables;
+    *self.dictionary.borrow_mut() = snapshot.dictionary;
+    self.reverse_lookup = snapshot.reverse_lookup;
+  }
+
 
   pub fn new() -> SymbolTable {
     Self {
@@ -50,6 +74,35 @@ impl SymbolTable {
     cell.clone()
   }
 
+}
+
+#[cfg(test)]
+mod snapshot_tests {
+  use super::*;
+
+  #[test]
+  fn symbol_table_snapshot_restores_all_indexes_and_identity() {
+    let mut table = SymbolTable::new();
+    let outer = hash_str("outer");
+    let temporary = hash_str("temporary");
+    let outer_ref = table.insert(outer, Value::Index(Ref::new(1)), true);
+    table.dictionary.borrow_mut().insert(outer, "outer".to_string());
+    let outer_addr = outer_ref.addr();
+    let original_snapshot = table.snapshot();
+
+    table.insert(outer, Value::Index(Ref::new(2)), false);
+    table.insert(temporary, Value::Index(Ref::new(3)), false);
+    table.dictionary.borrow_mut().insert(outer, "changed".to_string());
+    table.dictionary.borrow_mut().insert(temporary, "temporary".to_string());
+    assert_ne!(table.snapshot(), original_snapshot);
+
+    table.restore(original_snapshot.clone());
+    assert_eq!(table.snapshot(), original_snapshot);
+    assert!(!table.contains(temporary));
+    assert!(table.get_mutable(outer).is_some());
+    assert_eq!(table.get(outer).unwrap().addr(), outer_addr);
+    assert_eq!(table.get_symbol_name_by_id(outer).as_deref(), Some("outer"));
+  }
 }
 
 #[cfg(feature = "pretty_print")]

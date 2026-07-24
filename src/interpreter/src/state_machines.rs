@@ -137,6 +137,16 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
       )
     )
   );
+  let compiled_arm_patterns = fsm
+    .arms
+    .iter()
+    .map(|arm| match arm {
+      FsmArm::Guard(pattern, _) | FsmArm::Transition(pattern, _) => {
+        compile_pattern(pattern, None, p).map(Some)
+      }
+      FsmArm::Comment(_) => Ok(None),
+    })
+    .collect::<MResult<Vec<_>>>()?;
   // Step through the FSM, applying transitions until we hit a terminal state (no applicable transitions) or exceed the step limit.
   for step in 0..p.max_steps {
     trace_println!(
@@ -152,9 +162,14 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
       match arm {
         FsmArm::Comment(_) => continue,
         FsmArm::Transition(pattern, transitions) => {
-          let mut arm_env = call_env.clone();
-          clear_pattern_bindings(pattern, &mut arm_env);
-          let matched = pattern_matches_value(pattern, state, &mut arm_env, p)?;
+          let base_env = call_env.clone();
+          let compiled_pattern = compiled_arm_patterns[arm_idx]
+            .as_ref()
+            .expect("transition arm pattern was not compiled");
+          let pattern_match = match_compiled_pattern(compiled_pattern, state, &base_env, p)?;
+          let matched = pattern_match.matched;
+          let mut arm_env = base_env.clone();
+          EnvironmentBindingSink::new(&mut arm_env).commit(&pattern_match)?;
           trace_println!(
             p,
             "{}",
@@ -170,6 +185,7 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
           if matched {
             let previous_state = summarize_value(state);
             let out = apply_transitions(transitions, state, &mut arm_env, p)?;
+            restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
             *call_env = arm_env;
             if let Some(value) = out {
               trace_println!(
@@ -199,9 +215,14 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
           }
         }
         FsmArm::Guard(pattern, guards) => {
-          let mut arm_env = call_env.clone();
-          clear_pattern_bindings(pattern, &mut arm_env);
-          let pattern_matched = pattern_matches_value(pattern, state, &mut arm_env, p)?;
+          let base_env = call_env.clone();
+          let compiled_pattern = compiled_arm_patterns[arm_idx]
+            .as_ref()
+            .expect("guard arm pattern was not compiled");
+          let pattern_match = match_compiled_pattern(compiled_pattern, state, &base_env, p)?;
+          let pattern_matched = pattern_match.matched;
+          let mut arm_env = base_env.clone();
+          EnvironmentBindingSink::new(&mut arm_env).commit(&pattern_match)?;
           trace_println!(
             p,
             "{}",
@@ -255,6 +276,7 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
             }
             let previous_state = summarize_value(state);
             let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
+            restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
             *call_env = arm_env;
             if let Some(value) = out {
               trace_println!(
@@ -304,6 +326,20 @@ fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &
     None,
   )
   .with_compiler_loc())
+}
+
+fn restore_arm_local_bindings(
+  pattern_match: &PatternMatch,
+  base_env: &Environment,
+  arm_env: &mut Environment,
+) {
+  for binding in &pattern_match.bindings {
+    if let Some(original) = base_env.get(&binding.id) {
+      arm_env.insert(binding.id, original.clone());
+    } else {
+      arm_env.remove(&binding.id);
+    }
+  }
 }
 
 fn validate_fsm_state_coverage(fsm: &FsmImplementation, fsm_pipe: &FsmPipe) -> MResult<()> {

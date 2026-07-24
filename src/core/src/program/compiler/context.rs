@@ -5,6 +5,7 @@ use super::*;
 pub struct CompileCtx {
   // pointer identity -> register index
   pub reg_map: HashMap<usize, Register>,
+  initialized_ptrs: HashSet<usize>,
   // symbol identity -> register index
   pub symbols: HashMap<u64, Register>,
   // symbol identity -> pointer identity
@@ -26,6 +27,7 @@ impl CompileCtx {
   pub fn new() -> Self {
     Self {
       reg_map: HashMap::new(),
+      initialized_ptrs: HashSet::new(),
       symbols: HashMap::new(),
       mutable_symbols: HashSet::new(),
       dictionary: HashMap::new(),
@@ -41,6 +43,7 @@ impl CompileCtx {
 
   pub fn clear(&mut self) {
     self.reg_map.clear();
+    self.initialized_ptrs.clear();
     self.symbols.clear();
     self.dictionary.clear();
     self.mutable_symbols.clear();
@@ -68,6 +71,12 @@ impl CompileCtx {
     self.next_reg += 1;
     self.reg_map.insert(ptr, r);
     r
+  }
+
+  pub fn register_for_ptr_with_initialization_status(&mut self, ptr: usize) -> (Register, bool) {
+    let register = self.alloc_register_for_ptr(ptr);
+    let needs_initialization = self.initialized_ptrs.insert(ptr);
+    (register, needs_initialization)
   }
 
   pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
@@ -282,5 +291,34 @@ impl MechErrorKind for FinalBufferLengthMismatchError {
   fn name(&self) -> &str { "FinalBufferLengthMismatch" }
   fn message(&self) -> String {
     format!("Final buffer length mismatch: expected {}, got {}", self.expected, self.got)
+  }
+}
+
+#[cfg(all(test, feature = "compiler"))]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn compile_context_initializes_pointer_register_once() {
+    let mut ctx = CompileCtx::new();
+    let pointer_a = 100usize;
+    let pointer_b = 200usize;
+
+    let (register_a, initializes_a) = ctx.register_for_ptr_with_initialization_status(pointer_a);
+    assert!(initializes_a);
+
+    let (register_a_again, initializes_a_again) = ctx.register_for_ptr_with_initialization_status(pointer_a);
+    assert_eq!(register_a_again, register_a);
+    assert!(!initializes_a_again);
+
+    let (register_b, initializes_b) = ctx.register_for_ptr_with_initialization_status(pointer_b);
+    assert_ne!(register_b, register_a);
+    assert!(initializes_b);
+
+    ctx.clear();
+
+    let (register_a_after_clear, initializes_a_after_clear) = ctx.register_for_ptr_with_initialization_status(pointer_a);
+    assert_eq!(register_a_after_clear, 0);
+    assert!(initializes_a_after_clear);
   }
 }

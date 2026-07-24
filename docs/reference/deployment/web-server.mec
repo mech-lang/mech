@@ -1,0 +1,14 @@
+Web Server Deployment
+===============================================================================
+
+Use `mech serve` for local browser development.
+
+```sh
+mech serve .
+```
+
+The server can serve source files, compiled payloads, formatted HTML, wasm assets, stylesheets, and a configured HTML shim.
+
+When a project has browser host settings, `mech serve` injects host configuration into the served page. This lets the browser runtime initialize from host-owned settings instead of hard-coded browser permissions.
+
+Use [Static Web Bundles](static-web-bundles.html) when the output needs to be served by a plain static file server.

@@ -3,8 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   cargo:
@@ -12,6 +16,289 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Check feature boundaries and examples
+        run: |
+          # Linked-stdlib CLI build for examples that import named modules.
+          cargo build --bin mech --features linked_stdlib
+          ./target/debug/mech test examples/working
+
+          # Prelude-only no-default feature checks.
+          cargo check --no-default-features
+          cargo check --no-default-features --features build
+          cargo check --no-default-features --features test
+          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+
+          # Direct package feature-boundary checks.
+          cargo check -p mech-core --no-default-features --features mika
+          cargo check -p mech-core --no-default-features --features "mika serde"
+          cargo check -p mech-syntax --no-default-features --features mika
+          cargo check -p mech-interpreter --no-default-features --features program
+          cargo check -p mech-program --no-default-features --features program
+
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+  cargo-language:
+    name: Cargo language tests
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Run root interpreter and bytecode tests
+        run: |
+          cargo test --test interpreter --test bytecode
+          cargo test --lib bytecode
+
+      - name: Run complete core and interpreter suites
+        run: cargo test -p mech-core -p mech-interpreter
+
+      - name: Run complete program library suite
+        run: cargo test -p mech-program --lib
+
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+  cargo-runtime:
+    name: Cargo runtime and host tests
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Run complete runtime suite
+        run: cargo test -p mech-runtime --lib --tests
+
+      - name: Run CLI host and context-send regression coverage
+        run: |
+          cargo test -p mech-syntax --test context_parser
+          cargo test -p mech-host-cli --features provider --test provider
+          cargo test --features "run repl pretty_print" --test mech_cli_host
+          cargo test --features "run repl pretty_print" cli::run::tests
+          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
+          cargo check -p mech-host-cli --no-default-features
+
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+  project-native:
+    name: Project native
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Check generic project package paths
+        run: bash scripts/check-analog-clock-web.sh
+
+      - name: Run native project tests
+        run: |
+          cargo test \
+            -p mech-host-time \
+            --no-default-features \
+            --features native
+          cargo test \
+            -p mech-host-timer \
+            --no-default-features \
+            --features native
+          cargo test \
+            -p mech-host-scene \
+            --no-default-features \
+            --features native
+          cargo test \
+            -p mech-wasm \
+            --no-default-features \
+            --features browser_project
+
+      - name: Check CLI clock
+        run: |
+          cargo test \
+            --features "run cli_host time_host_native timer_host_native console_host_native scene_host_native" \
+            --test mech_cli_host
+
+      - name: Smoke test native analog clock project
+        run: |
+          cargo build --bin mech
+          set +e
+          timeout --preserve-status --signal=INT 5s target/debug/mech run examples/analog-clock > /tmp/analog-clock.out
+          status=$?
+          set -e
+          test "$status" -eq 0
+          grep '^│' /tmp/analog-clock.out > /tmp/clock-values.out
+          test "$(wc -l < /tmp/clock-values.out)" -ge 2
+          test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
+
+      - name: Confirm browser examples are generic
+        run: |
+          test ! -e examples/common
+          test ! -e examples/pkg
+          test ! -e examples/analog-clock/clock.js
+          test ! -e mech-app
+          test ! -e include/blog.html
+          ! rg -n \
+            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\.js" \
+            src include examples
+
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Disk report on failure
+        if: failure()
+        run: bash scripts/ci-disk-report.sh
+
+  project-browser:
+    name: Project browser
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/project-browser
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Disk report at start
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Install WASM target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        env:
+          WASM_PACK_VERSION: v0.13.1
+        run: |
+          curl -fsSL \
+            "https://github.com/rustwasm/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install "/tmp/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+          wasm-pack --version
+
+      - name: Show Chrome version
+        run: google-chrome --version
+
+      - name: Check browser project feature boundaries
+        run: |
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser_project_runner
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features "browser_project_runner,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string,record,tuple,table,atom,enum,variables"
+
+      - name: Build browser project package
+        run: bash scripts/build-mech-browser.sh
+
+      - name: Remove browser release intermediates
+        run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
+
+      - name: Run headless Chrome WASM tests
+        run: |
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features browser_project \
+            -- \
+            --nocapture
+
+      - name: Smoke test served analog clock in Chrome
+        run: |
+          cargo build \
+            --bin mech \
+            --no-default-features \
+            --features serve
+
+          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+            bash scripts/smoke-served-analog-clock-browser.sh
+
+      - name: Remove generated browser package
+        if: always()
+        run: rm -rf src/wasm/pkg
+
+      - name: Disk report at end
+        if: always()
+        run: bash scripts/ci-disk-report.sh
+
+      - name: Disk report on failure
+        if: failure()
+        run: bash scripts/ci-disk-report.sh
+  run-only:
+    name: Run-only CLI
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,10 +309,51 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Build and test
+      - name: Build run-only CLI
+        run: cargo build --bin mech --no-default-features --features run
+
+      - name: Build run-only CLI with pretty print
+        run: cargo build --bin mech --no-default-features --features "run pretty_print"
+
+  windows-cli:
+    name: Windows CLI
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
         run: |
-          cargo clean
-          cargo build --bin mech
-          cargo build --no-default-features
-          cargo test interpret --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"
-          cargo test bytecode --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Build default Windows CLI
+        run: cargo build --bin mech
+
+      - name: Build REPL-only Windows CLI
+        run: cargo build --bin mech --no-default-features --features repl
+
+      - name: Build REPL-plus-Mika Windows CLI
+        run: cargo build --bin mech --no-default-features --features "repl mika"
+
+  dynamic-modules:
+    name: Dynamic modules
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run dynamic module smoke path
+        run: bash scripts/test-dynamic-modules.sh

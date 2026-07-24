@@ -1,0 +1,4743 @@
+// ---------------------------------------------------------------------------
+// Program execution
+// ---------------------------------------------------------------------------
+
+// These are the main methods responsible for executing Mech programs within the runtime. They handle the orchestration of program execution, including setting up the execution context, managing module imports and dependencies, emitting events for diagnostics, and ensuring that execution adheres to the runtime's limits and policies.
+
+// There are two main entry points for execution:
+
+// - `run_string`: Executes a string of Mech source code directly. This is for lightweight execution of ad-hoc code snippets, scripts, documents, configuration files, etc.
+// - `run_module`: Executes a module by its version ID, handling the resolution of dependencies and the construction of the import environment. This is for executing more complex, modular code that depends on other modules and is part of the larger program structure.
+
+// Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
+
+use super::*;
+use crate::{SourceDeclaration, SourceIndex};
+use crate::RuntimeResourceWritePreflightRequest;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum RuntimeAddressTarget {
+  Interpreter(SourceScope),
+  Context(RuntimeContextBinding),
+  Unknown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DirectContextEffectPlacement {
+  TopLevel,
+  ActivationScope,
+  FunctionBody,
+  FsmTransition,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AddressedReadPreflight {
+  RequireContextBinding,
+  AllowModuleAddressTargets,
+}
+
+struct PreparedModuleScopeExecution {
+  record: ModuleVersionRecord,
+  source: MechSourceCode,
+  environment: HashMap<String, ValRef>,
+}
+
+struct ProgramEnvironmentOverlay {
+  entries: Vec<ProgramEnvironmentOverlayEntry>,
+}
+
+struct ProgramEnvironmentOverlayEntry {
+  id: u64,
+  previous_symbol: Option<ValRef>,
+  previous_dictionary: Option<String>,
+}
+
+impl ProgramEnvironmentOverlay {
+  fn install(program: &mut MechProgram, environment: &HashMap<String, ValRef>) -> MResult<Self> {
+    let mut ids = HashMap::new();
+    for name in environment.keys() {
+      let id = hash_str(name);
+      if let Some(first) = ids.insert(id, name.clone()) {
+        if first != *name {
+          return Err(MechError::new(RuntimeModuleImportConflict {
+            binding: name.clone(),
+            first_import: first,
+            second_import: name.clone(),
+          }, None));
+        }
+      }
+    }
+
+    let mut entries = Vec::with_capacity(environment.len());
+    let symbols = program.interpreter_mut().symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    for (name, value_ref) in environment {
+      let id = hash_str(name);
+      let previous_symbol = symbols_brrw.symbols.get(&id).cloned();
+      let previous_dictionary = symbols_brrw.dictionary.borrow().get(&id).cloned();
+      if let Some(previous_name) = &previous_dictionary {
+        if previous_name != name && !environment.contains_key(previous_name) {
+          return Err(MechError::new(RuntimeModuleImportConflict {
+            binding: name.clone(),
+            first_import: previous_name.clone(),
+            second_import: name.clone(),
+          }, None));
+        }
+      }
+      entries.push(ProgramEnvironmentOverlayEntry { id, previous_symbol, previous_dictionary });
+      symbols_brrw.symbols.insert(id, value_ref.clone());
+      symbols_brrw.dictionary.borrow_mut().insert(id, name.clone());
+    }
+
+    Ok(Self { entries })
+  }
+
+  fn restore(self, program: &mut MechProgram) {
+    let symbols = program.interpreter_mut().symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    for entry in self.entries.into_iter().rev() {
+      if let Some(previous_symbol) = entry.previous_symbol {
+        symbols_brrw.symbols.insert(entry.id, previous_symbol);
+      } else {
+        symbols_brrw.symbols.remove(&entry.id);
+      }
+
+      if let Some(previous_dictionary) = entry.previous_dictionary {
+        symbols_brrw.dictionary.borrow_mut().insert(entry.id, previous_dictionary);
+      } else {
+        symbols_brrw.dictionary.borrow_mut().remove(&entry.id);
+      }
+    }
+  }
+}
+
+impl AddressedReadPreflight {
+  fn requires_context_binding(self) -> bool {
+    matches!(self, AddressedReadPreflight::RequireContextBinding)
+  }
+}
+
+impl DirectContextEffectPlacement {
+  fn description(self) -> &'static str {
+    match self {
+      DirectContextEffectPlacement::TopLevel => "module top level",
+      DirectContextEffectPlacement::ActivationScope => "an activation scope",
+      DirectContextEffectPlacement::FunctionBody => "a function body",
+      DirectContextEffectPlacement::FsmTransition => "an FSM transition",
+    }
+  }
+
+}
+
+struct ActiveRuntimeProgramHostGuard {
+  previous: Option<RuntimeProgramHostTarget>,
+}
+
+impl ActiveRuntimeProgramHostGuard {
+  fn install(runtime: *mut MechRuntime, context: *mut RuntimeContext) -> Self {
+    let previous = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(Some(RuntimeProgramHostTarget { runtime, context }))
+    });
+    Self { previous }
+  }
+}
+
+impl Drop for ActiveRuntimeProgramHostGuard {
+  fn drop(&mut self) {
+    ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
+      slot.replace(self.previous.take());
+    });
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeAddressedAssignmentUnsupported {
+  pub target: String,
+}
+
+impl MechErrorKind for RuntimeAddressedAssignmentUnsupported {
+  fn name(&self) -> &str { "RuntimeAddressedAssignmentUnsupported" }
+
+  fn message(&self) -> String {
+    format!("addressed assignment is not supported for `{}`", self.target)
+  }
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ResolvedContextResourceRequest {
+  provider_base_uri: String,
+  provider_path: String,
+  context_path: String,
+}
+
+// This name deliberately starts with a NUL byte.  It is an identifier we can
+// construct in the lowered tree, but it cannot be produced by the Mech lexer.
+// Keeping the compiler registered on the program is therefore not a public
+// source-level API.
+pub(super) const ACTIVATION_EFFECT_BARRIER_NAME: &str = "\0mech/runtime/activation-effect-barrier";
+pub(super) const ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME: &str =
+  "\0mech/runtime/activation-effect-payload-capture";
+
+#[derive(Clone, Debug)]
+pub(super) struct ActivationEffectBarrierCompiler;
+impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    if !arguments.is_empty() {
+      return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+        reason: format!(
+          "activation effect barrier expected no payloads, found {}",
+          arguments.len()
+        ),
+      }, None));
+    }
+    Ok(Box::new(ActivationEffectBarrier))
+  }
+}
+#[derive(Clone, Debug)]
+struct ActivationEffectBarrier;
+impl MechFunctionImpl for ActivationEffectBarrier {
+  fn solve(&self) {}
+  fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> { Ok(mech_core::ReactiveSolveStatus::Unchanged) }
+  // The barrier is a scheduling node, not a value producer.  Its node id and
+  // reactive execution record are the observable state used by send replay.
+  fn out(&self) -> Value { Value::Empty }
+  fn reactive_output_values(&self) -> Vec<Value> { Vec::new() }
+  fn to_string(&self) -> String { ACTIVATION_EFFECT_BARRIER_NAME.to_string() }
+}
+impl MechFunctionCompiler for ActivationEffectBarrier {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ActivationEffectPayloadCaptureCompiler;
+impl NativeFunctionCompiler for ActivationEffectPayloadCaptureCompiler {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    let [payload] = arguments.as_slice() else {
+      return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+        reason: format!(
+          "activation effect payload capture expected one payload, found {}",
+          arguments.len()
+        ),
+      }, None));
+    };
+    Ok(Box::new(ActivationEffectPayloadCapture {
+      payload: payload.clone(),
+      snapshot: mech_core::Ref::new(snapshot_runtime_value(payload)),
+    }))
+  }
+}
+
+#[derive(Clone, Debug)]
+struct ActivationEffectPayloadCapture {
+  payload: Value,
+  snapshot: mech_core::ValRef,
+}
+
+impl MechFunctionImpl for ActivationEffectPayloadCapture {
+  fn solve(&self) {
+    *self.snapshot.borrow_mut() = snapshot_runtime_value(&self.payload);
+  }
+  fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> {
+    self.solve();
+    Ok(mech_core::ReactiveSolveStatus::Unchanged)
+  }
+  fn out(&self) -> Value { Value::MutableReference(self.snapshot.clone()) }
+  // Payloads are sampled only when the activation pulse schedules this node.
+  // Their own changes must never dispatch an activation effect.
+  fn reactive_dependency_scopes(&self, argument_count: usize) -> Option<Vec<mech_core::ReactiveDependencyScope>> {
+    Some(vec![mech_core::ReactiveDependencyScope::None; argument_count])
+  }
+  fn reactive_output_values(&self) -> Vec<Value> { Vec::new() }
+  fn to_string(&self) -> String { ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME.to_string() }
+}
+
+impl MechFunctionCompiler for ActivationEffectPayloadCapture {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+      reason: "activation effect payload capture cannot be bytecode compiled".into(),
+    }, None))
+  }
+}
+
+fn identifier_from_str(name: &str) -> mech_core::Identifier {
+  mech_core::Identifier {
+    name: mech_core::Token::new(
+      mech_core::TokenKind::Identifier,
+      mech_core::SourceRange::default(),
+      name.chars().collect(),
+    ),
+  }
+}
+
+
+fn execution_scope_for_extracted_module_source(scope: &SourceScope) -> SourceScope {
+  match scope {
+    SourceScope::Program => SourceScope::Program,
+    SourceScope::Interpreter(_) => SourceScope::Program,
+  }
+}
+
+fn resolve_runtime_address_target(
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+  context_registry: &RuntimeContextRegistry,
+  target: &str,
+) -> RuntimeAddressTarget {
+  if !matches!(scope, SourceScope::Program) {
+    if let Some(binding) = context_registry.get(target) {
+      return RuntimeAddressTarget::Context(binding.clone());
+    }
+  }
+
+  for metadata in &record.scopes {
+    if let SourceScope::Interpreter(interpreter) = &metadata.scope {
+      if interpreter.namespace_str == target {
+        return RuntimeAddressTarget::Interpreter(metadata.scope.clone());
+      }
+    }
+  }
+
+  if let Some(binding) = context_registry.get(target) {
+    return RuntimeAddressTarget::Context(binding.clone());
+  }
+
+  RuntimeAddressTarget::Unknown
+}
+
+fn context_registry_for_scope(
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+) -> MResult<RuntimeContextRegistry> {
+  let declarations = record
+    .scopes
+    .iter()
+    .find(|metadata| &metadata.scope == scope)
+    .map(|metadata| metadata.contexts.as_slice())
+    .unwrap_or(&[]);
+  RuntimeContextRegistry::from_declarations(scope.clone(), declarations)
+}
+
+fn runtime_context_base_uri(binding: &RuntimeContextBinding) -> String {
+  match &binding.base {
+    RuntimeContextBase::ResourceUri(uri) => uri.clone(),
+  }
+}
+
+fn runtime_context_allows_operation(
+  binding: &RuntimeContextBinding,
+  operation: &str,
+  path: &str,
+) -> bool {
+  binding.capabilities.iter().any(|capability| {
+    if capability.operation != operation {
+      return false;
+    }
+
+    match &capability.scope {
+      RuntimeContextCapabilityScope::Wildcard => true,
+      RuntimeContextCapabilityScope::Path(exact) => {
+        if exact == path {
+          return true;
+        }
+        if let Some(prefix) = exact.strip_suffix("/*") {
+          let required_prefix = format!("{}/", prefix);
+          return path.starts_with(&required_prefix);
+        }
+        false
+      }
+    }
+  })
+}
+
+fn runtime_context_exposes_operation(
+  binding: &RuntimeContextBinding,
+  operation: &str,
+) -> bool {
+  binding.capabilities.iter().any(|capability| capability.operation == operation)
+}
+
+fn runtime_context_allows_read(
+  binding: &RuntimeContextBinding,
+  path: &str,
+) -> bool {
+  runtime_context_allows_operation(binding, "read", path)
+}
+
+fn runtime_context_allows_write(
+  binding: &RuntimeContextBinding,
+  path: &str,
+) -> bool {
+  runtime_context_allows_operation(binding, "write", path)
+}
+
+fn first_context_send_segment(path: &str) -> MResult<&str> {
+  path
+    .split('/')
+    .next()
+    .filter(|segment| !segment.is_empty())
+    .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
+      operation: "context_send",
+      reason: "context send target path must start with an operation name".to_string(),
+    }, None))
+}
+
+fn reserved_context_send_operation_error(operation: &str, path: &str) -> MechError {
+  MechError::new(RuntimeInvalidOperationError {
+    operation: "context_send",
+    reason: format!(
+      "context send target path `{path}` starts with reserved operation `{operation}`; use assignment for writes or a custom send operation"
+    ),
+  }, None)
+}
+
+fn context_send_operation(
+  binding: &RuntimeContextBinding,
+  path: &str,
+) -> MResult<RuntimeCapabilityOperation> {
+  let candidate = first_context_send_segment(path)?;
+  if candidate == "read" {
+    return Err(reserved_context_send_operation_error(candidate, path));
+  }
+  if candidate == "write" {
+    if runtime_context_allows_write(binding, path) {
+      return Ok(RuntimeCapabilityOperation::Write);
+    }
+    return Err(reserved_context_send_operation_error(candidate, path));
+  }
+  if runtime_context_allows_operation(binding, candidate, path) {
+    return RuntimeCapabilityOperation::from_name(candidate.to_string());
+  }
+  if runtime_context_exposes_operation(binding, candidate) {
+    return RuntimeCapabilityOperation::from_name(candidate.to_string());
+  }
+  if runtime_context_allows_write(binding, path) {
+    return Ok(RuntimeCapabilityOperation::Write);
+  }
+  RuntimeCapabilityOperation::from_name(candidate.to_string())
+}
+
+fn context_write_operation(
+  binding: &RuntimeContextBinding,
+  intent: RuntimeResourceWriteIntent,
+  path: &str,
+) -> MResult<RuntimeCapabilityOperation> {
+  match intent {
+    RuntimeResourceWriteIntent::Assign => Ok(RuntimeCapabilityOperation::Write),
+    RuntimeResourceWriteIntent::Send => context_send_operation(binding, path),
+  }
+}
+
+
+fn direct_context_target(context_name: &str, path: &str) -> String {
+  format!("@{}/{}", context_name, path)
+}
+
+fn undeclared_direct_context_target_error(context_name: &str) -> MechError {
+  MechError::new(RuntimeInvalidOperationError {
+    operation: "direct_context_target",
+    reason: format!("context target `@{context_name}` is not declared or imported"),
+  }, None)
+}
+
+
+
+fn single_code_program(
+  code: mech_core::MechCode,
+  comment: Option<mech_core::Comment>,
+) -> mech_core::Program {
+  mech_core::Program {
+    title: None,
+    body: mech_core::Body {
+      sections: vec![mech_core::Section {
+        subtitle: None,
+        elements: vec![mech_core::SectionElement::MechCode(vec![(code, comment)])],
+      }],
+    },
+  }
+}
+
+fn resolve_runtime_value(value: Value) -> Value {
+  match value {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  }
+}
+
+// Activation effects are released after the reactive turn succeeds. Keep the
+// body-time payload separate from any live source cells so a register commit
+// cannot change the value that the selected arm staged for its send.
+fn snapshot_runtime_value(value: &Value) -> Value {
+  value.deep_snapshot()
+}
+
+
+
+impl MechRuntime {
+  fn with_live_registration_mode<T>(
+    &mut self,
+    mode: crate::runtime::LiveRegistrationMode,
+    f: impl FnOnce(&mut Self) -> MResult<T>,
+  ) -> MResult<T> {
+    let previous = std::mem::replace(&mut self.live_registration_mode, mode);
+    let result = f(self);
+    self.live_registration_mode = previous;
+    result
+  }
+
+  #[cfg(test)]
+  pub(super) fn run_string_with_isolated_registration_for_test(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
+    self.with_live_registration_mode(
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      |runtime| {
+        runtime.run_string_with_context(context, source)
+      },
+    )
+  }
+
+  fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
+    matches!(import.alias, Some(mech_core::ModuleImportAlias::Context(_)))
+  }
+
+
+  pub(crate) fn context_declarations_from_index_scope(
+    &self,
+    index: &SourceIndex,
+    scope: &SourceScope,
+  ) -> MResult<Vec<crate::SourceContextDeclaration>> {
+    let mut declarations = Vec::new();
+
+    for declaration in &index.declarations {
+      match declaration {
+        SourceDeclaration::Context(context) if &context.occurrence.scope == scope => {
+          declarations.push(context.declaration.clone());
+        }
+        SourceDeclaration::Import(import) if &import.occurrence.scope == scope => {
+          let Some(SourceImportAlias::Context(alias)) = &import.declaration.alias else {
+            continue;
+          };
+          let module = import.declaration.module.as_deref().ok_or_else(|| {
+            MechError::new(RuntimeInvalidOperationError {
+              operation: "materialize_direct_manifest_context_imports",
+              reason: format!("context import `{}` is missing module metadata", import.declaration.specifier),
+            }, None)
+          })?;
+          let item = import.declaration.item.as_deref().ok_or_else(|| {
+            MechError::new(RuntimeInvalidOperationError {
+              operation: "materialize_direct_manifest_context_imports",
+              reason: format!("context import `{}` is missing item metadata", import.declaration.specifier),
+            }, None)
+          })?;
+          let target = format!("{module}/{item}");
+          if let Some(context) = self.host_interfaces.resolve_optional(&target)? {
+            declarations.push(crate::SourceContextDeclaration {
+              name: alias.clone(),
+              base: crate::SourceContextBase::ResourceUri(context.base_uri.clone()),
+              capabilities: context.operations.iter().map(|operation| crate::SourceContextCapability {
+                operation: operation.clone(),
+                scope: crate::SourceContextCapabilityScope::Wildcard,
+              }).collect(),
+            });
+          } else {
+            let export = self.module_manifests.context_export(module, item)?;
+            declarations.push(crate::SourceContextDeclaration {
+              name: alias.clone(),
+              base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+              capabilities: export.operations.iter().map(|operation| crate::SourceContextCapability {
+                operation: operation.clone(),
+                scope: crate::SourceContextCapabilityScope::Wildcard,
+              }).collect(),
+            });
+          }
+        }
+        _ => {}
+      }
+    }
+
+    Ok(declarations)
+  }
+
+  fn direct_context_registry_for_scope(
+    &self,
+    tree: &mech_core::Program,
+    scope: &SourceScope,
+  ) -> MResult<RuntimeContextRegistry> {
+    let index = SourceIndex::from_program(tree);
+    let declarations = self.context_declarations_from_index_scope(&index, scope)?;
+    RuntimeContextRegistry::from_declarations(scope.clone(), &declarations)
+  }
+
+  fn resolve_context_resource_request(
+    &self,
+    binding: &RuntimeContextBinding,
+    requested_path: &str,
+  ) -> MResult<ResolvedContextResourceRequest> {
+    let context_base_uri = runtime_context_base_uri(binding).trim_end_matches('/').to_string();
+    let requested_path = requested_path.trim_matches('/').to_string();
+    let candidate_uri = if requested_path.is_empty() {
+      context_base_uri.clone()
+    } else {
+      format!("{}/{}", context_base_uri, requested_path)
+    };
+
+    let provider_base_uri = self
+      .resources
+      .provider_base_uri_for(&candidate_uri)?
+      .unwrap_or_else(|| context_base_uri.clone());
+    let provider_path = candidate_uri
+      .strip_prefix(&provider_base_uri)
+      .unwrap_or_default()
+      .trim_matches('/')
+      .to_string();
+
+    Ok(ResolvedContextResourceRequest {
+      provider_base_uri,
+      provider_path,
+      context_path: requested_path,
+    })
+  }
+
+  fn read_context_resource(
+    &self,
+    context: &RuntimeContext,
+    binding: &RuntimeContextBinding,
+    path: &str,
+  ) -> MResult<Value> {
+    let resolved = self.resolve_context_resource_request(binding, path)?;
+    if !runtime_context_allows_read(binding, &resolved.context_path) {
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: "read".to_string(),
+        path: resolved.context_path,
+      }, None));
+    }
+    if !self.has_capability_grant(
+      &context.subject,
+      &resolved.provider_base_uri,
+      &RuntimeCapabilityOperation::Read,
+      &resolved.provider_path,
+    ) {
+      return Err(MechError::new(RuntimeCapabilityGrantDenied {
+        subject: context.subject.clone(),
+        resource: resolved.provider_base_uri,
+        operation: RuntimeCapabilityOperation::Read,
+        path: resolved.provider_path,
+      }, None));
+    }
+    self.resources.read(RuntimeResourceReadRequest {
+      base_uri: resolved.provider_base_uri,
+      path: resolved.provider_path,
+      context_name: binding.name.clone(),
+    })
+  }
+
+  fn write_context_resource(
+    &mut self,
+    context: &RuntimeContext,
+    binding: &RuntimeContextBinding,
+    path: &str,
+    value: Value,
+    intent: RuntimeResourceWriteIntent,
+  ) -> MResult<()> {
+    let resolved = self.resolve_context_resource_request(binding, path)?;
+    let operation = context_write_operation(binding, intent, &resolved.context_path)?;
+    if !runtime_context_allows_operation(binding, operation.name(), &resolved.context_path) {
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: operation.name().to_string(),
+        path: resolved.context_path,
+      }, None));
+    }
+    if !self.has_capability_grant(
+      &context.subject,
+      &resolved.provider_base_uri,
+      &operation,
+      &resolved.provider_path,
+    ) {
+      return Err(MechError::new(RuntimeCapabilityGrantDenied {
+        subject: context.subject.clone(),
+        resource: resolved.provider_base_uri,
+        operation: operation.clone(),
+        path: resolved.provider_path,
+      }, None));
+    }
+    self.resources.write(RuntimeResourceWriteRequest {
+      base_uri: resolved.provider_base_uri,
+      path: resolved.provider_path,
+      context_name: binding.name.clone(),
+      operation: operation.clone(),
+      value,
+      intent,
+    })
+  }
+
+  fn bind_context_read_temp(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    source: crate::RuntimeHostInputSource,
+    value: Value,
+  ) -> MResult<mech_core::Expression> {
+    self.validate_live_context_candidate(context)?;
+    let identifier = mech_core::internal_pattern_value_identifier(&format!(
+      "context-{}-{}",
+      hash_str(source.base_uri()),
+      hash_str(source.path())
+    ));
+    let name = identifier.to_string();
+    let symbol_id = identifier.hash();
+    let input = program.ensure_input(program.interpreter().id, symbol_id, &name, resolve_runtime_value(value))?;
+    if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
+      let bindings = self.live_input_bindings.entry(source).or_default();
+      if !bindings.iter().any(|binding| *binding == input) {
+        bindings.push(input);
+      }
+      self.commit_live_context_candidate(context);
+    }
+    let var = mech_core::Var {
+      name: identifier,
+      context: None,
+      kind: None,
+    };
+    Ok(mech_core::Expression::Var(var))
+  }
+
+  fn resolve_context_reads_in_expression(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<mech_core::Expression> {
+    match expression {
+      mech_core::Expression::Var(var) => {
+        let Some(var_context) = &var.context else {
+          return Ok(expression.clone());
+        };
+        let target = var_context.to_string();
+        let Some(binding) = registry.get(&target) else {
+          return Ok(expression.clone());
+        };
+        let path = var.name.to_string();
+        let resolved = self.resolve_context_resource_request(binding, &path)?;
+        let source = crate::RuntimeHostInputSource::new(resolved.provider_base_uri.clone(), resolved.provider_path.clone())?;
+        let value = self.read_context_resource(context, binding, &path)?;
+        self.bind_context_read_temp(context, program, source, value)
+      }
+      mech_core::Expression::Formula(factor) => Ok(mech_core::Expression::Formula(
+        self.resolve_context_reads_in_factor(context, program, registry, factor)?,
+      )),
+      mech_core::Expression::FunctionCall(call) => {
+        let args = call.args.iter().map(|(name, expression)| {
+          Ok((name.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))
+        }).collect::<MResult<Vec<_>>>()?;
+        Ok(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: call.name.clone(), args }))
+      }
+      mech_core::Expression::FsmPipe(pipe) => {
+        Ok(mech_core::Expression::FsmPipe(
+          self.resolve_context_reads_in_fsm_pipe(context, program, registry, pipe)?,
+        ))
+      }
+      mech_core::Expression::Literal(_) => Ok(expression.clone()),
+      mech_core::Expression::Match(match_expression) => {
+        let mut match_expression = match_expression.as_ref().clone();
+        match_expression.source = self.resolve_context_reads_in_expression(context, program, registry, &match_expression.source)?;
+        match_expression.arms = match_expression.arms.iter().map(|arm| {
+          Ok(mech_core::MatchArm {
+            pattern: self.resolve_context_reads_in_match_pattern(context, program, registry, &arm.pattern)?,
+            guard: arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?,
+            expression: self.resolve_context_reads_in_expression(context, program, registry, &arm.expression)?,
+          })
+        }).collect::<MResult<Vec<_>>>()?;
+        Ok(mech_core::Expression::Match(Box::new(match_expression)))
+      }
+      mech_core::Expression::Range(range) => {
+        let mut range = range.as_ref().clone();
+        range.start = self.resolve_context_reads_in_factor(context, program, registry, &range.start)?;
+        range.increment = match &range.increment {
+          Some((operator, increment)) => Some((operator.clone(), self.resolve_context_reads_in_factor(context, program, registry, increment)?)),
+          None => None,
+        };
+        range.terminal = self.resolve_context_reads_in_factor(context, program, registry, &range.terminal)?;
+        Ok(mech_core::Expression::Range(Box::new(range)))
+      }
+      mech_core::Expression::Slice(slice) => {
+        if let Some(context_name) = &slice.context {
+          let context_name = context_name.to_string();
+          if registry.contains(&context_name) {
+            return Err(MechError::new(RuntimeInvalidOperationError {
+              operation: "context_read",
+              reason: "context-addressed slices are not supported".to_string(),
+            }, None));
+          }
+          return Ok(expression.clone());
+        }
+        Ok(mech_core::Expression::Slice(
+          self.resolve_context_reads_in_slice(context, program, registry, slice)?,
+        ))
+      }
+      mech_core::Expression::Structure(structure) => Ok(mech_core::Expression::Structure(
+        self.resolve_context_reads_in_structure(context, program, registry, structure)?,
+      )),
+      mech_core::Expression::SetComprehension(comprehension) => {
+        let mut comprehension = comprehension.as_ref().clone();
+        comprehension.expression = self.resolve_context_reads_in_expression(context, program, registry, &comprehension.expression)?;
+        comprehension.qualifiers = comprehension.qualifiers.iter().map(|qualifier| self.resolve_context_reads_in_comprehension_qualifier(context, program, registry, qualifier)).collect::<MResult<Vec<_>>>()?;
+        Ok(mech_core::Expression::SetComprehension(Box::new(comprehension)))
+      }
+      mech_core::Expression::MatrixComprehension(comprehension) => {
+        let mut comprehension = comprehension.as_ref().clone();
+        comprehension.expression = self.resolve_context_reads_in_expression(context, program, registry, &comprehension.expression)?;
+        comprehension.qualifiers = comprehension.qualifiers.iter().map(|qualifier| self.resolve_context_reads_in_comprehension_qualifier(context, program, registry, qualifier)).collect::<MResult<Vec<_>>>()?;
+        Ok(mech_core::Expression::MatrixComprehension(Box::new(comprehension)))
+      }
+    }
+  }
+
+  fn resolve_context_reads_in_factor(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<mech_core::Factor> {
+    match factor {
+      mech_core::Factor::Expression(expression) => Ok(mech_core::Factor::Expression(Box::new(self.resolve_context_reads_in_expression(context, program, registry, expression)?))),
+      mech_core::Factor::Negate(factor) => Ok(mech_core::Factor::Negate(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Not(factor) => Ok(mech_core::Factor::Not(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Parenthetical(factor) => Ok(mech_core::Factor::Parenthetical(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Transpose(factor) => Ok(mech_core::Factor::Transpose(Box::new(self.resolve_context_reads_in_factor(context, program, registry, factor)?))),
+      mech_core::Factor::Term(term) => {
+        let rhs = term.rhs.iter().map(|(operator, factor)| {
+          Ok((operator.clone(), self.resolve_context_reads_in_factor(context, program, registry, factor)?))
+        }).collect::<MResult<Vec<_>>>()?;
+        Ok(mech_core::Factor::Term(Box::new(mech_core::Term {
+          lhs: self.resolve_context_reads_in_factor(context, program, registry, &term.lhs)?,
+          rhs,
+        })))
+      }
+    }
+  }
+
+  fn resolve_context_reads_in_slice(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    slice: &mech_core::Slice,
+  ) -> MResult<mech_core::Slice> {
+    Ok(mech_core::Slice {
+      name: slice.name.clone(),
+      context: slice.context.clone(),
+      subscript: slice.subscript.iter().map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript)).collect::<MResult<Vec<_>>>()?,
+    })
+  }
+
+  fn resolve_context_reads_in_slice_ref(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    target: &mech_core::SliceRef,
+  ) -> MResult<mech_core::SliceRef> {
+    let mut target = target.clone();
+    if let Some(subscripts) = &target.subscript {
+      target.subscript = Some(
+        subscripts
+          .iter()
+          .map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript))
+          .collect::<MResult<Vec<_>>>()?,
+      );
+    }
+    Ok(target)
+  }
+
+  fn resolve_context_reads_in_subscript(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    subscript: &mech_core::Subscript,
+  ) -> MResult<mech_core::Subscript> {
+    match subscript {
+      mech_core::Subscript::Brace(subscripts) => Ok(mech_core::Subscript::Brace(subscripts.iter().map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript)).collect::<MResult<Vec<_>>>()?)),
+      mech_core::Subscript::Bracket(subscripts) => Ok(mech_core::Subscript::Bracket(subscripts.iter().map(|subscript| self.resolve_context_reads_in_subscript(context, program, registry, subscript)).collect::<MResult<Vec<_>>>()?)),
+      mech_core::Subscript::Formula(factor) => Ok(mech_core::Subscript::Formula(self.resolve_context_reads_in_factor(context, program, registry, factor)?)),
+      mech_core::Subscript::Range(range) => {
+        let mut range = range.clone();
+        range.start = self.resolve_context_reads_in_factor(context, program, registry, &range.start)?;
+        range.increment = match &range.increment {
+          Some((operator, increment)) => Some((operator.clone(), self.resolve_context_reads_in_factor(context, program, registry, increment)?)),
+          None => None,
+        };
+        range.terminal = self.resolve_context_reads_in_factor(context, program, registry, &range.terminal)?;
+        Ok(mech_core::Subscript::Range(range))
+      }
+      _ => Ok(subscript.clone()),
+    }
+  }
+
+  fn resolve_context_reads_in_structure(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    structure: &mech_core::Structure,
+  ) -> MResult<mech_core::Structure> {
+    match structure {
+      mech_core::Structure::Empty => Ok(mech_core::Structure::Empty),
+      mech_core::Structure::Map(map) => Ok(mech_core::Structure::Map(mech_core::Map {
+        elements: map.elements.iter().map(|mapping| Ok(mech_core::Mapping {
+          key: self.resolve_context_reads_in_expression(context, program, registry, &mapping.key)?,
+          value: self.resolve_context_reads_in_expression(context, program, registry, &mapping.value)?,
+        })).collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Structure::Matrix(matrix) => Ok(mech_core::Structure::Matrix(mech_core::nodes::Matrix {
+        rows: matrix.rows.iter().map(|row| Ok(mech_core::MatrixRow {
+          columns: row.columns.iter().map(|column| Ok(mech_core::MatrixColumn {
+            element: self.resolve_context_reads_in_expression(context, program, registry, &column.element)?,
+          })).collect::<MResult<Vec<_>>>()?,
+        })).collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Structure::Record(record) => Ok(mech_core::Structure::Record(mech_core::Record {
+        bindings: record.bindings.iter().map(|binding| Ok(mech_core::Binding {
+          name: binding.name.clone(),
+          kind: binding.kind.clone(),
+          value: self.resolve_context_reads_in_expression(context, program, registry, &binding.value)?,
+        })).collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Structure::Set(set) => Ok(mech_core::Structure::Set(mech_core::Set {
+        elements: set.elements.iter().map(|expression| self.resolve_context_reads_in_expression(context, program, registry, expression)).collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Structure::Table(table) => Ok(mech_core::Structure::Table(mech_core::Table {
+        header: table.header.clone(),
+        rows: table.rows.iter().map(|row| Ok(mech_core::TableRow {
+          columns: row.columns.iter().map(|column| Ok(mech_core::TableColumn {
+            element: self.resolve_context_reads_in_expression(context, program, registry, &column.element)?,
+          })).collect::<MResult<Vec<_>>>()?,
+        })).collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Structure::Tuple(tuple) => Ok(mech_core::Structure::Tuple(mech_core::Tuple {
+        elements: tuple.elements.iter().map(|expression| self.resolve_context_reads_in_expression(context, program, registry, expression)).collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Structure::TupleStruct(tuple_struct) => Ok(mech_core::Structure::TupleStruct(mech_core::TupleStruct {
+        name: tuple_struct.name.clone(),
+        value: Box::new(self.resolve_context_reads_in_expression(context, program, registry, &tuple_struct.value)?),
+      })),
+    }
+  }
+
+  fn resolve_context_reads_in_comprehension_qualifier(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    qualifier: &mech_core::ComprehensionQualifier,
+  ) -> MResult<mech_core::ComprehensionQualifier> {
+    match qualifier {
+      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
+        Ok(mech_core::ComprehensionQualifier::Generator((
+          self.resolve_context_reads_in_match_pattern(context, program, registry, pattern)?,
+          self.resolve_context_reads_in_expression(context, program, registry, expression)?,
+        )))
+      }
+      mech_core::ComprehensionQualifier::Filter(expression) => Ok(mech_core::ComprehensionQualifier::Filter(self.resolve_context_reads_in_expression(context, program, registry, expression)?)),
+      mech_core::ComprehensionQualifier::Let(var_def) => {
+        let mut var_def = var_def.clone();
+        var_def.expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
+        Ok(mech_core::ComprehensionQualifier::Let(var_def))
+      }
+    }
+  }
+
+  fn flush_direct_execution(
+    &mut self,
+    program: &mut MechProgram,
+    pending: &mut Vec<mech_core::SectionElement>,
+    result: &mut Value,
+  ) -> MResult<()> {
+    if pending.is_empty() {
+      return Ok(());
+    }
+    let tree = mech_core::Program {
+      title: None,
+      body: mech_core::Body {
+        sections: vec![mech_core::Section {
+          subtitle: None,
+          elements: std::mem::take(pending),
+        }],
+      },
+    };
+    *result = program.run_tree(&tree)?;
+    Ok(())
+  }
+
+  fn executable_fence_for_scope(
+    fenced: &mech_core::FencedMechCode,
+    scope: &SourceScope,
+  ) -> bool {
+    match scope {
+      SourceScope::Program => fenced.config.namespace_str.is_empty(),
+      SourceScope::Interpreter(interpreter) => fenced.config.namespace_str == interpreter.namespace_str,
+    }
+  }
+
+  fn resolve_context_reads_in_pattern(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pattern: &mech_core::Pattern,
+  ) -> MResult<mech_core::Pattern> {
+    match pattern {
+      mech_core::Pattern::Expression(expression) => Ok(mech_core::Pattern::Expression(
+        self.resolve_context_reads_in_expression(context, program, registry, expression)?,
+      )),
+      mech_core::Pattern::TupleStruct(tuple_struct) => Ok(mech_core::Pattern::TupleStruct(mech_core::PatternTupleStruct {
+        name: tuple_struct.name.clone(),
+        patterns: tuple_struct.patterns.iter()
+          .map(|pattern| self.resolve_context_reads_in_pattern(context, program, registry, pattern))
+          .collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Pattern::Tuple(tuple) => Ok(mech_core::Pattern::Tuple(mech_core::PatternTuple(
+        tuple.0.iter()
+          .map(|pattern| self.resolve_context_reads_in_pattern(context, program, registry, pattern))
+          .collect::<MResult<Vec<_>>>()?,
+      ))),
+      mech_core::Pattern::Array(array) => {
+        let spread = if let Some(spread) = &array.spread {
+          Some(mech_core::PatternArraySpread {
+            kind: spread.kind.clone(),
+            binding: spread.binding.as_ref()
+              .map(|binding| self.resolve_context_reads_in_pattern(context, program, registry, binding).map(Box::new))
+              .transpose()?,
+          })
+        } else {
+          None
+        };
+        Ok(mech_core::Pattern::Array(mech_core::PatternArray {
+          prefix: array.prefix.iter()
+            .map(|pattern| self.resolve_context_reads_in_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+          spread,
+          suffix: array.suffix.iter()
+            .map(|pattern| self.resolve_context_reads_in_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        }))
+      }
+      mech_core::Pattern::Wildcard => Ok(mech_core::Pattern::Wildcard),
+    }
+  }
+
+  fn resolve_context_reads_in_match_pattern(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pattern: &mech_core::Pattern,
+  ) -> MResult<mech_core::Pattern> {
+    match pattern {
+      mech_core::Pattern::Expression(expression) => Ok(mech_core::Pattern::Expression(
+        self.resolve_context_reads_in_match_pattern_expression(context, program, registry, expression)?,
+      )),
+      mech_core::Pattern::TupleStruct(tuple_struct) => Ok(mech_core::Pattern::TupleStruct(mech_core::PatternTupleStruct {
+        name: tuple_struct.name.clone(),
+        patterns: tuple_struct.patterns.iter()
+          .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+          .collect::<MResult<Vec<_>>>()?,
+      })),
+      mech_core::Pattern::Tuple(tuple) => {
+        if tuple.0.len() == 1 {
+          let pattern = self.resolve_context_reads_in_match_pattern(context, program, registry, &tuple.0[0])?;
+          if pattern != tuple.0[0] {
+            return Ok(pattern);
+          }
+        }
+        Ok(mech_core::Pattern::Tuple(mech_core::PatternTuple(
+          tuple.0.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        )))
+      }
+      mech_core::Pattern::Array(array) => {
+        let spread = if let Some(spread) = &array.spread {
+          Some(mech_core::PatternArraySpread {
+            kind: spread.kind.clone(),
+            binding: spread.binding.as_ref()
+              .map(|binding| self.resolve_context_reads_in_match_pattern(context, program, registry, binding).map(Box::new))
+              .transpose()?,
+          })
+        } else {
+          None
+        };
+        Ok(mech_core::Pattern::Array(mech_core::PatternArray {
+          prefix: array.prefix.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+          spread,
+          suffix: array.suffix.iter()
+            .map(|pattern| self.resolve_context_reads_in_match_pattern(context, program, registry, pattern))
+            .collect::<MResult<Vec<_>>>()?,
+        }))
+      }
+      mech_core::Pattern::Wildcard => Ok(mech_core::Pattern::Wildcard),
+    }
+  }
+
+  fn resolve_context_reads_in_match_pattern_expression(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<mech_core::Expression> {
+    if let Some(expression) = self.resolve_interpreter_address_pattern_expression(
+      program,
+      registry,
+      expression,
+    )? {
+      return Ok(expression);
+    }
+    self.resolve_context_reads_in_expression(context, program, registry, expression)
+  }
+
+  fn resolve_interpreter_address_pattern_expression(
+    &mut self,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match expression {
+      mech_core::Expression::Var(var) => {
+        let Some(var_context) = &var.context else {
+          return Ok(None);
+        };
+        let target = var_context.to_string();
+        if registry.get(&target).is_some() {
+          return Ok(None);
+        }
+
+        let address = format!("@{target}/{}", var.name.to_string());
+        let value = {
+          let symbols = program.interpreter().symbols();
+          let symbols = symbols.borrow();
+          symbols
+            .get(hash_str(&address))
+            .map(|value_ref| resolve_runtime_value(value_ref.borrow().clone()))
+        };
+        match value {
+          Some(value) => self.resolved_pattern_value_expression(value).map(Some),
+          None => Ok(None),
+        }
+      }
+      mech_core::Expression::Formula(factor) => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, factor)
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn resolved_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+    let value = resolve_runtime_value(value);
+    match value {
+      Value::String(value) => {
+        let text = value.borrow().clone();
+        Ok(mech_core::Expression::Literal(mech_core::Literal::String(mech_core::MechString {
+          text: mech_core::Token::new(
+            mech_core::TokenKind::String,
+            mech_core::SourceRange::default(),
+            text.chars().collect(),
+          ),
+        })))
+      }
+      #[cfg(feature = "bool")]
+      Value::Bool(value) => {
+        let flag = *value.borrow();
+        Ok(mech_core::Expression::Literal(mech_core::Literal::Boolean(mech_core::Token::new(
+          if flag { mech_core::TokenKind::True } else { mech_core::TokenKind::False },
+          mech_core::SourceRange::default(),
+          if flag { "true".chars().collect() } else { "false".chars().collect() },
+        ))))
+      }
+      Value::Empty => Ok(mech_core::Expression::Literal(mech_core::Literal::Empty(mech_core::Token::new(
+        mech_core::TokenKind::Empty,
+        mech_core::SourceRange::default(),
+        vec!['_'],
+      )))),
+      other => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "interpreter_address_pattern",
+        reason: format!(
+          "interpreter-address patterns currently support string, bool, and empty values; got {other:?}",
+        ),
+      }, None)),
+    }
+  }
+
+  fn resolve_interpreter_address_pattern_factor(
+    &mut self,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+  ) -> MResult<Option<mech_core::Expression>> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.resolve_interpreter_address_pattern_expression(program, registry, expression)
+      }
+      mech_core::Factor::Parenthetical(inner) => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, inner)
+      }
+      mech_core::Factor::Term(term) if term.rhs.is_empty() => {
+        self.resolve_interpreter_address_pattern_factor(program, registry, &term.lhs)
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn resolve_context_reads_in_transition(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    transition: &mech_core::Transition,
+  ) -> MResult<mech_core::Transition> {
+    match transition {
+      mech_core::Transition::Async(pattern) => Ok(mech_core::Transition::Async(
+        self.resolve_context_reads_in_pattern(context, program, registry, pattern)?,
+      )),
+      mech_core::Transition::CodeBlock(code_items) => Ok(mech_core::Transition::CodeBlock(
+        code_items.iter()
+          .map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone())))
+          .collect::<MResult<Vec<_>>>()?,
+      )),
+      mech_core::Transition::Next(pattern) => Ok(mech_core::Transition::Next(
+        self.resolve_context_reads_in_pattern(context, program, registry, pattern)?,
+      )),
+      mech_core::Transition::Output(pattern) => Ok(mech_core::Transition::Output(
+        self.resolve_context_reads_in_pattern(context, program, registry, pattern)?,
+      )),
+      mech_core::Transition::Statement(statement) => Ok(mech_core::Transition::Statement(
+        self.resolve_context_reads_in_statement(context, program, registry, statement)?,
+      )),
+    }
+  }
+
+  fn resolve_context_reads_in_fsm_pipe(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pipe: &mech_core::FsmPipe,
+  ) -> MResult<mech_core::FsmPipe> {
+    let mut pipe = pipe.clone();
+
+    if let Some(args) = &pipe.start.args {
+      pipe.start.args = Some(args.iter().map(|(name, expression)| {
+        Ok((name.clone(), self.resolve_context_reads_in_expression(context, program, registry, expression)?))
+      }).collect::<MResult<Vec<_>>>()?);
+    }
+
+    pipe.transitions = pipe.transitions.iter()
+      .map(|transition| self.resolve_context_reads_in_transition(context, program, registry, transition))
+      .collect::<MResult<Vec<_>>>()?;
+
+    Ok(pipe)
+  }
+
+  fn resolve_context_reads_in_fsm_implementation(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    fsm: &mech_core::FsmImplementation,
+  ) -> MResult<mech_core::FsmImplementation> {
+    let arms = fsm.arms.iter().map(|arm| {
+      match arm {
+        mech_core::FsmArm::Guard(pattern, guards) => Ok(mech_core::FsmArm::Guard(
+          self.resolve_context_reads_in_match_pattern(context, program, registry, pattern)?,
+          guards.iter().map(|guard| Ok(mech_core::Guard {
+            condition: self.resolve_context_reads_in_match_pattern(
+              context,
+              program,
+              registry,
+              &guard.condition,
+            )?,
+            transitions: guard.transitions.iter()
+              .map(|transition| self.resolve_context_reads_in_transition(context, program, registry, transition))
+              .collect::<MResult<Vec<_>>>()?,
+          })).collect::<MResult<Vec<_>>>()?,
+        )),
+        mech_core::FsmArm::Transition(pattern, transitions) => Ok(mech_core::FsmArm::Transition(
+          self.resolve_context_reads_in_match_pattern(context, program, registry, pattern)?,
+          transitions.iter()
+            .map(|transition| self.resolve_context_reads_in_transition(context, program, registry, transition))
+            .collect::<MResult<Vec<_>>>()?,
+        )),
+        mech_core::FsmArm::Comment(comment) => Ok(mech_core::FsmArm::Comment(comment.clone())),
+      }
+    }).collect::<MResult<Vec<_>>>()?;
+
+    Ok(mech_core::FsmImplementation {
+      name: fsm.name.clone(),
+      input: fsm.input.clone(),
+      start: self.resolve_context_reads_in_pattern(context, program, registry, &fsm.start)?,
+      arms,
+    })
+  }
+
+  fn resolve_context_reads_in_function_define(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    function: &mech_core::FunctionDefine,
+  ) -> MResult<mech_core::FunctionDefine> {
+    Ok(mech_core::FunctionDefine {
+      name: function.name.clone(),
+      input: function.input.clone(),
+      output: function.output.clone(),
+      statements: function.statements.clone(),
+      match_arms: function.match_arms.iter().map(|arm| Ok(mech_core::FunctionMatchArm {
+        pattern: self.resolve_context_reads_in_match_pattern(
+          context,
+          program,
+          registry,
+          &arm.pattern,
+        )?,
+        expression: arm.expression.clone(),
+      })).collect::<MResult<Vec<_>>>()?,
+    })
+  }
+
+  fn resolve_context_reads_in_mech_code(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    code: &mech_core::MechCode,
+  ) -> MResult<mech_core::MechCode> {
+    match code {
+      mech_core::MechCode::ActivationScope(scope) => {
+        let mut scope = scope.clone();
+        scope.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        scope.body = match scope.body {
+          mech_core::ActivationBody::Block(body) => mech_core::ActivationBody::Block(body.iter().map(|(code, comment)| Ok((self.resolve_context_reads_in_mech_code(context, program, registry, code)?, comment.clone()))).collect::<MResult<_>>()?),
+          mech_core::ActivationBody::PatternArms(arms) => mech_core::ActivationBody::PatternArms(arms),
+        };
+        Ok(mech_core::MechCode::ActivationScope(scope))
+      },
+      mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
+        self.resolve_context_reads_in_statement(context, program, registry, statement)?,
+      )),
+      mech_core::MechCode::Expression(expression) => Ok(mech_core::MechCode::Expression(
+        self.resolve_context_reads_in_expression(context, program, registry, expression)?,
+      )),
+      mech_core::MechCode::FsmImplementation(fsm) => Ok(mech_core::MechCode::FsmImplementation(
+        self.resolve_context_reads_in_fsm_implementation(context, program, registry, fsm)?,
+      )),
+      mech_core::MechCode::FsmSpecification(spec) => Ok(mech_core::MechCode::FsmSpecification(spec.clone())),
+      mech_core::MechCode::FunctionDefine(function) => Ok(mech_core::MechCode::FunctionDefine(
+        self.resolve_context_reads_in_function_define(context, program, registry, function)?,
+      )),
+      mech_core::MechCode::Import(_)
+      | mech_core::MechCode::Comment(_)
+      | mech_core::MechCode::Error(_, _) => Ok(code.clone()),
+    }
+  }
+
+  fn resolve_context_reads_in_statement(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    statement: &mech_core::Statement,
+  ) -> MResult<mech_core::Statement> {
+    match statement {
+      mech_core::Statement::VariableDefine(var_def) => {
+        let mut var_def = var_def.clone();
+        var_def.expression = self.resolve_context_reads_in_expression(context, program, registry, &var_def.expression)?;
+        Ok(mech_core::Statement::VariableDefine(var_def))
+      }
+      mech_core::Statement::VariableAssign(assign) => {
+        let mut assign = assign.clone();
+        assign.target = self.resolve_context_reads_in_slice_ref(context, program, registry, &assign.target)?;
+        assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
+        Ok(mech_core::Statement::VariableAssign(assign))
+      }
+      mech_core::Statement::OpAssign(op_assign) => {
+        let mut op_assign = op_assign.clone();
+        op_assign.target = self.resolve_context_reads_in_slice_ref(context, program, registry, &op_assign.target)?;
+        op_assign.expression = self.resolve_context_reads_in_expression(context, program, registry, &op_assign.expression)?;
+        Ok(mech_core::Statement::OpAssign(op_assign))
+      }
+      mech_core::Statement::TupleDestructure(tuple_destructure) => {
+        let mut tuple_destructure = tuple_destructure.clone();
+        tuple_destructure.expression = self.resolve_context_reads_in_expression(context, program, registry, &tuple_destructure.expression)?;
+        Ok(mech_core::Statement::TupleDestructure(tuple_destructure))
+      }
+      #[cfg(feature = "invariant_define")]
+      mech_core::Statement::InvariantDefine(invariant) => {
+        let mut invariant = invariant.clone();
+        invariant.expression = self.resolve_context_reads_in_expression(context, program, registry, &invariant.expression)?;
+        Ok(mech_core::Statement::InvariantDefine(invariant))
+      }
+      mech_core::Statement::FsmDeclare(fsm) => {
+        let mut fsm = fsm.clone();
+        fsm.pipe = self.resolve_context_reads_in_fsm_pipe(context, program, registry, &fsm.pipe)?;
+        Ok(mech_core::Statement::FsmDeclare(fsm))
+      }
+      _ => Ok(statement.clone()),
+    }
+  }
+
+  fn push_direct_code(
+    &mut self,
+    context: &RuntimeContext,
+    program: &mut MechProgram,
+    registry: &RuntimeContextRegistry,
+    pending: &mut Vec<mech_core::SectionElement>,
+    pending_codes: &mut Vec<(mech_core::MechCode, Option<mech_core::Comment>)>,
+    result: &mut Value,
+    skip_non_context_imports: bool,
+    code: &mech_core::MechCode,
+    comment: &Option<mech_core::Comment>,
+  ) -> MResult<()> {
+    match code {
+      mech_core::MechCode::Import(import) if Self::is_manifest_context_import(import) => Ok(()),
+      mech_core::MechCode::Import(_) if skip_non_context_imports => Ok(()),
+      mech_core::MechCode::Statement(mech_core::Statement::ImportDeclaration(_))
+      | mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(_)) => Ok(()),
+      mech_core::MechCode::Statement(mech_core::Statement::ExportDeclaration(export)) => {
+        if !pending_codes.is_empty() {
+          pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+        }
+        self.flush_direct_execution(program, pending, result)?;
+        let id = hash_str(&export.name.to_string());
+        if let Some(value) = program.interpreter().symbols().borrow().get(id) {
+          *result = resolve_runtime_value(value.borrow().clone());
+        } else {
+          *result = Value::Empty;
+        }
+        Ok(())
+      }
+      mech_core::MechCode::ActivationScope(scope) => {
+        if !pending_codes.is_empty() { pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes))); }
+        self.flush_direct_execution(program, pending, result)?;
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          let mut lowered = scope.clone();
+          lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+          let mut lowered_arms = Vec::with_capacity(arms.len());
+          let mut arm_registrations = Vec::with_capacity(arms.len());
+          let mut registration_count = 0usize;
+          for arm in arms {
+            let pattern = self.resolve_context_reads_in_match_pattern(
+              context,
+              program,
+              registry,
+              &arm.pattern,
+            )?;
+            let guard = arm.guard.as_ref().map(|guard| self.resolve_context_reads_in_expression(context, program, registry, guard)).transpose()?;
+            let (body, registrations) = match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => {
+                let mut lowered_body = Vec::with_capacity(body.len() + 1);
+                let mut registrations = Vec::new();
+                for (body_code, body_comment) in body {
+                  match body_code {
+                    mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+                      let context_name = send.target.context.as_ref().unwrap().to_string();
+                      let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
+                      registration_count += 1;
+                      let payload = self.resolve_context_reads_in_expression(
+                        context,
+                        program,
+                        registry,
+                        &send.expression,
+                      )?;
+                      lowered_body.push((
+                        mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(
+                          mech_core::FunctionCall {
+                            name: identifier_from_str(ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME),
+                            args: vec![(None, payload)],
+                          },
+                        )),
+                        body_comment.clone(),
+                      ));
+                      registrations.push((binding, send.target.name.to_string()));
+                    }
+                    _ => lowered_body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+                  }
+                }
+                if !registrations.is_empty() {
+                  // The payload captures remain at their source positions, but
+                  // a single final barrier releases the complete arm effect
+                  // batch only after every body node has succeeded.
+                  lowered_body.push((
+                    mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall {
+                      name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME),
+                      args: vec![],
+                    })),
+                    None,
+                  ));
+                }
+                (mech_core::ActivationArmBody::Block(lowered_body), registrations)
+              }
+              mech_core::ActivationArmBody::Expression(expression) => (
+                mech_core::ActivationArmBody::Expression(self.resolve_context_reads_in_expression(context, program, registry, expression)?),
+                Vec::new(),
+              ),
+            };
+            arm_registrations.push(registrations);
+            lowered_arms.push(mech_core::ActivationArm { pattern, guard, body });
+          }
+          lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
+          if registration_count > 0 {
+            if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+              return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None));
+            }
+            self.validate_live_context_candidate(context)?;
+          }
+          let pattern_registration_start = program.interpreter().plan().pattern_activation_registrations().len();
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          if registration_count == 0 { return Ok(()); }
+          let interpreter_id = program.interpreter().id;
+          let pattern_registration = {
+            let plan = program.interpreter().plan();
+            let registrations = plan.pattern_activation_registrations();
+            if registrations.len() != pattern_registration_start + 1 {
+              return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                reason: format!("expected one patterned activation registration, found {}", registrations.len().saturating_sub(pattern_registration_start)),
+              }, None));
+            }
+            registrations[pattern_registration_start].clone()
+          };
+          if pattern_registration.arms.len() != arm_registrations.len() {
+            return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+              reason: format!("patterned activation arm registration mismatch: expected {}, found {}", arm_registrations.len(), pattern_registration.arms.len()),
+            }, None));
+          }
+          let mut sends = Vec::with_capacity(registration_count);
+          {
+            let plan = program.interpreter().plan();
+            let plan = plan.borrow();
+            for (arm, registrations) in pattern_registration.arms.iter().zip(arm_registrations) {
+              if registrations.is_empty() { continue; }
+              let captures = plan.nodes[arm.body_node_start..arm.body_node_end].iter().filter(|node| {
+                node.kind == mech_core::ReactiveNodeKind::Combinational
+                  && node.function.to_string() == ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME
+                  && node.outputs.is_empty()
+              }).collect::<Vec<_>>();
+              let barriers = plan.nodes[arm.body_node_start..arm.body_node_end].iter().filter(|node| {
+                node.kind == mech_core::ReactiveNodeKind::Combinational
+                  && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
+                  && node.outputs.is_empty()
+              }).collect::<Vec<_>>();
+              if captures.len() != registrations.len() {
+                return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                  reason: format!(
+                    "expected {} patterned-arm activation effect payload captures, found {}",
+                    registrations.len(),
+                    captures.len()
+                  ),
+                }, None));
+              }
+              if barriers.len() != 1 {
+                return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                  reason: format!(
+                    "expected one patterned-arm activation effect barrier, found {}",
+                    barriers.len()
+                  ),
+                }, None));
+              }
+              let barrier_node_id = barriers[0].id;
+              for ((binding, path), capture) in registrations.into_iter().zip(captures) {
+                let snapshot = match capture.function.out() {
+                  Value::MutableReference(snapshot) => snapshot,
+                  other => return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+                    reason: format!(
+                      "patterned-arm activation effect payload capture returned {}, expected a snapshot",
+                      other.kind()
+                    ),
+                  }, None)),
+                };
+                sends.push(RuntimePersistentSend {
+                  binding,
+                  path,
+                  value: snapshot,
+                  schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id },
+                });
+              }
+            }
+          }
+          if sends.len() != registration_count {
+            return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+              reason: format!("patterned activation send registration mismatch: expected {}, found {}", registration_count, sends.len()),
+            }, None));
+          }
+          self.persistent_sends.extend(sends);
+          self.commit_live_context_candidate(context);
+          return Ok(());
+        }
+        let mut lowered = scope.clone();
+        lowered.trigger = self.resolve_context_reads_in_expression(context, program, registry, &scope.trigger)?;
+        let mut registrations = Vec::new();
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
+        lowered.body = mech_core::ActivationBody::Block(vec![]);
+        let lowered_body = match &mut lowered.body { mech_core::ActivationBody::Block(body) => body, _ => unreachable!() };
+        for (body_code, body_comment) in scope_body {
+          match body_code {
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+              let context_name = send.target.context.as_ref().unwrap().to_string();
+              let binding = registry.get(&context_name).cloned().ok_or_else(|| MechError::new(RuntimeAddressedAssignmentUnsupported { target: context_name.clone() }, None))?;
+              let payload = self.resolve_context_reads_in_expression(
+                context,
+                program,
+                registry,
+                &send.expression,
+              )?;
+              lowered_body.push((
+                mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(
+                  mech_core::FunctionCall {
+                    name: identifier_from_str(ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME),
+                    args: vec![(None, payload)],
+                  },
+                )),
+                body_comment.clone(),
+              ));
+              registrations.push((binding, send.target.name.to_string()));
+            }
+            _ => lowered_body.push((self.resolve_context_reads_in_mech_code(context, program, registry, body_code)?, body_comment.clone())),
+          }
+        }
+        if registrations.is_empty() {
+          program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+          return Ok(());
+        }
+        lowered_body.push((mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(mech_core::FunctionCall { name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME), args: vec![] })), None));
+        self.validate_live_context_candidate(context)?;
+        let plan_start = program.interpreter().plan().borrow().nodes.len();
+        program.run_tree(&single_code_program(mech_core::MechCode::ActivationScope(lowered), comment.clone()))?;
+        let interpreter_id = program.interpreter().id;
+        let plan = program.interpreter().plan();
+        let plan = plan.borrow();
+        let captures = plan.nodes[plan_start..].iter().filter(|node| {
+          node.kind == mech_core::ReactiveNodeKind::Combinational
+            && node.function.to_string() == ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME
+            && node.outputs.is_empty()
+        }).collect::<Vec<_>>();
+        let barriers = plan.nodes[plan_start..].iter().filter(|node| {
+          node.kind == mech_core::ReactiveNodeKind::Combinational
+            && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
+            && node.outputs.is_empty()
+        }).collect::<Vec<_>>();
+        if captures.len() != registrations.len() {
+          return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+            reason: format!(
+              "expected {} activation effect payload captures, found {}",
+              registrations.len(),
+              captures.len()
+            ),
+          }, None));
+        }
+        if barriers.len() != 1 {
+          return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+            reason: format!("expected one activation effect barrier, found {}", barriers.len()),
+          }, None));
+        }
+        let barrier_node_id = barriers[0].id;
+        let mut sends = Vec::with_capacity(registrations.len());
+        for ((binding, path), capture) in registrations.into_iter().zip(captures) {
+          let snapshot = match capture.function.out() {
+            Value::MutableReference(snapshot) => snapshot,
+            other => return Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
+              reason: format!(
+                "activation effect payload capture returned {}, expected a snapshot",
+                other.kind()
+              ),
+            }, None)),
+          };
+          sends.push(RuntimePersistentSend {
+            binding,
+            path,
+            value: snapshot,
+            schedule: RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id },
+          });
+        }
+        drop(plan);
+        self.persistent_sends.extend(sends);
+        self.commit_live_context_candidate(context);
+        Ok(())
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
+        if let Some(context_name) = &var_def.var.context {
+          let target = context_name.to_string();
+          if let Some(binding) = registry.get(&target).cloned() {
+            if !pending_codes.is_empty() {
+              pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+            }
+            self.flush_direct_execution(program, pending, result)?;
+            return Err(MechError::new(RuntimeInvalidOperationError {
+              operation: "direct_context_define",
+              reason: format!(
+                "context-addressed path `@{}/{}` cannot be defined with `:=`; use `=` for context writes",
+                binding.name,
+                var_def.var.name.to_string()
+              ),
+            }, None));
+          }
+        }
+        let code = self.resolve_context_reads_in_mech_code(
+          context,
+          program,
+          registry,
+          &mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def.clone())),
+        )?;
+        pending_codes.push((code, comment.clone()));
+        Ok(())
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+        // Context sends are executed only at module top level for now. Parser paths
+        // intentionally reject nested sends until interpreter/effect execution can
+        // support them in functions and state machines.
+        let Some(context_name) = &send.target.context else {
+          return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target: send.target.name.to_string() }, None));
+        };
+        let target = context_name.to_string();
+        let Some(binding) = registry.get(&target).cloned() else {
+          return Err(MechError::new(RuntimeAddressedAssignmentUnsupported { target }, None));
+        };
+        if !pending_codes.is_empty() {
+          pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+        }
+        self.flush_direct_execution(program, pending, result)?;
+        let expression = self.resolve_context_reads_in_expression(context, program, registry, &send.expression)?;
+        let path = send.target.name.to_string();
+        if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+          let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
+          self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
+          *result = value;
+          return Ok(());
+        }
+        self.validate_live_context_candidate(context)?;
+        let value_cell = self.bind_persistent_send_value_on_program(program, expression)?;
+        let value = resolve_runtime_value(value_cell.borrow().clone());
+        self.write_context_resource(context, &binding, &path, value.clone(), RuntimeResourceWriteIntent::Send)?;
+        self.persistent_sends.push(RuntimePersistentSend { binding, path, value: value_cell, schedule: RuntimePersistentSendSchedule::EveryAcceptedTurn });
+        self.commit_live_context_candidate(context);
+        *result = value;
+        return Ok(());
+      }
+      mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
+        if let Some(context_name) = &assign.target.context {
+          let target = context_name.to_string();
+          if let Some(binding) = registry.get(&target).cloned() {
+            if !pending_codes.is_empty() {
+              pending.push(mech_core::SectionElement::MechCode(std::mem::take(pending_codes)));
+            }
+            self.flush_direct_execution(program, pending, result)?;
+            let expression = self.resolve_context_reads_in_expression(context, program, registry, &assign.expression)?;
+            let value = resolve_runtime_value(self.evaluate_expression_on_program(program, &expression)?);
+            self.write_context_resource(context, &binding, &assign.target.name.to_string(), value.clone(), RuntimeResourceWriteIntent::Assign)?;
+            *result = value;
+            return Ok(());
+          }
+        }
+        let code = self.resolve_context_reads_in_mech_code(
+          context,
+          program,
+          registry,
+          &mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign.clone())),
+        )?;
+        pending_codes.push((code, comment.clone()));
+        Ok(())
+      }
+      _ => {
+        let code = self.resolve_context_reads_in_mech_code(context, program, registry, code)?;
+        pending_codes.push((code, comment.clone()));
+        Ok(())
+      }
+    }
+  }
+
+  fn preflight_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    tree: &mech_core::Program,
+    scope: &SourceScope,
+  ) -> MResult<()> {
+    let registry = self.direct_context_registry_for_scope(tree, scope)?;
+    self.preflight_context_capabilities_with_registry(context, &registry, tree, scope, AddressedReadPreflight::RequireContextBinding)
+  }
+
+  fn preflight_context_capabilities_with_registry(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    tree: &mech_core::Program,
+    scope: &SourceScope,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    for section in &tree.body.sections {
+      for element in &section.elements {
+        match element {
+          mech_core::SectionElement::MechCode(codes) => {
+            for (code, _) in codes {
+              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel, addressed_read_preflight)?;
+            }
+          }
+          mech_core::SectionElement::FencedMechCode(fenced)
+            if Self::executable_fence_for_scope(fenced, scope) =>
+          {
+            for (code, _) in &fenced.code {
+              self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::TopLevel, addressed_read_preflight)?;
+            }
+          }
+          _ => {}
+        }
+      }
+    }
+    Ok(())
+  }
+
+  fn preflight_code_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    code: &mech_core::MechCode,
+    placement: DirectContextEffectPlacement,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match code {
+      mech_core::MechCode::ActivationScope(scope) => {
+        self.preflight_expression_context_reads(context, registry, &scope.trigger, addressed_read_preflight)?;
+        if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
+          let has_send = arms.iter().any(|arm| match &arm.body {
+            mech_core::ActivationArmBody::Block(body) => body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_)))),
+            mech_core::ActivationArmBody::Expression(_) => false,
+          });
+          if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+            return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None));
+          }
+          for arm in arms {
+            self.preflight_pattern_context_reads(
+              context,
+              registry,
+              &arm.pattern,
+              addressed_read_preflight,
+            )?;
+            if let Some(guard) = &arm.guard { self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?; }
+            match &arm.body {
+              mech_core::ActivationArmBody::Block(body) => for (code, _) in body { self.preflight_code_context_capabilities(context, registry, code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?; },
+              mech_core::ActivationArmBody::Expression(expression) => self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?,
+            }
+          }
+          return Ok(());
+        }
+        let scope_body = match &scope.body { mech_core::ActivationBody::Block(body) => body, mech_core::ActivationBody::PatternArms(_) => unreachable!() };
+        let has_send = scope_body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))));
+        // Only writes to local registers conflict with an effectful activation.
+        // Context-addressed assignments have their own, operation-specific
+        // placement error below (they are top-level only).
+        let has_register = scope_body.iter().any(|(code, _)| match code {
+          mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => assign.target.context.is_none(),
+          mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => assign.target.context.is_none(),
+          _ => false,
+        });
+        if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
+        if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
+        for (body_code, _) in scope_body {
+          self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
+      mech_core::MechCode::Statement(statement) => {
+        self.preflight_statement_context_capabilities(context, registry, statement, placement, addressed_read_preflight)
+      }
+      mech_core::MechCode::Expression(expression) => {
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
+      }
+      mech_core::MechCode::FsmImplementation(fsm) => {
+        self.preflight_fsm_implementation_context_capabilities(context, registry, fsm, addressed_read_preflight)
+      }
+      mech_core::MechCode::FunctionDefine(function) => {
+        self.preflight_function_define_context_capabilities(context, registry, function, addressed_read_preflight)
+      }
+      mech_core::MechCode::Import(_)
+      | mech_core::MechCode::Comment(_)
+      | mech_core::MechCode::FsmSpecification(_)
+      | mech_core::MechCode::Error(_, _) => Ok(()),
+    }
+  }
+
+  fn preflight_function_define_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    function: &mech_core::FunctionDefine,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    for statement in &function.statements {
+      self.reject_runtime_context_reads_in_statement(registry, statement)?;
+    }
+    for arm in &function.match_arms {
+      self.reject_runtime_context_reads_in_pattern(registry, &arm.pattern)?;
+      self.reject_runtime_context_reads_in_expression(registry, &arm.expression)?;
+    }
+
+    for statement in &function.statements {
+      self.preflight_statement_context_capabilities(
+        context,
+        registry,
+        statement,
+        DirectContextEffectPlacement::FunctionBody,
+        addressed_read_preflight,
+      )?;
+    }
+    for arm in &function.match_arms {
+      self.preflight_pattern_context_reads(context, registry, &arm.pattern, addressed_read_preflight)?;
+      self.preflight_expression_context_reads(context, registry, &arm.expression, addressed_read_preflight)?;
+    }
+    Ok(())
+  }
+
+  fn reject_function_context_read(
+        &self,
+        context_name: &mech_core::Identifier,
+        path: &mech_core::Identifier,
+    ) -> MResult<()> {
+        Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "direct_context_read_placement",
+                reason: format!(
+                    "context read from `{}` is not supported inside function definitions yet; read at module top level and pass the value as an argument",
+                    direct_context_target(&context_name.to_string(), &path.to_string()),
+                ),
+            },
+            None,
+        ))
+    }
+
+    fn reject_runtime_context_reads_in_statement(
+        &self,
+        registry: &RuntimeContextRegistry,
+        statement: &mech_core::Statement,
+    ) -> MResult<()> {
+        match statement {
+            mech_core::Statement::VariableDefine(var_def) => {
+                self.reject_runtime_context_reads_in_expression(registry, &var_def.expression)
+            }
+            mech_core::Statement::VariableAssign(assign) => {
+                self.reject_runtime_context_reads_in_slice_ref(registry, &assign.target)?;
+                self.reject_runtime_context_reads_in_expression(registry, &assign.expression)
+            }
+            mech_core::Statement::OpAssign(op_assign) => {
+                self.reject_runtime_context_reads_in_slice_ref(registry, &op_assign.target)?;
+                self.reject_runtime_context_reads_in_expression(registry, &op_assign.expression)
+            }
+            mech_core::Statement::ContextSend(send) => {
+                self.reject_runtime_context_reads_in_expression(registry, &send.expression)
+            }
+            mech_core::Statement::TupleDestructure(tuple_destructure) => self
+                .reject_runtime_context_reads_in_expression(
+                    registry,
+                    &tuple_destructure.expression,
+                ),
+            mech_core::Statement::FsmDeclare(fsm) => {
+                if let Some(args) = &fsm.pipe.start.args {
+                    for (_, expression) in args {
+                        self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                    }
+                }
+                for transition in &fsm.pipe.transitions {
+                    self.reject_runtime_context_reads_in_transition(registry, transition)?;
+                }
+                Ok(())
+            }
+            #[cfg(feature = "invariant_define")]
+            mech_core::Statement::InvariantDefine(invariant) => {
+                self.reject_runtime_context_reads_in_expression(registry, &invariant.expression)
+            }
+            _ => Ok(()),
+        }
+    }
+
+    fn reject_runtime_context_reads_in_transition(
+        &self,
+        registry: &RuntimeContextRegistry,
+        transition: &mech_core::Transition,
+    ) -> MResult<()> {
+        match transition {
+            mech_core::Transition::Async(pattern)
+            | mech_core::Transition::Next(pattern)
+            | mech_core::Transition::Output(pattern) => {
+                self.reject_runtime_context_reads_in_pattern(registry, pattern)
+            }
+            mech_core::Transition::CodeBlock(code_items) => {
+                for (code, _) in code_items {
+                    if let mech_core::MechCode::Statement(statement) = code {
+                        self.reject_runtime_context_reads_in_statement(registry, statement)?;
+                    } else if let mech_core::MechCode::Expression(expression) = code {
+                        self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                    }
+                }
+                Ok(())
+            }
+            mech_core::Transition::Statement(statement) => {
+                self.reject_runtime_context_reads_in_statement(registry, statement)
+            }
+        }
+    }
+
+    fn reject_runtime_context_reads_in_pattern(
+        &self,
+        registry: &RuntimeContextRegistry,
+        pattern: &mech_core::Pattern,
+    ) -> MResult<()> {
+        match pattern {
+            mech_core::Pattern::Expression(expression) => {
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::Pattern::TupleStruct(tuple_struct) => {
+                for pattern in &tuple_struct.patterns {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                Ok(())
+            }
+            mech_core::Pattern::Tuple(tuple) => {
+                for pattern in &tuple.0 {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                Ok(())
+            }
+            mech_core::Pattern::Array(array) => {
+                for pattern in &array.prefix {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                if let Some(spread) = &array.spread {
+                    if let Some(binding) = &spread.binding {
+                        self.reject_runtime_context_reads_in_pattern(registry, binding)?;
+                    }
+                }
+                for pattern in &array.suffix {
+                    self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                }
+                Ok(())
+            }
+            mech_core::Pattern::Wildcard => Ok(()),
+        }
+    }
+
+    fn reject_runtime_context_reads_in_expression(
+        &self,
+        registry: &RuntimeContextRegistry,
+        expression: &mech_core::Expression,
+    ) -> MResult<()> {
+        match expression {
+            mech_core::Expression::Var(var) => {
+                if let Some(context_name) = &var.context {
+                    if registry.contains(&context_name.to_string()) {
+                        self.reject_function_context_read(context_name, &var.name)?;
+                    }
+                }
+                Ok(())
+            }
+            mech_core::Expression::Formula(factor) => {
+                self.reject_runtime_context_reads_in_factor(registry, factor)
+            }
+            mech_core::Expression::FunctionCall(call) => {
+                for (_, expression) in &call.args {
+                    self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::FsmPipe(pipe) => {
+                if let Some(args) = &pipe.start.args {
+                    for (_, expression) in args {
+                        self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                    }
+                }
+                for transition in &pipe.transitions {
+                    self.reject_runtime_context_reads_in_transition(registry, transition)?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::Literal(_) => Ok(()),
+            mech_core::Expression::Range(range) => {
+                self.reject_runtime_context_reads_in_factor(registry, &range.start)?;
+                if let Some((_, increment)) = &range.increment {
+                    self.reject_runtime_context_reads_in_factor(registry, increment)?;
+                }
+                self.reject_runtime_context_reads_in_factor(registry, &range.terminal)
+            }
+            mech_core::Expression::Structure(structure) => {
+                self.reject_runtime_context_reads_in_structure(registry, structure)
+            }
+            mech_core::Expression::Match(match_expression) => {
+                self.reject_runtime_context_reads_in_expression(
+                    registry,
+                    &match_expression.source,
+                )?;
+                for arm in &match_expression.arms {
+                    self.reject_runtime_context_reads_in_pattern(registry, &arm.pattern)?;
+                    if let Some(guard) = &arm.guard {
+                        self.reject_runtime_context_reads_in_expression(registry, guard)?;
+                    }
+                    self.reject_runtime_context_reads_in_expression(registry, &arm.expression)?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::Slice(slice) => {
+                self.reject_runtime_context_reads_in_slice(registry, slice)
+            }
+            mech_core::Expression::SetComprehension(comprehension) => {
+                self.reject_runtime_context_reads_in_expression(
+                    registry,
+                    &comprehension.expression,
+                )?;
+                for qualifier in &comprehension.qualifiers {
+                    self.reject_runtime_context_reads_in_comprehension_qualifier(
+                        registry, qualifier,
+                    )?;
+                }
+                Ok(())
+            }
+            mech_core::Expression::MatrixComprehension(comprehension) => {
+                self.reject_runtime_context_reads_in_expression(
+                    registry,
+                    &comprehension.expression,
+                )?;
+                for qualifier in &comprehension.qualifiers {
+                    self.reject_runtime_context_reads_in_comprehension_qualifier(
+                        registry, qualifier,
+                    )?;
+                }
+                Ok(())
+            }
+        }
+    }
+
+    fn reject_runtime_context_reads_in_factor(
+        &self,
+        registry: &RuntimeContextRegistry,
+        factor: &mech_core::Factor,
+    ) -> MResult<()> {
+        match factor {
+            mech_core::Factor::Expression(expression) => {
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::Factor::Negate(factor)
+            | mech_core::Factor::Not(factor)
+            | mech_core::Factor::Parenthetical(factor)
+            | mech_core::Factor::Transpose(factor) => {
+                self.reject_runtime_context_reads_in_factor(registry, factor)
+            }
+            mech_core::Factor::Term(term) => {
+                self.reject_runtime_context_reads_in_factor(registry, &term.lhs)?;
+                for (_, factor) in &term.rhs {
+                    self.reject_runtime_context_reads_in_factor(registry, factor)?;
+                }
+                Ok(())
+            }
+        }
+    }
+
+    fn reject_runtime_context_reads_in_slice(
+        &self,
+        registry: &RuntimeContextRegistry,
+        slice: &mech_core::Slice,
+    ) -> MResult<()> {
+        if let Some(context_name) = &slice.context {
+            if registry.contains(&context_name.to_string()) {
+                self.reject_function_context_read(context_name, &slice.name)?;
+            }
+        }
+        for subscript in &slice.subscript {
+            self.reject_runtime_context_reads_in_subscript(registry, subscript)?;
+        }
+        Ok(())
+    }
+
+    fn reject_runtime_context_reads_in_slice_ref(
+        &self,
+        registry: &RuntimeContextRegistry,
+        target: &mech_core::SliceRef,
+    ) -> MResult<()> {
+        if let Some(subscripts) = &target.subscript {
+            for subscript in subscripts {
+                self.reject_runtime_context_reads_in_subscript(registry, subscript)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn reject_runtime_context_reads_in_subscript(
+        &self,
+        registry: &RuntimeContextRegistry,
+        subscript: &mech_core::Subscript,
+    ) -> MResult<()> {
+        match subscript {
+            mech_core::Subscript::Brace(subscripts) | mech_core::Subscript::Bracket(subscripts) => {
+                for subscript in subscripts {
+                    self.reject_runtime_context_reads_in_subscript(registry, subscript)?;
+                }
+                Ok(())
+            }
+            mech_core::Subscript::Formula(factor) => {
+                self.reject_runtime_context_reads_in_factor(registry, factor)
+            }
+            mech_core::Subscript::Range(range) => {
+                self.reject_runtime_context_reads_in_factor(registry, &range.start)?;
+                if let Some((_, increment)) = &range.increment {
+                    self.reject_runtime_context_reads_in_factor(registry, increment)?;
+                }
+                self.reject_runtime_context_reads_in_factor(registry, &range.terminal)
+            }
+            _ => Ok(()),
+        }
+    }
+
+    fn reject_runtime_context_reads_in_structure(
+        &self,
+        registry: &RuntimeContextRegistry,
+        structure: &mech_core::Structure,
+    ) -> MResult<()> {
+        match structure {
+            mech_core::Structure::Map(map) => {
+                for mapping in &map.elements {
+                    self.reject_runtime_context_reads_in_expression(registry, &mapping.key)?;
+                    self.reject_runtime_context_reads_in_expression(registry, &mapping.value)?;
+                }
+            }
+            mech_core::Structure::Set(set) => {
+                for expression in &set.elements {
+                    self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                }
+            }
+            mech_core::Structure::Matrix(matrix) => {
+                for row in &matrix.rows {
+                    for column in &row.columns {
+                        self.reject_runtime_context_reads_in_expression(registry, &column.element)?;
+                    }
+                }
+            }
+            mech_core::Structure::Record(record) => {
+                for binding in &record.bindings {
+                    self.reject_runtime_context_reads_in_expression(registry, &binding.value)?;
+                }
+            }
+            mech_core::Structure::Table(table) => {
+                for row in &table.rows {
+                    for column in &row.columns {
+                        self.reject_runtime_context_reads_in_expression(registry, &column.element)?;
+                    }
+                }
+            }
+            mech_core::Structure::Tuple(tuple) => {
+                for expression in &tuple.elements {
+                    self.reject_runtime_context_reads_in_expression(registry, expression)?;
+                }
+            }
+            mech_core::Structure::TupleStruct(tuple_struct) => {
+                self.reject_runtime_context_reads_in_expression(registry, &tuple_struct.value)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn reject_runtime_context_reads_in_comprehension_qualifier(
+        &self,
+        registry: &RuntimeContextRegistry,
+        qualifier: &mech_core::ComprehensionQualifier,
+    ) -> MResult<()> {
+        match qualifier {
+            mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
+                self.reject_runtime_context_reads_in_pattern(registry, pattern)?;
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::ComprehensionQualifier::Filter(expression) => {
+                self.reject_runtime_context_reads_in_expression(registry, expression)
+            }
+            mech_core::ComprehensionQualifier::Let(var_def) => {
+                self.reject_runtime_context_reads_in_expression(registry, &var_def.expression)
+            }
+        }
+    }
+
+    fn preflight_fsm_implementation_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    fsm: &mech_core::FsmImplementation,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    self.preflight_pattern_context_reads(context, registry, &fsm.start, addressed_read_preflight)?;
+    for arm in &fsm.arms {
+      match arm {
+        mech_core::FsmArm::Guard(pattern, guards) => {
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+          for guard in guards {
+            self.preflight_pattern_context_reads(context, registry, &guard.condition, addressed_read_preflight)?;
+            for transition in &guard.transitions {
+              self.preflight_transition_context_capabilities(context, registry, transition, addressed_read_preflight)?;
+            }
+          }
+        }
+        mech_core::FsmArm::Transition(pattern, transitions) => {
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+          for transition in transitions {
+            self.preflight_transition_context_capabilities(context, registry, transition, addressed_read_preflight)?;
+          }
+        }
+        mech_core::FsmArm::Comment(_) => {}
+      }
+    }
+    Ok(())
+  }
+
+  fn preflight_transition_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    transition: &mech_core::Transition,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match transition {
+      mech_core::Transition::Async(pattern)
+      | mech_core::Transition::Next(pattern)
+      | mech_core::Transition::Output(pattern) => {
+        self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)
+      }
+      mech_core::Transition::CodeBlock(code_items) => {
+        for (code, _) in code_items {
+          self.preflight_code_context_capabilities(
+            context,
+            registry,
+            code,
+            DirectContextEffectPlacement::FsmTransition,
+            addressed_read_preflight,
+          )?;
+        }
+        Ok(())
+      }
+      mech_core::Transition::Statement(statement) => {
+        self.preflight_statement_context_capabilities(
+          context,
+          registry,
+          statement,
+          DirectContextEffectPlacement::FsmTransition,
+          addressed_read_preflight,
+        )
+      }
+    }
+  }
+
+  fn preflight_pattern_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    pattern: &mech_core::Pattern,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match pattern {
+      mech_core::Pattern::Expression(expression) => {
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
+      }
+      mech_core::Pattern::TupleStruct(tuple_struct) => {
+        for pattern in &tuple_struct.patterns {
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
+      mech_core::Pattern::Tuple(tuple) => {
+        for pattern in &tuple.0 {
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
+      mech_core::Pattern::Array(array) => {
+        for pattern in &array.prefix {
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+        }
+        if let Some(spread) = &array.spread {
+          if let Some(binding) = &spread.binding {
+            self.preflight_pattern_context_reads(context, registry, binding, addressed_read_preflight)?;
+          }
+        }
+        for pattern in &array.suffix {
+          self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
+      mech_core::Pattern::Wildcard => Ok(()),
+    }
+  }
+
+  fn preflight_statement_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    statement: &mech_core::Statement,
+    placement: DirectContextEffectPlacement,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match statement {
+      mech_core::Statement::VariableDefine(var_def) => {
+        if let Some(context_name) = &var_def.var.context {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "direct_context_define",
+            reason: format!(
+              "context-addressed path `{}` cannot be defined with `:=`; use `=` or `<-`",
+              direct_context_target(&context_name.to_string(), &var_def.var.name.to_string()),
+            ),
+          }, None));
+        }
+        self.preflight_expression_context_reads(context, registry, &var_def.expression, addressed_read_preflight)
+      }
+      mech_core::Statement::VariableAssign(assign) => {
+        self.preflight_slice_ref_subscript_context_reads(context, registry, &assign.target, addressed_read_preflight)?;
+        if let Some(context_name) = &assign.target.context {
+          let context_name = context_name.to_string();
+          let path = assign.target.name.to_string();
+          self.reject_direct_context_effect_placement(
+            "assignment",
+            &context_name,
+            &path,
+            placement,
+          )?;
+          self.preflight_context_access(
+            context,
+            registry,
+            &context_name,
+            &path,
+            RuntimeCapabilityOperation::Write,
+            true,
+            Some(RuntimeResourceWriteIntent::Assign),
+          )?;
+        }
+        self.preflight_expression_context_reads(context, registry, &assign.expression, addressed_read_preflight)?;
+        Ok(())
+      }
+      mech_core::Statement::ContextSend(send) => {
+        let Some(context_name) = &send.target.context else {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "direct_context_send",
+            reason: format!("send target `{}` is not a context path", send.target.name.to_string()),
+          }, None));
+        };
+
+        let context_name = context_name.to_string();
+        let path = send.target.name.to_string();
+
+        self.reject_direct_context_effect_placement(
+          "send",
+          &context_name,
+          &path,
+          placement,
+        )?;
+
+        self.preflight_context_send_access(
+          context,
+          registry,
+          &context_name,
+          &path,
+        )?;
+
+        self.preflight_expression_context_reads(context, registry, &send.expression, addressed_read_preflight)?;
+        Ok(())
+      }
+      mech_core::Statement::OpAssign(op_assign) => {
+        self.preflight_slice_ref_subscript_context_reads(context, registry, &op_assign.target, addressed_read_preflight)?;
+        if op_assign.target.context.is_some() {
+          return Err(MechError::new(RuntimeInvalidOperationError {
+            operation: "direct_context_op_assign",
+            reason: "context op-assignment is not supported; use `=` or `<-`".to_string(),
+          }, None));
+        }
+        self.preflight_expression_context_reads(context, registry, &op_assign.expression, addressed_read_preflight)
+      }
+      mech_core::Statement::TupleDestructure(tuple_destructure) => self
+        .preflight_expression_context_reads(context, registry, &tuple_destructure.expression, addressed_read_preflight),
+      #[cfg(feature = "invariant_define")]
+      mech_core::Statement::InvariantDefine(invariant) => {
+        self.preflight_expression_context_reads(context, registry, &invariant.expression, addressed_read_preflight)
+      }
+      mech_core::Statement::FsmDeclare(fsm) => {
+        self.preflight_fsm_pipe_context_capabilities(context, registry, &fsm.pipe, addressed_read_preflight)
+      }
+      _ => Ok(()),
+    }
+  }
+
+  fn preflight_fsm_pipe_context_capabilities(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    pipe: &mech_core::FsmPipe,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    if let Some(args) = &pipe.start.args {
+      for (_, expression) in args {
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
+      }
+    }
+
+    for transition in &pipe.transitions {
+      self.preflight_transition_context_capabilities(context, registry, transition, addressed_read_preflight)?;
+    }
+
+    Ok(())
+  }
+
+  fn preflight_expression_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    expression: &mech_core::Expression,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match expression {
+      mech_core::Expression::Var(var) => {
+        if let Some(context_name) = &var.context {
+          let context_name = context_name.to_string();
+          if registry.contains(&context_name) || addressed_read_preflight.requires_context_binding() {
+            self.preflight_context_access(
+              context,
+              registry,
+              &context_name,
+              &var.name.to_string(),
+              RuntimeCapabilityOperation::Read,
+              true,
+              None,
+            )?;
+          }
+        }
+      }
+      mech_core::Expression::Formula(factor) => {
+        self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)?;
+      }
+      mech_core::Expression::FunctionCall(call) => {
+        for (_, expression) in &call.args {
+          self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Expression::FsmPipe(pipe) => {
+        self.preflight_fsm_pipe_context_capabilities(context, registry, pipe, addressed_read_preflight)?;
+      }
+      mech_core::Expression::Literal(_) => {}
+      mech_core::Expression::Range(range) => {
+        self.preflight_factor_context_reads(context, registry, &range.start, addressed_read_preflight)?;
+        if let Some((_, increment)) = &range.increment {
+          self.preflight_factor_context_reads(context, registry, increment, addressed_read_preflight)?;
+        }
+        self.preflight_factor_context_reads(context, registry, &range.terminal, addressed_read_preflight)?;
+      }
+      mech_core::Expression::Structure(structure) => {
+        self.preflight_structure_context_reads(context, registry, structure, addressed_read_preflight)?;
+      }
+      mech_core::Expression::Match(match_expression) => {
+        self.preflight_expression_context_reads(context, registry, &match_expression.source, addressed_read_preflight)?;
+        for arm in &match_expression.arms {
+          self.preflight_pattern_context_reads(context, registry, &arm.pattern, addressed_read_preflight)?;
+          if let Some(guard) = &arm.guard {
+            self.preflight_expression_context_reads(context, registry, guard, addressed_read_preflight)?;
+          }
+          self.preflight_expression_context_reads(context, registry, &arm.expression, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Expression::Slice(slice) => {
+        if let Some(context_name) = &slice.context {
+          let context_name = context_name.to_string();
+          if registry.contains(&context_name) {
+            return Err(MechError::new(RuntimeInvalidOperationError {
+              operation: "context_read",
+              reason: "context-addressed slices are not supported".to_string(),
+            }, None));
+          }
+          if addressed_read_preflight.requires_context_binding() {
+            return Err(undeclared_direct_context_target_error(&context_name));
+          }
+        }
+        self.preflight_slice_context_reads(context, registry, slice, addressed_read_preflight)?;
+      }
+      mech_core::Expression::SetComprehension(comprehension) => {
+        self.preflight_expression_context_reads(context, registry, &comprehension.expression, addressed_read_preflight)?;
+        for qualifier in &comprehension.qualifiers {
+          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Expression::MatrixComprehension(comprehension) => {
+        self.preflight_expression_context_reads(context, registry, &comprehension.expression, addressed_read_preflight)?;
+        for qualifier in &comprehension.qualifiers {
+          self.preflight_comprehension_qualifier_context_reads(context, registry, qualifier, addressed_read_preflight)?;
+        }
+      }
+    }
+    Ok(())
+  }
+
+  fn preflight_factor_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    factor: &mech_core::Factor,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match factor {
+      mech_core::Factor::Expression(expression) => {
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
+      }
+      mech_core::Factor::Negate(factor)
+      | mech_core::Factor::Not(factor)
+      | mech_core::Factor::Parenthetical(factor)
+      | mech_core::Factor::Transpose(factor) => {
+        self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)
+      }
+      mech_core::Factor::Term(term) => {
+        self.preflight_factor_context_reads(context, registry, &term.lhs, addressed_read_preflight)?;
+        for (_, factor) in &term.rhs {
+          self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)?;
+        }
+        Ok(())
+      }
+    }
+  }
+
+  fn preflight_structure_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    structure: &mech_core::Structure,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match structure {
+      mech_core::Structure::Map(map) => {
+        for mapping in &map.elements {
+          self.preflight_expression_context_reads(context, registry, &mapping.key, addressed_read_preflight)?;
+          self.preflight_expression_context_reads(context, registry, &mapping.value, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Structure::Set(set) => {
+        for expression in &set.elements {
+          self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Structure::Matrix(matrix) => {
+        for row in &matrix.rows {
+          for column in &row.columns {
+            self.preflight_expression_context_reads(context, registry, &column.element, addressed_read_preflight)?;
+          }
+        }
+      }
+      mech_core::Structure::Record(record) => {
+        for binding in &record.bindings {
+          self.preflight_expression_context_reads(context, registry, &binding.value, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Structure::Table(table) => {
+        for row in &table.rows {
+          for column in &row.columns {
+            self.preflight_expression_context_reads(context, registry, &column.element, addressed_read_preflight)?;
+          }
+        }
+      }
+      mech_core::Structure::Tuple(tuple) => {
+        for expression in &tuple.elements {
+          self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Structure::TupleStruct(tuple_struct) => {
+        self.preflight_expression_context_reads(context, registry, &tuple_struct.value, addressed_read_preflight)?;
+      }
+      _ => {}
+    }
+    Ok(())
+  }
+
+  fn preflight_slice_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    slice: &mech_core::Slice,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    for subscript in &slice.subscript {
+      self.preflight_subscript_context_reads(context, registry, subscript, addressed_read_preflight)?;
+    }
+    Ok(())
+  }
+
+  fn preflight_slice_ref_subscript_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    target: &mech_core::SliceRef,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    if let Some(subscripts) = &target.subscript {
+      for subscript in subscripts {
+        self.preflight_subscript_context_reads(context, registry, subscript, addressed_read_preflight)?;
+      }
+    }
+    Ok(())
+  }
+
+  fn preflight_subscript_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    subscript: &mech_core::Subscript,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match subscript {
+      mech_core::Subscript::Brace(subscripts) | mech_core::Subscript::Bracket(subscripts) => {
+        for subscript in subscripts {
+          self.preflight_subscript_context_reads(context, registry, subscript, addressed_read_preflight)?;
+        }
+      }
+      mech_core::Subscript::Formula(factor) => {
+        self.preflight_factor_context_reads(context, registry, factor, addressed_read_preflight)?;
+      }
+      mech_core::Subscript::Range(range) => {
+        self.preflight_factor_context_reads(context, registry, &range.start, addressed_read_preflight)?;
+        if let Some((_, increment)) = &range.increment {
+          self.preflight_factor_context_reads(context, registry, increment, addressed_read_preflight)?;
+        }
+        self.preflight_factor_context_reads(context, registry, &range.terminal, addressed_read_preflight)?;
+      }
+      _ => {}
+    }
+    Ok(())
+  }
+
+  fn preflight_comprehension_qualifier_context_reads(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    qualifier: &mech_core::ComprehensionQualifier,
+    addressed_read_preflight: AddressedReadPreflight,
+  ) -> MResult<()> {
+    match qualifier {
+      mech_core::ComprehensionQualifier::Generator((pattern, expression)) => {
+        self.preflight_pattern_context_reads(context, registry, pattern, addressed_read_preflight)?;
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
+      }
+      mech_core::ComprehensionQualifier::Filter(expression) => {
+        self.preflight_expression_context_reads(context, registry, expression, addressed_read_preflight)
+      }
+      mech_core::ComprehensionQualifier::Let(var_def) => {
+        self.preflight_expression_context_reads(context, registry, &var_def.expression, addressed_read_preflight)
+      }
+    }
+  }
+
+
+  fn reject_direct_context_effect_placement(
+    &self,
+    effect: &str,
+    context_name: &str,
+    path: &str,
+    placement: DirectContextEffectPlacement,
+  ) -> MResult<()> {
+    let allowed = match effect {
+      "assignment" => matches!(placement, DirectContextEffectPlacement::TopLevel),
+      "send" => matches!(placement, DirectContextEffectPlacement::TopLevel | DirectContextEffectPlacement::ActivationScope),
+      _ => false,
+    };
+    if allowed { return Ok(()); }
+
+    Err(MechError::new(RuntimeInvalidOperationError {
+      operation: "direct_context_effect_placement",
+      reason: format!(
+        "context {effect} to `{}` is only supported at module top level, not inside {}",
+        direct_context_target(context_name, path),
+        placement.description(),
+      ),
+    }, None))
+  }
+
+  fn preflight_context_send_access(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    context_name: &str,
+    path: &str,
+  ) -> MResult<()> {
+    let Some(binding) = registry.get(context_name) else {
+      return Err(undeclared_direct_context_target_error(context_name));
+    };
+    let resolved = self.resolve_context_resource_request(binding, path)?;
+    let operation = context_send_operation(binding, &resolved.context_path)?;
+    self.preflight_context_access(
+      context,
+      registry,
+      context_name,
+      path,
+      operation,
+      true,
+      Some(RuntimeResourceWriteIntent::Send),
+    )
+  }
+
+  fn preflight_context_access(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    context_name: &str,
+    path: &str,
+    operation: RuntimeCapabilityOperation,
+    require_context_binding: bool,
+    write_intent: Option<RuntimeResourceWriteIntent>,
+  ) -> MResult<()> {
+    let Some(binding) = registry.get(context_name) else {
+      if require_context_binding {
+        return Err(undeclared_direct_context_target_error(context_name));
+      }
+      return Ok(());
+    };
+    let resolved = self.resolve_context_resource_request(binding, path)?;
+    let context_allowed = match operation {
+      RuntimeCapabilityOperation::Read => runtime_context_allows_read(binding, &resolved.context_path),
+      RuntimeCapabilityOperation::Write => runtime_context_allows_write(binding, &resolved.context_path),
+      _ => runtime_context_allows_operation(binding, operation.name(), &resolved.context_path),
+    };
+    if !context_allowed {
+      return Err(MechError::new(RuntimeResourceCapabilityDenied {
+        context_name: binding.name.clone(),
+        operation: match operation {
+          RuntimeCapabilityOperation::Read => "read".to_string(),
+          RuntimeCapabilityOperation::Write => "write".to_string(),
+          other => format!("{other:?}"),
+        },
+        path: resolved.context_path,
+      }, None));
+    }
+    if !self.has_capability_grant(
+      &context.subject,
+      &resolved.provider_base_uri,
+      &operation,
+      &resolved.provider_path,
+    ) {
+      return Err(MechError::new(
+        RuntimeCapabilityGrantDenied {
+          subject: context.subject.clone(),
+          resource: resolved.provider_base_uri,
+          operation,
+          path: resolved.provider_path,
+        },
+        None,
+      ));
+    }
+
+    if let Some(intent) = write_intent {
+      self.resources.preflight_write(RuntimeResourceWritePreflightRequest {
+        base_uri: resolved.provider_base_uri,
+        path: resolved.provider_path,
+        context_name: binding.name.clone(),
+        operation: operation.clone(),
+        intent,
+      })?;
+    }
+
+    Ok(())
+  }
+
+  fn run_tree_on_program(
+    &mut self,
+    context: &mut RuntimeContext,
+    program: &mut MechProgram,
+    tree: &mech_core::Program,
+    scope_hint: Option<&SourceScope>,
+  ) -> MResult<Value> {
+    let direct_document_run = scope_hint.is_none();
+    let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
+    let skip_non_context_imports = scope_hint.is_some();
+    let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
+    let mut result = Value::Empty;
+    let mut pending = Vec::new();
+
+    for section in &tree.body.sections {
+      for element in &section.elements {
+        match element {
+          mech_core::SectionElement::MechCode(codes) => {
+            let mut pending_codes = Vec::new();
+            for (code, comment) in codes {
+              self.push_direct_code(
+                context,
+                program,
+                &registry,
+                &mut pending,
+                &mut pending_codes,
+                &mut result,
+                skip_non_context_imports,
+                code,
+                comment,
+              )?;
+            }
+            if !pending_codes.is_empty() {
+              pending.push(mech_core::SectionElement::MechCode(pending_codes));
+            }
+          }
+          mech_core::SectionElement::FencedMechCode(fenced)
+            if Self::executable_fence_for_scope(fenced, execution_scope) =>
+          {
+            let mut pending_codes = Vec::new();
+            for (code, comment) in &fenced.code {
+              self.push_direct_code(
+                context,
+                program,
+                &registry,
+                &mut pending,
+                &mut pending_codes,
+                &mut result,
+                skip_non_context_imports,
+                code,
+                comment,
+              )?;
+            }
+            if !pending_codes.is_empty() {
+              let mut fenced = fenced.clone();
+              fenced.code = pending_codes;
+              pending.push(mech_core::SectionElement::FencedMechCode(fenced));
+            }
+          }
+          mech_core::SectionElement::FencedMechCode(fenced) if direct_document_run => {
+            pending.push(mech_core::SectionElement::FencedMechCode(fenced.clone()));
+          }
+          _ => {}
+        }
+      }
+    }
+
+    self.flush_direct_execution(program, &mut pending, &mut result)?;
+    Ok(result)
+  }
+
+  fn evaluate_expression_on_program(
+    &mut self,
+    program: &mut MechProgram,
+    expression: &mech_core::Expression,
+  ) -> MResult<Value> {
+    let single = single_code_program(mech_core::MechCode::Expression(expression.clone()), None);
+    program.run_tree(&single).map(resolve_runtime_value)
+  }
+
+  fn bind_persistent_send_value_on_program(
+    &mut self,
+    program: &mut MechProgram,
+    expression: mech_core::Expression,
+  ) -> MResult<ValRef> {
+    let name = format!("mech-internal-persistent-send-{}", self.persistent_sends.len());
+    let id = hash_str(&name);
+    let var_def = mech_core::VariableDefine {
+      mutable: false,
+      var: mech_core::Var {
+        name: identifier_from_str(&name),
+        context: None,
+        kind: None,
+      },
+      expression,
+    };
+    let single = single_code_program(
+      mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
+      None,
+    );
+    program.run_tree(&single)?;
+    program
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(id)
+      .ok_or_else(|| MechError::new(RuntimeInvalidOperationError {
+        operation: "persistent_context_send",
+        reason: "failed to bind persistent send expression to an output cell".to_string(),
+      }, None))
+  }
+
+  pub fn run_string(&mut self, source: &str) -> MResult<Value> {
+    let mut context = self.runtime_context()?;
+    self.run_string_with_context(&mut context, source)
+  }
+  pub fn run_string_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    self.validate_context_for_runtime(context)?;
+    let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
+      MechError::new(
+        ResourceBudgetExceededError {
+          resource: "source_bytes",
+          used: u64::MAX,
+          requested: 1,
+          max: None,
+        },
+        None,
+      )
+    })?;
+    self.enforce_source_byte_count(context, source_bytes)?;
+    self.run_string_with_context_inner(context, source, turn_started)
+  }
+
+  fn run_string_with_context_inner(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+    turn_started: Instant,
+  ) -> MResult<Value> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let live_state_before = self.live_state_snapshot();
+
+    let result = match mech_syntax::parser::parse(source.trim()) {
+      Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
+        Ok(()) => {
+          let program_config = self.program.config.clone();
+          let mut program = std::mem::replace(
+            &mut self.program,
+            MechProgram::new(program_config),
+          );
+
+          let result = (|| {
+            self.register_runtime_program_host_functions(
+              context,
+              &mut program,
+            )?;
+
+            let runtime_ptr: *mut MechRuntime = self;
+            let context_ptr: *mut RuntimeContext = context;
+            let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+            self.run_tree_on_program(context, &mut program, &tree, None)
+          })();
+
+          self.program = program;
+          result
+        }
+        Err(error) => Err(error),
+      },
+      Err(error) => Err(error),
+    };
+
+    let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+    }
+
+    result
+  }
+
+  /// Evaluates bytecode in an isolated temporary program. It returns the
+  /// evaluation result but does not install the decoded program, symbols,
+  /// execution plan, or live state as the runtime's persistent active program.
+  pub fn run_bytecode_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    bytecode: &[u8],
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    self.validate_context_for_runtime(context)?;
+    let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
+      MechError::new(
+        ResourceBudgetExceededError {
+          resource: "source_bytes",
+          used: u64::MAX,
+          requested: 1,
+          max: None,
+        },
+        None,
+      )
+    })?;
+    self.enforce_source_byte_count(context, source_bytes)?;
+    self.run_bytecode_with_context_inner(context, bytecode, turn_started)
+  }
+
+  fn run_bytecode_with_context_inner(
+    &mut self,
+    context: &mut RuntimeContext,
+    bytecode: &[u8],
+    turn_started: Instant,
+  ) -> MResult<Value> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let program_config = self.program.config.clone();
+    let previous_program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config.clone()),
+    );
+    let mut bytecode_program = MechProgram::new(program_config);
+
+    let live_state_before = self.live_state_snapshot();
+    let result = (|| {
+      self.register_runtime_program_host_functions(
+        context,
+        &mut bytecode_program,
+      )?;
+
+      let runtime_ptr: *mut MechRuntime = self;
+      let context_ptr: *mut RuntimeContext = context;
+      let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+      bytecode_program.run_bytecode(bytecode)
+    })();
+
+    let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+
+    // Runtime bytecode execution is one-shot. Direct MechProgram
+    // bytecode loading is the persistent installation path.
+    self.program = previous_program;
+    self.restore_live_state(live_state_before);
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+    }
+
+    result
+  }
+
+  pub fn run_source_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    self.validate_context_for_runtime(context)?;
+    self.enforce_source_limits(context, source)?;
+    self.run_source_with_context_inner(context, source, turn_started)
+  }
+
+  fn run_source_with_context_inner(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+    turn_started: Instant,
+  ) -> MResult<Value> {
+    match source {
+      MechSourceCode::String(source) => self.run_string_with_context_inner(context, source, turn_started),
+      MechSourceCode::Tree(tree) => self.run_tree_with_context_timed(context, tree, turn_started),
+      MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context_inner(context, bytes, turn_started),
+      MechSourceCode::Program(sources) => {
+        let mut value = Value::Empty;
+        for source in sources {
+          value = self.run_source_with_context_inner(context, source, turn_started)?;
+        }
+        Ok(value)
+      }
+      unsupported => Err(MechError::new(RuntimeInvalidOperationError { operation: "run_source", reason: format!("unsupported program source: {:?}", unsupported) }, None)),
+    }
+  }
+
+  pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
+    let mut context = self.runtime_context()?;
+    self.run_tree_with_context(&mut context, tree)
+  }
+
+  pub fn run_tree_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    tree: &mech_core::Program,
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    self.run_tree_with_context_timed(context, tree, turn_started)
+  }
+
+  fn run_tree_with_context_timed(
+    &mut self,
+    context: &mut RuntimeContext,
+    tree: &mech_core::Program,
+    turn_started: Instant,
+  ) -> MResult<Value> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    let live_state_before = self.live_state_snapshot();
+
+    let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
+      Ok(()) => {
+        let program_config = self.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut self.program,
+          MechProgram::new(program_config),
+        );
+
+        let result = (|| {
+          self.register_runtime_program_host_functions(
+            context,
+            &mut program,
+          )?;
+
+          let runtime_ptr: *mut MechRuntime = self;
+          let context_ptr: *mut RuntimeContext = context;
+          let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+          self.run_tree_on_program(context, &mut program, tree, None)
+        })();
+
+        self.program = program;
+        result
+      }
+      Err(error) => Err(error),
+    };
+
+    let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    if result.is_err() {
+      self.restore_live_state(live_state_before);
+    }
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+        if let Some(started) = profile_started {
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ProgramProfiled {
+              task_id: context.task,
+              duration_ns: started.elapsed().as_nanos(),
+            },
+          )?;
+        }
+      }
+    }
+
+    result
+  }
+
+  pub fn take_program(&mut self) -> MechProgram {
+    let program_config = self.program.config.clone();
+    std::mem::replace(&mut self.program, MechProgram::new(program_config))
+  }
+
+  pub fn out_string(&self) -> String {
+    self.program.out_string()
+  }
+
+  pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
+    self.program.has_interpreter(interpreter_id)
+  }
+
+  pub fn output_value_for_interpreter(
+    &self,
+    interpreter_id: u64,
+    output_id: u64,
+  ) -> Option<Value> {
+    self.program.output_value_for_interpreter(interpreter_id, output_id)
+  }
+
+  pub fn symbol_name_for_interpreter_output(
+    &self,
+    interpreter_id: u64,
+    output_id: u64,
+  ) -> Option<String> {
+    self.program.symbol_name_for_interpreter_output(interpreter_id, output_id)
+  }
+
+  pub fn symbol_values_for_interpreter(
+    &self,
+    interpreter_id: u64,
+    names: &[String],
+  ) -> Option<Vec<(String, Value)>> {
+    self.program.symbol_values_for_interpreter(interpreter_id, names)
+  }
+
+  pub fn root_symbol_value(&self, name: &str) -> MResult<Value> {
+    self.program.root_symbol_value(name)
+  }
+
+  pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, Value)>> {
+    self.program.root_symbol_values(names)
+  }
+
+  pub fn bind_ans_for_interpreter(
+    &mut self,
+    interpreter_id: u64,
+    value: &Value,
+  ) -> MResult<()> {
+    if self.program.bind_ans_for_interpreter(interpreter_id, value) {
+      return Ok(());
+    }
+
+    Err(MechError::new(
+      RuntimeInvalidOperationError {
+        operation: "bind_ans_for_interpreter",
+        reason: format!("interpreter id {} not found", interpreter_id),
+      },
+      None,
+    ))
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step(&mut self, count: u64) -> MResult<()> {
+    let mut context = self.runtime_context()?;
+    self.step_with_context(&mut context, count)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    count: u64,
+  ) -> MResult<()> {
+    let turn_started = Instant::now();
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+    let result = program.step(count);
+
+    self.program = program;
+    result?;
+    self.enforce_turn_duration(turn_started)
+  }
+
+  pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
+    let mut context = self.runtime_context()?
+      .with_module_version(version);
+
+    self.run_module_with_context(&mut context, version)
+  }
+
+  pub fn run_module_scope(
+    &mut self,
+    version: ModuleVersionId,
+    scope: SourceScope,
+  ) -> MResult<Value> {
+    let mut context = self.runtime_context()?
+      .with_module_version(version);
+
+    self.run_module_scope_with_context(&mut context, version, scope)
+  }
+
+  pub fn run_module_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+  ) -> MResult<Value> {
+    self.run_module_scope_with_context(context, version, SourceScope::Program)
+  }
+
+  pub fn run_module_scope_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: SourceScope,
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    let mut preflight_seen = HashSet::new();
+    self.preflight_module_graph_for_scope(context, version, &scope, &mut preflight_seen)?;
+
+    let mut seen = HashSet::new();
+    let mut module_instances = HashMap::new();
+
+    let instance = self.execute_module_isolated_for_scope(
+      context,
+      version,
+      &scope,
+      &mut seen,
+      &mut module_instances,
+    )?;
+
+    self.enforce_turn_duration(turn_started)?;
+    Ok(instance.result)
+  }
+
+  pub(super) fn preflight_module_graph_for_scope(
+    &self,
+    context: &RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+  ) -> MResult<()> {
+    self.validate_context_for_runtime(context)?;
+    let instance_key = (version, scope.clone());
+    if !seen.insert(instance_key) {
+      return Ok(());
+    }
+
+    let Some(record) = self.store.get_module_version(version)? else {
+      return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
+    };
+    validate_module_import_edges(&record)?;
+    let Some(source) = record.source.clone() else {
+      return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
+    };
+
+    let context_registry = context_registry_for_scope(&record, scope)?;
+    let scoped_source = module_source_for_scope(&source, scope)?;
+    let execution_scope = execution_scope_for_extracted_module_source(scope);
+    self.preflight_module_source(context, &context_registry, &scoped_source, &execution_scope)?;
+
+    for edge in &record.import_edges {
+      if &edge.scope != scope {
+        continue;
+      }
+
+      self.preflight_module_graph_for_scope(
+        context,
+        edge.dependency,
+        &SourceScope::Program,
+        seen,
+      )?;
+    }
+
+    let scoped_refs = record
+      .scopes
+      .iter()
+      .find(|metadata| &metadata.scope == scope)
+      .map(|metadata| metadata.address_references.as_slice())
+      .unwrap_or(&[]);
+
+    for reference in scoped_refs {
+      match resolve_runtime_address_target(&record, scope, &context_registry, &reference.target) {
+        RuntimeAddressTarget::Interpreter(interpreter_scope) => {
+          if !matches!(scope, SourceScope::Program) {
+            return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+          }
+          self.preflight_module_graph_for_scope(
+            context,
+            version,
+            &interpreter_scope,
+            seen,
+          )?;
+        }
+        RuntimeAddressTarget::Context(_) => {}
+        RuntimeAddressTarget::Unknown => {
+          return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+        }
+      }
+    }
+
+    Ok(())
+  }
+
+  fn preflight_module_source(
+    &self,
+    context: &RuntimeContext,
+    registry: &RuntimeContextRegistry,
+    source: &MechSourceCode,
+    scope: &SourceScope,
+  ) -> MResult<()> {
+    match source {
+      MechSourceCode::String(source) => {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.preflight_context_capabilities_with_registry(context, registry, &tree, scope, AddressedReadPreflight::AllowModuleAddressTargets)
+      }
+      MechSourceCode::Tree(tree) => {
+        self.preflight_context_capabilities_with_registry(context, registry, tree, scope, AddressedReadPreflight::AllowModuleAddressTargets)
+      }
+      MechSourceCode::Program(sources) => {
+        for source in sources {
+          self.preflight_module_source(context, registry, source, scope)?;
+        }
+        Ok(())
+      }
+      MechSourceCode::Html(_) | MechSourceCode::ByteCode(_) => Ok(()),
+      MechSourceCode::Image(_, _) => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "run_module_preflight",
+        reason: "unsupported executable source kind for provider preflight: image".to_string(),
+      }, None)),
+    }
+  }
+
+  fn prepare_module_scope_execution(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+  ) -> MResult<PreparedModuleScopeExecution> {
+    let Some(record) = self.store.get_module_version(version)? else {
+      return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
+    };
+    validate_module_import_edges(&record)?;
+    let Some(source) = record.source.clone() else {
+      return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
+    };
+
+    let context_registry = context_registry_for_scope(&record, scope)?;
+
+    for edge in &record.import_edges {
+      if &edge.scope != scope {
+        continue;
+      }
+
+      self.execute_module_isolated_for_scope(
+        context,
+        edge.dependency,
+        &SourceScope::Program,
+        seen,
+        module_instances,
+      )?;
+    }
+
+    let mut environment = self.build_import_environment_for_scope(
+      context,
+      &record,
+      scope,
+      module_instances,
+    )?;
+
+    let address_environment = self.build_address_environment_for_scope(
+      context,
+      version,
+      &record,
+      scope,
+      &context_registry,
+      seen,
+      module_instances,
+    )?;
+    merge_module_environment(
+      &mut environment,
+      address_environment,
+      "import environment",
+      "address environment",
+    )?;
+
+    let scoped_source = module_source_for_scope(&source, scope)?;
+
+    Ok(PreparedModuleScopeExecution { record, source: scoped_source, environment })
+  }
+
+  fn execute_module_isolated_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+  ) -> MResult<ModuleInstance> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+
+    let instance_key = (version, scope.clone());
+
+    if let Some(instance) = module_instances.get(&instance_key).cloned() {
+      return Ok(instance);
+    }
+
+    if seen.contains(&instance_key) {
+      return Ok(ModuleInstance { version, exports: HashMap::new(), result: Value::Empty });
+    }
+    seen.insert(instance_key.clone());
+
+    let prepared = self.prepare_module_scope_execution(
+      context,
+      version,
+      scope,
+      seen,
+      module_instances,
+    )?;
+    let mut module_program = MechProgram::new(MechProgramConfig {
+      name: self.config.name.clone(),
+      environment: MechProgramEnvironment {
+        trace_enabled: self.config.diagnostics.trace_enabled,
+        debug_enabled: self.config.diagnostics.debug_enabled,
+        profile_enabled: self.config.diagnostics.profile_enabled,
+        rounds_per_step: self.config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
+      },
+    });
+
+    {
+      let symbols = module_program.interpreter_mut().symbols();
+      let mut symbols_brrw = symbols.borrow_mut();
+      for (name, value_ref) in &prepared.environment {
+        let id = hash_str(&name);
+        symbols_brrw.symbols.insert(id, value_ref.clone());
+        symbols_brrw.dictionary.borrow_mut().insert(id, name.clone());
+      }
+    }
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ModuleExecutionStarted { module_version: version },
+    )?;
+    let result = self.run_module_source_on_program(
+      context,
+      &mut module_program,
+      &prepared.source,
+      scope,
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+    );
+    let result = match result {
+      Ok(value) => value,
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: version,
+            message: format!("{:?}", error),
+          },
+        )?;
+        return Err(error);
+      }
+    };
+    let mut exports = HashMap::new();
+    {
+      let symbols = module_program.interpreter_mut().symbols();
+      let symbols_brrw = symbols.borrow();
+      for export in exports_for_scope(&prepared.record, scope) {
+        let id = hash_str(&export.name);
+        let Some(value_ref) = symbols_brrw.get(id) else {
+          let error = MechError::new(RuntimeModuleExportNotFound { dependency: prepared.record.id.to_string(), export: export.name.clone() }, None);
+          self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ModuleExecutionFailed {
+              module_version: version,
+              message: format!("{:?}", error),
+            },
+          )?;
+          return Err(error);
+        };
+        exports.insert(export.name.clone(), value_ref.clone());
+      }
+    }
+
+    let instance = ModuleInstance { version, exports, result };
+    module_instances.insert(instance_key, instance.clone());
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ModuleExecutionCompleted { module_version: version },
+    )?;
+    Ok(instance)
+  }
+
+  pub(super) fn execute_module_retained_root_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+    turn_started: Instant,
+  ) -> MResult<Value> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+
+    if !matches!(scope, SourceScope::Program) {
+      return Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "run_root_module",
+        reason: "retained root module execution only supports program scope".to_string(),
+      }, None));
+    }
+
+    let instance_key = (version, scope.clone());
+    if seen.contains(&instance_key) {
+      return Ok(Value::Empty);
+    }
+    seen.insert(instance_key);
+
+    let prepared = self.prepare_module_scope_execution(
+      context,
+      version,
+      scope,
+      seen,
+      module_instances,
+    )?;
+
+    let program_config = self.program.config.clone();
+    let mut root_program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let result = (|| -> MResult<Value> {
+      let overlay = ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
+      let live_state_before = self.live_state_snapshot();
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleExecutionStarted { module_version: version },
+      )?;
+
+      let result = self
+        .run_module_source_on_program(
+          context,
+          &mut root_program,
+          &prepared.source,
+          scope,
+          crate::runtime::LiveRegistrationMode::RetainedRoot,
+        )
+        .and_then(|value| {
+          self.enforce_turn_duration(turn_started)?;
+          Ok(value)
+        });
+
+      match result {
+        Ok(value) => Ok(value),
+        Err(error) => {
+          self.restore_live_state(live_state_before);
+          overlay.restore(&mut root_program);
+          Err(error)
+        }
+      }
+    })();
+
+    self.program = root_program;
+
+    match result {
+      Ok(value) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionCompleted { module_version: version },
+        )?;
+        Ok(value)
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: version,
+            message: format!("{:?}", error),
+          },
+        )?;
+        Err(error)
+      }
+    }
+  }
+
+  fn run_module_source_on_program(
+    &mut self,
+    context: &mut RuntimeContext,
+    program: &mut MechProgram,
+    source: &MechSourceCode,
+    scope: &SourceScope,
+    registration_mode: crate::runtime::LiveRegistrationMode,
+  ) -> MResult<Value> {
+    self.register_runtime_program_host_functions(context, program)?;
+
+    let runtime_ptr: *mut MechRuntime = self;
+    let context_ptr: *mut RuntimeContext = context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+    self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramStarted {
+        task_id: context.task,
+      },
+    )?;
+
+    // Named interpreter scopes are extracted to bare source by module_source_for_scope.
+    // Once extracted, their declarations are indexed as SourceScope::Program in the
+    // reparsed tree, so direct context handling must use Program scope for that tree.
+    // The surrounding module execution still uses the original scope for imports,
+    // exports, address environment, and ModuleInstance identity.
+    let execution_scope = execution_scope_for_extracted_module_source(scope);
+
+    let result = self.with_live_registration_mode(registration_mode, |runtime| {
+      match source {
+      MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
+        Ok(tree) => {
+          let registry = runtime.direct_context_registry_for_scope(&tree, &execution_scope)?;
+          match runtime.preflight_context_capabilities_with_registry(
+            context,
+            &registry,
+            &tree,
+            &execution_scope,
+            AddressedReadPreflight::AllowModuleAddressTargets,
+          ) {
+            Ok(()) => runtime.run_tree_on_program(context, program, &tree, Some(&execution_scope)),
+            Err(error) => Err(error),
+          }
+        },
+        Err(error) => Err(error),
+      },
+      MechSourceCode::Tree(tree) => {
+        let registry = runtime.direct_context_registry_for_scope(tree, &execution_scope)?;
+        match runtime.preflight_context_capabilities_with_registry(
+          context,
+          &registry,
+          tree,
+          &execution_scope,
+          AddressedReadPreflight::AllowModuleAddressTargets,
+        ) {
+          Ok(()) => runtime.run_tree_on_program(context, program, tree, Some(&execution_scope)),
+          Err(error) => Err(error),
+        }
+      },
+      MechSourceCode::Program(sources) => {
+        let mut result = Ok(Value::Empty);
+        for source in sources {
+          result = runtime.run_module_source_on_program(
+            context,
+            program,
+            source,
+            scope,
+            registration_mode,
+          );
+          if result.is_err() {
+            break;
+          }
+        }
+        result
+      }
+      MechSourceCode::Html(_) | MechSourceCode::ByteCode(_) => program.run_source(source),
+      MechSourceCode::Image(_, _) => Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "run_module_preflight",
+        reason: "unsupported executable source kind for provider preflight: image".to_string(),
+      }, None)),
+      }
+    });
+
+    match &result {
+      Ok(_) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramCompleted {
+            task_id: context.task,
+          },
+        )?;
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ProgramFailed {
+            task_id: context.task,
+            message: format!("{:?}", error),
+          },
+        )?;
+      }
+    }
+
+    result
+  }
+
+  fn build_address_environment_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    record: &ModuleVersionRecord,
+    scope: &SourceScope,
+    context_registry: &RuntimeContextRegistry,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+  ) -> MResult<HashMap<String, mech_core::ValRef>> {
+    fn address_binding_key(target: &str, name: &str) -> String {
+      format!("@{target}/{name}")
+    }
+
+    let scoped_refs = record
+      .scopes
+      .iter()
+      .find(|metadata| &metadata.scope == scope)
+      .map(|metadata| metadata.address_references.as_slice())
+      .unwrap_or(&[]);
+
+    let mut requested_by_scope: HashMap<SourceScope, Vec<SourceAddressReference>> = HashMap::new();
+    let mut bindings = HashMap::new();
+    for reference in scoped_refs {
+      match resolve_runtime_address_target(record, scope, context_registry, &reference.target) {
+        RuntimeAddressTarget::Interpreter(interpreter_scope) => {
+          if !matches!(scope, SourceScope::Program) {
+            return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+          }
+          requested_by_scope.entry(interpreter_scope).or_default().push(reference.clone());
+        }
+        RuntimeAddressTarget::Context(_) => {
+          // Context-addressed resource reads are resolved while executing source
+          // statements so reads observe earlier writes in the same module scope.
+        }
+        RuntimeAddressTarget::Unknown => {
+          return Err(MechError::new(UnknownAddressTarget { target: reference.target.clone() }, None));
+        }
+      }
+    }
+
+    for (interpreter_scope, requested_refs) in requested_by_scope {
+      let instance = self.execute_module_isolated_for_scope(
+        context,
+        version,
+        &interpreter_scope,
+        seen,
+        module_instances,
+      )?;
+
+      for reference in requested_refs {
+        let Some(export_value) = instance.exports.get(&reference.name) else {
+          return Err(MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: reference.name.clone() }, None));
+        };
+        bindings.insert(address_binding_key(&reference.target, &reference.name), export_value.clone());
+      }
+    }
+
+    Ok(bindings)
+  }
+
+  fn build_import_environment_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    importer: &ModuleVersionRecord,
+    scope: &SourceScope,
+    module_instances: &HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+  ) -> MResult<HashMap<String, mech_core::ValRef>> {
+    let mut bindings = HashMap::new();
+    let mut ownership: HashMap<String, String> = HashMap::new();
+
+    for edge in &importer.import_edges {
+      if &edge.scope != scope {
+        continue;
+      }
+
+      let import = &edge.import;
+      let dependency = edge.dependency;
+
+      let dependency_key = (dependency, SourceScope::Program);
+      let Some(dependency_instance) = module_instances.get(&dependency_key) else {
+        return Err(MechError::new(RuntimeInvalidOperationError { operation: "build_import_environment", reason: format!("dependency instance missing for {}", dependency) }, None));
+      };
+
+      match &import.kind {
+        SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
+          let Some(namespace) = module_namespace_for_import(import) else { continue; };
+          for (export_name, export_value) in &dependency_instance.exports {
+            let binding = format!("{}/{}", namespace, export_name);
+            if let Some(first) = ownership.insert(binding.clone(), import.specifier.clone()) {
+              return Err(MechError::new(RuntimeModuleImportConflict { binding, first_import: first, second_import: import.specifier.clone() }, None));
+            }
+            bindings.insert(format!("{}/{}", namespace, export_name), export_value.clone());
+          }
+        }
+        SourceImportKind::Single { name } => {
+          if matches!(import.alias, Some(crate::resolver::SourceImportAlias::Context(_))) {
+            continue;
+          }
+          let Some(export_value) = dependency_instance.exports.get(name) else {
+            return Err(MechError::new(RuntimeModuleExportNotFound { dependency: import.specifier.clone(), export: name.clone() }, None));
+          };
+
+          let binding = match &import.alias {
+            Some(crate::resolver::SourceImportAlias::Value(alias)) => alias.clone(),
+            Some(crate::resolver::SourceImportAlias::Context(_)) => continue,
+            None => name.clone(),
+          };
+
+          if let Some(first) = ownership.insert(binding.clone(), import.specifier.clone()) {
+            return Err(MechError::new(RuntimeModuleImportConflict { binding: binding.clone(), first_import: first, second_import: import.specifier.clone() }, None));
+          }
+          bindings.insert(binding, export_value.clone());
+        }
+        SourceImportKind::Wildcard => {
+          for (export_name, export_value) in &dependency_instance.exports {
+            if let Some(first) = ownership.insert(export_name.clone(), import.specifier.clone()) {
+              return Err(MechError::new(RuntimeModuleImportConflict { binding: export_name.clone(), first_import: first, second_import: import.specifier.clone() }, None));
+            }
+            bindings.insert(export_name.clone(), export_value.clone());
+          }
+        }
+      }
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleImportLinked {
+          importer: importer.id,
+          dependency,
+          specifier: import.specifier.clone(),
+        },
+      )?;
+    }
+
+    Ok(bindings)
+  }
+}
+
+
+
+fn module_source_for_scope(
+  source: &MechSourceCode,
+  scope: &SourceScope,
+) -> MResult<MechSourceCode> {
+  match scope {
+    SourceScope::Program => Ok(source.clone()),
+    SourceScope::Interpreter(interpreter) => {
+      let MechSourceCode::String(source_text) = source else {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "run_module_scope",
+            reason: "interpreter scope execution requires string source".to_string(),
+          },
+          None,
+        ));
+      };
+
+      let tree = mech_syntax::parser::parse(source_text.trim())?;
+
+      if let Some(source) = source_from_parsed_fenced_blocks(&tree, interpreter.namespace)? {
+        return Ok(MechSourceCode::String(source));
+      }
+
+      Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "run_module_scope",
+          reason: format!("interpreter scope `{}` not found", interpreter.namespace_str),
+        },
+        None,
+      ))
+    }
+  }
+}
+
+fn source_from_parsed_fenced_blocks(
+  tree: &mech_core::Program,
+  namespace: u64,
+) -> MResult<Option<String>> {
+  let mut blocks = Vec::new();
+
+  for section in &tree.body.sections {
+    for element in &section.elements {
+      if let mech_core::SectionElement::FencedMechCode(fenced) = element {
+        if fenced.config.namespace == namespace {
+          let block = source_from_parsed_fenced_code(fenced)?;
+          blocks.push(block.trim_end().to_string());
+        }
+      }
+    }
+  }
+
+  if blocks.is_empty() {
+    Ok(None)
+  } else {
+    Ok(Some(blocks.join("\n")))
+  }
+}
+
+fn source_from_parsed_fenced_code(
+  fenced: &mech_core::FencedMechCode,
+) -> MResult<String> {
+  source_from_tokens(std::slice::from_ref(&fenced.source))
+}
+
+fn source_from_tokens(tokens: &[mech_core::Token]) -> MResult<String> {
+  if tokens.is_empty() {
+    return Ok(String::new());
+  }
+
+  if tokens.iter().any(|token| token.src_range.start.row == 0 || token.src_range.start.col == 0) {
+    return Ok(tokens.iter().map(|token| token.to_string()).collect::<Vec<_>>().join(" "));
+  }
+
+  let mut source = String::new();
+  let mut row = tokens[0].src_range.start.row;
+  let mut col = tokens[0].src_range.start.col;
+
+  for token in tokens {
+    let start = &token.src_range.start;
+    while row < start.row {
+      source.push('\n');
+      row += 1;
+      col = 1;
+    }
+    while col < start.col {
+      source.push(' ');
+      col += 1;
+    }
+
+    let token_text = token.to_string();
+    for ch in token_text.chars() {
+      source.push(ch);
+      if ch == '\n' {
+        row += 1;
+        col = 1;
+      } else {
+        col += 1;
+      }
+    }
+  }
+
+  Ok(source)
+}
+
+fn exports_for_scope<'a>(
+  record: &'a ModuleVersionRecord,
+  scope: &SourceScope,
+) -> &'a [SourceExportDeclaration] {
+  record
+    .scopes
+    .iter()
+    .find(|metadata| &metadata.scope == scope)
+    .map(|metadata| metadata.exports.as_slice())
+    .unwrap_or(&[])
+}
+
+fn merge_module_environment(
+  target: &mut HashMap<String, ValRef>,
+  source: HashMap<String, ValRef>,
+  first_import: &str,
+  second_import: &str,
+) -> MResult<()> {
+  for (binding, value) in source {
+    if target.contains_key(&binding) {
+      return Err(MechError::new(RuntimeModuleImportConflict {
+        binding,
+        first_import: first_import.to_string(),
+        second_import: second_import.to_string(),
+      }, None));
+    }
+    target.insert(binding, value);
+  }
+  Ok(())
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::{
+    BasicCapability, BasicOperation, BasicResource, BasicSubject, ClosureHostFunction,
+  };
+  use mech_core::Ref;
+  use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+  };
+
+  #[cfg(all(feature = "record", feature = "tuple", feature = "f64"))]
+  #[test]
+  fn activation_effect_payload_snapshot_deeply_detaches_scene_values() {
+    let live = Ref::new(1.0);
+    let scene = Value::Record(Ref::new(mech_core::MechRecord::new(vec![(
+      "position",
+      Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
+        Value::F64(live.clone()),
+        Value::F64(Ref::new(2.0)),
+      ]))),
+    )])));
+    let snapshot = snapshot_runtime_value(&scene);
+    *live.borrow_mut() = 9.0;
+
+    let Value::Record(snapshot) = snapshot else {
+      panic!("expected record snapshot");
+    };
+    let position = {
+      let snapshot = snapshot.borrow();
+      let Value::Tuple(position) = snapshot.data.get(&hash_str("position")).unwrap() else {
+        panic!("expected tuple field");
+      };
+      position.clone()
+    };
+    let position = position.borrow();
+    let Value::F64(x) = position.elements[0].as_ref() else {
+      panic!("expected scalar tuple element");
+    };
+    assert_eq!(*x.borrow(), 1.0);
+    assert_ne!(x.as_ptr(), live.as_ptr());
+  }
+
+  #[test]
+  fn runtime_has_interpreter_finds_root_interpreter() {
+    let runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    assert!(runtime.has_interpreter(0));
+  }
+
+  #[test]
+  fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let source = "```mech
+1
+```";
+    let _ = runtime.run_string(source).unwrap();
+    let root_id = runtime.program().interpreter().id;
+    let output_id = {
+      let out_values = runtime.program().interpreter().out_values.borrow();
+      *out_values.keys().next().expect("expected output value after run_string")
+    };
+    let output = runtime.output_value_for_interpreter(root_id, output_id);
+    assert!(output.is_some());
+  }
+
+  #[test]
+  fn run_string_with_context_emits_profile_event_when_enabled() {
+    let mut config = RuntimeConfig::default();
+    config.diagnostics.profile_enabled = true;
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    runtime.run_string_with_context(&mut context, "1 + 1").unwrap();
+
+    assert!(context.events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::ProgramProfiled { duration_ns, .. } if duration_ns > 0
+      )
+    }));
+  }
+
+  #[test]
+  fn run_string_with_context_emits_profile_event_on_failure_when_enabled() {
+    let mut config = RuntimeConfig::default();
+    config.diagnostics.profile_enabled = true;
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    assert!(runtime.run_string_with_context(&mut context, "1 +").is_err());
+
+    assert!(context.events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::ProgramProfiled { duration_ns, .. } if duration_ns > 0
+      )
+    }));
+  }
+
+  #[test]
+  fn max_source_bytes_rejects_string_source() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(&mut context, "1234")
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.used, 0);
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn direct_string_source_limit_uses_borrowed_length() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let source = String::from("1234");
+
+    let error = runtime
+      .run_string_with_context(&mut context, &source)
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(source, "1234");
+  }
+
+  #[test]
+  fn direct_bytecode_source_limit_uses_borrowed_length() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let bytecode = vec![1, 2, 3, 4];
+
+    let error = runtime
+      .run_bytecode_with_context(&mut context, &bytecode)
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(bytecode, vec![1, 2, 3, 4]);
+  }
+
+  #[test]
+  fn context_event_retention_is_bounded() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(2);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.put_object_with_context(&mut context, ObjectRecord::text(ObjectId(1), "text", "one")).unwrap();
+    runtime.put_object_with_context(&mut context, ObjectRecord::text(ObjectId(2), "text", "two")).unwrap();
+    runtime.put_object_with_context(&mut context, ObjectRecord::text(ObjectId(3), "text", "three")).unwrap();
+    let object_ids = context.events.iter().filter_map(|event| match event.kind {
+      RuntimeEventKind::ObjectCreated { object_id } => Some(object_id),
+      _ => None,
+    }).collect::<Vec<_>>();
+    assert_eq!(object_ids, vec![ObjectId(2), ObjectId(3)]);
+  }
+
+  #[test]
+  fn max_source_bytes_rejects_program_aggregate() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let source = MechSourceCode::Program(vec![
+      MechSourceCode::String("1".to_string()),
+      MechSourceCode::String("22".to_string()),
+      MechSourceCode::String("3".to_string()),
+    ]);
+
+    let error = runtime
+      .run_source_with_context(&mut context, &source)
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn max_memory_bytes_rejects_large_source_buffer() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(100);
+    config.limits.max_memory_bytes = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(&mut context, "1234")
+      .unwrap_err();
+    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
+    assert_eq!(budget.resource, "bytes");
+    assert_eq!(budget.used, 0);
+    assert_eq!(budget.requested, 4);
+    assert_eq!(budget.max, Some(3));
+  }
+
+  #[test]
+  fn tree_source_without_known_size_is_not_rejected_by_source_byte_limit() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(1);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let tree = mech_syntax::parser::parse("1 + 1").unwrap();
+    let source = MechSourceCode::Tree(tree);
+
+    runtime.run_source_with_context(&mut context, &source).unwrap();
+  }
+
+  #[test]
+  fn runtime_bind_ans_for_interpreter_binds_ans() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let value = Value::U64(Ref::new(42));
+    runtime.bind_ans_for_interpreter(0, &value).unwrap();
+    let ans_id = hash_str("ans");
+    let bound = runtime
+      .program()
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(ans_id)
+      .map(|value| value.borrow().clone());
+    assert_eq!(bound, Some(value));
+  }
+
+  #[cfg(feature = "functions")]
+  #[test]
+  fn step_with_context_recomputes_runtime_host_function_with_provided_context() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_for_host = calls.clone();
+    runtime
+      .register_mech_host_function(ClosureHostFunction::new(
+        "demo/echo",
+        move |_services, context, args| {
+          assert_eq!(context.subject, "program:step-host-test");
+          calls_for_host.fetch_add(1, Ordering::SeqCst);
+          match &args[0] {
+            Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+            Value::MutableReference(value) => match &*value.borrow() {
+              Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+              other => panic!("expected F64 mutable reference, got {:?}", other),
+            },
+            other => panic!("expected F64 argument, got {:?}", other),
+          }
+        },
+      ))
+      .unwrap();
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        CapabilityId(1),
+        &BasicSubject::new("program:step-host-test"),
+        &BasicResource::new("host:demo/echo"),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
+
+    let mut context = runtime
+      .runtime_context()
+      .unwrap()
+      .with_subject("program:step-host-test");
+    runtime
+      .run_string_with_context(&mut context, "x := 1\ny := demo/echo(x) + 0")
+      .unwrap();
+    let x = runtime
+      .program()
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(hash_str("x"))
+      .map(|value| value.borrow().clone())
+      .expect("expected x to be bound");
+    let x_ref = match x {
+      Value::F64(value) => value,
+      other => panic!("expected x to be F64, got {:?}", other),
+    };
+    *x_ref.borrow_mut() = 2.0;
+    runtime.step_with_context(&mut context, 3).unwrap();
+
+    *x_ref.borrow_mut() = 2.0;
+    let function = RuntimeHostNativeFunction {
+      name: "demo/echo".to_string(),
+      host_name: "demo/echo".to_string(),
+      arguments: vec![Value::F64(x_ref.clone())],
+      value: Ref::new(Value::F64(Ref::new(1.0))),
+    };
+    let calls_before_solve = calls.load(Ordering::SeqCst);
+    let runtime_ptr: *mut MechRuntime = &mut runtime;
+    let context_ptr: *mut RuntimeContext = &mut context;
+    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+    function.solve();
+
+    assert!(calls.load(Ordering::SeqCst) > calls_before_solve);
+    let y = function.out();
+    match y {
+      Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
+      other => panic!("expected F64(2.0), got {:?}", other),
+    }
+  }
+}
+
+impl MechRuntime {
+  pub fn ingress(&self) -> crate::RuntimeIngress {
+    crate::RuntimeIngress::new(self.host_input_queue.clone())
+  }
+
+  pub fn has_pending_host_inputs(&self) -> MResult<bool> {
+    Ok(self.pending_host_input_count()? > 0)
+  }
+
+  pub fn persistent_send_count(&self) -> usize {
+    self.persistent_sends.len()
+  }
+
+  pub fn input_driver_count(&self) -> usize {
+    self.attached_input_driver_count
+  }
+
+  pub fn has_input_drivers(&self) -> bool {
+    self.input_driver_count() > 0
+  }
+
+  pub fn live_input_binding_count(&self) -> usize {
+    self.live_input_bindings.values().map(Vec::len).sum()
+  }
+
+  pub fn has_live_input_bindings(&self) -> bool {
+    self.live_input_binding_count() > 0
+  }
+
+  pub fn driven_live_input_binding_count(&self) -> usize {
+    self.live_input_bindings
+      .iter()
+      .filter(|(source, _)| self.input_drivers[..self.attached_input_driver_count].iter().any(|driver| driver.drives(source)))
+      .map(|(_, bindings)| bindings.len())
+      .sum()
+  }
+
+  pub fn has_driven_live_input_bindings(&self) -> bool {
+    self.driven_live_input_binding_count() > 0
+  }
+
+  pub fn pending_host_input_count(&self) -> MResult<usize> {
+    let guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+    Ok(guard.queue.len())
+  }
+
+  pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
+    input.validate()?;
+    let mut target_updates = Vec::new();
+    let mut seen_targets = std::collections::HashSet::new();
+    let mut ignored_update_count = 0;
+
+    for update in &input.updates {
+      let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
+        ignored_update_count += 1;
+        continue;
+      };
+      if bindings.is_empty() {
+        ignored_update_count += 1;
+        continue;
+      }
+      let value = update.value.clone().into_mech_value()?;
+      for program_input in bindings {
+        if !seen_targets.insert(program_input) {
+          return Err(MechError::new(mech_program::ProgramInputDuplicateTarget { input: program_input }, None));
+        }
+        target_updates.push(mech_program::ProgramInputUpdate { input: program_input, value: value.clone() });
+      }
+    }
+
+    if target_updates.is_empty() {
+      return Ok(crate::RuntimeHostInputOutcome {
+        update_count: input.updates.len(),
+        ignored_update_count,
+        binding_count: 0,
+        turn: None,
+      });
+    }
+
+    let mut context = self.live_turn_context()?;
+    self.validate_context_for_runtime(&context)?;
+    context.charge_step()?;
+
+    let turn_started = Instant::now();
+
+    let program_config = self.program.config.clone();
+    let mut program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let result = (|| -> MResult<crate::RuntimeHostInputOutcome> {
+      let runtime_ptr: *mut MechRuntime = self;
+      let context_ptr: *mut RuntimeContext = &mut context;
+      let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+
+      // The program API performs complete input preflight, commits the
+      // accepted input batch, and advances one persistent reactive turn
+      // per affected interpreter. Errors after input admission preserve
+      // accepted writes and completed register commits.
+      let turn =
+        program.update_inputs_and_advance_turn(
+          &target_updates,
+        )?;
+      self.enforce_turn_duration(turn_started)?;
+      self.execute_persistent_sends(&context, &turn)?;
+
+      Ok(crate::RuntimeHostInputOutcome {
+        update_count: input.updates.len(),
+        ignored_update_count,
+        binding_count: turn.updated_count,
+        turn: Some(turn),
+      })
+    })();
+
+    self.program = program;
+
+    result
+  }
+
+  fn execute_persistent_sends(&mut self, context: &RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
+    for send in self.persistent_sends.clone() {
+      let should_send = match send.schedule {
+        RuntimePersistentSendSchedule::EveryAcceptedTurn => true,
+        RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
+          outcome.turn.before_commit.executed_nodes.contains(&barrier_node_id) || outcome.turn.after_commit.executed_nodes.contains(&barrier_node_id)
+        }).unwrap_or(false),
+      };
+      if !should_send { continue; }
+      let value = resolve_runtime_value(send.value.borrow().clone());
+      self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
+    }
+    Ok(())
+  }
+
+  pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {
+    let mut outcomes = Vec::new();
+    for _ in 0..max_inputs {
+      let input = {
+        let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+        guard.queue.pop_front()
+      };
+      let Some(input) = input else { break; };
+      outcomes.push(self.apply_host_input(input)?);
+    }
+    Ok(outcomes)
+  }
+
+  pub fn close_ingress(&mut self) -> MResult<()> {
+    let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
+    guard.closed = true;
+    Ok(())
+  }
+
+  pub fn start_input_drivers(&mut self) -> MResult<()> {
+    if self.ingress().is_closed()? {
+      return Err(crate::input::input_error("RuntimeIngressClosed", "cannot start input drivers after ingress is closed"));
+    }
+    let mut started = vec![false; self.attached_input_driver_count];
+    for index in 0..self.attached_input_driver_count {
+      if self.input_drivers[index].is_live() { continue; }
+      let has_driven_input = {
+        let driver = &self.input_drivers[index];
+        self
+          .live_input_bindings
+          .iter()
+          .any(|(source, bindings)| !bindings.is_empty() && driver.drives(source))
+      };
+      if !has_driven_input { continue; }
+      if let Err(error) = self.input_drivers[index].start() {
+        for index in (0..self.attached_input_driver_count).rev() {
+          if !started[index] { continue; }
+          let _ = self.input_drivers[index].stop();
+        }
+        return Err(error);
+      }
+      started[index] = true;
+    }
+    Ok(())
+  }
+
+  pub fn stop_input_drivers(&mut self) -> MResult<()> {
+    let mut first_error = None;
+    for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
+      if let Err(error) = driver.stop() {
+        if first_error.is_none() { first_error = Some(error); }
+      }
+    }
+    if let Some(error) = first_error { return Err(error); }
+    Ok(())
+  }
+}
+
+#[cfg(test)]
+mod root_symbol_snapshot_runtime_tests {
+  use super::*;
+
+  fn f64_value(value: &Value) -> f64 {
+    match value {
+      Value::F64(value) => *value.borrow(),
+      other => panic!("expected f64, got {other:?}"),
+    }
+  }
+
+  #[test]
+  fn runtime_delegates_root_symbol_value() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime.run_string("answer := 42.0").unwrap();
+    assert_eq!(f64_value(&runtime.root_symbol_value("answer").unwrap()), 42.0);
+  }
+
+  #[test]
+  fn runtime_delegates_root_symbol_values() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime.run_string("a := 1.0\nb := 2.0").unwrap();
+    let rows = runtime.root_symbol_values(&["b", "a"]).unwrap();
+    assert_eq!(rows[0].0, "b");
+    assert_eq!(f64_value(&rows[0].1), 2.0);
+    assert_eq!(rows[1].0, "a");
+    assert_eq!(f64_value(&rows[1].1), 1.0);
+  }
+}

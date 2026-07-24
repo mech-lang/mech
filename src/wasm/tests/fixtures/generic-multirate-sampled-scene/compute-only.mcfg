@@ -1,0 +1,15 @@
+config := {
+  hosts: [
+    {
+      name: "update"
+      provider: "timer"
+      settings: { frequency-hz: 73 max-catch-up-steps: 10 }
+    }
+  ]
+  run: {
+    paths: ["updates.mec"]
+    grants: [
+      { target: "update/tick" operations: ["read"] paths: ["tick", "delta-seconds"] }
+    ]
+  }
+}

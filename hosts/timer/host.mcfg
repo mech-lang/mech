@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "timer"
+    contexts: [
+      {
+        name: "tick"
+        base-uri: "timer://{instance}/tick"
+        operations: ["read"]
+      }
+    ]
+  }
+}

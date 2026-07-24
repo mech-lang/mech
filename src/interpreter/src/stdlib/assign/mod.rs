@@ -24,7 +24,7 @@ pub use self::map::*;
 pub use self::tuple::*;
 
 // ----------------------------------------------------------------------------
-// Assign 
+// Assign
 // ----------------------------------------------------------------------------
 
 // x = 1 ----------------------------------------------------------------------
@@ -34,9 +34,45 @@ struct Assign<T> {
   sink: Ref<T>,
   source: Ref<T>,
 }
-impl<T> MechFunctionImpl for Assign<T> 
+impl<T> MechFunctionFactory for Assign<T>
 where
-  T: Clone + Debug,
+  T: Clone
+    + Debug
+    + Sync
+    + Send
+    + 'static
+    + CompileConst
+    + ConstElem
+    + AsValueKind,
+  Ref<T>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, source) => {
+        let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
+        let source: Ref<T> = unsafe { source.as_unchecked() }.clone();
+
+        Ok(Box::new(Self {
+          sink,
+          source,
+        }))
+      }
+      _ => Err(
+        MechError::new(
+          IncorrectNumberOfArguments {
+            expected: 2,
+            found: args.len(),
+          },
+          None,
+        )
+        .with_compiler_loc(),
+      ),
+    }
+  }
+}
+impl<T> MechFunctionImpl for Assign<T>
+where
+  T: Clone + Debug + 'static,
   Ref<T>: ToValue
 {
   fn solve(&self) {
@@ -46,17 +82,86 @@ where
       *sink_ptr = (*source_ptr).clone();
     }
   }
+  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+    let next = self.source.borrow().clone();
+    let output_cells = self.reactive_output_cell_ids();
+    Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, output_cells)))
+  }
   fn out(&self) -> Value { self.sink.to_value() }
+  fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for Assign<T> 
+impl<T> MechFunctionCompiler for Assign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("Assign<{}>", T::as_value_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+  }
+}
+
+register_fxn_descriptor!(
+  Assign,
+  u8, "u8",
+  u16, "u16",
+  u32, "u32",
+  u64, "u64",
+  u128, "u128",
+  i8, "i8",
+  i16, "i16",
+  i32, "i32",
+  i64, "i64",
+  i128, "i128",
+  f32, "f32",
+  f64, "f64",
+  bool, "bool",
+  String, "string",
+  R64, "r64",
+  C64, "c64",
+);
+
+register_descriptor! {
+  FunctionDescriptor {
+    name: "Assign<index>",
+    ptr: Assign::<usize>::new,
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct EmptyAssignmentNotBytecodeCompilable;
+impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
+  fn name(&self) -> &str {
+    "EmptyAssignmentNotBytecodeCompilable"
+  }
+
+  fn message(&self) -> String {
+    "empty stable assignment is not currently bytecode-compilable".to_string()
+  }
+}
+
+#[derive(Debug)]
+struct AssignEmpty;
+impl MechFunctionImpl for AssignEmpty {
+  fn solve(&self) {}
+  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+    Ok(Box::new(ReactiveRegisterNoopCommit::new(self.reactive_output_cell_ids())))
+  }
+  fn out(&self) -> Value { Value::Empty }
+  fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
+  fn to_string(&self) -> String { "AssignEmpty".to_string() }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AssignEmpty {
+  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    Err(
+      MechError::new(
+        EmptyAssignmentNotBytecodeCompilable,
+        None,
+      )
+      .with_compiler_loc()
+    )
   }
 }
 
@@ -110,6 +215,26 @@ macro_rules! impl_assign_value_match_arms {
 }
 
 fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+  match (&sink, &source) {
+    (Value::Typed(sink_inner, sink_annotation), Value::Typed(source_inner, source_annotation))
+      if sink_annotation == source_annotation =>
+    {
+      return assign_value_fxn(
+        sink_inner.as_ref().clone(),
+        source_inner.as_ref().clone(),
+      );
+    }
+    (Value::Empty, Value::Empty) => {
+      return Ok(Box::new(AssignEmpty));
+    }
+    (Value::Index(sink), Value::Index(source)) => {
+      return Ok(Box::new(Assign {
+        sink: sink.clone(),
+        source: source.clone(),
+      }));
+    }
+    _ => {}
+  }
   impl_assign_value_match_arms!(
     (sink, source),
     Bool,   "bool";
@@ -123,7 +248,7 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
     I16,    "i16";
     I32,    "i32";
     I64,    "i64";
-    U128,   "u128";
+    I128,   "i128";
     F32,    "f32";
     F64,    "f64";
     R64, "rational";
@@ -217,5 +342,21 @@ impl NativeFunctionCompiler for AddAssignValue {
         }
       }
     }
+  }
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[cfg(feature = "compiler")]
+  #[test]
+  fn empty_stable_assignment_bytecode_compile_returns_error() {
+    let assignment = AssignEmpty;
+    let mut ctx = CompileCtx::new();
+    let error = assignment.compile(&mut ctx).unwrap_err();
+    let rendered = format!("{error:?}");
+    assert!(rendered.contains("EmptyAssignmentNotBytecodeCompilable"), "{rendered}");
   }
 }

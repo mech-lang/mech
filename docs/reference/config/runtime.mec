@@ -1,0 +1,57 @@
+Runtime Config
+===============================================================================
+
+The `runtime` section configures scalar runtime behavior.
+
+```mech
+config := {
+  runtime: {
+    name: "demo-runtime"
+    limits: {
+      max-steps-per-turn: 10000
+      max-turn-duration-ms: 1000
+    }
+    diagnostics: {
+      debug-enabled: false
+      trace-enabled: false
+      profile-enabled: false
+      log-level: "info"
+    }
+  }
+}
+```
+
+1. Fields
+-------------------------------------------------------------------------------
+
+| Field | Description |
+|-------|-------------|
+| `name` | Human-readable runtime name. |
+| `limits` | Execution and resource limits. |
+| `diagnostics` | Debug, trace, profile, and log-level settings. |
+
+2. Limits
+-------------------------------------------------------------------------------
+
+Supported limit fields:
+
+- `max-steps-per-turn`
+- `max-turn-duration-ms`
+- `max-memory-bytes`
+- `max-tasks`
+- `max-actors`
+- `max-actor-mailbox-len`
+- `max-source-bytes`
+- `max-in-memory-events`
+
+3. Diagnostics
+-------------------------------------------------------------------------------
+
+Supported diagnostic fields:
+
+- `debug-enabled`
+- `trace-enabled`
+- `profile-enabled`
+- `log-level`
+
+`log-level` may be `error`, `warn`, `info`, `debug`, or `trace`.

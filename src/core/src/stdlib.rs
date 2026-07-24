@@ -28,10 +28,8 @@ macro_rules! compile_register_brrw {
   ($reg:expr, $ctx:ident) => {
     {
       let addr = $reg.addr();
-      let reg = $ctx.alloc_register_for_ptr(addr);
-      let borrow = $reg.borrow();
-      let const_id = borrow.compile_const($ctx).unwrap();
-      $ctx.emit_const_load(reg, const_id);
+      let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+      if needs_initialization { let borrow = $reg.borrow(); let const_id = borrow.compile_const($ctx).unwrap(); $ctx.emit_const_load(reg, const_id); }
       reg
     }
   };
@@ -42,9 +40,8 @@ macro_rules! compile_register {
   ($reg:expr, $ctx:ident) => {
     {
       let addr = $reg.addr();
-      let reg = $ctx.alloc_register_for_ptr(addr);
-      let const_id = $reg.compile_const($ctx).unwrap();
-      $ctx.emit_const_load(reg, const_id);
+      let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+      if needs_initialization { let const_id = $reg.compile_const($ctx).unwrap(); $ctx.emit_const_load(reg, const_id); }
       reg
     }
   };
@@ -55,9 +52,8 @@ macro_rules! compile_register_mat {
   ($reg:expr, $ctx:ident) => {
     {
       let addr = $reg.addr();
-      let reg = $ctx.alloc_register_for_ptr(addr);
-      let const_id = $reg.compile_const_mat($ctx).unwrap();
-      $ctx.emit_const_load(reg, const_id);
+      let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
+      if needs_initialization { let const_id = $reg.compile_const_mat($ctx).unwrap(); $ctx.emit_const_load(reg, const_id); }
       reg
     }
   };
@@ -195,6 +191,33 @@ macro_rules! compile_varop {
     );
     return Ok(registers[0])
   };
+}
+
+#[cfg(all(test, feature = "compiler", feature = "i64"))]
+mod tests {
+  use crate::*;
+
+  #[test]
+  fn pointer_register_scalar_initializes_once() {
+    let mut ctx = CompileCtx::new();
+    let ctx = &mut ctx;
+    let scalar_a = Ref::new(42i64);
+    let scalar_b = Ref::new(42i64);
+
+    let register_a = compile_register_brrw!(scalar_a, ctx);
+    let register_a_again = compile_register_brrw!(scalar_a, ctx);
+    let register_b = compile_register_brrw!(scalar_b, ctx);
+
+    assert_eq!(register_a_again, register_a);
+    assert_ne!(register_b, register_a);
+    assert_eq!(ctx.const_entries.len(), 2);
+
+    let const_loads = ctx.instrs.iter().filter_map(|instruction| match instruction {
+      EncodedInstr::ConstLoad { dst, const_id } => Some((*dst, *const_id)),
+      _ => None,
+    }).collect::<Vec<_>>();
+    assert_eq!(const_loads, vec![(register_a, 0), (register_b, 1)]);
+  }
 }
 
 #[macro_export]

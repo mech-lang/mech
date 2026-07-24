@@ -1,0 +1,2 @@
++> ./math.mec
+ok := math/tau > 6.0

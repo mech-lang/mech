@@ -1,0 +1,12 @@
+config := {
+  hosts: [
+    { name: "arm" provider: "robot-arm" settings: { backend: "mock" } }
+  ]
+  run: {
+    paths: ["demo.mec"]
+    grants: [
+      { target: "arm/commands" operations: ["move", "grip", "home"] paths: ["*"] }
+      { target: "arm/state" operations: ["read"] paths: ["position", "gripper", "last-command"] }
+    ]
+  }
+}

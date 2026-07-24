@@ -1,0 +1,45 @@
+`mech test`
+===============================================================================
+
+`mech test` runs source files and validates invariants.
+
+An invariant is a top-level binding whose name ends in `!` and whose expression evaluates to `bool`.
+
+```mech
+x := 1
+positive! := x > 0
+```
+
+1. Run tests
+-------------------------------------------------------------------------------
+
+```sh
+mech test .
+mech test tests/example.mec
+```
+
+2. Output files
+-------------------------------------------------------------------------------
+
+Write JSON output:
+
+```sh
+mech test . --out report.json
+```
+
+Write Mech record output:
+
+```sh
+mech test . --out report.mec
+```
+
+3. Verbose output
+-------------------------------------------------------------------------------
+
+```sh
+mech test . --verbose
+```
+
+Verbose output includes detail for passed invariants as well as failed invariants.
+
+See [Validation](../validation.html) for invariant syntax and report shape.
