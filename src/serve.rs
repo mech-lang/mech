@@ -636,12 +636,13 @@ impl MechServer {
     for source in &project.source_paths {
       check_fs_capability(&mut self.authority.kernel().clone(), &self.serve_subject, FS_READ, source)?;
       let relative = source.strip_prefix(&project.root).map_err(|error| Error::new(ErrorKind::InvalidInput, format!("project source is outside root: {}", error)))?;
-      let key = url_key(relative).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "invalid project source URL"))?;
+      let specifier = url_key(relative).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "invalid project source URL"))?;
+      let transport_url = percent_encode_url_path(&specifier);
       source_entries.push(serde_json::json!({
-        "specifier": key.clone(),
-        "url": key.clone(),
+        "specifier": specifier,
+        "url": transport_url.clone(),
       }));
-      registry.insert_user_asset(key, ServerAsset {
+      registry.insert_user_asset(transport_url, ServerAsset {
         bytes: std::fs::read(source)?,
         content_type: content_type_for_path(source.to_string_lossy().as_ref()),
         content_encoding: None,
@@ -1119,6 +1120,28 @@ fn url_key(path: &Path) -> Option<String> {
   normalize_url_path(&segments.join("/"))
 }
 
+fn percent_encode_url_path(path: &str) -> String {
+  let mut encoded = String::with_capacity(path.len());
+  for &byte in path.as_bytes() {
+    if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/') {
+      encoded.push(byte as char);
+    } else {
+      encoded.push('%');
+      encoded.push(percent_encode_hex_digit(byte >> 4));
+      encoded.push(percent_encode_hex_digit(byte & 0x0f));
+    }
+  }
+  encoded
+}
+
+fn percent_encode_hex_digit(value: u8) -> char {
+  match value {
+    0..=9 => (b'0' + value) as char,
+    10..=15 => (b'A' + value - 10) as char,
+    _ => unreachable!(),
+  }
+}
+
 fn static_key_for_path(root: &Path, path: &Path) -> Option<String> {
   let candidate = if path.is_absolute() {
     path.to_path_buf()
@@ -1282,6 +1305,19 @@ mod tests {
   }
 
   #[test]
+  fn percent_encode_url_path_encodes_reserved_and_utf8_bytes() {
+    for (path, expected) in [
+      ("app/a#b.mec", "app/a%23b.mec"),
+      ("app/a?b.mec", "app/a%3Fb.mec"),
+      ("app/100%.mec", "app/100%25.mec"),
+      ("app/my file.mec", "app/my%20file.mec"),
+      ("app/café.mec", "app/caf%C3%A9.mec"),
+    ] {
+      assert_eq!(percent_encode_url_path(path), expected);
+    }
+  }
+
+  #[test]
   fn served_project_publishes_expanded_source_manifest_after_user_assets() {
     let root = temp_root("source-manifest");
     let app = root.join("app");
@@ -1291,8 +1327,10 @@ mod tests {
 
     let clock_path = app.join("clock.mec");
     let support_path = app.join("support.mec");
+    let escaped_path = app.join("a#b.mec");
     std::fs::write(&clock_path, "clock := 1\n").unwrap();
     std::fs::write(&support_path, "support := 1\n").unwrap();
+    std::fs::write(&escaped_path, "escaped := 1\n").unwrap();
     std::fs::write(
       mech_dir.join("project-sources.json"),
       r#"{"version":999,"sources":[]}"#,
@@ -1320,6 +1358,7 @@ mod tests {
     let expected_backing_paths = [
       clock_path.canonicalize().unwrap(),
       support_path.canonicalize().unwrap(),
+      escaped_path.canonicalize().unwrap(),
     ]
     .into_iter()
     .collect::<BTreeSet<_>>();
@@ -1340,6 +1379,10 @@ mod tests {
       manifest_asset.bytes,
       br#"{"version":999,"sources":[]}"#.to_vec(),
     );
+    let escaped_source_asset = registry
+      .get_route("/app/a%23b.mec")
+      .expect("encoded source route should exist");
+    assert_eq!(escaped_source_asset.bytes, b"escaped := 1\n");
 
     let manifest: serde_json::Value = serde_json::from_slice(&manifest_asset.bytes).unwrap();
     assert_eq!(manifest.get("version").and_then(serde_json::Value::as_u64), Some(1));
@@ -1347,7 +1390,7 @@ mod tests {
       .get("sources")
       .and_then(serde_json::Value::as_array)
       .expect("generated project source manifest should contain sources");
-    assert_eq!(sources.len(), 2);
+    assert_eq!(sources.len(), 3);
     let source_pairs = sources
       .iter()
       .map(|source| {
@@ -1367,6 +1410,7 @@ mod tests {
     assert_eq!(
       source_pairs,
       BTreeSet::from([
+        ("app/a#b.mec".to_string(), "app/a%23b.mec".to_string()),
         ("app/clock.mec".to_string(), "app/clock.mec".to_string()),
         ("app/support.mec".to_string(), "app/support.mec".to_string()),
       ]),
