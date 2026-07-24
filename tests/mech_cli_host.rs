@@ -1005,7 +1005,7 @@ x := @missing/HOME
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "direct_context_target");
+  let combined = assert_failure_contains(output, "UnknownAddressTarget");
   assert!(
     !combined.contains("must-not-write"),
     "provider wrote before undeclared context read failed preflight:\n{combined}"
