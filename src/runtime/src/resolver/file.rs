@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
-use mech_core::{MResult, MechError, MechSourceCode};
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::{check_fs_capability, SharedCapabilityKernel, FS_IMPORT, FS_READ, FS_RESOLVE};
 use crate::resolver::{
@@ -15,6 +15,28 @@ use super::{
   SourceIncludeCycle, SourceIncludeReadFailed, SourceKind,
   SourceUnknownFileExtension,
 };
+
+#[derive(Debug, Clone)]
+pub struct SourceFilesystemSpecifierInvalid {
+  pub specifier: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for SourceFilesystemSpecifierInvalid {
+  fn name(&self) -> &str { "SourceFilesystemSpecifierInvalid" }
+
+  fn message(&self) -> String {
+    format!("Invalid filesystem source specifier `{}`: {}", self.specifier, self.reason)
+  }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum FilesystemSourceSpecifier {
+  Ordinary(PathBuf),
+  RootRelative(PathBuf),
+  Absolute(PathBuf),
+  OtherScheme,
+}
 
 #[derive(Clone, Debug)]
 pub struct FileSourceResolver {
@@ -70,44 +92,84 @@ impl FileSourceResolver {
     &self,
     request: &SourceRequest,
   ) -> MResult<Option<PathBuf>> {
-    let specifier = Path::new(&request.specifier);
-
-    if specifier.is_absolute() {
-      for candidate in absolute_path_candidates(specifier) {
-        if candidate.is_file() {
-          return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
-        }
-      }
-      return Ok(None);
-    }
-
-    if let Some(referrer) = &request.referrer {
-      let referrer_path = Path::new(referrer);
-
-      let parent = if referrer_path.is_dir() {
-        Some(referrer_path)
-      } else {
-        referrer_path.parent()
-      };
-
-      if let Some(parent) = parent {
-        for candidate in path_candidates(parent, specifier) {
+    match parse_filesystem_source_specifier(&request.specifier)? {
+      FilesystemSourceSpecifier::OtherScheme => Ok(None),
+      FilesystemSourceSpecifier::Absolute(specifier) => {
+        for candidate in absolute_path_candidates(&specifier) {
           if candidate.is_file() {
             return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
           }
         }
+        Ok(None)
       }
-    }
-
-    for root in &self.roots {
-      for candidate in path_candidates(root, specifier) {
-        if candidate.is_file() {
-          return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+      FilesystemSourceSpecifier::RootRelative(specifier) => {
+        for root in &self.roots {
+          for candidate in path_candidates(root, &specifier) {
+            if candidate.is_file() {
+              return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+            }
+          }
         }
+        Ok(None)
+      }
+      FilesystemSourceSpecifier::Ordinary(specifier) => {
+        if specifier.is_absolute() {
+          for candidate in absolute_path_candidates(&specifier) {
+            if candidate.is_file() {
+              return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+            }
+          }
+          return Ok(None);
+        }
+
+        if let Some(referrer) = &request.referrer {
+          if let Some(referrer_path) = self.normalize_referrer_path(referrer)? {
+            let parent = if referrer_path.is_dir() {
+              Some(referrer_path.as_path())
+            } else {
+              referrer_path.parent()
+            };
+
+            if let Some(parent) = parent {
+              for candidate in path_candidates(parent, &specifier) {
+                if candidate.is_file() {
+                  return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+                }
+              }
+            }
+          }
+        }
+
+        for root in &self.roots {
+          for candidate in path_candidates(root, &specifier) {
+            if candidate.is_file() {
+              return self.authorize_resolved(request, canonicalize_source_path(&candidate)?);
+            }
+          }
+        }
+
+        Ok(None)
       }
     }
+  }
 
-    Ok(None)
+  fn normalize_referrer_path(&self, referrer: &str) -> MResult<Option<PathBuf>> {
+    match parse_filesystem_source_specifier(referrer)? {
+      FilesystemSourceSpecifier::OtherScheme => Ok(None),
+      FilesystemSourceSpecifier::Ordinary(path) | FilesystemSourceSpecifier::Absolute(path) => {
+        Ok(Some(path))
+      }
+      FilesystemSourceSpecifier::RootRelative(path) => {
+        for root in &self.roots {
+          for candidate in path_candidates(root, &path) {
+            if candidate.is_file() {
+              return Ok(Some(canonicalize_source_path(&candidate)?));
+            }
+          }
+        }
+        Ok(None)
+      }
+    }
   }
 
   fn authorize_resolved(&self, request: &SourceRequest, path: PathBuf) -> MResult<Option<PathBuf>> {
@@ -136,12 +198,13 @@ impl SourceResolver for FileSourceResolver {
       .unwrap_or("source")
       .to_string();
 
-    let mut resolved = ResolvedSource::new(name, file_uri(&path), source).with_kind(kind);
+    let canonical_uri = path_to_file_uri(&path)?;
+    let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
 
     if resolved.kind == SourceKind::Mech {
       if let MechSourceCode::String(source_text) = &resolved.source {
         let tree = mech_syntax::parser::parse(source_text.trim())?;
-        let referrer = path.to_string_lossy().to_string();
+        let referrer = canonical_uri.clone();
         let index = SourceIndex::from_program(&tree);
         index.validate_address_targets()?;
         let imports = index.all_imports();
@@ -165,6 +228,226 @@ impl SourceResolver for FileSourceResolver {
     }
 
     Ok(Some(resolved))
+  }
+}
+
+fn parse_filesystem_source_specifier(specifier: &str) -> MResult<FilesystemSourceSpecifier> {
+  let Some((scheme, rest)) = split_uri_scheme(specifier) else {
+    return Ok(FilesystemSourceSpecifier::Ordinary(PathBuf::from(specifier)));
+  };
+  match scheme {
+    "fs" => parse_fs_uri(specifier, rest),
+    "file" => file_uri_to_path(specifier).map(FilesystemSourceSpecifier::Absolute),
+    _ => Ok(FilesystemSourceSpecifier::OtherScheme),
+  }
+}
+
+fn split_uri_scheme(specifier: &str) -> Option<(&str, &str)> {
+  let (prefix, rest) = specifier.split_once("://")?;
+  if valid_uri_scheme(prefix) { Some((prefix, rest)) } else { None }
+}
+
+fn valid_uri_scheme(prefix: &str) -> bool {
+  let mut chars = prefix.chars();
+  let Some(first) = chars.next() else { return false; };
+  first.is_ascii_alphabetic()
+    && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '+' || ch == '.' || ch == '-')
+}
+
+fn filesystem_specifier_error(specifier: impl Into<String>, reason: impl Into<String>) -> MechError {
+  MechError::new(SourceFilesystemSpecifierInvalid { specifier: specifier.into(), reason: reason.into() }, None)
+}
+
+fn parse_fs_uri(specifier: &str, rest: &str) -> MResult<FilesystemSourceSpecifier> {
+  reject_query_or_fragment(specifier, rest)?;
+  let raw_path = rest.trim_start_matches('/');
+  if raw_path.is_empty() {
+    return Err(filesystem_specifier_error(specifier, "fs:// path must not be empty"));
+  }
+  let decoded = percent_decode_to_string(specifier, raw_path)?;
+  Ok(FilesystemSourceSpecifier::RootRelative(normalize_root_relative_path(specifier, &decoded)?))
+}
+
+fn reject_query_or_fragment(specifier: &str, rest: &str) -> MResult<()> {
+  if rest.contains('?') {
+    return Err(filesystem_specifier_error(specifier, "query strings are not supported"));
+  }
+  if rest.contains('#') {
+    return Err(filesystem_specifier_error(specifier, "fragments are not supported"));
+  }
+  Ok(())
+}
+
+fn normalize_root_relative_path(specifier: &str, decoded: &str) -> MResult<PathBuf> {
+  if decoded.trim().is_empty() {
+    return Err(filesystem_specifier_error(specifier, "path must not be empty"));
+  }
+  if looks_like_windows_drive_path(decoded) {
+    return Err(filesystem_specifier_error(specifier, "Windows drive prefixes are not permitted in fs:// paths"));
+  }
+  let path = Path::new(decoded);
+  if path.is_absolute() {
+    return Err(filesystem_specifier_error(specifier, "absolute paths are not permitted in fs:// paths"));
+  }
+
+  let mut normalized = PathBuf::new();
+  for component in path.components() {
+    match component {
+      Component::Normal(part) => normalized.push(part),
+      Component::CurDir => {}
+      Component::ParentDir => return Err(filesystem_specifier_error(specifier, "parent traversal is not permitted in fs:// paths")),
+      Component::RootDir => return Err(filesystem_specifier_error(specifier, "root components are not permitted in fs:// paths")),
+      Component::Prefix(_) => return Err(filesystem_specifier_error(specifier, "path prefixes are not permitted in fs:// paths")),
+    }
+  }
+  if normalized.as_os_str().is_empty() {
+    return Err(filesystem_specifier_error(specifier, "path must not be empty"));
+  }
+  Ok(normalized)
+}
+
+fn looks_like_windows_drive_path(text: &str) -> bool {
+  let bytes = text.as_bytes();
+  bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
+
+fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
+  let Some(rest) = uri.strip_prefix("file://") else {
+    return Err(filesystem_specifier_error(uri, "file URI must start with file://"));
+  };
+  reject_query_or_fragment(uri, rest)?;
+  let (authority, raw_path) = if rest.starts_with('/') {
+    ("", rest)
+  } else if let Some(path_start) = rest.find('/') {
+    (&rest[..path_start], &rest[path_start..])
+  } else {
+    return Err(filesystem_specifier_error(uri, "file URI must include an absolute path"));
+  };
+  let decoded_path = percent_decode_to_string(uri, raw_path)?;
+  local_file_uri_to_path(uri, authority, &decoded_path)
+}
+
+#[cfg(not(windows))]
+fn local_file_uri_to_path(uri: &str, authority: &str, decoded_path: &str) -> MResult<PathBuf> {
+  if !(authority.is_empty() || authority.eq_ignore_ascii_case("localhost")) {
+    return Err(filesystem_specifier_error(uri, "non-local file URI authorities are not supported on this platform"));
+  }
+  if !decoded_path.starts_with('/') {
+    return Err(filesystem_specifier_error(uri, "file URI path must be absolute"));
+  }
+  Ok(PathBuf::from(decoded_path))
+}
+
+#[cfg(windows)]
+fn local_file_uri_to_path(uri: &str, authority: &str, decoded_path: &str) -> MResult<PathBuf> {
+  if authority.is_empty() || authority.eq_ignore_ascii_case("localhost") {
+    let local_path = if decoded_path.len() >= 4
+      && decoded_path.as_bytes()[0] == b'/'
+      && decoded_path.as_bytes()[1].is_ascii_alphabetic()
+      && decoded_path.as_bytes()[2] == b':'
+      && decoded_path.as_bytes()[3] == b'/'
+    {
+      decoded_path[1..].replace('/', "\\")
+    } else {
+      return Err(filesystem_specifier_error(uri, "local Windows file URI path must include a drive prefix"));
+    };
+    return Ok(PathBuf::from(local_path));
+  }
+  let path = decoded_path.trim_start_matches('/').replace('/', "\\");
+  if path.is_empty() {
+    return Err(filesystem_specifier_error(uri, "UNC file URI must include a share path"));
+  }
+  Ok(PathBuf::from(format!("\\\\{}\\{}", authority, path)))
+}
+
+fn percent_decode_to_string(specifier: &str, text: &str) -> MResult<String> {
+  let bytes = text.as_bytes();
+  let mut out = Vec::with_capacity(bytes.len());
+  let mut index = 0;
+  while index < bytes.len() {
+    if bytes[index] == b'%' {
+      if index + 2 >= bytes.len() {
+        return Err(filesystem_specifier_error(specifier, "malformed percent escape"));
+      }
+      let high = hex_value(bytes[index + 1]).ok_or_else(|| filesystem_specifier_error(specifier, "malformed percent escape"))?;
+      let low = hex_value(bytes[index + 2]).ok_or_else(|| filesystem_specifier_error(specifier, "malformed percent escape"))?;
+      out.push((high << 4) | low);
+      index += 3;
+    } else {
+      out.push(bytes[index]);
+      index += 1;
+    }
+  }
+  String::from_utf8(out).map_err(|error| filesystem_specifier_error(specifier, format!("percent-decoded path is not valid UTF-8: {}", error)))
+}
+
+fn hex_value(byte: u8) -> Option<u8> {
+  match byte {
+    b'0'..=b'9' => Some(byte - b'0'),
+    b'a'..=b'f' => Some(byte - b'a' + 10),
+    b'A'..=b'F' => Some(byte - b'A' + 10),
+    _ => None,
+  }
+}
+
+fn path_to_file_uri(path: &Path) -> MResult<String> {
+  #[cfg(windows)]
+  {
+    let text = path.display().to_string().replace('\\', "/");
+    if let Some(unc) = text.strip_prefix("//") {
+      return Ok(format!("file://{}", percent_encode_path(unc.as_bytes())));
+    }
+    let path_text = if text.starts_with('/') { text } else { format!("/{}", text) };
+    return Ok(format!("file://{}", percent_encode_path(path_text.as_bytes())));
+  }
+
+  #[cfg(unix)]
+  {
+    use std::os::unix::ffi::OsStrExt;
+    if !path.is_absolute() {
+      return Err(filesystem_specifier_error(path.display().to_string(), "file URI source path must be absolute"));
+    }
+    Ok(format!("file://{}", percent_encode_path(path.as_os_str().as_bytes())))
+  }
+
+  #[cfg(not(any(unix, windows)))]
+  {
+    if !path.is_absolute() {
+      return Err(filesystem_specifier_error(path.display().to_string(), "file URI source path must be absolute"));
+    }
+    let text = path.to_str().ok_or_else(|| {
+      filesystem_specifier_error(
+        path.display().to_string(),
+        "file URI source path must be valid UTF-8 on this target",
+      )
+    })?;
+    Ok(format!("file://{}", percent_encode_path(text.as_bytes())))
+  }
+}
+
+fn percent_encode_path(bytes: &[u8]) -> String {
+  let mut out = String::new();
+  for &byte in bytes {
+    if is_file_uri_path_byte_unreserved(byte) {
+      out.push(byte as char);
+    } else {
+      out.push('%');
+      out.push(hex_char(byte >> 4));
+      out.push(hex_char(byte & 0x0f));
+    }
+  }
+  out
+}
+
+fn is_file_uri_path_byte_unreserved(byte: u8) -> bool {
+  byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':')
+}
+
+fn hex_char(value: u8) -> char {
+  match value {
+    0..=9 => (b'0' + value) as char,
+    10..=15 => (b'A' + value - 10) as char,
+    _ => unreachable!(),
   }
 }
 
@@ -415,16 +698,6 @@ fn canonicalize_source_path(path: &Path) -> MResult<PathBuf> {
   })
 }
 
-fn file_uri(path: &Path) -> String {
-  let mut text = path.display().to_string();
-
-  if cfg!(windows) {
-    text = text.replace('\\', "/");
-  }
-
-  format!("file://{}", text)
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -509,6 +782,142 @@ mod tests {
     let request = SourceRequest::new("./math.mec").with_referrer(referrer.to_string_lossy().to_string());
     let resolved = resolver.resolve(&request).unwrap().unwrap();
     assert_eq!(resolved.name, "math.mec");
+  }
+
+  #[test]
+  fn resolves_fs_uri_beneath_configured_root() {
+    let root = temp_root("resolve-fs-root");
+    std::fs::create_dir_all(root.join("lib")).unwrap();
+    std::fs::write(root.join("lib/dep.mec"), "value := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let resolved = resolver.resolve(&SourceRequest::new("fs://lib/dep.mec")).unwrap().unwrap();
+    assert_eq!(resolved.name, "dep.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn resolves_fs_uri_with_empty_authority_beneath_configured_root() {
+    let root = temp_root("resolve-fs-root-empty-authority");
+    std::fs::create_dir_all(root.join("lib")).unwrap();
+    std::fs::write(root.join("lib/dep.mec"), "value := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let resolved = resolver.resolve(&SourceRequest::new("fs:///lib/dep.mec")).unwrap().unwrap();
+    assert_eq!(resolved.name, "dep.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn rejects_fs_uri_parent_traversal_before_filesystem_probe() {
+    let root = temp_root("reject-fs-parent");
+    std::fs::create_dir_all(&root).unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let error = resolver.resolve(&SourceRequest::new("fs://../dep.mec")).unwrap_err();
+    assert!(error.kind_as::<SourceFilesystemSpecifierInvalid>().is_some());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn resolves_percent_encoded_fs_uri_path() {
+    let root = temp_root("resolve-fs-percent");
+    std::fs::create_dir_all(root.join("lib")).unwrap();
+    std::fs::write(root.join("lib/space dep.mec"), "value := 1").unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let resolved = resolver.resolve(&SourceRequest::new("fs://lib/space%20dep.mec")).unwrap().unwrap();
+    assert_eq!(resolved.name, "space dep.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn resolves_file_uri_absolute_path() {
+    let root = temp_root("resolve-file-absolute");
+    std::fs::create_dir_all(&root).unwrap();
+    let path = root.join("main.mec");
+    std::fs::write(&path, "value := 1").unwrap();
+    let uri = path_to_file_uri(&path.canonicalize().unwrap()).unwrap();
+    let resolver = FileSourceResolver::empty();
+    let resolved = resolver.resolve(&SourceRequest::new(uri)).unwrap().unwrap();
+    assert_eq!(resolved.name, "main.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn resolves_file_uri_localhost_path() {
+    let root = temp_root("resolve-file-localhost");
+    std::fs::create_dir_all(&root).unwrap();
+    let path = root.join("main.mec");
+    std::fs::write(&path, "value := 1").unwrap();
+    let uri = path_to_file_uri(&path.canonicalize().unwrap()).unwrap().replacen("file://", "file://localhost", 1);
+    let resolver = FileSourceResolver::empty();
+    let resolved = resolver.resolve(&SourceRequest::new(uri)).unwrap().unwrap();
+    assert_eq!(resolved.name, "main.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn resolves_percent_encoded_file_uri_path() {
+    let root = temp_root("resolve-file-percent");
+    std::fs::create_dir_all(root.join("space dir")).unwrap();
+    let path = root.join("space dir/dep #1.mec");
+    std::fs::write(&path, "value := 1").unwrap();
+    let uri = path_to_file_uri(&path.canonicalize().unwrap()).unwrap();
+    assert!(uri.contains("%20"));
+    assert!(uri.contains("%23"));
+    let resolver = FileSourceResolver::empty();
+    let resolved = resolver.resolve(&SourceRequest::new(uri)).unwrap().unwrap();
+    assert_eq!(resolved.name, "dep #1.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn file_uri_referrer_resolves_relative_import_from_parent() {
+    let root = temp_root("resolve-file-referrer");
+    std::fs::create_dir_all(root.join("sub")).unwrap();
+    let referrer = root.join("sub/main.mec");
+    let dep = root.join("sub/dep.mec");
+    std::fs::write(&referrer, "+> ./dep.mec").unwrap();
+    std::fs::write(&dep, "value := 1").unwrap();
+    let referrer_uri = path_to_file_uri(&referrer.canonicalize().unwrap()).unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    let request = SourceRequest::new("./dep.mec").with_referrer(referrer_uri);
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+    assert_eq!(resolved.name, "dep.mec");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn other_uri_schemes_are_ignored_by_file_resolver() {
+    let root = temp_root("resolve-other-schemes");
+    std::fs::create_dir_all(&root).unwrap();
+    let resolver = FileSourceResolver::new(&root);
+    assert!(resolver.resolve(&SourceRequest::new("https://example.com/main.mec")).unwrap().is_none());
+    assert!(resolver.resolve(&SourceRequest::new("memory://main.mec")).unwrap().is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn file_uri_helpers_round_trip_supported_local_path() {
+    let root = temp_root("file-uri-round-trip");
+    std::fs::create_dir_all(root.join("space dir")).unwrap();
+    let path = root.join("space dir/dep #1%.mec");
+    std::fs::write(&path, "value := 1").unwrap();
+    let canonical = path.canonicalize().unwrap();
+    let uri = path_to_file_uri(&canonical).unwrap();
+    assert_eq!(file_uri_to_path(&uri).unwrap(), canonical);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(not(windows))]
+  #[test]
+  fn rejects_nonlocal_file_uri_authority_on_non_windows() {
+    let error = file_uri_to_path("file://server/share/project/main.mec").unwrap_err();
+    assert!(error.kind_as::<SourceFilesystemSpecifierInvalid>().is_some());
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn supports_windows_drive_and_unc_file_uri_forms() {
+    assert_eq!(file_uri_to_path("file:///C:/project/main.mec").unwrap(), PathBuf::from("C:\\project\\main.mec"));
+    assert_eq!(file_uri_to_path("file://server/share/project/main.mec").unwrap(), PathBuf::from("\\\\server\\share\\project\\main.mec"));
   }
 
 

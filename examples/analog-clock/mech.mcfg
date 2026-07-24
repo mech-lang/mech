@@ -1,4 +1,10 @@
 config := {
+  runtime: {
+    limits: {
+      max-turn-duration-ms: 2000
+    }
+  }
+
   hosts: [
     {
       name: "clock"

@@ -10,14 +10,15 @@ use crate::cli::capabilities;
 use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
 use crate::cli::run::{
-    RunInputMode, new_cli_runtime, run_cli_source_code_with_events, run_cli_source_with_events,
+    RunInputMode, cli_module_options, new_cli_runtime, run_cli_root_module_with_events,
+    run_cli_source_code_with_events, run_cli_source_with_events,
 };
 use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
     collect_sources_with_events,
 };
-use mech_runtime::{RuntimeEvent, RuntimeEventKind};
+use mech_runtime::{RuntimeEvent, RuntimeEventKind, SourceKind, SourceRequest};
 
 #[derive(Debug, Clone)]
 struct CliRunError {
@@ -243,12 +244,29 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                 let mut last = Value::Empty;
                 for p in &plan.run_paths {
                     for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
-                        let src = mech_runtime::read_runtime_source_file_with_capabilities(
-                            &target,
-                            Some(&fs_kernel),
-                            Some(MECH_TOOL_SUBJECT),
-                        )?;
-                        let (value, events) = run_cli_source_code_with_events(&mut runtime, &src)?;
+                        let (value, events) = if SourceKind::from_path(&target) == SourceKind::Mech {
+                            let canonical_target = target.canonicalize().map_err(|error| {
+                                MechError::new(
+                                    CliRunError {
+                                        operation: "canonicalize_run_target".to_string(),
+                                        reason: format!("{}: {}", target.display(), error),
+                                    },
+                                    None,
+                                )
+                            })?;
+                            run_cli_root_module_with_events(
+                                &mut runtime,
+                                SourceRequest::new(canonical_target.to_string_lossy().to_string()),
+                                cli_module_options(),
+                            )?
+                        } else {
+                            let src = mech_runtime::read_runtime_source_file_with_capabilities(
+                                &target,
+                                Some(&fs_kernel),
+                                Some(MECH_TOOL_SUBJECT),
+                            )?;
+                            run_cli_source_code_with_events(&mut runtime, &src)?
+                        };
                         print_run_runtime_events(&events);
                         last = value;
                     }

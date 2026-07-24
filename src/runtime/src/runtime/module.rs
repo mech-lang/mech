@@ -475,6 +475,68 @@ impl MechRuntime {
     )
   }
 
+  pub fn resolve_and_run_root_module(
+    &mut self,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<Value> {
+    let mut context = self.runtime_context()?;
+    self.resolve_and_run_root_module_with_context(&mut context, request, options)
+  }
+
+  pub fn resolve_and_run_root_module_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<Value> {
+    let turn_started = Instant::now();
+    self.validate_context_for_runtime(context)?;
+
+    let request = request.into();
+    request.validate()?;
+    let root_specifier = request.specifier.clone();
+    let previous_module_version = context.module_version;
+
+    let result = (|| -> MResult<Value> {
+      let Some(root_version) = self.build_module_from_request_with_context(
+        context,
+        request,
+        options,
+      )? else {
+        return Err(MechError::new(
+          RuntimeRootModuleSourceNotFound { specifier: root_specifier },
+          None,
+        ));
+      };
+
+      context.module_version = Some(root_version);
+
+      let mut preflight_seen = HashSet::new();
+      self.preflight_module_graph_for_scope(
+        context,
+        root_version,
+        &SourceScope::Program,
+        &mut preflight_seen,
+      )?;
+
+      let mut seen = HashSet::new();
+      let mut module_instances = HashMap::new();
+      let value = self.execute_module_retained_root_for_scope(
+        context,
+        root_version,
+        &SourceScope::Program,
+        &mut seen,
+        &mut module_instances,
+        turn_started,
+      )?;
+      Ok(value)
+    })();
+
+    context.module_version = previous_module_version;
+    result
+  }
+
   pub fn put_source_module(
     &mut self,
     name: &str,

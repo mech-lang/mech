@@ -6,6 +6,12 @@ use mech_program::{MechProgram, MechProgramConfig};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
 
+fn temp_root(name: &str) -> std::path::PathBuf {
+  let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{name}-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+  std::fs::create_dir_all(&root).unwrap();
+  root
+}
+
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
   let root = std::env::temp_dir().join(format!("mech-runtime-module-smoke-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
   std::fs::create_dir_all(&root).unwrap();
@@ -201,6 +207,17 @@ fn assert_bool_false(result: Value, label: &str) {
   }
 }
 
+fn assert_f64(result: Value, expected: f64, label: &str) {
+  match result {
+    Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
+    Value::MutableReference(value) => match &*value.borrow() {
+      Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
+      other => panic!("expected f64 mutable reference result from {label}, got {:?}", other),
+    },
+    other => panic!("expected f64 result from {label}, got {:?}", other),
+  }
+}
+
 
 
 #[test]
@@ -220,6 +237,135 @@ ok := math/tau > 6.0
   let result = runtime.run_module(version).unwrap();
 
   assert_bool_true(result, "direct run_string normal import");
+}
+
+#[test]
+fn resolved_retained_root_imports_sibling_module() {
+  let root = setup_main_only_module("retained-root-sibling", "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n");
+  std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
+  assert_f64(result, 42.0, "retained root sibling import");
+  assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0, "retained root answer");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resolved_retained_root_imports_parent_relative_module() {
+  let root = temp_root("retained-root-parent-relative");
+  std::fs::create_dir_all(root.join("app")).unwrap();
+  std::fs::create_dir_all(root.join("shared")).unwrap();
+  std::fs::write(root.join("shared/dep.mec"), "value := 41\n<+ value\n").unwrap();
+  std::fs::write(root.join("app/main.mec"), "+> ../shared/dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_run_root_module("app/main.mec", module_options()).unwrap();
+  assert_f64(result, 42.0, "retained root parent-relative import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resolved_retained_root_import_namespace_exports_are_visible() {
+  let root = setup_main_only_module("retained-root-namespace", "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n");
+  std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
+  assert_f64(runtime.root_symbol_value("dep/value").unwrap(), 41.0, "retained root namespace export");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resolved_retained_root_wildcard_source_import_works() {
+  let root = setup_main_only_module("retained-root-wildcard", "+> ./dep.mec/*\nanswer := value + 1\nanswer\n");
+  std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  let result = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
+  assert_f64(result, 42.0, "retained root wildcard import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resolved_retained_root_missing_dependency_reports_dependency_error() {
+  let root = setup_main_only_module("retained-root-missing-dependency", "+> ./missing.mec\nanswer := 1\n");
+  let mut runtime = runtime_with_root(&root);
+  let error = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap_err();
+  assert!(error.kind_as::<RuntimeModuleDependencyMissingError>().is_some(), "expected dependency missing error, got {error:?}");
+  assert!(format!("{error:?}").contains("./missing.mec"));
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resolved_retained_root_missing_source_reports_root_error() {
+  let root = temp_root("retained-root-missing-source");
+  let mut runtime = runtime_with_root(&root);
+  let error = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap_err();
+  assert!(error.kind_as::<RuntimeRootModuleSourceNotFound>().is_some(), "expected root source not found, got {error:?}");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn resolved_retained_root_dependency_cycle_reports_existing_cycle_error() {
+  let root = setup_main_only_module("retained-root-cycle", "+> ./dep.mec\nanswer := 1\n");
+  std::fs::write(root.join("dep.mec"), "+> ./main.mec\nvalue := 1\n<+ value\n").unwrap();
+  let mut runtime = runtime_with_root(&root);
+  let error = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap_err();
+  assert!(error.kind_as::<RuntimeModuleDependencyCycleError>().is_some(), "expected dependency cycle, got {error:?}");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn retained_root_dependency_context_read_does_not_create_live_binding() {
+  let root = setup_main_only_module("retained-root-dependency-isolated", "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n");
+  std::fs::write(root.join("dep.mec"), "@numbers := docs://numbers{:read(increment)}\nvalue := @numbers/increment\n<+ value\n").unwrap();
+  let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(41.0)));
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(provider).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://numbers", "increment")).unwrap();
+  let result = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
+  assert_f64(result, 42.0, "dependency context read result");
+  assert!(!runtime.has_live_input_bindings(), "dependency context reads must remain isolated");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn retained_root_context_read_creates_live_binding_and_recomputes() {
+  let root = setup_main_only_module(
+    "retained-root-live",
+    "@numbers := docs://numbers{:read(increment)}\noutput := @numbers/increment + 1\noutput\n",
+  );
+  let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(2.0)));
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(provider).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://numbers", "increment")).unwrap();
+  let result = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
+  assert_f64(result, 3.0, "root context read initial result");
+  assert!(runtime.has_live_input_bindings(), "root context read should retain live binding");
+  runtime.apply_host_input(RuntimeHostInput::single(
+    RuntimeHostInputSource::new("docs://numbers", "increment").unwrap(),
+    RuntimeHostInputValue::F64(10.0),
+  )).unwrap();
+  assert_f64(runtime.root_symbol_value("output").unwrap(), 11.0, "root recompute after host input");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn failed_retained_root_restores_live_state_and_imported_environment() {
+  let root = temp_root("retained-root-failure-rollback");
+  std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+  std::fs::write(root.join("ok.mec"), "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
+  let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(1.0)));
+  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(provider).build().unwrap();
+  runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://numbers", "increment")).unwrap();
+  runtime.resolve_and_run_root_module("ok.mec", module_options()).unwrap();
+  assert_f64(runtime.root_symbol_value("dep/value").unwrap(), 41.0, "initial imported environment");
+
+  std::fs::write(root.join("dep.mec"), "value := 99\n<+ value\n").unwrap();
+  std::fs::write(
+    root.join("bad.mec"),
+    "+> ./dep.mec\n@numbers := docs://numbers{:read(increment)}\nsample := @numbers/increment\nbroken := missing + sample\n",
+  ).unwrap();
+  let error = runtime.resolve_and_run_root_module("bad.mec", module_options()).unwrap_err();
+  assert!(format!("{error:?}").contains("missing"), "expected root execution failure, got {error:?}");
+  assert!(!runtime.has_live_input_bindings(), "failed root must restore live input bindings");
+  assert_f64(runtime.root_symbol_value("dep/value").unwrap(), 41.0, "restored imported environment");
+  std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]
