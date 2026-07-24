@@ -113,10 +113,14 @@ pub fn host_arg_resolved(
   args: &[Value],
   index: usize,
 ) -> MResult<Value> {
-  match host_arg(function, args, index)? {
-    Value::MutableReference(value) => Ok(value.borrow().clone()),
-    Value::Typed(..) => todo!(),
-    other => Ok(other.clone()),
+  let mut value = host_arg(function, args, index)?.clone();
+
+  loop {
+    value = match value {
+      Value::MutableReference(value) => value.borrow().clone(),
+      Value::Typed(value, _) => *value,
+      other => return Ok(other),
+    };
   }
 }
 
@@ -225,7 +229,12 @@ pub fn expect_no_args(
 }
 
 pub fn is_empty_value(value: &Value) -> bool {
-  matches!(value, Value::Empty)
+  match value {
+    Value::Empty => true,
+    Value::Typed(value, _) => is_empty_value(value),
+    Value::MutableReference(value) => is_empty_value(&value.borrow()),
+    _ => false,
+  }
 }
 
 pub fn host_arg_optional(
@@ -1270,4 +1279,69 @@ where
   let d = D::from_host_value(function, args, 3)?;
 
   Ok(f(a, b, c, d)?.into_host_value())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn typed(value: Value, kind: ValueKind) -> Value {
+    Value::Typed(Box::new(value), kind)
+  }
+
+  #[test]
+  fn resolves_typed_strings_through_scalar_helpers() {
+    let args = vec![typed(
+      Value::String(Ref::new("hello".into())),
+      ValueKind::String,
+    )];
+
+    assert_eq!(host_arg_string("test", &args, 0).unwrap(), "hello");
+  }
+
+  #[cfg(feature = "f64")]
+  #[test]
+  fn resolves_typed_f64_through_scalar_helpers() {
+    let args = vec![typed(Value::F64(Ref::new(42.0)), ValueKind::F64)];
+
+    assert_eq!(host_arg_f64("test", &args, 0).unwrap(), 42.0);
+  }
+
+  #[test]
+  fn resolves_nested_typed_and_mutable_reference_values() {
+    let string = || Value::String(Ref::new("hello".into()));
+    let cases = vec![
+      typed(
+        Value::MutableReference(Ref::new(string())),
+        ValueKind::String,
+      ),
+      Value::MutableReference(Ref::new(typed(string(), ValueKind::String))),
+      Value::MutableReference(Ref::new(Value::MutableReference(Ref::new(typed(
+        string(),
+        ValueKind::String,
+      ))))),
+    ];
+
+    assert_eq!(host_arg_string("test", &cases[..1], 0).unwrap(), "hello");
+    assert_eq!(host_arg_string("test", &cases[1..2], 0).unwrap(), "hello");
+    assert_eq!(host_arg_string("test", &cases[2..], 0).unwrap(), "hello");
+  }
+
+  #[test]
+  fn typed_wrong_type_returns_an_error() {
+    let args = vec![typed(Value::Empty, ValueKind::String)];
+
+    assert!(host_arg_string("test", &args, 0).is_err());
+  }
+
+  #[test]
+  fn optional_helpers_treat_wrapped_empty_as_absent() {
+    let args = vec![
+      typed(Value::Empty, ValueKind::String),
+      Value::MutableReference(Ref::new(typed(Value::Empty, ValueKind::String))),
+    ];
+
+    assert_eq!(host_arg_optional_string("test", &args, 0).unwrap(), None);
+    assert_eq!(host_arg_optional_string("test", &args, 1).unwrap(), None);
+  }
 }
