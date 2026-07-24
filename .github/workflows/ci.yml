@@ -132,6 +132,14 @@ jobs:
             --features "repl mika" \
             --test mech_repl_ctrlc
 
+      - name: Run REPL Mika finalization regression
+        run: |
+          cargo test \
+            --lib \
+            --no-default-features \
+            --features "repl mika" \
+            mika_farewell_remains_visible_after_drop
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
@@ -352,6 +360,9 @@ jobs:
 
       - name: Build REPL-plus-Mika Windows CLI
         run: cargo build --bin mech --no-default-features --features "repl mika"
+
+      - name: Test REPL Mika finalization
+        run: cargo test --lib --no-default-features --features "repl mika" mika_farewell_remains_visible_after_drop
 
   dynamic-modules:
     name: Dynamic modules

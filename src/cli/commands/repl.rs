@@ -8,7 +8,7 @@ use std::time::Duration;
 use colored::*;
 use crossterm::{ExecutableCommand, cursor, style::Print};
 #[cfg(feature = "mika")]
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use mech_core::*;
 use mech_program::*;
 #[cfg(feature = "run")]
@@ -27,6 +27,64 @@ pub(crate) const TEXT_LOGO: &str = r#"
   │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘│ │
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
+
+#[cfg(feature = "mika")]
+const MIKA_FAREWELL_TEMPLATE: &str = "\n{spinner:.yellow} {msg}";
+
+#[cfg(feature = "mika")]
+fn play_mika_farewell(draw_target: ProgressDrawTarget, message: String, frame_delay: Duration) {
+    let final_state = ProgressBar::with_draw_target(None, draw_target);
+
+    let animation_style = ProgressStyle::with_template(MIKA_FAREWELL_TEMPLATE)
+        .unwrap_or_else(|_| ProgressStyle::default_spinner())
+        .tick_strings(MICROMIKA_WAVE);
+
+    final_state.set_style(animation_style);
+    final_state.set_message(message);
+
+    for _ in 0..MICROMIKA_WAVE.len().saturating_sub(1) {
+        thread::sleep(frame_delay);
+        final_state.tick();
+    }
+
+    // `indicatif` uses the last tick string after a spinner is finished.
+    // MICROMIKA_WAVE ends with a blank cleanup frame, so replace the
+    // style before finishing to preserve Mika's resting face.
+    let resting_face = MICROMIKA_WAVE[0];
+    let finished_style = ProgressStyle::with_template(MIKA_FAREWELL_TEMPLATE)
+        .unwrap_or_else(|_| ProgressStyle::default_spinner())
+        .tick_strings(&[resting_face, resting_face]);
+
+    final_state.set_style(finished_style);
+    final_state.finish();
+}
+
+#[cfg(all(test, feature = "mika"))]
+mod tests {
+    use super::*;
+    use indicatif::InMemoryTerm;
+
+    #[test]
+    fn mika_farewell_remains_visible_after_drop() {
+        let terminal = InMemoryTerm::new(10, 80);
+        let draw_target = ProgressDrawTarget::term_like(Box::new(terminal.clone()));
+
+        play_mika_farewell(draw_target, "⸢Okay cya!⸥\n".to_string(), Duration::ZERO);
+
+        // The helper has returned, so its ProgressBar has already been dropped.
+        let contents = terminal.contents();
+        let visible_lines = contents
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            visible_lines,
+            vec!["╭◉╮ ⸢Okay cya!⸥"],
+            "unexpected terminal contents after farewell spinner drop:\n{contents}",
+        );
+    }
+}
 
 pub(crate) struct ReplStartup {
     #[cfg(feature = "run")]
@@ -78,19 +136,11 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         };
         if should_exit {
             #[cfg(feature = "mika")]
-            {
-                let final_state = ProgressBar::new_spinner();
-                let completed_style = ProgressStyle::with_template("\n{spinner:.yellow} {msg}")
-                    .unwrap_or_else(|_| ProgressStyle::default_spinner())
-                    .tick_strings(MICROMIKA_WAVE);
-                final_state.set_style(completed_style);
-                final_state.set_message(format!("{}Okay cya!{}\n", mika_open, mika_close));
-
-                for _ in 0..MICROMIKA_WAVE.len().saturating_sub(1) {
-                    thread::sleep(Duration::from_millis(100));
-                    final_state.tick();
-                }
-            }
+            play_mika_farewell(
+                ProgressDrawTarget::stderr(),
+                format!("{}Okay cya!{}\n", mika_open, mika_close),
+                Duration::from_millis(100),
+            );
 
             #[cfg(not(feature = "mika"))]
             println!("Okay cya!");
