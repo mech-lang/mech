@@ -290,6 +290,101 @@ fn mech_run_directory_ignores_non_mech_assets() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
+fn mech_run_file_resolves_relative_sibling_import() {
+  let root = temp_root("run-file-sibling-import");
+  std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("main.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "42");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_file_resolves_parent_relative_import() {
+  let root = temp_root("run-file-parent-import");
+  std::fs::create_dir_all(root.join("app")).unwrap();
+  std::fs::create_dir_all(root.join("shared")).unwrap();
+  std::fs::write(root.join("shared/dep.mec"), "value := 41\n<+ value\n").unwrap();
+  std::fs::write(root.join("app/main.mec"), "+> ../shared/dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("app/main.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "42");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_file_resolves_fs_uri_import() {
+  let root = temp_root("run-file-fs-import");
+  std::fs::create_dir_all(root.join("lib")).unwrap();
+  std::fs::write(root.join("lib/dep.mec"), "value := 41\n<+ value\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> fs://lib/dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("main.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  assert_success_contains(output, "42");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_file_missing_import_reports_dependency() {
+  let root = temp_root("run-file-missing-import");
+  std::fs::write(root.join("main.mec"), "+> ./missing.mec\nanswer := 1\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("main.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  let combined = assert_failure_contains(output, "RuntimeModuleDependencyMissing");
+  assert!(combined.contains("./missing.mec"), "missing specifier should appear in output:\n{combined}");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_file_dependency_denied_by_filesystem_capability() {
+  let root = temp_root("run-file-dependency-denied");
+  std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+  std::fs::write(root.join("main.mec"), "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
+
+  let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+    .arg("run")
+    .arg("--no-default-capabilities")
+    .arg("--allow-read")
+    .arg("main.mec")
+    .arg("main.mec")
+    .current_dir(&root)
+    .output()
+    .unwrap();
+
+  let combined = assert_failure_contains(output, "Capability");
+  assert!(
+    combined.contains("resolve") || combined.contains("import"),
+    "expected filesystem resolve/import capability denial, got:\n{combined}"
+  );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
 fn mech_run_explicit_loader_supported_text_file_still_runs() {
   let root = temp_root("run-explicit-js");
   let source = root.join("script.js");
@@ -975,7 +1070,7 @@ x := @missing/HOME
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "direct_context_target");
+  let combined = assert_failure_contains(output, "UnknownAddressTarget");
   assert!(
     !combined.contains("must-not-write"),
     "provider wrote before undeclared context read failed preflight:\n{combined}"
