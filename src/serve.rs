@@ -631,10 +631,16 @@ impl MechServer {
       content_encoding: None,
       backing_paths: project.config_path.clone().into_iter().collect(),
     });
+    let mut source_entries =
+      Vec::with_capacity(project.source_paths.len());
     for source in &project.source_paths {
       check_fs_capability(&mut self.authority.kernel().clone(), &self.serve_subject, FS_READ, source)?;
       let relative = source.strip_prefix(&project.root).map_err(|error| Error::new(ErrorKind::InvalidInput, format!("project source is outside root: {}", error)))?;
       let key = url_key(relative).ok_or_else(|| Error::new(ErrorKind::InvalidInput, "invalid project source URL"))?;
+      source_entries.push(serde_json::json!({
+        "specifier": key.clone(),
+        "url": key.clone(),
+      }));
       registry.insert_user_asset(key, ServerAsset {
         bytes: std::fs::read(source)?,
         content_type: content_type_for_path(source.to_string_lossy().as_ref()),
@@ -662,6 +668,27 @@ impl MechServer {
         backing_paths: Vec::new(),
       });
     }
+    let manifest = serde_json::to_vec(&serde_json::json!({
+      "version": 1,
+      "sources": source_entries,
+    }))
+    .map_err(|error| {
+      Error::new(
+        ErrorKind::InvalidData,
+        format!(
+          "failed to serialize project source manifest: {error}"
+        ),
+      )
+    })?;
+    registry.insert_asset(
+      "_mech/project-sources.json",
+      asset(
+        &manifest,
+        "application/json",
+        None,
+        project.source_paths.clone(),
+      ),
+    );
     drop(registry);
     self.workspace_root = Some(project.root);
     println!("{} Project loaded in {:?}.", self.badge(), started.elapsed());
@@ -1251,6 +1278,112 @@ mod tests {
       served_project_source_paths(&root, &[run_path.clone()], Some(&serve)).unwrap(),
       vec![root.join("app/lib.mec").canonicalize().unwrap(), run_path],
     );
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn served_project_publishes_expanded_source_manifest_after_user_assets() {
+    let root = temp_root("source-manifest");
+    let app = root.join("app");
+    let mech_dir = root.join("_mech");
+    std::fs::create_dir_all(&app).unwrap();
+    std::fs::create_dir_all(&mech_dir).unwrap();
+
+    let clock_path = app.join("clock.mec");
+    let support_path = app.join("support.mec");
+    std::fs::write(&clock_path, "clock := 1\n").unwrap();
+    std::fs::write(&support_path, "support := 1\n").unwrap();
+    std::fs::write(
+      mech_dir.join("project-sources.json"),
+      r#"{"version":999,"sources":[]}"#,
+    )
+    .unwrap();
+    std::fs::write(root.join("index.html"), "<!doctype html>\n").unwrap();
+    std::fs::write(
+      root.join("mech.mcfg"),
+      r#"config := {
+  hosts: []
+
+  serve: {
+    paths: ["app"]
+  }
+
+  run: {
+    paths: ["app/clock.mec"]
+    grants: []
+  }
+}
+"#,
+    )
+    .unwrap();
+
+    let expected_backing_paths = [
+      clock_path.canonicalize().unwrap(),
+      support_path.canonicalize().unwrap(),
+    ]
+    .into_iter()
+    .collect::<BTreeSet<_>>();
+    let guard = CurrentDirGuard::enter(&root);
+    let project = discover_served_project(&[".".to_string()])
+      .unwrap()
+      .unwrap();
+    let mut server = test_server();
+    server.load_served_project(project).unwrap();
+
+    let registry = server.registry.read().unwrap();
+    assert!(registry.user_assets.contains("_mech/project-sources.json"));
+    let manifest_asset = registry
+      .get_route("/_mech/project-sources.json")
+      .expect("generated project source manifest route should exist");
+    assert_eq!(manifest_asset.content_type, "application/json");
+    assert_ne!(
+      manifest_asset.bytes,
+      br#"{"version":999,"sources":[]}"#.to_vec(),
+    );
+
+    let manifest: serde_json::Value = serde_json::from_slice(&manifest_asset.bytes).unwrap();
+    assert_eq!(manifest.get("version").and_then(serde_json::Value::as_u64), Some(1));
+    let sources = manifest
+      .get("sources")
+      .and_then(serde_json::Value::as_array)
+      .expect("generated project source manifest should contain sources");
+    assert_eq!(sources.len(), 2);
+    let source_pairs = sources
+      .iter()
+      .map(|source| {
+        let specifier = source
+          .get("specifier")
+          .and_then(serde_json::Value::as_str)
+          .expect("manifest source specifier should be a string")
+          .to_string();
+        let url = source
+          .get("url")
+          .and_then(serde_json::Value::as_str)
+          .expect("manifest source URL should be a string")
+          .to_string();
+        (specifier, url)
+      })
+      .collect::<BTreeSet<_>>();
+    assert_eq!(
+      source_pairs,
+      BTreeSet::from([
+        ("app/clock.mec".to_string(), "app/clock.mec".to_string()),
+        ("app/support.mec".to_string(), "app/support.mec".to_string()),
+      ]),
+    );
+    assert!(sources.iter().all(|source| {
+      source.get("specifier").and_then(serde_json::Value::as_str) != Some("app")
+    }));
+    assert!(sources.iter().all(|source| {
+      source.get("url").and_then(serde_json::Value::as_str) != Some("app")
+    }));
+    assert_eq!(
+      manifest_asset.backing_paths.into_iter().collect::<BTreeSet<_>>(),
+      expected_backing_paths,
+    );
+
+    drop(registry);
+    drop(guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
