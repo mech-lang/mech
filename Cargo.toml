@@ -206,6 +206,9 @@ matrix_vertcat = ["matrix"]
 [dev-dependencies]
 nalgebra = "0.34.1"
 
+[target.'cfg(unix)'.dev-dependencies]
+libc = "0.2"
+
 [dependencies]
 mech-core        = { version = "0.3.5", default-features = false }
 mech-syntax      = { version = "0.3.5", default-features = false }

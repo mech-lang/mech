@@ -1,5 +1,4 @@
 use std::io;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 #[cfg(feature = "mika")]
 use std::thread;
@@ -65,17 +64,19 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     println!("{} {}", micromika, intro_message);
 
     let caught_interrupts = Arc::new(Mutex::new(0));
-    let exit_requested = Arc::new(AtomicBool::new(false));
     let ci = caught_interrupts.clone();
-    let exit_requested_for_handler = exit_requested.clone();
     ctrlc::set_handler(move || {
         println!("{}", ctrlc_cmd);
-        let Ok(mut caught_interrupts) = ci.lock() else {
-            exit_requested_for_handler.store(true, Ordering::SeqCst);
-            return;
+        let should_exit = {
+            let mut caught_interrupts = match ci.lock() {
+                Ok(guard) => guard,
+                Err(poisoned) => poisoned.into_inner(),
+            };
+
+            *caught_interrupts += 1;
+            *caught_interrupts >= 3
         };
-        *caught_interrupts += 1;
-        if *caught_interrupts >= 3 {
+        if should_exit {
             #[cfg(feature = "mika")]
             {
                 let final_state = ProgressBar::new_spinner();
@@ -94,8 +95,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
             #[cfg(not(feature = "mika"))]
             println!("Okay cya!");
 
-            exit_requested_for_handler.store(true, Ordering::SeqCst);
-            return;
+            std::process::exit(0);
         }
         println!(
             "\n{} {}Enter {} to terminate this REPL session.{}\n",
@@ -142,9 +142,6 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     }));
 
     loop {
-        if exit_requested.load(Ordering::SeqCst) {
-            return Ok(CliOutcome::exit(0));
-        }
         {
             if let Ok(mut ci) = caught_interrupts.lock() {
                 *ci = 0;
