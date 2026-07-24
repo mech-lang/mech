@@ -401,13 +401,27 @@ fn path_to_file_uri(path: &Path) -> MResult<String> {
     return Ok(format!("file://{}", percent_encode_path(path_text.as_bytes())));
   }
 
-  #[cfg(not(windows))]
+  #[cfg(unix)]
   {
     use std::os::unix::ffi::OsStrExt;
     if !path.is_absolute() {
       return Err(filesystem_specifier_error(path.display().to_string(), "file URI source path must be absolute"));
     }
     Ok(format!("file://{}", percent_encode_path(path.as_os_str().as_bytes())))
+  }
+
+  #[cfg(not(any(unix, windows)))]
+  {
+    if !path.is_absolute() {
+      return Err(filesystem_specifier_error(path.display().to_string(), "file URI source path must be absolute"));
+    }
+    let text = path.to_str().ok_or_else(|| {
+      filesystem_specifier_error(
+        path.display().to_string(),
+        "file URI source path must be valid UTF-8 on this target",
+      )
+    })?;
+    Ok(format!("file://{}", percent_encode_path(text.as_bytes())))
   }
 }
 
