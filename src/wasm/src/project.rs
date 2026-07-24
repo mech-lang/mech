@@ -25,7 +25,8 @@ use mech_host_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
 use mech_host_timer::BrowserTimerHostFactory;
 use mech_runtime::{
-    ConfigProfileOptions, MechConfigDocument, MechRuntime, RuntimeBuilder, parse_config_document,
+    ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
+    ModuleBuildOptions, RuntimeBuilder, SourceRequest, parse_config_document,
 };
 
 #[cfg(feature = "browser_host_dom")]
@@ -65,8 +66,9 @@ impl WasmProject {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let mut runtime = build_runtime(&document, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
-        run_project_sources(&mut runtime, &document, &source_map).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
+        let mut runtime = build_runtime(&document, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
+        run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self {
             runtime,
             #[cfg(feature = "browser_host_scene")]
@@ -86,8 +88,9 @@ impl WasmProject {
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let mut runtime = build_runtime_from_authority(&document, &authority, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
-        run_project_sources(&mut runtime, &document, &source_map).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
+        let mut runtime = build_runtime_from_authority(&document, &authority, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
+        run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self {
             runtime,
             #[cfg(feature = "browser_host_scene")]
@@ -183,11 +186,20 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
         ConfigProfileOptions::default(),
     )?;
     let run = require_run(&document)?;
-    Ok(run
+    let mut paths = run
         .paths
         .iter()
         .map(|path| path.to_string_lossy().to_string())
-        .collect())
+        .collect::<Vec<_>>();
+    if let Some(serve) = &document.serve {
+        for path in &serve.paths {
+            let path = path.to_string_lossy().to_string();
+            if !paths.contains(&path) {
+                paths.push(path);
+            }
+        }
+    }
+    Ok(paths)
 }
 fn runtime_builder_with_factories(
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
@@ -229,9 +241,11 @@ fn runtime_builder_with_factories(
 
 fn build_runtime(
     document: &MechConfigDocument,
+    source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
-    let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?;
+    let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?
+        .source_resolver(source_resolver);
     for host in &document.hosts {
         builder = builder.host_instance(host.clone());
     }
@@ -246,10 +260,12 @@ fn build_runtime(
 fn build_runtime_from_authority(
     document: &MechConfigDocument,
     authority: &BrowserRuntimeInjectionConfig,
+    source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
     let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?
-        .config(authority.into_runtime_config().map_err(to_js_error)?);
+        .config(authority.into_runtime_config().map_err(to_js_error)?)
+        .source_resolver(source_resolver);
     for required in &document.hosts {
         if let Some(host) = authority.hosts.iter().find(|host| host.name == required.name && host.provider == required.provider) {
             builder = builder.host_instance(host.clone());
@@ -265,6 +281,7 @@ fn build_runtime_from_authority(
 fn build_runtime_from_authority(
     _document: &MechConfigDocument,
     _authority: &(),
+    _source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] _scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
     Err(js_error("served project authority support was not compiled into this WASM artifact"))
@@ -494,23 +511,38 @@ fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue
     }
     Ok(out)
 }
+
+fn project_source_resolver(
+    sources: &HashMap<String, String>,
+) -> mech_core::MResult<InMemorySourceResolver> {
+    let mut resolver = InMemorySourceResolver::new();
+    for (specifier, source) in sources {
+        resolver.insert_string(specifier, source)?;
+    }
+    Ok(resolver)
+}
+
+fn browser_module_options() -> ModuleBuildOptions<'static> {
+    ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        "v0.3",
+        "wasm32-unknown-unknown",
+        &[],
+        &[],
+    )
+}
+
 fn run_project_sources(
     runtime: &mut MechRuntime,
     document: &MechConfigDocument,
-    sources: &HashMap<String, String>,
 ) -> mech_core::MResult<()> {
     let run = require_run(document)?;
     for path in &run.paths {
         let key = path.to_string_lossy().to_string();
-        let source = sources.get(&key).ok_or_else(|| {
-            MechError::new(
-                ProjectError {
-                    message: format!("missing source `{key}`"),
-                },
-                None,
-            )
-        })?;
-        runtime.run_string(source)?;
+        runtime.resolve_and_run_root_module(
+            SourceRequest::new(key),
+            browser_module_options(),
+        )?;
     }
     Ok(())
 }
@@ -580,6 +612,20 @@ mod tests {
     }
 
     #[test]
+    fn required_paths_adds_deduplicated_serve_sources_after_run_roots() {
+        let config = r#"config := {
+  hosts: []
+  run: { paths: ["app/main.mec" "other.mec"] grants: [] }
+  serve: { paths: ["app/main.mec" "app/lib.mec" "other.mec" "shared/lib.mec"] }
+}"#;
+
+        assert_eq!(
+            required_path_strings(config).unwrap(),
+            vec!["app/main.mec", "other.mec", "app/lib.mec", "shared/lib.mec"]
+        );
+    }
+
+    #[test]
     fn required_paths_rejects_missing_run() {
         assert!(required_path_strings("config := { hosts: [] }").is_err());
     }
@@ -592,7 +638,6 @@ mod tests {
 
     #[test]
     fn from_sources_executes_paths_in_order() {
-        let mut runtime = RuntimeBuilder::new().build().unwrap();
         let document = parse_config_document(
             "test.mcfg",
             CONFIG,
@@ -602,7 +647,98 @@ mod tests {
         let mut sources = HashMap::new();
         sources.insert("a.mec".to_string(), "x := 1".to_string());
         sources.insert("b.mec".to_string(), "y := 2".to_string());
-        run_project_sources(&mut runtime, &document, &sources).unwrap();
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
+    }
+
+    fn project_document(paths: &[&str]) -> MechConfigDocument {
+        let paths = paths
+            .iter()
+            .map(|path| format!("\"{path}\""))
+            .collect::<Vec<_>>()
+            .join(" ");
+        parse_config_document(
+            "test.mcfg",
+            &format!("config := {{ hosts: [] run: {{ paths: [{paths}] grants: [] }} }}"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap()
+    }
+
+    fn assert_f64(value: mech_core::Value, expected: f64) {
+        match value {
+            mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
+            mech_core::Value::MutableReference(value) => match &*value.borrow() {
+                mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
+                other => panic!("expected f64 value, got {other:?}"),
+            },
+            other => panic!("expected f64 value, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn project_sources_resolve_sibling_and_parent_modules() {
+        let document = project_document(&["app/main.mec", "nested/main.mec"]);
+        let sources = HashMap::from([
+            (
+                "app/main.mec".to_string(),
+                "+> ./lib.mec\nanswer := lib/value + 1\nanswer\n".to_string(),
+            ),
+            ("app/lib.mec".to_string(), "value := 41\n<+ value\n".to_string()),
+            (
+                "nested/main.mec".to_string(),
+                "+> ../shared/lib.mec\nparent-answer := lib/value + 1\n".to_string(),
+            ),
+            ("shared/lib.mec".to_string(), "value := 41\n<+ value\n".to_string()),
+        ]);
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+
+        run_project_sources(&mut runtime, &document).unwrap();
+
+        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
+        assert_f64(runtime.root_symbol_value("parent-answer").unwrap(), 42.0);
+    }
+
+    #[test]
+    fn project_sources_report_missing_module_dependencies() {
+        let document = project_document(&["main.mec"]);
+        let sources = HashMap::from([(
+            "main.mec".to_string(),
+            "+> ./missing.mec\nanswer := 1\n".to_string(),
+        )]);
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+
+        let error = run_project_sources(&mut runtime, &document).unwrap_err();
+        assert!(error
+            .kind_as::<mech_runtime::RuntimeModuleDependencyMissingError>()
+            .is_some());
+    }
+
+    #[test]
+    fn project_sources_only_execute_configured_roots() {
+        let document = project_document(&["first.mec", "second.mec"]);
+        let sources = HashMap::from([
+            ("first.mec".to_string(), "marker := 1\n".to_string()),
+            ("second.mec".to_string(), "answer := marker + 1\n".to_string()),
+            ("unused.mec".to_string(), "this is not valid Mech\n".to_string()),
+        ]);
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+
+        run_project_sources(&mut runtime, &document).unwrap();
+
+        assert_f64(runtime.root_symbol_value("answer").unwrap(), 2.0);
     }
 
 
@@ -739,8 +875,11 @@ rows := |id<string> x<f64>|
   | "row-a" 1 + delta |
   | "row-b" 2 + delta |"#.to_string(),
         );
-        let mut runtime = RuntimeBuilder::new().build().unwrap();
-        run_project_sources(&mut runtime, &document, &sources).unwrap();
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
     }
 
     #[derive(Debug)]
@@ -817,6 +956,7 @@ rows := |id<string> x<f64>|
 
         let scene_backend = mech_host_scene::RecordingSceneBackend::new();
         let mut builder = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&generic_fixture_sources()).unwrap())
             .host_input_capacity(16)
             .host_factory(Box::new(TestManualTimerHostFactory::new())).unwrap()
             .host_factory(Box::new(mech_host_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap())).unwrap();
@@ -827,7 +967,7 @@ rows := |id<string> x<f64>|
             builder = builder.run_resource_grant(grant.clone());
         }
         let mut runtime = builder.build().unwrap();
-        run_project_sources(&mut runtime, &document, &generic_fixture_sources()).unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
 
         let initial_scene = scene_backend.latest().unwrap();
         assert_eq!(initial_scene.circles.len(), 2);
@@ -869,8 +1009,7 @@ rows := |id<string> x<f64>|
             ConfigProfileOptions::default(),
         )
         .unwrap();
-        let sources = HashMap::new();
-        assert!(run_project_sources(&mut runtime, &document, &sources).is_err());
+        assert!(run_project_sources(&mut runtime, &document).is_err());
     }
     #[cfg(feature = "served_project_authority")]
     #[test]

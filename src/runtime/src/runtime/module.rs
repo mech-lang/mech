@@ -30,6 +30,26 @@ fn source_index_for_module_record_source(
   }
 }
 
+fn index_unindexed_module_source(
+  resolved: &mut ResolvedSource,
+) -> MResult<()> {
+  if !resolved.scopes.is_empty() {
+    return Ok(());
+  }
+
+  let Some(index) = source_index_for_module_record_source(&resolved.source)? else {
+    return Ok(());
+  };
+
+  index.validate_address_targets()?;
+  resolved.imports = index.all_imports();
+  resolved.exports = index.all_exports();
+  resolved.contexts = index.all_contexts();
+  resolved.address_references = index.all_address_references();
+  resolved.scopes = index.module_scopes();
+  Ok(())
+}
+
 impl MechRuntime {
   pub fn ensure_module(
     &mut self,
@@ -277,6 +297,7 @@ impl MechRuntime {
         .collect::<Vec<_>>();
 
       let mut resolved = resolved;
+      index_unindexed_module_source(&mut resolved)?;
 
       let explicit_capability_requirements = options
         .capability_requirements
