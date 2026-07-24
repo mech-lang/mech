@@ -32,7 +32,7 @@ mod transaction;
 #[cfg(test)]
 mod input_tests;
 
-use crate::runtime::errors::*;
+pub use self::errors::*;
 use crate::runtime::host::*;
 
 use std::sync::Arc;

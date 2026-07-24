@@ -158,6 +158,21 @@ impl MechErrorKind for RuntimeModuleDependencyMissingError {
   }
 }
 
+#[derive(Debug, Clone)]
+pub struct RuntimeRootModuleSourceNotFound {
+  pub specifier: String,
+}
+
+impl MechErrorKind for RuntimeRootModuleSourceNotFound {
+  fn name(&self) -> &str {
+    "RuntimeRootModuleSourceNotFound"
+  }
+
+  fn message(&self) -> String {
+    format!("root module source `{}` could not be resolved", self.specifier)
+  }
+}
+
 
 #[derive(Debug, Clone)]
 pub struct RuntimeProgramHostNotActiveError {

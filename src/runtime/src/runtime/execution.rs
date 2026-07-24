@@ -36,6 +36,81 @@ enum AddressedReadPreflight {
   AllowModuleAddressTargets,
 }
 
+struct PreparedModuleScopeExecution {
+  record: ModuleVersionRecord,
+  source: MechSourceCode,
+  environment: HashMap<String, ValRef>,
+}
+
+struct ProgramEnvironmentOverlay {
+  entries: Vec<ProgramEnvironmentOverlayEntry>,
+}
+
+struct ProgramEnvironmentOverlayEntry {
+  id: u64,
+  previous_symbol: Option<ValRef>,
+  previous_dictionary: Option<String>,
+}
+
+impl ProgramEnvironmentOverlay {
+  fn install(program: &mut MechProgram, environment: &HashMap<String, ValRef>) -> MResult<Self> {
+    let mut ids = HashMap::new();
+    for name in environment.keys() {
+      let id = hash_str(name);
+      if let Some(first) = ids.insert(id, name.clone()) {
+        if first != *name {
+          return Err(MechError::new(RuntimeModuleImportConflict {
+            binding: name.clone(),
+            first_import: first,
+            second_import: name.clone(),
+          }, None));
+        }
+      }
+    }
+
+    let mut entries = Vec::with_capacity(environment.len());
+    let symbols = program.interpreter_mut().symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    for (name, value_ref) in environment {
+      let id = hash_str(name);
+      let previous_symbol = symbols_brrw.symbols.get(&id).cloned();
+      let previous_dictionary = symbols_brrw.dictionary.borrow().get(&id).cloned();
+      if let Some(previous_name) = &previous_dictionary {
+        if previous_name != name && !environment.contains_key(previous_name) {
+          return Err(MechError::new(RuntimeModuleImportConflict {
+            binding: name.clone(),
+            first_import: previous_name.clone(),
+            second_import: name.clone(),
+          }, None));
+        }
+      }
+      entries.push(ProgramEnvironmentOverlayEntry { id, previous_symbol, previous_dictionary });
+      symbols_brrw.symbols.insert(id, value_ref.clone());
+      symbols_brrw.dictionary.borrow_mut().insert(id, name.clone());
+    }
+
+    Ok(Self { entries })
+  }
+
+  fn restore(self, program: &mut MechProgram) {
+    let symbols = program.interpreter_mut().symbols();
+    let mut symbols_brrw = symbols.borrow_mut();
+    for entry in self.entries.into_iter().rev() {
+      if let Some(previous_symbol) = entry.previous_symbol {
+        symbols_brrw.symbols.insert(entry.id, previous_symbol);
+      } else {
+        symbols_brrw.symbols.remove(&entry.id);
+      }
+
+      if let Some(previous_dictionary) = entry.previous_dictionary {
+        symbols_brrw.dictionary.borrow_mut().insert(entry.id, previous_dictionary);
+      } else {
+        symbols_brrw.dictionary.borrow_mut().remove(&entry.id);
+      }
+    }
+  }
+}
+
 impl AddressedReadPreflight {
   fn requires_context_binding(self) -> bool {
     matches!(self, AddressedReadPreflight::RequireContextBinding)
@@ -3395,7 +3470,7 @@ impl MechRuntime {
     Ok(instance.result)
   }
 
-  fn preflight_module_graph_for_scope(
+  pub(super) fn preflight_module_graph_for_scope(
     &self,
     context: &RuntimeContext,
     version: ModuleVersionId,
@@ -3493,28 +3568,14 @@ impl MechRuntime {
     }
   }
 
-  fn execute_module_isolated_for_scope(
+  fn prepare_module_scope_execution(
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     scope: &SourceScope,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
-  ) -> MResult<ModuleInstance> {
-    self.validate_context_for_runtime(context)?;
-    context.charge_step()?;
-
-    let instance_key = (version, scope.clone());
-
-    if let Some(instance) = module_instances.get(&instance_key).cloned() {
-      return Ok(instance);
-    }
-
-    if seen.contains(&instance_key) {
-      return Ok(ModuleInstance { version, exports: HashMap::new(), result: Value::Empty });
-    }
-    seen.insert(instance_key.clone());
-
+  ) -> MResult<PreparedModuleScopeExecution> {
     let Some(record) = self.store.get_module_version(version)? else {
       return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
     };
@@ -3539,7 +3600,7 @@ impl MechRuntime {
       )?;
     }
 
-    let mut import_environment = self.build_import_environment_for_scope(
+    let mut environment = self.build_import_environment_for_scope(
       context,
       &record,
       scope,
@@ -3555,7 +3616,47 @@ impl MechRuntime {
       seen,
       module_instances,
     )?;
-    import_environment.extend(address_environment);
+    merge_module_environment(
+      &mut environment,
+      address_environment,
+      "import environment",
+      "address environment",
+    )?;
+
+    let scoped_source = module_source_for_scope(&source, scope)?;
+
+    Ok(PreparedModuleScopeExecution { record, source: scoped_source, environment })
+  }
+
+  fn execute_module_isolated_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+  ) -> MResult<ModuleInstance> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+
+    let instance_key = (version, scope.clone());
+
+    if let Some(instance) = module_instances.get(&instance_key).cloned() {
+      return Ok(instance);
+    }
+
+    if seen.contains(&instance_key) {
+      return Ok(ModuleInstance { version, exports: HashMap::new(), result: Value::Empty });
+    }
+    seen.insert(instance_key.clone());
+
+    let prepared = self.prepare_module_scope_execution(
+      context,
+      version,
+      scope,
+      seen,
+      module_instances,
+    )?;
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
       environment: MechProgramEnvironment {
@@ -3569,10 +3670,10 @@ impl MechRuntime {
     {
       let symbols = module_program.interpreter_mut().symbols();
       let mut symbols_brrw = symbols.borrow_mut();
-      for (name, value_ref) in import_environment {
+      for (name, value_ref) in &prepared.environment {
         let id = hash_str(&name);
-        symbols_brrw.symbols.insert(id, value_ref);
-        symbols_brrw.dictionary.borrow_mut().insert(id, name);
+        symbols_brrw.symbols.insert(id, value_ref.clone());
+        symbols_brrw.dictionary.borrow_mut().insert(id, name.clone());
       }
     }
 
@@ -3580,8 +3681,13 @@ impl MechRuntime {
       context,
       RuntimeEventKind::ModuleExecutionStarted { module_version: version },
     )?;
-    let scoped_source = module_source_for_scope(&source, scope)?;
-    let result = self.run_module_source_on_program(context, &mut module_program, &scoped_source, scope);
+    let result = self.run_module_source_on_program(
+      context,
+      &mut module_program,
+      &prepared.source,
+      scope,
+      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+    );
     let result = match result {
       Ok(value) => value,
       Err(error) => {
@@ -3599,10 +3705,10 @@ impl MechRuntime {
     {
       let symbols = module_program.interpreter_mut().symbols();
       let symbols_brrw = symbols.borrow();
-      for export in exports_for_scope(&record, scope) {
+      for export in exports_for_scope(&prepared.record, scope) {
         let id = hash_str(&export.name);
         let Some(value_ref) = symbols_brrw.get(id) else {
-          let error = MechError::new(RuntimeModuleExportNotFound { dependency: record.id.to_string(), export: export.name.clone() }, None);
+          let error = MechError::new(RuntimeModuleExportNotFound { dependency: prepared.record.id.to_string(), export: export.name.clone() }, None);
           self.emit_event_to_context(
             context,
             RuntimeEventKind::ModuleExecutionFailed {
@@ -3625,12 +3731,107 @@ impl MechRuntime {
     Ok(instance)
   }
 
+  pub(super) fn execute_module_retained_root_for_scope(
+    &mut self,
+    context: &mut RuntimeContext,
+    version: ModuleVersionId,
+    scope: &SourceScope,
+    seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
+    module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+    turn_started: Instant,
+  ) -> MResult<Value> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+
+    if !matches!(scope, SourceScope::Program) {
+      return Err(MechError::new(RuntimeInvalidOperationError {
+        operation: "run_root_module",
+        reason: "retained root module execution only supports program scope".to_string(),
+      }, None));
+    }
+
+    let instance_key = (version, scope.clone());
+    if seen.contains(&instance_key) {
+      return Ok(Value::Empty);
+    }
+    seen.insert(instance_key);
+
+    let prepared = self.prepare_module_scope_execution(
+      context,
+      version,
+      scope,
+      seen,
+      module_instances,
+    )?;
+
+    let program_config = self.program.config.clone();
+    let mut root_program = std::mem::replace(
+      &mut self.program,
+      MechProgram::new(program_config),
+    );
+
+    let result = (|| -> MResult<Value> {
+      let overlay = ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
+      let live_state_before = self.live_state_snapshot();
+
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleExecutionStarted { module_version: version },
+      )?;
+
+      let result = self
+        .run_module_source_on_program(
+          context,
+          &mut root_program,
+          &prepared.source,
+          scope,
+          crate::runtime::LiveRegistrationMode::RetainedRoot,
+        )
+        .and_then(|value| {
+          self.enforce_turn_duration(turn_started)?;
+          Ok(value)
+        });
+
+      match result {
+        Ok(value) => Ok(value),
+        Err(error) => {
+          self.restore_live_state(live_state_before);
+          overlay.restore(&mut root_program);
+          Err(error)
+        }
+      }
+    })();
+
+    self.program = root_program;
+
+    match result {
+      Ok(value) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionCompleted { module_version: version },
+        )?;
+        Ok(value)
+      }
+      Err(error) => {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: version,
+            message: format!("{:?}", error),
+          },
+        )?;
+        Err(error)
+      }
+    }
+  }
+
   fn run_module_source_on_program(
     &mut self,
     context: &mut RuntimeContext,
     program: &mut MechProgram,
     source: &MechSourceCode,
     scope: &SourceScope,
+    registration_mode: crate::runtime::LiveRegistrationMode,
   ) -> MResult<Value> {
     self.register_runtime_program_host_functions(context, program)?;
 
@@ -3652,7 +3853,7 @@ impl MechRuntime {
     // exports, address environment, and ModuleInstance identity.
     let execution_scope = execution_scope_for_extracted_module_source(scope);
 
-    let result = self.with_live_registration_mode(crate::runtime::LiveRegistrationMode::IsolatedSnapshot, |runtime| {
+    let result = self.with_live_registration_mode(registration_mode, |runtime| {
       match source {
       MechSourceCode::String(source) => match mech_syntax::parser::parse(source.trim()) {
         Ok(tree) => {
@@ -3686,7 +3887,13 @@ impl MechRuntime {
       MechSourceCode::Program(sources) => {
         let mut result = Ok(Value::Empty);
         for source in sources {
-          result = runtime.run_module_source_on_program(context, program, source, scope);
+          result = runtime.run_module_source_on_program(
+            context,
+            program,
+            source,
+            scope,
+            registration_mode,
+          );
           if result.is_err() {
             break;
           }
@@ -3978,6 +4185,25 @@ fn exports_for_scope<'a>(
     .find(|metadata| &metadata.scope == scope)
     .map(|metadata| metadata.exports.as_slice())
     .unwrap_or(&[])
+}
+
+fn merge_module_environment(
+  target: &mut HashMap<String, ValRef>,
+  source: HashMap<String, ValRef>,
+  first_import: &str,
+  second_import: &str,
+) -> MResult<()> {
+  for (binding, value) in source {
+    if target.contains_key(&binding) {
+      return Err(MechError::new(RuntimeModuleImportConflict {
+        binding,
+        first_import: first_import.to_string(),
+        second_import: second_import.to_string(),
+      }, None));
+    }
+    target.insert(binding, value);
+  }
+  Ok(())
 }
 
 
