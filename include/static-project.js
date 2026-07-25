@@ -47,7 +47,10 @@ async function readProjectSourceManifest(moduleUrl) {
   }
 
   if (
-    manifest?.version !== 1 ||
+    manifest?.version !== 2 ||
+    !Array.isArray(manifest.roots) ||
+    manifest.roots.length === 0 ||
+    manifest.roots.some(root => typeof root !== "string") ||
     !Array.isArray(manifest.sources) ||
     manifest.sources.some(
       source =>
@@ -58,16 +61,23 @@ async function readProjectSourceManifest(moduleUrl) {
     throw new Error("invalid project source manifest");
   }
 
-  return manifest.sources;
+  return manifest;
 }
 
 async function main() {
   await init();
+  if (
+    typeof WasmProject.fromServedBundle !== "function" ||
+    typeof WasmProject.supportsServedAuthority !== "function" ||
+    WasmProject.supportsServedAuthority() !== true
+  ) {
+    throw new Error("static bundle WASM profile mismatch: rebuild with browser_project support");
+  }
   const config = await fetchText("mech.mcfg");
-  const sourceEntries = await readProjectSourceManifest(import.meta.url);
+  const manifest = await readProjectSourceManifest(import.meta.url);
   const sources = {};
 
-  for (const source of sourceEntries) {
+  for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
   }
 
@@ -75,7 +85,7 @@ async function main() {
     throw new Error("static bundle is missing injected browser host authority");
   }
 
-  project = WasmProject.fromServedSources(config, sources);
+  project = WasmProject.fromServedBundle(config, sources, manifest.roots);
   project.start();
   running = true;
   requestAnimationFrame(frame);

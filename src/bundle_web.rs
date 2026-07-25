@@ -35,6 +35,13 @@ pub struct BundleWebResult {
   pub source_count: usize,
 }
 
+#[derive(Debug)]
+struct BundledSource {
+  canonical_path: PathBuf,
+  specifier: String,
+  url: String,
+}
+
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
   if options.source_paths.is_empty() {
     return Err(validation_error("bundle-web requires serve.paths in the project config"));
@@ -101,8 +108,6 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   let root_shim_with_config = crate::inject_host_authority_injection_script(&shim_string, &injection)?;
   fs::write(&index_html, &root_shim_with_config)?;
 
-  let mut source_entries = Vec::with_capacity(options.source_paths.len());
-  let mut source_entry_keys = BTreeSet::new();
   let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
   for source_path in &options.source_paths {
     let logical_source_path = source_path;
@@ -113,12 +118,11 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
 
     let specifier = bundle_source_specifier(&relative)?;
     let url = format!("source/{}", percent_encode_url_path(&specifier));
-    source_entry_keys.insert(specifier.clone());
-    source_entries.push(serde_json::json!({
-      "specifier": specifier,
-      "url": url.clone(),
-    }));
-    bundled_sources.push((read_source_path.clone(), url));
+    bundled_sources.push(BundledSource {
+      canonical_path: read_source_path.clone(),
+      specifier,
+      url,
+    });
 
     write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
@@ -134,26 +138,28 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     let html = formatter.format_html(&tree, stylesheet_string.clone(), source_shim);
     write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
   }
+  let mut roots = Vec::with_capacity(options.loaded_config.document.run.as_ref().unwrap().paths.len());
   for run_path in &options.loaded_config.document.run.as_ref().unwrap().paths {
-    let requested = run_path.to_string_lossy().replace('\\', "/");
     let resolved = resolve_config_path(&base_dir, run_path).canonicalize()?;
-    let url = bundled_sources
+    let source = bundled_sources
       .iter()
-      .find(|(source, _)| *source == resolved)
-      .map(|(_, url)| url)
+      .find(|source| source.canonical_path == resolved)
       .ok_or_else(|| validation_error(format!(
         "bundle-web run path is not included by serve.paths: {}",
         run_path.display(),
       )))?;
-    if source_entry_keys.insert(requested.clone()) {
-      source_entries.push(serde_json::json!({
-        "specifier": requested,
-        "url": url,
-      }));
-    }
+    roots.push(source.specifier.clone());
   }
+  let source_entries = bundled_sources
+    .iter()
+    .map(|source| serde_json::json!({
+      "specifier": source.specifier,
+      "url": source.url,
+    }))
+    .collect::<Vec<_>>();
   let manifest = serde_json::to_vec(&serde_json::json!({
-    "version": 1,
+    "version": 2,
+    "roots": roots,
     "sources": source_entries,
   }))
   .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
@@ -371,9 +377,9 @@ fn copy_wasm_package(wasm_pkg: &Path, output_pkg: &Path) -> MResult<()> {
 }
 
 fn relative_source_path(source: &Path, base_dir: &Path, project_dir: &Path) -> MResult<PathBuf> {
-  let relative = if let Ok(relative) = source.strip_prefix(base_dir) {
+  let relative = if let Ok(relative) = source.strip_prefix(project_dir) {
     relative
-  } else if let Ok(relative) = source.strip_prefix(project_dir) {
+  } else if let Ok(relative) = source.strip_prefix(base_dir) {
     relative
   } else {
     return Err(validation_error(format!("bundle-web source is outside project/config root: {}", source.display())));
@@ -582,7 +588,7 @@ mod tests {
   }
 
   #[test]
-  fn bundle_web_static_project_bootstrap_uses_served_sources() {
+  fn bundle_web_static_project_bootstrap_uses_served_bundle() {
     let root = temp_root("static-bootstrap");
     let loaded = write_demo_project(&root);
     let out = root.join("out");
@@ -597,11 +603,73 @@ mod tests {
     .unwrap();
     assert!(index.contains("src=\"./_mech/project.js\""));
     assert!(index.contains("window.__MECH_HOST_CONFIG"));
-    assert!(bootstrap.contains("WasmProject.fromServedSources"));
+    assert!(bootstrap.contains("WasmProject.fromServedBundle"));
     assert!(bootstrap.contains("../pkg/mech_wasm.js"));
-    assert_eq!(manifest["version"], 1);
+    assert_eq!(manifest["version"], 2);
+    assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
     assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");
     assert_eq!(manifest["sources"][0]["url"], "source/demo.mec");
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_rewrites_external_run_paths_to_bundle_local_roots() {
+    let root = temp_root("external-run-roots");
+    let app = root.join("app");
+    let config = root.join("config");
+    fs::create_dir_all(app.join("src")).unwrap();
+    fs::create_dir_all(app.join("pkg")).unwrap();
+    fs::create_dir_all(&config).unwrap();
+    fs::write(
+      config.join("demo.mcfg"),
+      r#"config := {
+  runtime: {name: "external-run-roots"}
+  serve: {
+    paths: ["../app/src"]
+    shim: "../app/index.html"
+    wasm: "../app/pkg"
+  }
+  run: {paths: ["../app/src/main.mec"]}
+}
+"#,
+    )
+    .unwrap();
+    fs::write(app.join("index.html"), "<html><body></body></html>").unwrap();
+    fs::write(app.join("src/main.mec"), "+> ./dep.mec\nanswer := dep/value + 1\n").unwrap();
+    fs::write(app.join("src/dep.mec"), "value := 41\n<+ value\n").unwrap();
+    fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
+    let loaded = crate::load_mech_config_path(config.join("demo.mcfg"), Some(app.clone())).unwrap();
+    let options = BundleWebOptions {
+      project_dir: app.clone(),
+      output_dir: root.join("out"),
+      source_paths: vec![app.join("src/main.mec"), app.join("src/dep.mec")],
+      shim_path: app.join("index.html"),
+      stylesheet_paths: Vec::new(),
+      wasm_pkg: app.join("pkg"),
+      loaded_config: loaded,
+      host_config_injection: None,
+    };
+
+    bundle_web_project(options).unwrap();
+
+    let manifest: serde_json::Value = serde_json::from_slice(
+      &fs::read(root.join("out/_mech/project-sources.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(manifest["version"], 2);
+    assert_eq!(manifest["roots"], serde_json::json!(["src/main.mec"]));
+    assert!(manifest["sources"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|source| source["specifier"] == "src/main.mec"));
+    assert!(manifest["sources"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|source| source["specifier"] == "src/dep.mec"));
+    assert!(!manifest.to_string().contains("../"));
     fs::remove_dir_all(root).unwrap();
   }
 

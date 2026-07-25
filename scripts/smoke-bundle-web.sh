@@ -142,7 +142,7 @@ from pathlib import Path
 import sys
 
 manifest = json.loads(Path(sys.argv[1]).read_text())
-if manifest.get("version") != 1:
+if manifest.get("version") != 2:
     raise SystemExit(f"unexpected source manifest version: {manifest!r}")
 sources = manifest.get("sources")
 if not isinstance(sources, list):
@@ -153,6 +153,8 @@ expected = {
 }
 if pairs != expected:
     raise SystemExit(f"unexpected source manifest entries: {manifest!r}")
+if manifest.get("roots") != ["demo.mec"]:
+    raise SystemExit(f"unexpected source manifest roots: {manifest!r}")
 PY
 
 google-chrome \
