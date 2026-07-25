@@ -424,6 +424,34 @@ fn dynamic_trace(message: impl AsRef<str>) {
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn dynamic_status_name(status: mech_abi::MechStatusV1) -> &'static str {
+    match status.0 {
+        0 => "Ok",
+        1 => "InvalidIndex",
+        2 => "NullPointer",
+        3 => "WrongType",
+        4 => "WrongShape",
+        5 => "Unsupported",
+        6 => "Panic",
+        _ => "Unknown",
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn check_dynamic_kernel_status(function: &str, status: mech_abi::MechStatusV1) -> MResult<()> {
+    if status == mech_abi::MechStatusV1::Ok {
+        return Ok(());
+    }
+
+    Err(DynamicModuleLoader::dynamic_error(format!(
+        "dynamic kernel `{}` returned {} (status {})",
+        function,
+        dynamic_status_name(status),
+        status.0,
+    )))
+}
+
+#[cfg(feature = "dynamic-modules")]
 struct DynamicOverloadedCompiler {
     name: String,
     compilers: Vec<Arc<dyn NativeFunctionCompiler>>,
@@ -930,17 +958,30 @@ struct DynamicBinaryF64F64ToF64Function {
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn solve_dynamic_binary_scalar(
+    n: &Ref<f64>,
+    k: &Ref<f64>,
+    out: &Ref<f64>,
+    kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
+    name: &str,
+) -> MResult<()> {
+    let mut next = *out.borrow();
+    let status = unsafe { (kernel)(*n.borrow(), *k.borrow(), &mut next as *mut f64) };
+    check_dynamic_kernel_status(name, status)?;
+    *out.borrow_mut() = next;
+    Ok(())
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     fn solve(&self) {
-        let status =
-            unsafe { (self.kernel)(*self.n.as_ptr(), *self.k.as_ptr(), self.out.as_mut_ptr()) };
-
-        if status != mech_abi::MechStatusV1::Ok {
-            dynamic_trace(format!(
-                "dynamic kernel `{}` returned status {:?}",
-                self.name, status
-            ));
+        if let Err(error) = self.solve_result() {
+            dynamic_trace(error.full_chain_message());
         }
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+        solve_dynamic_binary_scalar(&self.n, &self.k, &self.out, self.kernel, &self.name)
     }
 
     fn out(&self) -> Value {
@@ -997,15 +1038,7 @@ fn solve_dynamic_binary_broadcast(
                 &mut value as *mut f64,
             )
         };
-        if status != mech_abi::MechStatusV1::Ok {
-            return Err(MechError::new(
-                GenericError {
-                    msg: format!("dynamic kernel `{}` returned status {:?}", name, status),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
+        check_dynamic_kernel_status(name, status)?;
         out_vec.push(value);
     }
     replace_dynamic_matrix_output(out, plan.rows, plan.cols, out_vec, name)
@@ -1014,11 +1047,13 @@ fn solve_dynamic_binary_broadcast(
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn solve(&self) {
-        if let Err(err) =
-            solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name)
-        {
-            dynamic_trace(err.full_chain_message());
+        if let Err(error) = self.solve_result() {
+            dynamic_trace(error.full_chain_message());
         }
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+        solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name)
     }
 
     fn out(&self) -> Value {
@@ -1056,16 +1091,29 @@ struct DynamicUnaryF64ToF64Function {
 }
 
 #[cfg(feature = "dynamic-modules")]
+fn solve_dynamic_unary_scalar(
+    input: &Ref<f64>,
+    out: &Ref<f64>,
+    kernel: mech_abi::MechUnaryF64ToF64KernelV1,
+    name: &str,
+) -> MResult<()> {
+    let mut next = *out.borrow();
+    let status = unsafe { (kernel)(*input.borrow(), &mut next as *mut f64) };
+    check_dynamic_kernel_status(name, status)?;
+    *out.borrow_mut() = next;
+    Ok(())
+}
+
+#[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     fn solve(&self) {
-        let status = unsafe { (self.kernel)(*self.input.as_ptr(), self.out.as_mut_ptr()) };
-
-        if status != mech_abi::MechStatusV1::Ok {
-            dynamic_trace(format!(
-                "dynamic kernel `{}` returned status {:?}",
-                self.name, status
-            ));
+        if let Err(error) = self.solve_result() {
+            dynamic_trace(error.full_chain_message());
         }
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+        solve_dynamic_unary_scalar(&self.input, &self.out, self.kernel, &self.name)
     }
 
     fn out(&self) -> Value {
@@ -1141,25 +1189,20 @@ fn solve_dynamic_unary_view(
             },
         )
     };
-    if status != mech_abi::MechStatusV1::Ok {
-        return Err(MechError::new(
-            GenericError {
-                msg: format!("dynamic kernel `{}` returned status {:?}", name, status),
-            },
-            None,
-        )
-        .with_compiler_loc());
-    }
+    check_dynamic_kernel_status(name, status)?;
     replace_dynamic_matrix_output(out, rows, cols, out_vec, name)
 }
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn solve(&self) {
-        if let Err(err) = solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name)
-        {
-            dynamic_trace(err.full_chain_message());
+        if let Err(error) = self.solve_result() {
+            dynamic_trace(error.full_chain_message());
         }
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+        solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name)
     }
 
     fn out(&self) -> Value {

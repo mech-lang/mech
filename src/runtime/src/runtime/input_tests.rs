@@ -591,7 +591,7 @@ fn live_host_output_kind_change_preserves_previous_output() {
   let host_calls = calls.clone();
   runtime.register_mech_host_function(ClosureHostFunction::new("demo/kind-change", move |_services, _context, args| {
     let call = host_calls.fetch_add(1, Ordering::SeqCst);
-    if call == 0 {
+    if call < 2 {
       let value = match &args[0] {
         Value::F64(value) => *value.borrow(),
         Value::MutableReference(value) => match &*value.borrow() {

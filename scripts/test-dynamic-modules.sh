@@ -57,18 +57,31 @@ cargo test --manifest-path machines/combinatorics/Cargo.toml --no-default-featur
 echo "building combinatorics dynamic provider"
 cargo build --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
+echo "building dynamic status test provider"
+cargo build \
+  --manifest-path tests/fixtures/dynamic-status-module/Cargo.toml \
+  --target-dir "${TARGET_DIR}"
+
 echo "staging dynamic modules"
 rm -rf "${MODULE_DIR}"
 mkdir -p "${MODULE_DIR}"
 
 stage_module "mech_math" "mech_module_math"
 stage_module "mech_combinatorics" "mech_module_combinatorics"
+stage_module "mech_dynamic_status_test" "mech_module_status_test"
 
 echo "running dynamic math integration tests"
 MECH_MODULE_PATH="${MODULE_DIR}" cargo test --test dynamic_math --no-default-features --features "base dynamic-modules f64"
 
 echo "running dynamic combinatorics integration tests"
 MECH_MODULE_PATH="${MODULE_DIR}" cargo test --test dynamic_combinatorics --no-default-features --features "base dynamic-modules f64"
+
+echo "running dynamic status failure tests"
+MECH_MODULE_PATH="${MODULE_DIR}" \
+  cargo test \
+    --test dynamic_status_failures \
+    --no-default-features \
+    --features "base dynamic-modules f64"
 
 echo "running dynamic module smoke tests"
 MECH_MODULE_PATH="${MODULE_DIR}" cargo test --test dynamic_modules --no-default-features --features "base dynamic-modules f64"

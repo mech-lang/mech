@@ -166,7 +166,7 @@ pub fn execute_native_function_compiler(
 ) -> MResult<Value> {
   let plan = p.plan();
   match fxn_compiler.compile(input_arg_values) {
-    Ok(mut new_fxn) => {
+    Ok(new_fxn) => {
       trace_println!(
         p,
         "{}",
@@ -183,7 +183,7 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      if !plan.activation_registration_active() { new_fxn.solve(); }
+      if !plan.activation_registration_active() { new_fxn.solve_result()?; }
       let result = new_fxn.out();
       trace_println!(
         p,
@@ -1143,11 +1143,20 @@ mod native_dependency_tests {
     let input_cell = ReactiveCellId::new(input.id());
     let arguments = vec![Value::F64(input)];
     let solve_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-    assert!(execute_native_function_compiler(Arc::new(DeferredNativeSolveCompiler { solve_calls: solve_calls.clone() }), &arguments, &interpreter).is_ok());
-    assert_eq!(solve_calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     let plan = interpreter.plan();
+    plan.push_activation_registration_scope(vec![input_cell]);
+    let result = execute_native_function_compiler(
+      Arc::new(DeferredNativeSolveCompiler {
+        solve_calls: solve_calls.clone(),
+      }),
+      &arguments,
+      &interpreter,
+    );
+    plan.pop_activation_registration_scope();
+
+    assert!(result.is_ok());
+    assert_eq!(solve_calls.load(std::sync::atomic::Ordering::SeqCst), 0);
     let plan = plan.borrow();
-    let node = plan.last().unwrap();
     assert!(plan.nodes.last().unwrap().inputs.iter().any(|dependency| dependency.cell == input_cell));
     assert!(plan.nodes.last().unwrap().function.solve_result().unwrap_err().kind_name().contains("DeferredNativeSolveError"));
     assert_eq!(plan.len(), 1);
@@ -1194,5 +1203,118 @@ mod native_dependency_tests {
       &[node.id],
     );
     assert!(node.outputs.contains(&output_cell));
+  }
+}
+
+#[cfg(all(test, feature = "functions", feature = "f64"))]
+mod native_initialization_failure_tests {
+  use super::*;
+  use std::sync::atomic::{AtomicUsize, Ordering};
+
+  struct FailingInitializationCompiler {
+    solve_calls: Arc<AtomicUsize>,
+    solve_result_calls: Arc<AtomicUsize>,
+  }
+
+  struct FailingInitializationFunction {
+    solve_calls: Arc<AtomicUsize>,
+    solve_result_calls: Arc<AtomicUsize>,
+    output: Ref<f64>,
+  }
+
+  impl NativeFunctionCompiler for FailingInitializationCompiler {
+    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      Ok(Box::new(FailingInitializationFunction {
+        solve_calls: self.solve_calls.clone(),
+        solve_result_calls: self.solve_result_calls.clone(),
+        output: Ref::new(123.0),
+      }))
+    }
+  }
+
+  impl MechFunctionImpl for FailingInitializationFunction {
+    fn solve(&self) {
+      self.solve_calls.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+      self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
+      Err(MechError::new(
+        GenericError {
+          msg: "test native initialization failed".to_string(),
+        },
+        None,
+      ))
+    }
+
+    fn out(&self) -> Value {
+      Value::F64(self.output.clone())
+    }
+
+    fn to_string(&self) -> String {
+      "failing-initialization-test".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for FailingInitializationFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      panic!("failing initialization test function must not be bytecode compiled")
+    }
+  }
+
+  fn failing_compiler(
+    solve_calls: Arc<AtomicUsize>,
+    solve_result_calls: Arc<AtomicUsize>,
+  ) -> Arc<dyn NativeFunctionCompiler> {
+    Arc::new(FailingInitializationCompiler {
+      solve_calls,
+      solve_result_calls,
+    })
+  }
+
+  #[test]
+  fn eager_initialization_uses_solve_result() {
+    let interpreter = Interpreter::new(0, 100);
+    let arguments = vec![Value::F64(Ref::new(1.0))];
+    let solve_calls = Arc::new(AtomicUsize::new(0));
+    let solve_result_calls = Arc::new(AtomicUsize::new(0));
+    let plan_len = interpreter.plan().len();
+
+    let error = execute_native_function_compiler(
+      failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
+      &arguments,
+      &interpreter,
+    )
+    .expect_err("eager initialization must return the native solve error");
+
+    assert!(error.full_chain_message().contains("test native initialization failed"));
+    assert_eq!(solve_result_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(interpreter.plan().len(), plan_len);
+  }
+
+  #[test]
+  fn activation_registration_defers_initialization_solving() {
+    let interpreter = Interpreter::new(0, 100);
+    let input = Ref::new(1.0);
+    let arguments = vec![Value::F64(input.clone())];
+    let solve_calls = Arc::new(AtomicUsize::new(0));
+    let solve_result_calls = Arc::new(AtomicUsize::new(0));
+    let plan = interpreter.plan();
+    let plan_len = plan.len();
+
+    plan.push_activation_registration_scope(vec![ReactiveCellId::new(input.id())]);
+    let result = execute_native_function_compiler(
+      failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
+      &arguments,
+      &interpreter,
+    );
+    plan.pop_activation_registration_scope();
+
+    assert!(result.is_ok());
+    assert_eq!(solve_result_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(plan.len(), plan_len + 1);
   }
 }
