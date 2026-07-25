@@ -2,7 +2,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use mech_core::*;
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
-use crate::run_mech_tests;
+use crate::test::run_mech_tests_without_tree;
 
 pub(crate) fn command() -> Command {
     Command::new("test")
@@ -57,7 +57,7 @@ impl TestOptions {
 }
 
 pub(crate) fn run(options: TestOptions) -> MResult<CliOutcome> {
-    let code = run_mech_tests(
+    let code = run_mech_tests_without_tree(
         options.paths,
         options.debug,
         options.time,

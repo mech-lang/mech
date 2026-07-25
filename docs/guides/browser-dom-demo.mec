@@ -1,0 +1,54 @@
+Browser DOM Static Bundle Demo
+===============================================================================
+
+The browser DOM demo is a complete static bundle project. It demonstrates configured browser host access, scoped DOM grants, an allowed DOM-to-Mech-to-DOM round trip, and a denied write.
+
+1. Files
+-------------------------------------------------------------------------------
+
+```text
+examples/browser-dom-demo/
+  README.md
+  demo.mcfg
+  demo.mec
+  denied.mec
+  index.html
+```
+
+2. Build the WASM package
+-------------------------------------------------------------------------------
+
+```sh
+cd src/wasm
+wasm-pack build --target web
+cd ../..
+```
+
+3. Bundle the project
+-------------------------------------------------------------------------------
+
+```sh
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+python -m http.server 9000 -d dist/browser-dom-demo
+```
+
+Open:
+
+```text
+http://127.0.0.1:9000/
+```
+
+The bundle configuration declares `serve.paths`, `serve.shim`, and `serve.wasm`. The shim loads `./pkg/mech_wasm.js` and `./code/*.mec` with relative URLs, so it can run from a plain static web server.
+
+4. What the demo shows
+-------------------------------------------------------------------------------
+
+The source binds the configured browser DOM context:
+
+```mech
++> @browser := browser/dom
+```
+
+The allowed program reads the input, computes strings in Mech, and writes its result to configured DOM paths. `denied.mec` tries to write the read-only input and is rejected by its runtime grant.
+
+For the maintained native/browser runtime example, use `mech run examples/analog-clock` or `mech serve examples/analog-clock`.

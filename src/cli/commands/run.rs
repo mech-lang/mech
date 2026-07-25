@@ -1,8 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use std::time::Duration;
 
 use clap::{Arg, ArgAction, Command};
@@ -30,12 +27,8 @@ struct CliRunError {
 }
 
 impl MechErrorKind for CliRunError {
-    fn name(&self) -> &str {
-        "CliRunError"
-    }
-    fn message(&self) -> String {
-        format!("{} failed: {}", self.operation, self.reason)
-    }
+    fn name(&self) -> &str { "CliRunError" }
+    fn message(&self) -> String { format!("{} failed: {}", self.operation, self.reason) }
 }
 
 pub(crate) fn command() -> Command {
@@ -238,10 +231,11 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 
     let result: MResult<Value> = match &plan.input_mode {
         RunInputMode::InlineSource(source) => {
-            run_cli_source_with_events(&mut runtime, source.trim()).map(|(value, events)| {
-                print_run_runtime_events(&events);
-                value
-            })
+            run_cli_source_with_events(&mut runtime, source.trim())
+                .map(|(value, events)| {
+                    print_run_runtime_events(&events);
+                    value
+                })
         }
         _ => {
             if plan.run_paths.is_empty() {
@@ -251,8 +245,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                 let mut last = Value::Empty;
                 for p in &plan.run_paths {
                     for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
-                        let (value, events) = if SourceKind::from_path(&target) == SourceKind::Mech
-                        {
+                        let (value, events) = if SourceKind::from_path(&target) == SourceKind::Mech {
                             let canonical_target = target.canonicalize().map_err(|error| {
                                 MechError::new(
                                     CliRunError {
@@ -323,16 +316,7 @@ fn run_live_runtime(runtime: &mut mech_runtime::MechRuntime) -> MResult<()> {
     let stop_for_handler = Arc::clone(&stop);
     ctrlc::set_handler(move || {
         stop_for_handler.store(true, Ordering::SeqCst);
-    })
-    .map_err(|error| {
-        MechError::new(
-            CliRunError {
-                operation: "ctrlc_handler".to_string(),
-                reason: error.to_string(),
-            },
-            None,
-        )
-    })?;
+    }).map_err(|error| MechError::new(CliRunError { operation: "ctrlc_handler".to_string(), reason: error.to_string() }, None))?;
 
     runtime.start_input_drivers()?;
     let run_result = run_live_loop(runtime, &stop);

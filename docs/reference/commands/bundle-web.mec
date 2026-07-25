@@ -7,7 +7,7 @@
 -------------------------------------------------------------------------------
 
 ```sh
-mech bundle-web examples/analog-clock --out dist/analog-clock
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
 ```
 
 2. Required project config

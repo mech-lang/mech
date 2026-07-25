@@ -49,16 +49,44 @@ fn config_integer_boundary_values_succeed() {
 }
 
 #[test]
-fn browser_hosts_schema_parses() {
-    let resource = parse(
-        r#"config := {
-  hosts: [{name: "browser" provider: "browser" settings: {dom: []}}]
-  run: {grants: [{target: "browser/dom" operations: ["read"] paths: ["body/content"]}]}
-}"#,
+fn shipped_browser_bundle_example_configures_browser_host_and_grants() {
+    let source_name = "examples/browser-dom-demo/demo.mcfg";
+    let project = parse_config_document(
+        source_name,
+        include_str!("../../../examples/browser-dom-demo/demo.mcfg"),
+        ConfigProfileOptions::default(),
     )
     .unwrap();
-    assert!(resource.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
-    assert_eq!(resource.run.as_ref().unwrap().grants.len(), 1);
+
+    let serve = project.serve.as_ref().unwrap();
+    assert_eq!(serve.paths, vec![PathBuf::from("demo.mec"), PathBuf::from("denied.mec")]);
+    assert_eq!(serve.shim, Some(PathBuf::from("index.html")));
+    assert_eq!(serve.wasm, Some(PathBuf::from("../../src/wasm/pkg")));
+
+    assert!(project.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+
+    let grants = &project.run.as_ref().unwrap().grants;
+    assert_eq!(grants.len(), 2);
+    assert!(grants.iter().any(|grant| {
+        grant.target == "browser/dom"
+            && grant.operations == vec!["read".to_string()]
+            && grant.paths == vec!["body/content/mech-sandbox/input/_value".to_string()]
+    }));
+    assert!(grants.iter().any(|grant| {
+        grant.target == "browser/dom"
+            && grant.operations == vec!["write".to_string()]
+            && grant.paths.contains(&"body/content/mech-sandbox/output/_value".to_string())
+            && grant.paths.contains(&"body/content/mech-sandbox/title".to_string())
+    }));
+}
+
+#[test]
+fn shipped_browser_bundle_example_source_begins_with_browser_host_import() {
+    assert!(
+        include_str!("../../../examples/browser-dom-demo/demo.mec")
+            .trim_start()
+            .starts_with("+> @browser := browser/dom")
+    );
 }
 
 #[test]

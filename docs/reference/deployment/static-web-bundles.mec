@@ -4,8 +4,8 @@ Static Web Bundles
 Use `mech bundle-web` to produce static web assets from a configured browser project.
 
 ```sh
-mech bundle-web examples/analog-clock --out dist/analog-clock
-python -m http.server 9000 -d dist/analog-clock
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+python -m http.server 9000 -d dist/browser-dom-demo
 ```
 
 The generated directory can be served by a normal static web server.
