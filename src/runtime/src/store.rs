@@ -125,6 +125,19 @@ pub trait MechStore: std::fmt::Debug + Send {
     capability: Arc<dyn Capability>,
   ) -> MResult<CapabilityId>;
 
+  /// Administratively remove a capability grant that has not committed.
+  ///
+  /// Contract:
+  ///
+  /// - `grant_capability` must not retain grant state when it returns `Err`;
+  /// - `rollback_capability_grant` is called only after `grant_capability`
+  ///   returned `Ok`;
+  /// - it administratively removes an uncommitted record;
+  /// - it ignores the capability's revocable policy;
+  /// - it is idempotent;
+  /// - it removes subject and revocation indexes as well as the primary record.
+  fn rollback_capability_grant(&mut self, id: CapabilityId) -> MResult<()>;
+
   fn get_capability(
     &self,
     id: CapabilityId,
@@ -1269,6 +1282,18 @@ impl MechStore for InMemoryStore {
     Ok(id)
   }
 
+  fn rollback_capability_grant(&mut self, id: CapabilityId) -> MResult<()> {
+    self.capabilities.remove(&id);
+    self.revoked_capabilities.remove(&id);
+
+    self.capabilities_by_subject.retain(|_, ids| {
+      ids.retain(|candidate| *candidate != id);
+      !ids.is_empty()
+    });
+
+    Ok(())
+  }
+
   fn get_capability(
     &self,
     id: CapabilityId,
@@ -1737,6 +1762,63 @@ mod tests {
     store.revoke_capability(CapabilityId(1)).unwrap();
 
     assert!(store.is_capability_revoked(CapabilityId(1)).unwrap());
+  }
+
+  #[test]
+  fn capability_grant_rollback_removes_non_revocable_capability() {
+    let mut store = InMemoryStore::new();
+    let capability = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task:1",
+      "db:users",
+      [":read"],
+    )
+    .revocable(false);
+
+    store
+      .grant_capability(CapabilityId(1), Arc::new(capability))
+      .unwrap();
+    store.rollback_capability_grant(CapabilityId(1)).unwrap();
+
+    assert!(store.get_capability(CapabilityId(1)).unwrap().is_none());
+    assert!(store
+      .list_capabilities_for_subject("task:1")
+      .unwrap()
+      .is_empty());
+
+    let replacement = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task:1",
+      "db:users",
+      [":read"],
+    )
+    .revocable(false);
+    assert_eq!(
+      store
+        .grant_capability(CapabilityId(1), Arc::new(replacement))
+        .unwrap(),
+      CapabilityId(1),
+    );
+  }
+
+  #[test]
+  fn capability_grant_rollback_is_idempotent() {
+    let mut store = InMemoryStore::new();
+
+    assert!(store.rollback_capability_grant(CapabilityId(1)).is_ok());
+
+    let capability = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task:1",
+      "db:users",
+      [":read"],
+    );
+    store
+      .grant_capability(CapabilityId(1), Arc::new(capability))
+      .unwrap();
+
+    assert!(store.rollback_capability_grant(CapabilityId(1)).is_ok());
+    assert!(store.rollback_capability_grant(CapabilityId(1)).is_ok());
   }
 
   #[test]

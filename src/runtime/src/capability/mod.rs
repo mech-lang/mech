@@ -304,6 +304,138 @@ mod tests {
   }
 
   #[test]
+  fn rollback_grant_bypasses_non_revocable_policy() {
+    let mut kernel = BasicCapabilityKernel::new();
+    let capability = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task://1",
+      "db://users",
+      [":read"],
+    )
+    .revocable(false);
+    let request = CapabilityRequest::from_keys("task://1", ":read", "db://users");
+    let subject = BasicSubject::new("task://1");
+
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(capability)))
+      .unwrap();
+    assert_eq!(kernel.check(&request).unwrap(), CapabilityId(1));
+
+    kernel.rollback_grant(CapabilityId(1)).unwrap();
+
+    assert!(kernel.get(CapabilityId(1)).unwrap().is_none());
+    assert!(!kernel
+      .list_for_subject(&subject)
+      .unwrap()
+      .contains(&CapabilityId(1)));
+    assert!(kernel.check(&request).is_err());
+  }
+
+  #[test]
+  fn rollback_grant_clears_use_accounting() {
+    let mut kernel = BasicCapabilityKernel::new();
+    let request = CapabilityRequest::from_keys("task://1", ":read", "db://users");
+
+    let capability = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task://1",
+      "db://users",
+      [":read"],
+    )
+    .with_constraints(BasicConstraints::default().with_max_uses(1));
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(capability)))
+      .unwrap();
+    assert_eq!(kernel.check(&request).unwrap(), CapabilityId(1));
+
+    kernel.rollback_grant(CapabilityId(1)).unwrap();
+
+    let replacement = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task://1",
+      "db://users",
+      [":read"],
+    )
+    .with_constraints(BasicConstraints::default().with_max_uses(1));
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(replacement)))
+      .unwrap();
+    assert_eq!(kernel.check(&request).unwrap(), CapabilityId(1));
+  }
+
+  #[test]
+  fn rollback_grant_removes_descendants_and_graph_indexes() {
+    let mut kernel = BasicCapabilityKernel::new();
+    let parent_subject = BasicSubject::new("task://1");
+    let child_subject = BasicSubject::new("task://2");
+
+    let parent = BasicCapability::from_keys(
+      CapabilityId(1),
+      parent_subject.key(),
+      "db://users",
+      [":read"],
+    )
+    .delegable(true);
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(parent)))
+      .unwrap();
+    kernel
+      .derive_capability(CapabilityDerivation::delegate(
+        CapabilityId(1),
+        CapabilityId(2),
+        &parent_subject,
+        &child_subject,
+      ))
+      .unwrap();
+
+    kernel.rollback_grant(CapabilityId(1)).unwrap();
+
+    assert!(kernel.get(CapabilityId(1)).unwrap().is_none());
+    assert!(kernel.get(CapabilityId(2)).unwrap().is_none());
+    assert!(kernel.list_for_subject(&parent_subject).unwrap().is_empty());
+    assert!(kernel.list_for_subject(&child_subject).unwrap().is_empty());
+
+    let replacement = BasicCapability::from_keys(
+      CapabilityId(1),
+      parent_subject.key(),
+      "db://users",
+      [":read"],
+    )
+    .delegable(true);
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(replacement)))
+      .unwrap();
+    assert_eq!(
+      kernel
+        .derive_capability(CapabilityDerivation::delegate(
+          CapabilityId(1),
+          CapabilityId(2),
+          &parent_subject,
+          &child_subject,
+        ))
+        .unwrap(),
+      CapabilityId(2),
+    );
+  }
+
+  #[test]
+  fn rollback_grant_is_idempotent() {
+    let mut kernel = BasicCapabilityKernel::new();
+    let capability = BasicCapability::from_keys(
+      CapabilityId(1),
+      "task://1",
+      "db://users",
+      [":read"],
+    );
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(capability)))
+      .unwrap();
+
+    assert!(kernel.rollback_grant(CapabilityId(1)).is_ok());
+    assert!(kernel.rollback_grant(CapabilityId(1)).is_ok());
+  }
+
+  #[test]
   fn constrained_capability_denies_missing_metrics() {
     let subject = BasicSubject::new("task://1");
     let resource = BasicResource::new("db://users");
