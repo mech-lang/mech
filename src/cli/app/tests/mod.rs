@@ -1,6 +1,6 @@
 use super::*;
 #[cfg(feature = "build")]
-use crate::cli::commands::build::validate_build_bytecode_inputs;
+use crate::cli::commands::build::{run as run_build, validate_build_bytecode_inputs, BuildOptions};
 use colored::{ColoredString, Colorize};
 use std::path::PathBuf;
 
@@ -204,6 +204,32 @@ mod build_input_tests {
         values.iter().map(|value| value.to_string()).collect()
     }
 
+    fn temp_root(label: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "mech-build-module-{label}-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    fn build_options(paths: Vec<PathBuf>, output_path: PathBuf) -> BuildOptions {
+        BuildOptions {
+            paths: paths
+                .into_iter()
+                .map(|path| path.display().to_string())
+                .collect(),
+            output_path,
+            debug: false,
+            trace: false,
+            time: false,
+            rounds_per_step: 10_000,
+        }
+    }
+
     #[test]
     fn build_rejects_mixed_source_then_bytecode() {
         let error = validate_build_bytecode_inputs(&paths(&["old.mec", "compiled.mecb"]))
@@ -242,6 +268,75 @@ mod build_input_tests {
             validate_build_bytecode_inputs(&paths(&["a.mec", "b.mec"])).unwrap(),
             0
         );
+    }
+
+    #[test]
+    fn build_resolves_sibling_dependency_before_compiling() {
+        let root = temp_root("sibling");
+        let main = root.join("main.mec");
+        let output = root.join("out");
+        std::fs::write(&main, "+> ./dep.mec\nanswer := dep/value + 1\n").unwrap();
+        std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+
+        run_build(build_options(vec![main], output.clone())).unwrap();
+
+        assert!(output.join("output.mecb").metadata().unwrap().len() > 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn build_resolves_nested_dependency_before_compiling() {
+        let root = temp_root("nested");
+        let main = root.join("main.mec");
+        let lib = root.join("lib");
+        let output = root.join("out");
+        std::fs::create_dir_all(&lib).unwrap();
+        std::fs::write(&main, "+> ./lib/first.mec\nanswer := first/value + 1\n").unwrap();
+        std::fs::write(
+            lib.join("first.mec"),
+            "+> ./second.mec\nvalue := second/value + 1\n<+ value\n",
+        )
+        .unwrap();
+        std::fs::write(lib.join("second.mec"), "value := 40\n<+ value\n").unwrap();
+
+        run_build(build_options(vec![main], output.clone())).unwrap();
+
+        assert!(output.join("output.mecb").metadata().unwrap().len() > 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn build_missing_dependency_preserves_error_and_creates_no_output() {
+        let root = temp_root("missing");
+        let main = root.join("main.mec");
+        let output = root.join("out");
+        std::fs::write(&main, "+> ./missing.mec\nanswer := 1\n").unwrap();
+
+        let error = match run_build(build_options(vec![main], output.clone())) {
+            Ok(_) => panic!("build unexpectedly succeeded"),
+            Err(error) => error,
+        };
+
+        let chain = error.full_chain_message();
+        assert!(chain.contains("missing.mec"));
+        assert!(chain.contains("main.mec"));
+        assert!(!output.join("output.mecb").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn build_multiple_source_roots_in_caller_order() {
+        let root = temp_root("multiple-roots");
+        let first = root.join("first.mec");
+        let second = root.join("second.mec");
+        let output = root.join("out");
+        std::fs::write(&first, "marker := 1\n").unwrap();
+        std::fs::write(&second, "answer := marker + 1\n").unwrap();
+
+        run_build(build_options(vec![first, second], output.clone())).unwrap();
+
+        assert!(output.join("output.mecb").metadata().unwrap().len() > 0);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
 
