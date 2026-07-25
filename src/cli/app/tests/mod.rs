@@ -42,10 +42,12 @@ mod filesystem_capability_cli_tests {
     #[test]
     fn default_grants_current_directory_when_no_capability_options_are_present() {
         let matches = capability_matches(&["mech", "serve", "."]);
-        let authority =
-            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
-                .unwrap()
-                .authority;
+        let authority = capabilities::build_mech_filesystem_authority(
+            &capabilities::FilesystemCapabilityArgs::from_matches(&matches),
+            None,
+        )
+        .unwrap()
+        .authority;
         let mut ids = DefaultIdGenerator::new();
         authority
             .delegate_path_to(
@@ -69,10 +71,12 @@ mod filesystem_capability_cli_tests {
         let outside_arg = outside.to_string_lossy();
         let matches =
             capability_matches(&["mech", "--cap-root", &allowed_arg, "serve", &outside_arg]);
-        let authority =
-            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
-                .unwrap()
-                .authority;
+        let authority = capabilities::build_mech_filesystem_authority(
+            &capabilities::FilesystemCapabilityArgs::from_matches(&matches),
+            None,
+        )
+        .unwrap()
+        .authority;
         let mut ids = DefaultIdGenerator::new();
         assert!(
             authority
@@ -100,10 +104,12 @@ mod filesystem_capability_cli_tests {
             "serve",
             root.to_str().unwrap(),
         ]);
-        let authority =
-            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
-                .unwrap()
-                .authority;
+        let authority = capabilities::build_mech_filesystem_authority(
+            &capabilities::FilesystemCapabilityArgs::from_matches(&matches),
+            None,
+        )
+        .unwrap()
+        .authority;
         let mut ids = DefaultIdGenerator::new();
         assert!(
             authority
@@ -123,10 +129,12 @@ mod filesystem_capability_cli_tests {
             "--allow-read",
             root.to_str().unwrap(),
         ]);
-        let authority =
-            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
-                .unwrap()
-                .authority;
+        let authority = capabilities::build_mech_filesystem_authority(
+            &capabilities::FilesystemCapabilityArgs::from_matches(&matches),
+            None,
+        )
+        .unwrap()
+        .authority;
         let mut ids = DefaultIdGenerator::new();
         authority
             .delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_READ])
@@ -156,10 +164,12 @@ mod filesystem_capability_cli_tests {
             "serve",
             &allowed_arg,
         ]);
-        let authority =
-            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
-                .unwrap()
-                .authority;
+        let authority = capabilities::build_mech_filesystem_authority(
+            &capabilities::FilesystemCapabilityArgs::from_matches(&matches),
+            None,
+        )
+        .unwrap()
+        .authority;
         assert_eq!(authority.source_capabilities().len(), 1);
         let mut ids = DefaultIdGenerator::new();
         authority
@@ -184,10 +194,12 @@ mod filesystem_capability_cli_tests {
             "--allow-serve",
             root.to_str().unwrap(),
         ]);
-        let authority =
-            capabilities::build_mech_filesystem_authority(&capabilities::FilesystemCapabilityArgs::from_matches(&matches), None)
-                .unwrap()
-                .authority;
+        let authority = capabilities::build_mech_filesystem_authority(
+            &capabilities::FilesystemCapabilityArgs::from_matches(&matches),
+            None,
+        )
+        .unwrap()
+        .authority;
         let mut ids = DefaultIdGenerator::new();
         authority
             .delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &root, true, [FS_SERVE])
@@ -467,13 +479,96 @@ fn root_command_parses_available_subcommands() {
         .unwrap_err();
 }
 
-#[cfg(all(test, feature = "build", feature = "test", feature = "formatter", feature = "bundle_web", feature = "run", feature = "serve"))]
+#[test]
+fn root_rounds_per_step_rejects_invalid_values() {
+    for value in ["typo", "0", "-1", "18446744073709551616"] {
+        assert!(
+            super::build_cli()
+                .try_get_matches_from(["mech", "--rounds-per-step", value])
+                .is_err()
+        );
+    }
+}
+
+#[test]
+fn root_rounds_per_step_is_stored_as_usize() {
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "--rounds-per-step", "10"])
+        .unwrap();
+
+    assert_eq!(super::root_flags(&matches).rounds_per_step, Some(10));
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_rounds_per_step_rejects_invalid_values() {
+    for value in ["typo", "0", "-1", "18446744073709551616"] {
+        assert!(
+            super::build_cli()
+                .try_get_matches_from(["mech", "run", "--rounds-per-step", value, "demo.mec"])
+                .is_err()
+        );
+    }
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_rounds_per_step_is_stored_as_usize() {
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "run", "--rounds-per-step", "20", "demo.mec"])
+        .unwrap();
+    let args = crate::cli::run_options::RunCliArgs::from_matches(
+        super::root_flags(&matches),
+        &matches,
+        matches.subcommand_matches("run"),
+    )
+    .unwrap();
+
+    assert_eq!(args.rounds_per_step, Some(20));
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_rounds_per_step_overrides_root_value() {
+    let matches = super::build_cli()
+        .try_get_matches_from([
+            "mech",
+            "--rounds-per-step",
+            "10",
+            "run",
+            "--rounds-per-step",
+            "20",
+            "demo.mec",
+        ])
+        .unwrap();
+    let args = crate::cli::run_options::RunCliArgs::from_matches(
+        super::root_flags(&matches),
+        &matches,
+        matches.subcommand_matches("run"),
+    )
+    .unwrap();
+
+    assert_eq!(args.rounds_per_step, Some(20));
+}
+
+#[cfg(all(
+    test,
+    feature = "build",
+    feature = "test",
+    feature = "formatter",
+    feature = "bundle_web",
+    feature = "run",
+    feature = "serve"
+))]
 mod filesystem_flag_dispatch_tests {
     const MESSAGE: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
 
     fn dispatch_error(args: &[&str]) -> String {
         let matches = super::build_cli().try_get_matches_from(args).unwrap();
-        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
         let error = match runtime.block_on(super::dispatch(matches)) {
             Ok(_) => panic!("dispatch unexpectedly succeeded"),
             Err(error) => error,
@@ -482,23 +577,54 @@ mod filesystem_flag_dispatch_tests {
     }
 
     #[test]
-    fn filesystem_flags_rejected_for_build() { assert!(dispatch_error(&["mech", "build", "--allow-read", "."]).contains(MESSAGE)); }
+    fn filesystem_flags_rejected_for_build() {
+        assert!(dispatch_error(&["mech", "build", "--allow-read", "."]).contains(MESSAGE));
+    }
 
     #[test]
-    fn filesystem_flags_rejected_for_test() { assert!(dispatch_error(&["mech", "test", "--allow-read", "."]).contains(MESSAGE)); }
+    fn filesystem_flags_rejected_for_test() {
+        assert!(dispatch_error(&["mech", "test", "--allow-read", "."]).contains(MESSAGE));
+    }
 
     #[test]
-    fn filesystem_flags_rejected_for_format() { assert!(dispatch_error(&["mech", "format", "--allow-read", "."]).contains(MESSAGE)); }
+    fn filesystem_flags_rejected_for_format() {
+        assert!(dispatch_error(&["mech", "format", "--allow-read", "."]).contains(MESSAGE));
+    }
 
     #[test]
-    fn filesystem_flags_rejected_for_bundle_web() { assert!(dispatch_error(&["mech", "bundle-web", "--allow-read", ".", ".", "--out", "out"]).contains(MESSAGE)); }
+    fn filesystem_flags_rejected_for_bundle_web() {
+        assert!(
+            dispatch_error(&[
+                "mech",
+                "bundle-web",
+                "--allow-read",
+                ".",
+                ".",
+                "--out",
+                "out"
+            ])
+            .contains(MESSAGE)
+        );
+    }
 
     #[test]
-    fn filesystem_flags_accepted_for_run() { super::build_cli().try_get_matches_from(["mech", "run", "--allow-read", "."]).unwrap(); }
+    fn filesystem_flags_accepted_for_run() {
+        super::build_cli()
+            .try_get_matches_from(["mech", "run", "--allow-read", "."])
+            .unwrap();
+    }
 
     #[test]
-    fn filesystem_flags_accepted_for_bare_run() { super::build_cli().try_get_matches_from(["mech", "--allow-read", "."]).unwrap(); }
+    fn filesystem_flags_accepted_for_bare_run() {
+        super::build_cli()
+            .try_get_matches_from(["mech", "--allow-read", "."])
+            .unwrap();
+    }
 
     #[test]
-    fn filesystem_flags_accepted_for_serve() { super::build_cli().try_get_matches_from(["mech", "serve", "--allow-read", "."]).unwrap(); }
+    fn filesystem_flags_accepted_for_serve() {
+        super::build_cli()
+            .try_get_matches_from(["mech", "serve", "--allow-read", "."])
+            .unwrap();
+    }
 }

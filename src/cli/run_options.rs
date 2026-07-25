@@ -41,8 +41,7 @@ impl RunCliArgs {
             time: root.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false),
             repl: root.repl,
             rounds_per_step: run_matches
-                .and_then(|m| m.get_one::<String>("rounds-per-step"))
-                .and_then(|s| s.parse::<usize>().ok())
+                .and_then(|matches| matches.get_one::<usize>("rounds-per-step").copied())
                 .or(root.rounds_per_step),
             cli_capability_selection: cli_host_capability_selection(root_matches, run_matches),
         })
