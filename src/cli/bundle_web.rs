@@ -8,7 +8,7 @@ use mech_core::*;
 
 use crate::{
   discover_project_config, load_mech_config_path, require_config_file, resolve_config_path,
-  resolve_project_dir_input, BundleWebOptions, LoadedMechConfig,
+  resolve_project_dir_input, validate_static_bundle_wasm_package, BundleWebOptions, LoadedMechConfig,
 };
 
 fn validation_error(msg: impl Into<String>) -> MechError {
@@ -359,7 +359,7 @@ pub(crate) fn effective_bundle_web_options_from_args(
         .map(|path| resolve_config_path(&loaded.base_dir, path))
     })
     .ok_or_else(|| validation_error("bundle-web requires a wasm package via --wasm or serve.wasm"))?;
-  require_bundle_wasm_package(&wasm_pkg)?;
+  validate_static_bundle_wasm_package(&wasm_pkg)?;
 
   #[cfg(feature = "host_delegation_signing")]
   let host_config_injection = host_delegation_signing_options_from_args(
@@ -456,7 +456,7 @@ pub fn effective_bundle_web_options(
     .ok_or_else(|| {
       validation_error("bundle-web requires a wasm package via --wasm or serve.wasm")
     })?;
-  require_bundle_wasm_package(&wasm_pkg)?;
+  validate_static_bundle_wasm_package(&wasm_pkg)?;
 
   #[cfg(feature = "host_delegation_signing")]
   let host_config_injection = host_delegation_signing_options(
@@ -547,28 +547,18 @@ fn require_file(field: &str, path: &Path) -> MResult<()> {
   }
 }
 
-fn require_bundle_wasm_package(path: &Path) -> MResult<()> {
-  if !path.is_dir() {
-    return Err(validation_error(format!("configuration error: serve.wasm must be an existing directory: {}", path.display()))
-    .into());
-  }
-
-  for file in ["mech_wasm.js", "mech_wasm_bg.wasm"] {
-    let required = path.join(file);
-    if !required.is_file() {
-      return Err(validation_error(format!("configuration error: serve.wasm is missing required file: {}", required.display()))
-      .into());
-    }
-  }
-
-  Ok(())
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::cli::CURRENT_DIR_LOCK;
   use std::time::{SystemTime, UNIX_EPOCH};
+
+  const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
+  static fromServedBundle() {}
+  static supportsServedAuthority() { return true; }
+}
+export default async function init() {}
+"#;
 
   struct CurrentDirGuard {
     previous: PathBuf,
@@ -626,7 +616,7 @@ mod tests {
     std::fs::write(project.join("index.html"), "<html><head></head></html>").unwrap();
     std::fs::write(project.join("demo.mec"), "x := 1\n").unwrap();
     std::fs::write(project.join("style.css"), "body {}\n").unwrap();
-    std::fs::write(project.join("pkg/mech_wasm.js"), "export {};\n").unwrap();
+    std::fs::write(project.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     std::fs::write(project.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     std::fs::write(
       project.join("demo.mcfg"),
@@ -703,7 +693,7 @@ mod tests {
     std::fs::create_dir_all(root.join("override-pkg")).unwrap();
     std::fs::write(root.join("override.html"), "<html><head></head></html>").unwrap();
     std::fs::write(root.join("override.css"), "html {}\n").unwrap();
-    std::fs::write(root.join("override-pkg/mech_wasm.js"), "export {};\n").unwrap();
+    std::fs::write(root.join("override-pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     std::fs::write(root.join("override-pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     let _guard = CurrentDirGuard::enter(&root);
 
@@ -791,7 +781,7 @@ mod tests {
     std::fs::create_dir_all(&config).unwrap();
     std::fs::write(app.join("index.html"), "<html><head></head><body><script type=\"module\">import init from \"./pkg/mech_wasm.js\"; await fetch(\"./style.css\");</script></body></html>").unwrap();
     std::fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
-    std::fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    std::fs::write(app.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     std::fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     std::fs::write(config.join("style.css"), "body {}\n").unwrap();
     std::fs::write(
@@ -833,7 +823,7 @@ mod tests {
     std::fs::create_dir_all(&config).unwrap();
     std::fs::write(app.join("index.html"), "<html><head></head><body><script type=\"module\">import init from \"./pkg/mech_wasm.js\"; await fetch(\"./style.css\");</script></body></html>").unwrap();
     std::fs::write(app.join("src/demo.mec"), "x := 1\n").unwrap();
-    std::fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    std::fs::write(app.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     std::fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     std::fs::write(config.join("style.css"), "body {}\n").unwrap();
     std::fs::write(

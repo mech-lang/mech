@@ -46,6 +46,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
   if options.source_paths.is_empty() {
     return Err(validation_error("bundle-web requires serve.paths in the project config"));
   }
+  validate_static_bundle_wasm_package(&options.wasm_pkg)?;
 
   let project_dir = options.project_dir.canonicalize()?;
   let base_dir = options.loaded_config.base_dir.canonicalize()?;
@@ -170,6 +171,39 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     index_html,
     source_count: options.source_paths.len(),
   })
+}
+
+pub(crate) fn validate_static_bundle_wasm_package(path: &Path) -> MResult<()> {
+  if !path.is_dir() {
+    return Err(validation_error(format!(
+      "configuration error: serve.wasm must be an existing directory: {}",
+      path.display(),
+    )));
+  }
+
+  let js_path = path.join("mech_wasm.js");
+  let wasm_path = path.join("mech_wasm_bg.wasm");
+  for required in [&js_path, &wasm_path] {
+    if !required.is_file() {
+      return Err(validation_error(format!(
+        "configuration error: serve.wasm is missing required file: {}",
+        required.display(),
+      )));
+    }
+  }
+
+  let wrapper = fs::read_to_string(&js_path).map_err(|_| static_wasm_profile_error())?;
+  if !wrapper.contains("WasmProject") || !wrapper.contains("fromServedBundle") {
+    return Err(static_wasm_profile_error());
+  }
+
+  Ok(())
+}
+
+fn static_wasm_profile_error() -> MechError {
+  validation_error(
+    "configuration error: serve.wasm was built without static served-project support; rebuild it with `bash scripts/build-mech-browser.sh` or the `browser_project` feature",
+  )
 }
 
 fn rebase_bundle_shim_for_depth(shim: &str, depth: usize) -> String {
@@ -568,6 +602,13 @@ mod tests {
   use mech_core::nodes::Program;
   use std::time::{SystemTime, UNIX_EPOCH};
 
+  const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
+  static fromServedBundle() {}
+  static supportsServedAuthority() { return true; }
+}
+export default async function init() {}
+"#;
+
   fn temp_root(name: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
       "mech-bundle-web-{name}-{}",
@@ -602,7 +643,7 @@ mod tests {
     .unwrap();
     fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
     fs::create_dir_all(root.join("pkg")).unwrap();
-    fs::write(root.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(root.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     fs::write(root.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.to_path_buf())).unwrap()
   }
@@ -660,7 +701,7 @@ mod tests {
     .unwrap();
     fs::write(root.join("demo.mec"), "x := 1\n").unwrap();
     fs::create_dir_all(root.join("pkg")).unwrap();
-    fs::write(root.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(root.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     fs::write(root.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.to_path_buf())).unwrap()
   }
@@ -700,6 +741,82 @@ mod tests {
 
     let error = format!("{:?}", bundle_web_project(options(&root, &out, loaded)).unwrap_err());
     assert!(error.contains("bundle-web requires run.paths"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn wasm_package_validator_accepts_static_served_project_wrapper() {
+    let root = temp_root("wasm-package-valid");
+    let package = root.join("pkg");
+    fs::create_dir_all(&package).unwrap();
+    fs::write(package.join("mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
+    fs::write(package.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
+
+    validate_static_bundle_wasm_package(&package).unwrap();
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn wasm_package_validator_rejects_missing_javascript() {
+    let root = temp_root("wasm-package-missing-js");
+    let package = root.join("pkg");
+    fs::create_dir_all(&package).unwrap();
+    fs::write(package.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
+
+    let error = format!("{:?}", validate_static_bundle_wasm_package(&package).unwrap_err());
+    assert!(error.contains("mech_wasm.js"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn wasm_package_validator_rejects_missing_wasm() {
+    let root = temp_root("wasm-package-missing-wasm");
+    let package = root.join("pkg");
+    fs::create_dir_all(&package).unwrap();
+    fs::write(package.join("mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
+
+    let error = format!("{:?}", validate_static_bundle_wasm_package(&package).unwrap_err());
+    assert!(error.contains("mech_wasm_bg.wasm"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn wasm_package_validator_rejects_missing_wasm_project_export() {
+    let root = temp_root("wasm-package-missing-project");
+    let package = root.join("pkg");
+    fs::create_dir_all(&package).unwrap();
+    fs::write(package.join("mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(package.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
+
+    let error = format!("{:?}", validate_static_bundle_wasm_package(&package).unwrap_err());
+    assert!(error.contains("static served-project support"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn wasm_package_validator_rejects_missing_served_bundle_export() {
+    let root = temp_root("wasm-package-missing-bundle");
+    let package = root.join("pkg");
+    fs::create_dir_all(&package).unwrap();
+    fs::write(package.join("mech_wasm.js"), "export class WasmProject {}\n").unwrap();
+    fs::write(package.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
+
+    let error = format!("{:?}", validate_static_bundle_wasm_package(&package).unwrap_err());
+    assert!(error.contains("static served-project support"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn wasm_package_incompatibility_leaves_output_untouched() {
+    let root = temp_root("wasm-package-no-output");
+    let loaded = write_demo_project(&root);
+    fs::write(root.join("pkg/mech_wasm.js"), "export class WasmProject {}\n").unwrap();
+    let out = root.join("out");
+
+    let error = format!("{:?}", bundle_web_project(options(&root, &out, loaded)).unwrap_err());
+
+    assert!(error.contains("static served-project support"));
+    assert!(!out.exists());
     fs::remove_dir_all(root).unwrap();
   }
 
@@ -774,7 +891,7 @@ mod tests {
     fs::write(app.join("index.html"), "<html><body></body></html>").unwrap();
     fs::write(app.join("src/main.mec"), "+> ./dep.mec\nanswer := dep/value + 1\n").unwrap();
     fs::write(app.join("src/dep.mec"), "value := 41\n<+ value\n").unwrap();
-    fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(app.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     let loaded = crate::load_mech_config_path(config.join("demo.mcfg"), Some(app.clone())).unwrap();
     let options = BundleWebOptions {
@@ -940,7 +1057,7 @@ mod tests {
     )
     .unwrap();
     fs::write(project.join("demo.mec"), "x := 1\n").unwrap();
-    fs::write(project.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(project.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     fs::write(project.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     fs::write(secrets.join("settings.json"), r#"{"secret":true}"#).unwrap();
     unix_fs::symlink("../../secrets/settings.json", project.join("public/settings.json")).unwrap();
@@ -1042,7 +1159,7 @@ mod tests {
     )
     .unwrap();
     fs::write(app.join("demo.mec"), "x := 1\n").unwrap();
-    fs::write(app.join("pkg/mech_wasm.js"), "export default async function init() {}\n").unwrap();
+    fs::write(app.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
     fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
     fs::write(
       config.join("demo.mcfg"),
