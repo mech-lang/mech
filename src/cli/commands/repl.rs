@@ -121,6 +121,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
             let config = startup
                 .runtime_config
                 .unwrap_or_else(RuntimeConfig::default);
+            config.validate()?;
             let mut repl_program = MechProgram::new(MechProgramConfig {
                 name: config.name.clone(),
                 environment: MechProgramEnvironment::default(),
@@ -129,7 +130,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
                 config.diagnostics.debug_enabled,
                 config.diagnostics.trace_enabled,
                 config.diagnostics.profile_enabled,
-                config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
+                config.limits.max_steps_per_turn_as_usize()?,
             );
             MechRepl::from(repl_program)
         }

@@ -15,7 +15,7 @@
 // - `active_module_version`: Retrieves the active version of a module, if any.
 
 use super::*;
-use crate::SourceIndex;
+use crate::{NonExecutableModuleSource, SourceIndex};
 
 fn source_index_for_module_record_source(
   source: &mech_core::MechSourceCode,
@@ -272,6 +272,16 @@ impl MechRuntime {
   ) -> MResult<ModuleVersionId> {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
+
+    if !resolved.is_executable_mech_source() {
+      return Err(MechError::new(
+        NonExecutableModuleSource {
+          canonical_uri: resolved.canonical_uri.clone(),
+        },
+        None,
+      ));
+    }
+
     self.enforce_source_limits(context, &resolved.source)?;
 
     let canonical_uri = resolved.canonical_uri.clone();
@@ -588,7 +598,8 @@ impl MechRuntime {
       name,
       canonical_uri,
       MechSourceCode::String(source.to_string()),
-    );
+    )
+    .with_kind(crate::SourceKind::Mech);
 
     self.build_module_from_resolved_source_with_context(
       context,
@@ -689,5 +700,27 @@ mod tests {
       .unwrap()
       .iter()
       .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. })));
+  }
+
+  #[test]
+  fn non_executable_module_source_is_rejected_before_indexing() {
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let resolved = ResolvedSource::new(
+      "style.css",
+      "memory://style.css",
+      MechSourceCode::String("not valid Mech source".to_string()),
+    )
+    .with_kind(SourceKind::Css);
+
+    let error = runtime
+      .build_module_from_resolved_source_with_context(
+        &mut context,
+        resolved,
+        ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
+      )
+      .unwrap_err();
+
+    assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
   }
 }

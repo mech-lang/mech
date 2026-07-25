@@ -207,6 +207,7 @@ impl RuntimeLimits {
 
   pub fn validate(&self) -> MResult<()> {
     require_nonzero_opt("limits.max_steps_per_turn", self.max_steps_per_turn)?;
+    self.max_steps_per_turn_as_usize()?;
     require_nonzero_opt("limits.max_turn_duration_ms", self.max_turn_duration_ms)?;
     require_nonzero_opt("limits.max_memory_bytes", self.max_memory_bytes)?;
     require_nonzero_opt("limits.max_tasks", self.max_tasks)?;
@@ -215,6 +216,24 @@ impl RuntimeLimits {
     require_nonzero_opt("limits.max_source_bytes", self.max_source_bytes)?;
     require_nonzero_opt("limits.max_in_memory_events", self.max_in_memory_events)?;
     Ok(())
+  }
+
+  /// Returns the interpreter step limit in its native counter type.
+  ///
+  /// A missing limit preserves the existing 10,000-round fallback.
+  pub fn max_steps_per_turn_as_usize(&self) -> MResult<usize> {
+    match self.max_steps_per_turn {
+      Some(value) => usize::try_from(value).map_err(|_| {
+        MechError::new(
+          InvalidRuntimeConfigValue {
+            field: "limits.max_steps_per_turn",
+            reason: "must fit the target architecture".to_string(),
+          },
+          None,
+        )
+      }),
+      None => Ok(10_000),
+    }
   }
 }
 
@@ -326,6 +345,28 @@ mod tests {
     config.limits.max_steps_per_turn = Some(0);
 
     assert!(config.validate().is_err());
+  }
+
+  #[test]
+  fn step_limit_must_fit_the_target_architecture() {
+    let mut config = RuntimeConfig::default();
+    let target_max = u64::try_from(usize::MAX).unwrap();
+
+    config.limits.max_steps_per_turn = Some(target_max);
+    assert!(config.validate().is_ok());
+
+    if let Some(too_large) = target_max.checked_add(1) {
+      config.limits.max_steps_per_turn = Some(too_large);
+      assert!(config.validate().is_err());
+    }
+  }
+
+  #[test]
+  fn missing_step_limit_uses_existing_fallback() {
+    let mut limits = RuntimeLimits::default();
+    limits.max_steps_per_turn = None;
+
+    assert_eq!(limits.max_steps_per_turn_as_usize().unwrap(), 10_000);
   }
 
 }

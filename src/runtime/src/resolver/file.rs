@@ -191,7 +191,12 @@ impl SourceResolver for FileSourceResolver {
     };
 
     let kind = SourceKind::from_path(&path);
-    let source = read_runtime_source_file_with_capabilities(&path, self.capability_kernel.as_ref(), self.capability_subject.as_deref())?;
+    let source = read_runtime_source_file_with_capabilities_and_import_checks(
+      &path,
+      self.capability_kernel.as_ref(),
+      self.capability_subject.as_deref(),
+      request.referrer.is_some(),
+    )?;
     let name = path
       .file_name()
       .and_then(|name| name.to_str())
@@ -472,6 +477,15 @@ pub fn read_runtime_source_file(path: &Path) -> MResult<MechSourceCode> {
 }
 
 pub fn read_runtime_source_file_with_capabilities(path: &Path, kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>) -> MResult<MechSourceCode> {
+  read_runtime_source_file_with_capabilities_and_import_checks(path, kernel, subject, false)
+}
+
+fn read_runtime_source_file_with_capabilities_and_import_checks(
+  path: &Path,
+  kernel: Option<&SharedCapabilityKernel>,
+  subject: Option<&str>,
+  require_import_for_includes: bool,
+) -> MResult<MechSourceCode> {
   check_optional_fs(kernel, subject, FS_READ, path)?;
   let extension = path
     .extension()
@@ -488,7 +502,12 @@ pub fn read_runtime_source_file_with_capabilities(path: &Path, kernel: Option<&S
 
   match extension.as_str() {
     "mec" | "🤖" => {
-      let expanded = expand_mechdown_includes_with_capabilities(path, kernel, subject)?;
+      let expanded = expand_mechdown_includes_with_capabilities_and_import_checks(
+        path,
+        kernel,
+        subject,
+        require_import_for_includes,
+      )?;
       Ok(MechSourceCode::String(expanded))
     }
 
@@ -578,9 +597,24 @@ pub fn read_file_bytes(path: &Path) -> MResult<Vec<u8>> {
 pub fn expand_mechdown_includes(path: &Path) -> MResult<String> { expand_mechdown_includes_with_capabilities(path, None, None) }
 
 pub fn expand_mechdown_includes_with_capabilities(path: &Path, kernel: Option<&SharedCapabilityKernel>, subject: Option<&str>) -> MResult<String> {
+  expand_mechdown_includes_with_capabilities_and_import_checks(path, kernel, subject, false)
+}
+
+fn expand_mechdown_includes_with_capabilities_and_import_checks(
+  path: &Path,
+  kernel: Option<&SharedCapabilityKernel>,
+  subject: Option<&str>,
+  require_import_for_includes: bool,
+) -> MResult<String> {
   let canonical = canonicalize_source_path(path)?;
   let mut active = HashSet::new();
-  expand_mechdown_includes_inner(&canonical, &mut active, kernel, subject)
+  expand_mechdown_includes_inner(
+    &canonical,
+    &mut active,
+    kernel,
+    subject,
+    require_import_for_includes,
+  )
 }
 
 fn expand_mechdown_includes_inner(
@@ -588,6 +622,7 @@ fn expand_mechdown_includes_inner(
   active: &mut HashSet<PathBuf>,
   kernel: Option<&SharedCapabilityKernel>,
   subject: Option<&str>,
+  require_import_for_includes: bool,
 ) -> MResult<String> {
   let canonical = canonicalize_source_path(path)?;
 
@@ -609,6 +644,7 @@ fn expand_mechdown_includes_inner(
     active,
     kernel,
     subject,
+    require_import_for_includes,
   )?;
 
   active.remove(&canonical);
@@ -622,6 +658,7 @@ fn expand_mechdown_include_tokens(
   active: &mut HashSet<PathBuf>,
   kernel: Option<&SharedCapabilityKernel>,
   subject: Option<&str>,
+  require_import_for_includes: bool,
 ) -> MResult<String> {
   let mut result = String::new();
 
@@ -649,8 +686,18 @@ fn expand_mechdown_include_tokens(
             )
           })?;
 
+        if require_import_for_includes {
+          check_optional_fs(kernel, subject, FS_IMPORT, &include_canonical)?;
+        }
+
         let include_source =
-          expand_mechdown_includes_inner(&include_canonical, active, kernel, subject)?;
+          expand_mechdown_includes_inner(
+            &include_canonical,
+            active,
+            kernel,
+            subject,
+            require_import_for_includes,
+          )?;
 
         result.push_str(&include_source);
 
@@ -958,4 +1005,36 @@ mod capability_tests {
 
   #[test]
   fn denies_include_outside_grant() { let root = temp_root("include"); let allowed = root.join("allowed"); let outside = root.join("outside"); std::fs::create_dir_all(&allowed).unwrap(); std::fs::create_dir_all(&outside).unwrap(); std::fs::write(allowed.join("main.mec"), "{../outside/secret.mec}\n").unwrap(); std::fs::write(outside.join("secret.mec"), "x := 2\n").unwrap(); let resolver = resolver(&root, &allowed); assert!(resolver.resolve(&SourceRequest::new("allowed/main.mec")).is_err()); std::fs::remove_dir_all(root).unwrap(); }
+
+  #[test]
+  fn imported_source_requires_import_capability_for_each_include() {
+    let root = temp_root("nested-import-include");
+    let allowed = root.join("allowed");
+    std::fs::create_dir_all(&allowed).unwrap();
+
+    let main = allowed.join("main.mec");
+    let child = allowed.join("child.mec");
+    let grandchild = allowed.join("grandchild.mec");
+    std::fs::write(&main, "{child.mec}\n").unwrap();
+    std::fs::write(&child, "{grandchild.mec}\n").unwrap();
+    std::fs::write(&grandchild, "x := 1\n").unwrap();
+
+    let mut ids = SequentialIdGenerator::new();
+    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+    authority.grant_path(&mut ids, &allowed, true, [FS_READ, FS_RESOLVE]).unwrap();
+    authority.grant_path(&mut ids, &main, false, [FS_IMPORT]).unwrap();
+    authority.grant_path(&mut ids, &child, false, [FS_IMPORT]).unwrap();
+    authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &allowed, true, [FS_READ, FS_RESOLVE]).unwrap();
+    authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &main, false, [FS_IMPORT]).unwrap();
+    authority.delegate_path_to(&mut ids, SERVE_HOST_SUBJECT, &child, false, [FS_IMPORT]).unwrap();
+    let resolver = FileSourceResolver::new(&root)
+      .with_capabilities(authority.kernel().clone(), SERVE_HOST_SUBJECT);
+
+    assert!(resolver.resolve(&SourceRequest::new("allowed/main.mec")).is_ok());
+    assert!(resolver
+      .resolve(&SourceRequest::new("allowed/main.mec").with_referrer("memory://parent.mec"))
+      .is_err());
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
 }

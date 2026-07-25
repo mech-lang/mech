@@ -3663,7 +3663,7 @@ impl MechRuntime {
         trace_enabled: self.config.diagnostics.trace_enabled,
         debug_enabled: self.config.diagnostics.debug_enabled,
         profile_enabled: self.config.diagnostics.profile_enabled,
-        rounds_per_step: self.config.limits.max_steps_per_turn.unwrap_or(10_000) as usize,
+        rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
       },
     });
 

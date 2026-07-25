@@ -156,3 +156,51 @@ impl MechErrorKind for NonExecutableModuleSource {
     )
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use mech_core::MechSourceCode;
+
+  fn build(resolved: ResolvedSource) -> MResult<RuntimeModuleRecord> {
+    ModuleBuilder::new().build_resolved_source(
+      resolved,
+      "test",
+      "v0.3",
+      "native",
+      &[],
+      &[],
+      &[],
+    )
+  }
+
+  #[test]
+  fn rejects_non_executable_source_kind() {
+    let error = build(
+      ResolvedSource::new(
+        "style.css",
+        "memory://style.css",
+        MechSourceCode::String("body { color: red; }".to_string()),
+      )
+      .with_kind(crate::SourceKind::Css),
+    )
+    .unwrap_err();
+
+    assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+  }
+
+  #[test]
+  fn rejects_non_executable_source_representation() {
+    let error = build(
+      ResolvedSource::new(
+        "main.mec",
+        "memory://main.mec",
+        MechSourceCode::Html("<p>not Mech code</p>".to_string()),
+      )
+      .with_kind(crate::SourceKind::Mech),
+    )
+    .unwrap_err();
+
+    assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+  }
+}

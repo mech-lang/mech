@@ -304,6 +304,43 @@ mod tests {
   }
 
   #[test]
+  fn constrained_capability_denies_missing_metrics() {
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
+    let cap = BasicCapability::new(
+      CapabilityId(1),
+      &subject,
+      &resource,
+      [BasicOperation::read()],
+    )
+    .with_constraints(
+      BasicConstraints::default()
+        .with_max_bytes(10)
+        .with_max_items(2)
+        .with_max_duration_ms(100),
+    );
+
+    let request = CapabilityRequest::new(&subject, &BasicOperation::read(), &resource);
+    assert!(!cap.check(&request).unwrap().allowed);
+
+    let request = request.with_context(CapabilityContext::local().with_bytes(10));
+    assert!(!cap.check(&request).unwrap().allowed);
+
+    let request = request.with_context(
+      CapabilityContext::local().with_bytes(10).with_items(2),
+    );
+    assert!(!cap.check(&request).unwrap().allowed);
+
+    let request = request.with_context(
+      CapabilityContext::local()
+        .with_bytes(10)
+        .with_items(2)
+        .with_duration_ms(100),
+    );
+    assert!(cap.check(&request).unwrap().allowed);
+  }
+
+  #[test]
   fn attenuation_cannot_relax_local_only() {
     let subject = BasicSubject::new("task://1");
     let resource = BasicResource::new("db://users");
