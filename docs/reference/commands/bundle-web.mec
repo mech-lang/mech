@@ -13,7 +13,7 @@ mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
 2. Required project config
 -------------------------------------------------------------------------------
 
-`bundle-web` requires a project config with enough `serve` information to locate source files, the HTML shim, and the wasm package.
+`bundle-web` requires nonempty `run.paths` and `serve.paths` in the project config. The HTML shim and wasm package may be supplied through `serve.shim` and `serve.wasm` or through the `--shim` and `--wasm` command-line options.
 
 ```mech
 config := {
@@ -45,4 +45,4 @@ html/
 4. Static URL rules
 -------------------------------------------------------------------------------
 
-Static bundles should use relative browser URLs. Server-root URLs such as `/code/demo.mec` depend on `mech serve` and are rejected for static bundles.
+Static bundles should use relative browser URLs such as `./_mech/project.js`, `./pkg/mech_wasm.js`, and `./source/demo.mec`. Server-root URLs such as `/_mech/project.js` depend on `mech serve` and are rejected for static bundles.

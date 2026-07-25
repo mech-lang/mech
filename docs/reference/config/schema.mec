@@ -12,7 +12,7 @@ config := {
 }
 ```
 
-All sections are optional unless a command requires a specific section. For example, `bundle-web` requires enough `serve` configuration to locate source files, a shim, and a wasm package.
+All sections are optional unless a command requires a specific section. For example, `bundle-web` requires nonempty `run.paths` and `serve.paths` from the project config, plus an HTML shim and a wasm package. The shim and wasm package may come from `serve.shim` and `serve.wasm` or from the corresponding command-line overrides.
 
 1. Top-level fields
 -------------------------------------------------------------------------------
@@ -48,6 +48,7 @@ config := {
   hosts: []
 
   run: {
+    paths: ["demo.mec"]
     grants: []
   }
 }

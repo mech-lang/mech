@@ -13,7 +13,7 @@ The generated directory can be served by a normal static web server.
 1. Requirements
 -------------------------------------------------------------------------------
 
-The project must provide source paths, an HTML shim, and a wasm package path through config or command-line options.
+The config must provide nonempty `run.paths` and `serve.paths`. The HTML shim and WASM package may be supplied through `serve.shim` and `serve.wasm` or through the `--shim` and `--wasm` command-line options.
 
 2. URL rules
 -------------------------------------------------------------------------------
@@ -23,13 +23,15 @@ Static bundles must use relative URLs for Mech assets.
 Use:
 
 ```text
+./_mech/project.js
 ./pkg/mech_wasm.js
-./code/demo.mec
+./source/demo.mec
 ```
 
 Do not use server-root URLs such as:
 
 ```text
+/_mech/project.js
 /pkg/mech_wasm.js
-/code/demo.mec
+/source/demo.mec
 ```

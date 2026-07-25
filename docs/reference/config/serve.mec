@@ -38,4 +38,4 @@ Browser pages can initialize from that projection with `WasmMech.fromHostConfig(
 3. Static bundling
 -------------------------------------------------------------------------------
 
-`bundle-web` reads the same `serve` section to determine project sources, shim, wasm package, and stylesheets. Static bundles require relative browser URLs; server-root URLs such as `/code/demo.mec` are not portable in static output.
+`bundle-web` requires nonempty `run.paths` and `serve.paths` from the project config. It reads the `serve` section to determine project sources and stylesheets; the shim and wasm package may come from the config or the `--shim` and `--wasm` command-line options. Static bundles require relative browser URLs; server-root URLs such as `/_mech/project.js` are not portable in static output.
