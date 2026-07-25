@@ -36,6 +36,14 @@ impl MonotonicTimerBackend for NativeMonotonicTimerBackend {
     }
 }
 
+struct WorkerLiveReset(Arc<AtomicBool>);
+
+impl Drop for WorkerLiveReset {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
+    }
+}
+
 pub struct NativeTimerInputDriver<B: MonotonicTimerBackend + Send + Sync> {
     instance: String,
     backend: B,
@@ -74,6 +82,52 @@ impl<B: MonotonicTimerBackend + Send + Sync> NativeTimerInputDriver<B> {
             stop_sender: Arc::new(Mutex::new(None)),
         }
     }
+
+    fn prepare_worker_start(&mut self) -> MResult<bool> {
+        let mut stop_sender_guard = self
+            .stop_sender
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStart", "timer stop-signal lock is poisoned"))?;
+        let mut worker_guard = self
+            .worker
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStart", "timer worker lock is poisoned"))?;
+
+        if self.live.load(Ordering::SeqCst)
+            && worker_guard
+                .as_ref()
+                .is_some_and(|handle| !handle.is_finished())
+        {
+            return Ok(true);
+        }
+
+        let stop_sender = stop_sender_guard.take();
+        let worker = worker_guard.take();
+        drop(worker_guard);
+        drop(stop_sender_guard);
+
+        self.live.store(false, Ordering::SeqCst);
+
+        if let Some(sender) = stop_sender {
+            let _ = sender.send(());
+        }
+
+        let worker_panicked = worker.is_some_and(|handle| handle.join().is_err());
+
+        self.scheduler
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStart", "timer scheduler lock is poisoned"))?
+            .pause();
+
+        if worker_panicked {
+            return Err(timer_error(
+                "TimerDriverStart",
+                "native timer worker panicked before restart",
+            ));
+        }
+
+        Ok(false)
+    }
 }
 impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTimerInputDriver<B> {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
@@ -101,7 +155,7 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         Ok(())
     }
     fn start(&mut self) -> MResult<()> {
-        if self.is_live() {
+        if self.prepare_worker_start()? {
             return Ok(());
         }
         let ingress = self
@@ -115,13 +169,6 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                     "native timer driver must be attached before start",
                 )
             })?;
-        let mut worker_guard = self
-            .worker
-            .lock()
-            .map_err(|_| timer_error("TimerDriverStart", "timer worker lock is poisoned"))?;
-        if worker_guard.is_some() {
-            return Ok(());
-        }
         let now = self.backend.now_ms()?;
         self.scheduler
             .lock()
@@ -140,7 +187,8 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         let snapshot = self.snapshot.clone();
         let pending = self.pending.clone();
         let instance = self.instance.clone();
-        *worker_guard = Some(thread::spawn(move || {
+        let worker = thread::spawn(move || {
+            let _live_reset = WorkerLiveReset(live.clone());
             while live.load(Ordering::SeqCst) {
                 let state = pending
                     .lock()
@@ -158,10 +206,15 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                 match state {
                     Ok(TimerSubmitState::Drained) => {}
                     Ok(TimerSubmitState::Full) => {
-                        let wait = scheduler
-                            .lock()
+                        let wait = backend
+                            .now_ms()
                             .ok()
-                            .and_then(|s| backend.now_ms().ok().map(|now| native_wait_duration(&s, now)))
+                            .and_then(|now| {
+                                scheduler
+                                    .lock()
+                                    .ok()
+                                    .map(|scheduler| native_wait_duration(&scheduler, now))
+                            })
                             .unwrap_or_else(|| Duration::from_millis(1));
                         match stop_receiver.recv_timeout(wait) {
                             Ok(()) | Err(RecvTimeoutError::Disconnected) => break,
@@ -223,8 +276,12 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                     Err(RecvTimeoutError::Timeout) => {}
                 }
             }
-            live.store(false, Ordering::SeqCst);
-        }));
+        });
+        *self
+            .worker
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStart", "timer worker lock is poisoned"))? =
+            Some(worker);
         Ok(())
     }
     fn stop(&mut self) -> MResult<()> {
@@ -267,6 +324,232 @@ pub fn native_wait_duration(scheduler: &FixedStepScheduler, now_ms: f64) -> Dura
 impl<B: MonotonicTimerBackend + Send + Sync> Drop for NativeTimerInputDriver<B> {
     fn drop(&mut self) {
         let _ = self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::AtomicUsize;
+
+    use super::*;
+
+    fn wait_for_finished_worker<B>(driver: &NativeTimerInputDriver<B>)
+    where
+        B: MonotonicTimerBackend + Send + Sync,
+    {
+        let deadline = Instant::now() + Duration::from_secs(1);
+        loop {
+            let finished = driver
+                .worker
+                .lock()
+                .unwrap()
+                .as_ref()
+                .is_some_and(|handle| handle.is_finished());
+            if finished {
+                return;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "timed out waiting for native timer worker to finish"
+            );
+            thread::sleep(Duration::from_millis(5));
+        }
+    }
+
+    fn wait_for_pending_inputs(runtime: &mech_runtime::MechRuntime, count: usize) {
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while runtime.pending_host_input_count().unwrap() < count {
+            assert!(
+                Instant::now() < deadline,
+                "timed out waiting for native timer input"
+            );
+            thread::sleep(Duration::from_millis(5));
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    struct ControlledBackend {
+        calls: Arc<AtomicUsize>,
+        panic_on_worker_call: bool,
+    }
+
+    impl MonotonicTimerBackend for ControlledBackend {
+        fn now_ms(&self) -> MResult<f64> {
+            match self.calls.fetch_add(1, Ordering::SeqCst) {
+                0 => Ok(0.0),
+                1 if self.panic_on_worker_call => panic!("test timer backend panic"),
+                1 => Err(timer_error("TimerBackend", "test backend failure")),
+                2 => Ok(10_000.0),
+                3 => Ok(10_010.0),
+                _ => Ok(10_010.0),
+            }
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    struct WorkingBackend {
+        calls: Arc<AtomicUsize>,
+    }
+
+    impl MonotonicTimerBackend for WorkingBackend {
+        fn now_ms(&self) -> MResult<f64> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(0.0)
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    struct FullIngressPanickingBackend {
+        calls: Arc<AtomicUsize>,
+    }
+
+    impl MonotonicTimerBackend for FullIngressPanickingBackend {
+        fn now_ms(&self) -> MResult<f64> {
+            match self.calls.fetch_add(1, Ordering::SeqCst) {
+                0 => Ok(0.0),
+                1 => Ok(10.0),
+                2 => panic!("test timer backend panic while ingress is full"),
+                _ => Ok(10_000.0),
+            }
+        }
+    }
+
+    fn snapshot() -> SharedTimerSnapshot {
+        new_shared_snapshot(TimerSnapshot::new(0, 100, 0))
+    }
+
+    #[test]
+    fn restart_after_backend_error_rebases_scheduler() {
+        let runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(4)
+            .build()
+            .unwrap();
+        let shared_snapshot = snapshot();
+        let backend = ControlledBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+            panic_on_worker_call: false,
+        };
+        let mut driver = NativeTimerInputDriver::new(
+            "physics",
+            backend,
+            FixedStepScheduler::new(100, 8),
+            shared_snapshot.clone(),
+        );
+        driver.attach(runtime.ingress()).unwrap();
+
+        driver.start().unwrap();
+        wait_for_finished_worker(&driver);
+        assert!(!driver.is_live());
+
+        driver.start().unwrap();
+        wait_for_pending_inputs(&runtime, 1);
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+        let snapshot = *shared_snapshot.lock().unwrap();
+        assert_eq!(snapshot.tick, 1);
+        assert_eq!(snapshot.skipped_steps, 0);
+        driver.stop().unwrap();
+    }
+
+    #[test]
+    fn panicked_worker_is_reported_once_and_can_restart() {
+        let runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(4)
+            .build()
+            .unwrap();
+        let shared_snapshot = snapshot();
+        let backend = ControlledBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+            panic_on_worker_call: true,
+        };
+        let mut driver = NativeTimerInputDriver::new(
+            "physics",
+            backend,
+            FixedStepScheduler::new(100, 8),
+            shared_snapshot.clone(),
+        );
+        driver.attach(runtime.ingress()).unwrap();
+
+        driver.start().unwrap();
+        wait_for_finished_worker(&driver);
+        assert!(!driver.is_live());
+
+        let error = driver.start().unwrap_err();
+        assert_eq!(error.kind_name(), "TimerDriverStart");
+        assert!(format!("{error:?}").contains("native timer worker panicked before restart"));
+        assert!(!driver.is_live());
+        assert!(driver.worker.lock().unwrap().is_none());
+        assert!(driver.stop_sender.lock().unwrap().is_none());
+        assert_eq!(driver.scheduler.lock().unwrap().time_until_next_boundary(10_000.0), 0.0);
+
+        driver.start().unwrap();
+        wait_for_pending_inputs(&runtime, 1);
+        let snapshot = *shared_snapshot.lock().unwrap();
+        assert_eq!(snapshot.tick, 1);
+        assert_eq!(snapshot.skipped_steps, 0);
+        driver.stop().unwrap();
+    }
+
+    #[test]
+    fn full_ingress_panic_leaves_scheduler_recoverable() {
+        let mut runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(1)
+            .build()
+            .unwrap();
+        let shared_snapshot = snapshot();
+        let backend = FullIngressPanickingBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+        };
+        let mut driver = NativeTimerInputDriver::new(
+            "physics",
+            backend,
+            FixedStepScheduler::new(100, 8),
+            shared_snapshot.clone(),
+        );
+        driver.attach(runtime.ingress()).unwrap();
+        runtime
+            .ingress()
+            .submit(TimerSnapshot::new(0, 100, 0).into_host_input("filler").unwrap())
+            .unwrap();
+
+        driver.start().unwrap();
+        wait_for_finished_worker(&driver);
+        assert!(!driver.is_live());
+
+        let error = driver.start().unwrap_err();
+        assert_eq!(error.kind_name(), "TimerDriverStart");
+        assert!(format!("{error:?}").contains("native timer worker panicked before restart"));
+        assert!(driver.scheduler.lock().is_ok());
+
+        runtime.drain_host_inputs(1).unwrap();
+        driver.start().unwrap();
+        wait_for_pending_inputs(&runtime, 1);
+        assert_eq!(shared_snapshot.lock().unwrap().tick, 1);
+        driver.stop().unwrap();
+    }
+
+    #[test]
+    fn native_start_is_idempotent_while_worker_is_live() {
+        let runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(4)
+            .build()
+            .unwrap();
+        let backend = WorkingBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+        };
+        let mut driver = NativeTimerInputDriver::new(
+            "physics",
+            backend,
+            FixedStepScheduler::new(100, 8),
+            snapshot(),
+        );
+        driver.attach(runtime.ingress()).unwrap();
+
+        driver.start().unwrap();
+        let first_thread = driver.worker.lock().unwrap().as_ref().unwrap().thread().id();
+        driver.start().unwrap();
+        let second_thread = driver.worker.lock().unwrap().as_ref().unwrap().thread().id();
+        assert_eq!(first_thread, second_thread);
+        driver.stop().unwrap();
     }
 }
 

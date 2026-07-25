@@ -26,6 +26,14 @@ impl TimeBackend for NativeTimeBackend {
   }
 }
 
+struct WorkerLiveReset(Arc<AtomicBool>);
+
+impl Drop for WorkerLiveReset {
+  fn drop(&mut self) {
+    self.0.store(false, Ordering::SeqCst);
+  }
+}
+
 pub struct NativeTimeInputDriver<B>
 where
   B: TimeBackend + Send + Sync,
@@ -70,6 +78,32 @@ where
       stop_sender: Arc::new(Mutex::new(None)),
     }
   }
+
+  fn prepare_worker_start(&mut self) -> MResult<bool> {
+    let mut stop_sender_guard = self.stop_sender.lock().map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))?;
+    let mut worker_guard = self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?;
+
+    if self.live.load(Ordering::SeqCst) && worker_guard.as_ref().is_some_and(|handle| !handle.is_finished()) {
+      return Ok(true);
+    }
+
+    let stop_sender = stop_sender_guard.take();
+    let worker = worker_guard.take();
+    drop(worker_guard);
+    drop(stop_sender_guard);
+
+    self.live.store(false, Ordering::SeqCst);
+
+    if let Some(sender) = stop_sender {
+      let _ = sender.send(());
+    }
+
+    if let Some(handle) = worker {
+      handle.join().map_err(|_| time_error("TimeDriverStart", "native time worker panicked before restart"))?;
+    }
+
+    Ok(false)
+  }
 }
 
 impl<B> RuntimeHostInputDriver for NativeTimeInputDriver<B>
@@ -93,14 +127,12 @@ where
   }
 
   fn start(&mut self) -> MResult<()> {
-    if self.is_live() && self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?.is_some() {
+    if self.prepare_worker_start()? {
       return Ok(());
     }
     let ingress = self.ingress.lock().map_err(|_| time_error("TimeDriverStart", "time ingress lock is poisoned"))?
       .clone()
       .ok_or_else(|| time_error("TimeDriverStart", "native time driver must be attached before start"))?;
-    let mut worker_guard = self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?;
-    if worker_guard.is_some() { return Ok(()); }
     let (stop_sender, stop_receiver) = mpsc::channel();
     *self.stop_sender.lock().map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))? = Some(stop_sender);
     self.live.store(true, Ordering::SeqCst);
@@ -109,7 +141,8 @@ where
     let snapshot = self.snapshot.clone();
     let interval = self.interval;
     let instance = self.instance.clone();
-    *worker_guard = Some(thread::spawn(move || {
+    let worker = thread::spawn(move || {
+      let _live_reset = WorkerLiveReset(live.clone());
       while live.load(Ordering::SeqCst) {
         match backend.snapshot() {
           Ok(next) => {
@@ -142,8 +175,8 @@ where
           Err(RecvTimeoutError::Timeout) => {}
         }
       }
-      live.store(false, Ordering::SeqCst);
-    }));
+    });
+    *self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))? = Some(worker);
     Ok(())
   }
 
@@ -168,6 +201,127 @@ where
   B: TimeBackend + Send + Sync,
 {
   fn drop(&mut self) { let _ = self.stop(); }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::sync::atomic::AtomicUsize;
+  use std::time::Instant;
+
+  use super::*;
+
+  fn snapshot() -> TimeSnapshot {
+    TimeSnapshot {
+      unix_ms: 1.0,
+      hour: 2.0,
+      minute: 3.0,
+      second: 4.0,
+      millisecond: 5.0,
+    }
+  }
+
+  fn wait_for_finished_worker<B>(driver: &NativeTimeInputDriver<B>)
+  where
+    B: TimeBackend + Send + Sync,
+  {
+    let deadline = Instant::now() + Duration::from_secs(1);
+    loop {
+      let finished = driver.worker.lock().unwrap().as_ref().is_some_and(|handle| handle.is_finished());
+      if finished {
+        return;
+      }
+      assert!(Instant::now() < deadline, "timed out waiting for native time worker to finish");
+      thread::sleep(Duration::from_millis(5));
+    }
+  }
+
+  fn wait_for_pending_inputs(runtime: &mech_runtime::MechRuntime, count: usize) {
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while runtime.pending_host_input_count().unwrap() < count {
+      assert!(Instant::now() < deadline, "timed out waiting for native time input");
+      thread::sleep(Duration::from_millis(5));
+    }
+  }
+
+  #[derive(Clone, Debug)]
+  struct FailingThenWorkingBackend {
+    calls: Arc<AtomicUsize>,
+  }
+
+  impl TimeBackend for FailingThenWorkingBackend {
+    fn snapshot(&self) -> MResult<TimeSnapshot> {
+      if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+        Err(time_error("TimeBackend", "test backend failure"))
+      } else {
+        Ok(snapshot())
+      }
+    }
+  }
+
+  #[derive(Clone, Debug)]
+  struct PanickingThenWorkingBackend {
+    calls: Arc<AtomicUsize>,
+  }
+
+  impl TimeBackend for PanickingThenWorkingBackend {
+    fn snapshot(&self) -> MResult<TimeSnapshot> {
+      if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+        panic!("test time backend panic");
+      }
+      Ok(snapshot())
+    }
+  }
+
+  #[test]
+  fn restart_after_backend_error_replaces_exited_worker() {
+    let runtime = mech_runtime::MechRuntime::builder().host_input_capacity(4).build().unwrap();
+    let backend = FailingThenWorkingBackend { calls: Arc::new(AtomicUsize::new(0)) };
+    let mut driver = NativeTimeInputDriver::new(
+      "clock",
+      backend,
+      new_shared_snapshot(TimeSnapshot::default()),
+      Duration::from_millis(5),
+    );
+    driver.attach(runtime.ingress()).unwrap();
+
+    driver.start().unwrap();
+    wait_for_finished_worker(&driver);
+    assert!(!driver.is_live());
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+    driver.start().unwrap();
+    wait_for_pending_inputs(&runtime, 1);
+    driver.stop().unwrap();
+    assert!(!driver.is_live());
+  }
+
+  #[test]
+  fn panicked_worker_is_reported_once_and_can_restart() {
+    let runtime = mech_runtime::MechRuntime::builder().host_input_capacity(4).build().unwrap();
+    let backend = PanickingThenWorkingBackend { calls: Arc::new(AtomicUsize::new(0)) };
+    let mut driver = NativeTimeInputDriver::new(
+      "clock",
+      backend,
+      new_shared_snapshot(TimeSnapshot::default()),
+      Duration::from_millis(5),
+    );
+    driver.attach(runtime.ingress()).unwrap();
+
+    driver.start().unwrap();
+    wait_for_finished_worker(&driver);
+    assert!(!driver.is_live());
+
+    let error = driver.start().unwrap_err();
+    assert_eq!(error.kind_name(), "TimeDriverStart");
+    assert!(format!("{error:?}").contains("native time worker panicked before restart"));
+    assert!(!driver.is_live());
+    assert!(driver.worker.lock().unwrap().is_none());
+    assert!(driver.stop_sender.lock().unwrap().is_none());
+
+    driver.start().unwrap();
+    wait_for_pending_inputs(&runtime, 1);
+    driver.stop().unwrap();
+  }
 }
 
 #[derive(Debug)]
