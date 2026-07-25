@@ -1125,10 +1125,34 @@ fn transport_url_key(path: &Path) -> Option<String> {
   url_key(path).map(|key| percent_encode_url_path(&key))
 }
 
+fn is_url_path_byte(byte: u8) -> bool {
+  byte.is_ascii_alphanumeric()
+    || matches!(
+      byte,
+      b'-'
+        | b'.'
+        | b'_'
+        | b'~'
+        | b'/'
+        | b'!'
+        | b'$'
+        | b'&'
+        | b'\''
+        | b'('
+        | b')'
+        | b'*'
+        | b'+'
+        | b','
+        | b';'
+        | b'='
+        | b'@'
+    )
+}
+
 fn percent_encode_url_path(path: &str) -> String {
   let mut encoded = String::with_capacity(path.len());
   for &byte in path.as_bytes() {
-    if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/') {
+    if is_url_path_byte(byte) {
       encoded.push(byte as char);
     } else {
       encoded.push('%');
@@ -1312,11 +1336,18 @@ mod tests {
   #[test]
   fn percent_encode_url_path_encodes_reserved_and_utf8_bytes() {
     for (path, expected) in [
+      ("assets/app+debug.js", "assets/app+debug.js"),
+      ("assets/theme@2.css", "assets/theme@2.css"),
+      ("assets/alert!.svg", "assets/alert!.svg"),
+      ("assets/data;.json", "assets/data;.json"),
+      ("assets/a&b=c.js", "assets/a&b=c.js"),
       ("app/a#b.mec", "app/a%23b.mec"),
       ("app/a?b.mec", "app/a%3Fb.mec"),
       ("app/100%.mec", "app/100%25.mec"),
       ("app/my file.mec", "app/my%20file.mec"),
       ("app/café.mec", "app/caf%C3%A9.mec"),
+      ("app/a\\b.mec", "app/a%5Cb.mec"),
+      ("app/a:b.mec", "app/a%3Ab.mec"),
     ] {
       assert_eq!(percent_encode_url_path(path), expected);
     }
@@ -1778,6 +1809,10 @@ mod tests {
     std::fs::write(assets.join("my logo.svg"), b"svg").unwrap();
     std::fs::write(assets.join("100%.json"), b"json").unwrap();
     std::fs::write(assets.join("café.md"), b"markdown").unwrap();
+    std::fs::write(assets.join("app+debug.js"), b"plus").unwrap();
+    std::fs::write(assets.join("theme@2.css"), b"at").unwrap();
+    std::fs::write(assets.join("alert!.svg"), b"bang").unwrap();
+    std::fs::write(assets.join("data;.json"), b"semicolon").unwrap();
     let mut registry = ServerSourceRegistry::default();
 
     load_static_assets_from_paths(&mut registry, &root, &["assets".to_string()]).unwrap();
@@ -1791,11 +1826,31 @@ mod tests {
     let markdown = registry.get_route("/assets/caf%C3%A9.md").unwrap();
     assert_eq!(markdown.bytes, b"markdown");
     assert_eq!(markdown.content_type, "text/markdown");
+    assert_eq!(registry.get_route("/assets/app+debug.js").unwrap().bytes, b"plus");
+    assert_eq!(registry.get_route("/assets/theme@2.css").unwrap().bytes, b"at");
+    assert_eq!(registry.get_route("/assets/alert!.svg").unwrap().bytes, b"bang");
+    assert_eq!(registry.get_route("/assets/data;.json").unwrap().bytes, b"semicolon");
 
     let keys = registry.static_asset_keys();
     assert!(keys.contains(&"assets/my%20logo.svg".to_string()));
     assert!(keys.contains(&"assets/100%25.json".to_string()));
     assert!(keys.contains(&"assets/caf%C3%A9.md".to_string()));
+    for key in [
+      "assets/app+debug.js",
+      "assets/theme@2.css",
+      "assets/alert!.svg",
+      "assets/data;.json",
+    ] {
+      assert!(keys.contains(&key.to_string()));
+    }
+    for key in [
+      "assets/app%2Bdebug.js",
+      "assets/theme%402.css",
+      "assets/alert%21.svg",
+      "assets/data%3B.json",
+    ] {
+      assert!(!keys.contains(&key.to_string()));
+    }
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -1815,6 +1870,22 @@ mod tests {
   }
 
   #[test]
+  fn registry_reload_static_path_updates_literal_url_path_character_key() {
+    let root = temp_root("static-literal-update");
+    let css = root.join("theme+dark.css");
+    std::fs::write(&css, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &css).unwrap();
+    assert_eq!(registry.get_route("theme+dark.css").unwrap().bytes, b"old");
+
+    std::fs::write(&css, "new").unwrap();
+    assert!(registry.reload_static_path(&root, &css).unwrap());
+    assert_eq!(registry.get_route("theme+dark.css").unwrap().bytes, b"new");
+    assert!(registry.get_route("theme%2Bdark.css").is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn registry_reload_static_path_removes_encoded_asset_key() {
     let root = temp_root("static-encoded-remove");
     let json = root.join("100%.json");
@@ -1827,6 +1898,26 @@ mod tests {
     assert!(registry.reload_static_path(&root, &json).unwrap());
     assert!(registry.get_route("100%25.json").is_none());
     for key in ["100%.json", "100%25.json"] {
+      assert!(!registry.assets.contains_key(key));
+      assert!(!registry.user_assets.contains(key));
+      assert!(!registry.static_asset_paths.contains_key(key));
+    }
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_reload_static_path_removes_literal_url_path_character_key() {
+    let root = temp_root("static-literal-remove");
+    let json = root.join("data@2.json");
+    std::fs::write(&json, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &json).unwrap();
+    assert!(registry.get_route("data@2.json").is_some());
+
+    std::fs::remove_file(&json).unwrap();
+    assert!(registry.reload_static_path(&root, &json).unwrap());
+    assert!(registry.get_route("data@2.json").is_none());
+    for key in ["data@2.json", "data%402.json"] {
       assert!(!registry.assets.contains_key(key));
       assert!(!registry.user_assets.contains(key));
       assert!(!registry.static_asset_paths.contains_key(key));
