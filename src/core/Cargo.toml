@@ -196,3 +196,11 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[dev-dependencies]
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "value_state_journal"
+harness = false
+required-features = ["baselib"]
