@@ -8,7 +8,7 @@ use mech_runtime::{
   ResolvedSource,
   RuntimeBuilder,
   ModuleBuildOptions,
-  SourceRequest,
+  SourceKind,
 };
 
 fn short_text(text: &str) -> String {
@@ -58,19 +58,19 @@ fn main() -> MResult<()> {
     .runtime_context()?
     .with_subject("program:runtime-dependency-source");
 
-  let mut resolved = ResolvedSource::new(
+  let resolved = ResolvedSource::new(
     "index",
     "memory://runtime-dependency-source-demo/index.mec",
     MechSourceCode::String(
       r#"
+        +> dep.mec
         x := 41 + 1
         x
       "#
       .to_string(),
     ),
-  );
-
-  resolved.dependencies.push(SourceRequest::new("dep.mec"));
+  )
+  .with_kind(SourceKind::Mech);
 
   let target = runtime_target();
   let options = ModuleBuildOptions::new(
