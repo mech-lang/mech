@@ -1,7 +1,11 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use mech_core::{CommittedValueStateDelta, MechRecord, Ref, ToMatrix, Value, ValueStateJournal};
+use mech_core::{
+    CommittedValueStateDelta, MechMap, MechRecord, MechSet, Ref, ToMatrix, Value,
+    ValueStateJournal,
+};
 use std::hint::black_box;
 
+const HASHED_COLLECTION_SIZE: usize = 64;
 const PHASE_SCALARS: usize = 64;
 const VALUE_MATRIX_SIDE: usize = 32;
 
@@ -37,6 +41,61 @@ fn captured_mutated_scalars(count: usize) -> ValueStateJournal {
 
 fn scalar_delta(count: usize) -> CommittedValueStateDelta {
     let mut journal = captured_mutated_scalars(count);
+    journal.record_after().unwrap();
+    journal.into_delta().unwrap()
+}
+
+fn scalar_set_root(count: usize) -> (Value, Vec<Ref<f64>>) {
+    let cells = (0..count)
+        .map(|index| Ref::new(index as f64))
+        .collect::<Vec<_>>();
+    let members = cells
+        .iter()
+        .map(|cell| Value::F64(cell.clone()))
+        .collect();
+    (
+        Value::Set(Ref::new(MechSet::from_vec(members))),
+        cells,
+    )
+}
+
+fn scalar_map_root(count: usize) -> (Value, Vec<Ref<f64>>) {
+    let cells = (0..count)
+        .map(|index| Ref::new(index as f64))
+        .collect::<Vec<_>>();
+    let entries = cells
+        .iter()
+        .enumerate()
+        .map(|(index, cell)| (Value::F64(cell.clone()), Value::Id(index as u64)))
+        .collect();
+    (
+        Value::Map(Ref::new(MechMap::from_vec(entries))),
+        cells,
+    )
+}
+
+fn hashed_set_journal() -> ValueStateJournal {
+    let (root, cells) = scalar_set_root(HASHED_COLLECTION_SIZE);
+    let journal = capture_roots(&[root]);
+    *cells[HASHED_COLLECTION_SIZE / 2].borrow_mut() = 10_000.0;
+    journal
+}
+
+fn hashed_set_delta() -> CommittedValueStateDelta {
+    let mut journal = hashed_set_journal();
+    journal.record_after().unwrap();
+    journal.into_delta().unwrap()
+}
+
+fn hashed_map_journal() -> ValueStateJournal {
+    let (root, cells) = scalar_map_root(HASHED_COLLECTION_SIZE);
+    let journal = capture_roots(&[root]);
+    *cells[HASHED_COLLECTION_SIZE / 2].borrow_mut() = 10_000.0;
+    journal
+}
+
+fn hashed_map_delta() -> CommittedValueStateDelta {
+    let mut journal = hashed_map_journal();
     journal.record_after().unwrap();
     journal.into_delta().unwrap()
 }
@@ -210,6 +269,92 @@ fn scalar_phases(c: &mut Criterion) {
     group.finish();
 }
 
+fn hashed_collection_group(
+    c: &mut Criterion,
+    name: &str,
+    root: Value,
+    journal_factory: fn() -> ValueStateJournal,
+    delta_factory: fn() -> CommittedValueStateDelta,
+) {
+    let expected_cells = 1 + HASHED_COLLECTION_SIZE;
+    assert_eq!(capture_roots(&[root.clone()]).cell_count(), expected_cells);
+    assert_eq!(journal_factory().cell_count(), expected_cells);
+    assert_eq!(delta_factory().cell_count(), expected_cells);
+
+    let mut group = c.benchmark_group(name);
+    group.throughput(Throughput::Elements(HASHED_COLLECTION_SIZE as u64));
+
+    group.bench_function("capture", |b| {
+        b.iter_batched(
+            ValueStateJournal::new,
+            |mut journal| {
+                journal.capture_value(black_box(&root)).unwrap();
+                black_box(journal)
+            },
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("record_after", |b| {
+        b.iter_batched(
+            journal_factory,
+            |mut journal| {
+                journal.record_after().unwrap();
+                black_box(journal)
+            },
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("rewind", |b| {
+        b.iter_batched(
+            delta_factory,
+            |delta| {
+                delta.rewind().unwrap();
+                black_box(delta)
+            },
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("replay", |b| {
+        b.iter_batched(
+            || {
+                let delta = delta_factory();
+                delta.rewind().unwrap();
+                delta
+            },
+            |delta| {
+                delta.replay().unwrap();
+                black_box(delta)
+            },
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.finish();
+}
+
+fn hashed_collection_phases(c: &mut Criterion) {
+    let (set_root, _) = scalar_set_root(HASHED_COLLECTION_SIZE);
+    hashed_collection_group(
+        c,
+        "value_state_journal/hashed_set_64_scalars",
+        set_root,
+        hashed_set_journal,
+        hashed_set_delta,
+    );
+
+    let (map_root, _) = scalar_map_root(HASHED_COLLECTION_SIZE);
+    hashed_collection_group(
+        c,
+        "value_state_journal/hashed_map_64_scalar_keys",
+        map_root,
+        hashed_map_journal,
+        hashed_map_delta,
+    );
+}
+
 fn capture_graphs(c: &mut Criterion) {
     let nested_record = nested_shared_record();
     assert_eq!(capture_roots(&[nested_record.clone()]).cell_count(), 3);
@@ -310,6 +455,7 @@ criterion_group!(
     direct_scalar_mutation,
     capture_scalars,
     scalar_phases,
+    hashed_collection_phases,
     capture_graphs,
     topology_phases
 );
