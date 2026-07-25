@@ -20,7 +20,7 @@ use mech_core::{
   val_ref_reactive_cell_ids, ReactiveCellId, ReactiveTurnOutcome,
 };
 
-use mech_interpreter::Interpreter;
+use mech_interpreter::{Interpreter, InterpreterCheckpoint};
 use mech_syntax::parser;
 
 use crate::ClosureNativeFunctionCompiler;
@@ -301,6 +301,18 @@ pub struct MechProgram {
   interpreter: Interpreter,
 }
 
+/// An explicit, retained snapshot of a complete [`MechProgram`].
+///
+/// The checkpoint is intentionally opaque: it can only be created by
+/// [`MechProgram::checkpoint`] and consumed by [`MechProgram::restore`].
+/// It is a process-local savepoint, not a serializable durable-history record
+/// or a source of stable transaction identities.
+#[derive(Clone)]
+pub struct MechProgramCheckpoint {
+  config: MechProgramConfig,
+  interpreter: InterpreterCheckpoint,
+}
+
 impl MechProgram {
   pub fn new(config: MechProgramConfig) -> Self {
     let id = hash_str(&format!("program/{}", config.name));
@@ -312,6 +324,25 @@ impl MechProgram {
       config,
       interpreter,
     }
+  }
+
+  /// Captures the complete structural and value state of this program.
+  ///
+  /// Capture is explicit and has no effect on ordinary interpretation or
+  /// reactive turns.
+  pub fn checkpoint(&self) -> MResult<MechProgramCheckpoint> {
+    Ok(MechProgramCheckpoint {
+      config: self.config.clone(),
+      interpreter: self.interpreter.checkpoint()?,
+    })
+  }
+
+  /// Restores a retained checkpoint without executing program functions,
+  /// callbacks, solvers, or providers.
+  pub fn restore(&mut self, checkpoint: MechProgramCheckpoint) -> MResult<()> {
+    self.interpreter.restore(checkpoint.interpreter)?;
+    self.config = checkpoint.config;
+    Ok(())
   }
 
   #[cfg(feature = "functions")]
@@ -750,8 +781,9 @@ fn with_interpreter_mut<T>(
   }
   let child_ids = interpreter.sub_interpreters.borrow().keys().copied().collect::<Vec<_>>();
   for child_id in child_ids {
-    let mut sub_interpreters = interpreter.sub_interpreters.borrow_mut();
-    let Some(child) = sub_interpreters.get_mut(&child_id) else { continue; };
+    let child = interpreter.sub_interpreters.borrow().get(&child_id).cloned();
+    let Some(child) = child else { continue; };
+    let mut child = child.borrow_mut();
     if let Some(result) = with_interpreter_mut(child.as_mut(), interpreter_id, f) { return Some(result); }
   }
   None
@@ -788,8 +820,14 @@ fn with_interpreter<T>(
     return Some(f(interpreter));
   }
 
-  let sub_interpreters = interpreter.sub_interpreters.borrow();
-  for sub_interpreter in sub_interpreters.values() {
+  let sub_interpreters = interpreter
+    .sub_interpreters
+    .borrow()
+    .values()
+    .cloned()
+    .collect::<Vec<_>>();
+  for sub_interpreter in sub_interpreters {
+    let sub_interpreter = sub_interpreter.borrow();
     if let Some(result) = with_interpreter(sub_interpreter.as_ref(), interpreter_id, f) {
       return Some(result);
     }
@@ -814,10 +852,11 @@ fn bind_ans_recursive(
   };
 
   for child_id in child_ids {
-    let mut sub_interpreters = interpreter.sub_interpreters.borrow_mut();
-    let Some(child) = sub_interpreters.get_mut(&child_id) else {
+    let child = interpreter.sub_interpreters.borrow().get(&child_id).cloned();
+    let Some(child) = child else {
       continue;
     };
+    let mut child = child.borrow_mut();
     if bind_ans_recursive(child.as_mut(), interpreter_id, value) {
       return true;
     }
@@ -888,6 +927,7 @@ impl MechErrorKind for UnsupportedProgramSourceError {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use mech_core::Ref;
 
   fn program_with_nested_interpreter(nested_id: u64, child_id: u64) -> MechProgram {
     let mut program = MechProgram::new(MechProgramConfig::default());
@@ -900,12 +940,12 @@ mod tests {
     child
       .sub_interpreters
       .borrow_mut()
-      .insert(nested_id, Box::new(nested));
+      .insert(nested_id, Ref::new(Box::new(nested)));
     program
       .interpreter_mut()
       .sub_interpreters
       .borrow_mut()
-      .insert(child_id, Box::new(child));
+      .insert(child_id, Ref::new(Box::new(child)));
     program
   }
 
@@ -923,10 +963,20 @@ mod tests {
     let mut program = program_with_nested_interpreter(nested_id, child_id);
     {
       let root = program.interpreter_mut();
-      let mut sub_interpreters = root.sub_interpreters.borrow_mut();
-      let child = sub_interpreters.get_mut(&child_id).unwrap();
-      let mut child_sub_interpreters = child.sub_interpreters.borrow_mut();
-      let nested = child_sub_interpreters.get_mut(&nested_id).unwrap();
+      let child = root
+        .sub_interpreters
+        .borrow()
+        .get(&child_id)
+        .unwrap()
+        .clone();
+      let child = child.borrow();
+      let nested = child
+        .sub_interpreters
+        .borrow()
+        .get(&nested_id)
+        .unwrap()
+        .clone();
+      let nested = nested.borrow();
       nested
         .out_values
         .borrow_mut()
@@ -1541,6 +1591,492 @@ mod program_reactive_turn_tests {
   #[cfg(feature="string")] #[test] fn program_reactive_turn_preflight_failure_mutates_nothing(){let mut p=MechProgram::new(MechProgramConfig::default());let(a,b)=(input(&mut p,"a",1.),input(&mut p,"b",2.));p.run_string("output := a + b").unwrap();let id=p.interpreter().id;let s=snapshot(&p,id);let q=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:a,value:f64_value(10.)},ProgramInputUpdate{input:b,value:Value::String(Ref::new("bad".into()))}]).unwrap_err();assert!(format!("{q:?}").contains("StableValueUpdateKindMismatch"));assert_eq!((value(&p,id,"a"),value(&p,id,"b"),value(&p,id,"output")),(1.,2.,3.));assert_eq!(snapshot(&p,id),s);assert!(!pending(&p,id));}
   #[test] fn program_reactive_turn_rejects_root_alias_duplicate(){let mut p=MechProgram::new(MechProgramConfig::default());let x=input(&mut p,"input",1.);let id=p.interpreter().id;let e=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:ProgramInputId{interpreter_id:0,symbol_id:x.symbol_id},value:f64_value(2.)},ProgramInputUpdate{input:x,value:f64_value(3.)}]).unwrap_err();assert!(format!("{e:?}").contains("ProgramInputDuplicateTarget"));assert_eq!(value(&p,id,"input"),1.);assert!(!pending(&p,id));}
   #[test] fn program_reactive_turn_empty_batch_is_noop(){let mut p=MechProgram::new(MechProgramConfig::default());let id=p.interpreter().id;let s=snapshot(&p,id);assert_eq!(p.update_inputs_and_advance_turn(&[]).unwrap(),ProgramInputTurnOutcome::default());assert_eq!(snapshot(&p,id),s);assert!(!pending(&p,id));}
-  #[test] fn program_reactive_turn_orders_nested_interpreters_deterministically(){let mut p=MechProgram::new(MechProgramConfig::default());let mut c1=Interpreter::new_with_full_stdlib(101);let mut c2=Interpreter::new_with_full_stdlib(202);for(i,src) in [(&mut c1,"input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0"),(&mut c2,"input := 1.0\noutput := input + 1.0")]{i.interpret(&parser::parse(src).unwrap()).unwrap();}p.interpreter_mut().sub_interpreters.borrow_mut().insert(101,Box::new(c1));p.interpreter_mut().sub_interpreters.borrow_mut().insert(202,Box::new(c2));let(a,b)=(ProgramInputId{interpreter_id:101,symbol_id:hash_str("input")},ProgramInputId{interpreter_id:202,symbol_id:hash_str("input")});let root=snapshot(&p,p.interpreter().id);let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:b,value:f64_value(20.)},ProgramInputUpdate{input:a,value:f64_value(10.)}]).unwrap();assert_eq!(o.updated_count,2);assert_eq!(o.interpreter_turns.iter().map(|x|x.interpreter_id).collect::<Vec<_>>(),vec![101,202]);assert!(!o.interpreter_turns[0].dirty_cells.is_empty());assert!(!o.interpreter_turns[1].dirty_cells.is_empty());assert_ne!(o.interpreter_turns[0].dirty_cells,o.interpreter_turns[1].dirty_cells);assert_eq!((value(&p,101,"a"),value(&p,101,"middle"),value(&p,101,"b")),(10.,11.,2.));assert!(pending(&p,101));assert_eq!(value(&p,202,"output"),21.);assert!(!pending(&p,202));assert!(!pending(&p,p.interpreter().id));assert_eq!(snapshot(&p,p.interpreter().id),root);p.advance_reactive_turn(101,&[]).unwrap();assert_eq!((value(&p,101,"b"),value(&p,101,"output"),value(&p,202,"output")),(11.,12.,21.));assert!(!pending(&p,101));assert!(!pending(&p,202));}
+  #[test] fn program_reactive_turn_orders_nested_interpreters_deterministically(){let mut p=MechProgram::new(MechProgramConfig::default());let mut c1=Interpreter::new_with_full_stdlib(101);let mut c2=Interpreter::new_with_full_stdlib(202);for(i,src) in [(&mut c1,"input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0"),(&mut c2,"input := 1.0\noutput := input + 1.0")]{i.interpret(&parser::parse(src).unwrap()).unwrap();}p.interpreter_mut().sub_interpreters.borrow_mut().insert(101,Ref::new(Box::new(c1)));p.interpreter_mut().sub_interpreters.borrow_mut().insert(202,Ref::new(Box::new(c2)));let(a,b)=(ProgramInputId{interpreter_id:101,symbol_id:hash_str("input")},ProgramInputId{interpreter_id:202,symbol_id:hash_str("input")});let root=snapshot(&p,p.interpreter().id);let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:b,value:f64_value(20.)},ProgramInputUpdate{input:a,value:f64_value(10.)}]).unwrap();assert_eq!(o.updated_count,2);assert_eq!(o.interpreter_turns.iter().map(|x|x.interpreter_id).collect::<Vec<_>>(),vec![101,202]);assert!(!o.interpreter_turns[0].dirty_cells.is_empty());assert!(!o.interpreter_turns[1].dirty_cells.is_empty());assert_ne!(o.interpreter_turns[0].dirty_cells,o.interpreter_turns[1].dirty_cells);assert_eq!((value(&p,101,"a"),value(&p,101,"middle"),value(&p,101,"b")),(10.,11.,2.));assert!(pending(&p,101));assert_eq!(value(&p,202,"output"),21.);assert!(!pending(&p,202));assert!(!pending(&p,p.interpreter().id));assert_eq!(snapshot(&p,p.interpreter().id),root);p.advance_reactive_turn(101,&[]).unwrap();assert_eq!((value(&p,101,"b"),value(&p,101,"output"),value(&p,202,"output")),(11.,12.,21.));assert!(!pending(&p,101));assert!(!pending(&p,202));}
   #[cfg(feature="compiler")] #[test] fn program_reactive_turn_decoded_plan_reuses_identity(){let mut source=MechProgram::new(MechProgramConfig::default());source.load_full_stdlib();source.run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\noutput").unwrap();let bytes=source.compile_bytecode().unwrap();let mut p=MechProgram::new(MechProgramConfig::default());p.load_full_stdlib();p.run_bytecode(&bytes).unwrap();let id=p.interpreter().id;let x=p.ensure_input(id,hash_str("input"),"input",f64_value(1.)).unwrap();let s=snapshot(&p,id);let(a,b)=(register_node_for_output(&p,id,cell(&p,id,"a")),register_node_for_output(&p,id,cell(&p,id,"b")));let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:x,value:f64_value(10.)}]).unwrap();assert_eq!(o.interpreter_turns[0].turn.register_commit.committed_nodes,vec![a]);assert_eq!(o.interpreter_turns[0].turn.after_commit.pending_register_nodes,vec![b]);let o=p.advance_reactive_turn(id,&[]).unwrap();assert_eq!(o.register_commit.committed_nodes,vec![b]);assert_eq!(value(&p,id,"output"),12.);assert!(!pending(&p,id));assert_eq!(snapshot(&p,id),s);}
+}
+
+#[cfg(all(
+  test,
+  feature = "program",
+  feature = "functions",
+  feature = "f64",
+  feature = "variable_define",
+))]
+mod retained_checkpoint_tests {
+  use super::*;
+  use mech_core::{MechRecord, MechTuple, Ref, ToMatrix};
+  use std::cell::RefCell;
+  use std::rc::Rc;
+
+  struct RestoreProbe {
+    output: Ref<f64>,
+    solve_count: Rc<RefCell<usize>>,
+  }
+
+  impl MechFunctionImpl for RestoreProbe {
+    fn solve(&self) {
+      *self.solve_count.borrow_mut() += 1;
+    }
+    fn out(&self) -> Value {
+      Value::F64(self.output.clone())
+    }
+    fn to_string(&self) -> String {
+      "RestoreProbe".into()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl mech_core::MechFunctionCompiler for RestoreProbe {
+    fn compile(&self, _context: &mut CompileCtx) -> MResult<mech_core::Register> {
+      Ok(0)
+    }
+  }
+
+  struct UnsupportedCheckpointFunction;
+
+  impl MechFunctionImpl for UnsupportedCheckpointFunction {
+    fn solve(&self) {}
+    fn out(&self) -> Value {
+      Value::Empty
+    }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Err(MechError::new(
+        mech_core::TransactionStateUnsupportedError {
+          function: self.to_string(),
+          reason: "opaque test state".into(),
+        },
+        None,
+      ))
+    }
+    fn to_string(&self) -> String {
+      "UnsupportedCheckpointFunction".into()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl mech_core::MechFunctionCompiler for UnsupportedCheckpointFunction {
+    fn compile(&self, _context: &mut CompileCtx) -> MResult<mech_core::Register> {
+      Ok(0)
+    }
+  }
+
+  fn scalar_cell(program: &MechProgram, name: &str) -> (ValRef, Ref<f64>) {
+    let outer = program
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(hash_str(name))
+      .expect("symbol");
+    let inner = match &*outer.borrow() {
+      Value::F64(value) => value.clone(),
+      other => panic!("expected f64 symbol, got {other:?}"),
+    };
+    (outer, inner)
+  }
+
+  fn activation_capture(
+    program: &MechProgram,
+    arm_index: usize,
+    capture_index: usize,
+  ) -> (ReactiveCellId, Value) {
+    let plan = program.interpreter().plan();
+    let registration = {
+      let registrations = plan.pattern_activation_registrations();
+      assert_eq!(registrations.len(), 1);
+      registrations[0].clone()
+    };
+    let arm = registration.arms.get(arm_index).expect("activation arm");
+    let capture = arm.captures.get(capture_index).expect("activation capture");
+    let capture_cell = capture.cell;
+    let capture_value = plan
+      .borrow()
+      .node(arm.gate_node)
+      .expect("activation gate")
+      .function
+      .reactive_output_values()
+      .into_iter()
+      .find(|value| value.reactive_root_cell_ids().contains(&capture_cell))
+      .expect("committed activation capture");
+    (capture_cell, capture_value)
+  }
+
+  fn tuple_f64_backing(tuple: &Ref<MechTuple>, index: usize) -> Ref<f64> {
+    let tuple = tuple.borrow();
+    match tuple.elements.get(index).map(|element| element.as_ref()) {
+      Some(Value::F64(backing)) => backing.clone(),
+      other => panic!("expected tuple f64 backing, got {other:?}"),
+    }
+  }
+
+  fn insert_interpreter_scalar(
+    interpreter: &Interpreter,
+    name: &str,
+    value: f64,
+  ) -> (ValRef, Ref<f64>) {
+    let id = hash_str(name);
+    let inner = Ref::new(value);
+    let outer = interpreter
+      .symbols()
+      .borrow_mut()
+      .insert(id, Value::F64(inner.clone()), true);
+    interpreter
+      .symbols()
+      .borrow()
+      .dictionary
+      .borrow_mut()
+      .insert(id, name.to_string());
+    interpreter
+      .dictionary()
+      .borrow_mut()
+      .insert(id, name.to_string());
+    (outer, inner)
+  }
+
+  fn interpreter_box_address(interpreter: &mech_interpreter::InterpreterRef) -> usize {
+    interpreter.borrow().as_ref() as *const Interpreter as usize
+  }
+
+  #[test]
+  fn program_checkpoint_restores_config_structure_values_and_identity() {
+    let mut program = MechProgram::new(MechProgramConfig {
+      name: "retained".into(),
+      environment: MechProgramEnvironment::default(),
+    });
+    program.run_string("x := 1.0\ny := x + 1.0").unwrap();
+
+    let symbols_addr = program.interpreter().symbols().addr();
+    let functions_addr = program.interpreter().functions().addr();
+    let original_plan = program.interpreter().plan();
+    let plan_addr = original_plan.0.addr();
+    let original_plan_len = original_plan.borrow().len();
+    let (x_outer, x_inner) = scalar_cell(&program, "x");
+    let x_outer_addr = x_outer.addr();
+    let x_inner_addr = x_inner.addr();
+    let checkpoint = program.checkpoint().unwrap();
+
+    program.config.name = "changed".into();
+    program.config.environment.rounds_per_step = 17;
+    *x_inner.borrow_mut() = 99.0;
+    program.run_string("temporary := x + 10.0").unwrap();
+    assert!(program.interpreter().plan_len() > original_plan_len);
+
+    program.restore(checkpoint).unwrap();
+
+    assert_eq!(program.config.name, "retained");
+    assert_eq!(program.config.environment.rounds_per_step, 10_000);
+    assert_eq!(program.interpreter().symbols().addr(), symbols_addr);
+    assert_eq!(program.interpreter().functions().addr(), functions_addr);
+    assert_eq!(program.interpreter().plan().0.addr(), plan_addr);
+    assert_eq!(program.interpreter().plan_len(), original_plan_len);
+    assert!(
+      program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .get(hash_str("temporary"))
+        .is_none()
+    );
+    let (restored_outer, restored_inner) = scalar_cell(&program, "x");
+    assert_eq!(restored_outer.addr(), x_outer_addr);
+    assert_eq!(restored_inner.addr(), x_inner_addr);
+    assert_eq!(*restored_inner.borrow(), 1.0);
+  }
+
+  #[test]
+  fn program_checkpoint_restores_activation_capture_identity_and_payload() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program
+      .run_string(
+        r#"
+event := (1.0, 2.0)
+~> event
+  | whole => {
+      selected := whole
+    }
+  | * => {
+      selected := (-1.0, -1.0)
+    }
+"#,
+      )
+      .unwrap();
+
+    let (capture_cell, capture_value) = activation_capture(&program, 0, 0);
+    let Value::Tuple(capture_outer) = capture_value else {
+      panic!("expected tuple activation capture")
+    };
+    let first_backing = tuple_f64_backing(&capture_outer, 0);
+    let second_backing = tuple_f64_backing(&capture_outer, 1);
+    let outer_addr = capture_outer.addr();
+    let first_backing_addr = first_backing.addr();
+    let second_backing_addr = second_backing.addr();
+    assert_eq!(capture_cell, ReactiveCellId::new(capture_outer.id()));
+    assert_eq!(*first_backing.borrow(), 1.0);
+    assert_eq!(*second_backing.borrow(), 2.0);
+    let checkpoint = program.checkpoint().unwrap();
+
+    *first_backing.borrow_mut() = 99.0;
+    *second_backing.borrow_mut() = 100.0;
+    *capture_outer.borrow_mut() = MechTuple::from_vec(vec![
+      Value::F64(Ref::new(101.0)),
+      Value::F64(Ref::new(102.0)),
+    ]);
+
+    program.restore(checkpoint).unwrap();
+
+    let (restored_cell, restored_value) = activation_capture(&program, 0, 0);
+    let Value::Tuple(restored_outer) = restored_value else {
+      panic!("expected restored tuple activation capture")
+    };
+    let restored_first = tuple_f64_backing(&restored_outer, 0);
+    let restored_second = tuple_f64_backing(&restored_outer, 1);
+    assert_eq!(restored_cell, capture_cell);
+    assert_eq!(restored_outer.addr(), outer_addr);
+    assert_eq!(restored_first.addr(), first_backing_addr);
+    assert_eq!(restored_second.addr(), second_backing_addr);
+    assert_eq!(*restored_first.borrow(), 1.0);
+    assert_eq!(*restored_second.borrow(), 2.0);
+  }
+
+  #[test]
+  fn program_checkpoint_restore_preflights_everything_before_mutation() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("x := 1.0").unwrap();
+    let (x_outer, x_inner) = scalar_cell(&program, "x");
+    let checkpoint = program.checkpoint().unwrap();
+
+    *x_inner.borrow_mut() = 42.0;
+    program.config.name = "still-mutated-on-error".into();
+    program.run_string("temporary := 2.0").unwrap();
+    let held_late_borrow = x_outer.borrow();
+
+    let error = program.restore(checkpoint.clone()).unwrap_err();
+    assert_eq!(error.kind_name(), "ValueStateBorrowConflict");
+    assert_eq!(program.config.name, "still-mutated-on-error");
+    assert_eq!(*x_inner.borrow(), 42.0);
+    assert!(
+      program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .get(hash_str("temporary"))
+        .is_some()
+    );
+
+    drop(held_late_borrow);
+    program.restore(checkpoint).unwrap();
+    assert_eq!(program.config.name, "program");
+    let (_, restored_inner) = scalar_cell(&program, "x");
+    assert_eq!(*restored_inner.borrow(), 1.0);
+    assert!(
+      program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .get(hash_str("temporary"))
+        .is_none()
+    );
+  }
+
+  #[test]
+  fn program_checkpoint_restores_removed_recursive_interpreters_with_identity() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let child_id = 101;
+    let grandchild_id = 202;
+
+    let child = Interpreter::new(child_id, 10_000);
+    let (child_outer, child_inner) =
+      insert_interpreter_scalar(&child, "child-value", 1.0);
+    let grandchild = Interpreter::new(grandchild_id, 10_000);
+    let (grandchild_outer, grandchild_inner) =
+      insert_interpreter_scalar(&grandchild, "grandchild-value", 2.0);
+    let grandchild_ref = Ref::new(Box::new(grandchild));
+    let grandchild_handle_addr = grandchild_ref.addr();
+    let grandchild_box_addr = interpreter_box_address(&grandchild_ref);
+    child
+      .sub_interpreters
+      .borrow_mut()
+      .insert(grandchild_id, grandchild_ref.clone());
+    let child_ref = Ref::new(Box::new(child));
+    let child_handle_addr = child_ref.addr();
+    let child_box_addr = interpreter_box_address(&child_ref);
+    program
+      .interpreter()
+      .sub_interpreters
+      .borrow_mut()
+      .insert(child_id, child_ref.clone());
+
+    let checkpoint = program.checkpoint().unwrap();
+
+    let removed_child = program
+      .interpreter()
+      .sub_interpreters
+      .borrow_mut()
+      .remove(&child_id)
+      .unwrap();
+    removed_child
+      .borrow()
+      .sub_interpreters
+      .borrow_mut()
+      .remove(&grandchild_id);
+    *child_inner.borrow_mut() = 10.0;
+    *grandchild_inner.borrow_mut() = 20.0;
+    program
+      .interpreter()
+      .sub_interpreters
+      .borrow_mut()
+      .insert(child_id, Ref::new(Box::new(Interpreter::new(child_id, 10_000))));
+    program
+      .interpreter()
+      .sub_interpreters
+      .borrow_mut()
+      .insert(303, Ref::new(Box::new(Interpreter::new(303, 10_000))));
+
+    program.restore(checkpoint).unwrap();
+
+    let restored_child = program
+      .interpreter()
+      .sub_interpreters
+      .borrow()
+      .get(&child_id)
+      .unwrap()
+      .clone();
+    assert_eq!(program.interpreter().sub_interpreters.borrow().len(), 1);
+    assert_eq!(restored_child.addr(), child_handle_addr);
+    assert_eq!(interpreter_box_address(&restored_child), child_box_addr);
+    assert_eq!(child_outer.addr(), restored_child.borrow().symbols().borrow().get(hash_str("child-value")).unwrap().addr());
+    assert_eq!(*child_inner.borrow(), 1.0);
+
+    let restored_grandchild = restored_child
+      .borrow()
+      .sub_interpreters
+      .borrow()
+      .get(&grandchild_id)
+      .unwrap()
+      .clone();
+    assert_eq!(restored_grandchild.addr(), grandchild_handle_addr);
+    assert_eq!(
+      interpreter_box_address(&restored_grandchild),
+      grandchild_box_addr,
+    );
+    assert_eq!(
+      grandchild_outer.addr(),
+      restored_grandchild
+        .borrow()
+        .symbols()
+        .borrow()
+        .get(hash_str("grandchild-value"))
+        .unwrap()
+        .addr(),
+    );
+    assert_eq!(*grandchild_inner.borrow(), 2.0);
+  }
+
+  #[test]
+  fn program_restore_does_not_execute_functions_and_preserves_output_identity() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let output = Ref::new(1.0);
+    let solve_count = Rc::new(RefCell::new(0));
+    program.interpreter().plan().add_function(Box::new(RestoreProbe {
+      output: output.clone(),
+      solve_count: solve_count.clone(),
+    }));
+    let function_address = {
+      let plan = program.interpreter().plan();
+      let plan = plan.borrow();
+      plan.nodes[0].function.as_ref() as *const dyn MechFunction as *const () as usize
+    };
+    let checkpoint = program.checkpoint().unwrap();
+    *output.borrow_mut() = 99.0;
+
+    program.restore(checkpoint).unwrap();
+
+    assert_eq!(*solve_count.borrow(), 0);
+    assert_eq!(*output.borrow(), 1.0);
+    let restored_function_address = {
+      let plan = program.interpreter().plan();
+      let plan = plan.borrow();
+      plan.nodes[0].function.as_ref() as *const dyn MechFunction as *const () as usize
+    };
+    assert_eq!(restored_function_address, function_address);
+  }
+
+  #[test]
+  fn unsupported_function_state_fails_checkpoint_creation_without_changes() {
+    let program = MechProgram::new(MechProgramConfig::default());
+    let plan = program.interpreter().plan();
+    plan.add_function(Box::new(UnsupportedCheckpointFunction));
+    let plan_len = plan.len();
+
+    let error = match program.checkpoint() {
+      Ok(_) => panic!("unsupported checkpoint unexpectedly succeeded"),
+      Err(error) => error,
+    };
+
+    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+    assert_eq!(program.interpreter().plan_len(), plan_len);
+  }
+
+  #[test]
+  fn program_checkpoint_restores_nested_container_and_matrix_topology() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let shared = Ref::new(1.0);
+    let matrix = <f64 as ToMatrix>::to_matrixd(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+    let record = Ref::new(MechRecord::new(vec![
+      ("shared", Value::F64(shared.clone())),
+      ("matrix", Value::MatrixF64(matrix.clone())),
+    ]));
+    let record_addr = record.addr();
+    let matrix_cells = Value::MatrixF64(matrix.clone()).reactive_cell_ids();
+    let record_outer = program
+      .interpreter()
+      .symbols()
+      .borrow_mut()
+      .insert(
+        hash_str("nested"),
+        Value::Record(record.clone()),
+        true,
+      );
+    let checkpoint = program.checkpoint().unwrap();
+
+    *shared.borrow_mut() = 10.0;
+    matrix.set(vec![10.0, 20.0, 30.0, 40.0]);
+    *record.borrow_mut() = MechRecord::new(vec![
+      ("replacement", Value::F64(Ref::new(99.0))),
+    ]);
+
+    program.restore(checkpoint).unwrap();
+
+    assert_eq!(record.addr(), record_addr);
+    assert_eq!(*shared.borrow(), 1.0);
+    assert_eq!(matrix.as_vec(), vec![1.0, 2.0, 3.0, 4.0]);
+    assert_eq!(
+      Value::MatrixF64(matrix.clone()).reactive_cell_ids(),
+      matrix_cells,
+    );
+    assert_eq!(record.borrow().cols, 2);
+    assert_eq!(
+      record_outer.borrow().reactive_cell_ids(),
+      Value::Record(record).reactive_cell_ids(),
+    );
+  }
+
+  #[test]
+  fn program_checkpoint_rejects_cross_program_restore_before_mutation() {
+    let source = MechProgram::new(MechProgramConfig {
+      name: "source".into(),
+      environment: MechProgramEnvironment::default(),
+    });
+    let checkpoint = source.checkpoint().unwrap();
+    let mut target = MechProgram::new(MechProgramConfig {
+      name: "target".into(),
+      environment: MechProgramEnvironment::default(),
+    });
+    let target_state_addr = target.interpreter().state.addr();
+
+    let error = target.restore(checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterCheckpointOwnerMismatch");
+    assert_eq!(target.config.name, "target");
+    assert_eq!(target.interpreter().state.addr(), target_state_addr);
+  }
 }
