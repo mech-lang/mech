@@ -2620,6 +2620,153 @@ fn direct_runtime_normal_import_is_not_dropped() {
   }
 }
 
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_namespace_executes_in_root_module() {
+  let root = setup_main_only_module(
+    "function-module-namespace",
+    "+> math\nresult := math/sin(0)\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let result = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap();
+
+  assert_f64(result, 0.0, "function module namespace import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_in_source_dependency_executes() {
+  let root = temp_root("function-module-dependency");
+  std::fs::write(
+    root.join("main.mec"),
+    "+> ./dep.mec\nanswer := dep/value\nanswer\n",
+  )
+  .unwrap();
+  std::fs::write(
+    root.join("dep.mec"),
+    "+> math\nvalue := math/cos(0)\n<+ value\n",
+  )
+  .unwrap();
+  let mut runtime = runtime_with_root(&root);
+
+  let result = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap();
+
+  assert_f64(result, 1.0, "function module import in source dependency");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_item_executes_in_root_module() {
+  let root = setup_main_only_module(
+    "function-module-item",
+    "+> math/sin\nresult := sin(0)\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let result = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap();
+
+  assert_f64(result, 0.0, "function module item import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_item_alias_executes_in_root_module() {
+  let root = setup_main_only_module(
+    "function-module-item-alias",
+    "+> s := math/sin\nresult := s(0)\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let result = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap();
+
+  assert_f64(result, 0.0, "function module item alias import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_wildcard_executes_in_root_module() {
+  let root = setup_main_only_module(
+    "function-module-wildcard",
+    "+> math/*\nresult := sin(0)\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let result = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap();
+
+  assert_f64(result, 0.0, "function module wildcard import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_requires_an_explicit_import() {
+  let root = setup_main_only_module(
+    "function-module-missing-import",
+    "result := math/sin(0)\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let error = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap_err();
+
+  assert_eq!(error.kind_name(), "MissingFunction");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_source_edge_takes_precedence() {
+  let root = setup_modules(
+    "+> math\nresult := math/tau\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let version = runtime
+    .resolve_and_store_module_source("main.mec", module_options())
+    .unwrap()
+    .unwrap();
+  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  assert_eq!(record.import_edges.len(), 1);
+
+  let result = runtime.run_module(version).unwrap();
+
+  assert_f64(result, 6.28318, "source module import precedence");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn function_module_import_duplicate_namespace_is_idempotent() {
+  let root = setup_main_only_module(
+    "function-module-duplicate",
+    "+> math\n+> math\nresult := math/sin(0)\nresult\n",
+  );
+  let mut runtime = runtime_with_root(&root);
+
+  let result = runtime
+    .resolve_and_run_root_module("main.mec", module_options())
+    .unwrap();
+
+  assert_f64(result, 0.0, "duplicate function module import");
+  std::fs::remove_dir_all(root).unwrap();
+}
+
 
 #[test]
 fn workspace_module_build_allows_linked_stdlib_namespace_import_without_source_file() {

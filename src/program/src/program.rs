@@ -319,6 +319,47 @@ impl MechProgram {
     mech_interpreter::load_stdlib(&mut self.interpreter.functions().borrow_mut());
   }
 
+  #[cfg(feature = "functions")]
+  pub fn load_function_module(&mut self, module: &str) -> MResult<()> {
+    mech_interpreter::load_module(
+      &mut self.interpreter.functions().borrow_mut(),
+      module,
+    )?;
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn import_function_module_item(&mut self, module: &str, item: &str) -> MResult<()> {
+    mech_interpreter::import_module_item(
+      &mut self.interpreter.functions().borrow_mut(),
+      module,
+      item,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn import_function_module_item_as(
+    &mut self,
+    module: &str,
+    item: &str,
+    alias: &str,
+  ) -> MResult<()> {
+    mech_interpreter::import_module_item_as(
+      &mut self.interpreter.functions().borrow_mut(),
+      module,
+      item,
+      alias,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn import_function_module_glob(&mut self, module: &str) -> MResult<()> {
+    mech_interpreter::import_module_glob(
+      &mut self.interpreter.functions().borrow_mut(),
+      module,
+    )
+  }
+
   pub fn register_native_function_compiler(
     &mut self,
     name: impl Into<String>,

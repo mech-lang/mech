@@ -542,6 +542,36 @@ mod tests {
     std::fs::remove_dir_all(root).unwrap();
   }
 
+  #[cfg(feature = "linked_stdlib")]
+  #[test]
+  fn mech_tests_execute_linked_module_imports() {
+    let root = temp_test_root("linked-module-import");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> math\nresult := math/sin(0)\nresult! := result == 0\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"files-passed\": 1"));
+    assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
   #[test]
   fn mech_tests_resolve_nested_dependencies_with_passing_invariants() {
     let root = temp_test_root("nested-pass");

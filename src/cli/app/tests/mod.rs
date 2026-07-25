@@ -305,6 +305,20 @@ mod build_input_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "linked_stdlib")]
+    #[test]
+    fn build_materializes_linked_function_module_imports_before_compiling() {
+        let root = temp_root("linked-function-module");
+        let main = root.join("main.mec");
+        let output = root.join("out");
+        std::fs::write(&main, "+> math\nresult := math/sin(0)\n").unwrap();
+
+        run_build(build_options(vec![main], output.clone())).unwrap();
+
+        assert!(output.join("output.mecb").metadata().unwrap().len() > 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     #[test]
     fn build_missing_dependency_preserves_error_and_creates_no_output() {
         let root = temp_root("missing");

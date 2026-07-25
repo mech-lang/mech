@@ -12,7 +12,7 @@
 // Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
 
 use super::*;
-use crate::{SourceDeclaration, SourceIndex};
+use crate::{SourceDeclaration, SourceImportDeclaration, SourceIndex};
 use crate::RuntimeResourceWritePreflightRequest;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -50,6 +50,104 @@ struct ProgramEnvironmentOverlayEntry {
   id: u64,
   previous_symbol: Option<ValRef>,
   previous_dictionary: Option<String>,
+}
+
+fn imports_for_scope<'a>(
+  record: &'a ModuleVersionRecord,
+  scope: &SourceScope,
+) -> &'a [SourceImportDeclaration] {
+  if let Some(metadata) = record.scopes.iter().find(|metadata| &metadata.scope == scope) {
+    return metadata.imports.as_slice();
+  }
+
+  if matches!(scope, SourceScope::Program) {
+    return record.imports.as_slice();
+  }
+
+  &[]
+}
+
+fn import_has_source_edge(
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+  import: &SourceImportDeclaration,
+) -> bool {
+  record
+    .import_edges
+    .iter()
+    .any(|edge| &edge.scope == scope && &edge.import == import)
+}
+
+fn materialize_function_imports_for_scope(
+  program: &mut MechProgram,
+  record: &ModuleVersionRecord,
+  scope: &SourceScope,
+) -> MResult<()> {
+  for import in imports_for_scope(record, scope) {
+    if matches!(import.alias, Some(SourceImportAlias::Context(_))) {
+      continue;
+    }
+
+    if import_has_source_edge(record, scope, import) {
+      continue;
+    }
+
+    let module = import.module.as_deref().ok_or_else(|| {
+      MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "materialize_function_import",
+          reason: format!(
+            "non-source import `{}` is missing module metadata",
+            import.specifier
+          ),
+        },
+        None,
+      )
+    })?;
+
+    match &import.kind {
+      SourceImportKind::Namespace => program.load_function_module(module)?,
+      SourceImportKind::Single { .. } => {
+        let item = import.item.as_deref().ok_or_else(|| {
+          MechError::new(
+            RuntimeInvalidOperationError {
+              operation: "materialize_function_import",
+              reason: format!(
+                "item import `{}` is missing item metadata",
+                import.specifier
+              ),
+            },
+            None,
+          )
+        })?;
+
+        match &import.alias {
+          Some(SourceImportAlias::Value(alias)) => {
+            program.import_function_module_item_as(module, item, alias.as_str())?;
+          }
+          Some(SourceImportAlias::Context(_)) => {
+            unreachable!("context imports were filtered above")
+          }
+          None => program.import_function_module_item(module, item)?,
+        }
+      }
+      SourceImportKind::Wildcard => program.import_function_module_glob(module)?,
+      SourceImportKind::DependencyOnly => {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "materialize_function_import",
+            reason: format!(
+              "required source dependency `{}` has no module import edge",
+              import.specifier
+            ),
+          },
+          None,
+        ));
+      }
+    }
+  }
+
+  Ok(())
 }
 
 impl ProgramEnvironmentOverlay {
@@ -3667,6 +3765,8 @@ impl MechRuntime {
       },
     });
 
+    materialize_function_imports_for_scope(&mut module_program, &prepared.record, scope)?;
+
     {
       let symbols = module_program.interpreter_mut().symbols();
       let mut symbols_brrw = symbols.borrow_mut();
@@ -3771,6 +3871,7 @@ impl MechRuntime {
     );
 
     let result = (|| -> MResult<Value> {
+      materialize_function_imports_for_scope(&mut root_program, &prepared.record, scope)?;
       let overlay = ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
       let live_state_before = self.live_state_snapshot();
 
