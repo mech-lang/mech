@@ -9,6 +9,26 @@
 use super::*;
 
 #[derive(Debug, Clone)]
+pub struct RuntimeCapabilityGrantRollbackFailed {
+  pub capability: CapabilityId,
+  pub rollback_failures: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeCapabilityGrantRollbackFailed {
+  fn name(&self) -> &str {
+    "RuntimeCapabilityGrantRollbackFailed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "capability grant {} failed and compensation was incomplete: {}",
+      self.capability,
+      self.rollback_failures.join("; "),
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct RuntimeModuleDependencyCycleError {
   pub cycle: Vec<String>,
 }
