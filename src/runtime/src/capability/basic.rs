@@ -261,7 +261,12 @@ impl Capability for BasicCapability {
       return Ok(CapabilityDecision::deny("capability is local-only"));
     }
 
-    if let (Some(max), Some(actual)) = (self.constraints.max_bytes, request.context.bytes) {
+    if let Some(max) = self.constraints.max_bytes {
+      let Some(actual) = request.context.bytes else {
+        return Ok(CapabilityDecision::deny(
+          "byte limit requires request byte count",
+        ));
+      };
       if actual > max {
         return Ok(CapabilityDecision::deny(format!(
           "byte limit exceeded: max {}, actual {}",
@@ -270,7 +275,12 @@ impl Capability for BasicCapability {
       }
     }
 
-    if let (Some(max), Some(actual)) = (self.constraints.max_items, request.context.items) {
+    if let Some(max) = self.constraints.max_items {
+      let Some(actual) = request.context.items else {
+        return Ok(CapabilityDecision::deny(
+          "item limit requires request item count",
+        ));
+      };
       if actual > max {
         return Ok(CapabilityDecision::deny(format!(
           "item limit exceeded: max {}, actual {}",
@@ -279,9 +289,12 @@ impl Capability for BasicCapability {
       }
     }
 
-    if let (Some(max), Some(actual)) =
-      (self.constraints.max_duration_ms, request.context.duration_ms)
-    {
+    if let Some(max) = self.constraints.max_duration_ms {
+      let Some(actual) = request.context.duration_ms else {
+        return Ok(CapabilityDecision::deny(
+          "duration limit requires request duration",
+        ));
+      };
       if actual > max {
         return Ok(CapabilityDecision::deny(format!(
           "duration limit exceeded: max {}ms, actual {}ms",

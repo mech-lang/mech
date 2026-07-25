@@ -4616,6 +4616,7 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
   let version = runtime
     .store_resolved_module_source(
       ResolvedSource::new("main.mec", "memory://main.mec", MechSourceCode::Tree(tree))
+        .with_kind(SourceKind::Mech)
         .with_imports(index.all_imports())
         .with_exports(index.all_exports())
         .with_contexts(index.all_contexts())

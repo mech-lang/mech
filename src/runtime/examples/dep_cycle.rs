@@ -7,6 +7,7 @@ use mech_runtime::{
   ResolvedSource,
   RuntimeBuilder,
   ModuleBuildOptions,
+  SourceKind,
   SourceRequest,
   SourceResolver,
 };
@@ -18,20 +19,19 @@ struct CycleSourceResolver {
 
 impl CycleSourceResolver {
   fn new() -> Self {
-    let mut a = ResolvedSource::new(
+    let a = ResolvedSource::new(
       "a",
       "memory://cycle/a.mec",
-      MechSourceCode::String("a := 1\na".to_string()),
-    );
+      MechSourceCode::String("+> b.mec\na := 1\na".to_string()),
+    )
+    .with_kind(SourceKind::Mech);
 
-    let mut b = ResolvedSource::new(
+    let b = ResolvedSource::new(
       "b",
       "memory://cycle/b.mec",
-      MechSourceCode::String("b := 2\nb".to_string()),
-    );
-
-    a.dependencies.push(SourceRequest::new("b.mec"));
-    b.dependencies.push(SourceRequest::new("a.mec"));
+      MechSourceCode::String("+> a.mec\nb := 2\nb".to_string()),
+    )
+    .with_kind(SourceKind::Mech);
 
     let mut sources = HashMap::new();
     sources.insert("a.mec".to_string(), a);

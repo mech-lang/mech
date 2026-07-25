@@ -375,7 +375,7 @@ impl ResolvedSource {
   }
 
   pub fn is_executable_mech_source(&self) -> bool {
-    matches!(
+    self.kind.is_executable_mech() && matches!(
       self.source,
       MechSourceCode::String(_)
         | MechSourceCode::Tree(_)
@@ -540,8 +540,20 @@ mod tests {
       "main",
       "memory:main",
       MechSourceCode::String("x := 1".to_string()),
-    );
+    )
+    .with_kind(SourceKind::Mech);
 
     assert!(source.is_executable_mech_source());
+  }
+
+  #[test]
+  fn resolved_source_default_kind_is_not_executable() {
+    let source = ResolvedSource::new(
+      "main",
+      "memory:main",
+      MechSourceCode::String("x := 1".to_string()),
+    );
+
+    assert!(!source.is_executable_mech_source());
   }
 }

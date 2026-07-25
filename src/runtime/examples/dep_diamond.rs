@@ -8,6 +8,7 @@ use mech_runtime::{
   ResolvedSource,
   RuntimeBuilder,
   ModuleBuildOptions,
+  SourceKind,
   SourceRequest,
   SourceResolver,
 };
@@ -40,56 +41,56 @@ impl DiamondSourceResolver {
   }
 
   fn root_source() -> ResolvedSource {
-    let mut source = ResolvedSource::new(
+    let source = ResolvedSource::new(
       "root",
       "memory://diamond/root.mec",
       MechSourceCode::String(
         r#"
+          +> a.mec
+          +> b.mec
           root := 1
           root
         "#
         .to_string(),
       ),
-    );
-
-    source.dependencies.push(SourceRequest::new("a.mec"));
-    source.dependencies.push(SourceRequest::new("b.mec"));
+    )
+    .with_kind(SourceKind::Mech);
 
     source
   }
 
   fn a_source() -> ResolvedSource {
-    let mut source = ResolvedSource::new(
+    let source = ResolvedSource::new(
       "a",
       "memory://diamond/a.mec",
       MechSourceCode::String(
         r#"
+          +> shared.mec
           a := 10
           a
         "#
         .to_string(),
       ),
-    );
-
-    source.dependencies.push(SourceRequest::new("shared.mec"));
+    )
+    .with_kind(SourceKind::Mech);
 
     source
   }
 
   fn b_source() -> ResolvedSource {
-    let mut source = ResolvedSource::new(
+    let source = ResolvedSource::new(
       "b",
       "memory://diamond/b.mec",
       MechSourceCode::String(
         r#"
+          +> shared.mec
           b := 20
           b
         "#
         .to_string(),
       ),
-    );
-
-    source.dependencies.push(SourceRequest::new("shared.mec"));
+    )
+    .with_kind(SourceKind::Mech);
 
     source
   }
@@ -110,6 +111,7 @@ impl DiamondSourceResolver {
         ),
       ),
     )
+    .with_kind(SourceKind::Mech)
   }
 }
 
