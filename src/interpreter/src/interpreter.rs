@@ -26,8 +26,11 @@ pub struct RuntimeContextBinding {
   pub base_uri: String,
 }
 
+pub type InterpreterRef = Ref<Box<Interpreter>>;
+
 pub struct Interpreter {
   pub id: u64,
+  checkpoint_owner: Rc<()>,
   pub profile: bool,
   pub max_steps: usize,
   #[cfg(feature = "trace")]
@@ -63,13 +66,887 @@ pub struct Interpreter {
   pub user_state_machines: Ref<HashMap<u64, FsmImplementation>>,
   #[cfg(feature = "state_machines")]
   pub user_state_machine_specs: Ref<HashMap<u64, FsmSpecification>>,
-  pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
+  pub sub_interpreters: Ref<HashMap<u64, InterpreterRef>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterCheckpointUnsupportedCompilerContext {
+  pub interpreter_id: u64,
+}
+
+impl MechErrorKind for InterpreterCheckpointUnsupportedCompilerContext {
+  fn name(&self) -> &str {
+    "InterpreterCheckpointUnsupportedCompilerContext"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Interpreter {} has a retained compiler context that cannot be checkpointed safely.",
+      self.interpreter_id,
+    )
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterCheckpointBorrowConflict {
+  pub phase: &'static str,
+  pub interpreter_id: u64,
+  pub type_name: &'static str,
+  pub address: usize,
+}
+
+impl MechErrorKind for InterpreterCheckpointBorrowConflict {
+  fn name(&self) -> &str {
+    "InterpreterCheckpointBorrowConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Cannot borrow {} checkpoint target at 0x{:x} for interpreter {} during {}.",
+      self.type_name,
+      self.address,
+      self.interpreter_id,
+      self.phase,
+    )
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterCheckpointHierarchyAlias {
+  pub interpreter_id: u64,
+  pub address: usize,
+}
+
+impl MechErrorKind for InterpreterCheckpointHierarchyAlias {
+  fn name(&self) -> &str {
+    "InterpreterCheckpointHierarchyAlias"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Interpreter {} contains a repeated or cyclic child handle at 0x{:x}.",
+      self.interpreter_id,
+      self.address,
+    )
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterCheckpointOwnerMismatch {
+  pub interpreter_id: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterCheckpointChildKeyMismatch {
+  pub parent_id: u64,
+  pub key: u64,
+  pub child_id: u64,
+}
+
+impl MechErrorKind for InterpreterCheckpointChildKeyMismatch {
+  fn name(&self) -> &str {
+    "InterpreterCheckpointChildKeyMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Interpreter {} stores child {} under mismatched key {}.",
+      self.parent_id,
+      self.child_id,
+      self.key,
+    )
+  }
+}
+
+impl MechErrorKind for InterpreterCheckpointOwnerMismatch {
+  fn name(&self) -> &str {
+    "InterpreterCheckpointOwnerMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "The checkpoint belongs to a different interpreter than interpreter {}.",
+      self.interpreter_id,
+    )
+  }
+}
+
+fn checkpoint_borrow_error<T: 'static>(
+  phase: &'static str,
+  interpreter_id: u64,
+  target: &Ref<T>,
+) -> MechError {
+  MechError::new(
+    InterpreterCheckpointBorrowConflict {
+      phase,
+      interpreter_id,
+      type_name: core::any::type_name::<T>(),
+      address: target.addr(),
+    },
+    None,
+  )
+  .with_compiler_loc()
+}
+
+fn checkpoint_clone_ref<T: Clone + 'static>(
+  target: &Ref<T>,
+  interpreter_id: u64,
+) -> MResult<T> {
+  target
+    .try_borrow()
+    .map(|value| value.clone())
+    .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter_id, target))
+}
+
+fn checkpoint_preflight_ref<T: 'static>(
+  target: &Ref<T>,
+  interpreter_id: u64,
+) -> MResult<()> {
+  target
+    .try_borrow_mut()
+    .map(|_| ())
+    .map_err(|_| checkpoint_borrow_error("checkpoint-restore", interpreter_id, target))
+}
+
+#[cfg(feature = "functions")]
+fn checkpoint_preflight_plan_capture(
+  plan: &Plan,
+  interpreter_id: u64,
+) -> MResult<()> {
+  plan
+    .0
+    .try_borrow()
+    .map(|_| ())
+    .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter_id, &plan.0))?;
+  plan
+    .1
+    .try_borrow()
+    .map(|_| ())
+    .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter_id, &plan.1))?;
+  plan.validate_checkpoint_invariants()
+}
+
+struct RefPayloadCheckpoint<T: Clone + 'static> {
+  target: Ref<T>,
+  payload: T,
+}
+
+impl<T: Clone + 'static> RefPayloadCheckpoint<T> {
+  fn capture(target: &Ref<T>, interpreter_id: u64) -> MResult<Self> {
+    Ok(Self {
+      target: target.clone(),
+      payload: checkpoint_clone_ref(target, interpreter_id)?,
+    })
+  }
+
+  fn preflight(&self, interpreter_id: u64) -> MResult<()> {
+    checkpoint_preflight_ref(&self.target, interpreter_id)
+  }
+
+  fn apply(&self) {
+    *self.target.borrow_mut() = self.payload.clone();
+  }
+}
+
+#[cfg(feature = "symbol_table")]
+struct SymbolTableCellCheckpoint {
+  target: SymbolTableRef,
+  snapshot: SymbolTableSnapshot,
+}
+
+#[cfg(feature = "symbol_table")]
+impl SymbolTableCellCheckpoint {
+  fn capture(
+    target: &SymbolTableRef,
+    interpreter_id: u64,
+    journal: &mut ValueStateJournal,
+  ) -> MResult<Self> {
+    let snapshot = {
+      let table = target
+        .try_borrow()
+        .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter_id, target))?;
+      table
+        .dictionary
+        .try_borrow()
+        .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter_id, &table.dictionary))?;
+      let snapshot = table.snapshot();
+      for value in table.symbols.values() {
+        journal.capture_val_ref(value)?;
+      }
+      for value in table.mutable_variables.values() {
+        journal.capture_val_ref(value)?;
+      }
+      snapshot
+    };
+    Ok(Self {
+      target: target.clone(),
+      snapshot,
+    })
+  }
+
+  fn preflight(&self, interpreter_id: u64) -> MResult<()> {
+    checkpoint_preflight_ref(&self.target, interpreter_id)?;
+    let table = self
+      .target
+      .try_borrow()
+      .map_err(|_| checkpoint_borrow_error("checkpoint-restore", interpreter_id, &self.target))?;
+    table.preflight_restore(&self.snapshot)
+  }
+
+  fn apply(&self) {
+    self.target.borrow_mut().apply_restore(&self.snapshot);
+  }
+}
+
+#[cfg(feature = "functions")]
+struct FrameCellCheckpoint {
+  locals: SymbolTableCellCheckpoint,
+  plan: Plan,
+  plan_checkpoint: PlanCheckpoint,
+}
+
+#[cfg(feature = "functions")]
+impl FrameCellCheckpoint {
+  fn capture(
+    frame: &Frame,
+    interpreter_id: u64,
+    journal: &mut ValueStateJournal,
+  ) -> MResult<Self> {
+    let plan = frame.checkpoint_plan();
+    checkpoint_preflight_plan_capture(&plan, interpreter_id)?;
+    for value in plan.transaction_state_values()? {
+      journal.capture_value(&value)?;
+    }
+    if let Some(value) = frame.checkpoint_out() {
+      journal.capture_value(&value)?;
+    }
+    Ok(Self {
+      locals: SymbolTableCellCheckpoint::capture(
+        &frame.checkpoint_locals(),
+        interpreter_id,
+        journal,
+      )?,
+      plan_checkpoint: plan.checkpoint(),
+      plan,
+    })
+  }
+
+  fn preflight(&self, interpreter_id: u64) -> MResult<()> {
+    self.locals.preflight(interpreter_id)?;
+    self.plan.preflight_rollback(&self.plan_checkpoint)
+  }
+
+  fn apply_structure(&self) {
+    self.locals.apply();
+    self.plan.apply_rollback_structure(&self.plan_checkpoint);
+  }
+
+  fn rebuild_checkpoint_indexes(&self) {
+    self.plan.rebuild_checkpoint_indexes();
+    self
+      .plan
+      .validate_checkpoint_invariants()
+      .expect("frame checkpoint preflight guarantees restored plan invariants");
+  }
+}
+
+struct ProgramStateCheckpoint {
+  target: Ref<ProgramState>,
+  #[cfg(feature = "symbol_table")]
+  symbol_table: SymbolTableCellCheckpoint,
+  #[cfg(feature = "symbol_table")]
+  environment: Option<SymbolTableCellCheckpoint>,
+  #[cfg(feature = "functions")]
+  functions: FunctionsRef,
+  #[cfg(feature = "functions")]
+  functions_snapshot: FunctionsSnapshot,
+  #[cfg(feature = "functions")]
+  plan: Plan,
+  #[cfg(feature = "functions")]
+  plan_checkpoint: PlanCheckpoint,
+  kinds: KindTable,
+  #[cfg(feature = "enum")]
+  enums: EnumTable,
+  #[cfg(feature = "enum")]
+  enum_dictionaries: Vec<RefPayloadCheckpoint<Dictionary>>,
+  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+  invariants: InvariantTable,
+  #[cfg(feature = "invariant_define")]
+  invariant_violations: Vec<InvariantViolation>,
+  #[cfg(feature = "invariant_define")]
+  invariant_expressions: InvariantExpressionTable,
+  #[cfg(feature = "invariant_define")]
+  invariant_evaluations: InvariantEvaluationTable,
+  dictionary: RefPayloadCheckpoint<Dictionary>,
+}
+
+impl ProgramStateCheckpoint {
+  fn capture(
+    target: &Ref<ProgramState>,
+    interpreter_id: u64,
+    journal: &mut ValueStateJournal,
+  ) -> MResult<Self> {
+    let state = target
+      .try_borrow()
+      .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter_id, target))?;
+
+    #[cfg(feature = "symbol_table")]
+    let symbol_table = SymbolTableCellCheckpoint::capture(
+      &state.symbol_table,
+      interpreter_id,
+      journal,
+    )?;
+    #[cfg(feature = "symbol_table")]
+    let environment = match &state.environment {
+      Some(environment) => Some(SymbolTableCellCheckpoint::capture(
+        environment,
+        interpreter_id,
+        journal,
+      )?),
+      None => None,
+    };
+
+    #[cfg(feature = "functions")]
+    let functions = state.functions.clone();
+    #[cfg(feature = "functions")]
+    let functions_snapshot = FunctionsSnapshot::capture(&functions)?;
+    #[cfg(feature = "functions")]
+    for value in functions_snapshot.transaction_state_values()? {
+      journal.capture_value(&value)?;
+    }
+
+    #[cfg(feature = "functions")]
+    let plan = state.plan.clone();
+    #[cfg(feature = "functions")]
+    checkpoint_preflight_plan_capture(&plan, interpreter_id)?;
+    #[cfg(feature = "functions")]
+    for value in plan.transaction_state_values()? {
+      journal.capture_value(&value)?;
+    }
+    #[cfg(feature = "functions")]
+    let plan_checkpoint = plan.checkpoint();
+
+    #[cfg(feature = "enum")]
+    let enums = state.enums.clone();
+    #[cfg(feature = "enum")]
+    let mut enum_dictionaries = Vec::new();
+    #[cfg(feature = "enum")]
+    for enum_value in enums.values() {
+      enum_dictionaries.push(RefPayloadCheckpoint::capture(
+        &enum_value.names,
+        interpreter_id,
+      )?);
+      for (_, payload) in &enum_value.variants {
+        if let Some(payload) = payload {
+          journal.capture_value(payload)?;
+        }
+      }
+    }
+
+    #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+    for (_, value) in state.invariants.values() {
+      journal.capture_val_ref(value)?;
+    }
+
+    Ok(Self {
+      target: target.clone(),
+      #[cfg(feature = "symbol_table")]
+      symbol_table,
+      #[cfg(feature = "symbol_table")]
+      environment,
+      #[cfg(feature = "functions")]
+      functions,
+      #[cfg(feature = "functions")]
+      functions_snapshot,
+      #[cfg(feature = "functions")]
+      plan,
+      #[cfg(feature = "functions")]
+      plan_checkpoint,
+      kinds: state.kinds.clone(),
+      #[cfg(feature = "enum")]
+      enums,
+      #[cfg(feature = "enum")]
+      enum_dictionaries,
+      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+      invariants: state.invariants.clone(),
+      #[cfg(feature = "invariant_define")]
+      invariant_violations: state.invariant_violations.clone(),
+      #[cfg(feature = "invariant_define")]
+      invariant_expressions: state.invariant_expressions.clone(),
+      #[cfg(feature = "invariant_define")]
+      invariant_evaluations: state.invariant_evaluations.clone(),
+      dictionary: RefPayloadCheckpoint::capture(&state.dictionary, interpreter_id)?,
+    })
+  }
+
+  fn preflight(&self, interpreter_id: u64) -> MResult<()> {
+    checkpoint_preflight_ref(&self.target, interpreter_id)?;
+    #[cfg(feature = "symbol_table")]
+    self.symbol_table.preflight(interpreter_id)?;
+    #[cfg(feature = "symbol_table")]
+    if let Some(environment) = &self.environment {
+      environment.preflight(interpreter_id)?;
+    }
+    #[cfg(feature = "functions")]
+    self.functions_snapshot.preflight_restore()?;
+    #[cfg(feature = "functions")]
+    self.plan.preflight_rollback(&self.plan_checkpoint)?;
+    #[cfg(feature = "enum")]
+    for dictionary in &self.enum_dictionaries {
+      dictionary.preflight(interpreter_id)?;
+    }
+    self.dictionary.preflight(interpreter_id)
+  }
+
+  fn apply_structure(&self) {
+    {
+      let mut state = self.target.borrow_mut();
+      #[cfg(feature = "symbol_table")]
+      {
+        state.symbol_table = self.symbol_table.target.clone();
+        state.environment = self
+          .environment
+          .as_ref()
+          .map(|environment| environment.target.clone());
+      }
+      #[cfg(feature = "functions")]
+      {
+        state.functions = self.functions.clone();
+        state.plan = self.plan.clone();
+      }
+      state.kinds = self.kinds.clone();
+      #[cfg(feature = "enum")]
+      {
+        state.enums = self.enums.clone();
+      }
+      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
+      {
+        state.invariants = self.invariants.clone();
+      }
+      #[cfg(feature = "invariant_define")]
+      {
+        state.invariant_violations = self.invariant_violations.clone();
+        state.invariant_expressions = self.invariant_expressions.clone();
+        state.invariant_evaluations = self.invariant_evaluations.clone();
+      }
+      state.dictionary = self.dictionary.target.clone();
+    }
+
+    #[cfg(feature = "symbol_table")]
+    self.symbol_table.apply();
+    #[cfg(feature = "symbol_table")]
+    if let Some(environment) = &self.environment {
+      environment.apply();
+    }
+    #[cfg(feature = "functions")]
+    self.functions_snapshot.apply_restore_structure();
+    #[cfg(feature = "functions")]
+    self.plan.apply_rollback_structure(&self.plan_checkpoint);
+    #[cfg(feature = "enum")]
+    for dictionary in &self.enum_dictionaries {
+      dictionary.apply();
+    }
+    self.dictionary.apply();
+  }
+
+  #[cfg(feature = "functions")]
+  fn rebuild_checkpoint_indexes(&self, turn_state: &ReactiveTurnState) {
+    self.functions_snapshot.rebuild_checkpoint_indexes();
+    self.plan.rebuild_checkpoint_indexes();
+    self
+      .functions_snapshot
+      .validate_checkpoint_invariants()
+      .expect("function checkpoint preflight guarantees restored plan invariants");
+    self
+      .plan
+      .validate_checkpoint_invariants()
+      .expect("program checkpoint preflight guarantees restored plan invariants");
+    self
+      .plan
+      .validate_checkpoint_turn_state(turn_state)
+      .expect("program checkpoint preflight guarantees restored turn invariants");
+  }
+}
+
+struct ChildInterpreterCheckpoint {
+  target: InterpreterRef,
+  checkpoint: Box<InterpreterStructureCheckpoint>,
+}
+
+struct InterpreterStructureCheckpoint {
+  owner: Rc<()>,
+  id: u64,
+  profile: bool,
+  max_steps: usize,
+  ip: usize,
+  #[cfg(feature = "trace")]
+  trace: bool,
+  #[cfg(feature = "trace")]
+  trace_to_stdout: bool,
+  #[cfg(feature = "trace")]
+  trace_events: RefPayloadCheckpoint<Vec<TraceEvent>>,
+  state: ProgramStateCheckpoint,
+  #[cfg(feature = "functions")]
+  reactive_turn_state: ReactiveTurnState,
+  #[cfg(feature = "functions")]
+  persistent_user_function_plan_depth: RefPayloadCheckpoint<usize>,
+  deferred_expression_solve_depth: RefPayloadCheckpoint<usize>,
+  #[cfg(feature = "functions")]
+  stack: Vec<Frame>,
+  #[cfg(feature = "functions")]
+  frame_checkpoints: Vec<FrameCellCheckpoint>,
+  registers: Vec<Value>,
+  constants: Vec<Value>,
+  code: Vec<MechSourceCode>,
+  out: Value,
+  out_values: RefPayloadCheckpoint<HashMap<u64, Value>>,
+  #[cfg(feature = "subscript_formula")]
+  string_access_live_values: RefPayloadCheckpoint<std::collections::BTreeSet<usize>>,
+  #[cfg(feature = "subscript_formula")]
+  current_string_access_expression_live: RefPayloadCheckpoint<bool>,
+  inline_eval_counter: RefPayloadCheckpoint<u64>,
+  context_bindings: RefPayloadCheckpoint<HashMap<u64, RuntimeContextBinding>>,
+  module_manifests: RefPayloadCheckpoint<ModuleManifestCatalog>,
+  #[cfg(feature = "state_machines")]
+  user_state_machines: RefPayloadCheckpoint<HashMap<u64, FsmImplementation>>,
+  #[cfg(feature = "state_machines")]
+  user_state_machine_specs: RefPayloadCheckpoint<HashMap<u64, FsmSpecification>>,
+  sub_interpreters: Ref<HashMap<u64, InterpreterRef>>,
+  sub_interpreter_entries: HashMap<u64, InterpreterRef>,
+  children: Vec<ChildInterpreterCheckpoint>,
+}
+
+impl InterpreterStructureCheckpoint {
+  fn capture(
+    interpreter: &Interpreter,
+    journal: &mut ValueStateJournal,
+    seen_children: &mut Vec<InterpreterRef>,
+  ) -> MResult<Self> {
+    #[cfg(feature = "compiler")]
+    if interpreter.context.is_some() {
+      return Err(MechError::new(
+        InterpreterCheckpointUnsupportedCompilerContext {
+          interpreter_id: interpreter.id,
+        },
+        None,
+      )
+      .with_compiler_loc());
+    }
+
+    let state = ProgramStateCheckpoint::capture(
+      &interpreter.state,
+      interpreter.id,
+      journal,
+    )?;
+    #[cfg(feature = "functions")]
+    state
+      .plan
+      .validate_checkpoint_turn_state(&interpreter.reactive_turn_state)?;
+
+    for value in &interpreter.registers {
+      journal.capture_value(value)?;
+    }
+    for value in &interpreter.constants {
+      journal.capture_value(value)?;
+    }
+    journal.capture_value(&interpreter.out)?;
+
+    let out_values = RefPayloadCheckpoint::capture(
+      &interpreter.out_values,
+      interpreter.id,
+    )?;
+    for value in out_values.payload.values() {
+      journal.capture_value(value)?;
+    }
+
+    #[cfg(feature = "functions")]
+    let mut frame_checkpoints = Vec::with_capacity(interpreter.stack.len());
+    #[cfg(feature = "functions")]
+    for frame in &interpreter.stack {
+      frame_checkpoints.push(FrameCellCheckpoint::capture(
+        frame,
+        interpreter.id,
+        journal,
+      )?);
+    }
+
+    let sub_interpreter_entries = checkpoint_clone_ref(
+      &interpreter.sub_interpreters,
+      interpreter.id,
+    )?;
+    let mut children = Vec::with_capacity(sub_interpreter_entries.len());
+    for (child_id, child) in &sub_interpreter_entries {
+      if seen_children.iter().any(|seen| seen.same_handle(child)) {
+        return Err(MechError::new(
+          InterpreterCheckpointHierarchyAlias {
+            interpreter_id: interpreter.id,
+            address: child.addr(),
+          },
+          None,
+        )
+        .with_compiler_loc());
+      }
+      seen_children.push(child.clone());
+      let child_borrow = child
+        .try_borrow()
+        .map_err(|_| checkpoint_borrow_error("checkpoint-capture", interpreter.id, child))?;
+      if child_borrow.id != *child_id {
+        return Err(MechError::new(
+          InterpreterCheckpointChildKeyMismatch {
+            parent_id: interpreter.id,
+            key: *child_id,
+            child_id: child_borrow.id,
+          },
+          None,
+        )
+        .with_compiler_loc());
+      }
+      let checkpoint = Self::capture(
+        child_borrow.as_ref(),
+        journal,
+        seen_children,
+      )?;
+      children.push(ChildInterpreterCheckpoint {
+        target: child.clone(),
+        checkpoint: Box::new(checkpoint),
+      });
+    }
+
+    Ok(Self {
+      owner: interpreter.checkpoint_owner.clone(),
+      id: interpreter.id,
+      profile: interpreter.profile,
+      max_steps: interpreter.max_steps,
+      ip: interpreter.ip,
+      #[cfg(feature = "trace")]
+      trace: interpreter.trace,
+      #[cfg(feature = "trace")]
+      trace_to_stdout: interpreter.trace_to_stdout,
+      #[cfg(feature = "trace")]
+      trace_events: RefPayloadCheckpoint::capture(
+        &interpreter.trace_events,
+        interpreter.id,
+      )?,
+      state,
+      #[cfg(feature = "functions")]
+      reactive_turn_state: interpreter.reactive_turn_state.clone(),
+      #[cfg(feature = "functions")]
+      persistent_user_function_plan_depth: RefPayloadCheckpoint::capture(
+        &interpreter.persistent_user_function_plan_depth,
+        interpreter.id,
+      )?,
+      deferred_expression_solve_depth: RefPayloadCheckpoint::capture(
+        &interpreter.deferred_expression_solve_depth,
+        interpreter.id,
+      )?,
+      #[cfg(feature = "functions")]
+      stack: interpreter.stack.clone(),
+      #[cfg(feature = "functions")]
+      frame_checkpoints,
+      registers: interpreter.registers.clone(),
+      constants: interpreter.constants.clone(),
+      code: interpreter.code.clone(),
+      out: interpreter.out.clone(),
+      out_values,
+      #[cfg(feature = "subscript_formula")]
+      string_access_live_values: RefPayloadCheckpoint::capture(
+        &interpreter.string_access_live_values,
+        interpreter.id,
+      )?,
+      #[cfg(feature = "subscript_formula")]
+      current_string_access_expression_live: RefPayloadCheckpoint::capture(
+        &interpreter.current_string_access_expression_live,
+        interpreter.id,
+      )?,
+      inline_eval_counter: RefPayloadCheckpoint::capture(
+        &interpreter.inline_eval_counter,
+        interpreter.id,
+      )?,
+      context_bindings: RefPayloadCheckpoint::capture(
+        &interpreter.context_bindings,
+        interpreter.id,
+      )?,
+      module_manifests: RefPayloadCheckpoint::capture(
+        &interpreter.module_manifests,
+        interpreter.id,
+      )?,
+      #[cfg(feature = "state_machines")]
+      user_state_machines: RefPayloadCheckpoint::capture(
+        &interpreter.user_state_machines,
+        interpreter.id,
+      )?,
+      #[cfg(feature = "state_machines")]
+      user_state_machine_specs: RefPayloadCheckpoint::capture(
+        &interpreter.user_state_machine_specs,
+        interpreter.id,
+      )?,
+      sub_interpreters: interpreter.sub_interpreters.clone(),
+      sub_interpreter_entries,
+      children,
+    })
+  }
+
+  fn preflight(&self) -> MResult<()> {
+    self.state.preflight(self.id)?;
+    #[cfg(feature = "trace")]
+    self.trace_events.preflight(self.id)?;
+    #[cfg(feature = "functions")]
+    self.persistent_user_function_plan_depth.preflight(self.id)?;
+    self.deferred_expression_solve_depth.preflight(self.id)?;
+    self.out_values.preflight(self.id)?;
+    #[cfg(feature = "subscript_formula")]
+    self.string_access_live_values.preflight(self.id)?;
+    #[cfg(feature = "subscript_formula")]
+    self.current_string_access_expression_live.preflight(self.id)?;
+    self.inline_eval_counter.preflight(self.id)?;
+    self.context_bindings.preflight(self.id)?;
+    self.module_manifests.preflight(self.id)?;
+    #[cfg(feature = "state_machines")]
+    self.user_state_machines.preflight(self.id)?;
+    #[cfg(feature = "state_machines")]
+    self.user_state_machine_specs.preflight(self.id)?;
+    checkpoint_preflight_ref(&self.sub_interpreters, self.id)?;
+    #[cfg(feature = "functions")]
+    for frame in &self.frame_checkpoints {
+      frame.preflight(self.id)?;
+    }
+    for child in &self.children {
+      checkpoint_preflight_ref(&child.target, self.id)?;
+      let child_borrow = child
+        .target
+        .try_borrow()
+        .map_err(|_| checkpoint_borrow_error("checkpoint-restore", self.id, &child.target))?;
+      child.checkpoint.preflight_owner(child_borrow.as_ref())?;
+      child.checkpoint.preflight()?;
+    }
+    Ok(())
+  }
+
+  fn preflight_owner(&self, interpreter: &Interpreter) -> MResult<()> {
+    if Rc::ptr_eq(&self.owner, &interpreter.checkpoint_owner) {
+      Ok(())
+    } else {
+      Err(MechError::new(
+        InterpreterCheckpointOwnerMismatch {
+          interpreter_id: interpreter.id,
+        },
+        None,
+      )
+      .with_compiler_loc())
+    }
+  }
+
+  fn apply_structure(&self, interpreter: &mut Interpreter) {
+    interpreter.id = self.id;
+    interpreter.profile = self.profile;
+    interpreter.max_steps = self.max_steps;
+    interpreter.ip = self.ip;
+    #[cfg(feature = "trace")]
+    {
+      interpreter.trace = self.trace;
+      interpreter.trace_to_stdout = self.trace_to_stdout;
+      interpreter.trace_events = self.trace_events.target.clone();
+    }
+    interpreter.state = self.state.target.clone();
+    #[cfg(feature = "functions")]
+    {
+      interpreter.reactive_turn_state = self.reactive_turn_state.clone();
+      interpreter.persistent_user_function_plan_depth =
+        self.persistent_user_function_plan_depth.target.clone();
+      interpreter.stack = self.stack.clone();
+    }
+    interpreter.deferred_expression_solve_depth =
+      self.deferred_expression_solve_depth.target.clone();
+    interpreter.registers = self.registers.clone();
+    interpreter.constants = self.constants.clone();
+    #[cfg(feature = "compiler")]
+    {
+      interpreter.context = None;
+    }
+    interpreter.code = self.code.clone();
+    interpreter.out = self.out.clone();
+    interpreter.out_values = self.out_values.target.clone();
+    #[cfg(feature = "subscript_formula")]
+    {
+      interpreter.string_access_live_values = self.string_access_live_values.target.clone();
+      interpreter.current_string_access_expression_live =
+        self.current_string_access_expression_live.target.clone();
+    }
+    interpreter.inline_eval_counter = self.inline_eval_counter.target.clone();
+    interpreter.context_bindings = self.context_bindings.target.clone();
+    interpreter.module_manifests = self.module_manifests.target.clone();
+    #[cfg(feature = "state_machines")]
+    {
+      interpreter.user_state_machines = self.user_state_machines.target.clone();
+      interpreter.user_state_machine_specs = self.user_state_machine_specs.target.clone();
+    }
+    interpreter.sub_interpreters = self.sub_interpreters.clone();
+
+    self.state.apply_structure();
+    #[cfg(feature = "trace")]
+    self.trace_events.apply();
+    #[cfg(feature = "functions")]
+    self.persistent_user_function_plan_depth.apply();
+    self.deferred_expression_solve_depth.apply();
+    self.out_values.apply();
+    #[cfg(feature = "subscript_formula")]
+    self.string_access_live_values.apply();
+    #[cfg(feature = "subscript_formula")]
+    self.current_string_access_expression_live.apply();
+    self.inline_eval_counter.apply();
+    self.context_bindings.apply();
+    self.module_manifests.apply();
+    #[cfg(feature = "state_machines")]
+    self.user_state_machines.apply();
+    #[cfg(feature = "state_machines")]
+    self.user_state_machine_specs.apply();
+    #[cfg(feature = "functions")]
+    for frame in &self.frame_checkpoints {
+      frame.apply_structure();
+    }
+
+    *self.sub_interpreters.borrow_mut() = self.sub_interpreter_entries.clone();
+    for child in &self.children {
+      let mut child_borrow = child.target.borrow_mut();
+      child.checkpoint.apply_structure(child_borrow.as_mut());
+    }
+  }
+
+  fn rebuild_checkpoint_indexes(&self) {
+    #[cfg(feature = "functions")]
+    {
+      self
+        .state
+        .rebuild_checkpoint_indexes(&self.reactive_turn_state);
+      for frame in &self.frame_checkpoints {
+        frame.rebuild_checkpoint_indexes();
+      }
+    }
+    for child in &self.children {
+      child.checkpoint.rebuild_checkpoint_indexes();
+    }
+  }
+}
+
+struct InterpreterCheckpointData {
+  structure: InterpreterStructureCheckpoint,
+  journal: ValueStateJournal,
+}
+
+/// A process-local explicit savepoint for retained interpreter state.
+///
+/// This type is intentionally opaque and is not a serializable history record
+/// or a source of durable transaction identities.
+#[derive(Clone)]
+pub struct InterpreterCheckpoint {
+  data: Rc<InterpreterCheckpointData>,
 }
 
 impl Clone for Interpreter {
   fn clone(&self) -> Self {
     Self {
       id: self.id,
+      checkpoint_owner: Rc::new(()),
       ip: self.ip,
       profile: false,
       max_steps: self.max_steps,
@@ -111,6 +988,32 @@ impl Clone for Interpreter {
 }
 
 impl Interpreter {
+  pub fn checkpoint(&self) -> MResult<InterpreterCheckpoint> {
+    let mut journal = ValueStateJournal::new();
+    let mut seen_children = Vec::new();
+    let structure = InterpreterStructureCheckpoint::capture(
+      self,
+      &mut journal,
+      &mut seen_children,
+    )?;
+    Ok(InterpreterCheckpoint {
+      data: Rc::new(InterpreterCheckpointData {
+        structure,
+        journal,
+      }),
+    })
+  }
+
+  pub fn restore(&mut self, checkpoint: InterpreterCheckpoint) -> MResult<()> {
+    checkpoint.data.structure.preflight_owner(self)?;
+    checkpoint.data.structure.preflight()?;
+    checkpoint.data.journal.preflight_restore_before()?;
+    checkpoint.data.structure.apply_structure(self);
+    checkpoint.data.journal.apply_restore_before();
+    checkpoint.data.structure.rebuild_checkpoint_indexes();
+    Ok(())
+  }
+
   pub fn new(id: u64, max_steps: usize) -> Self {
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
@@ -133,6 +1036,7 @@ impl Interpreter {
     load_prelude(&mut state.functions.borrow_mut());
     Self {
       id,
+      checkpoint_owner: Rc::new(()),
       ip: 0,
       profile: false,
       max_steps, // Default maximum steps
@@ -260,7 +1164,9 @@ impl Interpreter {
 
   pub fn clear(&mut self) {
     let id = self.id;
+    let checkpoint_owner = self.checkpoint_owner.clone();
     *self = Interpreter::new(id, self.max_steps);
+    self.checkpoint_owner = checkpoint_owner;
   }
 
   pub fn set_trace_enabled(&mut self, enabled: bool) {
@@ -749,6 +1655,370 @@ fn register_bytecode_function(
   state.plan.register_function(function, &input_values)?;
 
   Ok(output)
+}
+
+#[cfg(all(
+  test,
+  feature = "functions",
+  feature = "symbol_table",
+  feature = "f64"
+))]
+mod checkpoint_tests {
+  use super::*;
+
+  fn f64_value(value: &Ref<f64>) -> Value {
+    Value::F64(value.clone())
+  }
+
+  fn install_scalar(
+    interpreter: &Interpreter,
+    name: &str,
+    value: f64,
+  ) -> (ValRef, Ref<f64>) {
+    let backing = Ref::new(value);
+    let id = hash_str(name);
+    let symbols = interpreter.symbols();
+    let cell = symbols
+      .borrow_mut()
+      .insert(id, f64_value(&backing), true);
+    symbols
+      .borrow()
+      .dictionary
+      .borrow_mut()
+      .insert(id, name.to_string());
+    (cell, backing)
+  }
+
+  fn child_box_address(child: &InterpreterRef) -> usize {
+    let child = child.borrow();
+    child.as_ref() as *const Interpreter as usize
+  }
+
+  #[test]
+  fn interpreter_checkpoint_restores_private_state_and_recursive_child_identity() {
+    let mut root = Interpreter::new(1, 100);
+    root.ip = 7;
+    root.profile = true;
+    let (symbol_cell, symbol_backing) = install_scalar(&root, "kept", 1.0);
+    let symbol_cell_address = symbol_cell.addr();
+    let symbol_backing_address = symbol_backing.addr();
+    let symbol_backing_identity = ReactiveCellId::new(symbol_backing.id());
+    root.registers = vec![f64_value(&symbol_backing)];
+    root.constants = vec![f64_value(&Ref::new(2.0))];
+    root.out = f64_value(&symbol_backing);
+    root.code.push(MechSourceCode::String("before".to_string()));
+    root
+      .out_values
+      .borrow_mut()
+      .insert(hash_str("out"), f64_value(&symbol_backing));
+    *root.inline_eval_counter.borrow_mut() = 4;
+    *root.persistent_user_function_plan_depth.borrow_mut() = 2;
+    *root.deferred_expression_solve_depth.borrow_mut() = 3;
+    let context_binding_id = hash_str("checkpoint-context");
+    root.context_bindings.borrow_mut().insert(
+      context_binding_id,
+      RuntimeContextBinding {
+        name: "checkpoint-context".to_string(),
+        base_uri: "test://checkpoint".to_string(),
+      },
+    );
+    let original_manifests = root.module_manifests.borrow().clone();
+    #[cfg(feature = "trace")]
+    {
+      root.trace = true;
+      root.trace_to_stdout = false;
+    }
+    #[cfg(feature = "state_machines")]
+    {
+      let name = internal_pattern_value_identifier("checkpoint-fsm");
+      root.user_state_machines.borrow_mut().insert(
+        hash_str("checkpoint-fsm"),
+        FsmImplementation {
+          name: name.clone(),
+          input: Vec::new(),
+          start: Pattern::Wildcard,
+          arms: Vec::new(),
+        },
+      );
+      root.user_state_machine_specs.borrow_mut().insert(
+        hash_str("checkpoint-fsm"),
+        FsmSpecification {
+          name,
+          input: Vec::new(),
+          output: None,
+          states: Vec::new(),
+        },
+      );
+    }
+    #[cfg(feature = "invariant_define")]
+    {
+      let invariant_id = hash_str("checkpoint-invariant");
+      let invariant_value = Ref::new(Value::Bool(Ref::new(true)));
+      let mut state = root.state.borrow_mut();
+      state
+        .invariants
+        .insert(invariant_id, ("checkpoint invariant".to_string(), invariant_value));
+      state
+        .invariant_expressions
+        .insert(invariant_id, "value == true".to_string());
+      state.invariant_evaluations.insert(
+        invariant_id,
+        InvariantEvaluation {
+          reason: "checkpoint reason".to_string(),
+          evaluated_kind: "bool".to_string(),
+          actual: "true".to_string(),
+          expected: "true".to_string(),
+        },
+      );
+      state.invariant_violations.push(InvariantViolation {
+        id: invariant_id,
+        error: MechError::new(
+          GenericError {
+            msg: "checkpoint violation".to_string(),
+          },
+          None,
+        ),
+      });
+    }
+
+    let state_address = root.state.addr();
+    let symbols_address = root.symbols().addr();
+    let symbol_dictionary_address = root.symbols().borrow().dictionary.addr();
+    let out_values_address = root.out_values.addr();
+    let inline_counter_address = root.inline_eval_counter.addr();
+    let context_bindings_address = root.context_bindings.addr();
+    let module_manifests_address = root.module_manifests.addr();
+    #[cfg(feature = "trace")]
+    let trace_events_address = root.trace_events.addr();
+    #[cfg(feature = "state_machines")]
+    let user_state_machines_address = root.user_state_machines.addr();
+    #[cfg(feature = "state_machines")]
+    let user_state_machine_specs_address = root.user_state_machine_specs.addr();
+    let sub_interpreters_address = root.sub_interpreters.addr();
+
+    let child_id = 2;
+    let grandchild_id = 3;
+    let mut child = Interpreter::new(child_id, 200);
+    child.ip = 8;
+    let (_child_cell, child_backing) = install_scalar(&child, "child", 20.0);
+    let mut grandchild = Interpreter::new(grandchild_id, 300);
+    grandchild.ip = 9;
+    let (_grandchild_cell, grandchild_backing) =
+      install_scalar(&grandchild, "grandchild", 30.0);
+    let grandchild_ref = Ref::new(Box::new(grandchild));
+    let grandchild_handle_address = grandchild_ref.addr();
+    let expected_grandchild_box_address = child_box_address(&grandchild_ref);
+    child
+      .sub_interpreters
+      .borrow_mut()
+      .insert(grandchild_id, grandchild_ref);
+    let child_ref = Ref::new(Box::new(child));
+    let child_handle_address = child_ref.addr();
+    let expected_child_box_address = child_box_address(&child_ref);
+    root
+      .sub_interpreters
+      .borrow_mut()
+      .insert(child_id, child_ref);
+
+    let checkpoint = root.checkpoint().unwrap();
+
+    root.id = 99;
+    root.ip = 99;
+    root.profile = false;
+    root.max_steps = 999;
+    root.registers.clear();
+    root.constants.clear();
+    root.code.push(MechSourceCode::String("after".to_string()));
+    root.out = Value::Empty;
+    root.state = Ref::new(ProgramState::new());
+    root.out_values = Ref::new(HashMap::new());
+    root.inline_eval_counter = Ref::new(99);
+    root.persistent_user_function_plan_depth = Ref::new(99);
+    root.deferred_expression_solve_depth = Ref::new(99);
+    root.context_bindings = Ref::new(HashMap::new());
+    root.module_manifests = Ref::new(ModuleManifestCatalog::new());
+    #[cfg(feature = "trace")]
+    {
+      root.trace = false;
+      root.trace_to_stdout = true;
+      root.trace_events = Ref::new(Vec::new());
+    }
+    #[cfg(feature = "state_machines")]
+    {
+      root.user_state_machines = Ref::new(HashMap::new());
+      root.user_state_machine_specs = Ref::new(HashMap::new());
+    }
+    *symbol_backing.borrow_mut() = 11.0;
+    *child_backing.borrow_mut() = 21.0;
+    *grandchild_backing.borrow_mut() = 31.0;
+
+    let removed_child = root
+      .sub_interpreters
+      .borrow_mut()
+      .remove(&child_id)
+      .unwrap();
+    {
+      let mut child = removed_child.borrow_mut();
+      child.id = 22;
+      child.ip = 88;
+      let removed_grandchild = child
+        .sub_interpreters
+        .borrow_mut()
+        .remove(&grandchild_id)
+        .unwrap();
+      drop(removed_grandchild);
+    }
+    drop(removed_child);
+    root
+      .sub_interpreters
+      .borrow_mut()
+      .insert(999, Ref::new(Box::new(Interpreter::new(999, 10))));
+
+    let held = symbol_backing.borrow();
+    let error = root.restore(checkpoint.clone()).unwrap_err();
+    assert_eq!(
+      error.kind_as::<ValueStateBorrowConflict>().unwrap().phase,
+      "restore-before"
+    );
+    assert_eq!(root.id, 99);
+    assert_eq!(root.ip, 99);
+    assert_ne!(root.state.addr(), state_address);
+    assert!(root.sub_interpreters.borrow().contains_key(&999));
+    assert!(!root.sub_interpreters.borrow().contains_key(&child_id));
+    assert_eq!(*held, 11.0);
+    drop(held);
+
+    root.restore(checkpoint).unwrap();
+
+    assert_eq!(root.id, 1);
+    assert_eq!(root.ip, 7);
+    assert!(root.profile);
+    assert_eq!(root.max_steps, 100);
+    assert_eq!(root.state.addr(), state_address);
+    assert_eq!(root.symbols().addr(), symbols_address);
+    assert_eq!(
+      root.symbols().borrow().dictionary.addr(),
+      symbol_dictionary_address
+    );
+    assert_eq!(root.out_values.addr(), out_values_address);
+    assert_eq!(root.inline_eval_counter.addr(), inline_counter_address);
+    assert_eq!(root.context_bindings.addr(), context_bindings_address);
+    assert_eq!(root.module_manifests.addr(), module_manifests_address);
+    assert_eq!(*root.module_manifests.borrow(), original_manifests);
+    assert_eq!(
+      root.context_bindings
+        .borrow()
+        .get(&context_binding_id)
+        .unwrap()
+        .base_uri,
+      "test://checkpoint",
+    );
+    #[cfg(feature = "trace")]
+    {
+      assert!(root.trace);
+      assert!(!root.trace_to_stdout);
+      assert_eq!(root.trace_events.addr(), trace_events_address);
+    }
+    #[cfg(feature = "state_machines")]
+    {
+      assert_eq!(root.user_state_machines.addr(), user_state_machines_address);
+      assert_eq!(
+        root.user_state_machine_specs.addr(),
+        user_state_machine_specs_address,
+      );
+      assert!(root
+        .user_state_machines
+        .borrow()
+        .contains_key(&hash_str("checkpoint-fsm")));
+      assert!(root
+        .user_state_machine_specs
+        .borrow()
+        .contains_key(&hash_str("checkpoint-fsm")));
+    }
+    #[cfg(feature = "invariant_define")]
+    {
+      let state = root.state.borrow();
+      let invariant_id = hash_str("checkpoint-invariant");
+      assert!(state.invariants.contains_key(&invariant_id));
+      assert_eq!(
+        state.invariant_expressions.get(&invariant_id).unwrap(),
+        "value == true",
+      );
+      assert_eq!(
+        state
+          .invariant_evaluations
+          .get(&invariant_id)
+          .unwrap()
+          .reason,
+        "checkpoint reason",
+      );
+      assert_eq!(state.invariant_violations.len(), 1);
+      assert_eq!(state.invariant_violations[0].id, invariant_id);
+    }
+    assert_eq!(root.sub_interpreters.addr(), sub_interpreters_address);
+    assert_eq!(root.registers.len(), 1);
+    assert_eq!(root.constants.len(), 1);
+    assert_eq!(root.code, vec![MechSourceCode::String("before".to_string())]);
+    assert_eq!(*root.inline_eval_counter.borrow(), 4);
+    assert_eq!(*root.persistent_user_function_plan_depth.borrow(), 2);
+    assert_eq!(*root.deferred_expression_solve_depth.borrow(), 3);
+    assert_eq!(symbol_cell.addr(), symbol_cell_address);
+    assert_eq!(symbol_backing.addr(), symbol_backing_address);
+    assert_eq!(
+      ReactiveCellId::new(symbol_backing.id()),
+      symbol_backing_identity
+    );
+    assert_eq!(*symbol_backing.borrow(), 1.0);
+    assert!(root.sub_interpreters.borrow().get(&999).is_none());
+
+    let restored_child = root
+      .sub_interpreters
+      .borrow()
+      .get(&child_id)
+      .cloned()
+      .unwrap();
+    assert_eq!(restored_child.addr(), child_handle_address);
+    assert_eq!(
+      child_box_address(&restored_child),
+      expected_child_box_address
+    );
+    let restored_grandchild = {
+      let child = restored_child.borrow();
+      assert_eq!(child.id, child_id);
+      assert_eq!(child.ip, 8);
+      assert_eq!(*child_backing.borrow(), 20.0);
+      child
+        .sub_interpreters
+        .borrow()
+        .get(&grandchild_id)
+        .cloned()
+        .unwrap()
+    };
+    assert_eq!(restored_grandchild.addr(), grandchild_handle_address);
+    assert_eq!(
+      child_box_address(&restored_grandchild),
+      expected_grandchild_box_address
+    );
+    let grandchild = restored_grandchild.borrow();
+    assert_eq!(grandchild.id, grandchild_id);
+    assert_eq!(grandchild.ip, 9);
+    assert_eq!(*grandchild_backing.borrow(), 30.0);
+  }
+
+  #[cfg(feature = "compiler")]
+  #[test]
+  fn interpreter_checkpoint_rejects_retained_compiler_context() {
+    let mut interpreter = Interpreter::new(41, 100);
+    interpreter.context = Some(CompileCtx::new());
+    let error = match interpreter.checkpoint() {
+      Ok(_) => panic!("retained compiler context checkpoint unexpectedly succeeded"),
+      Err(error) => error,
+    };
+    let unsupported = error
+      .kind_as::<InterpreterCheckpointUnsupportedCompilerContext>()
+      .unwrap();
+    assert_eq!(unsupported.interpreter_id, 41);
+  }
 }
 
 #[cfg(all(test, feature = "program", feature = "functions", feature = "symbol_table", feature = "f64"))]

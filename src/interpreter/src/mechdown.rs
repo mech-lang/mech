@@ -92,11 +92,13 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         let mut new_sub_interpreter =  Interpreter::new(code_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
 
-        let mut pp = sub_interpreters
+        let pp = sub_interpreters
           .entry(code_id)
-          .or_insert(Box::new(new_sub_interpreter))
-          .as_mut();
-        out = eval_fenced_code_block(&block.code, pp, true)?;
+          .or_insert(Ref::new(Box::new(new_sub_interpreter)))
+          .clone();
+        drop(sub_interpreters);
+        let pp = pp.borrow();
+        out = eval_fenced_code_block(&block.code, pp.as_ref(), true)?;
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
         let (last_code,_) = block.code.last().unwrap();
@@ -173,9 +175,11 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         new_sub_interpreter.set_functions(p.functions().clone());
         let pp = sub_interpreters
           .entry(mika_interp_id)
-          .or_insert(Box::new(new_sub_interpreter))
-          .as_mut();
-        let _ = section(&mika_section.elements, pp)?;
+          .or_insert(Ref::new(Box::new(new_sub_interpreter)))
+          .clone();
+        drop(sub_interpreters);
+        let pp = pp.borrow();
+        let _ = section(&mika_section.elements, pp.as_ref())?;
       }
       return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
     },

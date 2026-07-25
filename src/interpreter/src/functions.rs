@@ -36,6 +36,20 @@ pub struct Frame {
   state: FrameState,      // Running / Suspended / Completed
 }
 
+impl Frame {
+  pub(crate) fn checkpoint_plan(&self) -> Plan {
+    self.plan.clone()
+  }
+
+  pub(crate) fn checkpoint_locals(&self) -> SymbolTableRef {
+    self.locals.clone()
+  }
+
+  pub(crate) fn checkpoint_out(&self) -> Option<Value> {
+    self.out.clone()
+  }
+}
+
 // The call stack is a simple growable list of frames; the last entry is current.
 #[derive(Clone)]
 pub struct Stack {
