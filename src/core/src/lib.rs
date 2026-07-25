@@ -101,6 +101,7 @@ pub mod error;
 pub mod browser;
 pub mod kind;
 pub mod nodes;
+pub mod state_journal;
 pub mod structures;
 pub mod value;
 #[cfg(feature = "functions")]
@@ -115,6 +116,7 @@ pub use self::error::*;
 pub use self::browser::*;
 pub use self::kind::*;
 pub use self::nodes::*;
+pub use self::state_journal::*;
 pub use self::structures::*;
 pub use self::value::*;
 #[cfg(feature = "functions")]
