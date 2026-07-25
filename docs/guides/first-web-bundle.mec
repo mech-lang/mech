@@ -7,9 +7,7 @@ This guide shows the minimal flow for producing static web assets from a configu
 -------------------------------------------------------------------------------
 
 ```sh
-cd src/wasm
-wasm-pack build --target web
-cd ../..
+bash scripts/build-mech-browser.sh
 ```
 
 2. Bundle the project
@@ -35,4 +33,4 @@ http://127.0.0.1:9000/
 4. Static URL rule
 -------------------------------------------------------------------------------
 
-Static bundles must use relative URLs for Mech assets. Use `./pkg/...` and `./code/...`, not `/pkg/...` or `/code/...`.
+Static bundles must use relative URLs for Mech assets. The generated shim loads `./_mech/project.js`, which loads `./pkg/...` and `./source/...`; do not use server-root URLs.

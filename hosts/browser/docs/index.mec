@@ -31,5 +31,5 @@ The DOM context is backed by configured DOM paths, selectors, properties, and al
 3. Related guides
 -------------------------------------------------------------------------------
 
-- [Browser DOM Demo](/guides/browser-dom-demo.html)
 - [First Web Bundle](/guides/first-web-bundle.html)
+- [Browser DOM Demo](/guides/browser-dom-demo.html)

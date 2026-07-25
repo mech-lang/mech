@@ -259,7 +259,25 @@ fn report_to_json(report: &TestReport, verbose: bool) -> Result<String, io::Erro
 
 pub fn run_mech_tests(
   mech_paths: Vec<String>,
-  tree_flag: bool,
+  _tree_flag: bool,
+  debug_flag: bool,
+  time_flag: bool,
+  trace_flag: bool,
+  output_path: Option<String>,
+  verbose: bool,
+) -> Result<i32, MechError> {
+  run_mech_tests_without_tree(
+    mech_paths,
+    debug_flag,
+    time_flag,
+    trace_flag,
+    output_path,
+    verbose,
+  )
+}
+
+pub(crate) fn run_mech_tests_without_tree(
+  mech_paths: Vec<String>,
   debug_flag: bool,
   time_flag: bool,
   trace_flag: bool,
@@ -293,7 +311,6 @@ pub fn run_mech_tests(
       name: format!("test-{}", uuid),
       environment: MechProgramEnvironment::default(),
     });
-    let _ = tree_flag;
     program.configure(debug_flag, trace_flag, time_flag, 10_000);
     if is_bytecode_test_path(Path::new(path)) {
       let err = bytecode_test_unsupported_error(path);

@@ -88,7 +88,7 @@ config := {
 }
 ```
 
-Browser DOM access also requires host settings and run grants. See [Browser DOM Demo](../guides/browser-dom-demo.html).
+Browser DOM access also requires host settings and run grants.
 
 5. Next pages
 -------------------------------------------------------------------------------
@@ -96,5 +96,4 @@ Browser DOM access also requires host settings and run grants. See [Browser DOM 
 - [Config Files](../reference/config/config-files.html)
 - [Config Schema](../reference/config/schema.html)
 - [Contexts](../reference/contexts/index.html)
-- [Browser DOM Demo](../guides/browser-dom-demo.html)
 - [Robot Arm Demo](../guides/robot-arm-demo.html)

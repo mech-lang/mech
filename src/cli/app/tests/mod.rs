@@ -467,6 +467,100 @@ fn root_command_parses_available_subcommands() {
         .unwrap_err();
 }
 
+#[test]
+fn root_help_does_not_advertise_parse_tree() {
+    let mut command = super::build_cli();
+    let mut help = Vec::new();
+    command.write_long_help(&mut help).unwrap();
+    let help = String::from_utf8(help).unwrap();
+
+    assert!(!help.contains("--tree"));
+    assert!(!help.contains("Print parse tree"));
+}
+
+#[test]
+fn root_rejects_removed_parse_tree_options() {
+    for option in ["--tree", "-e"] {
+        let error = super::build_cli()
+            .try_get_matches_from(["mech", option, "demo.mec"])
+            .unwrap_err();
+
+        assert_eq!(error.kind(), clap::error::ErrorKind::UnknownArgument);
+    }
+}
+
+#[test]
+fn root_rounds_per_step_rejects_invalid_values() {
+    for value in ["typo", "0", "-1", "18446744073709551616"] {
+        assert!(
+            super::build_cli()
+                .try_get_matches_from(["mech", "--rounds-per-step", value])
+                .is_err()
+        );
+    }
+}
+
+#[test]
+fn root_rounds_per_step_is_stored_as_usize() {
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "--rounds-per-step", "10"])
+        .unwrap();
+
+    assert_eq!(super::root_flags(&matches).rounds_per_step, Some(10));
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_rounds_per_step_rejects_invalid_values() {
+    for value in ["typo", "0", "-1", "18446744073709551616"] {
+        assert!(
+            super::build_cli()
+                .try_get_matches_from(["mech", "run", "--rounds-per-step", value, "demo.mec"])
+                .is_err()
+        );
+    }
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_rounds_per_step_is_stored_as_usize() {
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "run", "--rounds-per-step", "20", "demo.mec"])
+        .unwrap();
+    let args = crate::cli::run_options::RunCliArgs::from_matches(
+        super::root_flags(&matches),
+        &matches,
+        matches.subcommand_matches("run"),
+    )
+    .unwrap();
+
+    assert_eq!(args.rounds_per_step, Some(20));
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_rounds_per_step_overrides_root_value() {
+    let matches = super::build_cli()
+        .try_get_matches_from([
+            "mech",
+            "--rounds-per-step",
+            "10",
+            "run",
+            "--rounds-per-step",
+            "20",
+            "demo.mec",
+        ])
+        .unwrap();
+    let args = crate::cli::run_options::RunCliArgs::from_matches(
+        super::root_flags(&matches),
+        &matches,
+        matches.subcommand_matches("run"),
+    )
+    .unwrap();
+
+    assert_eq!(args.rounds_per_step, Some(20));
+}
+
 #[cfg(all(test, feature = "build", feature = "test", feature = "formatter", feature = "bundle_web", feature = "run", feature = "serve"))]
 mod filesystem_flag_dispatch_tests {
     const MESSAGE: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";

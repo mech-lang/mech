@@ -73,7 +73,7 @@ Use `--address` and `--port` to change the bind address:
 mech serve hello.mec --address 127.0.0.1 --port 3000
 ```
 
-Projects that use browser DOM resources should normally use a config file. See [Your First Mech Project](first-project.html) and the [Browser DOM Demo](../guides/browser-dom-demo.html).
+Projects that use browser DOM resources should normally use a config file. See [Your First Mech Project](first-project.html).
 
 5. Build an executable artifact with `mechc`
 -------------------------------------------------------------------------------

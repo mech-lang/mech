@@ -1,4 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
+#[cfg(feature = "served_project_authority")]
+use std::path::Path;
 
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
@@ -83,6 +85,27 @@ impl WasmProject {
     pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
+        Self::from_served_project(document, source_map)
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedBundle)]
+    pub fn from_served_bundle(
+        config_source: &str,
+        sources: JsValue,
+        roots: JsValue,
+    ) -> Result<WasmProject, JsValue> {
+        let mut document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        replace_bundle_run_paths(&mut document, bundle_roots_from_js(roots)?)?;
+        Self::from_served_project(document, source_map)
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn from_served_project(
+        document: MechConfigDocument,
+        source_map: HashMap<String, String>,
+    ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
@@ -169,6 +192,55 @@ impl WasmProject {
         self.stopped = true;
         Ok(())
     }
+}
+
+#[cfg(feature = "served_project_authority")]
+fn bundle_roots_from_js(value: JsValue) -> Result<Vec<String>, JsValue> {
+    if !Array::is_array(&value) {
+        return Err(js_error("bundle roots must be an array"));
+    }
+    let roots = Array::from(&value);
+    if roots.length() == 0 {
+        return Err(js_error("bundle roots must not be empty"));
+    }
+    roots
+        .iter()
+        .map(|root| {
+            let root = root
+                .as_string()
+                .ok_or_else(|| js_error("bundle roots must contain only strings"))?;
+            validate_bundle_root(&root)?;
+            Ok(root)
+        })
+        .collect()
+}
+
+#[cfg(feature = "served_project_authority")]
+fn validate_bundle_root(root: &str) -> Result<(), JsValue> {
+    if root.is_empty()
+        || Path::new(root).is_absolute()
+        || root.contains('\\')
+        || root.contains(':')
+        || root
+            .split('/')
+            .any(|component| component.is_empty() || matches!(component, "." | ".."))
+    {
+        return Err(js_error(format!("invalid bundle root `{root}`")));
+    }
+    Ok(())
+}
+
+#[cfg(feature = "served_project_authority")]
+fn replace_bundle_run_paths(
+    document: &mut MechConfigDocument,
+    roots: Vec<String>,
+) -> Result<(), JsValue> {
+    let run = document
+        .run
+        .as_mut()
+        .ok_or_else(|| js_error("project config must contain run settings"))?;
+    run.paths = roots.into_iter().map(Into::into).collect();
+    Ok(())
 }
 
 fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
@@ -675,6 +747,46 @@ mod tests {
             ConfigProfileOptions::default(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn browser_project_profile_supports_string_concatenation() {
+        let document = project_document(&["demo.mec"]);
+
+        let mut sources = HashMap::new();
+        sources.insert(
+            "demo.mec".to_string(),
+            r#"greeting := "Hello, " + "Ada""#.to_string(),
+        );
+
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+
+        run_project_sources(&mut runtime, &document).unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn served_bundle_roots_execute_bundle_local_main_and_sibling_dependency() {
+        let mut document = project_document(&["ignored.mec"]);
+        replace_bundle_run_paths(&mut document, vec!["src/main.mec".to_string()]).unwrap();
+        let sources = HashMap::from([
+            (
+                "src/main.mec".to_string(),
+                "+> ./dep.mec\nanswer := dep/value + 1\n".to_string(),
+            ),
+            ("src/dep.mec".to_string(), "value := 41\n<+ value\n".to_string()),
+        ]);
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+
+        run_project_sources(&mut runtime, &document).unwrap();
+
+        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
 
     fn assert_f64(value: mech_core::Value, expected: f64) {

@@ -1,13 +1,7 @@
-Browser DOM Demo
+Browser DOM Static Bundle Demo
 ===============================================================================
 
-The browser DOM demo shows a full browser host round trip:
-
-```text
-DOM -> Mech -> DOM
-```
-
-It demonstrates configured browser host access, runtime grants, context bindings, wasm initialization, and denied access.
+The browser DOM demo is a complete static bundle project. It demonstrates configured browser host access, scoped DOM grants, and a DOM-to-Mech-to-DOM round trip.
 
 1. Files
 -------------------------------------------------------------------------------
@@ -15,9 +9,9 @@ It demonstrates configured browser host access, runtime grants, context bindings
 ```text
 examples/browser-dom-demo/
   README.md
+  README.mec
   demo.mcfg
   demo.mec
-  denied.mec
   index.html
 ```
 
@@ -25,50 +19,14 @@ examples/browser-dom-demo/
 -------------------------------------------------------------------------------
 
 ```sh
-cd src/wasm
-wasm-pack build --target web
-cd ../..
+bash scripts/build-mech-browser.sh
 ```
 
-If the server expects the compressed wasm asset, refresh it after rebuilding:
-
-```sh
-brotli -Z --force src/wasm/pkg/mech_wasm_bg.wasm
-```
-
-3. Serve the demo
+3. Bundle the project
 -------------------------------------------------------------------------------
 
 ```sh
-cargo run --bin mech -- --config examples/browser-dom-demo/demo.mcfg serve
-```
-
-Open:
-
-```text
-http://127.0.0.1:8081/
-```
-
-4. What the demo shows
--------------------------------------------------------------------------------
-
-The config declares a browser host instance, DOM paths, and run grants.
-
-The source binds the browser DOM context:
-
-```mech
-+> @browser := browser/dom
-```
-
-The source reads an input value, computes strings in Mech, and writes the result back to DOM paths.
-
-`denied.mec` attempts a write that the config does not allow. The denial is expected and demonstrates capability enforcement.
-
-5. Static bundle
--------------------------------------------------------------------------------
-
-```sh
-cargo run --bin mech -- bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
 python -m http.server 9000 -d dist/browser-dom-demo
 ```
 
@@ -77,3 +35,18 @@ Open:
 ```text
 http://127.0.0.1:9000/
 ```
+
+The bundle configuration declares `run.paths`, `serve.paths`, `serve.shim`, and `serve.wasm`. The shim loads `./_mech/project.js`, which loads the bundled configuration and sources through relative URLs.
+
+4. What the demo shows
+-------------------------------------------------------------------------------
+
+The source binds the configured browser DOM context:
+
+```mech
++> @browser := browser/dom
+```
+
+The allowed program reads the input, computes strings in Mech, and writes its result to configured DOM paths. The primary project runs only `demo.mec`; denial behavior remains covered by lower-level browser host tests.
+
+For the maintained native/browser runtime example, use `mech run examples/analog-clock` or `mech serve examples/analog-clock`.

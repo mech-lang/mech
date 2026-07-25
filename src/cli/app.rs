@@ -47,13 +47,6 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("tree")
-                .short('e')
-                .long("tree")
-                .help("Print parse tree")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("time")
                 .short('t')
                 .long("time")
@@ -64,7 +57,8 @@ pub(crate) fn build_cli() -> Command {
             Arg::new("rounds-per-step")
                 .long("rounds-per-step")
                 .value_name("ROUNDS")
-                .help("Sets the number of rounds per step (10_000)")
+                .value_parser(crate::cli::rounds_per_step_value_parser())
+                .help("Sets the number of rounds per step. Must be a positive integer.")
                 .required(false),
         )
         .arg(
@@ -111,16 +105,13 @@ pub(crate) fn build_cli() -> Command {
 fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
     RootFlags {
         debug: cli_matches.get_flag("debug"),
-        tree: cli_matches.get_flag("tree"),
         trace: cli_matches.get_flag("trace"),
         time: cli_matches.get_flag("time"),
         #[cfg(feature = "repl")]
         repl: cli_matches.get_flag("repl"),
         #[cfg(not(feature = "repl"))]
         repl: false,
-        rounds_per_step: cli_matches
-            .get_one::<String>("rounds-per-step")
-            .and_then(|s| s.parse::<usize>().ok()),
+        rounds_per_step: cli_matches.get_one::<usize>("rounds-per-step").copied(),
     }
 }
 
