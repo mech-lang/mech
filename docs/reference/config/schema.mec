@@ -30,7 +30,7 @@ All sections are optional unless a command requires a specific section. For exam
 ```mech
 config := {
   runtime: {
-    name: "browser-dom-demo"
+    name: "browser-project"
     diagnostics: {
       debug-enabled: true
       log-level: "info"

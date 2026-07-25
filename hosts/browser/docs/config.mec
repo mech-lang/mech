@@ -30,7 +30,7 @@ config := {
 | `network` | Network origins, methods, and operations. |
 | `storage` | Storage backend, scope, recursion, and operations. |
 
-2. DOM-first release path
+2. DOM configuration
 -------------------------------------------------------------------------------
 
-The v0.3.6 release documentation focuses on the DOM path because it is the exercised browser-host demo path.
+The v0.3.6 release documentation includes DOM configuration alongside the other browser resource settings.

@@ -16,14 +16,14 @@ cd ../..
 -------------------------------------------------------------------------------
 
 ```sh
-mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+mech bundle-web examples/analog-clock --out dist/analog-clock
 ```
 
 3. Serve the static output
 -------------------------------------------------------------------------------
 
 ```sh
-python -m http.server 9000 -d dist/browser-dom-demo
+python -m http.server 9000 -d dist/analog-clock
 ```
 
 Open:

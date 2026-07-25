@@ -128,7 +128,6 @@ Mech Documentation
 -------------------------------------------------------------------------------
 
 - [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html)
-- [Browser DOM Demo](/guides/browser-dom-demo.html)
 - [Robot Arm Demo](/guides/robot-arm-demo.html)
 - [First Web Bundle](/guides/first-web-bundle.html)
 - [Executable Build](/guides/executable-build.html)
@@ -139,7 +138,7 @@ Mech Documentation
 -------------------------------------------------------------------------------
 
 - [Examples Overview](/examples/README.html)
-- [Browser DOM Demo](/examples/browser-dom-demo/README.html)
+- [Analog Clock](/examples/analog-clock/README.html)
 - [Robot Arm Examples](/hosts/robot-arm/examples/README.html)
 
 12. Mechdown Reference

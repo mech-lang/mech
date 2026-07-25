@@ -9,7 +9,6 @@
 ```sh
 mech run main.mec
 mech run src/main.mec src/support.mec
-mech run examples/browser-dom-resource.mec
 ```
 
 2. Project directory
@@ -21,7 +20,7 @@ mech run .
 
 When a single project directory is supplied and it contains a config file, configured `run.paths` are used unless explicit source paths override them.
 
-Do not use `mech run` on a project that only defines `serve.paths`. For example, `examples/browser-dom-demo/demo.mcfg` is a browser serving demo, so run it with `mech serve` instead.
+Use `mech serve examples/analog-clock` to serve the maintained browser project.
 
 3. Inline source
 -------------------------------------------------------------------------------

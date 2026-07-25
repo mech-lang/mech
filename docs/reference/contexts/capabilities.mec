@@ -36,4 +36,4 @@ For example, the browser host has DOM settings that map paths to selectors and p
 
 Denied access is expected behavior. It is how a host limits what a Mech program can read or modify.
 
-The browser DOM demo includes a denied source file that attempts to write to a read-only input path.
+A denied operation reports an error instead of granting access beyond the configured capability.

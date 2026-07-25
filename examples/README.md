@@ -6,6 +6,7 @@ Read about progress on our [blog](https://mech-lang.org/blog/), follow us on Twi
 
 ## Contents
 
+- analog-clock - A maintained native/browser project using time, console, and scene hosts.
 - aspirational - These programs don't yet work, but they will eventually once missing features are implemented.
 - working - These programs are functional and demonstrate features that are implemented so far.
 

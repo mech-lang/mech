@@ -27,7 +27,7 @@ mech serve main.mec --address 127.0.0.1 --port 3000
 -------------------------------------------------------------------------------
 
 ```sh
-mech serve examples/browser-dom-demo
+mech serve examples/analog-clock
 ```
 
 When a config file is loaded, `serve.paths`, `serve.shim`, `serve.wasm`, and `serve.stylesheets` can define the served project.

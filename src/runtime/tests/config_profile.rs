@@ -49,30 +49,16 @@ fn config_integer_boundary_values_succeed() {
 }
 
 #[test]
-fn shipped_browser_examples_use_hosts_schema() {
-    let resource = parse_config_document(
-        "examples/browser-dom-resource.mcfg",
-        include_str!("../../../examples/browser-dom-resource.mcfg"),
-        ConfigProfileOptions::default(),
+fn browser_hosts_schema_parses() {
+    let resource = parse(
+        r#"config := {
+  hosts: [{name: "browser" provider: "browser" settings: {dom: []}}]
+  run: {grants: [{target: "browser/dom" operations: ["read"] paths: ["body/content"]}]}
+}"#,
     )
     .unwrap();
     assert!(resource.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
-    assert_eq!(resource.run.as_ref().unwrap().grants.len(), 2);
-}
-
-#[test]
-fn shipped_browser_demo_sources_use_browser_dom_host_import() {
-    for (path, source) in [(
-        "examples/browser-dom-resource.mec",
-        include_str!("../../../examples/browser-dom-resource.mec"),
-    )] {
-        let first_line = source.lines().find(|line| !line.trim().is_empty()).unwrap_or("");
-        assert_eq!(first_line, "+> @browser := browser/dom", "{path} must start with a browser/dom host import");
-        assert!(
-            !source.contains("@browser := browser://dom/"),
-            "{path} must not use a raw browser://dom/ context declaration"
-        );
-    }
+    assert_eq!(resource.run.as_ref().unwrap().grants.len(), 1);
 }
 
 #[test]

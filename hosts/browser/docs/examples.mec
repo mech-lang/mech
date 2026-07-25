@@ -1,22 +1,16 @@
 Browser Host Examples
 ===============================================================================
 
-Browser host examples live under `examples` and browser-oriented guide pages.
+Browser-oriented project examples and guides live under `examples` and `docs`.
 
-1. DOM demo
+1. Browser project
 -------------------------------------------------------------------------------
 
 ```text
-examples/browser-dom-demo/
+examples/analog-clock/
 ```
 
-This demo shows browser DOM host configuration, context binding, DOM reads, DOM writes, denied access, `mech serve`, and `bundle-web`.
-
-Guide:
-
-```text
-/docs/guides/browser-dom-demo.mec
-```
+The analog clock is the maintained native/browser project example. It uses the time, console, and scene hosts.
 
 2. Static bundle
 -------------------------------------------------------------------------------
@@ -26,13 +20,3 @@ Guide:
 ```text
 /docs/guides/first-web-bundle.mec
 ```
-
-3. Config-profile fixture
--------------------------------------------------------------------------------
-
-```text
-examples/browser-dom-resource.mcfg
-examples/browser-dom-resource.mec
-```
-
-These files are retained because runtime config-profile tests include them directly. They are not the primary user-facing browser DOM example; use the full `browser-dom-demo` folder for that.
