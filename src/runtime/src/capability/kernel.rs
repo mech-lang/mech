@@ -16,6 +16,20 @@ use std::collections::{HashMap, HashSet, VecDeque};
 pub trait CapabilityKernel: std::fmt::Debug + Send {
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId>;
 
+  /// Administratively remove a grant that has not committed.
+  ///
+  /// Contract:
+  ///
+  /// - `grant` must not retain grant state when it returns `Err`;
+  /// - `rollback_grant` is called only after `grant` returned `Ok`;
+  /// - `rollback_grant` removes an uncommitted grant administratively;
+  /// - it is not ordinary revocation;
+  /// - it must ignore `Capability::is_revocable`;
+  /// - it must be idempotent;
+  /// - after successful rollback, the kernel must behave as though the grant
+  ///   never occurred.
+  fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()>;
+
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()>;
 
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId>;
@@ -111,6 +125,26 @@ impl BasicCapabilityKernel {
 
     out
   }
+
+  fn remove_capability_state(&mut self, capability: CapabilityId) {
+    self.capabilities.remove(&capability);
+    self.revoked.remove(&capability);
+    self.uses.remove(&capability);
+
+    self.by_subject.retain(|_, ids| {
+      ids.remove(&capability);
+      !ids.is_empty()
+    });
+
+    self.children.remove(&capability);
+    self.parent.retain(|child, parent| {
+      *child != capability && *parent != capability
+    });
+    self.children.retain(|_, children| {
+      children.remove(&capability);
+      !children.is_empty()
+    });
+  }
 }
 
 impl CapabilityKernel for BasicCapabilityKernel {
@@ -128,6 +162,17 @@ impl CapabilityKernel for BasicCapabilityKernel {
     }
 
     Ok(self.index_capability(capability))
+  }
+
+  fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> {
+    let descendants = self.descendants_of(capability);
+
+    for descendant in descendants.into_iter().rev() {
+      self.remove_capability_state(descendant);
+    }
+
+    self.remove_capability_state(capability);
+    Ok(())
   }
 
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> {
@@ -326,6 +371,7 @@ impl SharedCapabilityKernel {
 
 impl CapabilityKernel for SharedCapabilityKernel {
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> { self.inner.lock().unwrap().grant(grant) }
+  fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> { self.inner.lock().unwrap().rollback_grant(capability) }
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> { self.inner.lock().unwrap().revoke(revocation) }
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().check(request) }
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> { self.inner.lock().unwrap().get(id) }
