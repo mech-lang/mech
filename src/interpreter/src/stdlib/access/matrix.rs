@@ -836,7 +836,33 @@ impl MechFunctionImpl for MatrixAccessScalarValueF {
     };
   }
   fn out(&self) -> Value { self.out.borrow().clone() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(vec![Value::MutableReference(self.out.clone())])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(all(test, feature = "functions", feature = "matrixd"))]
+mod matrix_access_scalar_value_transaction_tests {
+  use super::*;
+
+  #[test]
+  fn transaction_state_retains_scalar_value_access_outer_output_ref() {
+    let out = Ref::new(Value::Empty);
+    let function = MatrixAccessScalarValueF {
+      source: Matrix::from_vec(vec![Value::Empty], 1, 1),
+      ix: Ref::new(1),
+      out: out.clone(),
+      element_kind: ValueKind::Any,
+    };
+
+    let values = function.transaction_state_values().unwrap();
+    assert_eq!(values.len(), 1);
+    match &values[0] {
+      Value::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
+      other => panic!("expected mutable-reference transaction root, got {other:?}"),
+    }
+  }
 }
 
 #[cfg(feature = "compiler")]

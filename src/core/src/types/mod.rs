@@ -52,6 +52,11 @@ pub use self::rational_numbers::*;
 // Ref
 // ----------------------------------------------------------------------------
 
+/// An opaque shared handle to a Mech value payload.
+///
+/// Callers use this API rather than depending on the current backing store so
+/// the representation can change without leaking into checkpoint or runtime
+/// coordination code.
 pub struct Ref<T>(pub Rc<RefCell<T>>);
 
 impl<T: Debug> Debug for Ref<T> {
@@ -87,6 +92,15 @@ impl<T> Ref<T> {
     }
     pub fn borrow_mut(&self) -> cell::RefMut<'_, T> {
         self.0.borrow_mut()
+    }
+    pub fn try_borrow(&self) -> Result<cell::Ref<'_, T>, cell::BorrowError> {
+        self.0.try_borrow()
+    }
+    pub fn try_borrow_mut(&self) -> Result<cell::RefMut<'_, T>, cell::BorrowMutError> {
+        self.0.try_borrow_mut()
+    }
+    pub fn same_handle(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
     }
     pub fn addr(&self) -> usize {
         Rc::as_ptr(&self.0) as *const () as usize

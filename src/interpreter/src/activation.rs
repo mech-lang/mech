@@ -57,6 +57,25 @@ activation_error!(
     ActivationPatternTriggerInvariant,
     "Activation trigger root cells disagree with the resolved trigger."
 );
+activation_error!(
+    ActivationPatternTransactionBoolStateUnsupported,
+    "Patterned activation transaction state requires boolean values."
+);
+
+fn transaction_bool_state(value: &Ref<bool>) -> MResult<Value> {
+    #[cfg(any(feature = "bool", feature = "variable_define"))]
+    {
+        Ok(Value::Bool(value.clone()))
+    }
+    #[cfg(not(any(feature = "bool", feature = "variable_define")))]
+    {
+        let _ = value;
+        Err(MechError::new(
+            ActivationPatternTransactionBoolStateUnsupported,
+            None,
+        ))
+    }
+}
 
 #[derive(Clone)]
 struct ActivationPatternCapture {
@@ -802,6 +821,11 @@ impl MechFunctionImpl for Matcher {
         outputs.extend(self.captures.iter().map(|capture| capture.proposed.clone()));
         outputs
     }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        let mut values = self.reactive_output_values();
+        values.push(transaction_bool_state(&self.matched)?);
+        Ok(values)
+    }
     fn reactive_dependency_kinds(&self, argument_count: usize) -> Option<Vec<ReactiveDependencyKind>> {
         let mut kinds = vec![ReactiveDependencyKind::Sampled; argument_count];
         if let Some(scope_pulse) = kinds.first_mut() {
@@ -827,6 +851,11 @@ impl MechFunctionImpl for Finalize {
     }
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
+    }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        let mut values = self.reactive_output_values();
+        values.push(transaction_bool_state(&self.eligible)?);
+        Ok(values)
     }
     fn to_string(&self) -> String {
         "ActivationPatternArmFinalize".into()
@@ -872,6 +901,11 @@ impl MechFunctionImpl for UnmatchedFinalize {
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
     }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        let mut values = self.reactive_output_values();
+        values.push(transaction_bool_state(&self.eligible)?);
+        Ok(values)
+    }
     fn to_string(&self) -> String {
         "ActivationPatternGuardUnmatchedFinalize".into()
     }
@@ -890,6 +924,11 @@ impl MechFunctionImpl for GuardFinalize {
     }
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
+    }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        let mut values = self.reactive_output_values();
+        values.push(transaction_bool_state(&self.eligible)?);
+        Ok(values)
     }
     fn to_string(&self) -> String {
         "ActivationPatternGuardFinalize".into()
@@ -913,6 +952,11 @@ impl MechFunctionImpl for Select {
     }
     fn out(&self) -> Value {
         Value::Index(self.out.clone())
+    }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        let mut values = self.reactive_output_values();
+        values.push(Value::Index(self.selected.clone()));
+        Ok(values)
     }
     fn to_string(&self) -> String {
         "ActivationPatternSelectArm".into()
@@ -2093,6 +2137,74 @@ mod tests {
         Arc,
         atomic::{AtomicUsize, Ordering},
     };
+
+    #[cfg(any(feature = "bool", feature = "variable_define"))]
+    #[test]
+    fn activation_transaction_state_exposes_hidden_mutable_cells() {
+        fn contains_bool(values: &[Value], target: &Ref<bool>) -> bool {
+            values.iter().any(|value| {
+                matches!(value, Value::Bool(cell) if cell.addr() == target.addr())
+            })
+        }
+        fn contains_index(values: &[Value], target: &Ref<usize>) -> bool {
+            values.iter().any(|value| {
+                matches!(value, Value::Index(cell) if cell.addr() == target.addr())
+            })
+        }
+
+        let matched = Ref::new(false);
+        let matcher = Matcher {
+            pattern: CompiledPattern::Wildcard,
+            trigger: Value::Empty,
+            expression_values: Vec::new(),
+            captures: Vec::new(),
+            matched: matched.clone(),
+            out: Ref::new(0),
+        };
+        let matcher_values = matcher.transaction_state_values().unwrap();
+        assert_eq!(matcher_values.len(), 2);
+        assert!(contains_bool(&matcher_values, &matched));
+
+        let eligible = Ref::new(false);
+        let finalize = Finalize {
+            matched: matched.clone(),
+            eligible: eligible.clone(),
+            out: Ref::new(0),
+        };
+        let finalize_values = finalize.transaction_state_values().unwrap();
+        assert_eq!(finalize_values.len(), 2);
+        assert!(contains_bool(&finalize_values, &eligible));
+
+        let unmatched_eligible = Ref::new(false);
+        let unmatched = UnmatchedFinalize {
+            matched: matched.clone(),
+            eligible: unmatched_eligible.clone(),
+            out: Ref::new(0),
+        };
+        let unmatched_values = unmatched.transaction_state_values().unwrap();
+        assert_eq!(unmatched_values.len(), 2);
+        assert!(contains_bool(&unmatched_values, &unmatched_eligible));
+
+        let guard_eligible = Ref::new(false);
+        let guard = GuardFinalize {
+            guard: Ref::new(false),
+            eligible: guard_eligible.clone(),
+            out: Ref::new(0),
+        };
+        let guard_values = guard.transaction_state_values().unwrap();
+        assert_eq!(guard_values.len(), 2);
+        assert!(contains_bool(&guard_values, &guard_eligible));
+
+        let selected = Ref::new(usize::MAX);
+        let select = Select {
+            eligible: vec![eligible],
+            selected: selected.clone(),
+            out: Ref::new(0),
+        };
+        let select_values = select.transaction_state_values().unwrap();
+        assert_eq!(select_values.len(), 2);
+        assert!(contains_index(&select_values, &selected));
+    }
 
     struct EagerGuardTestCompiler {
         compile_calls: Arc<AtomicUsize>,
