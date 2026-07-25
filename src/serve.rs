@@ -212,13 +212,14 @@ impl ServerSourceRegistry {
     let relative = path.strip_prefix(root).map_err(|error| {
       Error::new(ErrorKind::InvalidInput, format!("static asset is outside workspace root: {}", error))
     })?;
-    let Some(key) = url_key(relative) else {
+    let Some(key) = transport_url_key(relative) else {
       return Err(Error::new(ErrorKind::InvalidInput, "invalid static asset path").into());
     };
+    let path_text = path.to_string_lossy();
     self.insert_user_asset(key.clone(), ServerAsset {
       bytes: std::fs::read(&path)?,
-      content_type: content_type_for_path(&key),
-      content_encoding: content_encoding_for_path(&key),
+      content_type: content_type_for_path(path_text.as_ref()),
+      content_encoding: content_encoding_for_path(path_text.as_ref()),
       backing_paths: vec![path.clone()],
     });
     self.static_asset_paths.insert(key, path);
@@ -1120,6 +1121,10 @@ fn url_key(path: &Path) -> Option<String> {
   normalize_url_path(&segments.join("/"))
 }
 
+fn transport_url_key(path: &Path) -> Option<String> {
+  url_key(path).map(|key| percent_encode_url_path(&key))
+}
+
 fn percent_encode_url_path(path: &str) -> String {
   let mut encoded = String::with_capacity(path.len());
   for &byte in path.as_bytes() {
@@ -1154,7 +1159,7 @@ fn static_key_for_path(root: &Path, path: &Path) -> Option<String> {
     candidate
   };
   let relative = normalized.strip_prefix(root).ok()?;
-  url_key(relative)
+  transport_url_key(relative)
 }
 
 fn content_encoding_for_path(path: &str) -> Option<&'static str> {
@@ -1762,6 +1767,70 @@ mod tests {
     std::fs::remove_file(&css).unwrap();
     assert!(registry.reload_static_path(&root, &css).unwrap());
     assert!(registry.get_route("style.css").is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_static_assets_use_encoded_transport_keys() {
+    let root = temp_root("static-encoded-keys");
+    let assets = root.join("assets");
+    std::fs::create_dir_all(&assets).unwrap();
+    std::fs::write(assets.join("my logo.svg"), b"svg").unwrap();
+    std::fs::write(assets.join("100%.json"), b"json").unwrap();
+    std::fs::write(assets.join("café.md"), b"markdown").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+
+    load_static_assets_from_paths(&mut registry, &root, &["assets".to_string()]).unwrap();
+
+    let svg = registry.get_route("/assets/my%20logo.svg").unwrap();
+    assert_eq!(svg.bytes, b"svg");
+    assert_eq!(svg.content_type, "image/svg+xml");
+    let json = registry.get_route("/assets/100%25.json").unwrap();
+    assert_eq!(json.bytes, b"json");
+    assert_eq!(json.content_type, "application/json");
+    let markdown = registry.get_route("/assets/caf%C3%A9.md").unwrap();
+    assert_eq!(markdown.bytes, b"markdown");
+    assert_eq!(markdown.content_type, "text/markdown");
+
+    let keys = registry.static_asset_keys();
+    assert!(keys.contains(&"assets/my%20logo.svg".to_string()));
+    assert!(keys.contains(&"assets/100%25.json".to_string()));
+    assert!(keys.contains(&"assets/caf%C3%A9.md".to_string()));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_reload_static_path_updates_encoded_asset_key() {
+    let root = temp_root("static-encoded-update");
+    let css = root.join("theme dark.css");
+    std::fs::write(&css, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &css).unwrap();
+    assert_eq!(registry.get_route("theme%20dark.css").unwrap().bytes, b"old");
+
+    std::fs::write(&css, "new").unwrap();
+    assert!(registry.reload_static_path(&root, &css).unwrap());
+    assert_eq!(registry.get_route("theme%20dark.css").unwrap().bytes, b"new");
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn registry_reload_static_path_removes_encoded_asset_key() {
+    let root = temp_root("static-encoded-remove");
+    let json = root.join("100%.json");
+    std::fs::write(&json, "old").unwrap();
+    let mut registry = ServerSourceRegistry::default();
+    registry.insert_static_file(&root, &json).unwrap();
+    assert!(registry.get_route("100%25.json").is_some());
+
+    std::fs::remove_file(&json).unwrap();
+    assert!(registry.reload_static_path(&root, &json).unwrap());
+    assert!(registry.get_route("100%25.json").is_none());
+    for key in ["100%.json", "100%25.json"] {
+      assert!(!registry.assets.contains_key(key));
+      assert!(!registry.user_assets.contains(key));
+      assert!(!registry.static_asset_paths.contains_key(key));
+    }
     std::fs::remove_dir_all(root).unwrap();
   }
 
