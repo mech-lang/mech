@@ -2322,6 +2322,7 @@ version = "0.3.5"
 dependencies = [
  "bincode",
  "colored",
+ "criterion",
  "crossbeam-channel",
  "csv",
  "mech-core",
