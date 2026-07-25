@@ -178,21 +178,29 @@ fn rebase_bundle_shim_for_depth(shim: &str, depth: usize) -> String {
   }
   let prefix = "../".repeat(depth);
   let mut rebased = shim.to_string();
+  if let Some(bootstrap) = static_project_bootstrap_tag(&rebased) {
+    let project_base = "../".repeat(depth);
+    if let Some(attribute) = bootstrap.attribute("data-mech-project") {
+      if attribute.value == "." {
+        rebased.replace_range(attribute.value_start..attribute.value_end, &project_base);
+      }
+    } else {
+      rebased.insert_str(
+        bootstrap.end - 1,
+        &format!(" data-mech-project=\"{project_base}\""),
+      );
+    }
+  }
   for asset in ["pkg/", "style.css", "code/", "source/", "_mech/"] {
     let from = format!("./{asset}");
     let to = format!("{prefix}{asset}");
     rebased = rebased.replace(&from, &to);
   }
-  let project_base = "../".repeat(depth);
-  rebased = rebased.replace(
-    "data-mech-project=\".\"",
-    &format!("data-mech-project=\"{project_base}\""),
-  );
   rebased
 }
 
 fn ensure_static_project_bootstrap(shim: &str) -> String {
-  if shim.contains("src=\"./_mech/project.js\"") || shim.contains("src='./_mech/project.js'") {
+  if static_project_bootstrap_tag(shim).is_some() {
     return shim.to_string();
   }
   if let Some(index) = shim.find("</body>") {
@@ -202,6 +210,135 @@ fn ensure_static_project_bootstrap(shim: &str) -> String {
   } else {
     format!("{shim}\n{STATIC_PROJECT_SCRIPT}")
   }
+}
+
+#[derive(Debug)]
+struct HtmlAttribute {
+  name: String,
+  value: String,
+  value_start: usize,
+  value_end: usize,
+}
+
+#[derive(Debug)]
+struct ScriptStartTag {
+  end: usize,
+  attributes: Vec<HtmlAttribute>,
+}
+
+impl ScriptStartTag {
+  fn attribute(&self, name: &str) -> Option<&HtmlAttribute> {
+    self
+      .attributes
+      .iter()
+      .find(|attribute| attribute.name.eq_ignore_ascii_case(name))
+  }
+}
+
+fn static_project_bootstrap_tag(shim: &str) -> Option<ScriptStartTag> {
+  script_start_tags(shim)
+    .into_iter()
+    .find(|tag| tag.attribute("src").is_some_and(|attribute| is_static_project_bootstrap_url(&attribute.value)))
+}
+
+fn is_static_project_bootstrap_url(url: &str) -> bool {
+  let path_end = url.find(['?', '#']).unwrap_or(url.len());
+  &url[..path_end] == "./_mech/project.js"
+}
+
+fn script_start_tags(html: &str) -> Vec<ScriptStartTag> {
+  let mut tags = Vec::new();
+  let mut offset = 0;
+  while let Some(relative_start) = html[offset..].find("<script") {
+    let start = offset + relative_start;
+    let after_name = start + "<script".len();
+    let Some(first_after_name) = html.as_bytes().get(after_name) else {
+      break;
+    };
+    if !first_after_name.is_ascii_whitespace() && *first_after_name != b'>' {
+      offset = after_name;
+      continue;
+    }
+    let Some(end) = script_start_tag_end(html, after_name) else {
+      break;
+    };
+    tags.push(ScriptStartTag {
+      end,
+      attributes: quoted_attributes(&html[after_name..end - 1], after_name),
+    });
+    offset = end;
+  }
+  tags
+}
+
+fn script_start_tag_end(html: &str, start: usize) -> Option<usize> {
+  let mut quote = None;
+  for (relative, byte) in html.as_bytes()[start..].iter().copied().enumerate() {
+    match quote {
+      Some(expected) if byte == expected => quote = None,
+      Some(_) => {}
+      None if matches!(byte, b'\'' | b'\"') => quote = Some(byte),
+      None if byte == b'>' => return Some(start + relative + 1),
+      None => {}
+    }
+  }
+  None
+}
+
+fn quoted_attributes(source: &str, offset: usize) -> Vec<HtmlAttribute> {
+  let bytes = source.as_bytes();
+  let mut attributes = Vec::new();
+  let mut index = 0;
+  while index < bytes.len() {
+    while bytes
+      .get(index)
+      .is_some_and(|byte| byte.is_ascii_whitespace())
+      || bytes.get(index) == Some(&b'/')
+    {
+      index += 1;
+    }
+    let name_start = index;
+    while let Some(byte) = bytes.get(index) {
+      if byte.is_ascii_whitespace() || matches!(*byte, b'=' | b'/') {
+        break;
+      }
+      index += 1;
+    }
+    if name_start == index {
+      index += 1;
+      continue;
+    }
+    let name = &source[name_start..index];
+    while bytes.get(index).is_some_and(|byte| byte.is_ascii_whitespace()) {
+      index += 1;
+    }
+    if bytes.get(index) != Some(&b'=') {
+      continue;
+    }
+    index += 1;
+    while bytes.get(index).is_some_and(|byte| byte.is_ascii_whitespace()) {
+      index += 1;
+    }
+    let Some(quote) = bytes.get(index).copied().filter(|byte| matches!(*byte, b'\'' | b'\"')) else {
+      continue;
+    };
+    index += 1;
+    let value_start = index;
+    while bytes.get(index) != Some(&quote) {
+      if index == bytes.len() {
+        return attributes;
+      }
+      index += 1;
+    }
+    attributes.push(HtmlAttribute {
+      name: name.to_string(),
+      value: source[value_start..index].to_string(),
+      value_start: offset + value_start,
+      value_end: offset + index,
+    });
+    index += 1;
+  }
+  attributes
 }
 
 fn read_stylesheets(paths: &[PathBuf]) -> MResult<String> {
@@ -1075,6 +1212,57 @@ mod tests {
     let two = rebase_bundle_shim_for_depth(shim, 2);
     assert!(two.contains("../../pkg/mech_wasm.js"));
     assert!(two.contains("../../style.css"));
+  }
+
+  #[test]
+  fn static_project_bootstrap_recognizes_quoted_and_cache_busted_urls() {
+    for shim in [
+      r#"<script src="./_mech/project.js"></script>"#,
+      r#"<script src='./_mech/project.js'></script>"#,
+      r#"<script src = "./_mech/project.js"></script>"#,
+      r#"<script src = './_mech/project.js'></script>"#,
+      r#"<script src="./_mech/project.js?v=1"></script>"#,
+      r#"<script src="./_mech/project.js#release"></script>"#,
+      r#"<script src="./_mech/project.js?v=1#release"></script>"#,
+    ] {
+      assert_eq!(ensure_static_project_bootstrap(shim), shim);
+    }
+  }
+
+  #[test]
+  fn static_project_bootstrap_appends_for_nonmatching_script() {
+    let shim = r#"<script src="./assets/project.js"></script>"#;
+    let result = ensure_static_project_bootstrap(shim);
+
+    assert!(result.contains("./assets/project.js"));
+    assert!(result.contains("src=\"./_mech/project.js\""));
+  }
+
+  #[test]
+  fn source_page_shim_rebases_single_quoted_project_base() {
+    let shim = r#"<script type="module" src='./_mech/project.js' data-mech-project='.'></script>"#;
+    let rebased = rebase_bundle_shim_for_depth(shim, 2);
+
+    assert!(rebased.contains("src='../../_mech/project.js'"));
+    assert!(rebased.contains("data-mech-project='../../'"));
+  }
+
+  #[test]
+  fn source_page_shim_rebases_double_quoted_project_base() {
+    let shim = r#"<script type="module" src="./_mech/project.js" data-mech-project="."></script>"#;
+    let rebased = rebase_bundle_shim_for_depth(shim, 2);
+
+    assert!(rebased.contains("src=\"../../_mech/project.js\""));
+    assert!(rebased.contains("data-mech-project=\"../../\""));
+  }
+
+  #[test]
+  fn source_page_shim_adds_project_base_to_custom_bootstrap() {
+    let shim = r#"<script type="module" src="./_mech/project.js?v=1"></script>"#;
+    let rebased = rebase_bundle_shim_for_depth(shim, 2);
+
+    assert!(rebased.contains("src=\"../../_mech/project.js?v=1\""));
+    assert!(rebased.contains("data-mech-project=\"../../\""));
   }
 
   #[test]
