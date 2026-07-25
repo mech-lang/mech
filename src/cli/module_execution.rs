@@ -69,6 +69,13 @@ pub(crate) fn module_runtime_config(
             )
             .with_compiler_loc()
         })?);
+
+    // Legacy `mech build` and `mech test` constrained interpreter rounds but
+    // imposed no wall-clock deadline. These commands execute trusted local
+    // project sources, so runtime-backed module resolution must preserve that
+    // behavior rather than inheriting RuntimeConfig's one-second default.
+    config.limits.max_turn_duration_ms = None;
+
     config.validate()?;
     Ok(config)
 }
@@ -162,6 +169,25 @@ mod tests {
             10_000,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn module_runtime_config_preserves_unbounded_tool_duration() {
+        let config = module_runtime_config(
+            "tool-duration-test".to_string(),
+            false,
+            false,
+            false,
+            12_345,
+        )
+        .unwrap();
+
+        assert_eq!(config.limits.max_steps_per_turn, Some(12_345));
+        assert_eq!(config.limits.max_turn_duration_ms, None);
+        assert_eq!(
+            config.limits.max_source_bytes,
+            RuntimeConfig::default().limits.max_source_bytes,
+        );
     }
 
     fn assert_f64(value: Value, expected: f64) {
