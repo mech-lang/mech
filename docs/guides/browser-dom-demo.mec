@@ -1,7 +1,7 @@
 Browser DOM Static Bundle Demo
 ===============================================================================
 
-The browser DOM demo is a complete static bundle project. It demonstrates configured browser host access, scoped DOM grants, an allowed DOM-to-Mech-to-DOM round trip, and a denied write.
+The browser DOM demo is a complete static bundle project. It demonstrates configured browser host access, scoped DOM grants, and a DOM-to-Mech-to-DOM round trip.
 
 1. Files
 -------------------------------------------------------------------------------
@@ -19,9 +19,7 @@ examples/browser-dom-demo/
 -------------------------------------------------------------------------------
 
 ```sh
-cd src/wasm
-wasm-pack build --target web
-cd ../..
+bash scripts/build-mech-browser.sh
 ```
 
 3. Bundle the project
@@ -38,7 +36,7 @@ Open:
 http://127.0.0.1:9000/
 ```
 
-The bundle configuration declares `serve.paths`, `serve.shim`, and `serve.wasm`. The shim loads `./pkg/mech_wasm.js` and `./code/*.mec` with relative URLs, so it can run from a plain static web server.
+The bundle configuration declares `run.paths`, `serve.paths`, `serve.shim`, and `serve.wasm`. The shim loads `./_mech/project.js`, which loads the bundled configuration and sources through relative URLs.
 
 4. What the demo shows
 -------------------------------------------------------------------------------
@@ -49,6 +47,6 @@ The source binds the configured browser DOM context:
 +> @browser := browser/dom
 ```
 
-The allowed program reads the input, computes strings in Mech, and writes its result to configured DOM paths. `denied.mec` tries to write the read-only input and is rejected by its runtime grant.
+The allowed program reads the input, computes strings in Mech, and writes its result to configured DOM paths. The primary project runs only `demo.mec`; denial behavior remains covered by lower-level browser host tests.
 
 For the maintained native/browser runtime example, use `mech run examples/analog-clock` or `mech serve examples/analog-clock`.

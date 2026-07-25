@@ -66,6 +66,7 @@ fn shipped_browser_bundle_example_configures_browser_host_and_grants() {
     assert!(project.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
 
     let grants = &project.run.as_ref().unwrap().grants;
+    assert_eq!(project.run.as_ref().unwrap().paths, vec![PathBuf::from("demo.mec")]);
     assert_eq!(grants.len(), 2);
     assert!(grants.iter().any(|grant| {
         grant.target == "browser/dom"

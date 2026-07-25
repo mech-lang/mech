@@ -804,6 +804,7 @@ mod tests {
     stylesheets: ["style.css"]
     wasm: "../app/pkg"
   }
+  run: {paths: ["../app/demo.mec"]}
 }
 "#,
     )
@@ -845,6 +846,7 @@ mod tests {
     stylesheets: ["style.css"]
     wasm: "../app/pkg"
   }
+  run: {paths: ["../app/src/demo.mec"]}
 }
 "#,
     )

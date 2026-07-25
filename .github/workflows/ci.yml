@@ -272,7 +272,7 @@ jobs:
             -p mech-wasm \
             --target wasm32-unknown-unknown \
             --no-default-features \
-            --features "browser_project_runner,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string,record,tuple,table,atom,enum,variables"
+            --features "browser_project_runner,browser_host_dom,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string,record,tuple,table,atom,enum,variables"
 
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh

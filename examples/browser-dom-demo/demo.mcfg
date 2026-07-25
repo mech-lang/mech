@@ -26,6 +26,8 @@ config := {
     }
   ]
   run: {
+    paths: ["demo.mec"]
+
     grants: [
       { target: "browser/dom", operations: ["read"], paths: ["body/content/mech-sandbox/input/_value"] }
       { target: "browser/dom", operations: ["write"], paths: ["body/content/mech-sandbox/output/_value", "body/content/mech-sandbox/title", "body/content/mech-sandbox/status/_class", "body/content/mech-sandbox/status"] }

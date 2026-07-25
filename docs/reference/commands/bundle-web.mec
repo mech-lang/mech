@@ -22,6 +22,9 @@ config := {
     shim: "index.html"
     wasm: "../../src/wasm/pkg"
   }
+  run: {
+    paths: ["demo.mec"]
+  }
 }
 ```
 
