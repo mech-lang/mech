@@ -19,6 +19,10 @@ use core::hash::BuildHasherDefault;
 use fxhash::FxHasher;
 #[cfg(feature = "no_std")]
 use hashbrown::{HashMap as HashBrownMap, HashSet as HashBrownSet};
+#[cfg(feature = "map")]
+use indexmap::IndexMap;
+#[cfg(feature = "set")]
+use indexmap::IndexSet;
 
 #[cfg(not(feature = "no_std"))]
 use std::any::{Any, TypeId, type_name};
@@ -29,6 +33,60 @@ use std::collections::{HashMap, HashSet};
 type HashMap<K, V> = HashBrownMap<K, V, BuildHasherDefault<FxHasher>>;
 #[cfg(feature = "no_std")]
 type HashSet<K> = HashBrownSet<K, BuildHasherDefault<FxHasher>>;
+
+#[cfg(feature = "set")]
+fn canonical_set_snapshot(set: &MechSet, phase: &'static str) -> MResult<MechSet> {
+    let mut elements = IndexSet::with_capacity(set.set.len());
+    for (second_index, element) in set.set.iter().enumerate() {
+        let element = element.clone();
+        if let Some(first_index) = elements.iter().position(|existing| existing == &element) {
+            return Err(MechError::new(
+                ValueStateCollectionCollision {
+                    phase,
+                    collection: "set element",
+                    first_index,
+                    second_index,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        elements.insert(element);
+    }
+    Ok(MechSet {
+        kind: set.kind.clone(),
+        num_elements: set.num_elements,
+        set: elements,
+    })
+}
+
+#[cfg(feature = "map")]
+fn canonical_map_snapshot(map: &MechMap, phase: &'static str) -> MResult<MechMap> {
+    let mut entries = IndexMap::with_capacity(map.map.len());
+    for (second_index, (key, value)) in map.map.iter().enumerate() {
+        let key = key.clone();
+        let value = value.clone();
+        if let Some(first_index) = entries.keys().position(|existing| existing == &key) {
+            return Err(MechError::new(
+                ValueStateCollectionCollision {
+                    phase,
+                    collection: "map key",
+                    first_index,
+                    second_index,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        entries.insert(key, value);
+    }
+    Ok(MechMap {
+        key_kind: map.key_kind.clone(),
+        value_kind: map.value_kind.clone(),
+        num_elements: map.num_elements,
+        map: entries,
+    })
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct ValueStateKey {
@@ -331,6 +389,28 @@ impl ValueStateJournal {
         T: Clone + 'static,
         F: FnOnce(&Self, &T, &mut HashSet<ValueStateKey>) -> MResult<()>,
     {
+        self.preflight_ref_with_snapshot(
+            target,
+            side,
+            seen,
+            |value, _phase| Ok(value.clone()),
+            descend,
+        )
+    }
+
+    fn preflight_ref_with_snapshot<T, F, S>(
+        &self,
+        target: &Ref<T>,
+        side: CaptureSide,
+        seen: &mut HashSet<ValueStateKey>,
+        snapshot: S,
+        descend: F,
+    ) -> MResult<()>
+    where
+        T: Clone + 'static,
+        S: FnOnce(&T, &'static str) -> MResult<T>,
+        F: FnOnce(&Self, &T, &mut HashSet<ValueStateKey>) -> MResult<()>,
+    {
         let key = ValueStateKey::of(target);
         if !seen.insert(key) {
             return Ok(());
@@ -346,7 +426,8 @@ impl ValueStateJournal {
             )
             .with_compiler_loc()
         })?;
-        descend(self, &payload, seen)
+        let snapshot = snapshot(&payload, side.phase())?;
+        descend(self, &snapshot, seen)
     }
 
     fn visit_ref<T, F>(
@@ -358,6 +439,28 @@ impl ValueStateJournal {
     ) -> MResult<()>
     where
         T: Clone + 'static,
+        F: FnOnce(&mut Self, &T, &mut HashSet<ValueStateKey>) -> MResult<()>,
+    {
+        self.visit_ref_with_snapshot(
+            target,
+            side,
+            seen,
+            |value, _phase| Ok(value.clone()),
+            descend,
+        )
+    }
+
+    fn visit_ref_with_snapshot<T, F, S>(
+        &mut self,
+        target: &Ref<T>,
+        side: CaptureSide,
+        seen: &mut HashSet<ValueStateKey>,
+        snapshot: S,
+        descend: F,
+    ) -> MResult<()>
+    where
+        T: Clone + 'static,
+        S: FnOnce(&T, &'static str) -> MResult<T>,
         F: FnOnce(&mut Self, &T, &mut HashSet<ValueStateKey>) -> MResult<()>,
     {
         let key = ValueStateKey::of(target);
@@ -375,6 +478,9 @@ impl ValueStateJournal {
             )
             .with_compiler_loc()
         })?;
+        let snapshot = snapshot(&payload, side.phase())?;
+
+        descend(self, &snapshot, seen)?;
 
         if let Some(index) = self.entry_indices.get(&key).copied() {
             let entry = self.entries[index]
@@ -393,17 +499,17 @@ impl ValueStateJournal {
             match side {
                 CaptureSide::Before => {
                     if entry.before.is_none() {
-                        entry.before = Some(payload.clone());
+                        entry.before = Some(snapshot);
                     }
                 }
                 CaptureSide::After => {
-                    entry.after = Some(payload.clone());
+                    entry.after = Some(snapshot);
                 }
             }
         } else {
             let (before, after) = match side {
-                CaptureSide::Before => (Some(payload.clone()), None),
-                CaptureSide::After => (None, Some(payload.clone())),
+                CaptureSide::Before => (Some(snapshot), None),
+                CaptureSide::After => (None, Some(snapshot)),
             };
             let index = self.entries.len();
             self.entries.push(Box::new(RefValueStateEntry {
@@ -415,7 +521,7 @@ impl ValueStateJournal {
             self.entry_indices.insert(key, index);
         }
 
-        descend(self, &payload, seen)
+        Ok(())
     }
 
     fn preflight_value(
@@ -499,20 +605,32 @@ impl ValueStateJournal {
             #[cfg(feature = "matrix")]
             Value::MatrixValue(matrix) => self.preflight_value_matrix(matrix, side, seen),
             #[cfg(feature = "set")]
-            Value::Set(value) => self.preflight_ref(value, side, seen, |journal, set, seen| {
-                for value in &set.set {
-                    journal.preflight_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
+            Value::Set(value) => self.preflight_ref_with_snapshot(
+                value,
+                side,
+                seen,
+                canonical_set_snapshot,
+                |journal, set, seen| {
+                    for value in &set.set {
+                        journal.preflight_value(value, side, seen)?;
+                    }
+                    Ok(())
+                },
+            ),
             #[cfg(feature = "map")]
-            Value::Map(value) => self.preflight_ref(value, side, seen, |journal, map, seen| {
-                for (key, value) in &map.map {
-                    journal.preflight_value(key, side, seen)?;
-                    journal.preflight_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
+            Value::Map(value) => self.preflight_ref_with_snapshot(
+                value,
+                side,
+                seen,
+                canonical_map_snapshot,
+                |journal, map, seen| {
+                    for (key, value) in &map.map {
+                        journal.preflight_value(key, side, seen)?;
+                        journal.preflight_value(value, side, seen)?;
+                    }
+                    Ok(())
+                },
+            ),
             #[cfg(feature = "record")]
             Value::Record(value) => {
                 self.preflight_ref(value, side, seen, |journal, record, seen| {
@@ -643,20 +761,32 @@ impl ValueStateJournal {
             #[cfg(feature = "matrix")]
             Value::MatrixValue(matrix) => self.visit_value_matrix(matrix, side, seen),
             #[cfg(feature = "set")]
-            Value::Set(value) => self.visit_ref(value, side, seen, |journal, set, seen| {
-                for value in &set.set {
-                    journal.visit_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
+            Value::Set(value) => self.visit_ref_with_snapshot(
+                value,
+                side,
+                seen,
+                canonical_set_snapshot,
+                |journal, set, seen| {
+                    for value in &set.set {
+                        journal.visit_value(value, side, seen)?;
+                    }
+                    Ok(())
+                },
+            ),
             #[cfg(feature = "map")]
-            Value::Map(value) => self.visit_ref(value, side, seen, |journal, map, seen| {
-                for (key, value) in &map.map {
-                    journal.visit_value(key, side, seen)?;
-                    journal.visit_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
+            Value::Map(value) => self.visit_ref_with_snapshot(
+                value,
+                side,
+                seen,
+                canonical_map_snapshot,
+                |journal, map, seen| {
+                    for (key, value) in &map.map {
+                        journal.visit_value(key, side, seen)?;
+                        journal.visit_value(value, side, seen)?;
+                    }
+                    Ok(())
+                },
+            ),
             #[cfg(feature = "record")]
             Value::Record(value) => self.visit_ref(value, side, seen, |journal, record, seen| {
                 for value in record.data.values() {
@@ -977,6 +1107,27 @@ impl MechErrorKind for ValueStateBorrowConflict {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValueStateCollectionCollision {
+    pub phase: &'static str,
+    pub collection: &'static str,
+    pub first_index: usize,
+    pub second_index: usize,
+}
+
+impl MechErrorKind for ValueStateCollectionCollision {
+    fn name(&self) -> &str {
+        "ValueStateCollectionCollision"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Canonical {} state capture during {} found entries at indexes {} and {} that are equal under their current payloads.",
+            self.collection, self.phase, self.first_index, self.second_index
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValueStateEntryTypeMismatch {
     pub type_name: &'static str,
     pub address: usize,
@@ -1070,6 +1221,25 @@ mod tests {
 
     fn scalar_payload(value: &Value) -> f64 {
         *as_scalar(value).borrow()
+    }
+
+    fn set_contains_scalar(set: &Ref<MechSet>, value: f64) -> bool {
+        let probe = scalar_value(&scalar(value));
+        set.borrow().set.contains(&probe)
+    }
+
+    fn map_get_scalar(map: &Ref<MechMap>, key: f64) -> Option<Ref<f64>> {
+        let probe = scalar_value(&scalar(key));
+        map.borrow().map.get(&probe).map(as_scalar)
+    }
+
+    fn scalar_set_value(value: f64) -> Value {
+        let member = scalar(value);
+        Value::Set(Ref::new(MechSet::from_vec(vec![scalar_value(&member)])))
+    }
+
+    fn map_contains_scalar_set_key(map: &Ref<MechMap>, value: f64) -> bool {
+        map.borrow().map.contains_key(&scalar_set_value(value))
     }
 
     fn record_value(fields: Vec<(&str, Value)>) -> (Ref<MechRecord>, Value) {
@@ -1378,6 +1548,376 @@ mod tests {
         );
         assert_eq!(*members[0].borrow(), 1.0);
         assert_eq!(*members[1].borrow(), 2.0);
+    }
+
+    #[test]
+    fn state_journal_set_membership_survives_repeated_rewind_and_replay() {
+        let member = scalar(1.0);
+        let set = Ref::new(MechSet::from_vec(vec![scalar_value(&member)]));
+        let member_address = member.addr();
+        let set_address = set.addr();
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&Value::Set(set.clone())).unwrap();
+        assert_eq!(journal.cell_count(), 2);
+
+        *member.borrow_mut() = 2.0;
+        journal.record_after().unwrap();
+        let delta = journal.into_delta().unwrap();
+        assert_eq!(delta.cell_count(), 2);
+
+        for _ in 0..2 {
+            delta.rewind().unwrap();
+            assert_eq!(set.addr(), set_address);
+            assert_eq!(member.addr(), member_address);
+            assert_eq!(*member.borrow(), 1.0);
+            assert!(set_contains_scalar(&set, 1.0));
+            assert!(!set_contains_scalar(&set, 2.0));
+            assert_eq!(
+                set.borrow()
+                    .set
+                    .iter()
+                    .next()
+                    .map(as_scalar)
+                    .unwrap()
+                    .addr(),
+                member_address
+            );
+
+            delta.replay().unwrap();
+            assert_eq!(set.addr(), set_address);
+            assert_eq!(member.addr(), member_address);
+            assert_eq!(*member.borrow(), 2.0);
+            assert!(!set_contains_scalar(&set, 1.0));
+            assert!(set_contains_scalar(&set, 2.0));
+            assert_eq!(
+                set.borrow()
+                    .set
+                    .iter()
+                    .next()
+                    .map(as_scalar)
+                    .unwrap()
+                    .addr(),
+                member_address
+            );
+        }
+    }
+
+    #[test]
+    fn state_journal_map_key_lookup_survives_repeated_rewind_and_replay() {
+        let key = scalar(1.0);
+        let value = scalar(10.0);
+        let map = Ref::new(MechMap::from_vec(vec![(
+            scalar_value(&key),
+            scalar_value(&value),
+        )]));
+        let key_address = key.addr();
+        let map_address = map.addr();
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&Value::Map(map.clone())).unwrap();
+        assert_eq!(journal.cell_count(), 3);
+
+        *key.borrow_mut() = 2.0;
+        *value.borrow_mut() = 20.0;
+        journal.record_after().unwrap();
+        let delta = journal.into_delta().unwrap();
+        assert_eq!(delta.cell_count(), 3);
+
+        for _ in 0..2 {
+            delta.rewind().unwrap();
+            assert_eq!(map.addr(), map_address);
+            assert_eq!(key.addr(), key_address);
+            assert!(map_get_scalar(&map, 2.0).is_none());
+            let found = map_get_scalar(&map, 1.0).unwrap();
+            assert_eq!(found.addr(), value.addr());
+            assert_eq!(*found.borrow(), 10.0);
+            assert_eq!(
+                map.borrow()
+                    .map
+                    .keys()
+                    .next()
+                    .map(as_scalar)
+                    .unwrap()
+                    .addr(),
+                key_address
+            );
+
+            delta.replay().unwrap();
+            assert_eq!(map.addr(), map_address);
+            assert_eq!(key.addr(), key_address);
+            assert!(map_get_scalar(&map, 1.0).is_none());
+            let found = map_get_scalar(&map, 2.0).unwrap();
+            assert_eq!(found.addr(), value.addr());
+            assert_eq!(*found.borrow(), 20.0);
+            assert_eq!(
+                map.borrow()
+                    .map
+                    .keys()
+                    .next()
+                    .map(as_scalar)
+                    .unwrap()
+                    .addr(),
+                key_address
+            );
+        }
+    }
+
+    #[test]
+    fn state_journal_set_collision_is_atomic_and_retryable() {
+        let safe = scalar(10.0);
+        let left = scalar(1.0);
+        let right = scalar(2.0);
+        let set = Ref::new(MechSet::from_vec(vec![
+            scalar_value(&left),
+            scalar_value(&right),
+        ]));
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&scalar_value(&safe)).unwrap();
+        journal.capture_value(&Value::Set(set.clone())).unwrap();
+        assert_eq!(journal.cell_count(), 4);
+
+        *safe.borrow_mut() = 11.0;
+        *right.borrow_mut() = 1.0;
+        let error = journal.record_after().unwrap_err();
+        let collision = error.kind_as::<ValueStateCollectionCollision>().unwrap();
+        assert_eq!(collision.phase, "capture-after");
+        assert_eq!(collision.collection, "set element");
+        assert_eq!(collision.first_index, 0);
+        assert_eq!(collision.second_index, 1);
+        assert!(!journal.after_recorded);
+        assert!(!journal.sealed);
+        assert_eq!(journal.cell_count(), 4);
+        assert!(journal.entries.iter().all(|entry| !entry.has_after()));
+        assert_eq!(*safe.borrow(), 11.0);
+        assert_eq!(set.borrow().kind, ValueKind::F64);
+        assert_eq!(set.borrow().num_elements, 2);
+        assert_eq!(
+            set.borrow()
+                .set
+                .iter()
+                .map(as_scalar)
+                .map(|value| value.addr())
+                .collect::<Vec<_>>(),
+            vec![left.addr(), right.addr()]
+        );
+
+        journal.restore_before().unwrap();
+        assert_eq!(*safe.borrow(), 10.0);
+        assert_eq!((*left.borrow(), *right.borrow()), (1.0, 2.0));
+        assert!(set_contains_scalar(&set, 1.0));
+        assert!(set_contains_scalar(&set, 2.0));
+
+        *safe.borrow_mut() = 12.0;
+        *right.borrow_mut() = 3.0;
+        journal.record_after().unwrap();
+        let delta = journal.into_delta().unwrap();
+        assert_eq!(delta.cell_count(), 4);
+        delta.rewind().unwrap();
+        assert_eq!(*safe.borrow(), 10.0);
+        assert!(set_contains_scalar(&set, 1.0));
+        assert!(set_contains_scalar(&set, 2.0));
+        delta.replay().unwrap();
+        assert_eq!(*safe.borrow(), 12.0);
+        assert!(set_contains_scalar(&set, 1.0));
+        assert!(!set_contains_scalar(&set, 2.0));
+        assert!(set_contains_scalar(&set, 3.0));
+    }
+
+    #[test]
+    fn state_journal_collection_collision_uses_payload_equality_not_hash_match() {
+        let left = scalar(-0.0);
+        let right = scalar(1.0);
+        let set = Ref::new(MechSet::from_vec(vec![
+            scalar_value(&left),
+            scalar_value(&right),
+        ]));
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&Value::Set(set.clone())).unwrap();
+
+        *right.borrow_mut() = 0.0;
+        let error = journal.record_after().unwrap_err();
+        let collision = error.kind_as::<ValueStateCollectionCollision>().unwrap();
+        assert_eq!(collision.collection, "set element");
+        assert_eq!(collision.first_index, 0);
+        assert_eq!(collision.second_index, 1);
+        assert!(!journal.after_recorded);
+        assert!(!journal.sealed);
+        assert!(journal.entries.iter().all(|entry| !entry.has_after()));
+
+        journal.restore_before().unwrap();
+        assert_eq!(left.borrow().to_bits(), (-0.0f64).to_bits());
+        assert_eq!(*right.borrow(), 1.0);
+        assert!(set_contains_scalar(&set, -0.0));
+        assert!(set_contains_scalar(&set, 1.0));
+    }
+
+    #[test]
+    fn state_journal_map_collision_is_atomic_and_retryable() {
+        let safe = scalar(10.0);
+        let left_key = scalar(1.0);
+        let right_key = scalar(2.0);
+        let left_value = scalar(10.0);
+        let right_value = scalar(20.0);
+        let map = Ref::new(MechMap::from_vec(vec![
+            (scalar_value(&left_key), scalar_value(&left_value)),
+            (scalar_value(&right_key), scalar_value(&right_value)),
+        ]));
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&scalar_value(&safe)).unwrap();
+        journal.capture_value(&Value::Map(map.clone())).unwrap();
+        assert_eq!(journal.cell_count(), 6);
+
+        *safe.borrow_mut() = 11.0;
+        *right_key.borrow_mut() = 1.0;
+        let error = journal.record_after().unwrap_err();
+        let collision = error.kind_as::<ValueStateCollectionCollision>().unwrap();
+        assert_eq!(collision.phase, "capture-after");
+        assert_eq!(collision.collection, "map key");
+        assert_eq!(collision.first_index, 0);
+        assert_eq!(collision.second_index, 1);
+        assert!(!journal.after_recorded);
+        assert!(!journal.sealed);
+        assert_eq!(journal.cell_count(), 6);
+        assert!(journal.entries.iter().all(|entry| !entry.has_after()));
+        assert_eq!(*safe.borrow(), 11.0);
+        assert_eq!(map.borrow().key_kind, ValueKind::F64);
+        assert_eq!(map.borrow().value_kind, ValueKind::F64);
+        assert_eq!(map.borrow().num_elements, 2);
+        assert_eq!(map.borrow().map.len(), 2);
+        assert_eq!(
+            map.borrow()
+                .map
+                .keys()
+                .map(as_scalar)
+                .map(|value| value.addr())
+                .collect::<Vec<_>>(),
+            vec![left_key.addr(), right_key.addr()]
+        );
+        assert_eq!(
+            map.borrow()
+                .map
+                .values()
+                .map(as_scalar)
+                .map(|value| value.addr())
+                .collect::<Vec<_>>(),
+            vec![left_value.addr(), right_value.addr()]
+        );
+
+        journal.restore_before().unwrap();
+        assert_eq!(*safe.borrow(), 10.0);
+        assert_eq!((*left_key.borrow(), *right_key.borrow()), (1.0, 2.0));
+        assert_eq!(map_get_scalar(&map, 1.0).unwrap().addr(), left_value.addr());
+        assert_eq!(
+            map_get_scalar(&map, 2.0).unwrap().addr(),
+            right_value.addr()
+        );
+
+        *safe.borrow_mut() = 12.0;
+        *right_key.borrow_mut() = 3.0;
+        journal.record_after().unwrap();
+        let delta = journal.into_delta().unwrap();
+        assert_eq!(delta.cell_count(), 6);
+        delta.rewind().unwrap();
+        assert_eq!(*safe.borrow(), 10.0);
+        assert_eq!(map_get_scalar(&map, 1.0).unwrap().addr(), left_value.addr());
+        assert_eq!(
+            map_get_scalar(&map, 2.0).unwrap().addr(),
+            right_value.addr()
+        );
+        delta.replay().unwrap();
+        assert_eq!(*safe.borrow(), 12.0);
+        assert_eq!(map_get_scalar(&map, 1.0).unwrap().addr(), left_value.addr());
+        assert!(map_get_scalar(&map, 2.0).is_none());
+        assert_eq!(
+            map_get_scalar(&map, 3.0).unwrap().addr(),
+            right_value.addr()
+        );
+    }
+
+    #[test]
+    fn state_journal_nested_hashed_collection_lookups_survive_delta() {
+        let member = scalar(1.0);
+        let inner_set = Ref::new(MechSet::from_vec(vec![scalar_value(&member)]));
+        let outer_map = Ref::new(MechMap::from_vec(vec![(
+            Value::Set(inner_set.clone()),
+            Value::Id(7),
+        )]));
+        let outer_address = outer_map.addr();
+        let inner_address = inner_set.addr();
+        let member_address = member.addr();
+        let mut journal = ValueStateJournal::new();
+        journal
+            .capture_value(&Value::Map(outer_map.clone()))
+            .unwrap();
+        assert_eq!(journal.cell_count(), 3);
+
+        *member.borrow_mut() = 2.0;
+        journal.record_after().unwrap();
+        let delta = journal.into_delta().unwrap();
+        assert_eq!(delta.cell_count(), 3);
+
+        for _ in 0..2 {
+            delta.rewind().unwrap();
+            assert_eq!(outer_map.addr(), outer_address);
+            assert_eq!(inner_set.addr(), inner_address);
+            assert_eq!(member.addr(), member_address);
+            assert!(set_contains_scalar(&inner_set, 1.0));
+            assert!(!set_contains_scalar(&inner_set, 2.0));
+            assert!(map_contains_scalar_set_key(&outer_map, 1.0));
+            assert!(!map_contains_scalar_set_key(&outer_map, 2.0));
+
+            assert_eq!(outer_map.borrow().map.len(), 1);
+            assert!(matches!(
+                outer_map.borrow().map.values().next(),
+                Some(Value::Id(7))
+            ));
+            let restored_key = outer_map.borrow().map.keys().next().cloned().unwrap();
+            match restored_key {
+                Value::Set(restored) => assert_eq!(restored.addr(), inner_address),
+                _ => panic!("expected nested set key"),
+            }
+            assert_eq!(
+                inner_set
+                    .borrow()
+                    .set
+                    .iter()
+                    .next()
+                    .map(as_scalar)
+                    .unwrap()
+                    .addr(),
+                member_address
+            );
+
+            delta.replay().unwrap();
+            assert_eq!(outer_map.addr(), outer_address);
+            assert_eq!(inner_set.addr(), inner_address);
+            assert_eq!(member.addr(), member_address);
+            assert!(!set_contains_scalar(&inner_set, 1.0));
+            assert!(set_contains_scalar(&inner_set, 2.0));
+            assert!(!map_contains_scalar_set_key(&outer_map, 1.0));
+            assert!(map_contains_scalar_set_key(&outer_map, 2.0));
+
+            assert_eq!(outer_map.borrow().map.len(), 1);
+            assert!(matches!(
+                outer_map.borrow().map.values().next(),
+                Some(Value::Id(7))
+            ));
+            let restored_key = outer_map.borrow().map.keys().next().cloned().unwrap();
+            match restored_key {
+                Value::Set(restored) => assert_eq!(restored.addr(), inner_address),
+                _ => panic!("expected nested set key"),
+            }
+            assert_eq!(
+                inner_set
+                    .borrow()
+                    .set
+                    .iter()
+                    .next()
+                    .map(as_scalar)
+                    .unwrap()
+                    .addr(),
+                member_address
+            );
+        }
     }
 
     #[test]
