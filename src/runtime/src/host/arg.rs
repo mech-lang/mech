@@ -563,9 +563,9 @@ pub fn host_arg_tuple(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechTuple> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::Tuple(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "tuple", other)),
+    other => Err(wrong_type_error(function, index, "tuple", &other)),
   }
 }
 
@@ -575,9 +575,9 @@ pub fn host_arg_record(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechRecord> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::Record(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "record", other)),
+    other => Err(wrong_type_error(function, index, "record", &other)),
   }
 }
 
@@ -587,9 +587,9 @@ pub fn host_arg_table(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechTable> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::Table(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "table", other)),
+    other => Err(wrong_type_error(function, index, "table", &other)),
   }
 }
 
@@ -599,9 +599,9 @@ pub fn host_arg_map(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMap> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::Map(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "map", other)),
+    other => Err(wrong_type_error(function, index, "map", &other)),
   }
 }
 
@@ -611,9 +611,9 @@ pub fn host_arg_set(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechSet> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::Set(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "set", other)),
+    other => Err(wrong_type_error(function, index, "set", &other)),
   }
 }
 
@@ -623,9 +623,9 @@ pub fn host_arg_matrix_index(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<usize>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixIndex(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<index>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<index>", &other)),
   }
 }
 
@@ -635,9 +635,9 @@ pub fn host_arg_matrix_bool(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<bool>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixBool(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<bool>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<bool>", &other)),
   }
 }
 
@@ -647,9 +647,9 @@ pub fn host_arg_matrix_u8(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u8>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixU8(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<u8>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<u8>", &other)),
   }
 }
 
@@ -659,9 +659,9 @@ pub fn host_arg_matrix_u16(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u16>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixU16(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<u16>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<u16>", &other)),
   }
 }
 
@@ -671,9 +671,9 @@ pub fn host_arg_matrix_u32(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u32>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixU32(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<u32>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<u32>", &other)),
   }
 }
 
@@ -683,9 +683,9 @@ pub fn host_arg_matrix_u64(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u64>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixU64(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<u64>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<u64>", &other)),
   }
 }
 
@@ -695,9 +695,9 @@ pub fn host_arg_matrix_u128(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u128>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixU128(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<u128>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<u128>", &other)),
   }
 }
 
@@ -707,9 +707,9 @@ pub fn host_arg_matrix_i8(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i8>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixI8(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<i8>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<i8>", &other)),
   }
 }
 
@@ -719,9 +719,9 @@ pub fn host_arg_matrix_i16(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i16>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixI16(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<i16>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<i16>", &other)),
   }
 }
 
@@ -731,9 +731,9 @@ pub fn host_arg_matrix_i32(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i32>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixI32(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<i32>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<i32>", &other)),
   }
 }
 
@@ -743,9 +743,9 @@ pub fn host_arg_matrix_i64(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i64>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixI64(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<i64>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<i64>", &other)),
   }
 }
 
@@ -755,9 +755,9 @@ pub fn host_arg_matrix_i128(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i128>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixI128(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<i128>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<i128>", &other)),
   }
 }
 
@@ -767,9 +767,9 @@ pub fn host_arg_matrix_f32(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<f32>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixF32(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<f32>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<f32>", &other)),
   }
 }
 
@@ -791,9 +791,9 @@ pub fn host_arg_matrix_string(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<String>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixString(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<string>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<string>", &other)),
   }
 }
 
@@ -803,9 +803,9 @@ pub fn host_arg_matrix_value_matrix(
   args: &[Value],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<Value>> {
-  match host_arg(function, args, index)? {
+  match host_arg_resolved(function, args, index)? {
     Value::MatrixValue(value) => Ok(value.clone()),
-    other => Err(wrong_type_error(function, index, "matrix<value>", other)),
+    other => Err(wrong_type_error(function, index, "matrix<value>", &other)),
   }
 }
 
@@ -1289,6 +1289,11 @@ mod tests {
     Value::Typed(Box::new(value), kind)
   }
 
+  fn typed_reference(value: Value) -> Value {
+    let kind = value.kind();
+    Value::MutableReference(Ref::new(Value::Typed(Box::new(value), kind)))
+  }
+
   #[test]
   fn resolves_typed_strings_through_scalar_helpers() {
     let args = vec![typed(
@@ -1332,6 +1337,72 @@ mod tests {
     let args = vec![typed(Value::Empty, ValueKind::String)];
 
     assert!(host_arg_string("test", &args, 0).is_err());
+  }
+
+  #[cfg(feature = "tuple")]
+  #[test]
+  fn resolves_typed_tuples_through_compound_helpers() {
+    let tuple = mech_core::MechTuple::from_vec(vec![Value::Empty]);
+    let value = Value::Tuple(Ref::new(tuple.clone()));
+    let args = vec![typed(value.clone(), value.kind())];
+
+    assert_eq!(host_arg_tuple("test", &args, 0).unwrap(), tuple);
+  }
+
+  #[cfg(feature = "record")]
+  #[test]
+  fn resolves_typed_records_behind_mutable_references() {
+    let record = mech_core::MechRecord::new(vec![("field", Value::Empty)]);
+    let args = vec![typed_reference(Value::Record(Ref::new(record.clone())))];
+
+    assert_eq!(host_arg_record("test", &args, 0).unwrap(), record);
+  }
+
+  #[cfg(all(feature = "matrix", feature = "u8"))]
+  #[test]
+  fn resolves_typed_u8_matrices_behind_mutable_references() {
+    let matrix = mech_core::MechMatrix::from_vec(vec![1, 2], 1, 2);
+    let args = vec![typed_reference(Value::MatrixU8(matrix.clone()))];
+    let actual = host_arg_matrix_u8("test", &args, 0).unwrap();
+
+    assert_eq!(actual.shape(), matrix.shape());
+    assert_eq!(actual.as_vec(), matrix.as_vec());
+  }
+
+  #[cfg(feature = "tuple")]
+  #[test]
+  fn typed_non_tuple_returns_a_host_argument_error() {
+    let args = vec![typed(Value::Empty, ValueKind::Empty)];
+    let error = host_arg_tuple("test", &args, 0).unwrap_err();
+
+    assert!(error.kind_as::<HostArgumentError>().is_some());
+  }
+
+  #[test]
+  fn raw_and_reference_helpers_preserve_typed_wrappers() {
+    let typed_string = typed(
+      Value::String(Ref::new("hello".into())),
+      ValueKind::String,
+    );
+    let args = vec![typed_string.clone()];
+
+    assert!(matches!(host_arg_raw("test", &args, 0).unwrap(), Value::Typed(..)));
+    assert_eq!(
+      host_arg_optional_value("test", &args, 0).unwrap(),
+      Some(typed_string.clone())
+    );
+
+    let referenced = Value::MutableReference(Ref::new(typed_string.clone()));
+    assert_eq!(
+      host_arg_reference_value("test", &[referenced.clone()], 0).unwrap(),
+      typed_string
+    );
+
+    let nested_reference = Value::MutableReference(Ref::new(referenced.clone()));
+    assert_eq!(
+      host_arg_deref_cloned("test", &[nested_reference], 0).unwrap(),
+      referenced
+    );
   }
 
   #[test]
