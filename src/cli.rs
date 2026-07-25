@@ -14,6 +14,8 @@ pub(crate) mod diagnostics;
 pub mod host_factories;
 #[cfg(feature = "run")]
 pub mod host_grants;
+#[cfg(any(feature = "build", feature = "test"))]
+pub(crate) mod module_execution;
 #[cfg(feature = "cli_core")]
 pub(crate) mod outcome;
 #[cfg(any(feature = "formatter", feature = "serve"))]
