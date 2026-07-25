@@ -480,6 +480,28 @@ fn root_command_parses_available_subcommands() {
 }
 
 #[test]
+fn root_help_does_not_advertise_parse_tree() {
+    let mut command = super::build_cli();
+    let mut help = Vec::new();
+    command.write_long_help(&mut help).unwrap();
+    let help = String::from_utf8(help).unwrap();
+
+    assert!(!help.contains("--tree"));
+    assert!(!help.contains("Print parse tree"));
+}
+
+#[test]
+fn root_rejects_removed_parse_tree_options() {
+    for option in ["--tree", "-e"] {
+        let error = super::build_cli()
+            .try_get_matches_from(["mech", option, "demo.mec"])
+            .unwrap_err();
+
+        assert_eq!(error.kind(), clap::error::ErrorKind::UnknownArgument);
+    }
+}
+
+#[test]
 fn root_rounds_per_step_rejects_invalid_values() {
     for value in ["typo", "0", "-1", "18446744073709551616"] {
         assert!(

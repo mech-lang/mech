@@ -18,7 +18,6 @@ impl CliOutcome {
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct RootFlags {
     pub debug: bool,
-    pub tree: bool,
     pub trace: bool,
     pub time: bool,
     pub repl: bool,

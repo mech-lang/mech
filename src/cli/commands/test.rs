@@ -34,7 +34,6 @@ pub(crate) struct TestOptions {
     pub paths: Vec<String>,
     pub output_path: Option<String>,
     pub verbose: bool,
-    pub tree: bool,
     pub debug: bool,
     pub time: bool,
     pub trace: bool,
@@ -47,10 +46,9 @@ impl TestOptions {
                 .get_many::<String>("mech_test_file_paths")
                 .map_or(vec![".".to_string()], |files| {
                     files.map(|file| file.to_string()).collect()
-                }),
+            }),
             output_path: matches.get_one::<String>("output_path").cloned(),
             verbose: matches.get_flag("verbose"),
-            tree: root.tree,
             debug: root.debug,
             time: root.time,
             trace: root.trace,
@@ -61,7 +59,6 @@ impl TestOptions {
 pub(crate) fn run(options: TestOptions) -> MResult<CliOutcome> {
     let code = run_mech_tests(
         options.paths,
-        options.tree,
         options.debug,
         options.time,
         options.trace,

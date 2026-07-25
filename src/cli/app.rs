@@ -46,13 +46,6 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("tree")
-                .short('e')
-                .long("tree")
-                .help("Print parse tree")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("time")
                 .short('t')
                 .long("time")
@@ -110,7 +103,6 @@ pub(crate) fn build_cli() -> Command {
 fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
     RootFlags {
         debug: cli_matches.get_flag("debug"),
-        tree: cli_matches.get_flag("tree"),
         trace: cli_matches.get_flag("trace"),
         time: cli_matches.get_flag("time"),
         #[cfg(feature = "repl")]

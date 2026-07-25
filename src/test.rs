@@ -259,7 +259,6 @@ fn report_to_json(report: &TestReport, verbose: bool) -> Result<String, io::Erro
 
 pub fn run_mech_tests(
   mech_paths: Vec<String>,
-  tree_flag: bool,
   debug_flag: bool,
   time_flag: bool,
   trace_flag: bool,
@@ -293,7 +292,6 @@ pub fn run_mech_tests(
       name: format!("test-{}", uuid),
       environment: MechProgramEnvironment::default(),
     });
-    let _ = tree_flag;
     program.configure(debug_flag, trace_flag, time_flag, 10_000);
     if is_bytecode_test_path(Path::new(path)) {
       let err = bytecode_test_unsupported_error(path);
@@ -509,7 +507,7 @@ mod tests {
     let output = root.join("report.json");
     std::fs::write(&source, "x := 1\n").unwrap();
 
-    let exit_code = run_mech_tests(vec![source.display().to_string()], false, false, false, false, Some(output.display().to_string()), false).unwrap();
+    let exit_code = run_mech_tests(vec![source.display().to_string()], false, false, false, Some(output.display().to_string()), false).unwrap();
 
     assert_eq!(exit_code, 0);
     assert!(output.metadata().unwrap().len() > 0);
@@ -525,7 +523,7 @@ mod tests {
     let output = root.join("report.mec");
     std::fs::write(&source, "x := 1\n").unwrap();
 
-    let exit_code = run_mech_tests(vec![source.display().to_string()], false, false, false, false, Some(output.display().to_string()), false).unwrap();
+    let exit_code = run_mech_tests(vec![source.display().to_string()], false, false, false, Some(output.display().to_string()), false).unwrap();
 
     assert_eq!(exit_code, 0);
     assert!(output.metadata().unwrap().len() > 0);
@@ -639,7 +637,6 @@ mod tests {
       false,
       false,
       false,
-      false,
       None,
       false,
     );
@@ -672,7 +669,6 @@ mod tests {
 
     let exit_code = run_mech_tests(
       vec![bytecode.display().to_string()],
-      false,
       false,
       false,
       false,
