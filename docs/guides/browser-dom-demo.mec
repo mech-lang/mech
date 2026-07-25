@@ -9,9 +9,9 @@ The browser DOM demo is a complete static bundle project. It demonstrates config
 ```text
 examples/browser-dom-demo/
   README.md
+  README.mec
   demo.mcfg
   demo.mec
-  denied.mec
   index.html
 ```
 

@@ -59,7 +59,7 @@ fn shipped_browser_bundle_example_configures_browser_host_and_grants() {
     .unwrap();
 
     let serve = project.serve.as_ref().unwrap();
-    assert_eq!(serve.paths, vec![PathBuf::from("demo.mec"), PathBuf::from("denied.mec")]);
+    assert_eq!(serve.paths, vec![PathBuf::from("demo.mec")]);
     assert_eq!(serve.shim, Some(PathBuf::from("index.html")));
     assert_eq!(serve.wasm, Some(PathBuf::from("../../src/wasm/pkg")));
 

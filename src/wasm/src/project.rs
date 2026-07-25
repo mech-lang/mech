@@ -677,6 +677,24 @@ mod tests {
         .unwrap()
     }
 
+    #[test]
+    fn browser_project_profile_supports_string_concatenation() {
+        let document = project_document(&["demo.mec"]);
+
+        let mut sources = HashMap::new();
+        sources.insert(
+            "demo.mec".to_string(),
+            r#"greeting := "Hello, " + "Ada""#.to_string(),
+        );
+
+        let mut runtime = RuntimeBuilder::new()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .build()
+            .unwrap();
+
+        run_project_sources(&mut runtime, &document).unwrap();
+    }
+
     fn assert_f64(value: mech_core::Value, expected: f64) {
         match value {
             mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),

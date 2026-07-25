@@ -121,7 +121,11 @@ server_pid="$!"
 page_url="http://127.0.0.1:${port}/"
 
 for _ in $(seq 1 100); do
-  if curl --fail --silent --show-error --output /dev/null "$page_url"; then
+  if curl \
+    --fail \
+    --silent \
+    --output /dev/null \
+    "$page_url" 2>/dev/null; then
     break
   fi
   sleep 0.1
@@ -146,7 +150,6 @@ if not isinstance(sources, list):
 pairs = {(source.get("specifier"), source.get("url")) for source in sources}
 expected = {
     ("demo.mec", "source/demo.mec"),
-    ("denied.mec", "source/denied.mec"),
 }
 if pairs != expected:
     raise SystemExit(f"unexpected source manifest entries: {manifest!r}")
