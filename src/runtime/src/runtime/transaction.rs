@@ -279,11 +279,17 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
-    let envelope = self
-      .active_execution_transaction(transaction_id)?
-      .clone();
     let owns_program = self.program_transaction_owner == Some(transaction_id);
     let mut rollback_failures = Vec::new();
+    let mut envelope = self
+      .active_transactions
+      .remove(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })?;
 
     if owns_program && restore_program {
       match &envelope.program {
@@ -312,18 +318,25 @@ impl MechRuntime {
       ));
     }
 
-    let transaction = self.active_transactions.remove(&transaction_id);
-    if let Some(transaction) = transaction {
-      if let Err(error) = transaction.store.abort(reason) {
-        rollback_failures.push(format!(
-          "staged store discard invariant failed: {:?}",
-          error,
-        ));
-      }
-    } else {
+    rollback_failures.extend(
+      envelope
+        .effects
+        .abort_all()
+        .into_iter()
+        .map(|failure| {
+          format!(
+            "effect {} {:?} failed during transaction abort: {}",
+            failure.effect_id,
+            failure.phase,
+            failure.message,
+          )
+        }),
+    );
+
+    if let Err(error) = envelope.store.abort(reason) {
       rollback_failures.push(format!(
-        "active execution transaction {} disappeared during abort",
-        transaction_id,
+        "staged store discard invariant failed: {:?}",
+        error,
       ));
     }
 

@@ -19,6 +19,7 @@
 mod actor;
 mod capability;
 mod errors;
+mod effect;
 mod execution;
 mod host;
 mod id;
@@ -45,6 +46,7 @@ use self::program_transaction::{
   RuntimeExecutionTransactionMode,
   RuntimeTransactionContextIdentity,
 };
+use self::effect::RuntimeEffectJournal;
 use crate::runtime::host::*;
 
 use std::sync::Arc;

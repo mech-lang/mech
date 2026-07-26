@@ -167,13 +167,13 @@ pub(super) struct RuntimeProgramBaseline {
   pub(super) live: RuntimeLiveStateSnapshot,
 }
 
-#[derive(Clone)]
 pub(super) struct RuntimeExecutionTransaction {
   pub(super) store: RuntimeTransaction,
   pub(super) mode: RuntimeExecutionTransactionMode,
   pub(super) context_identity: RuntimeTransactionContextIdentity,
   pub(super) context_baseline: RuntimeContextCheckpoint,
   pub(super) program: Option<RuntimeProgramBaseline>,
+  pub(super) effects: RuntimeEffectJournal,
 }
 
 impl RuntimeExecutionTransaction {
@@ -189,6 +189,7 @@ impl RuntimeExecutionTransaction {
       context_identity,
       context_baseline,
       program: None,
+      effects: RuntimeEffectJournal::new(),
     }
   }
 }
@@ -197,7 +198,8 @@ impl RuntimeExecutionTransaction {
 pub(super) struct RuntimeProgramOperationSavepoint {
   pub(super) program: MechProgramCheckpoint,
   pub(super) live: RuntimeLiveStateSnapshot,
-  pub(super) transaction: RuntimeExecutionTransaction,
+  pub(super) store: RuntimeTransaction,
+  pub(super) effect_mark: usize,
   pub(super) context: RuntimeContextCheckpoint,
 }
 
@@ -355,16 +357,29 @@ impl MechRuntime {
 
     self.restore_live_state(savepoint.live.clone());
 
-    if !self.active_transactions.contains_key(&transaction_id) {
-      failures.push(format!(
+    match self.active_transactions.get_mut(&transaction_id) {
+      Some(transaction) => {
+        failures.extend(
+          transaction
+            .effects
+            .rollback_to(savepoint.effect_mark)
+            .into_iter()
+            .map(|failure| {
+              format!(
+                "effect {} {:?} failed during operation rollback: {}",
+                failure.effect_id,
+                failure.phase,
+                failure.message,
+              )
+            }),
+        );
+        transaction.store = savepoint.store.clone();
+      }
+      None => failures.push(format!(
         "active execution transaction {} disappeared before operation rollback",
         transaction_id,
-      ));
+      )),
     }
-    self.active_transactions.insert(
-      transaction_id,
-      savepoint.transaction.clone(),
-    );
 
     savepoint
       .context
@@ -424,7 +439,21 @@ impl MechRuntime {
   ) -> Vec<String> {
     let mut failures = Vec::new();
 
-    if let Some(transaction) = self.active_transactions.remove(&transaction_id) {
+    if let Some(mut transaction) = self.active_transactions.remove(&transaction_id) {
+      failures.extend(
+        transaction
+          .effects
+          .abort_all()
+          .into_iter()
+          .map(|failure| {
+            format!(
+              "best-effort effect {} {:?} failed: {}",
+              failure.effect_id,
+              failure.phase,
+              failure.message,
+            )
+          }),
+      );
       if let Err(error) = transaction.store.abort(reason) {
         failures.push(format!(
           "best-effort staged store discard failed: {:?}",
@@ -628,9 +657,14 @@ impl MechRuntime {
     let savepoint = RuntimeProgramOperationSavepoint {
       program: program_checkpoint,
       live: live_checkpoint,
-      transaction: self
+      store: self
         .active_execution_transaction(transaction_id)?
+        .store
         .clone(),
+      effect_mark: self
+        .active_execution_transaction(transaction_id)?
+        .effects
+        .mark(),
       context: RuntimeContextCheckpoint::capture(context),
     };
 
@@ -717,8 +751,35 @@ mod tests {
     BasicCapability, BasicOperation, BasicResource, BasicSubject,
   };
   use crate::{
-    ClosureHostFunction, NodeId,
+    ClosureHostFunction, NodeId, PreparedRuntimeEffect,
+    RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
   };
+
+  #[derive(Debug)]
+  struct SavepointAfterCommitEffect {
+    name: &'static str,
+  }
+
+  impl RuntimeAfterCommitEffect for SavepointAfterCommitEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::Custom {
+          name: self.name.to_string(),
+        },
+        "savepoint-test",
+      )
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      Ok(())
+    }
+  }
+
+  fn savepoint_effect(name: &'static str) -> PreparedRuntimeEffect {
+    PreparedRuntimeEffect::AfterCommit(Box::new(
+      SavepointAfterCommitEffect { name },
+    ))
+  }
 
   #[derive(Debug)]
   struct ScriptedEventIdGenerator {
@@ -820,6 +881,77 @@ mod tests {
     assert_eq!(runtime.program.interpreter().id, root_interpreter_id);
     assert_eq!(runtime.program.interpreter().plan_len(), plan_len_before);
     assert!(runtime.program.root_symbol_value("round3-owned").is_err());
+  }
+
+  #[test]
+  fn program_operation_savepoint_truncates_effects_without_reusing_ids() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let first = runtime
+      .with_atomic_program_operation(
+        &mut context,
+        "effect_savepoint_first",
+        |runtime, context| {
+          runtime.stage_runtime_effect_with_context(
+            context,
+            savepoint_effect("first"),
+          )
+        },
+      )
+      .unwrap();
+    assert_eq!(first.sequence, 0);
+
+    let failed: MResult<()> = runtime.with_atomic_program_operation(
+      &mut context,
+      "effect_savepoint_failed",
+      |runtime, context| {
+        runtime.stage_runtime_effect_with_context(
+          context,
+          savepoint_effect("rolled-back"),
+        )?;
+        Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "effect_savepoint_failed",
+            reason: "deliberate effect savepoint failure".to_string(),
+          },
+          None,
+        ))
+      },
+    );
+    assert_eq!(failed.unwrap_err().kind_name(), "RuntimeInvalidOperation");
+
+    let transaction =
+      runtime.active_execution_transaction(transaction_id).unwrap();
+    assert_eq!(transaction.effects.len(), 1);
+    assert_eq!(transaction.effects.next_sequence(), 2);
+
+    let third = runtime
+      .with_atomic_program_operation(
+        &mut context,
+        "effect_savepoint_third",
+        |runtime, context| {
+          runtime.stage_runtime_effect_with_context(
+            context,
+            savepoint_effect("third"),
+          )
+        },
+      )
+      .unwrap();
+    assert_eq!(third.sequence, 2);
+    assert_eq!(
+      runtime
+        .active_execution_transaction(transaction_id)
+        .unwrap()
+        .effects
+        .len(),
+      2,
+    );
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard staged effects")
+      .unwrap();
   }
 
   #[test]
