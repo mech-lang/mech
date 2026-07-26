@@ -697,6 +697,18 @@ impl MechRuntime {
         path: resolved.provider_path,
       }, None));
     }
+    if let Some(transaction_id) = context.transaction {
+      if let Some(value) = self
+        .active_execution_transaction(transaction_id)?
+        .effects
+        .staged_resource_value(
+          &resolved.provider_base_uri,
+          &resolved.provider_path,
+        )
+      {
+        return Ok(value);
+      }
+    }
     self.resources.read(RuntimeResourceReadRequest {
       base_uri: resolved.provider_base_uri,
       path: resolved.provider_path,
@@ -706,7 +718,7 @@ impl MechRuntime {
 
   fn write_context_resource(
     &mut self,
-    context: &RuntimeContext,
+    context: &mut RuntimeContext,
     binding: &RuntimeContextBinding,
     path: &str,
     value: Value,
@@ -734,14 +746,14 @@ impl MechRuntime {
         path: resolved.provider_path,
       }, None));
     }
-    self.resources.write(RuntimeResourceWriteRequest {
+    self.write_resource_with_context(context, RuntimeResourceWriteRequest {
       base_uri: resolved.provider_base_uri,
       path: resolved.provider_path,
       context_name: binding.name.clone(),
       operation: operation.clone(),
       value,
       intent,
-    })
+    }).map(|_| ())
   }
 
   fn bind_context_read_temp(
@@ -1464,7 +1476,7 @@ impl MechRuntime {
 
   fn push_direct_code(
     &mut self,
-    context: &RuntimeContext,
+    context: &mut RuntimeContext,
     program: &mut MechProgram,
     registry: &RuntimeContextRegistry,
     pending: &mut Vec<mech_core::SectionElement>,
@@ -4529,7 +4541,7 @@ mod tests {
     let calls = Arc::new(AtomicUsize::new(0));
     let calls_for_host = calls.clone();
     runtime
-      .register_mech_host_function(ClosureHostFunction::new(
+      .register_mech_host_function(ClosureHostFunction::new_pure(
         "demo/echo",
         move |_services, context, args| {
           assert_eq!(context.subject, "program:step-host-test");
@@ -4713,7 +4725,7 @@ impl MechRuntime {
           &target_updates,
         )?;
       self.enforce_turn_duration(turn_started)?;
-      self.execute_persistent_sends(&context, &turn)?;
+      self.execute_persistent_sends(&mut context, &turn)?;
 
       Ok(crate::RuntimeHostInputOutcome {
         update_count: input.updates.len(),
@@ -4728,7 +4740,7 @@ impl MechRuntime {
     result
   }
 
-  fn execute_persistent_sends(&mut self, context: &RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
+  fn execute_persistent_sends(&mut self, context: &mut RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
     for send in self.persistent_sends.clone() {
       let should_send = match send.schedule {
         RuntimePersistentSendSchedule::EveryAcceptedTurn => true,

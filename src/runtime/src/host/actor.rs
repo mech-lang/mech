@@ -32,6 +32,19 @@ impl HostFunction for ActorMessageKindHostFunction {
     "actor/message/kind"
   }
 
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
+  }
+
   fn call(
     &self,
     _services: &mut dyn RuntimeServices,
@@ -85,6 +98,19 @@ impl Default for ActorMessagePayloadHostFunction {
 impl HostFunction for ActorMessagePayloadHostFunction {
   fn name(&self) -> &str {
     "actor/message/payload"
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
   }
 
   fn call(
@@ -142,6 +168,19 @@ impl HostFunction for ActorStateIdHostFunction {
     "actor/state/id"
   }
 
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
+  }
+
   fn call(
     &self,
     _services: &mut dyn RuntimeServices,
@@ -189,6 +228,19 @@ impl Default for ActorStateGetHostFunction {
 impl HostFunction for ActorStateGetHostFunction {
   fn name(&self) -> &str {
     "actor/state/get"
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
   }
 
   fn call(
@@ -242,6 +294,29 @@ impl Default for ActorStatePutHostFunction {
 impl HostFunction for ActorStatePutHostFunction {
   fn name(&self) -> &str {
     "actor/state/put"
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    if context.actor.is_none() {
+      return Err(MechError::new(
+        HostInvalidContextError {
+          function: self.name().to_string(),
+          reason: "no actor is bound to the runtime context".to_string(),
+        },
+        None,
+      ));
+    }
+    host_arg_string(self.name(), &args, 0)?;
+    Ok(Value::String(Ref::new(services.next_object_id().to_string())))
   }
 
   fn call(

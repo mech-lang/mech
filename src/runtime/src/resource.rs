@@ -1,8 +1,13 @@
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, Value};
 
-use crate::RuntimeCapabilityOperation;
+use crate::{
+  PreparedRuntimeEffect, RuntimeCapabilityOperation,
+  RuntimeCompensatableEffect, RuntimeEffectCost, RuntimeEffectMetadata,
+  RuntimeEffectSource,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
@@ -56,7 +61,10 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
     ))
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn stage_write(
+    &mut self,
+    request: RuntimeResourceWriteRequest,
+  ) -> MResult<PreparedRuntimeEffect> {
     Err(MechError::new(
       RuntimeResourceWriteUnsupported {
         scheme: self.scheme().to_string(),
@@ -205,7 +213,10 @@ impl RuntimeResourceRegistry {
     entry.provider.preflight_write(request)
   }
 
-  pub fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  pub fn stage_write(
+    &mut self,
+    request: RuntimeResourceWriteRequest,
+  ) -> MResult<PreparedRuntimeEffect> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(entry) = self.provider_entry_for_mut(&scheme, &request.base_uri) else {
       return Err(MechError::new(
@@ -213,13 +224,13 @@ impl RuntimeResourceRegistry {
         None,
       ));
     };
-    entry.provider.write(request)
+    entry.provider.stage_write(request)
   }
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct InMemoryDocsProvider {
-  documents: HashMap<String, HashMap<String, Value>>,
+  documents: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
 }
 
 impl InMemoryDocsProvider {
@@ -254,7 +265,13 @@ impl InMemoryDocsProvider {
         None,
       ));
     }
-    self.documents.entry(base_uri).or_default().insert(path, value);
+    self
+      .documents
+      .lock()
+      .map_err(|_| in_memory_docs_lock_error(&base_uri))?
+      .entry(base_uri)
+      .or_default()
+      .insert(path, value);
     Ok(())
   }
 
@@ -275,11 +292,19 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
   }
 
   fn base_uris(&self) -> Vec<String> {
-    self.documents.keys().cloned().collect()
+    self
+      .documents
+      .lock()
+      .map(|documents| documents.keys().cloned().collect())
+      .unwrap_or_default()
   }
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
-    let Some(document) = self.documents.get(&request.base_uri) else {
+    let documents = self
+      .documents
+      .lock()
+      .map_err(|_| in_memory_docs_lock_error(&request.base_uri))?;
+    let Some(document) = documents.get(&request.base_uri) else {
       return Err(MechError::new(
         RuntimeResourcePathNotFound {
           base_uri: request.base_uri,
@@ -336,7 +361,10 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     Ok(())
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn stage_write(
+    &mut self,
+    request: RuntimeResourceWriteRequest,
+  ) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),
@@ -345,13 +373,102 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
       intent: request.intent,
     })?;
 
-    self.documents
-      .entry(request.base_uri)
-      .or_default()
-      .insert(request.path, request.value);
+    Ok(PreparedRuntimeEffect::Compensatable(Box::new(
+      InMemoryDocsWriteEffect {
+        documents: self.documents.clone(),
+        base_uri: request.base_uri,
+        path: request.path,
+        value: request.value,
+        previous: None,
+        base_existed: false,
+        applied: false,
+      },
+    )))
+  }
+}
 
+#[derive(Debug)]
+struct InMemoryDocsWriteEffect {
+  documents: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
+  base_uri: String,
+  path: String,
+  value: Value,
+  previous: Option<Value>,
+  base_existed: bool,
+  applied: bool,
+}
+
+impl RuntimeCompensatableEffect for InMemoryDocsWriteEffect {
+  fn metadata(&self) -> RuntimeEffectMetadata {
+    RuntimeEffectMetadata::new(
+      RuntimeEffectSource::ResourceProvider {
+        scheme: "docs".to_string(),
+      },
+      "write",
+    )
+    .with_resource(format!("{}/{}", self.base_uri, self.path))
+    .with_cost(RuntimeEffectCost {
+      bytes: 0,
+      items: 1,
+    })
+  }
+
+  fn apply(&mut self) -> MResult<()> {
+    let mut documents = self
+      .documents
+      .lock()
+      .map_err(|_| in_memory_docs_lock_error(&self.base_uri))?;
+    self.base_existed = documents.contains_key(&self.base_uri);
+    self.previous = documents
+      .entry(self.base_uri.clone())
+      .or_default()
+      .insert(self.path.clone(), self.value.clone());
+    self.applied = true;
     Ok(())
   }
+
+  fn compensate(&mut self) -> MResult<()> {
+    if !self.applied {
+      return Ok(());
+    }
+    let mut documents = self
+      .documents
+      .lock()
+      .map_err(|_| in_memory_docs_lock_error(&self.base_uri))?;
+    match self.previous.take() {
+      Some(previous) => {
+        documents
+          .entry(self.base_uri.clone())
+          .or_default()
+          .insert(self.path.clone(), previous);
+      }
+      None => {
+        let remove_base = if let Some(document) =
+          documents.get_mut(&self.base_uri)
+        {
+          document.remove(&self.path);
+          !self.base_existed && document.is_empty()
+        } else {
+          false
+        };
+        if remove_base {
+          documents.remove(&self.base_uri);
+        }
+      }
+    }
+    self.applied = false;
+    Ok(())
+  }
+}
+
+fn in_memory_docs_lock_error(base_uri: &str) -> MechError {
+  MechError::new(
+    RuntimeResourceInvalidUri {
+      uri: base_uri.to_string(),
+      reason: "in-memory docs resource lock is poisoned".to_string(),
+    },
+    None,
+  )
 }
 
 pub fn resource_base_matches(base: &str, candidate: &str) -> bool {
@@ -510,5 +627,164 @@ impl MechErrorKind for RuntimeResourceCapabilityDenied {
       self.operation,
       self.path,
     )
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use mech_core::Ref;
+
+  fn bool_value(value: bool) -> Value {
+    Value::Bool(Ref::new(value))
+  }
+
+  fn write_request(path: &str, value: bool) -> RuntimeResourceWriteRequest {
+    RuntimeResourceWriteRequest {
+      base_uri: "docs://manual".to_string(),
+      path: path.to_string(),
+      context_name: "manual".to_string(),
+      operation: RuntimeCapabilityOperation::Write,
+      value: bool_value(value),
+      intent: RuntimeResourceWriteIntent::Assign,
+    }
+  }
+
+  fn read_request(path: &str) -> RuntimeResourceReadRequest {
+    RuntimeResourceReadRequest {
+      base_uri: "docs://manual".to_string(),
+      path: path.to_string(),
+      context_name: "manual".to_string(),
+    }
+  }
+
+  #[test]
+  fn docs_write_is_invisible_until_explicit_commit() {
+    let provider = InMemoryDocsProvider::new();
+    let observed = provider.clone();
+    let mut runtime = crate::MechRuntime::builder()
+      .resource_provider(Box::new(provider))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    let effect_id = runtime
+      .write_resource_with_context(
+        &mut context,
+        write_request("intro/enabled", true),
+      )
+      .unwrap();
+
+    assert_eq!(effect_id.sequence, 0);
+    assert!(observed.read(read_request("intro/enabled")).is_err());
+
+    runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap();
+    assert_eq!(
+      observed.read(read_request("intro/enabled")).unwrap(),
+      bool_value(true),
+    );
+  }
+
+  #[test]
+  fn docs_write_is_discarded_by_explicit_abort() {
+    let mut provider = InMemoryDocsProvider::new();
+    provider
+      .insert("docs://manual", "intro/enabled", bool_value(false))
+      .unwrap();
+    let observed = provider.clone();
+    let mut runtime = crate::MechRuntime::builder()
+      .resource_provider(Box::new(provider))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .write_resource_with_context(
+        &mut context,
+        write_request("intro/enabled", true),
+      )
+      .unwrap();
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard docs write")
+      .unwrap();
+
+    assert_eq!(
+      observed.read(read_request("intro/enabled")).unwrap(),
+      bool_value(false),
+    );
+  }
+
+  #[test]
+  fn store_failure_compensates_docs_overwrite_and_creation() {
+    let mut provider = InMemoryDocsProvider::new();
+    provider
+      .insert("docs://manual", "intro/enabled", bool_value(false))
+      .unwrap();
+    let observed = provider.clone();
+    let mut runtime = crate::MechRuntime::builder()
+      .resource_provider(Box::new(provider))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .write_resource_with_context(
+        &mut context,
+        write_request("intro/enabled", true),
+      )
+      .unwrap();
+    runtime
+      .write_resource_with_context(
+        &mut context,
+        write_request("intro/created", true),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        crate::ObjectRecord::text(
+          crate::ObjectId(990),
+          "missing",
+          "update",
+        ),
+      )
+      .unwrap();
+
+    assert!(runtime
+      .commit_runtime_transaction(&mut context)
+      .is_err());
+
+    assert_eq!(
+      observed.read(read_request("intro/enabled")).unwrap(),
+      bool_value(false),
+    );
+    assert!(observed.read(read_request("intro/created")).is_err());
+
+    runtime
+      .abort_runtime_transaction(&mut context, "store failure cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn administrative_docs_write_executes_immediately() {
+    let provider = InMemoryDocsProvider::new();
+    let observed = provider.clone();
+    let mut runtime = crate::MechRuntime::builder()
+      .resource_provider(Box::new(provider))
+      .build()
+      .unwrap();
+
+    runtime
+      .write_resource(write_request("intro/enabled", true))
+      .unwrap();
+
+    assert_eq!(
+      observed.read(read_request("intro/enabled")).unwrap(),
+      bool_value(true),
+    );
   }
 }

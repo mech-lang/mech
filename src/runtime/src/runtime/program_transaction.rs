@@ -180,6 +180,7 @@ pub(super) struct RuntimeExecutionTransaction {
   pub(super) context_baseline: RuntimeContextCheckpoint,
   pub(super) program: Option<RuntimeProgramBaseline>,
   pub(super) effects: RuntimeEffectJournal,
+  pub(super) capabilities: RuntimeCapabilityOverlay,
   pub(super) state: RuntimeExecutionTransactionState,
 }
 
@@ -197,6 +198,7 @@ impl RuntimeExecutionTransaction {
       context_baseline,
       program: None,
       effects: RuntimeEffectJournal::new(),
+      capabilities: RuntimeCapabilityOverlay::default(),
       state: RuntimeExecutionTransactionState::Active,
     }
   }
@@ -208,6 +210,7 @@ pub(super) struct RuntimeProgramOperationSavepoint {
   pub(super) live: RuntimeLiveStateSnapshot,
   pub(super) store: RuntimeTransaction,
   pub(super) effect_mark: usize,
+  pub(super) capability_mark: usize,
   pub(super) context: RuntimeContextCheckpoint,
 }
 
@@ -387,15 +390,24 @@ impl MechRuntime {
         let effect_failures =
           transaction.effects.rollback_to(savepoint.effect_mark);
         transaction.store = savepoint.store.clone();
-        Some(effect_failures)
+        let capability_result = transaction
+          .capabilities
+          .rollback_to(savepoint.capability_mark);
+        Some((effect_failures, capability_result))
       }
       None => None,
     };
     self.active_effect_phase = None;
     match effect_rollback {
-      Some(effect_failures) => failures.extend(
-        Self::describe_effect_failures(effect_failures),
-      ),
+      Some((effect_failures, capability_result)) => {
+        failures.extend(Self::describe_effect_failures(effect_failures));
+        if let Err(error) = capability_result {
+          failures.push(format!(
+            "capability overlay rollback failed: {:?}",
+            error,
+          ));
+        }
+      }
       None => failures.push(format!(
         "active execution transaction {} disappeared before operation rollback",
         transaction_id,
@@ -678,6 +690,10 @@ impl MechRuntime {
       effect_mark: self
         .active_execution_transaction(transaction_id)?
         .effects
+        .mark(),
+      capability_mark: self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
         .mark(),
       context: RuntimeContextCheckpoint::capture(context),
     };
@@ -965,6 +981,42 @@ mod tests {
 
     runtime
       .abort_runtime_transaction(&mut context, "discard staged effects")
+      .unwrap();
+  }
+
+  #[test]
+  fn resource_provider_staging_failure_leaves_effect_journal_unchanged() {
+    let mut runtime = MechRuntime::builder()
+      .resource_provider(Box::new(InMemoryDocsProvider::new()))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let result = runtime.write_resource_with_context(
+      &mut context,
+      RuntimeResourceWriteRequest {
+        base_uri: "docs://manual".to_string(),
+        path: String::new(),
+        context_name: "manual".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value: Value::Bool(mech_core::Ref::new(true)),
+        intent: RuntimeResourceWriteIntent::Assign,
+      },
+    );
+
+    assert!(result.is_err());
+    assert_eq!(
+      runtime
+        .active_execution_transaction(transaction_id)
+        .unwrap()
+        .effects
+        .len(),
+      0,
+    );
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard failed staging")
       .unwrap();
   }
 
@@ -1590,7 +1642,7 @@ mod tests {
     let observed = Arc::new(Mutex::new(Vec::new()));
     let observed_for_host = observed.clone();
     runtime
-      .register_mech_host_function(ClosureHostFunction::new(
+      .register_mech_host_function(ClosureHostFunction::new_runtime_managed(
         "demo/reenter",
         move |_services, _context, _args| {
           ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {

@@ -28,6 +28,7 @@ use crate::capability::{
 use crate::context::RuntimeContext;
 
 use crate::service::RuntimeServices;
+use crate::PreparedRuntimeEffect;
 
 pub mod actor;
 pub mod arg;
@@ -38,6 +39,20 @@ pub use self::arg::*;
 // -----------------------------------------------------------------------------
 // Host Function
 // -----------------------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HostFunctionTransactionMode {
+  Pure,
+  RuntimeManaged,
+  Staged,
+  ImmediateOnly,
+}
+
+#[derive(Debug)]
+pub struct RuntimePreparedHostCall {
+  pub value: Value,
+  pub effect: PreparedRuntimeEffect,
+}
 
 /// A callable host function.
 ///
@@ -54,6 +69,15 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
   /// - `ui.render`
   /// - `net.fetch`
   fn name(&self) -> &str;
+
+  /// Declares how the function participates in runtime transactions.
+  ///
+  /// The conservative default is `ImmediateOnly`: existing host callbacks may
+  /// have arbitrary side effects, so retained execution must not invoke them
+  /// inside an implicit or explicit transaction without an explicit contract.
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::ImmediateOnly
+  }
 
   /// Optional resource key used for capability checks.
   ///
@@ -93,13 +117,66 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
     args.len() as u64
   }
 
-  /// Invoke the host function.
-  fn call(
+  /// Produce the provisional value needed while compiling a native call.
+  ///
+  /// Pure functions may reuse their normal callback. Runtime-managed
+  /// functions must override this method without retaining runtime mutation.
+  fn preview_call(
     &self,
     services: &mut dyn RuntimeServices,
     context: &mut RuntimeContext,
     args: Vec<Value>,
-  ) -> MResult<Value>;
+  ) -> MResult<Value> {
+    if matches!(
+      self.transaction_mode(),
+      HostFunctionTransactionMode::Pure
+        | HostFunctionTransactionMode::RuntimeManaged
+    ) {
+      return self.call(services, context, args);
+    }
+    Err(MechError::new(
+      InvalidHostCallError {
+        function: self.name().to_string(),
+        reason: format!(
+          "host function transaction mode {:?} requires an explicit non-mutating preview",
+          self.transaction_mode(),
+        ),
+      },
+      None,
+    ))
+  }
+
+  /// Invoke a pure, runtime-managed, or immediate-only host function.
+  fn call(
+    &self,
+    _services: &mut dyn RuntimeServices,
+    _context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<Value> {
+    Err(MechError::new(
+      InvalidHostCallError {
+        function: self.name().to_string(),
+        reason: "host function does not implement immediate invocation".to_string(),
+      },
+      None,
+    ))
+  }
+
+  /// Prepare a staged host call and its provisional program value.
+  fn stage_call(
+    &self,
+    _services: &mut dyn RuntimeServices,
+    _context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<RuntimePreparedHostCall> {
+    Err(MechError::new(
+      InvalidHostCallError {
+        function: self.name().to_string(),
+        reason: "host function does not implement staged invocation".to_string(),
+      },
+      None,
+    ))
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -115,6 +192,7 @@ where
 {
   name: String,
   capability: Option<CapabilityRequest>,
+  transaction_mode: HostFunctionTransactionMode,
   function: F,
 }
 
@@ -126,6 +204,7 @@ where
     f.debug_struct("ClosureHostFunction")
       .field("name", &self.name)
       .field("capability", &self.capability)
+      .field("transaction_mode", &self.transaction_mode)
       .field("function", &"<closure>")
       .finish()
   }
@@ -139,9 +218,44 @@ where
     name: impl Into<String>,
     function: F,
   ) -> Self {
+    Self::with_transaction_mode(
+      name,
+      HostFunctionTransactionMode::ImmediateOnly,
+      function,
+    )
+  }
+
+  pub fn new_pure(
+    name: impl Into<String>,
+    function: F,
+  ) -> Self {
+    Self::with_transaction_mode(
+      name,
+      HostFunctionTransactionMode::Pure,
+      function,
+    )
+  }
+
+  pub fn new_runtime_managed(
+    name: impl Into<String>,
+    function: F,
+  ) -> Self {
+    Self::with_transaction_mode(
+      name,
+      HostFunctionTransactionMode::RuntimeManaged,
+      function,
+    )
+  }
+
+  fn with_transaction_mode(
+    name: impl Into<String>,
+    transaction_mode: HostFunctionTransactionMode,
+    function: F,
+  ) -> Self {
     Self {
       name: name.into(),
       capability: None,
+      transaction_mode,
       function,
     }
   }
@@ -163,12 +277,93 @@ where
     &self.name
   }
 
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    self.transaction_mode
+  }
+
   fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
     let _ = context;
     self.capability.clone()
   }
 
   fn call(&self, services: &mut dyn RuntimeServices, context: &mut RuntimeContext, args: Vec<Value>) -> MResult<Value> {
+    (self.function)(services, context, args)
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Staged Closure Host Function
+// -----------------------------------------------------------------------------
+
+pub struct StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  name: String,
+  capability: Option<CapabilityRequest>,
+  function: F,
+}
+
+impl<F> std::fmt::Debug for StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("StagedClosureHostFunction")
+      .field("name", &self.name)
+      .field("capability", &self.capability)
+      .field("function", &"<staged-closure>")
+      .finish()
+  }
+}
+
+impl<F> StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  pub fn new(
+    name: impl Into<String>,
+    function: F,
+  ) -> Self {
+    Self {
+      name: name.into(),
+      capability: None,
+      function,
+    }
+  }
+
+  pub fn with_capability(
+    mut self,
+    capability: CapabilityRequest,
+  ) -> Self {
+    self.capability = Some(capability);
+    self
+  }
+}
+
+impl<F> HostFunction for StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  fn name(&self) -> &str {
+    &self.name
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::Staged
+  }
+
+  fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
+    let _ = context;
+    self.capability.clone()
+  }
+
+  fn stage_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<RuntimePreparedHostCall> {
     (self.function)(services, context, args)
   }
 }
@@ -502,6 +697,26 @@ impl MechErrorKind for InvalidHostCallError {
 }
 
 #[derive(Debug, Clone)]
+pub struct HostFunctionTransactionUnsupportedError {
+  pub function: String,
+  pub mode: HostFunctionTransactionMode,
+}
+
+impl MechErrorKind for HostFunctionTransactionUnsupportedError {
+  fn name(&self) -> &str {
+    "HostFunctionTransactionUnsupported"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Host function `{}` uses transaction mode {:?} and cannot run inside a runtime transaction",
+      self.function,
+      self.mode,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct InvalidHostCallFieldError {
   pub field: &'static str,
   pub reason: &'static str,
@@ -631,5 +846,34 @@ mod tests {
       .unwrap();
 
     assert_eq!(result, Value::Empty);
+  }
+
+  #[test]
+  fn closure_constructors_require_explicit_transaction_contracts() {
+    let immediate = ClosureHostFunction::new(
+      "host.immediate",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
+    let pure = ClosureHostFunction::new_pure(
+      "host.pure",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
+    let runtime_managed = ClosureHostFunction::new_runtime_managed(
+      "host.runtime-managed",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
+
+    assert_eq!(
+      immediate.transaction_mode(),
+      HostFunctionTransactionMode::ImmediateOnly,
+    );
+    assert_eq!(
+      pure.transaction_mode(),
+      HostFunctionTransactionMode::Pure,
+    );
+    assert_eq!(
+      runtime_managed.transaction_mode(),
+      HostFunctionTransactionMode::RuntimeManaged,
+    );
   }
 }

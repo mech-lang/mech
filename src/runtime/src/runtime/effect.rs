@@ -3,7 +3,7 @@
 use super::*;
 use crate::{
   PreparedRuntimeEffect, RuntimeEffectFailure, RuntimeEffectFailurePhase,
-  RuntimeEffectId,
+  RuntimeEffectId, RuntimeEffectRecord,
 };
 #[cfg(test)]
 use crate::{
@@ -23,6 +23,14 @@ pub(super) struct RuntimeEffectEntry {
   pub(super) id: RuntimeEffectId,
   pub(super) state: RuntimeEffectState,
   pub(super) effect: PreparedRuntimeEffect,
+  resource_write: Option<RuntimeStagedResourceWrite>,
+}
+
+#[derive(Debug)]
+struct RuntimeStagedResourceWrite {
+  base_uri: String,
+  path: String,
+  value: Value,
 }
 
 pub(super) struct RuntimeEffectStepFailure {
@@ -33,6 +41,7 @@ pub(super) struct RuntimeEffectStepFailure {
 pub(super) struct RuntimeEffectCommitFailure {
   pub(super) step: RuntimeEffectStepFailure,
   pub(super) participant_outcomes: Vec<String>,
+  pub(super) committed: Vec<RuntimeEffectId>,
 }
 
 #[derive(Debug, Default)]
@@ -52,6 +61,64 @@ impl RuntimeEffectJournal {
 
   pub(super) fn is_empty(&self) -> bool {
     self.entries.is_empty()
+  }
+
+  pub(super) fn records(&self) -> Vec<RuntimeEffectRecord> {
+    self.entries.iter().map(|entry| {
+      RuntimeEffectRecord::new(
+        entry.id,
+        entry.effect.metadata(),
+        entry.effect.protocol(),
+      )
+    }).collect()
+  }
+
+  pub(super) fn prepared_transactional_ids(
+    &self,
+  ) -> Vec<RuntimeEffectId> {
+    self.entries.iter().filter_map(|entry| {
+      if entry.state == RuntimeEffectState::Prepared
+        && matches!(entry.effect, PreparedRuntimeEffect::Transactional(_))
+      {
+        Some(entry.id)
+      } else {
+        None
+      }
+    }).collect()
+  }
+
+  pub(super) fn applied_compensatable_ids(
+    &self,
+  ) -> Vec<RuntimeEffectId> {
+    self.entries.iter().filter_map(|entry| {
+      if entry.state == RuntimeEffectState::Applied
+        && matches!(entry.effect, PreparedRuntimeEffect::Compensatable(_))
+      {
+        Some(entry.id)
+      } else {
+        None
+      }
+    }).collect()
+  }
+
+  pub(super) fn after_commit_ids(&self) -> Vec<RuntimeEffectId> {
+    self.entries.iter().filter_map(|entry| {
+      if matches!(entry.effect, PreparedRuntimeEffect::AfterCommit(_)) {
+        Some(entry.id)
+      } else {
+        None
+      }
+    }).collect()
+  }
+
+  pub(super) fn abortable_ids(&self) -> Vec<RuntimeEffectId> {
+    self.entries.iter().filter_map(|entry| {
+      if matches!(entry.effect, PreparedRuntimeEffect::AfterCommit(_)) {
+        None
+      } else {
+        Some(entry.id)
+      }
+    }).collect()
   }
 
   pub(super) fn validate_active(
@@ -115,6 +182,34 @@ impl RuntimeEffectJournal {
     transaction: TransactionId,
     effect: PreparedRuntimeEffect,
   ) -> RuntimeEffectId {
+    self.stage_entry(transaction, effect, None)
+  }
+
+  pub(super) fn stage_resource_write(
+    &mut self,
+    transaction: TransactionId,
+    effect: PreparedRuntimeEffect,
+    base_uri: String,
+    path: String,
+    value: Value,
+  ) -> RuntimeEffectId {
+    self.stage_entry(
+      transaction,
+      effect,
+      Some(RuntimeStagedResourceWrite {
+        base_uri,
+        path,
+        value,
+      }),
+    )
+  }
+
+  fn stage_entry(
+    &mut self,
+    transaction: TransactionId,
+    effect: PreparedRuntimeEffect,
+    resource_write: Option<RuntimeStagedResourceWrite>,
+  ) -> RuntimeEffectId {
     let id = RuntimeEffectId {
       transaction,
       sequence: self.next_sequence,
@@ -124,8 +219,24 @@ impl RuntimeEffectJournal {
       id,
       state: RuntimeEffectState::Staged,
       effect,
+      resource_write,
     });
     id
+  }
+
+  pub(super) fn staged_resource_value(
+    &self,
+    base_uri: &str,
+    path: &str,
+  ) -> Option<Value> {
+    self.entries.iter().rev().find_map(|entry| {
+      let write = entry.resource_write.as_ref()?;
+      if write.base_uri == base_uri && write.path == path {
+        Some(write.value.clone())
+      } else {
+        None
+      }
+    })
   }
 
   pub(super) fn rollback_to(
@@ -257,8 +368,9 @@ impl RuntimeEffectJournal {
 
   pub(super) fn commit_transactional(
     &mut self,
-  ) -> Result<Vec<String>, RuntimeEffectCommitFailure> {
+  ) -> Result<Vec<RuntimeEffectId>, RuntimeEffectCommitFailure> {
     let mut outcomes = Vec::new();
+    let mut committed = Vec::new();
     for entry in &mut self.entries {
       if entry.state != RuntimeEffectState::Prepared {
         continue;
@@ -267,10 +379,13 @@ impl RuntimeEffectJournal {
         continue;
       };
       match effect.commit() {
-        Ok(()) => outcomes.push(format!(
-          "transactional effect {} committed",
-          entry.id,
-        )),
+        Ok(()) => {
+          outcomes.push(format!(
+            "transactional effect {} committed",
+            entry.id,
+          ));
+          committed.push(entry.id);
+        }
         Err(error) => {
           let step = effect_step_failure(
             entry.id,
@@ -285,11 +400,12 @@ impl RuntimeEffectJournal {
           return Err(RuntimeEffectCommitFailure {
             step,
             participant_outcomes: outcomes,
+            committed,
           });
         }
       }
     }
-    Ok(outcomes)
+    Ok(committed)
   }
 
   pub(super) fn deliver_after_commit(
@@ -454,15 +570,221 @@ impl MechRuntime {
       ));
     }
     let cost = effect.cost();
+    let metadata = effect.metadata();
+    let protocol = effect.protocol();
     context.charge_bytes(cost.bytes)?;
     context.charge_items(cost.items)?;
+    let store_before = self
+      .active_execution_transaction(transaction_id)?
+      .store
+      .clone();
+    let effect_mark = self
+      .active_execution_transaction(transaction_id)?
+      .effects
+      .mark();
+    let context_events_before = context.events.clone();
+    let effect_id = self
+      .active_execution_transaction_mut(transaction_id)?
+      .effects
+      .stage(transaction_id, effect);
 
-    Ok(
-      self
-        .active_execution_transaction_mut(transaction_id)?
-        .effects
-        .stage(transaction_id, effect),
-    )
+    if let Err(error) = self.emit_event_to_context(
+      context,
+      RuntimeEventKind::EffectStaged {
+        effect_id,
+        source: metadata.source,
+        operation: metadata.operation,
+        resource: metadata.resource,
+        protocol,
+      },
+    ) {
+      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let cleanup = {
+        let transaction =
+          self.active_execution_transaction_mut(transaction_id)?;
+        transaction.store = store_before;
+        transaction.effects.rollback_to(effect_mark)
+      };
+      self.active_effect_phase = None;
+      context.events = context_events_before;
+      if cleanup.is_empty() {
+        return Err(error);
+      }
+      return Err(self.poison_effect_cleanup(
+        "stage_runtime_effect_with_context",
+        transaction_id,
+        format!("{:?}", error),
+        Self::describe_effect_failures(cleanup),
+      ));
+    }
+
+    Ok(effect_id)
+  }
+
+  pub(super) fn stage_runtime_resource_effect_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    effect: PreparedRuntimeEffect,
+    base_uri: String,
+    path: String,
+    value: Value,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_healthy(
+      "stage_runtime_resource_effect_with_context",
+    )?;
+    self.reject_effect_reentrancy(
+      "stage_runtime_resource_effect_with_context",
+    )?;
+    self.validate_context_for_runtime(context)?;
+
+    let transaction_id = Self::context_transaction_id(context)?;
+    if self.active_execution_transaction(transaction_id)?.state
+      != RuntimeExecutionTransactionState::Active
+    {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "stage_runtime_resource_effect_with_context",
+          reason: format!(
+            "transaction {} is not accepting new effects",
+            transaction_id,
+          ),
+        },
+        None,
+      ));
+    }
+    let cost = effect.cost();
+    let metadata = effect.metadata();
+    let protocol = effect.protocol();
+    context.charge_bytes(cost.bytes)?;
+    context.charge_items(cost.items)?;
+    let store_before = self
+      .active_execution_transaction(transaction_id)?
+      .store
+      .clone();
+    let effect_mark = self
+      .active_execution_transaction(transaction_id)?
+      .effects
+      .mark();
+    let context_events_before = context.events.clone();
+    let effect_id = self
+      .active_execution_transaction_mut(transaction_id)?
+      .effects
+      .stage_resource_write(
+        transaction_id,
+        effect,
+        base_uri,
+        path,
+        value,
+      );
+
+    if let Err(error) = self.emit_event_to_context(
+      context,
+      RuntimeEventKind::EffectStaged {
+        effect_id,
+        source: metadata.source,
+        operation: metadata.operation,
+        resource: metadata.resource,
+        protocol,
+      },
+    ) {
+      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let cleanup = {
+        let transaction =
+          self.active_execution_transaction_mut(transaction_id)?;
+        transaction.store = store_before;
+        transaction.effects.rollback_to(effect_mark)
+      };
+      self.active_effect_phase = None;
+      context.events = context_events_before;
+      if cleanup.is_empty() {
+        return Err(error);
+      }
+      return Err(self.poison_effect_cleanup(
+        "stage_runtime_resource_effect_with_context",
+        transaction_id,
+        format!("{:?}", error),
+        Self::describe_effect_failures(cleanup),
+      ));
+    }
+
+    Ok(effect_id)
+  }
+
+  pub(super) fn execute_runtime_effect_immediately(
+    &mut self,
+    mut effect: PreparedRuntimeEffect,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_healthy("execute_runtime_effect_immediately")?;
+    self.reject_effect_reentrancy("execute_runtime_effect_immediately")?;
+
+    let effect_id = RuntimeEffectId {
+      transaction: self.next_transaction_id(),
+      sequence: 0,
+    };
+    match &mut effect {
+      PreparedRuntimeEffect::Transactional(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Preparing);
+        let prepare_result = effect.prepare();
+        self.active_effect_phase = None;
+        prepare_result?;
+
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Committing);
+        let commit_result = effect.commit();
+        self.active_effect_phase = None;
+        if let Err(error) = commit_result {
+          return Err(self.poison_external_commit_indeterminate(
+            effect_id.transaction,
+            effect_id,
+            vec![format!(
+              "immediate transactional effect {} commit failed: {:?}",
+              effect_id,
+              error,
+            )],
+          ));
+        }
+      }
+      PreparedRuntimeEffect::Compensatable(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Applying);
+        let result = effect.apply();
+        self.active_effect_phase = None;
+        result?;
+      }
+      PreparedRuntimeEffect::AfterCommit(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Delivering);
+        let result = effect.deliver();
+        self.active_effect_phase = None;
+        result?;
+      }
+    }
+    Ok(effect_id)
+  }
+
+  pub(super) fn discard_unstaged_runtime_effect(
+    &mut self,
+    mut effect: PreparedRuntimeEffect,
+  ) -> MResult<()> {
+    let result = match &mut effect {
+      PreparedRuntimeEffect::Transactional(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Aborting);
+        let result = effect.abort();
+        self.active_effect_phase = None;
+        result
+      }
+      PreparedRuntimeEffect::Compensatable(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Aborting);
+        let result = effect.abort();
+        self.active_effect_phase = None;
+        result
+      }
+      PreparedRuntimeEffect::AfterCommit(_) => Ok(()),
+    };
+    result
   }
 }
 
@@ -671,6 +993,28 @@ mod tests {
   }
 
   #[derive(Debug)]
+  struct SensitiveAfterCommit {
+    secret_payload: String,
+  }
+
+  impl RuntimeAfterCommitEffect for SensitiveAfterCommit {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::Custom {
+          name: "sensitive-test".to_string(),
+        },
+        "deliver",
+      )
+      .with_resource("test://metadata-only")
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      assert!(!self.secret_payload.is_empty());
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
   struct CostedAfterCommit {
     cost: crate::RuntimeEffectCost,
   }
@@ -717,6 +1061,86 @@ mod tests {
 
     assert_eq!(journal.len(), 2);
     assert_eq!(journal.next_sequence(), 3);
+  }
+
+  #[test]
+  fn transaction_history_persists_effect_metadata_without_payload() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    let secret = "raw-secret-payload-must-not-be-durable";
+    let effect_id = runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(
+          SensitiveAfterCommit {
+            secret_payload: secret.to_string(),
+          },
+        )),
+      )
+      .unwrap();
+
+    runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    let transaction = runtime
+      .get_transaction(transaction_id)
+      .unwrap()
+      .unwrap();
+    assert_eq!(transaction.effects.len(), 1);
+    assert_eq!(transaction.effects[0].id, effect_id);
+    assert_eq!(
+      transaction.effects[0].protocol,
+      crate::RuntimeEffectProtocol::AfterCommit,
+    );
+    assert_eq!(
+      transaction.effects[0].resource.as_deref(),
+      Some("test://metadata-only"),
+    );
+    assert!(!format!("{:?}", transaction).contains(secret));
+    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::EffectDelivered { effect_id: delivered }
+          if delivered == effect_id
+      )
+    }));
+  }
+
+  #[test]
+  fn savepoint_rollback_discards_effect_and_staging_event() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    let result: MResult<RuntimeEffectId> =
+      runtime.with_atomic_program_operation(
+        &mut context,
+        "effect_staging_event_rollback",
+        |runtime, context| {
+          let effect_id = runtime.stage_runtime_effect_with_context(
+            context,
+            effect("rolled-back"),
+          )?;
+          Err(synthetic_error(format!(
+            "deliberate rollback for {}",
+            effect_id,
+          )))
+        },
+      );
+
+    assert_eq!(result.unwrap_err().kind_name(), "SyntheticEffectError");
+    assert!(runtime
+      .active_execution_transaction(transaction_id)
+      .unwrap()
+      .effects
+      .is_empty());
+    assert!(!context.events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::EffectStaged { .. })
+    }));
+    runtime
+      .abort_runtime_transaction(&mut context, "test cleanup")
+      .unwrap();
   }
 
   #[test]
@@ -802,6 +1226,15 @@ mod tests {
       RuntimeExecutionTransactionState::Active,
     );
     assert!(!runtime.is_poisoned());
+    assert!(context.events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::EffectPreparationFailed { .. }
+      )
+    }));
+    assert!(context.events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::EffectAborted { .. })
+    }));
 
     runtime
       .abort_runtime_transaction(&mut context, "prepare test cleanup")
@@ -911,6 +1344,12 @@ mod tests {
     );
     assert_eq!(context.transaction, Some(transaction_id));
     assert!(!runtime.is_poisoned());
+    assert!(context.events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::EffectCompensated { .. })
+    }));
+    assert!(context.events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::EffectAborted { .. })
+    }));
 
     runtime
       .abort_runtime_transaction(&mut context, "apply test cleanup")
@@ -997,6 +1436,12 @@ mod tests {
       .rollback_failures
       .iter()
       .any(|failure| failure.contains("first compensate failed")));
+    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::EffectCompensationFailed { .. }
+      )
+    }));
 
     assert!(runtime
       .abort_runtime_transaction(&mut context, "poison test cleanup")
@@ -1056,6 +1501,19 @@ mod tests {
       .get_transaction(transaction_id)
       .unwrap()
       .is_some());
+    let events = runtime.list_events(None).unwrap();
+    assert!(events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::TransactionalEffectCommitted { .. }
+      )
+    }));
+    assert!(events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::ExternalCommitIndeterminate { .. }
+      )
+    }));
   }
 
   #[test]
@@ -1112,6 +1570,19 @@ mod tests {
       .get_transaction(transaction_id)
       .unwrap()
       .is_some());
+    let events = runtime.list_events(None).unwrap();
+    assert!(events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::EffectDelivered { .. })
+    }));
+    assert!(events.iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::EffectDeliveryFailed {
+          effect_id,
+          ..
+        } if effect_id == failing_effect_id
+      )
+    }));
   }
 
   #[test]

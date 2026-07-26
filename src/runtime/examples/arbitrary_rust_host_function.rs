@@ -44,7 +44,7 @@ fn main() -> MResult<()> {
 
   println!("runtime: {}", short(runtime.id()));
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/echo",
     |_services, _context, args| {
       let text = host_arg_string("demo/echo", &args, 0)?;
@@ -56,7 +56,7 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/join",
     |_services, _context, args| {
       let left = host_arg_string("demo/join", &args, 0)?;
