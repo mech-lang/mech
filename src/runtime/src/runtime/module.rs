@@ -2561,13 +2561,14 @@ mod tests {
 
     runtime.run_string("reactive-boundary := 1").unwrap();
     let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    let error = runtime
+    let transaction_id =
+      runtime.begin_transaction(&mut context).unwrap();
+    runtime
       .step_with_context(&mut context, 1)
-      .unwrap_err();
+      .unwrap();
     assert_eq!(
-      error.kind_name(),
-      "RuntimeTransactionalReactiveTurnUnsupported",
+      runtime.program_transaction_owner,
+      Some(transaction_id),
     );
     runtime
       .abort_runtime_transaction(

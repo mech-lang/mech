@@ -845,6 +845,282 @@ fn live_context_capability_order_does_not_cause_mismatch() {
   runtime.run_string_with_context(&mut context_b, "@pulse := test://clock/ticks{:read(value)}\nother := @pulse/value").unwrap();
 }
 
+#[test]
+fn host_input_preparation_opens_no_transaction_or_budget_charge() {
+  let mut runtime =
+    test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let mut load_context = runtime.runtime_context().unwrap();
+  runtime
+    .run_string_with_context(
+      &mut load_context,
+      "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+    )
+    .unwrap();
+  let source =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  let mut context = runtime.live_turn_context().unwrap();
+  let used_steps = context.budget.used_steps;
+  let event_sequence = runtime.event_sequence;
+
+  let empty = RuntimeHostInput { updates: Vec::new() };
+  assert!(runtime
+    .apply_host_input_with_context(&mut context, empty)
+    .is_err());
+  assert_eq!(context.budget.used_steps, used_steps);
+  assert_eq!(runtime.event_sequence, event_sequence);
+  assert!(runtime.active_transactions.is_empty());
+
+  let target = runtime.live_input_bindings[&source][0];
+  let alias =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "alias").unwrap();
+  runtime
+    .live_input_bindings
+    .insert(alias.clone(), vec![target]);
+  let duplicate = RuntimeHostInput::new(vec![
+    RuntimeHostInputUpdate {
+      source: source.clone(),
+      value: RuntimeHostInputValue::F64(2.0),
+    },
+    RuntimeHostInputUpdate {
+      source: alias,
+      value: RuntimeHostInputValue::F64(3.0),
+    },
+  ])
+  .unwrap();
+  let error = runtime
+    .apply_host_input_with_context(&mut context, duplicate)
+    .unwrap_err();
+  assert_eq!(error.kind_name(), "ProgramInputDuplicateTarget");
+  assert_eq!(context.budget.used_steps, used_steps);
+  assert_eq!(runtime.event_sequence, event_sequence);
+  assert!(runtime.active_transactions.is_empty());
+
+  let unbound = RuntimeHostInput::single(
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "missing").unwrap(),
+    RuntimeHostInputValue::F64(4.0),
+  );
+  let outcome = runtime
+    .apply_host_input_with_context(&mut context, unbound)
+    .unwrap();
+  assert!(outcome.turn.is_none());
+  assert_eq!(context.budget.used_steps, used_steps);
+  assert_eq!(runtime.event_sequence, event_sequence);
+  assert!(runtime.active_transactions.is_empty());
+}
+
+#[test]
+fn explicit_host_input_is_provisional_until_outer_decision() {
+  let mut runtime =
+    test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let mut load_context = runtime.runtime_context().unwrap();
+  runtime
+    .run_string_with_context(
+      &mut load_context,
+      "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+    )
+    .unwrap();
+  let source =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  let mut context = runtime.live_turn_context().unwrap();
+  let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+  let outcome = runtime
+    .apply_host_input_with_context(
+      &mut context,
+      RuntimeHostInput::single(
+        source.clone(),
+        RuntimeHostInputValue::F64(5.0),
+      ),
+    )
+    .unwrap();
+  assert!(outcome.turn.is_some());
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+  assert_eq!(
+    runtime.program_transaction_owner,
+    Some(transaction_id),
+  );
+  assert!(runtime.active_transactions.contains_key(&transaction_id));
+
+  runtime
+    .abort_runtime_transaction(&mut context, "discard host input")
+    .unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 1.0);
+
+  let mut commit_context = runtime.live_turn_context().unwrap();
+  runtime.begin_transaction(&mut commit_context).unwrap();
+  runtime
+    .apply_host_input_with_context(
+      &mut commit_context,
+      RuntimeHostInput::single(
+        source,
+        RuntimeHostInputValue::F64(7.0),
+      ),
+    )
+    .unwrap();
+  runtime
+    .commit_runtime_transaction(&mut commit_context)
+    .unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 14.0);
+}
+
+#[test]
+fn implicit_host_input_cannot_drive_an_explicit_program_owner() {
+  let mut runtime =
+    test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let mut load_context = runtime.runtime_context().unwrap();
+  runtime
+    .run_string_with_context(
+      &mut load_context,
+      "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+    )
+    .unwrap();
+  let source =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  let mut owner_context = runtime.live_turn_context().unwrap();
+  let owner = runtime.begin_transaction(&mut owner_context).unwrap();
+  runtime
+    .step_with_context(&mut owner_context, 0)
+    .unwrap();
+
+  let error = runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::F64(5.0),
+    ))
+    .unwrap_err();
+  assert_eq!(error.kind_name(), "RuntimeProgramBusy");
+  assert_eq!(runtime.program_transaction_owner, Some(owner));
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 1.0);
+
+  runtime
+    .abort_runtime_transaction(&mut owner_context, "release input owner")
+    .unwrap();
+}
+
+#[test]
+fn host_input_context_accepts_transaction_capabilities_but_rejects_drift() {
+  let mut runtime =
+    test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let mut load_context = runtime.runtime_context().unwrap();
+  runtime
+    .run_string_with_context(
+      &mut load_context,
+      "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+    )
+    .unwrap();
+  let source =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+
+  let mut context = runtime.live_turn_context().unwrap();
+  runtime.begin_transaction(&mut context).unwrap();
+  let capability_id = CapabilityId(910);
+  let subject = context.subject.clone();
+  runtime
+    .grant_capability_with_context(
+      &mut context,
+      Arc::new(BasicCapability::new(
+        capability_id,
+        &BasicSubject::new(&subject),
+        &BasicResource::new("db://host-input"),
+        [BasicOperation::read()],
+      )),
+    )
+    .unwrap();
+  runtime
+    .apply_host_input_with_context(
+      &mut context,
+      RuntimeHostInput::single(
+        source.clone(),
+        RuntimeHostInputValue::F64(2.0),
+      ),
+    )
+    .unwrap();
+  runtime
+    .revoke_capability_with_context(&mut context, capability_id)
+    .unwrap();
+  runtime
+    .apply_host_input_with_context(
+      &mut context,
+      RuntimeHostInput::single(
+        source.clone(),
+        RuntimeHostInputValue::F64(3.0),
+      ),
+    )
+    .unwrap();
+  runtime
+    .abort_runtime_transaction(&mut context, "capability context test")
+    .unwrap();
+
+  let mut drift = runtime.live_turn_context().unwrap();
+  drift.add_capability(CapabilityId(999));
+  let error = runtime
+    .apply_host_input_with_context(
+      &mut drift,
+      RuntimeHostInput::single(
+        source.clone(),
+        RuntimeHostInputValue::F64(4.0),
+      ),
+    )
+    .unwrap_err();
+  assert!(format!("{error:?}").contains("RuntimeLiveContextMismatch"));
+
+  let mut maxima = runtime.live_turn_context().unwrap();
+  maxima.budget.max_steps = Some(1);
+  let error = runtime
+    .apply_host_input_with_context(
+      &mut maxima,
+      RuntimeHostInput::single(
+        source,
+        RuntimeHostInputValue::F64(5.0),
+      ),
+    )
+    .unwrap_err();
+  assert!(format!("{error:?}").contains("RuntimeLiveContextMismatch"));
+}
+
+#[test]
+fn failed_dequeued_host_input_is_consumed_and_later_packet_remains() {
+  let mut runtime =
+    test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let mut context = runtime.runtime_context().unwrap();
+  runtime
+    .run_string_with_context(
+      &mut context,
+      "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+    )
+    .unwrap();
+  let source =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  let ingress = runtime.ingress();
+  ingress
+    .submit(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::String("wrong kind".to_string()),
+    ))
+    .unwrap();
+  ingress
+    .submit(RuntimeHostInput::single(
+      source,
+      RuntimeHostInputValue::F64(9.0),
+    ))
+    .unwrap();
+
+  assert!(runtime.drain_host_inputs(2).is_err());
+  assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 1.0);
+
+  let outcomes = runtime.drain_host_inputs(1).unwrap();
+  assert_eq!(outcomes.len(), 1);
+  assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "output")), 9.0);
+}
+
 #[derive(Debug, Clone)]
 struct MockDriver {
   name: String,
@@ -1521,13 +1797,22 @@ output := hour + 1
   }
 
   #[test]
-  fn persistent_send_provider_failure_returns_from_drain() {
+  fn persistent_send_delivery_failure_keeps_committed_drain_healthy() {
     let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
     load(&mut runtime, "scalar-output");
     console.fail_next("expected drain failure");
     driver.publish(snapshot(5.0, 6.0, 7.0, 8.0)).unwrap();
-    let err = runtime.drain_host_inputs(1).unwrap_err();
-    assert!(format!("{err:?}").contains("expected drain failure"));
+    let outcomes = runtime.drain_host_inputs(1).unwrap();
+    assert_eq!(outcomes.len(), 1);
+    assert!(outcomes[0].turn.is_some());
+    assert!(!runtime.is_poisoned());
+    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(
+        &event.kind,
+        RuntimeEventKind::EffectDeliveryFailed { message, .. }
+          if message.contains("expected drain failure")
+      )
+    }));
   }
 
   #[test]
@@ -2196,7 +2481,7 @@ render-tick := @tick/tick
     }
 
     #[test]
-    fn activation_send_provider_failure_is_fail_fast_and_registration_is_retained() {
+    fn activation_send_delivery_failure_continues_and_registration_is_retained() {
         let provider = TestResourceProvider::new().with_value(
             "test://render/timer",
             "tick",
@@ -2233,21 +2518,32 @@ latest := render-tick + 1.0
         assert_eq!(activation_send_count(&runtime), 3);
         let plan_before = activation_plan_snapshot(&runtime);
         output.fail_once_at(2);
-        let error = runtime
+        let outcome = runtime
             .apply_host_input(RuntimeHostInput::single(
                 RuntimeHostInputSource::new("test://render/timer", "tick").unwrap(),
                 RuntimeHostInputValue::F64(1.0),
             ))
-            .unwrap_err();
-        assert!(
-            error.kind_as::<PersistentSendTestError>().is_some(),
-            "unexpected error: {error:?}"
-        );
+            .unwrap();
+        assert!(outcome.turn.is_some());
+        assert!(!runtime.is_poisoned());
+        assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+          matches!(
+            event.kind,
+            RuntimeEventKind::EffectDeliveryFailed { .. }
+          )
+        }));
         assert_eq!(
             output.attempts(),
-            vec!["\"first\"".to_string(), "\"second\"".to_string()]
+            vec![
+                "\"first\"".to_string(),
+                "\"second\"".to_string(),
+                "\"third\"".to_string()
+            ]
         );
-        assert_eq!(output.successes(), vec!["\"first\"".to_string()]);
+        assert_eq!(
+            output.successes(),
+            vec!["\"first\"".to_string(), "\"third\"".to_string()]
+        );
         assert_eq!(
             f64_value(&symbol_value(&runtime, "latest")),
             2.0,
@@ -2262,6 +2558,7 @@ latest := render-tick + 1.0
             vec![
                 "\"first\"".to_string(),
                 "\"second\"".to_string(),
+                "\"third\"".to_string(),
                 "\"first\"".to_string(),
                 "\"second\"".to_string(),
                 "\"third\"".to_string()
@@ -2271,6 +2568,7 @@ latest := render-tick + 1.0
             output.successes(),
             vec![
                 "\"first\"".to_string(),
+                "\"third\"".to_string(),
                 "\"first\"".to_string(),
                 "\"second\"".to_string(),
                 "\"third\"".to_string()

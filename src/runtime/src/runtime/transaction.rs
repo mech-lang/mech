@@ -793,24 +793,20 @@ impl MechRuntime {
     &mut self,
     envelope: &RuntimeExecutionTransaction,
   ) -> MResult<()> {
-    for mutation in envelope.capabilities.mutations() {
-      match mutation {
-        RuntimeCapabilityMutation::Grant(capability) => {
-          self
-            .capability_kernel
-            .grant(CapabilityGrant::new(capability))?;
-        }
-        RuntimeCapabilityMutation::Revoke(capability) => {
-          self
-            .capability_kernel
-            .revoke(CapabilityRevocation::new(capability))?;
-        }
-      }
+    for (_, capability) in envelope.capabilities.grants() {
+      self
+        .capability_kernel
+        .grant(CapabilityGrant::new(capability))?;
     }
     for (capability, uses) in envelope.capabilities.usage_deltas() {
       self
         .capability_kernel
         .apply_usage_delta(capability, uses)?;
+    }
+    for capability in envelope.capabilities.revocations() {
+      self
+        .capability_kernel
+        .revoke(CapabilityRevocation::new(capability))?;
     }
     Ok(())
   }

@@ -12,6 +12,7 @@ pub(super) enum RuntimeExecutionTransactionMode {
   Explicit,
   ImplicitModuleOperation,
   ImplicitProgramOperation,
+  ImplicitReactiveTurn,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -174,6 +175,14 @@ pub(super) struct RuntimeProgramBaseline {
   pub(super) live: RuntimeLiveStateSnapshot,
 }
 
+pub(super) enum RuntimeProgramOwnershipAcquisition {
+  Existing,
+  NewlyAcquired {
+    program: MechProgramCheckpoint,
+    live: RuntimeLiveStateSnapshot,
+  },
+}
+
 pub(super) struct RuntimeExecutionTransaction {
   pub(super) store: RuntimeTransaction,
   pub(super) modules: RuntimeModuleJournal,
@@ -241,6 +250,8 @@ thread_local! {
   static PROGRAM_TRANSACTION_TEST_FAULT:
     std::cell::RefCell<Option<ProgramTransactionTestFault>> =
       const { std::cell::RefCell::new(None) };
+  static RUNTIME_PROGRAM_CHECKPOINT_COUNT:
+    std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]
@@ -258,6 +269,16 @@ fn take_program_transaction_test_fault() -> Option<ProgramTransactionTestFault> 
   PROGRAM_TRANSACTION_TEST_FAULT.with(|slot| slot.replace(None))
 }
 
+#[cfg(test)]
+pub(super) fn reset_runtime_program_checkpoint_count() {
+  RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(|count| count.set(0));
+}
+
+#[cfg(test)]
+pub(super) fn runtime_program_checkpoint_count() -> usize {
+  RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(std::cell::Cell::get)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeHealth {
   Healthy,
@@ -273,6 +294,121 @@ pub struct RuntimePoisonRecord {
 }
 
 impl MechRuntime {
+  fn capture_runtime_program_checkpoint(
+    &self,
+  ) -> MResult<MechProgramCheckpoint> {
+    #[cfg(test)]
+    RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(|count| {
+      count.set(count.get().saturating_add(1));
+    });
+    self.program.checkpoint()
+  }
+
+  pub(super) fn acquire_program_transaction_ownership(
+    &mut self,
+    transaction_id: TransactionId,
+    operation: &'static str,
+  ) -> MResult<RuntimeProgramOwnershipAcquisition> {
+    if let Some(owner) = self.program_transaction_owner {
+      if owner != transaction_id {
+        return Err(MechError::new(
+          RuntimeProgramBusy {
+            operation,
+            owner,
+            requester: Some(transaction_id),
+          },
+          None,
+        ));
+      }
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      if transaction.mode != RuntimeExecutionTransactionMode::Explicit {
+        return self.coordinator_invariant_failure(
+          operation,
+          Some(transaction_id),
+          "program owner transaction is not explicit",
+        );
+      }
+      if transaction.program.is_none() {
+        return self.coordinator_invariant_failure(
+          operation,
+          Some(transaction_id),
+          "program ownership exists without a transaction program baseline",
+        );
+      }
+      return Ok(RuntimeProgramOwnershipAcquisition::Existing);
+    }
+
+    {
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      if transaction.mode != RuntimeExecutionTransactionMode::Explicit {
+        return self.coordinator_invariant_failure(
+          operation,
+          Some(transaction_id),
+          "program ownership can only be acquired by an explicit transaction",
+        );
+      }
+      if transaction.program.is_some() {
+        return self.coordinator_invariant_failure(
+          operation,
+          Some(transaction_id),
+          "transaction has a program baseline without program ownership",
+        );
+      }
+    }
+
+    let program = self.capture_runtime_program_checkpoint()?;
+    let live = self.live_state_snapshot();
+    self.active_execution_transaction_mut(transaction_id)?.program =
+      Some(RuntimeProgramBaseline {
+        program: program.clone(),
+        live: live.clone(),
+      });
+    self.program_transaction_owner = Some(transaction_id);
+    Ok(RuntimeProgramOwnershipAcquisition::NewlyAcquired {
+      program,
+      live,
+    })
+  }
+
+  pub(super) fn release_new_program_transaction_ownership(
+    &mut self,
+    transaction_id: TransactionId,
+  ) -> MResult<()> {
+    if self.program_transaction_owner != Some(transaction_id) {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "release_new_program_transaction_ownership",
+          reason: format!(
+            "transaction {} does not own the retained program",
+            transaction_id,
+          ),
+        },
+        None,
+      ));
+    }
+    if self
+      .active_execution_transaction(transaction_id)?
+      .program
+      .is_none()
+    {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "release_new_program_transaction_ownership",
+          reason: format!(
+            "transaction {} has no retained program baseline",
+            transaction_id,
+          ),
+        },
+        None,
+      ));
+    }
+    self.active_execution_transaction_mut(transaction_id)?.program = None;
+    self.program_transaction_owner = None;
+    Ok(())
+  }
+
   pub(super) fn ensure_runtime_healthy(
     &self,
     operation: &'static str,
@@ -330,24 +466,6 @@ impl MechRuntime {
     self.reject_effect_reentrancy(operation)
   }
 
-  pub(super) fn reject_transactional_reactive_turn(
-    &self,
-    context: &RuntimeContext,
-    operation: &'static str,
-  ) -> MResult<()> {
-    if context.transaction.is_none() && self.program_transaction_owner.is_none() {
-      return Ok(());
-    }
-    Err(MechError::new(
-      RuntimeTransactionalReactiveTurnUnsupported {
-        operation,
-        transaction_id: context.transaction,
-        owner: self.program_transaction_owner,
-      },
-      None,
-    ))
-  }
-
   pub(super) fn poison_program_operation(
     &mut self,
     operation: &'static str,
@@ -372,7 +490,7 @@ impl MechRuntime {
     )
   }
 
-  fn coordinator_invariant_failure<T>(
+  pub(super) fn coordinator_invariant_failure<T>(
     &mut self,
     operation: &'static str,
     transaction_id: Option<TransactionId>,
@@ -717,7 +835,8 @@ impl MechRuntime {
     let mut first_explicit_operation = false;
 
     let (transaction_id, program_checkpoint, live_checkpoint) = if implicit {
-      let program_checkpoint = self.program.checkpoint()?;
+      let program_checkpoint =
+        self.capture_runtime_program_checkpoint()?;
       let live_checkpoint = self.live_state_snapshot();
       let transaction_id = self.begin_runtime_transaction_internal(
         context,
@@ -732,33 +851,23 @@ impl MechRuntime {
       (transaction_id, program_checkpoint, live_checkpoint)
     } else {
       let transaction_id = requested_transaction.unwrap();
-      let mode = self.active_execution_transaction(transaction_id)?.mode;
-      if mode != RuntimeExecutionTransactionMode::Explicit {
-        return self.coordinator_invariant_failure(
-          operation,
-          Some(transaction_id),
-          "a public retained operation entered an implicit execution transaction without reentrancy detection",
-        );
+      match self.acquire_program_transaction_ownership(
+        transaction_id,
+        operation,
+      )? {
+        RuntimeProgramOwnershipAcquisition::NewlyAcquired {
+          program,
+          live,
+        } => {
+          first_explicit_operation = true;
+          (transaction_id, program, live)
+        }
+        RuntimeProgramOwnershipAcquisition::Existing => (
+          transaction_id,
+          self.capture_runtime_program_checkpoint()?,
+          self.live_state_snapshot(),
+        ),
       }
-
-      let program_checkpoint = self.program.checkpoint()?;
-      let live_checkpoint = self.live_state_snapshot();
-      if self.program_transaction_owner.is_none() {
-        self.active_execution_transaction_mut(transaction_id)?.program =
-          Some(RuntimeProgramBaseline {
-            program: program_checkpoint.clone(),
-            live: live_checkpoint.clone(),
-          });
-        self.program_transaction_owner = Some(transaction_id);
-        first_explicit_operation = true;
-      } else if self.active_execution_transaction(transaction_id)?.program.is_none() {
-        return self.coordinator_invariant_failure(
-          operation,
-          Some(transaction_id),
-          "program ownership exists without a transaction program baseline",
-        );
-      }
-      (transaction_id, program_checkpoint, live_checkpoint)
     };
 
     let savepoint = RuntimeProgramOperationSavepoint {
@@ -823,11 +932,18 @@ impl MechRuntime {
           cleanup_failures,
         ));
       } else if first_explicit_operation {
-        self.program_transaction_owner = None;
-        if let Ok(transaction) =
-          self.active_execution_transaction_mut(transaction_id)
+        if let Err(error) =
+          self.release_new_program_transaction_ownership(transaction_id)
         {
-          transaction.program = None;
+          return Err(self.poison_program_operation(
+            operation,
+            Some(transaction_id),
+            original_error_text,
+            vec![format!(
+              "program ownership release failed: {:?}",
+              error,
+            )],
+          ));
         }
       }
       return Err(original_error);

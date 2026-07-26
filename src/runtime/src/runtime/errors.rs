@@ -140,28 +140,6 @@ impl MechErrorKind for RuntimeProgramOperationReentrant {
 }
 
 #[derive(Debug, Clone)]
-pub struct RuntimeTransactionalReactiveTurnUnsupported {
-  pub operation: &'static str,
-  pub transaction_id: Option<TransactionId>,
-  pub owner: Option<TransactionId>,
-}
-
-impl MechErrorKind for RuntimeTransactionalReactiveTurnUnsupported {
-  fn name(&self) -> &str {
-    "RuntimeTransactionalReactiveTurnUnsupported"
-  }
-
-  fn message(&self) -> String {
-    format!(
-      "reactive operation `{}` cannot run transactionally yet (transaction {:?}, program owner {:?})",
-      self.operation,
-      self.transaction_id,
-      self.owner,
-    )
-  }
-}
-
-#[derive(Debug, Clone)]
 pub struct RuntimeTransactionalLiveRegistrationUnsupported {
   pub transaction_id: TransactionId,
   pub owner: Option<TransactionId>,

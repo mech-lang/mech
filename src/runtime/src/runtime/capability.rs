@@ -22,6 +22,7 @@ use std::collections::{HashMap, HashSet};
 pub(super) enum RuntimeCapabilityMutation {
   Grant(Arc<dyn Capability>),
   Revoke(CapabilityId),
+  Use(CapabilityId),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -31,6 +32,7 @@ pub(super) struct RuntimeCapabilityOverlay {
   grant_order: Vec<CapabilityId>,
   revocations: HashSet<CapabilityId>,
   uses: HashMap<CapabilityId, u64>,
+  usage_order: Vec<CapabilityId>,
 }
 
 impl RuntimeCapabilityOverlay {
@@ -39,21 +41,30 @@ impl RuntimeCapabilityOverlay {
   }
 
   pub(super) fn is_empty(&self) -> bool {
-    self.grants.is_empty() && self.revocations.is_empty()
+    self.grants.is_empty()
+      && self.revocations.is_empty()
+      && self.uses.is_empty()
   }
 
-  pub(super) fn stage_grant(&mut self, capability: Arc<dyn Capability>) {
-    self
-      .operations
-      .push(RuntimeCapabilityMutation::Grant(capability));
-    self.rebuild();
+  pub(super) fn stage_grant(
+    &mut self,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<()> {
+    self.stage_operation(RuntimeCapabilityMutation::Grant(capability))
   }
 
-  pub(super) fn stage_revocation(&mut self, capability: CapabilityId) {
-    self
-      .operations
-      .push(RuntimeCapabilityMutation::Revoke(capability));
-    self.rebuild();
+  pub(super) fn stage_revocation(
+    &mut self,
+    capability: CapabilityId,
+  ) -> MResult<()> {
+    self.stage_operation(RuntimeCapabilityMutation::Revoke(capability))
+  }
+
+  pub(super) fn stage_use(
+    &mut self,
+    capability: CapabilityId,
+  ) -> MResult<()> {
+    self.stage_operation(RuntimeCapabilityMutation::Use(capability))
   }
 
   pub(super) fn rollback_to(&mut self, mark: usize) -> MResult<()> {
@@ -71,8 +82,7 @@ impl RuntimeCapabilityOverlay {
       ));
     }
     self.operations.truncate(mark);
-    self.rebuild();
-    Ok(())
+    self.rebuild()
   }
 
   pub(super) fn provisional(
@@ -86,27 +96,11 @@ impl RuntimeCapabilityOverlay {
     &mut self,
     request: &CapabilityRequest,
   ) -> MResult<Option<CapabilityId>> {
-    for id in &self.grant_order {
-      let Some(capability) = self.grants.get(id) else {
-        continue;
-      };
-      if capability.subject_key() != request.subject {
-        continue;
-      }
-      if let Some(max_uses) = capability.max_uses() {
-        let actual = self.uses.get(id).copied().unwrap_or(0);
-        if actual >= max_uses {
-          continue;
-        }
-      }
-      let decision = capability.check(request)?;
-      if decision.allowed {
-        let uses = self.uses.entry(*id).or_insert(0);
-        *uses = uses.saturating_add(1);
-        return Ok(Some(*id));
-      }
+    let selected = self.preview_check(request)?;
+    if let Some(capability) = selected {
+      self.stage_use(capability)?;
     }
-    Ok(None)
+    Ok(selected)
   }
 
   pub(super) fn preview_check(
@@ -148,10 +142,16 @@ impl RuntimeCapabilityOverlay {
   pub(super) fn usage_deltas(
     &self,
   ) -> impl Iterator<Item = (CapabilityId, u64)> + '_ {
-    self.grant_order.iter().filter_map(|id| {
+    self.usage_order.iter().filter_map(|id| {
       let uses = self.uses.get(id).copied().unwrap_or(0);
       (uses != 0).then_some((*id, uses))
     })
+  }
+
+  pub(super) fn pending_uses(
+    &self,
+  ) -> &HashMap<CapabilityId, u64> {
+    &self.uses
   }
 
   pub(super) fn revocations(
@@ -164,35 +164,27 @@ impl RuntimeCapabilityOverlay {
     self.revocations.clone()
   }
 
-  pub(super) fn mutations(&self) -> Vec<RuntimeCapabilityMutation> {
-    let mut grants = HashSet::new();
-    let mut revocations = HashSet::new();
-    let mut mutations = Vec::new();
-    for operation in self.operations.iter().rev() {
-      match operation {
-        RuntimeCapabilityMutation::Grant(capability)
-          if self.grants.contains_key(&capability.id())
-            && grants.insert(capability.id()) =>
-        {
-          mutations.push(operation.clone());
-        }
-        RuntimeCapabilityMutation::Revoke(capability)
-          if self.revocations.contains(capability)
-            && revocations.insert(*capability) =>
-        {
-          mutations.push(operation.clone());
-        }
-        _ => {}
-      }
+  fn stage_operation(
+    &mut self,
+    operation: RuntimeCapabilityMutation,
+  ) -> MResult<()> {
+    self.operations.push(operation);
+    if let Err(error) = self.rebuild() {
+      self.operations.pop();
+      self.rebuild().expect(
+        "previous capability overlay state must remain valid",
+      );
+      return Err(error);
     }
-    mutations.reverse();
-    mutations
+    Ok(())
   }
 
-  fn rebuild(&mut self) {
+  fn rebuild(&mut self) -> MResult<()> {
     self.grants.clear();
     self.grant_order.clear();
     self.revocations.clear();
+    self.uses.clear();
+    self.usage_order.clear();
     for operation in &self.operations {
       match operation {
         RuntimeCapabilityMutation::Grant(capability) => {
@@ -206,13 +198,54 @@ impl RuntimeCapabilityOverlay {
         RuntimeCapabilityMutation::Revoke(capability) => {
           if self.grants.remove(capability).is_some() {
             self.grant_order.retain(|id| id != capability);
+            self.uses.remove(capability);
+            self.usage_order.retain(|id| id != capability);
           } else {
             self.revocations.insert(*capability);
           }
         }
+        RuntimeCapabilityMutation::Use(capability) => {
+          if self.revocations.contains(capability) {
+            return Err(MechError::new(
+              RuntimeInvalidOperationError {
+                operation: "rebuild_capability_overlay",
+                reason: format!(
+                  "capability {} was used after transaction-local revocation",
+                  capability,
+                ),
+              },
+              None,
+            ));
+          }
+          if !self.uses.contains_key(capability) {
+            self.usage_order.push(*capability);
+          }
+          let current = self.uses.get(capability).copied().unwrap_or(0);
+          let next =
+            Self::incremented_usage(*capability, current)?;
+          self.uses.insert(*capability, next);
+        }
       }
     }
-    self.uses.retain(|id, _| self.grants.contains_key(id));
+    Ok(())
+  }
+
+  fn incremented_usage(
+    capability: CapabilityId,
+    current: u64,
+  ) -> MResult<u64> {
+    current.checked_add(1).ok_or_else(|| {
+      MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "rebuild_capability_overlay",
+          reason: format!(
+            "capability {} transaction-local usage count overflowed",
+            capability,
+          ),
+        },
+        None,
+      )
+    })
   }
 }
 
@@ -286,7 +319,7 @@ impl MechRuntime {
       self
         .active_execution_transaction_mut(transaction_id)?
         .capabilities
-        .stage_grant(capability);
+        .stage_grant(capability)?;
       if let Err(error) = self.emit_event_to_context(
         context,
         RuntimeEventKind::CapabilityGranted {
@@ -408,7 +441,7 @@ impl MechRuntime {
       self
         .active_execution_transaction_mut(transaction_id)?
         .capabilities
-        .stage_revocation(capability);
+        .stage_revocation(capability)?;
       context.remove_capability(capability);
       if let Err(error) = self.emit_event_to_context(
         context,
@@ -472,13 +505,22 @@ impl MechRuntime {
       if let Some(capability) = provisional {
         return Ok(capability);
       }
-      let revocations = self
-        .active_execution_transaction(transaction_id)?
-        .capabilities
-        .revocation_ids();
-      return self
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      let revocations = transaction.capabilities.revocation_ids();
+      let pending_uses = transaction.capabilities.pending_uses().clone();
+      let capability = self
         .capability_kernel
-        .check_excluding(request, &revocations);
+        .preview_check_excluding_with_pending_uses(
+          request,
+          &revocations,
+          &pending_uses,
+        )?;
+      self
+        .active_execution_transaction_mut(transaction_id)?
+        .capabilities
+        .stage_use(capability)?;
+      return Ok(capability);
     }
     self.capability_kernel.check(request)
   }
@@ -501,13 +543,17 @@ impl MechRuntime {
       if let Some(capability) = provisional {
         return Ok(capability);
       }
-      let revocations = self
-        .active_execution_transaction(transaction_id)?
-        .capabilities
-        .revocation_ids();
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      let revocations = transaction.capabilities.revocation_ids();
+      let pending_uses = transaction.capabilities.pending_uses().clone();
       return self
         .capability_kernel
-        .preview_check_excluding(request, &revocations);
+        .preview_check_excluding_with_pending_uses(
+          request,
+          &revocations,
+          &pending_uses,
+        );
     }
     self.capability_kernel.preview_check(request)
   }
@@ -1061,8 +1107,12 @@ mod tests {
     let first = CapabilityId(100);
     let second = CapabilityId(101);
     let mut overlay = RuntimeCapabilityOverlay::default();
-    overlay.stage_grant(capability(first, "task:1", true));
-    overlay.stage_grant(capability(second, "task:1", true));
+    overlay
+      .stage_grant(capability(first, "task:1", true))
+      .unwrap();
+    overlay
+      .stage_grant(capability(second, "task:1", true))
+      .unwrap();
 
     for _ in 0..32 {
       assert_eq!(
@@ -1085,6 +1135,120 @@ mod tests {
       overlay.usage_deltas().collect::<Vec<_>>(),
       vec![(first, 1)],
     );
+  }
+
+  #[test]
+  fn capability_use_journal_savepoints_restore_only_later_uses() {
+    let id = CapabilityId(100);
+    let mut overlay = RuntimeCapabilityOverlay::default();
+    let empty_mark = overlay.mark();
+
+    overlay.stage_use(id).unwrap();
+    assert!(!overlay.is_empty());
+    assert_eq!(overlay.usage_deltas().collect::<Vec<_>>(), vec![(id, 1)]);
+
+    let later_mark = overlay.mark();
+    overlay.stage_use(id).unwrap();
+    assert_eq!(overlay.usage_deltas().collect::<Vec<_>>(), vec![(id, 2)]);
+
+    overlay.rollback_to(later_mark).unwrap();
+    assert_eq!(overlay.usage_deltas().collect::<Vec<_>>(), vec![(id, 1)]);
+
+    overlay.rollback_to(empty_mark).unwrap();
+    assert!(overlay.is_empty());
+    assert!(overlay.usage_deltas().next().is_none());
+  }
+
+  #[test]
+  fn capability_use_journal_preserves_live_usage_order() {
+    let first = CapabilityId(100);
+    let second = CapabilityId(101);
+    let mut overlay = RuntimeCapabilityOverlay::default();
+
+    overlay.stage_use(second).unwrap();
+    overlay.stage_use(first).unwrap();
+    overlay.stage_use(second).unwrap();
+
+    assert_eq!(
+      overlay.usage_deltas().collect::<Vec<_>>(),
+      vec![(second, 2), (first, 1)],
+    );
+    assert_eq!(
+      overlay.pending_uses(),
+      &HashMap::from([(first, 1), (second, 2)]),
+    );
+  }
+
+  #[test]
+  fn provisional_grant_use_revoke_cancels_all_authority_work() {
+    let id = CapabilityId(100);
+    let mut overlay = RuntimeCapabilityOverlay::default();
+
+    overlay
+      .stage_grant(limited_capability(id, 2))
+      .unwrap();
+    overlay.stage_use(id).unwrap();
+    overlay.stage_revocation(id).unwrap();
+
+    assert!(overlay.is_empty());
+    assert!(overlay.grants().next().is_none());
+    assert!(overlay.revocations().next().is_none());
+    assert!(overlay.usage_deltas().next().is_none());
+  }
+
+  #[test]
+  fn live_use_revoke_and_later_provisional_regrant_are_ordered() {
+    let id = CapabilityId(100);
+    let mut live_overlay = RuntimeCapabilityOverlay::default();
+    live_overlay.stage_use(id).unwrap();
+    live_overlay.stage_revocation(id).unwrap();
+    assert_eq!(
+      live_overlay.usage_deltas().collect::<Vec<_>>(),
+      vec![(id, 1)],
+    );
+    assert_eq!(
+      live_overlay.revocations().collect::<Vec<_>>(),
+      vec![id],
+    );
+
+    let mut provisional_overlay = RuntimeCapabilityOverlay::default();
+    provisional_overlay
+      .stage_grant(limited_capability(id, 2))
+      .unwrap();
+    provisional_overlay.stage_use(id).unwrap();
+    provisional_overlay.stage_revocation(id).unwrap();
+    provisional_overlay
+      .stage_grant(limited_capability(id, 2))
+      .unwrap();
+    provisional_overlay.stage_use(id).unwrap();
+    assert_eq!(
+      provisional_overlay.usage_deltas().collect::<Vec<_>>(),
+      vec![(id, 1)],
+    );
+  }
+
+  #[test]
+  fn failed_capability_rebuild_restores_previous_valid_overlay() {
+    let id = CapabilityId(100);
+    let mut overlay = RuntimeCapabilityOverlay::default();
+    overlay.stage_use(id).unwrap();
+    overlay.stage_revocation(id).unwrap();
+    let mark = overlay.mark();
+
+    let error = overlay.stage_use(id).unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
+    assert_eq!(overlay.mark(), mark);
+    assert_eq!(
+      overlay.usage_deltas().collect::<Vec<_>>(),
+      vec![(id, 1)],
+    );
+    assert_eq!(overlay.revocations().collect::<Vec<_>>(), vec![id]);
+
+    let overflow =
+      RuntimeCapabilityOverlay::incremented_usage(id, u64::MAX)
+        .unwrap_err();
+    assert_eq!(overflow.kind_name(), "RuntimeInvalidOperation");
   }
 
   #[test]
