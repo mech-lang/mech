@@ -17,10 +17,12 @@ use std::time::Instant;
 use mech_core::{
   hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
   MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value, ValueKind,
-  val_ref_reactive_cell_ids, ReactiveCellId, ReactiveTurnOutcome,
+  val_ref_reactive_cell_ids, ReactiveCellId, ReactiveTurnJournal, ReactiveTurnOutcome,
 };
 
-use mech_interpreter::{Interpreter, InterpreterCheckpoint};
+use mech_interpreter::{
+  Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint,
+};
 use mech_syntax::parser;
 
 use crate::ClosureNativeFunctionCompiler;
@@ -286,6 +288,7 @@ pub struct ProgramInputTurnOutcome {
 
 struct PreparedProgramInputBatch {
   assignments: Vec<Box<dyn MechFunction>>,
+  targets: Vec<ValRef>,
   dirty_cells: Vec<ReactiveCellId>,
   dirty_cells_by_interpreter: BTreeMap<u64, Vec<ReactiveCellId>>,
 }
@@ -299,6 +302,96 @@ pub struct ProgramSolveOutcome {
 pub struct MechProgram {
   pub config: MechProgramConfig,
   interpreter: Interpreter,
+}
+
+/// The ephemeral before-state for exactly one program-local reactive operation.
+///
+/// The journal is process-local, non-serializable, non-cloneable, and is not a
+/// durable history record. PR7 may retain it only until its surrounding runtime
+/// transaction reaches commit or rollback.
+pub struct ProgramReactiveTurnJournal {
+  values: ReactiveTurnJournal,
+  interpreters: BTreeMap<u64, InterpreterReactiveTurnCheckpoint>,
+  used: bool,
+}
+
+impl ProgramReactiveTurnJournal {
+  pub fn new() -> Self {
+    Self {
+      values: ReactiveTurnJournal::new(),
+      interpreters: BTreeMap::new(),
+      used: false,
+    }
+  }
+
+  fn begin_operation(&mut self, operation: &'static str) -> MResult<()> {
+    if self.used {
+      return Err(MechError::new(
+        ProgramReactiveTurnJournalAlreadyUsed { operation },
+        None,
+      ).with_compiler_loc());
+    }
+    self.used = true;
+    Ok(())
+  }
+
+  pub fn cell_count(&self) -> usize {
+    self.values.cell_count()
+  }
+
+  pub fn interpreter_count(&self) -> usize {
+    self.interpreters.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.values.is_empty() && self.interpreters.is_empty()
+  }
+}
+
+impl Default for ProgramReactiveTurnJournal {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProgramReactiveTurnJournalAlreadyUsed {
+  pub operation: &'static str,
+}
+
+impl MechErrorKind for ProgramReactiveTurnJournalAlreadyUsed {
+  fn name(&self) -> &str {
+    "ProgramReactiveTurnJournalAlreadyUsed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "The reactive-turn journal has already been used and cannot begin `{}`.",
+      self.operation,
+    )
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProgramReactiveTurnRollbackFailed {
+  pub operation: &'static str,
+  pub original_error: String,
+  pub rollback_error: String,
+}
+
+impl MechErrorKind for ProgramReactiveTurnRollbackFailed {
+  fn name(&self) -> &str {
+    "ProgramReactiveTurnRollbackFailed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Program reactive operation `{}` failed with {}; rollback also failed with {}.",
+      self.operation,
+      self.original_error,
+      self.rollback_error,
+    )
+  }
 }
 
 /// An explicit, retained snapshot of a complete [`MechProgram`].
@@ -318,6 +411,110 @@ pub struct MechProgramCheckpoint {
 }
 
 impl MechProgram {
+  #[cfg(feature = "functions")]
+  fn capture_reactive_interpreter(
+    &self,
+    interpreter_id: u64,
+    journal: &mut ProgramReactiveTurnJournal,
+  ) -> MResult<()> {
+    let Some((actual_id, checkpoint)) = with_interpreter(
+      &self.interpreter,
+      interpreter_id,
+      &mut |interpreter| {
+        (
+          interpreter.id,
+          if journal.interpreters.contains_key(&interpreter.id) {
+            None
+          } else {
+            Some(interpreter.reactive_turn_checkpoint())
+          },
+        )
+      },
+    ) else {
+      return Err(MechError::new(
+        ProgramInputError {
+          reason: format!("missing interpreter {interpreter_id}"),
+        },
+        None,
+      ));
+    };
+    if let Some(checkpoint) = checkpoint {
+      journal.interpreters.insert(actual_id, checkpoint?);
+    }
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  fn preflight_reactive_turn_rollback(
+    &self,
+    journal: &ProgramReactiveTurnJournal,
+  ) -> MResult<()> {
+    for (interpreter_id, checkpoint) in &journal.interpreters {
+      let Some(result) = with_interpreter(
+        &self.interpreter,
+        *interpreter_id,
+        &mut |interpreter| interpreter.preflight_restore_reactive_turn(checkpoint),
+      ) else {
+        return Err(MechError::new(
+          ProgramInputError {
+            reason: format!(
+              "missing interpreter {} during reactive-turn rollback",
+              interpreter_id,
+            ),
+          },
+          None,
+        ));
+      };
+      result?;
+    }
+    journal.values.preflight_restore_before()
+  }
+
+  #[cfg(feature = "functions")]
+  fn apply_reactive_turn_rollback(
+    &mut self,
+    journal: &ProgramReactiveTurnJournal,
+  ) {
+    journal.values.apply_restore_before();
+    for (interpreter_id, checkpoint) in &journal.interpreters {
+      with_interpreter_mut(
+        &mut self.interpreter,
+        *interpreter_id,
+        &mut |interpreter| interpreter.apply_restore_reactive_turn(checkpoint),
+      ).expect("reactive-turn rollback preflight located every interpreter");
+    }
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn rollback_reactive_turn(
+    &mut self,
+    journal: ProgramReactiveTurnJournal,
+  ) -> MResult<()> {
+    self.preflight_reactive_turn_rollback(&journal)?;
+    self.apply_reactive_turn_rollback(&journal);
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  fn finish_failed_reactive_operation<T>(
+    &mut self,
+    operation: &'static str,
+    journal: ProgramReactiveTurnJournal,
+    original_error: MechError,
+  ) -> MResult<T> {
+    match self.rollback_reactive_turn(journal) {
+      Ok(()) => Err(original_error),
+      Err(rollback_error) => Err(MechError::new(
+        ProgramReactiveTurnRollbackFailed {
+          operation,
+          original_error: format!("{:?}", original_error),
+          rollback_error: format!("{:?}", rollback_error),
+        },
+        None,
+      ).with_compiler_loc()),
+    }
+  }
+
   pub fn new(config: MechProgramConfig) -> Self {
     let id = hash_str(&format!("program/{}", config.name));
     let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
@@ -577,8 +774,27 @@ impl MechProgram {
   }
 
   #[cfg(feature = "functions")]
-  pub fn step(&mut self, count: u64) -> MResult<()> {
-    self.interpreter.step(count as usize, 1)?;
+  pub fn step(&mut self, step_id: u64) -> MResult<()> {
+    let mut journal = ProgramReactiveTurnJournal::new();
+    match self.step_with_reactive_turn_journal(step_id, &mut journal) {
+      Ok(()) => Ok(()),
+      Err(error) => self.finish_failed_reactive_operation("step", journal, error),
+    }
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_reactive_turn_journal(
+    &mut self,
+    step_id: u64,
+    journal: &mut ProgramReactiveTurnJournal,
+  ) -> MResult<()> {
+    journal.begin_operation("step")?;
+    self.capture_reactive_interpreter(self.interpreter.id, journal)?;
+    self.interpreter.step_with_reactive_turn_journal(
+      step_id as usize,
+      1,
+      &mut journal.values,
+    )?;
     Ok(())
   }
 
@@ -636,6 +852,7 @@ impl MechProgram {
   ) -> MResult<PreparedProgramInputBatch> {
     let mut seen_targets = BTreeSet::new();
     let mut assignments = Vec::with_capacity(updates.len());
+    let mut targets = Vec::with_capacity(updates.len());
     let mut dirty_cells = Vec::new();
     let mut dirty_cells_by_interpreter = BTreeMap::new();
     for update in updates {
@@ -655,6 +872,7 @@ impl MechProgram {
       if !seen_targets.insert(canonical_input) {
         return Err(MechError::new(ProgramInputDuplicateTarget { input: canonical_input }, None));
       }
+      targets.push(sink.clone());
       assignments.push(compile_stable_value_update(sink.clone(), update.value.clone())?);
       for cell in val_ref_reactive_cell_ids(&sink) {
         if !dirty_cells.contains(&cell) {
@@ -670,6 +888,7 @@ impl MechProgram {
     }
     Ok(PreparedProgramInputBatch {
       assignments,
+      targets,
       dirty_cells,
       dirty_cells_by_interpreter,
     })
@@ -692,29 +911,94 @@ impl MechProgram {
     interpreter_id: u64,
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactiveTurnOutcome> {
+    let mut journal = ProgramReactiveTurnJournal::new();
+    match self.advance_reactive_turn_with_journal(
+      interpreter_id,
+      dirty_cells,
+      &mut journal,
+    ) {
+      Ok(outcome) => Ok(outcome),
+      Err(error) => self.finish_failed_reactive_operation(
+        "advance_reactive_turn",
+        journal,
+        error,
+      ),
+    }
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_with_journal(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ProgramReactiveTurnJournal,
+  ) -> MResult<ReactiveTurnOutcome> {
+    journal.begin_operation("advance_reactive_turn")?;
+    self.capture_reactive_interpreter(interpreter_id, journal)?;
     let Some(result) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
-      interpreter.advance_reactive_turn(dirty_cells)
+      interpreter.advance_reactive_turn_with_journal(dirty_cells, &mut journal.values)
     }) else {
       return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
     };
     result
   }
 
-  /// Applies all input writes before advancing affected interpreters in ascending
-  /// actual interpreter-ID order. If a turn fails, prior input writes and prior
-  /// interpreter commits remain, the failing turn retains its reactive-plan error
-  /// state, later interpreters are not executed, and no rollback is attempted.
+  /// All input assignments and every affected interpreter turn form one
+  /// program-local atomic operation. A failure restores input cells, executed
+  /// function state, register state, and affected interpreter scheduler state.
+  /// This method does not coordinate external runtime effects.
   #[cfg(feature = "functions")]
   pub fn update_inputs_and_advance_turn(
     &mut self,
     updates: &[ProgramInputUpdate],
   ) -> MResult<ProgramInputTurnOutcome> {
+    let mut journal = ProgramReactiveTurnJournal::new();
+    match self.update_inputs_and_advance_turn_with_journal(updates, &mut journal) {
+      Ok(outcome) => Ok(outcome),
+      Err(error) => self.finish_failed_reactive_operation(
+        "update_inputs_and_advance_turn",
+        journal,
+        error,
+      ),
+    }
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn update_inputs_and_advance_turn_with_journal(
+    &mut self,
+    updates: &[ProgramInputUpdate],
+    journal: &mut ProgramReactiveTurnJournal,
+  ) -> MResult<ProgramInputTurnOutcome> {
+    journal.begin_operation("update_inputs_and_advance_turn")?;
     let prepared = self.prepare_input_updates(updates)?;
+    for target in &prepared.targets {
+      journal.values.capture_val_ref(target)?;
+    }
+    for interpreter_id in prepared.dirty_cells_by_interpreter.keys().copied() {
+      self.capture_reactive_interpreter(interpreter_id, journal)?;
+    }
     Self::apply_prepared_input_updates(&prepared)?;
     let updated_count = prepared.assignments.len();
     let mut interpreter_turns = Vec::with_capacity(prepared.dirty_cells_by_interpreter.len());
     for (interpreter_id, dirty_cells) in prepared.dirty_cells_by_interpreter {
-      let turn = self.advance_reactive_turn(interpreter_id, &dirty_cells)?;
+      let Some(turn) = with_interpreter_mut(
+        &mut self.interpreter,
+        interpreter_id,
+        &mut |interpreter| {
+          interpreter.advance_reactive_turn_with_journal(
+            &dirty_cells,
+            &mut journal.values,
+          )
+        },
+      ) else {
+        return Err(MechError::new(
+          ProgramInputError {
+            reason: format!("missing interpreter {interpreter_id}"),
+          },
+          None,
+        ));
+      };
+      let turn = turn?;
       interpreter_turns.push(ProgramInterpreterTurnOutcome {
         interpreter_id,
         dirty_cells,
@@ -1597,6 +1881,693 @@ mod program_reactive_turn_tests {
   #[test] fn program_reactive_turn_empty_batch_is_noop(){let mut p=MechProgram::new(MechProgramConfig::default());let id=p.interpreter().id;let s=snapshot(&p,id);assert_eq!(p.update_inputs_and_advance_turn(&[]).unwrap(),ProgramInputTurnOutcome::default());assert_eq!(snapshot(&p,id),s);assert!(!pending(&p,id));}
   #[test] fn program_reactive_turn_orders_nested_interpreters_deterministically(){let mut p=MechProgram::new(MechProgramConfig::default());let mut c1=Interpreter::new_with_full_stdlib(101);let mut c2=Interpreter::new_with_full_stdlib(202);for(i,src) in [(&mut c1,"input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0"),(&mut c2,"input := 1.0\noutput := input + 1.0")]{i.interpret(&parser::parse(src).unwrap()).unwrap();}p.interpreter_mut().sub_interpreters.borrow_mut().insert(101,Ref::new(Box::new(c1)));p.interpreter_mut().sub_interpreters.borrow_mut().insert(202,Ref::new(Box::new(c2)));let(a,b)=(ProgramInputId{interpreter_id:101,symbol_id:hash_str("input")},ProgramInputId{interpreter_id:202,symbol_id:hash_str("input")});let root=snapshot(&p,p.interpreter().id);let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:b,value:f64_value(20.)},ProgramInputUpdate{input:a,value:f64_value(10.)}]).unwrap();assert_eq!(o.updated_count,2);assert_eq!(o.interpreter_turns.iter().map(|x|x.interpreter_id).collect::<Vec<_>>(),vec![101,202]);assert!(!o.interpreter_turns[0].dirty_cells.is_empty());assert!(!o.interpreter_turns[1].dirty_cells.is_empty());assert_ne!(o.interpreter_turns[0].dirty_cells,o.interpreter_turns[1].dirty_cells);assert_eq!((value(&p,101,"a"),value(&p,101,"middle"),value(&p,101,"b")),(10.,11.,2.));assert!(pending(&p,101));assert_eq!(value(&p,202,"output"),21.);assert!(!pending(&p,202));assert!(!pending(&p,p.interpreter().id));assert_eq!(snapshot(&p,p.interpreter().id),root);p.advance_reactive_turn(101,&[]).unwrap();assert_eq!((value(&p,101,"b"),value(&p,101,"output"),value(&p,202,"output")),(11.,12.,21.));assert!(!pending(&p,101));assert!(!pending(&p,202));}
   #[cfg(feature="compiler")] #[test] fn program_reactive_turn_decoded_plan_reuses_identity(){let mut source=MechProgram::new(MechProgramConfig::default());source.load_full_stdlib();source.run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\noutput").unwrap();let bytes=source.compile_bytecode().unwrap();let mut p=MechProgram::new(MechProgramConfig::default());p.load_full_stdlib();p.run_bytecode(&bytes).unwrap();let id=p.interpreter().id;let x=p.ensure_input(id,hash_str("input"),"input",f64_value(1.)).unwrap();let s=snapshot(&p,id);let(a,b)=(register_node_for_output(&p,id,cell(&p,id,"a")),register_node_for_output(&p,id,cell(&p,id,"b")));let o=p.update_inputs_and_advance_turn(&[ProgramInputUpdate{input:x,value:f64_value(10.)}]).unwrap();assert_eq!(o.interpreter_turns[0].turn.register_commit.committed_nodes,vec![a]);assert_eq!(o.interpreter_turns[0].turn.after_commit.pending_register_nodes,vec![b]);let o=p.advance_reactive_turn(id,&[]).unwrap();assert_eq!(o.register_commit.committed_nodes,vec![b]);assert_eq!(value(&p,id,"output"),12.);assert!(!pending(&p,id));assert_eq!(snapshot(&p,id),s);}
+}
+
+#[cfg(all(test, feature = "program", feature = "functions"))]
+mod compact_program_reactive_turn_tests {
+  use super::*;
+  use std::{cell::RefCell, rc::Rc};
+
+  struct ProgramTestFunction {
+    name: &'static str,
+    output: Ref<usize>,
+    hidden: Vec<Ref<usize>>,
+    captures: Rc<RefCell<usize>>,
+    solves: Rc<RefCell<usize>>,
+    order: Rc<RefCell<Vec<u64>>>,
+    interpreter_id: u64,
+    fail: bool,
+    leak_borrow: bool,
+  }
+
+  impl MechFunctionImpl for ProgramTestFunction {
+    fn solve(&self) {}
+
+    fn solve_result(&self) -> MResult<()> {
+      self.solve_reactive().map(|_| ())
+    }
+
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+      *self.solves.borrow_mut() += 1;
+      self.order.borrow_mut().push(self.interpreter_id);
+      *self.output.borrow_mut() += 1;
+      for state in &self.hidden {
+        *state.borrow_mut() += 1;
+      }
+      if self.fail {
+        if self.leak_borrow {
+          let borrow = self.output.borrow_mut();
+          std::mem::forget(borrow);
+        }
+        return Err(MechError::new(
+          GenericError { msg: format!("deliberate {} failure", self.name) },
+          None,
+        ));
+      }
+      Ok(ReactiveSolveStatus::Changed)
+    }
+
+    fn out(&self) -> Value {
+      Value::Index(self.output.clone())
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      *self.captures.borrow_mut() += 1;
+      let mut values = vec![Value::Index(self.output.clone())];
+      values.extend(self.hidden.iter().cloned().map(Value::Index));
+      Ok(values)
+    }
+
+    fn to_string(&self) -> String {
+      self.name.into()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for ProgramTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<mech_core::Register> {
+      Ok(0)
+    }
+  }
+
+  fn test_function(
+    name: &'static str,
+    output: Ref<usize>,
+    interpreter_id: u64,
+    order: Rc<RefCell<Vec<u64>>>,
+  ) -> (ProgramTestFunction, Rc<RefCell<usize>>, Rc<RefCell<usize>>) {
+    let captures = Rc::new(RefCell::new(0));
+    let solves = Rc::new(RefCell::new(0));
+    (
+      ProgramTestFunction {
+        name,
+        output,
+        hidden: Vec::new(),
+        captures: captures.clone(),
+        solves: solves.clone(),
+        order,
+        interpreter_id,
+        fail: false,
+        leak_borrow: false,
+      },
+      captures,
+      solves,
+    )
+  }
+
+  fn index_input(
+    program: &mut MechProgram,
+    interpreter_id: u64,
+    name: &str,
+    value: usize,
+  ) -> (ProgramInputId, ValRef, Ref<usize>) {
+    let symbol_id = hash_str(name);
+    let input = program.ensure_input(
+      interpreter_id,
+      symbol_id,
+      name,
+      Value::Index(Ref::new(value)),
+    ).unwrap();
+    let outer = with_interpreter(
+      program.interpreter(),
+      interpreter_id,
+      &mut |interpreter| interpreter.symbols().borrow().get(symbol_id).unwrap(),
+    ).unwrap();
+    let inner = match &*outer.borrow() {
+      Value::Index(inner) => inner.clone(),
+      other => panic!("expected index input, got {other:?}"),
+    };
+    (input, outer, inner)
+  }
+
+  fn add_reactive(
+    program: &MechProgram,
+    interpreter_id: u64,
+    function: ProgramTestFunction,
+    input: &Ref<usize>,
+  ) {
+    let mut function = Some(function);
+    with_interpreter(
+      program.interpreter(),
+      interpreter_id,
+      &mut |interpreter| {
+        interpreter.plan().0.borrow_mut()
+          .register(
+            Box::new(function.take().expect("function registered once")),
+            &[Value::Index(input.clone())],
+          )
+          .unwrap();
+      },
+    ).unwrap();
+  }
+
+  fn update(input: ProgramInputId, value: usize) -> ProgramInputUpdate {
+    ProgramInputUpdate {
+      input,
+      value: Value::Index(Ref::new(value)),
+    }
+  }
+
+  #[test]
+  fn later_combinational_failure_restores_input_and_earlier_output() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, outer, inner) = index_input(&mut program, id, "input", 1);
+    let outer_address = outer.addr();
+    let inner_address = inner.addr();
+    let first_output = Ref::new(10usize);
+    let second_output = Ref::new(20usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (first, _, _) = test_function("first", first_output.clone(), id, order.clone());
+    let (mut second, _, _) = test_function("second", second_output.clone(), id, order);
+    second.fail = true;
+    add_reactive(&program, id, first, &inner);
+    add_reactive(&program, id, second, &inner);
+
+    let error = program.update_inputs_and_advance_turn(&[update(input, 9)]).unwrap_err();
+
+    assert!(error.kind_message().contains("deliberate second failure"));
+    assert_eq!((*inner.borrow(), *first_output.borrow(), *second_output.borrow()), (1, 10, 20));
+    assert_eq!((outer.addr(), inner.addr()), (outer_address, inner_address));
+  }
+
+  struct ProgramRegisterCommit {
+    sink: Ref<usize>,
+    next: usize,
+    outputs: Vec<ReactiveCellId>,
+  }
+
+  impl ReactiveRegisterCommit for ProgramRegisterCommit {
+    fn output_cells(&self) -> &[ReactiveCellId] { &self.outputs }
+    fn commit(self: Box<Self>) { *self.sink.borrow_mut() = self.next; }
+  }
+
+  struct ProgramRegister {
+    source: Ref<usize>,
+    sink: Ref<usize>,
+  }
+
+  impl MechFunctionImpl for ProgramRegister {
+    fn solve(&self) {}
+    fn out(&self) -> Value { Value::Index(self.sink.clone()) }
+    fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+      Ok(Box::new(ProgramRegisterCommit {
+        sink: self.sink.clone(),
+        next: *self.source.borrow(),
+        outputs: vec![ReactiveCellId::new(self.sink.id())],
+      }))
+    }
+    fn to_string(&self) -> String { "program-register".into() }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for ProgramRegister {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<mech_core::Register> { Ok(0) }
+  }
+
+  #[test]
+  fn post_register_failure_restores_commit_and_pending_state() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, source) = index_input(&mut program, id, "input", 1);
+    let sink = Ref::new(2usize);
+    let plan = program.interpreter().plan();
+    plan.0.borrow_mut().register(
+      Box::new(ProgramRegister { source: source.clone(), sink: sink.clone() }),
+      &[Value::Index(source.clone())],
+    ).unwrap();
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut failure, _, _) = test_function("post-register", Ref::new(0), id, order);
+    failure.fail = true;
+    plan.0.borrow_mut().register(
+      Box::new(failure),
+      &[Value::Index(sink.clone())],
+    ).unwrap();
+
+    program.update_inputs_and_advance_turn(&[update(input, 8)]).unwrap_err();
+
+    assert_eq!((*source.borrow(), *sink.borrow()), (1, 2));
+    assert!(!program.interpreter().has_pending_reactive_registers());
+  }
+
+  fn add_child(program: &mut MechProgram, id: u64) {
+    program.interpreter_mut().sub_interpreters.borrow_mut()
+      .insert(id, Ref::new(Box::new(Interpreter::new(id, 100))));
+  }
+
+  #[test]
+  fn all_prior_interpreters_restore_and_later_interpreters_do_not_execute() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    for id in [10, 20, 30, 40] { add_child(&mut program, id); }
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let mut updates = Vec::new();
+    let mut inputs = Vec::new();
+    let mut outputs = Vec::new();
+    for id in [10, 20, 30, 40] {
+      let (input, _, inner) = index_input(&mut program, id, "input", 1);
+      let output = Ref::new(id as usize);
+      let (mut function, _, _) = test_function("child", output.clone(), id, order.clone());
+      function.fail = id == 30;
+      add_reactive(&program, id, function, &inner);
+      updates.push(update(input, 9));
+      inputs.push(inner);
+      outputs.push(output);
+    }
+
+    program.update_inputs_and_advance_turn(&updates).unwrap_err();
+
+    assert_eq!(order.borrow().as_slice(), &[10, 20, 30]);
+    assert!(inputs.iter().all(|input| *input.borrow() == 1));
+    assert_eq!(
+      outputs.iter().map(|output| *output.borrow()).collect::<Vec<_>>(),
+      vec![10, 20, 30, 40],
+    );
+  }
+
+  #[test]
+  fn successful_interpreter_order_is_ascending_actual_id() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    for id in [30, 10, 20] { add_child(&mut program, id); }
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let mut updates = Vec::new();
+    for id in [30, 10, 20] {
+      let (input, _, inner) = index_input(&mut program, id, "input", 1);
+      let (function, _, _) = test_function("child", Ref::new(0), id, order.clone());
+      add_reactive(&program, id, function, &inner);
+      updates.push(update(input, 2));
+    }
+
+    let outcome = program.update_inputs_and_advance_turn(&updates).unwrap();
+
+    assert_eq!(order.borrow().as_slice(), &[10, 20, 30]);
+    assert_eq!(
+      outcome.interpreter_turns.iter().map(|turn| turn.interpreter_id).collect::<Vec<_>>(),
+      vec![10, 20, 30],
+    );
+  }
+
+  #[test]
+  fn shared_cells_restore_once_and_retain_identity() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    for id in [10, 20] { add_child(&mut program, id); }
+    let shared = Ref::new(5usize);
+    let address = shared.addr();
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let mut updates = Vec::new();
+    for id in [10, 20] {
+      let (input, _, inner) = index_input(&mut program, id, "input", 1);
+      let (function, _, _) = test_function("shared", shared.clone(), id, order.clone());
+      add_reactive(&program, id, function, &inner);
+      updates.push(update(input, 2));
+    }
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(&updates, &mut journal).unwrap();
+    assert_eq!(*shared.borrow(), 7);
+
+    program.rollback_reactive_turn(journal).unwrap();
+
+    assert_eq!(*shared.borrow(), 5);
+    assert_eq!(shared.addr(), address);
+  }
+
+  #[test]
+  fn hidden_function_owned_state_is_restored() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let hidden = Ref::new(40usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("hidden", Ref::new(0), id, order);
+    function.hidden.push(hidden.clone());
+    function.fail = true;
+    add_reactive(&program, id, function, &inner);
+
+    program.update_inputs_and_advance_turn(&[update(input, 2)]).unwrap_err();
+
+    assert_eq!(*hidden.borrow(), 40);
+  }
+
+  #[test]
+  fn fsm_transition_like_retained_state_is_restored() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "event", 0);
+    let transition_state = Ref::new(3usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("fsm transition", Ref::new(0), id, order);
+    function.hidden.push(transition_state.clone());
+    function.fail = true;
+    add_reactive(&program, id, function, &inner);
+    program.update_inputs_and_advance_turn(&[update(input, 1)]).unwrap_err();
+    assert_eq!(*transition_state.borrow(), 3);
+  }
+
+  #[test]
+  fn pattern_matcher_guard_selector_gate_and_capture_state_restore() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "pattern", 0);
+    let states = (0..5).map(Ref::new).collect::<Vec<_>>();
+    let addresses = states.iter().map(Ref::addr).collect::<Vec<_>>();
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("pattern pipeline", Ref::new(0), id, order);
+    function.hidden = states.clone();
+    function.fail = true;
+    add_reactive(&program, id, function, &inner);
+    program.update_inputs_and_advance_turn(&[update(input, 1)]).unwrap_err();
+    assert_eq!(states.iter().map(|state| *state.borrow()).collect::<Vec<_>>(), vec![0, 1, 2, 3, 4]);
+    assert_eq!(states.iter().map(Ref::addr).collect::<Vec<_>>(), addresses);
+  }
+
+  #[cfg(any())]
+  #[test]
+  fn rollback_removes_trace_suffixes_from_every_affected_interpreter() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    for id in [10, 20] { add_child(&mut program, id); }
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let mut updates = Vec::new();
+    for id in [10, 20] {
+      let (input, _, inner) = index_input(&mut program, id, "input", 1);
+      let (function, _, _) = test_function("trace", Ref::new(0), id, order.clone());
+      add_reactive(&program, id, function, &inner);
+      updates.push(update(input, 2));
+    }
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(&updates, &mut journal).unwrap();
+    for id in [10, 20] {
+      with_interpreter(program.interpreter(), id, &mut |interpreter| {
+        interpreter.push_trace_line("suffix".into());
+      }).unwrap();
+    }
+    program.rollback_reactive_turn(journal).unwrap();
+    for id in [10, 20] {
+      assert!(with_interpreter(program.interpreter(), id, &mut |interpreter| {
+        interpreter.trace_events().is_empty()
+      }).unwrap());
+    }
+  }
+
+  #[test]
+  fn single_interpreter_advance_is_atomic() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let input = Ref::new(1usize);
+    let output = Ref::new(7usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("advance", output.clone(), id, order);
+    function.fail = true;
+    add_reactive(&program, id, function, &input);
+    program.advance_reactive_turn(
+      id,
+      &Value::Index(input).reactive_root_cell_ids(),
+    ).unwrap_err();
+    assert_eq!(*output.borrow(), 7);
+  }
+
+  #[test]
+  fn input_turn_api_is_atomic() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("input-turn", Ref::new(0), id, order);
+    function.fail = true;
+    add_reactive(&program, id, function, &inner);
+    program.update_inputs_and_advance_turn(&[update(input, 2)]).unwrap_err();
+    assert_eq!(*inner.borrow(), 1);
+  }
+
+  #[test]
+  fn program_step_is_atomic() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let first_output = Ref::new(1usize);
+    let second_output = Ref::new(2usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (first, _, _) = test_function("first", first_output.clone(), id, order.clone());
+    let (mut second, _, _) = test_function("second", second_output.clone(), id, order);
+    second.fail = true;
+    program.interpreter().plan().add_function(Box::new(first));
+    program.interpreter().plan().add_function(Box::new(second));
+    program.step(1).unwrap_err();
+    assert_eq!((*first_output.borrow(), *second_output.borrow()), (1, 2));
+  }
+
+  #[test]
+  fn journal_aware_failure_leaves_changes_until_explicit_rollback() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let output = Ref::new(3usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("journal", output.clone(), id, order);
+    function.fail = true;
+    add_reactive(&program, id, function, &inner);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap_err();
+    assert_eq!((*inner.borrow(), *output.borrow()), (2, 4));
+    program.rollback_reactive_turn(journal).unwrap();
+    assert_eq!((*inner.borrow(), *output.borrow()), (1, 3));
+  }
+
+  #[test]
+  fn rollback_after_journal_aware_success_restores_operation() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let output = Ref::new(3usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (function, _, _) = test_function("success", output.clone(), id, order);
+    add_reactive(&program, id, function, &inner);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap();
+    program.rollback_reactive_turn(journal).unwrap();
+    assert_eq!((*inner.borrow(), *output.borrow()), (1, 3));
+  }
+
+  #[test]
+  fn successful_journal_can_be_dropped_without_more_work() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap();
+    drop(journal);
+    assert_eq!(*inner.borrow(), 2);
+  }
+
+  #[test]
+  fn journal_reuse_fails_before_second_mutation() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap();
+    let error = program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 3)],
+      &mut journal,
+    ).unwrap_err();
+    assert_eq!(error.kind_name(), "ProgramReactiveTurnJournalAlreadyUsed");
+    assert_eq!(*inner.borrow(), 2);
+  }
+
+  #[test]
+  fn rollback_preflight_failure_changes_nothing() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap();
+    let (tail, _, _) = test_function(
+      "topology-tail",
+      Ref::new(0),
+      id,
+      Rc::new(RefCell::new(Vec::new())),
+    );
+    program.interpreter().plan().add_function(Box::new(tail));
+
+    let error = program.rollback_reactive_turn(journal).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert_eq!(*inner.borrow(), 2);
+  }
+
+  #[test]
+  fn program_rollback_failure_preserves_original_and_rollback_errors() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let output = Ref::new(0usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (mut function, _, _) = test_function("borrow leak", output, id, order);
+    function.fail = true;
+    function.leak_borrow = true;
+    add_reactive(&program, id, function, &inner);
+
+    let error = program.update_inputs_and_advance_turn(&[update(input, 2)]).unwrap_err();
+
+    assert_eq!(error.kind_name(), "ProgramReactiveTurnRollbackFailed");
+    let rollback = error.kind_as::<ProgramReactiveTurnRollbackFailed>().unwrap();
+    assert!(rollback.original_error.contains("deliberate borrow leak failure"));
+    assert!(rollback.rollback_error.contains("ValueStateBorrowConflict"));
+  }
+
+  #[test]
+  fn compact_operations_preserve_plan_identity_without_program_checkpoint() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let plan_address = program.interpreter().plan().0.addr();
+    let (input, _, _) = index_input(&mut program, id, "input", 1);
+    program.update_inputs_and_advance_turn(&[update(input, 2)]).unwrap();
+    assert_eq!(program.interpreter().plan().0.addr(), plan_address);
+  }
+
+  #[test]
+  fn one_of_one_thousand_independent_nodes_has_compact_structural_count() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let mut selected = None;
+    let mut selected_capture = None;
+    let mut all_captures = Vec::new();
+    for index in 0..1000 {
+      let (input, _, inner) = index_input(
+        &mut program,
+        id,
+        &format!("input-{index}"),
+        index,
+      );
+      let (function, captures, _) = test_function(
+        "independent",
+        Ref::new(index),
+        id,
+        order.clone(),
+      );
+      add_reactive(&program, id, function, &inner);
+      if index == 777 {
+        selected = Some(input);
+        selected_capture = Some(captures.clone());
+      }
+      all_captures.push(captures);
+    }
+    let mut journal = ProgramReactiveTurnJournal::new();
+
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(selected.unwrap(), 9000)],
+      &mut journal,
+    ).unwrap();
+
+    assert_eq!(*selected_capture.unwrap().borrow(), 1);
+    assert_eq!(
+      all_captures.iter().map(|count| *count.borrow()).sum::<usize>(),
+      1,
+    );
+    assert_eq!(journal.interpreter_count(), 1);
+    assert!(journal.cell_count() < 10);
+  }
+
+  #[test]
+  fn reactive_turn_journal_reports_empty_and_operation_counts() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, _) = index_input(&mut program, id, "input", 1);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    assert!(journal.is_empty());
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap();
+    assert_eq!(journal.interpreter_count(), 1);
+    assert!(journal.cell_count() > 0);
+    assert!(!journal.is_empty());
+  }
+
+  #[test]
+  fn journal_aware_single_turn_can_be_rolled_back_after_success() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let input = Ref::new(1usize);
+    let output = Ref::new(5usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (function, _, _) = test_function("single success", output.clone(), id, order);
+    add_reactive(&program, id, function, &input);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.advance_reactive_turn_with_journal(
+      id,
+      &Value::Index(input).reactive_root_cell_ids(),
+      &mut journal,
+    ).unwrap();
+    assert_eq!(*output.borrow(), 6);
+    program.rollback_reactive_turn(journal).unwrap();
+    assert_eq!(*output.borrow(), 5);
+  }
+
+  #[test]
+  fn journal_aware_step_leaves_state_until_rollback() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let output = Ref::new(5usize);
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let (function, _, _) = test_function("step success", output.clone(), id, order);
+    program.interpreter().plan().add_function(Box::new(function));
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.step_with_reactive_turn_journal(2, &mut journal).unwrap();
+    assert_eq!(*output.borrow(), 7);
+    program.rollback_reactive_turn(journal).unwrap();
+    assert_eq!(*output.borrow(), 5);
+  }
+
+  #[test]
+  fn rollback_rejects_disappeared_interpreter_before_value_restore() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    add_child(&mut program, 77);
+    let (input, _, inner) = index_input(&mut program, 77, "input", 1);
+    let mut journal = ProgramReactiveTurnJournal::new();
+    program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2)],
+      &mut journal,
+    ).unwrap();
+    program.interpreter_mut().sub_interpreters.borrow_mut().remove(&77);
+
+    let error = program.rollback_reactive_turn(journal).unwrap_err();
+
+    assert_eq!(error.kind_name(), "ProgramInputError");
+    assert_eq!(*inner.borrow(), 2);
+  }
+
+  #[test]
+  fn duplicate_input_rejection_happens_before_any_journal_capture() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    let id = program.interpreter().id;
+    let (input, _, inner) = index_input(&mut program, id, "input", 1);
+    let mut journal = ProgramReactiveTurnJournal::new();
+
+    let error = program.update_inputs_and_advance_turn_with_journal(
+      &[update(input, 2), update(input, 3)],
+      &mut journal,
+    ).unwrap_err();
+
+    assert_eq!(error.kind_name(), "ProgramInputDuplicateTarget");
+    assert_eq!(*inner.borrow(), 1);
+    assert_eq!(journal.cell_count(), 0);
+    assert_eq!(journal.interpreter_count(), 0);
+  }
 }
 
 #[cfg(all(
