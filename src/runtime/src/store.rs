@@ -25,6 +25,7 @@ use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 use crate::capability::{Capability, CapabilityRequest};
 use crate::context::ResourceBudgetExceededError;
 use crate::event::RuntimeEvent;
+use crate::effect::RuntimeEffectRecord;
 use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
   ObjectId, TaskId, TransactionId,
@@ -763,6 +764,8 @@ pub struct TransactionRecord {
   pub actor_updates: Vec<ActorId>,
 
   pub events: Vec<EventId>,
+  #[cfg_attr(feature = "serde", serde(default))]
+  pub effects: Vec<RuntimeEffectRecord>,
 }
 
 impl TransactionRecord {
@@ -781,6 +784,7 @@ impl TransactionRecord {
       actor_updates: Vec::new(),
 
       events: Vec::new(),
+      effects: Vec::new(),
     }
   }
 
@@ -819,6 +823,11 @@ impl TransactionRecord {
     self
   }
 
+  pub fn with_effects(mut self, effects: Vec<RuntimeEffectRecord>) -> Self {
+    self.effects = effects;
+    self
+  }
+
   pub fn validate(&self) -> MResult<()> {
     if self.id.is_zero() {
       return invalid_store_record("transaction.id", "must not be zero");
@@ -835,6 +844,8 @@ impl TransactionRecord {
 #[derive(Clone, Debug)]
 pub struct RuntimeStoreCommit {
   pub transaction: TransactionRecord,
+  pub capability_grants: Vec<(CapabilityId, Arc<dyn Capability>)>,
+  pub capability_revocations: Vec<CapabilityId>,
   pub object_puts: Vec<ObjectRecord>,
   pub object_updates: Vec<ObjectRecord>,
   pub task_updates: Vec<TaskRecord>,
@@ -1431,6 +1442,14 @@ impl MechStore for InMemoryStore {
       temporary.enqueue_message(actor, message)?;
     }
 
+    for (capability, grant) in commit.capability_grants {
+      temporary.grant_capability(capability, grant)?;
+    }
+
+    for capability in commit.capability_revocations {
+      temporary.revoke_capability(capability)?;
+    }
+
     for event in commit.events {
       temporary.append_event(event)?;
     }
@@ -1922,6 +1941,8 @@ mod tests {
       transaction: TransactionRecord::new(TransactionId(1), "task:1")
         .with_write_set(vec![ObjectId(1), ObjectId(2)])
         .with_events(vec![EventId(1)]),
+      capability_grants: Vec::new(),
+      capability_revocations: Vec::new(),
       object_puts: vec![ObjectRecord::text(ObjectId(1), "note", "hello")],
       object_updates: vec![ObjectRecord::text(ObjectId(2), "note", "missing")],
       task_updates: Vec::new(),
