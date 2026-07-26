@@ -29,7 +29,7 @@ impl MechRuntime {
 
     for message in self.store.list_mailbox(actor)? {
       let acknowledged =
-        transaction.staged_message_ack_occurrences(actor, message.id);
+        transaction.store.staged_message_ack_occurrences(actor, message.id);
       let skipped = skipped_occurrences.entry(message.id).or_insert(0);
 
       if *skipped < acknowledged {
@@ -41,6 +41,7 @@ impl MechRuntime {
     }
 
     Ok(transaction
+      .store
       .peek_staged_enqueued_message(actor)
       .map(VisibleTransactionMessage::Staged))
   }
@@ -134,7 +135,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        if let Some(actor) = transaction.get_staged_actor(id) {
+        if let Some(actor) = transaction.store.get_staged_actor(id) {
           return Ok(Some(actor));
         }
       }
@@ -247,7 +248,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        let ack_count = transaction.staged_message_ack_count(actor)?;
+        let ack_count = transaction.store.staged_message_ack_count(actor)?;
         effective_len = effective_len.checked_sub(ack_count).ok_or_else(|| {
           MechError::new(
             RuntimeInvalidOperationError {
@@ -258,7 +259,7 @@ impl MechRuntime {
           )
         })?;
         effective_len = effective_len
-          .checked_add(transaction.staged_message_enqueue_count(actor)?)
+          .checked_add(transaction.store.staged_message_enqueue_count(actor)?)
           .ok_or_else(|| {
             MechError::new(
               ResourceBudgetExceededError {
@@ -555,11 +556,13 @@ mod tests {
       .active_transactions
       .get(&transaction_id)
       .unwrap()
+      .store
       .staged_event_ids();
     let staged_put_count_before = runtime
       .active_transactions
       .get(&transaction_id)
       .unwrap()
+      .store
       .staged_puts()
       .count();
 
@@ -582,6 +585,7 @@ mod tests {
         .active_transactions
         .get(&transaction_id)
         .unwrap()
+        .store
         .staged_event_ids(),
       staged_event_ids_before,
     );
@@ -590,6 +594,7 @@ mod tests {
         .active_transactions
         .get(&transaction_id)
         .unwrap()
+        .store
         .staged_puts()
         .count(),
       staged_put_count_before,
@@ -858,6 +863,7 @@ mod tests {
         .active_transactions
         .get(&transaction_id)
         .unwrap()
+        .store
         .staged_message_ack_occurrences(ActorId(1), MessageId(5)),
       2,
     );

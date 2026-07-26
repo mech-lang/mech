@@ -72,7 +72,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        if let Some(object) = transaction.get_staged_object(id) {
+        if let Some(object) = transaction.store.get_staged_object(id) {
           return Ok(Some(object));
         }
       }

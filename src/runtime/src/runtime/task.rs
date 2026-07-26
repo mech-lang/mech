@@ -116,7 +116,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        if let Some(task) = transaction.get_staged_task(id) {
+        if let Some(task) = transaction.store.get_staged_task(id) {
           return Ok(Some(task));
         }
       }

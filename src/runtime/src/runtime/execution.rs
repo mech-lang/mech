@@ -3498,6 +3498,7 @@ impl MechRuntime {
   ) -> MResult<()> {
     let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
+    self.reject_transactional_reactive_turn(context, "step_with_context")?;
     context.charge_step()?;
 
     let program_config = self.program.config.clone();
@@ -4668,6 +4669,16 @@ impl MechRuntime {
 
   pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
     input.validate()?;
+    if self.program_transaction_owner.is_some() {
+      return Err(MechError::new(
+        RuntimeTransactionalReactiveTurnUnsupported {
+          operation: "apply_host_input",
+          transaction_id: None,
+          owner: self.program_transaction_owner,
+        },
+        None,
+      ));
+    }
     let mut target_updates = Vec::new();
     let mut seen_targets = std::collections::HashSet::new();
     let mut ignored_update_count = 0;

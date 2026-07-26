@@ -452,6 +452,7 @@ mod tests {
       .active_transactions
       .get(&transaction_id)
       .unwrap()
+      .store
       .staged_events()
       .any(|event| matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. })));
     assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
