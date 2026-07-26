@@ -56,6 +56,7 @@ impl MechRuntime {
     name: &str,
     canonical_uri: &str,
   ) -> MResult<ModuleId> {
+    self.ensure_runtime_mutation_allowed("ensure_module")?;
     if let Some(module) = self.store.find_module_by_name(canonical_uri)? {
       return Ok(module.id);
     }
@@ -205,6 +206,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
   ) -> MResult<Option<ResolvedSource>> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_source_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -229,6 +233,7 @@ impl MechRuntime {
     &mut self,
     request: impl Into<SourceRequest>,
   ) -> MResult<Option<ResolvedSource>> {
+    self.ensure_runtime_mutation_allowed("resolve_source_evented")?;
     let mut context = self.runtime_context()?;
     self.resolve_source_with_context(&mut context, request)
   }
@@ -238,6 +243,9 @@ impl MechRuntime {
     resolved: ResolvedSource,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed(
+      "store_resolved_module_source",
+    )?;
     let mut context = self.runtime_context()?;
 
     self.build_module_from_resolved_source_with_context(
@@ -253,6 +261,9 @@ impl MechRuntime {
     resolved: ResolvedSource,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed(
+      "build_module_from_resolved_source_with_context",
+    )?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_resolved_source_with_context_and_graph(
@@ -481,6 +492,9 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_and_store_module_source",
+    )?;
     let mut context = self.runtime_context()?;
 
     self.build_module_from_request_with_context(
@@ -496,6 +510,9 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
+    self.ensure_runtime_mutation_allowed(
+      "build_module_from_request_with_context",
+    )?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_request_with_context_and_graph(
@@ -511,6 +528,9 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Value> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_and_run_root_module",
+    )?;
     let mut context = self.runtime_context()?;
     self.resolve_and_run_root_module_with_context(&mut context, request, options)
   }
@@ -594,6 +614,7 @@ impl MechRuntime {
     source: &str,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed("put_source_module")?;
     let mut context = self.runtime_context()?;
 
     self.put_source_module_with_context(
@@ -613,6 +634,9 @@ impl MechRuntime {
     source: &str,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed(
+      "put_source_module_with_context",
+    )?;
     let resolved = ResolvedSource::new(
       name,
       canonical_uri,
@@ -632,6 +656,9 @@ impl MechRuntime {
     module: ModuleId,
     version: ModuleVersionId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "activate_module_version",
+    )?;
     let mut context = self.runtime_context()?
       .with_module_version(version);
 
@@ -644,6 +671,9 @@ impl MechRuntime {
     module: ModuleId,
     version: ModuleVersionId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "activate_module_version_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 

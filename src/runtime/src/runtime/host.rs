@@ -80,8 +80,9 @@ impl MechRuntime {
     &mut self,
     function: impl HostFunction + 'static,
   ) -> MResult<()> {
-    self.ensure_runtime_healthy("register_mech_host_function")?;
-    self.reject_effect_reentrancy("register_mech_host_function")?;
+    self.ensure_runtime_mutation_allowed(
+      "register_mech_host_function",
+    )?;
     let name = function.name().to_string();
 
     self
@@ -166,8 +167,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
-    self.ensure_runtime_healthy("preview_host_call_with_context")?;
-    self.reject_effect_reentrancy("preview_host_call_with_context")?;
+    self.ensure_runtime_mutation_allowed(
+      "preview_host_call_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     call.validate()?;
 
@@ -188,7 +190,7 @@ impl MechRuntime {
       .unwrap_or_else(|| {
         default_host_capability_request(context, function.name())
       });
-    self.check_capability_with_context(context, &capability_request)?;
+    self.preview_capability_with_context(context, &capability_request)?;
 
     match function.transaction_mode() {
       HostFunctionTransactionMode::Pure => {
@@ -204,17 +206,7 @@ impl MechRuntime {
       HostFunctionTransactionMode::Staged => {
         let RuntimePreparedHostCall { value, effect } =
           function.stage_call(self, context, call.args)?;
-        if let Err(error) = self.discard_unstaged_runtime_effect(effect) {
-          return Err(self.poison_program_operation(
-            "preview_host_call_with_context",
-            context.transaction,
-            format!(
-              "staged host function `{}` preview cleanup failed",
-              function.name(),
-            ),
-            vec![format!("{:?}", error)],
-          ));
-        }
+        drop(effect);
         Ok(value)
       }
       HostFunctionTransactionMode::ImmediateOnly => {
@@ -234,6 +226,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
+    self.ensure_runtime_mutation_allowed("call_host_with_context")?;
     self.validate_context_for_runtime(context)?;
     call.validate()?;
 
@@ -528,11 +521,12 @@ mod transaction_tests {
   use std::sync::{Arc, Mutex};
   use std::sync::atomic::{AtomicUsize, Ordering};
   use crate::{
-    BasicCapability, BasicOperation, BasicResource, BasicSubject,
+    BasicCapability, BasicConstraints, BasicOperation, BasicResource,
+    BasicSubject, Capability, CapabilityDecision, CapabilityRequest,
     ClosureHostFunction,
     PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectMetadata, RuntimeEffectSource,
-    StagedClosureHostFunction,
+    RuntimeTransactionalEffect, StagedClosureHostFunction,
   };
 
   #[derive(Debug)]
@@ -567,6 +561,120 @@ mod transaction_tests {
         [BasicOperation::new("call")],
       )))
       .unwrap();
+  }
+
+  fn grant_limited_host_call(
+    runtime: &mut MechRuntime,
+    id: CapabilityId,
+    name: &str,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(
+        BasicCapability::new(
+          id,
+          &BasicSubject::new(&subject),
+          &BasicResource::new(format!("host:{name}")),
+          [BasicOperation::new("call")],
+        )
+        .with_constraints(
+          BasicConstraints::default().with_max_uses(1),
+        ),
+      ))
+      .unwrap();
+  }
+
+  #[derive(Debug)]
+  struct PreviewUnsupportedCapability {
+    id: CapabilityId,
+    subject: String,
+    resource: String,
+  }
+
+  impl Capability for PreviewUnsupportedCapability {
+    fn id(&self) -> CapabilityId {
+      self.id
+    }
+
+    fn subject_key(&self) -> &str {
+      &self.subject
+    }
+
+    fn validate(&self) -> MResult<()> {
+      Ok(())
+    }
+
+    fn check(
+      &self,
+      request: &CapabilityRequest,
+    ) -> MResult<CapabilityDecision> {
+      Ok(if request.subject == self.subject
+        && request.operation == "call"
+        && request.resource == self.resource
+      {
+        CapabilityDecision::allow()
+      } else {
+        CapabilityDecision::deny("request does not match")
+      })
+    }
+  }
+
+  #[derive(Debug)]
+  struct PreviewLifecycleEffect {
+    log: Arc<Mutex<Vec<String>>>,
+  }
+
+  #[derive(Debug)]
+  struct CountingAfterCommitEffect {
+    deliveries: Arc<AtomicUsize>,
+  }
+
+  impl RuntimeAfterCommitEffect for CountingAfterCommitEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::HostFunction {
+          name: "demo/staged-limited".to_string(),
+        },
+        "deliver",
+      )
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      self.deliveries.fetch_add(1, Ordering::SeqCst);
+      Ok(())
+    }
+  }
+
+  impl RuntimeTransactionalEffect for PreviewLifecycleEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::HostFunction {
+          name: "demo/staged-lifecycle".to_string(),
+        },
+        "preview-lifecycle",
+      )
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      self.log.lock().unwrap().push("prepare".to_string());
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      self.log.lock().unwrap().push("commit".to_string());
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      self.log.lock().unwrap().push("abort".to_string());
+      Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "preview_lifecycle_abort",
+          reason: "abort must not run for preview-only effects".to_string(),
+        },
+        None,
+      ))
+    }
   }
 
   #[test]
@@ -692,6 +800,176 @@ mod transaction_tests {
     runtime.commit_runtime_transaction(&mut context).unwrap();
 
     assert_eq!(calls.load(Ordering::SeqCst), 4);
+  }
+
+  #[test]
+  fn pure_host_preview_does_not_consume_single_use_capability() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    grant_limited_host_call(
+      &mut runtime,
+      CapabilityId(710),
+      "demo/pure-limited",
+    );
+    let calls = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    runtime
+      .register_mech_host_function(ClosureHostFunction::new_pure(
+        "demo/pure-limited",
+        move |_services, _context, _args| {
+          callback_calls.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::F64(Ref::new(1.0)))
+        },
+      ))
+      .unwrap();
+
+    runtime
+      .run_string("pure-limited-result := demo/pure-limited()")
+      .unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert!(runtime
+      .call_host(HostCall::new("demo/pure-limited", Vec::new()))
+      .is_err());
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+  }
+
+  #[test]
+  fn runtime_managed_preview_does_not_consume_single_use_capability() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    grant_limited_host_call(
+      &mut runtime,
+      CapabilityId(711),
+      "demo/managed-limited",
+    );
+    let calls = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    runtime
+      .register_mech_host_function(
+        ClosureHostFunction::new_runtime_managed(
+          "demo/managed-limited",
+          move |_services, _context, _args| {
+            callback_calls.fetch_add(1, Ordering::SeqCst);
+            Ok(Value::F64(Ref::new(1.0)))
+          },
+        ),
+      )
+      .unwrap();
+
+    runtime
+      .run_string("managed-limited-result := demo/managed-limited()")
+      .unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert!(runtime
+      .call_host(HostCall::new("demo/managed-limited", Vec::new()))
+      .is_err());
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+  }
+
+  #[test]
+  fn staged_preview_does_not_consume_single_use_capability() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    grant_limited_host_call(
+      &mut runtime,
+      CapabilityId(712),
+      "demo/staged-limited",
+    );
+    let calls = Arc::new(AtomicUsize::new(0));
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    let delivered = deliveries.clone();
+    runtime
+      .register_mech_host_function(StagedClosureHostFunction::new(
+        "demo/staged-limited",
+        move |_services, _context, _args| {
+          callback_calls.fetch_add(1, Ordering::SeqCst);
+          let delivered = delivered.clone();
+          Ok(RuntimePreparedHostCall {
+            value: Value::F64(Ref::new(1.0)),
+            effect: PreparedRuntimeEffect::AfterCommit(Box::new(
+              CountingAfterCommitEffect {
+                deliveries: delivered,
+              },
+            )),
+          })
+        },
+      ))
+      .unwrap();
+
+    runtime
+      .run_string("staged-limited-result := demo/staged-limited()")
+      .unwrap();
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(deliveries.load(Ordering::SeqCst), 1);
+    assert!(runtime
+      .call_host(HostCall::new("demo/staged-limited", Vec::new()))
+      .is_err());
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+  }
+
+  #[test]
+  fn custom_capability_without_preview_contract_fails_closed() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(PreviewUnsupportedCapability {
+        id: CapabilityId(713),
+        subject,
+        resource: "host:demo/unsupported-preview".to_string(),
+      }))
+      .unwrap();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    runtime
+      .register_mech_host_function(ClosureHostFunction::new_pure(
+        "demo/unsupported-preview",
+        move |_services, _context, _args| {
+          callback_calls.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::Empty)
+        },
+      ))
+      .unwrap();
+
+    let error = runtime
+      .run_string(
+        "unsupported-preview-result := demo/unsupported-preview()",
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+  }
+
+  #[test]
+  fn staged_preview_drops_inert_effect_without_lifecycle_calls() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    grant_host_call(&mut runtime, "demo/staged-lifecycle");
+    let lifecycle = Arc::new(Mutex::new(Vec::new()));
+    let effect_log = lifecycle.clone();
+    runtime
+      .register_mech_host_function(StagedClosureHostFunction::new(
+        "demo/staged-lifecycle",
+        move |_services, _context, _args| {
+          Ok(RuntimePreparedHostCall {
+            value: Value::F64(Ref::new(1.0)),
+            effect: PreparedRuntimeEffect::Transactional(Box::new(
+              PreviewLifecycleEffect {
+                log: effect_log.clone(),
+              },
+            )),
+          })
+        },
+      ))
+      .unwrap();
+
+    runtime
+      .run_string(
+        "staged-lifecycle-result := demo/staged-lifecycle()",
+      )
+      .unwrap();
+
+    assert_eq!(
+      lifecycle.lock().unwrap().as_slice(),
+      &["prepare".to_string(), "commit".to_string()],
+    );
   }
 
   #[test]

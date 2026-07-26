@@ -313,6 +313,14 @@ impl MechRuntime {
     ))
   }
 
+  pub(super) fn ensure_runtime_mutation_allowed(
+    &self,
+    operation: &'static str,
+  ) -> MResult<()> {
+    self.ensure_runtime_healthy(operation)?;
+    self.reject_effect_reentrancy(operation)
+  }
+
   pub(super) fn reject_transactional_reactive_turn(
     &self,
     context: &RuntimeContext,
@@ -387,25 +395,41 @@ impl MechRuntime {
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
     let effect_rollback = match self.active_transactions.get_mut(&transaction_id) {
       Some(transaction) => {
+        let abortable_ids = transaction
+          .effects
+          .abortable_ids_after(savepoint.effect_mark);
         let effect_failures =
           transaction.effects.rollback_to(savepoint.effect_mark);
         transaction.store = savepoint.store.clone();
         let capability_result = transaction
           .capabilities
           .rollback_to(savepoint.capability_mark);
-        Some((effect_failures, capability_result))
+        Some((effect_failures, capability_result, abortable_ids))
       }
       None => None,
     };
     self.active_effect_phase = None;
     match effect_rollback {
-      Some((effect_failures, capability_result)) => {
+      Some((effect_failures, capability_result, abortable_ids)) => {
+        let failed_effects: HashSet<RuntimeEffectId> = effect_failures
+          .iter()
+          .map(|failure| failure.effect_id)
+          .collect();
         failures.extend(Self::describe_effect_failures(effect_failures));
         if let Err(error) = capability_result {
           failures.push(format!(
             "capability overlay rollback failed: {:?}",
             error,
           ));
+        }
+        for effect_id in abortable_ids {
+          if failed_effects.contains(&effect_id) {
+            continue;
+          }
+          let _ = self.emit_effect_event_outside_transaction(
+            context,
+            RuntimeEventKind::EffectAborted { effect_id },
+          );
         }
       }
       None => failures.push(format!(
@@ -599,9 +623,8 @@ impl MechRuntime {
     context: &RuntimeContext,
     operation: &'static str,
   ) -> MResult<()> {
-    self.ensure_runtime_healthy(operation)?;
+    self.ensure_runtime_mutation_allowed(operation)?;
     self.validate_context_for_runtime(context)?;
-    self.reject_effect_reentrancy(operation)?;
     self.reject_program_operation_reentrancy(operation)?;
 
     if let Some(owner) = self.program_transaction_owner {
@@ -706,10 +729,22 @@ impl MechRuntime {
     self.active_program_operation = None;
 
     let original_error = match execution_result {
-      Ok(value) if implicit => match self.commit_runtime_transaction_internal(context) {
-        Ok(_) => return Ok(value),
-        Err(error) => error,
-      },
+      Ok(value) if implicit => {
+        match self.commit_runtime_transaction_internal(context) {
+          Ok(super::transaction::RuntimeCommitResolution::Committed(_)) => {
+            return Ok(value);
+          }
+          Ok(
+            super::transaction::RuntimeCommitResolution::CommittedWithError {
+              error,
+              ..
+            },
+          ) => {
+            return Err(error);
+          }
+          Err(error) => error,
+        }
+      }
       Ok(value) => return Ok(value),
       Err(error) => error,
     };
@@ -783,6 +818,8 @@ mod tests {
   use crate::{
     ClosureHostFunction, NodeId, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimePreparedHostCall, RuntimeTransactionalEffect,
+    StagedClosureHostFunction,
   };
 
   #[derive(Debug)]
@@ -809,6 +846,76 @@ mod tests {
     PreparedRuntimeEffect::AfterCommit(Box::new(
       SavepointAfterCommitEffect { name },
     ))
+  }
+
+  #[derive(Debug)]
+  struct CommitDecisionEffect {
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+    fail_commit: bool,
+  }
+
+  impl RuntimeTransactionalEffect for CommitDecisionEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::HostFunction {
+          name: self.name.to_string(),
+        },
+        "commit-decision",
+      )
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      self
+        .log
+        .lock()
+        .unwrap()
+        .push(format!("{}:prepare", self.name));
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      self
+        .log
+        .lock()
+        .unwrap()
+        .push(format!("{}:commit", self.name));
+      if self.fail_commit {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "commit_decision_test",
+            reason: format!("{} deliberate commit failure", self.name),
+          },
+          None,
+        ));
+      }
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      self
+        .log
+        .lock()
+        .unwrap()
+        .push(format!("{}:abort", self.name));
+      Ok(())
+    }
+  }
+
+  fn grant_program_host_call(
+    runtime: &mut MechRuntime,
+    id: CapabilityId,
+    name: &str,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        id,
+        &BasicSubject::new(&subject),
+        &BasicResource::new(format!("host:{name}")),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
   }
 
   #[derive(Debug)]
@@ -1054,6 +1161,68 @@ mod tests {
         event.kind,
         RuntimeEventKind::TransactionCommitted { .. }
       )
+    }));
+  }
+
+  #[test]
+  fn committed_implicit_participant_failure_never_rolls_back_program() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    for (id, name, fail_commit) in [
+      (CapabilityId(800), "round4/first", false),
+      (CapabilityId(801), "round4/second", true),
+    ] {
+      grant_program_host_call(&mut runtime, id, name);
+      let effect_log = log.clone();
+      runtime
+        .register_mech_host_function(StagedClosureHostFunction::new(
+          name,
+          move |_services, _context, _args| {
+            Ok(RuntimePreparedHostCall {
+              value: Value::F64(mech_core::Ref::new(1.0)),
+              effect: PreparedRuntimeEffect::Transactional(Box::new(
+                CommitDecisionEffect {
+                  name,
+                  log: effect_log.clone(),
+                  fail_commit,
+                },
+              )),
+            })
+          },
+        ))
+        .unwrap();
+    }
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(
+        &mut context,
+        "round4-committed-symbol := 41\nfirst-result := round4/first()\nsecond-result := round4/second()",
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExternalCommitIndeterminate");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "round4/first:prepare",
+        "round4/second:prepare",
+        "round4/first:commit",
+        "round4/second:commit",
+      ],
+    );
+    assert!(runtime
+      .program
+      .root_symbol_value("round4-committed-symbol")
+      .is_ok());
+    assert_eq!(context.transaction, None);
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert!(runtime.active_transactions.is_empty());
+    assert!(runtime.is_poisoned());
+    let transactions = runtime.list_transactions(None).unwrap();
+    assert_eq!(transactions.len(), 1);
+    assert!(!runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::TransactionAborted { .. })
     }));
   }
 

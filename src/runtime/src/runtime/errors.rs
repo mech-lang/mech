@@ -7,7 +7,7 @@
 // See /src/core/src/error.rs for the base error types and traits used by these runtime errors.
 
 use super::*;
-use crate::RuntimeEffectId;
+use crate::RuntimeEffectFailure;
 
 #[derive(Debug, Clone)]
 pub struct RuntimeEffectOperationReentrant {
@@ -56,7 +56,7 @@ impl MechErrorKind for RuntimeEffectCleanupFailed {
 #[derive(Debug, Clone)]
 pub struct RuntimeExternalCommitIndeterminate {
   pub transaction_id: TransactionId,
-  pub effect_id: RuntimeEffectId,
+  pub failures: Vec<RuntimeEffectFailure>,
   pub participant_outcomes: Vec<String>,
 }
 
@@ -67,9 +67,9 @@ impl MechErrorKind for RuntimeExternalCommitIndeterminate {
 
   fn message(&self) -> String {
     format!(
-      "runtime store transaction {} committed, but external effect {} has an indeterminate commit outcome: {}",
+      "runtime store transaction {} committed, but {} external participants have indeterminate commit outcomes: {}",
       self.transaction_id,
-      self.effect_id,
+      self.failures.len(),
       self.participant_outcomes.join("; "),
     )
   }

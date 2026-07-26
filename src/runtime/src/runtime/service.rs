@@ -7,6 +7,10 @@
 use super::*;
 
 impl RuntimeServices for MechRuntime {
+  // This infallible compatibility allocator is reachable by runtime-managed
+  // code only after the enclosing host/actor operation passes centralized
+  // mutation preflight. Direct administrative use is outside the poison
+  // guarantee, like the raw `*_mut` accessors.
   fn next_object_id(&mut self) -> ObjectId {
     MechRuntime::next_object_id(self)
   }

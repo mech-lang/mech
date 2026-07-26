@@ -72,6 +72,20 @@ pub trait CapabilityKernel: std::fmt::Debug + Send {
 
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId>;
 
+  fn preview_check(
+    &self,
+    _request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel preview".to_string(),
+        reason: "kernel does not support non-consuming capability preview"
+          .to_string(),
+      },
+      None,
+    ))
+  }
+
   fn check_excluding(
     &mut self,
     request: &CapabilityRequest,
@@ -84,6 +98,39 @@ pub trait CapabilityKernel: std::fmt::Debug + Send {
       TransactionStateUnsupportedError {
         function: "capability kernel".to_string(),
         reason: "kernel cannot exclude transaction-local revocations"
+          .to_string(),
+      },
+      None,
+    ))
+  }
+
+  fn preview_check_excluding(
+    &self,
+    _request: &CapabilityRequest,
+    _excluded: &HashSet<CapabilityId>,
+  ) -> MResult<CapabilityId> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel preview".to_string(),
+        reason: "kernel does not support non-consuming preview with transaction-local revocations"
+          .to_string(),
+      },
+      None,
+    ))
+  }
+
+  fn apply_usage_delta(
+    &mut self,
+    _capability: CapabilityId,
+    uses: u64,
+  ) -> MResult<()> {
+    if uses == 0 {
+      return Ok(());
+    }
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel usage commit".to_string(),
+        reason: "kernel does not support transactional capability usage deltas"
           .to_string(),
       },
       None,
@@ -152,6 +199,14 @@ impl BasicCapabilityKernel {
 
   fn successful_uses(&self, id: CapabilityId) -> u64 {
     self.uses.get(&id).copied().unwrap_or(0)
+  }
+
+  #[cfg(test)]
+  pub(crate) fn successful_uses_for_test(
+    &self,
+    id: CapabilityId,
+  ) -> u64 {
+    self.successful_uses(id)
   }
 
   fn increment_uses(&mut self, id: CapabilityId) {
@@ -269,6 +324,69 @@ impl BasicCapabilityKernel {
       None,
     ))
   }
+
+  fn preview_check_with_exclusions(
+    &self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+  ) -> MResult<CapabilityId> {
+    let Some(ids) = self.by_subject.get(&request.subject) else {
+      return Err(MechError::new(
+        CapabilityDeniedError {
+          subject: request.subject.clone(),
+          operation: request.operation.clone(),
+          resource: request.resource.clone(),
+          reason: "subject has no capabilities".to_string(),
+        },
+        None,
+      ));
+    };
+
+    let mut last_reason = None;
+    for id in ids {
+      if excluded.contains(id) {
+        last_reason =
+          Some("capability is revoked by the active transaction".to_string());
+        continue;
+      }
+      if self.revoked.contains(id) {
+        last_reason = Some("capability is revoked".to_string());
+        continue;
+      }
+
+      let Some(capability) = self.capabilities.get(id) else {
+        continue;
+      };
+      if let Some(max_uses) = capability.max_uses() {
+        let actual = self.successful_uses(*id);
+        if actual >= max_uses {
+          last_reason = Some(format!(
+            "use limit exceeded: max {}, actual {}",
+            max_uses, actual,
+          ));
+          continue;
+        }
+      }
+
+      let decision = capability.preview_check(request)?;
+      if !decision.allowed {
+        last_reason = decision.reason;
+        continue;
+      }
+      return Ok(*id);
+    }
+
+    Err(MechError::new(
+      CapabilityDeniedError {
+        subject: request.subject.clone(),
+        operation: request.operation.clone(),
+        resource: request.resource.clone(),
+        reason: last_reason
+          .unwrap_or_else(|| "no matching capability".to_string()),
+      },
+      None,
+    ))
+  }
 }
 
 impl CapabilityKernel for BasicCapabilityKernel {
@@ -362,6 +480,76 @@ impl CapabilityKernel for BasicCapabilityKernel {
     excluded: &HashSet<CapabilityId>,
   ) -> MResult<CapabilityId> {
     self.check_with_exclusions(request, excluded)
+  }
+
+  fn preview_check(
+    &self,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    self.preview_check_with_exclusions(request, &HashSet::new())
+  }
+
+  fn preview_check_excluding(
+    &self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+  ) -> MResult<CapabilityId> {
+    self.preview_check_with_exclusions(request, excluded)
+  }
+
+  fn apply_usage_delta(
+    &mut self,
+    capability: CapabilityId,
+    uses: u64,
+  ) -> MResult<()> {
+    if uses == 0 {
+      return Ok(());
+    }
+    let Some(authority) = self.capabilities.get(&capability) else {
+      return Err(MechError::new(
+        CapabilityNotFoundError { capability },
+        None,
+      ));
+    };
+    if self.revoked.contains(&capability) {
+      return Err(MechError::new(
+        CapabilityRevokedError { capability },
+        None,
+      ));
+    }
+    let current = self.successful_uses(capability);
+    let next = current.checked_add(uses).ok_or_else(|| {
+      MechError::new(
+        CapabilityDeniedError {
+          subject: authority.subject_key().to_string(),
+          operation: "commit-usage".to_string(),
+          resource: capability.to_string(),
+          reason: format!(
+            "usage count overflow for capability {}",
+            capability,
+          ),
+        },
+        None,
+      )
+    })?;
+    if let Some(max_uses) = authority.max_uses() {
+      if next > max_uses {
+        return Err(MechError::new(
+          CapabilityDeniedError {
+            subject: authority.subject_key().to_string(),
+            operation: "commit-usage".to_string(),
+            resource: capability.to_string(),
+            reason: format!(
+              "use limit exceeded: max {}, actual {}",
+              max_uses, next,
+            ),
+          },
+          None,
+        ));
+      }
+    }
+    self.uses.insert(capability, next);
+    Ok(())
   }
 
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
@@ -464,6 +652,14 @@ impl SharedCapabilityKernel {
     Self { inner: Arc::new(Mutex::new(kernel)) }
   }
 
+  #[cfg(test)]
+  pub(crate) fn successful_uses_for_test(
+    &self,
+    id: CapabilityId,
+  ) -> u64 {
+    self.inner.lock().unwrap().successful_uses_for_test(id)
+  }
+
 }
 
 impl CapabilityKernel for SharedCapabilityKernel {
@@ -485,6 +681,9 @@ impl CapabilityKernel for SharedCapabilityKernel {
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> { self.inner.lock().unwrap().revoke(revocation) }
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().check(request) }
   fn check_excluding(&mut self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().check_excluding(request, excluded) }
+  fn preview_check(&self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check(request) }
+  fn preview_check_excluding(&self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check_excluding(request, excluded) }
+  fn apply_usage_delta(&mut self, capability: CapabilityId, uses: u64) -> MResult<()> { self.inner.lock().unwrap().apply_usage_delta(capability, uses) }
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> { self.inner.lock().unwrap().get(id) }
   fn list_for_subject(&self, subject: &dyn Subject) -> MResult<Vec<CapabilityId>> { self.inner.lock().unwrap().list_for_subject(subject) }
   fn derive_capability(&mut self, derivation: CapabilityDerivation) -> MResult<CapabilityId> { self.inner.lock().unwrap().derive_capability(derivation) }

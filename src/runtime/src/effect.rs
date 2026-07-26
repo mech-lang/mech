@@ -179,6 +179,7 @@ pub enum RuntimeEffectFailurePhase {
   Abort,
   Commit,
   Deliver,
+  Audit,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -205,6 +206,7 @@ pub struct RuntimeEffectFailure {
 pub struct RuntimeCommitOutcome {
   pub transaction_id: TransactionId,
   pub delivery_failures: Vec<RuntimeEffectFailure>,
+  pub audit_failures: Vec<RuntimeEffectFailure>,
 }
 
 #[cfg(test)]
