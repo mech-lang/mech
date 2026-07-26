@@ -92,6 +92,10 @@ pub enum RuntimeEventKind {
     message: String,
   },
   EffectCompensated { effect_id: RuntimeEffectId },
+  EffectCompensationFailed {
+    effect_id: RuntimeEffectId,
+    message: String,
+  },
   EffectAborted { effect_id: RuntimeEffectId },
   TransactionalEffectCommitted { effect_id: RuntimeEffectId },
   EffectDelivered { effect_id: RuntimeEffectId },
@@ -159,6 +163,9 @@ impl RuntimeEventKind {
         ":effect/preparation/failed"
       }
       RuntimeEventKind::EffectCompensated { .. } => ":effect/compensated",
+      RuntimeEventKind::EffectCompensationFailed { .. } => {
+        ":effect/compensation/failed"
+      }
       RuntimeEventKind::EffectAborted { .. } => ":effect/aborted",
       RuntimeEventKind::TransactionalEffectCommitted { .. } => {
         ":effect/transactional/committed"

@@ -14,7 +14,7 @@
 use super::*;
 use crate::{
   CapabilityAlreadyExistsError, CapabilityNotFoundError,
-  CapabilityNotRevocableError, CapabilityRevokedError,
+  CapabilityNotRevocableError,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -29,6 +29,7 @@ pub(super) struct RuntimeCapabilityOverlay {
   operations: Vec<RuntimeCapabilityMutation>,
   grants: HashMap<CapabilityId, Arc<dyn Capability>>,
   revocations: HashSet<CapabilityId>,
+  uses: HashMap<CapabilityId, u64>,
 }
 
 impl RuntimeCapabilityOverlay {
@@ -80,20 +81,24 @@ impl RuntimeCapabilityOverlay {
     self.grants.get(&capability).cloned()
   }
 
-  pub(super) fn is_revoked(&self, capability: CapabilityId) -> bool {
-    self.revocations.contains(&capability)
-  }
-
   pub(super) fn check(
-    &self,
+    &mut self,
     request: &CapabilityRequest,
   ) -> MResult<Option<CapabilityId>> {
     for (id, capability) in &self.grants {
       if capability.subject_key() != request.subject {
         continue;
       }
+      if let Some(max_uses) = capability.max_uses() {
+        let actual = self.uses.get(id).copied().unwrap_or(0);
+        if actual >= max_uses {
+          continue;
+        }
+      }
       let decision = capability.check(request)?;
       if decision.allowed {
+        let uses = self.uses.entry(*id).or_insert(0);
+        *uses = uses.saturating_add(1);
         return Ok(Some(*id));
       }
     }
@@ -113,6 +118,10 @@ impl RuntimeCapabilityOverlay {
     &self,
   ) -> impl Iterator<Item = CapabilityId> + '_ {
     self.revocations.iter().copied()
+  }
+
+  pub(super) fn revocation_ids(&self) -> HashSet<CapabilityId> {
+    self.revocations.clone()
   }
 
   pub(super) fn mutations(&self) -> Vec<RuntimeCapabilityMutation> {
@@ -154,6 +163,7 @@ impl RuntimeCapabilityOverlay {
         }
       }
     }
+    self.uses.retain(|id, _| self.grants.contains_key(id));
   }
 }
 
@@ -395,24 +405,20 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     if let Some(transaction_id) = context.transaction {
-      let overlay = &self
-        .active_execution_transaction(transaction_id)?
-        .capabilities;
-      if let Some(capability) = overlay.check(request)? {
+      let provisional = self
+        .active_execution_transaction_mut(transaction_id)?
+        .capabilities
+        .check(request)?;
+      if let Some(capability) = provisional {
         return Ok(capability);
       }
-      let capability = self.capability_kernel.check(request)?;
-      if self
+      let revocations = self
         .active_execution_transaction(transaction_id)?
         .capabilities
-        .is_revoked(capability)
-      {
-        return Err(MechError::new(
-          CapabilityRevokedError { capability },
-          None,
-        ));
-      }
-      return Ok(capability);
+        .revocation_ids();
+      return self
+        .capability_kernel
+        .check_excluding(request, &revocations);
     }
     self.capability_kernel.check(request)
   }
@@ -435,7 +441,8 @@ mod tests {
   use mech_core::{GenericError, MResult, MechError};
 
   use crate::capability::{
-    BasicCapability, BasicCapabilityKernel, CapabilityDerivation,
+    BasicCapability, BasicCapabilityKernel, BasicConstraints,
+    CapabilityDerivation,
     CapabilityGrant, CapabilityKernel, CapabilityKernelCheckpoint, Subject,
   };
   use crate::id::{
@@ -585,7 +592,7 @@ mod tests {
       self.inner.checkpoint()
     }
 
-    fn restore_checkpoint(
+    fn restore(
       &mut self,
       _checkpoint: Box<dyn CapabilityKernelCheckpoint>,
     ) -> MResult<()> {
@@ -1141,5 +1148,77 @@ mod tests {
     assert!(poison.rollback_failures.iter().any(|failure| {
       failure.contains("deliberate capability checkpoint restore failure")
     }));
+  }
+
+  #[test]
+  fn provisional_capability_enforces_use_limit() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+    let limited: Arc<dyn Capability> = Arc::new(
+      BasicCapability::from_keys(
+        id,
+        "task:1",
+        "db://users",
+        [":read"],
+      )
+      .with_constraints(BasicConstraints {
+        max_uses: Some(1),
+        ..BasicConstraints::default()
+      }),
+    );
+
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(&mut context, limited)
+      .unwrap();
+    assert_eq!(
+      runtime
+        .check_capability_with_context(&mut context, &request("task:1"))
+        .unwrap(),
+      id,
+    );
+    assert!(runtime
+      .check_capability_with_context(&mut context, &request("task:1"))
+      .is_err());
+  }
+
+  #[test]
+  fn provisional_revocation_does_not_consume_live_use_limit() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut administrative = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+    let limited: Arc<dyn Capability> = Arc::new(
+      BasicCapability::from_keys(
+        id,
+        "task:1",
+        "db://users",
+        [":read"],
+      )
+      .with_constraints(BasicConstraints {
+        max_uses: Some(1),
+        ..BasicConstraints::default()
+      }),
+    );
+    runtime
+      .grant_capability_with_context(&mut administrative, limited)
+      .unwrap();
+
+    let mut owner = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut owner).unwrap();
+    runtime
+      .revoke_capability_with_context(&mut owner, id)
+      .unwrap();
+    assert!(runtime
+      .check_capability_with_context(&mut owner, &request("task:1"))
+      .is_err());
+    runtime
+      .abort_runtime_transaction(&mut owner, "test abort")
+      .unwrap();
+
+    assert_eq!(
+      runtime.check_capability(&request("task:1")).unwrap(),
+      id,
+    );
   }
 }

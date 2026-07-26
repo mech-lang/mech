@@ -585,7 +585,7 @@ impl MechRuntime {
     let compensated = envelope.effects.compensate_applied_reverse();
     let capability_restore = capability_checkpoint
       .map(|checkpoint| {
-        self.capability_kernel.restore_checkpoint(checkpoint)
+        self.capability_kernel.restore(checkpoint)
       });
     let aborted_ids = envelope.effects.prepared_transactional_ids();
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
@@ -600,6 +600,22 @@ impl MechRuntime {
       .iter()
       .map(|failure| failure.effect_id)
       .collect();
+    let mut audit_failures = Vec::new();
+    for failure in &compensated {
+      if let Err(error) = self.emit_effect_event_outside_transaction(
+        context,
+        RuntimeEventKind::EffectCompensationFailed {
+          effect_id: failure.effect_id,
+          message: failure.message.clone(),
+        },
+      ) {
+        audit_failures.push(format!(
+          "effect {} compensation failure audit event failed: {:?}",
+          failure.effect_id,
+          error,
+        ));
+      }
+    }
     let mut failures = Self::describe_effect_failures(compensated);
     if let Some(Err(error)) = capability_restore {
       failures.push(format!(
@@ -608,12 +624,12 @@ impl MechRuntime {
       ));
     }
     failures.extend(Self::describe_effect_failures(aborted));
+    failures.extend(audit_failures);
     for effect_id in compensated_ids {
       if failed_compensations.contains(&effect_id) {
         continue;
       }
-      if let Err(error) = self.stage_effect_lifecycle_event(
-        envelope,
+      if let Err(error) = self.emit_effect_event_outside_transaction(
         context,
         RuntimeEventKind::EffectCompensated { effect_id },
       ) {
@@ -655,6 +671,23 @@ impl MechRuntime {
     context.push_event(event.clone());
     self.trim_events_to_retention(&mut context.events);
     if let Err(error) = envelope.store.stage_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
+    Ok(id)
+  }
+
+  fn emit_effect_event_outside_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    let context_events_before = context.events.clone();
+    let event = self.make_event(kind);
+    let id = event.id;
+    context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
+    if let Err(error) = self.append_event(event) {
       context.events = context_events_before;
       return Err(error);
     }

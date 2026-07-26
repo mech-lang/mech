@@ -764,6 +764,7 @@ pub struct TransactionRecord {
   pub actor_updates: Vec<ActorId>,
 
   pub events: Vec<EventId>,
+  #[cfg_attr(feature = "serde", serde(default))]
   pub effects: Vec<RuntimeEffectRecord>,
 }
 

@@ -1436,6 +1436,12 @@ mod tests {
       .rollback_failures
       .iter()
       .any(|failure| failure.contains("first compensate failed")));
+    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::EffectCompensationFailed { .. }
+      )
+    }));
 
     assert!(runtime
       .abort_runtime_transaction(&mut context, "poison test cleanup")
