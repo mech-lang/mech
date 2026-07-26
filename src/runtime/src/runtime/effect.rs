@@ -464,6 +464,59 @@ impl MechRuntime {
         .stage(transaction_id, effect),
     )
   }
+
+  pub(super) fn execute_runtime_effect_immediately(
+    &mut self,
+    mut effect: PreparedRuntimeEffect,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_healthy("execute_runtime_effect_immediately")?;
+    self.reject_effect_reentrancy("execute_runtime_effect_immediately")?;
+
+    let effect_id = RuntimeEffectId {
+      transaction: self.next_transaction_id(),
+      sequence: 0,
+    };
+    match &mut effect {
+      PreparedRuntimeEffect::Transactional(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Preparing);
+        let prepare_result = effect.prepare();
+        self.active_effect_phase = None;
+        prepare_result?;
+
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Committing);
+        let commit_result = effect.commit();
+        self.active_effect_phase = None;
+        if let Err(error) = commit_result {
+          return Err(self.poison_external_commit_indeterminate(
+            effect_id.transaction,
+            effect_id,
+            vec![format!(
+              "immediate transactional effect {} commit failed: {:?}",
+              effect_id,
+              error,
+            )],
+          ));
+        }
+      }
+      PreparedRuntimeEffect::Compensatable(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Applying);
+        let result = effect.apply();
+        self.active_effect_phase = None;
+        result?;
+      }
+      PreparedRuntimeEffect::AfterCommit(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Delivering);
+        let result = effect.deliver();
+        self.active_effect_phase = None;
+        result?;
+      }
+    }
+    Ok(effect_id)
+  }
 }
 
 #[cfg(test)]

@@ -48,7 +48,7 @@ use self::program_transaction::{
   RuntimeTransactionContextIdentity,
 };
 use self::effect::RuntimeEffectJournal;
-use crate::ActiveRuntimeEffectPhase;
+use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use crate::runtime::host::*;
 
 use std::sync::Arc;
@@ -917,6 +917,8 @@ impl MechRuntime {
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
+    self.ensure_runtime_healthy("register_resource_provider")?;
+    self.reject_effect_reentrancy("register_resource_provider")?;
     self.resources.register_provider(provider)
   }
 
@@ -928,7 +930,31 @@ impl MechRuntime {
     &mut self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<()> {
-    self.resources.write(request)
+    self.ensure_runtime_healthy("write_resource")?;
+    self.reject_effect_reentrancy("write_resource")?;
+    let effect = self.resources.stage_write(request)?;
+    self.execute_runtime_effect_immediately(effect)?;
+    Ok(())
+  }
+
+  pub fn write_resource_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: RuntimeResourceWriteRequest,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_healthy("write_resource_with_context")?;
+    self.reject_effect_reentrancy("write_resource_with_context")?;
+    self.validate_context_for_runtime(context)?;
+
+    let effect = self.resources.stage_write(request)?;
+    if context.transaction.is_some() {
+      return self.stage_runtime_effect_with_context(context, effect);
+    }
+
+    let cost = effect.cost();
+    context.charge_bytes(cost.bytes)?;
+    context.charge_items(cost.items)?;
+    self.execute_runtime_effect_immediately(effect)
   }
 
   pub fn read_resource(
