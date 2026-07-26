@@ -67,6 +67,32 @@ pub struct RuntimeEffectMetadata {
   pub cost: RuntimeEffectCost,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeEffectRecord {
+  pub id: RuntimeEffectId,
+  pub source: RuntimeEffectSource,
+  pub operation: String,
+  pub resource: Option<String>,
+  pub protocol: RuntimeEffectProtocol,
+}
+
+impl RuntimeEffectRecord {
+  pub fn new(
+    id: RuntimeEffectId,
+    metadata: RuntimeEffectMetadata,
+    protocol: RuntimeEffectProtocol,
+  ) -> Self {
+    Self {
+      id,
+      source: metadata.source,
+      operation: metadata.operation,
+      resource: metadata.resource,
+      protocol,
+    }
+  }
+}
+
 impl RuntimeEffectMetadata {
   pub fn new(
     source: RuntimeEffectSource,

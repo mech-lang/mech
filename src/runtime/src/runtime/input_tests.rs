@@ -256,7 +256,7 @@ fn register_sleep_host(
 ) {
   runtime
     .register_mech_host_function(
-      ClosureHostFunction::new(
+      ClosureHostFunction::new_pure(
         name,
         move |_services, _context, args| {
           thread::sleep(
@@ -436,7 +436,7 @@ fn patterned_activation_guard_rejects_runtime_host_before_elaboration() {
   let calls = Arc::new(AtomicUsize::new(0));
   let host_calls = calls.clone();
   runtime
-    .register_mech_host_function(ClosureHostFunction::new(
+    .register_mech_host_function(ClosureHostFunction::new_pure(
       "demo/audit",
       move |_services, _context, _args| {
         host_calls.fetch_add(1, Ordering::SeqCst);
@@ -513,7 +513,7 @@ fn live_input_recomputes_runtime_host_function() {
     .unwrap();
   let calls = Arc::new(AtomicUsize::new(0));
   let host_calls = calls.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-plus-one", move |_services, _context, args| {
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/live-plus-one", move |_services, _context, args| {
     host_calls.fetch_add(1, Ordering::SeqCst);
     match &args[0] {
       Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
@@ -545,7 +545,7 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
   grant_host_call(&mut runtime, &subject, 91, "host:demo/left-branch"); grant_host_call(&mut runtime, &subject, 92, "host:demo/right-branch");
   let left_calls = Arc::new(AtomicUsize::new(0)); let right_calls = Arc::new(AtomicUsize::new(0));
   for (name, calls, add) in [("demo/left-branch", left_calls.clone(), 100.0), ("demo/right-branch", right_calls.clone(), 200.0)] {
-    runtime.register_mech_host_function(ClosureHostFunction::new(name, move |_services, _context, args| { calls.fetch_add(1, Ordering::SeqCst); let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + add))) })).unwrap();
+    runtime.register_mech_host_function(ClosureHostFunction::new_pure(name, move |_services, _context, args| { calls.fetch_add(1, Ordering::SeqCst); let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + add))) })).unwrap();
   }
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(left), :read(right)}\nleft-output := demo/left-branch(@pulse/left)\nright-output := demo/right-branch(@pulse/right)").unwrap();
   let left_calls_before = left_calls.load(Ordering::SeqCst);
@@ -569,7 +569,7 @@ fn live_host_string_output_recomputes_without_replacing_reference() {
   grant_read(&mut runtime, "test://clock/ticks", "value");
   let subject = runtime.runtime_context().unwrap().subject;
   grant_host_call(&mut runtime, &subject, 45, "host:demo/live-label");
-  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-label", |_services, _context, args| {
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/live-label", |_services, _context, args| {
     let value = match &args[0] {
       Value::F64(value) => *value.borrow(),
       Value::MutableReference(value) => match &*value.borrow() {
@@ -611,7 +611,7 @@ fn live_host_output_kind_change_preserves_previous_output() {
   grant_host_call(&mut runtime, &subject, 46, "host:demo/kind-change");
   let calls = Arc::new(AtomicUsize::new(0));
   let host_calls = calls.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new("demo/kind-change", move |_services, _context, args| {
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/kind-change", move |_services, _context, args| {
     let call = host_calls.fetch_add(1, Ordering::SeqCst);
     if call < 2 {
       let value = match &args[0] {
@@ -658,7 +658,7 @@ fn runtime_reactive_host_input_turn_failure_preserves_admitted_inputs() {
   let (mut runtime, output) = test_runtime_with_output(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0)); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value"); grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
   let subject = runtime.runtime_context().unwrap().subject; grant_host_call(&mut runtime, &subject, 47, "host:demo/fails-after-first");
   let calls = Arc::new(AtomicUsize::new(0)); let host_calls = calls.clone(); let fail_host = Arc::new(AtomicBool::new(false)); let fail_host_for_call = fail_host.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new("demo/fails-after-first", move |_services, _context, args| { host_calls.fetch_add(1, Ordering::SeqCst); if fail_host_for_call.load(Ordering::SeqCst) { return Err(MechError::new(DeliberateHostCallError, None)); } let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + 1.0))) })).unwrap();
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/fails-after-first", move |_services, _context, args| { host_calls.fetch_add(1, Ordering::SeqCst); if fail_host_for_call.load(Ordering::SeqCst) { return Err(MechError::new(DeliberateHostCallError, None)); } let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + 1.0))) })).unwrap();
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result + 0\n@out/line <- output").unwrap();
   let calls_before = calls.load(Ordering::SeqCst); let input_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap(); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); let host_result_pointer = match &*host_result.borrow() { Value::F64(value) => value.as_ptr(), other => panic!("expected f64 host result, got {other:?}") }; let plan_before = plan_snapshot(&runtime); let lines_before = output.lines();
   assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(output.lines().len(), 1); assert_eq!(runtime.persistent_send_count(), 1);
@@ -673,7 +673,7 @@ fn live_host_empty_output_can_recompute() {
   grant_host_call(&mut runtime, &subject, 48, "host:demo/live-empty");
   let calls = Arc::new(AtomicUsize::new(0));
   let host_calls = calls.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new("demo/live-empty", move |_services, _context, _args| {
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/live-empty", move |_services, _context, _args| {
     host_calls.fetch_add(1, Ordering::SeqCst);
     Ok(Value::Empty)
   })).unwrap();
@@ -2022,7 +2022,7 @@ other-value := other-tick + 1.0
   fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
     let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0))).with_value("test://other/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);grant_read(&mut runtime,"test://render/timer","tick");grant_read(&mut runtime,"test://other/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
     let subject=runtime.runtime_context().unwrap().subject;grant_host_call(&mut runtime,&subject,194,"host:demo/patterned-body-fail-second");let calls=Arc::new(AtomicUsize::new(0));let host_calls=calls.clone();
-    runtime.register_mech_host_function(ClosureHostFunction::new("demo/patterned-body-fail-second",move |_services,_context,args|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==2{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))))})).unwrap();
+    runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/patterned-body-fail-second",move |_services,_context,args|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==2{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))))})).unwrap();
     runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
 @other := test://other/timer{:read(tick)}
 @out := test://effects/output{:write(line)}
@@ -2139,7 +2139,7 @@ render-tick := @tick/tick
         let calls = Arc::new(AtomicUsize::new(0));
         let host_calls = calls.clone();
         runtime
-            .register_mech_host_function(ClosureHostFunction::new(
+            .register_mech_host_function(ClosureHostFunction::new_pure(
                 "demo/activation-fail-second",
                 move |_services, _context, args| {
                     let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;

@@ -2,11 +2,25 @@ use crate::*;
 
 use mech_core::*;
 use std::sync::Arc;
+use std::any::Any;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 // -----------------------------------------------------------------------------
 // Capability Kernel Trait
 // -----------------------------------------------------------------------------
+
+pub trait CapabilityKernelCheckpoint: std::fmt::Debug + Send {
+  fn into_any(self: Box<Self>) -> Box<dyn Any>;
+}
+
+impl<T> CapabilityKernelCheckpoint for T
+where
+  T: std::fmt::Debug + Send + Any,
+{
+  fn into_any(self: Box<Self>) -> Box<dyn Any> {
+    self
+  }
+}
 
 /// Capability authority graph and checking interface.
 ///
@@ -14,6 +28,30 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// audited, cryptographic-token-based, or host-specific authority systems should
 /// implement this trait.
 pub trait CapabilityKernel: std::fmt::Debug + Send {
+  fn checkpoint(&self) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel".to_string(),
+        reason: "kernel does not support transaction checkpoints".to_string(),
+      },
+      None,
+    ))
+  }
+
+  fn restore(
+    &mut self,
+    _checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+  ) -> MResult<()> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel".to_string(),
+        reason: "kernel does not support transaction checkpoint restore"
+          .to_string(),
+      },
+      None,
+    ))
+  }
+
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId>;
 
   /// Administratively remove a grant that has not committed.
@@ -33,6 +71,24 @@ pub trait CapabilityKernel: std::fmt::Debug + Send {
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()>;
 
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId>;
+
+  fn check_excluding(
+    &mut self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+  ) -> MResult<CapabilityId> {
+    if excluded.is_empty() {
+      return self.check(request);
+    }
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel".to_string(),
+        reason: "kernel cannot exclude transaction-local revocations"
+          .to_string(),
+      },
+      None,
+    ))
+  }
 
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>>;
 
@@ -145,9 +201,100 @@ impl BasicCapabilityKernel {
       !children.is_empty()
     });
   }
+
+  fn check_with_exclusions(
+    &mut self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+  ) -> MResult<CapabilityId> {
+    let Some(ids) = self.by_subject.get(&request.subject) else {
+      return Err(MechError::new(
+        CapabilityDeniedError {
+          subject: request.subject.clone(),
+          operation: request.operation.clone(),
+          resource: request.resource.clone(),
+          reason: "subject has no capabilities".to_string(),
+        },
+        None,
+      ));
+    };
+
+    let ids: Vec<CapabilityId> = ids.iter().copied().collect();
+    let mut last_reason = None;
+
+    for id in ids {
+      if excluded.contains(&id) {
+        last_reason =
+          Some("capability is revoked by the active transaction".to_string());
+        continue;
+      }
+      if self.revoked.contains(&id) {
+        last_reason = Some("capability is revoked".to_string());
+        continue;
+      }
+
+      let Some(capability) = self.capabilities.get(&id) else {
+        continue;
+      };
+
+      if let Some(max_uses) = capability.max_uses() {
+        let actual = self.successful_uses(id);
+        if actual >= max_uses {
+          last_reason = Some(format!(
+            "use limit exceeded: max {}, actual {}",
+            max_uses, actual,
+          ));
+          continue;
+        }
+      }
+
+      let decision = capability.check(request)?;
+      if !decision.allowed {
+        last_reason = decision.reason;
+        continue;
+      }
+
+      self.increment_uses(id);
+      return Ok(id);
+    }
+
+    Err(MechError::new(
+      CapabilityDeniedError {
+        subject: request.subject.clone(),
+        operation: request.operation.clone(),
+        resource: request.resource.clone(),
+        reason: last_reason
+          .unwrap_or_else(|| "no matching capability".to_string()),
+      },
+      None,
+    ))
+  }
 }
 
 impl CapabilityKernel for BasicCapabilityKernel {
+  fn checkpoint(&self) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+    Ok(Box::new(self.clone()))
+  }
+
+  fn restore(
+    &mut self,
+    checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+  ) -> MResult<()> {
+    let snapshot = checkpoint
+      .into_any()
+      .downcast::<BasicCapabilityKernel>()
+      .map_err(|_| MechError::new(
+        TransactionStateUnsupportedError {
+          function: "basic capability kernel".to_string(),
+          reason: "checkpoint belongs to a different kernel implementation"
+            .to_string(),
+        },
+        None,
+      ))?;
+    *self = *snapshot;
+    Ok(())
+  }
+
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> {
     let capability = grant.capability;
     capability.validate()?;
@@ -206,65 +353,15 @@ impl CapabilityKernel for BasicCapabilityKernel {
   }
 
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> {
-    let Some(ids) = self.by_subject.get(&request.subject) else {
-      return Err(MechError::new(
-        CapabilityDeniedError {
-          subject: request.subject.clone(),
-          operation: request.operation.clone(),
-          resource: request.resource.clone(),
-          reason: "subject has no capabilities".to_string(),
-        },
-        None,
-      ));
-    };
+    self.check_with_exclusions(request, &HashSet::new())
+  }
 
-    let ids: Vec<CapabilityId> = ids.iter().copied().collect();
-    let mut last_reason = None;
-
-    for id in ids {
-      if self.revoked.contains(&id) {
-        last_reason = Some("capability is revoked".to_string());
-        continue;
-      }
-
-      let Some(capability) = self.capabilities.get(&id) else {
-        continue;
-      };
-
-      if let Some(max_uses) = capability.max_uses() {
-        let actual = self.successful_uses(id);
-        if actual >= max_uses {
-          last_reason = Some(format!(
-            "use limit exceeded: max {}, actual {}",
-            max_uses, actual,
-          ));
-          continue;
-        }
-      }
-
-      let decision = capability.check(request)?;
-
-      if !decision.allowed {
-        last_reason = decision.reason;
-        continue;
-      }
-
-      // The generic Capability trait does not expose max_uses, because custom
-      // capabilities can implement their own use accounting inside check().
-      // The default kernel still tracks successful uses for inspection.
-      self.increment_uses(id);
-      return Ok(id);
-    }
-
-    Err(MechError::new(
-      CapabilityDeniedError {
-        subject: request.subject.clone(),
-        operation: request.operation.clone(),
-        resource: request.resource.clone(),
-        reason: last_reason.unwrap_or_else(|| "no matching capability".to_string()),
-      },
-      None,
-    ))
+  fn check_excluding(
+    &mut self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+  ) -> MResult<CapabilityId> {
+    self.check_with_exclusions(request, excluded)
   }
 
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
@@ -370,10 +467,24 @@ impl SharedCapabilityKernel {
 }
 
 impl CapabilityKernel for SharedCapabilityKernel {
+  fn checkpoint(&self) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+    self.inner.lock().unwrap().checkpoint()
+  }
+  fn restore(
+    &mut self,
+    checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+  ) -> MResult<()> {
+    self
+      .inner
+      .lock()
+      .unwrap()
+      .restore(checkpoint)
+  }
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> { self.inner.lock().unwrap().grant(grant) }
   fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> { self.inner.lock().unwrap().rollback_grant(capability) }
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> { self.inner.lock().unwrap().revoke(revocation) }
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().check(request) }
+  fn check_excluding(&mut self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().check_excluding(request, excluded) }
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> { self.inner.lock().unwrap().get(id) }
   fn list_for_subject(&self, subject: &dyn Subject) -> MResult<Vec<CapabilityId>> { self.inner.lock().unwrap().list_for_subject(subject) }
   fn derive_capability(&mut self, derivation: CapabilityDerivation) -> MResult<CapabilityId> { self.inner.lock().unwrap().derive_capability(derivation) }

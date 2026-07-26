@@ -47,6 +47,9 @@ use self::program_transaction::{
   RuntimeExecutionTransactionState,
   RuntimeTransactionContextIdentity,
 };
+use self::capability::{
+  RuntimeCapabilityMutation, RuntimeCapabilityOverlay,
+};
 use self::effect::RuntimeEffectJournal;
 use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use crate::runtime::host::*;
@@ -199,7 +202,7 @@ use crate::event::{
 };
 
 use crate::host::{
-  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy, HostFunction,
+  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy,
   HostFunctionNotFoundError, HostRegistry, InMemoryHostRegistry,
 };
 

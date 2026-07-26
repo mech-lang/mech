@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use mech_core::{MResult, MechMatrix as Matrix, ToMatrix, Value};
 
@@ -60,8 +60,6 @@ fn main() -> MResult<()> {
     .map(|(a, b)| a * b)
     .sum::<f64>();
 
-  let result_store = Arc::new(Mutex::new(None::<f64>));
-
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
     .build()?;
@@ -74,7 +72,7 @@ fn main() -> MResult<()> {
   {
     let v1 = v1.clone();
 
-    runtime.register_mech_host_function(ClosureHostFunction::new(
+    runtime.register_mech_host_function(ClosureHostFunction::new_pure(
       "demo/matrix/v1",
       move |_services, _context, args| {
         host_call0("demo/matrix/v1", &args, || {
@@ -87,7 +85,7 @@ fn main() -> MResult<()> {
   {
     let v2 = v2.clone();
 
-    runtime.register_mech_host_function(ClosureHostFunction::new(
+    runtime.register_mech_host_function(ClosureHostFunction::new_pure(
       "demo/matrix/v2",
       move |_services, _context, args| {
         host_call0("demo/matrix/v2", &args, || {
@@ -97,46 +95,11 @@ fn main() -> MResult<()> {
     ))?;
   }
 
-  {
-    let result_store = result_store.clone();
-
-    runtime.register_mech_host_function(ClosureHostFunction::new(
-      "demo/matrix/store-result",
-      move |_services, _context, args| {
-        let result = host_arg_matrix_f64(
-          "demo/matrix/store-result",
-          &args,
-          0,
-        )?;
-
-        let shape = result.shape();
-
-        println!("rust received matrix result:");
-        println!("  shape: {:?}", shape);
-        println!("  matrix: {:?}", result);
-
-        let Some(actual) = matrix_scalar_f64(&result) else {
-          panic!(
-            "expected a 1x1 matrix result, got shape {:?}",
-            shape,
-          );
-        };
-
-        println!("  scalar: {}", actual);
-
-        *result_store.lock().unwrap() = Some(actual);
-
-        Ok(Value::MatrixF64(result))
-      },
-    ))?;
-  }
-
   let subject = BasicSubject::new("program:matrix-multiply");
 
   for (id, name) in [
     (1, "demo/matrix/v1"),
     (2, "demo/matrix/v2"),
-    (3, "demo/matrix/store-result"),
   ] {
     runtime.grant_capability(Arc::new(BasicCapability::new(
       CapabilityId(id),
@@ -150,7 +113,7 @@ fn main() -> MResult<()> {
     v1 := demo/matrix/v1()
     v2 := demo/matrix/v2()
     result := v1 ** v2'
-    demo/matrix/store-result(result)
+    result
   "#;
 
   println!();
@@ -169,10 +132,13 @@ fn main() -> MResult<()> {
   println!();
   println!("program result: {:?}", value);
 
-  let stored = result_store
-    .lock()
-    .unwrap()
-    .expect("Rust host did not receive matrix result");
+  let result = host_arg_matrix_f64(
+    "matrix-multiply result",
+    &[value],
+    0,
+  )?;
+  let stored = matrix_scalar_f64(&result)
+    .expect("Mech program did not return a 1x1 matrix");
 
   assert!(
     (stored - expected).abs() < f64::EPSILON,
