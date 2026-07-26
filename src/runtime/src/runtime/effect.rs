@@ -7,7 +7,8 @@ use crate::{
 };
 #[cfg(test)]
 use crate::{
-  RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
+  RuntimeAfterCommitEffect, RuntimeCompensatableEffect,
+  RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -468,10 +469,220 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::sync::{Arc, Mutex};
+
+  #[derive(Debug, Clone)]
+  struct SyntheticEffectError {
+    message: String,
+  }
+
+  impl MechErrorKind for SyntheticEffectError {
+    fn name(&self) -> &str {
+      "SyntheticEffectError"
+    }
+
+    fn message(&self) -> String {
+      self.message.clone()
+    }
+  }
+
+  fn synthetic_error(message: impl Into<String>) -> MechError {
+    MechError::new(
+      SyntheticEffectError {
+        message: message.into(),
+      },
+      None,
+    )
+  }
+
+  fn record(log: &Arc<Mutex<Vec<String>>>, entry: impl Into<String>) {
+    log.lock().unwrap().push(entry.into());
+  }
+
+  fn synthetic_metadata(name: &str) -> RuntimeEffectMetadata {
+    RuntimeEffectMetadata::new(
+      RuntimeEffectSource::Custom {
+        name: name.to_string(),
+      },
+      "synthetic",
+    )
+  }
+
+  #[derive(Debug)]
+  struct SyntheticTransactionalEffect {
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+    fail_prepare: bool,
+    fail_commit: bool,
+    fail_abort: bool,
+  }
+
+  impl RuntimeTransactionalEffect for SyntheticTransactionalEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata(self.name)
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:prepare", self.name));
+      if self.fail_prepare {
+        return Err(synthetic_error(format!(
+          "{} prepare failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:commit", self.name));
+      if self.fail_commit {
+        return Err(synthetic_error(format!(
+          "{} commit failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:abort", self.name));
+      if self.fail_abort {
+        return Err(synthetic_error(format!(
+          "{} abort failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct SyntheticCompensatableEffect {
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+    fail_apply: bool,
+    fail_compensate: bool,
+    fail_abort: bool,
+  }
+
+  impl RuntimeCompensatableEffect for SyntheticCompensatableEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata(self.name)
+    }
+
+    fn apply(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:apply", self.name));
+      if self.fail_apply {
+        return Err(synthetic_error(format!(
+          "{} apply failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+
+    fn compensate(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:compensate", self.name));
+      if self.fail_compensate {
+        return Err(synthetic_error(format!(
+          "{} compensate failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:abort", self.name));
+      if self.fail_abort {
+        return Err(synthetic_error(format!(
+          "{} abort failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct SyntheticAfterCommitEffect {
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+    fail_deliver: bool,
+  }
+
+  impl RuntimeAfterCommitEffect for SyntheticAfterCommitEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata(self.name)
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:deliver", self.name));
+      if self.fail_deliver {
+        return Err(synthetic_error(format!(
+          "{} delivery failed",
+          self.name,
+        )));
+      }
+      Ok(())
+    }
+  }
+
+  fn transactional(
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+  ) -> SyntheticTransactionalEffect {
+    SyntheticTransactionalEffect {
+      name,
+      log,
+      fail_prepare: false,
+      fail_commit: false,
+      fail_abort: false,
+    }
+  }
+
+  fn compensatable(
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+  ) -> SyntheticCompensatableEffect {
+    SyntheticCompensatableEffect {
+      name,
+      log,
+      fail_apply: false,
+      fail_compensate: false,
+      fail_abort: false,
+    }
+  }
+
+  fn after_commit(
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+  ) -> SyntheticAfterCommitEffect {
+    SyntheticAfterCommitEffect {
+      name,
+      log,
+      fail_deliver: false,
+    }
+  }
 
   #[derive(Debug)]
   struct NoopAfterCommit {
     name: &'static str,
+  }
+
+  #[derive(Debug)]
+  struct CostedAfterCommit {
+    cost: crate::RuntimeEffectCost,
+  }
+
+  impl RuntimeAfterCommitEffect for CostedAfterCommit {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata("costed").with_cost(self.cost)
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      Ok(())
+    }
   }
 
   impl RuntimeAfterCommitEffect for NoopAfterCommit {
@@ -506,5 +717,476 @@ mod tests {
 
     assert_eq!(journal.len(), 2);
     assert_eq!(journal.next_sequence(), 3);
+  }
+
+  #[test]
+  fn rolled_back_effect_cost_is_not_refunded() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    let bytes_before = context.budget.used_bytes;
+    let items_before = context.budget.used_items;
+
+    let result: MResult<()> = runtime.with_atomic_program_operation(
+      &mut context,
+      "costed_effect_failure",
+      |runtime, context| {
+        runtime.stage_runtime_effect_with_context(
+          context,
+          PreparedRuntimeEffect::AfterCommit(Box::new(
+            CostedAfterCommit {
+              cost: crate::RuntimeEffectCost {
+                bytes: 17,
+                items: 3,
+              },
+            },
+          )),
+        )?;
+        Err(synthetic_error("deliberate costed operation failure"))
+      },
+    );
+
+    assert_eq!(result.unwrap_err().kind_name(), "SyntheticEffectError");
+    assert_eq!(context.budget.used_bytes, bytes_before + 17);
+    assert_eq!(context.budget.used_items, items_before + 3);
+    let transaction =
+      runtime.active_execution_transaction(transaction_id).unwrap();
+    assert_eq!(transaction.effects.len(), 0);
+    assert_eq!(transaction.effects.next_sequence(), 1);
+
+    runtime
+      .abort_runtime_transaction(&mut context, "cost test cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn prepare_failure_aborts_prepared_participants_and_stays_retryable() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = transactional("second", log.clone());
+    second.fail_prepare = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "SyntheticEffectError");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["first:prepare", "second:prepare", "first:abort"],
+    );
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert_eq!(
+      runtime
+        .active_execution_transaction(transaction_id)
+        .unwrap()
+        .state,
+      RuntimeExecutionTransactionState::Active,
+    );
+    assert!(!runtime.is_poisoned());
+
+    runtime
+      .abort_runtime_transaction(&mut context, "prepare test cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn prepared_effect_abort_failure_poisons_runtime() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let mut first = transactional("first", log.clone());
+    first.fail_abort = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(first)),
+      )
+      .unwrap();
+    let mut second = transactional("second", log.clone());
+    second.fail_prepare = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectCleanupFailed");
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, Some(transaction_id));
+    let poison = match runtime.health() {
+      RuntimeHealth::Healthy => panic!("runtime should be poisoned"),
+      RuntimeHealth::Poisoned(poison) => poison,
+    };
+    assert!(poison.original_error.contains("second prepare failed"));
+    assert!(poison
+      .rollback_failures
+      .iter()
+      .any(|failure| failure.contains("first abort failed")));
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["first:prepare", "second:prepare", "first:abort"],
+    );
+
+    assert!(runtime
+      .abort_runtime_transaction(&mut context, "abort failure cleanup")
+      .is_err());
+    assert_eq!(context.transaction, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+  }
+
+  #[test]
+  fn apply_failure_compensates_and_aborts_in_reverse_phase_order() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "transactional",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(compensatable(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = compensatable("second", log.clone());
+    second.fail_apply = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "SyntheticEffectError");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "transactional:prepare",
+        "first:apply",
+        "second:apply",
+        "first:compensate",
+        "transactional:abort",
+      ],
+    );
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(!runtime.is_poisoned());
+
+    runtime
+      .abort_runtime_transaction(&mut context, "apply test cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn store_failure_compensates_effect_and_keeps_transaction_active() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(compensatable(
+          "reversible",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(900), "missing", "update"),
+      )
+      .unwrap();
+
+    assert!(runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .is_err());
+
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["reversible:apply", "reversible:compensate"],
+    );
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert!(!runtime.is_poisoned());
+
+    runtime
+      .abort_runtime_transaction(&mut context, "store test cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn compensation_failure_poisons_runtime_with_complete_diagnostic() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let mut first = compensatable("first", log.clone());
+    first.fail_compensate = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(first)),
+      )
+      .unwrap();
+    let mut second = compensatable("second", log.clone());
+    second.fail_apply = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectCleanupFailed");
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, Some(transaction_id));
+    let poison = match runtime.health() {
+      RuntimeHealth::Healthy => panic!("runtime should be poisoned"),
+      RuntimeHealth::Poisoned(poison) => poison,
+    };
+    assert!(poison.original_error.contains("second apply failed"));
+    assert!(poison
+      .rollback_failures
+      .iter()
+      .any(|failure| failure.contains("first compensate failed")));
+
+    assert!(runtime
+      .abort_runtime_transaction(&mut context, "poison test cleanup")
+      .is_err());
+    assert_eq!(context.transaction, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+  }
+
+  #[test]
+  fn provider_commit_failure_after_store_commit_is_indeterminate() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = transactional("second", log.clone());
+    second.fail_commit = true;
+    let failing_effect_id = runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExternalCommitIndeterminate");
+    let indeterminate = error
+      .kind_as::<RuntimeExternalCommitIndeterminate>()
+      .unwrap();
+    assert_eq!(indeterminate.transaction_id, transaction_id);
+    assert_eq!(indeterminate.effect_id, failing_effect_id);
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "first:prepare",
+        "second:prepare",
+        "first:commit",
+        "second:commit",
+      ],
+    );
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert!(runtime
+      .get_transaction(transaction_id)
+      .unwrap()
+      .is_some());
+  }
+
+  #[test]
+  fn after_commit_delivery_failure_keeps_committed_runtime_healthy() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(after_commit(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = after_commit("second", log.clone());
+    second.fail_deliver = true;
+    let failing_effect_id = runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(second)),
+      )
+      .unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(after_commit(
+          "third",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+
+    let outcome = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    assert_eq!(outcome.transaction_id, transaction_id);
+    assert_eq!(outcome.delivery_failures.len(), 1);
+    assert_eq!(
+      outcome.delivery_failures[0].effect_id,
+      failing_effect_id,
+    );
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["first:deliver", "second:deliver", "third:deliver"],
+    );
+    assert!(!runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+    assert!(runtime
+      .get_transaction(transaction_id)
+      .unwrap()
+      .is_some());
+  }
+
+  #[test]
+  fn outer_abort_discards_effects_in_reverse_order() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    for name in ["first", "second", "third"] {
+      runtime
+        .stage_runtime_effect_with_context(
+          &mut context,
+          PreparedRuntimeEffect::Transactional(Box::new(transactional(
+            name,
+            log.clone(),
+          ))),
+        )
+        .unwrap();
+    }
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard")
+      .unwrap();
+
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["third:abort", "second:abort", "first:abort"],
+    );
+  }
+
+  #[test]
+  fn mutation_is_rejected_while_an_effect_phase_is_active() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.active_effect_phase =
+      Some(ActiveRuntimeEffectPhase::Preparing);
+
+    let error = runtime.begin_transaction(&mut context).unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectOperationReentrant");
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_transactions.is_empty());
+  }
+
+  #[test]
+  fn broken_effect_identity_poisons_before_external_work() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(after_commit(
+          "identity",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    runtime
+      .active_execution_transaction_mut(transaction_id)
+      .unwrap()
+      .effects
+      .entries[0]
+      .id
+      .transaction = TransactionId(transaction_id.0.saturating_add(1));
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectCleanupFailed");
+    assert!(runtime.is_poisoned());
+    assert!(log.lock().unwrap().is_empty());
+    assert_eq!(context.transaction, Some(transaction_id));
   }
 }
