@@ -24,6 +24,7 @@ mod execution;
 mod host;
 mod id;
 mod module;
+mod module_transaction;
 mod object;
 mod program_transaction;
 mod schedule;
@@ -45,12 +46,14 @@ use self::program_transaction::{
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
   RuntimeExecutionTransactionState,
+  RuntimeOperationSavepoint,
   RuntimeTransactionContextIdentity,
 };
 use self::capability::{
   RuntimeCapabilityMutation, RuntimeCapabilityOverlay,
 };
 use self::effect::RuntimeEffectJournal;
+use self::module_transaction::RuntimeModuleJournal;
 use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use crate::runtime::host::*;
 

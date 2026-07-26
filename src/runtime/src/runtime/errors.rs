@@ -350,6 +350,28 @@ impl MechErrorKind for RuntimeModuleImportConflict {
 }
 
 #[derive(Debug, Clone)]
+pub struct RuntimeModuleJournalConflict {
+  pub record_type: &'static str,
+  pub identity: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for RuntimeModuleJournalConflict {
+  fn name(&self) -> &str {
+    "RuntimeModuleJournalConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "{} `{}` conflicts with the transaction module journal: {}",
+      self.record_type,
+      self.identity,
+      self.reason,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct RuntimeModuleImportEdgeInvalid {
   pub module: ModuleVersionId,
   pub reason: String,

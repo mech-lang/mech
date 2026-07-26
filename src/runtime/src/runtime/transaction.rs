@@ -30,7 +30,125 @@ pub(super) enum RuntimeCommitResolution {
   },
 }
 
+fn module_journal_validation_error(
+  record_type: &'static str,
+  identity: impl Into<String>,
+  reason: impl Into<String>,
+) -> MechError {
+  MechError::new(
+    RuntimeModuleJournalConflict {
+      record_type,
+      identity: identity.into(),
+      reason: reason.into(),
+    },
+    None,
+  )
+}
+
 impl MechRuntime {
+
+  fn validate_runtime_module_journal(
+    &self,
+    transaction_id: TransactionId,
+  ) -> MResult<()> {
+    let journal =
+      &self.active_execution_transaction(transaction_id)?.modules;
+    if journal.is_empty() {
+      return Ok(());
+    }
+
+    for module in journal.module_puts() {
+      module.validate()?;
+      if module.id != module_id(&module.name) {
+        return Err(module_journal_validation_error(
+          "module",
+          module.id.to_string(),
+          "module ID does not match its canonical URI",
+        ));
+      }
+      if let Some(existing) = self.store.get_module(module.id)? {
+        if existing.name != module.name {
+          return Err(module_journal_validation_error(
+            "module",
+            module.id.to_string(),
+            "committed module ID maps to another canonical URI",
+          ));
+        }
+      }
+      if let Some(existing) =
+        self.store.find_module_by_name(&module.name)?
+      {
+        if existing.id != module.id {
+          return Err(module_journal_validation_error(
+            "module.name",
+            module.name.clone(),
+            "committed canonical URI maps to another module ID",
+          ));
+        }
+      }
+    }
+
+    for version in journal.version_puts() {
+      version.validate()?;
+      version.validate_import_edges()?;
+      if let Some(existing) =
+        self.store.get_module_version(version.id)?
+      {
+        if existing != *version {
+          return Err(module_journal_validation_error(
+            "module_version",
+            version.id.to_string(),
+            "committed version ID maps to different contents",
+          ));
+        }
+      }
+      if journal.get_module(version.module).is_none()
+        && self.store.get_module(version.module)?.is_none()
+      {
+        return Err(module_journal_validation_error(
+          "module_version.owner",
+          version.module.to_string(),
+          format!(
+            "owner of version {} is not visible",
+            version.id,
+          ),
+        ));
+      }
+      for dependency in &version.dependencies {
+        if journal.get_version(*dependency).is_none()
+          && self.store.get_module_version(*dependency)?.is_none()
+        {
+          return Err(module_journal_validation_error(
+            "module_version.dependency",
+            dependency.to_string(),
+            format!(
+              "dependency of version {} is not visible",
+              version.id,
+            ),
+          ));
+        }
+      }
+      for edge in &version.import_edges {
+        if journal.get_version(edge.dependency).is_none()
+          && self
+            .store
+            .get_module_version(edge.dependency)?
+            .is_none()
+        {
+          return Err(module_journal_validation_error(
+            "module_version.import_edge",
+            edge.dependency.to_string(),
+            format!(
+              "import-edge target of version {} is not visible",
+              version.id,
+            ),
+          ));
+        }
+      }
+    }
+
+    Ok(())
+  }
 
   pub fn commit_transaction(
     &mut self,
@@ -219,6 +337,8 @@ impl MechRuntime {
         journal_failures,
       ));
     }
+
+    self.validate_runtime_module_journal(transaction_id)?;
 
     {
       let transaction =
@@ -738,6 +858,12 @@ impl MechRuntime {
 
     Ok(RuntimeStoreCommit {
       transaction: transaction_record,
+      module_puts: envelope.modules.module_puts().cloned().collect(),
+      module_version_puts: envelope
+        .modules
+        .version_puts()
+        .cloned()
+        .collect(),
       capability_grants: envelope.capabilities.grants().collect(),
       capability_revocations: envelope
         .capabilities
@@ -938,6 +1064,43 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::{
+    PreparedRuntimeEffect, RuntimeEffectMetadata,
+    RuntimeEffectSource, RuntimeTransactionalEffect,
+  };
+  use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+  };
+
+  #[derive(Debug)]
+  struct PrepareProbe {
+    prepared: Arc<AtomicBool>,
+  }
+
+  impl RuntimeTransactionalEffect for PrepareProbe {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::Custom {
+          name: "module-validation-probe".to_string(),
+        },
+        "prepare",
+      )
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      self.prepared.store(true, Ordering::SeqCst);
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      Ok(())
+    }
+  }
 
   fn event_count(
     events: &[RuntimeEvent],
@@ -994,6 +1157,48 @@ mod tests {
       ),
       0,
     );
+  }
+
+  #[test]
+  fn module_journal_validation_precedes_effect_preparation() {
+    let mut runtime = new_runtime();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id =
+      runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .active_execution_transaction_mut(transaction_id)
+      .unwrap()
+      .modules
+      .stage_version(ModuleVersionRecord::new(
+        ModuleVersionId(10),
+        module_id("memory://missing.mec"),
+        1,
+      ))
+      .unwrap();
+    let prepared = Arc::new(AtomicBool::new(false));
+    runtime
+      .active_execution_transaction_mut(transaction_id)
+      .unwrap()
+      .effects
+      .stage(
+        transaction_id,
+        PreparedRuntimeEffect::Transactional(Box::new(
+          PrepareProbe {
+            prepared: prepared.clone(),
+          },
+        )),
+      );
+
+    let error =
+      runtime.commit_runtime_transaction(&mut context).unwrap_err();
+
+    assert!(
+      error.kind_as::<RuntimeModuleJournalConflict>().is_some(),
+    );
+    assert!(!prepared.load(Ordering::SeqCst));
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(matches!(runtime.health(), RuntimeHealth::Healthy));
   }
 
   #[test]

@@ -68,6 +68,44 @@ impl MechRuntime {
     self.store.put_module(module)
   }
 
+  fn ensure_module_for_build_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    name: &str,
+    canonical_uri: &str,
+  ) -> MResult<ModuleId> {
+    let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(module) =
+      self.find_module_by_name_visible(context, canonical_uri)?
+    {
+      return Ok(module.id);
+    }
+
+    let id = module_id(canonical_uri);
+    if let Some(module) = self.get_module_visible(context, id)? {
+      if module.name == canonical_uri {
+        return Ok(id);
+      }
+      return Err(MechError::new(
+        RuntimeModuleJournalConflict {
+          record_type: "module",
+          identity: id.to_string(),
+          reason: "visible module ID maps to another canonical URI"
+            .to_string(),
+        },
+        None,
+      ));
+    }
+
+    let module = ModuleRecord::new(id, canonical_uri)
+      .with_description(name.to_string());
+    self
+      .active_execution_transaction_mut(transaction_id)?
+      .modules
+      .stage_module(module)?;
+    Ok(id)
+  }
+
   fn materialize_manifest_context_imports(
     &mut self,
     record: &mut crate::RuntimeModuleRecord,
@@ -264,6 +302,26 @@ impl MechRuntime {
     self.ensure_runtime_mutation_allowed(
       "build_module_from_resolved_source_with_context",
     )?;
+    self.with_atomic_module_operation(
+      context,
+      "build_module_from_resolved_source_with_context",
+      |runtime, context| {
+        runtime.build_module_from_resolved_source_in_transaction(
+          context,
+          resolved,
+          options,
+        )
+      },
+    )
+  }
+
+  fn build_module_from_resolved_source_in_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    resolved: ResolvedSource,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<ModuleVersionId> {
+    let _ = Self::context_transaction_id(context)?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_resolved_source_with_context_and_graph(
@@ -282,6 +340,7 @@ impl MechRuntime {
     dependency_graph: &mut ModuleDependencyGraph,
   ) -> MResult<ModuleVersionId> {
     self.validate_context_for_runtime(context)?;
+    let transaction_id = Self::context_transaction_id(context)?;
     context.charge_step()?;
 
     if !resolved.is_executable_mech_source() {
@@ -411,7 +470,8 @@ impl MechRuntime {
       self.materialize_manifest_context_imports(&mut record)?;
       Self::validate_runtime_module_record_address_targets(&record)?;
 
-      let module = self.ensure_module(
+      let module = self.ensure_module_for_build_with_context(
+        context,
         &record.name,
         &record.canonical_uri,
       )?;
@@ -422,17 +482,9 @@ impl MechRuntime {
         "ModuleBuilder and runtime module store derived different ModuleId values",
       );
 
-      if self
-        .store
-        .get_module_version(record.module_version)?
-        .is_some()
-      {
-        dependency_graph.cache_version(&canonical_uri, record.module_version);
-        return Ok(record.module_version);
-      }
-
+      let module_version = record.module_version;
       let version = ModuleVersionRecord::new(
-        record.module_version,
+        module_version,
         module,
         1,
       )
@@ -447,18 +499,41 @@ impl MechRuntime {
       .with_capability_requirements(record.capability_requirements);
       validate_module_import_edges(&version)?;
 
-      self.store.put_module_version(version)?;
+      if let Some(existing) =
+        self.get_module_version_visible(context, module_version)?
+      {
+        if existing != version {
+          return Err(MechError::new(
+            RuntimeModuleJournalConflict {
+              record_type: "module_version",
+              identity: module_version.to_string(),
+              reason: "visible version ID maps to different contents"
+                .to_string(),
+            },
+            None,
+          ));
+        }
+        dependency_graph.cache_version(&canonical_uri, module_version);
+        return Ok(module_version);
+      }
 
-      dependency_graph.cache_version(&canonical_uri, record.module_version);
+      let staged = self
+        .active_execution_transaction_mut(transaction_id)?
+        .modules
+        .stage_version(version)?;
 
-      self.emit_event_to_context(
-        context,
-        RuntimeEventKind::ModuleCompiled {
-          module_version: record.module_version,
-        },
-      )?;
+      dependency_graph.cache_version(&canonical_uri, module_version);
 
-      Ok(record.module_version)
+      if staged {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleCompiled {
+            module_version,
+          },
+        )?;
+      }
+
+      Ok(module_version)
     })();
 
     dependency_graph.leave(&canonical_uri);
@@ -513,6 +588,27 @@ impl MechRuntime {
     self.ensure_runtime_mutation_allowed(
       "build_module_from_request_with_context",
     )?;
+    let request = request.into();
+    self.with_atomic_module_operation(
+      context,
+      "build_module_from_request_with_context",
+      |runtime, context| {
+        runtime.build_module_from_request_in_transaction(
+          context,
+          request,
+          options,
+        )
+      },
+    )
+  }
+
+  pub(super) fn build_module_from_request_in_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<Option<ModuleVersionId>> {
+    let _ = Self::context_transaction_id(context)?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_request_with_context_and_graph(
@@ -541,30 +637,32 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Value> {
-    let turn_started = Instant::now();
-    self.preflight_atomic_program_operation(
-      context,
-      "resolve_and_run_root_module_with_context",
-    )?;
-
     let request = request.into();
     request.validate()?;
     let root_specifier = request.specifier.clone();
-    let Some(root_version) = self.build_module_from_request_with_context(
-      context,
-      request,
-      options,
-    )? else {
-      return Err(MechError::new(
-        RuntimeRootModuleSourceNotFound { specifier: root_specifier },
-        None,
-      ));
-    };
+    let turn_started = Instant::now();
+    let mut root_version_for_audit = None;
 
     let result = self.with_atomic_program_operation(
       context,
       "resolve_and_run_root_module_with_context",
       |runtime, context| {
+        let Some(root_version) =
+          runtime.build_module_from_request_in_transaction(
+            context,
+            request,
+            options,
+          )?
+        else {
+          return Err(MechError::new(
+            RuntimeRootModuleSourceNotFound {
+              specifier: root_specifier.clone(),
+            },
+            None,
+          ));
+        };
+
+        root_version_for_audit = Some(root_version);
         context.module_version = Some(root_version);
 
         let mut preflight_seen = HashSet::new();
@@ -589,20 +687,22 @@ impl MechRuntime {
     );
 
     if let Err(error) = &result {
-      let _ = self.emit_event_to_context(
-        context,
-        RuntimeEventKind::ModuleExecutionFailed {
-          module_version: root_version,
-          message: format!("{:?}", error),
-        },
-      );
-      let _ = self.emit_event_to_context(
+      let _ = self.emit_event_immediate_to_context(
         context,
         RuntimeEventKind::ProgramFailed {
           task_id: context.task,
           message: format!("{:?}", error),
         },
       );
+      if let Some(root_version) = root_version_for_audit {
+        let _ = self.emit_event_immediate_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: root_version,
+            message: format!("{:?}", error),
+          },
+        );
+      }
     }
     result
   }
@@ -644,10 +744,16 @@ impl MechRuntime {
     )
     .with_kind(crate::SourceKind::Mech);
 
-    self.build_module_from_resolved_source_with_context(
+    self.with_atomic_module_operation(
       context,
-      resolved,
-      options,
+      "put_source_module_with_context",
+      |runtime, context| {
+        runtime.build_module_from_resolved_source_in_transaction(
+          context,
+          resolved,
+          options,
+        )
+      },
     )
   }
 
@@ -712,7 +818,230 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::SourceKind;
+  use crate::capability::{
+    BasicCapability, BasicOperation, BasicResource, BasicSubject,
+  };
+  use crate::{
+    IdGenerator,
+    InMemorySourceResolver, PreparedRuntimeEffect,
+    NodeId,
+    RuntimeAfterCommitEffect, RuntimeEffectMetadata,
+    RuntimeEffectSource, RuntimePreparedHostCall,
+    RuntimeTransactionalEffect, SourceKind, SourceResolver,
+    StagedClosureHostFunction,
+  };
+  use std::collections::VecDeque;
+  use std::sync::Arc;
+  use std::sync::atomic::{AtomicUsize, Ordering};
+
+  #[derive(Debug)]
+  struct ScriptedEventIdGenerator {
+    next: u128,
+    event_ids: VecDeque<EventId>,
+  }
+
+  impl ScriptedEventIdGenerator {
+    fn new(
+      next: u128,
+      event_ids: impl IntoIterator<Item = EventId>,
+    ) -> Self {
+      Self {
+        next,
+        event_ids: event_ids.into_iter().collect(),
+      }
+    }
+
+    fn next_id(&mut self) -> u128 {
+      let id = self.next;
+      self.next = self.next.saturating_add(1);
+      id
+    }
+  }
+
+  impl IdGenerator for ScriptedEventIdGenerator {
+    fn runtime_id(&mut self) -> RuntimeId {
+      RuntimeId(self.next_id())
+    }
+
+    fn object_id(&mut self) -> ObjectId {
+      ObjectId(self.next_id())
+    }
+
+    fn actor_id(&mut self) -> ActorId {
+      ActorId(self.next_id())
+    }
+
+    fn task_id(&mut self) -> TaskId {
+      TaskId(self.next_id())
+    }
+
+    fn capability_id(&mut self) -> CapabilityId {
+      CapabilityId(self.next_id())
+    }
+
+    fn transaction_id(&mut self) -> TransactionId {
+      TransactionId(self.next_id())
+    }
+
+    fn event_id(&mut self) -> EventId {
+      self
+        .event_ids
+        .pop_front()
+        .unwrap_or_else(|| EventId(self.next_id()))
+    }
+
+    fn node_id(&mut self) -> NodeId {
+      NodeId(self.next_id())
+    }
+
+    fn message_id(&mut self) -> MessageId {
+      MessageId(self.next_id())
+    }
+  }
+
+  #[derive(Debug)]
+  struct CountingSourceResolver {
+    inner: InMemorySourceResolver,
+    calls: Arc<AtomicUsize>,
+  }
+
+  impl SourceResolver for CountingSourceResolver {
+    fn resolve(
+      &self,
+      request: &SourceRequest,
+    ) -> MResult<Option<ResolvedSource>> {
+      self.calls.fetch_add(1, Ordering::SeqCst);
+      self.inner.resolve(request)
+    }
+  }
+
+  #[derive(Debug)]
+  struct CountingAfterCommitEffect {
+    deliveries: Arc<AtomicUsize>,
+    fail: bool,
+  }
+
+  impl RuntimeAfterCommitEffect for CountingAfterCommitEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::Custom {
+          name: "round5-after-commit".to_string(),
+        },
+        "deliver",
+      )
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      self.deliveries.fetch_add(1, Ordering::SeqCst);
+      if self.fail {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "round5_after_commit",
+            reason: "deliberate delivery failure".to_string(),
+          },
+          None,
+        ));
+      }
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct FailingCommitEffect {
+    aborts: Arc<AtomicUsize>,
+  }
+
+  impl RuntimeTransactionalEffect for FailingCommitEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::Custom {
+          name: "round5-failing-commit".to_string(),
+        },
+        "commit",
+      )
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "round5_effect_commit",
+          reason: "deliberate post-store failure".to_string(),
+        },
+        None,
+      ))
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      self.aborts.fetch_add(1, Ordering::SeqCst);
+      Ok(())
+    }
+  }
+
+  fn test_module_options() -> ModuleBuildOptions<'static> {
+    ModuleBuildOptions::new(
+      "test",
+      "v0.3",
+      "native",
+      &[],
+      &[],
+    )
+  }
+
+  fn runtime_with_sources(
+    sources: &[(&str, &str)],
+  ) -> MechRuntime {
+    let mut resolver = InMemorySourceResolver::new();
+    for (specifier, source) in sources {
+      resolver.insert_string(*specifier, *source).unwrap();
+    }
+    let mut runtime =
+      MechRuntime::new(RuntimeConfig::default()).unwrap();
+    runtime.set_source_resolver(resolver).unwrap();
+    runtime
+  }
+
+  fn grant_host_call(
+    runtime: &mut MechRuntime,
+    id: CapabilityId,
+    name: &str,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        id,
+        &BasicSubject::new(&subject),
+        &BasicResource::new(format!("host:{name}")),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
+  }
+
+  fn staged_test_capability(
+    runtime: &MechRuntime,
+    id: CapabilityId,
+  ) -> (
+    Arc<BasicCapability>,
+    CapabilityRequest,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    (
+      Arc::new(BasicCapability::from_keys(
+        id,
+        &subject,
+        "round5://resource",
+        [":read"],
+      )),
+      CapabilityRequest::from_keys(
+        subject,
+        ":read",
+        "round5://resource",
+      ),
+    )
+  }
 
   #[test]
   fn max_source_bytes_rejects_module_source() {
@@ -771,5 +1100,1480 @@ mod tests {
       .unwrap_err();
 
     assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+  }
+
+  #[test]
+  fn missing_later_dependency_commits_no_graph() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "main.mec",
+        "+> ./first.mec\n+> ./missing.mec\nanswer := 1\n",
+      ),
+      ("first.mec", "value := 1\n<+ value\n"),
+    ]);
+
+    let error = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert!(
+      error
+        .kind_as::<RuntimeModuleDependencyMissingError>()
+        .is_some(),
+      "expected missing dependency, got {error:?}",
+    );
+    for uri in ["memory:main.mec", "memory:first.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "failed graph exposed {uri}",
+      );
+    }
+    assert!(
+      runtime
+        .list_events(None)
+        .unwrap()
+        .iter()
+        .all(|event| !matches!(
+          event.kind,
+          RuntimeEventKind::ModuleCompiled { .. }
+        )),
+    );
+  }
+
+  #[test]
+  fn deep_parse_failure_commits_no_graph() {
+    let mut runtime = runtime_with_sources(&[
+      ("main.mec", "+> ./middle.mec\nanswer := 1\n"),
+      ("middle.mec", "+> ./leaf.mec\nvalue := 1\n"),
+      ("leaf.mec", "value := [1, 2\n"),
+    ]);
+
+    assert!(
+      runtime
+        .resolve_and_store_module_source(
+          "main.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    for uri in [
+      "memory:main.mec",
+      "memory:middle.mec",
+      "memory:leaf.mec",
+    ] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "failed graph exposed {uri}",
+      );
+    }
+  }
+
+  #[test]
+  fn cycle_error_retains_deterministic_path() {
+    let mut runtime = runtime_with_sources(&[
+      ("main.mec", "+> ./middle.mec\nanswer := 1\n"),
+      ("middle.mec", "+> ./leaf.mec\nvalue := 1\n"),
+      ("leaf.mec", "+> ./main.mec\nvalue := 2\n"),
+    ]);
+
+    let error = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+    let cycle = error
+      .kind_as::<RuntimeModuleDependencyCycleError>()
+      .expect("existing cycle error type");
+
+    assert_eq!(
+      cycle.cycle,
+      vec![
+        "memory:main.mec".to_string(),
+        "memory:middle.mec".to_string(),
+        "memory:leaf.mec".to_string(),
+        "memory:main.mec".to_string(),
+      ],
+    );
+  }
+
+  #[test]
+  fn explicit_transaction_owns_provisional_graph_visibility() {
+    let mut runtime = runtime_with_sources(&[(
+      "main.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut owner = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut owner).unwrap();
+
+    let version = runtime
+      .build_module_from_request_with_context(
+        &mut owner,
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let module = module_id("memory:main.mec");
+    let observer = runtime.runtime_context().unwrap();
+
+    assert!(
+      runtime
+        .get_module_visible(&owner, module)
+        .unwrap()
+        .is_some(),
+    );
+    assert!(
+      runtime
+        .get_module_version_visible(&owner, version)
+        .unwrap()
+        .is_some(),
+    );
+    assert!(
+      runtime
+        .get_module_visible(&observer, module)
+        .unwrap()
+        .is_none(),
+    );
+    assert!(
+      runtime
+        .get_module_version_visible(&observer, version)
+        .unwrap()
+        .is_none(),
+    );
+    assert!(runtime.store.get_module(module).unwrap().is_none());
+    assert!(
+      runtime.store.get_module_version(version).unwrap().is_none(),
+    );
+    assert!(
+      runtime
+        .run_module_with_context(&mut owner, version)
+        .is_ok(),
+    );
+    assert!(runtime.run_module(version).is_err());
+
+    runtime
+      .commit_runtime_transaction(&mut owner)
+      .unwrap();
+    assert!(runtime.store.get_module(module).unwrap().is_some());
+    assert!(
+      runtime.store.get_module_version(version).unwrap().is_some(),
+    );
+  }
+
+  #[test]
+  fn explicit_abort_discards_provisional_graph() {
+    let mut runtime = runtime_with_sources(&[(
+      "main.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let version = runtime
+      .build_module_from_request_with_context(
+        &mut context,
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard graph")
+      .unwrap();
+
+    assert!(
+      runtime
+        .store
+        .get_module(module_id("memory:main.mec"))
+        .unwrap()
+        .is_none(),
+    );
+    assert!(
+      runtime.store.get_module_version(version).unwrap().is_none(),
+    );
+  }
+
+  #[test]
+  fn failed_later_build_preserves_earlier_provisional_graph() {
+    let mut runtime = runtime_with_sources(&[
+      ("earlier.mec", "value := 1\nvalue\n"),
+      (
+        "later.mec",
+        "+> ./later-dependency.mec\n+> ./missing.mec\nvalue := 2\n",
+      ),
+      ("later-dependency.mec", "value := 3\n<+ value\n"),
+    ]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let earlier = runtime
+      .build_module_from_request_with_context(
+        &mut context,
+        "earlier.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    assert!(
+      runtime
+        .build_module_from_request_with_context(
+          &mut context,
+          "later.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    assert!(
+      runtime
+        .get_module_version_visible(&context, earlier)
+        .unwrap()
+        .is_some(),
+    );
+    for uri in ["memory:later.mec", "memory:later-dependency.mec"] {
+      assert!(
+        runtime
+          .find_module_by_name_visible(&context, uri)
+          .unwrap()
+          .is_none(),
+        "failed operation retained {uri}",
+      );
+    }
+
+    runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap();
+    assert!(
+      runtime.store.get_module_version(earlier).unwrap().is_some(),
+    );
+  }
+
+  #[test]
+  fn committed_equal_version_emits_no_second_compile_event() {
+    let mut runtime = runtime_with_sources(&[(
+      "main.mec",
+      "value := 1\nvalue\n",
+    )]);
+    let first = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let compiled_before = runtime
+      .list_events(None)
+      .unwrap()
+      .iter()
+      .filter(|event| matches!(
+        event.kind,
+        RuntimeEventKind::ModuleCompiled { .. }
+      ))
+      .count();
+
+    let second = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let compiled_after = runtime
+      .list_events(None)
+      .unwrap()
+      .iter()
+      .filter(|event| matches!(
+        event.kind,
+        RuntimeEventKind::ModuleCompiled { .. }
+      ))
+      .count();
+
+    assert_eq!(second, first);
+    assert_eq!(compiled_after, compiled_before);
+  }
+
+  #[test]
+  fn module_only_work_is_allowed_while_another_transaction_owns_program() {
+    let mut runtime = runtime_with_sources(&[(
+      "module-b.mec",
+      "value := 2\nvalue\n",
+    )]);
+    let mut context_a = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context_a).unwrap();
+    runtime
+      .run_string_with_context(
+        &mut context_a,
+        "transaction-a-owner := 1",
+      )
+      .unwrap();
+
+    let mut context_b = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context_b).unwrap();
+    let version = runtime
+      .build_module_from_request_with_context(
+        &mut context_b,
+        "module-b.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    assert!(
+      runtime
+        .get_module_version_visible(&context_b, version)
+        .unwrap()
+        .is_some(),
+    );
+    runtime
+      .abort_runtime_transaction(&mut context_b, "discard B")
+      .unwrap();
+    runtime
+      .abort_runtime_transaction(&mut context_a, "discard A")
+      .unwrap();
+  }
+
+  #[test]
+  fn retained_root_graph_begins_inside_hidden_program_transaction() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+
+    runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+
+    let events = runtime.list_events(None).unwrap();
+    let transaction_started = events
+      .iter()
+      .position(|event| matches!(
+        event.kind,
+        RuntimeEventKind::TransactionStarted { .. }
+      ))
+      .unwrap();
+    let source_resolved = events
+      .iter()
+      .position(|event| matches!(
+        event.kind,
+        RuntimeEventKind::SourceResolved { .. }
+      ))
+      .unwrap();
+    let compiled = events
+      .iter()
+      .position(|event| matches!(
+        event.kind,
+        RuntimeEventKind::ModuleCompiled { .. }
+      ))
+      .unwrap();
+
+    assert!(transaction_started < source_resolved);
+    assert!(source_resolved < compiled);
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_some(),
+    );
+    assert!(runtime.root_symbol_value("answer").is_ok());
+    assert!(runtime.active_transactions.is_empty());
+  }
+
+  #[test]
+  fn retained_root_failure_rolls_back_graph_events_and_program() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := missing\nanswer\n",
+    )]);
+    runtime.run_string("baseline := 7").unwrap();
+
+    let error = runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert!(format!("{error:?}").contains("missing"));
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+    assert!(runtime.root_symbol_value("baseline").is_ok());
+    assert!(runtime.root_symbol_value("answer").is_err());
+    let events = runtime.list_events(None).unwrap();
+    assert!(events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::SourceResolved { .. }
+        | RuntimeEventKind::ModuleCompiled { .. }
+    )));
+    assert!(events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ProgramFailed { .. }
+    )));
+    assert!(events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ModuleExecutionFailed { .. }
+    )));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
+  fn retained_root_dependency_execution_failure_commits_no_graph() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./dep.mec\nanswer := dep/value\nanswer\n",
+      ),
+      (
+        "dep.mec",
+        "value := missing\n<+ value\n",
+      ),
+    ]);
+
+    assert!(
+      runtime
+        .resolve_and_run_root_module(
+          "root.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    for uri in ["memory:root.mec", "memory:dep.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "dependency failure exposed {uri}",
+      );
+    }
+  }
+
+  #[test]
+  fn retained_root_missing_later_dependency_has_no_partial_graph_or_version_audit() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./first.mec\n+> ./missing.mec\nanswer := 1\n",
+      ),
+      ("first.mec", "value := 1\n<+ value\n"),
+    ]);
+
+    let error = runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert!(
+      error
+        .kind_as::<RuntimeModuleDependencyMissingError>()
+        .is_some(),
+    );
+    for uri in ["memory:root.mec", "memory:first.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "missing dependency exposed {uri}",
+      );
+    }
+    let events = runtime.list_events(None).unwrap();
+    assert!(events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ProgramFailed { .. }
+    )));
+    assert!(events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::ModuleExecutionFailed { .. }
+    )));
+  }
+
+  #[test]
+  fn failed_root_does_not_deliver_dependency_after_commit_effect() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./dep.mec\nanswer := missing\nanswer\n",
+      ),
+      (
+        "dep.mec",
+        "value := round5/after_commit()\n<+ value\n",
+      ),
+    ]);
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    let deliveries_for_host = deliveries.clone();
+    runtime
+      .register_mech_host_function(
+        StagedClosureHostFunction::new(
+          "round5/after_commit",
+          move |_services, _context, _args| {
+            Ok(RuntimePreparedHostCall {
+              value: Value::F64(mech_core::Ref::new(1.0)),
+              effect: PreparedRuntimeEffect::AfterCommit(Box::new(
+                CountingAfterCommitEffect {
+                  deliveries: deliveries_for_host.clone(),
+                  fail: false,
+                },
+              )),
+            })
+          },
+        ),
+      )
+      .unwrap();
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(910),
+      "round5/after_commit",
+    );
+
+    assert!(
+      runtime
+        .resolve_and_run_root_module(
+          "root.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    assert_eq!(deliveries.load(Ordering::SeqCst), 0);
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:dep.mec")
+        .unwrap()
+        .is_none(),
+    );
+  }
+
+  #[test]
+  fn explicit_retained_root_is_provisional_and_abort_restores_baseline() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    runtime.run_string("baseline := 7").unwrap();
+    let mut owner = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut owner).unwrap();
+
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut owner,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+
+    assert!(runtime.root_symbol_value("answer").is_ok());
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+    runtime
+      .abort_runtime_transaction(
+        &mut owner,
+        "discard provisional retained root",
+      )
+      .unwrap();
+    assert!(runtime.root_symbol_value("baseline").is_ok());
+    assert!(runtime.root_symbol_value("answer").is_err());
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+  }
+
+  #[test]
+  fn retryable_explicit_store_failure_keeps_graph_without_rebuilding() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let mut inner = InMemorySourceResolver::new();
+    inner
+      .insert_string(
+        "root.mec",
+        "answer := 42\nanswer\n",
+      )
+      .unwrap();
+    let resolver = CountingSourceResolver {
+      inner,
+      calls: calls.clone(),
+    };
+    let mut runtime = RuntimeBuilder::new()
+      .source_resolver(resolver)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id =
+      runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let calls_after_build = calls.load(Ordering::SeqCst);
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(
+          ObjectId(911),
+          "missing",
+          "provisional update",
+        ),
+      )
+      .unwrap();
+
+    assert!(
+      runtime
+        .commit_runtime_transaction_detailed(&mut context)
+        .is_err(),
+    );
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+    assert!(runtime.root_symbol_value("answer").is_ok());
+    assert_eq!(calls.load(Ordering::SeqCst), calls_after_build);
+
+    runtime
+      .store
+      .put_object(ObjectRecord::text(
+        ObjectId(911),
+        "missing",
+        "baseline",
+      ))
+      .unwrap();
+    runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    assert_eq!(calls.load(Ordering::SeqCst), calls_after_build);
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_some(),
+    );
+    assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := round5/stage_bad_update()\nanswer\n",
+    )]);
+    runtime.run_string("baseline := 7").unwrap();
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    let deliveries_for_host = deliveries.clone();
+    runtime
+      .register_mech_host_function(
+        StagedClosureHostFunction::new(
+          "round5/stage_bad_update",
+          move |services, context, _args| {
+            services.update_object_with_context(
+              context,
+              ObjectRecord::text(
+                ObjectId(912),
+                "missing",
+                "invalid update",
+              ),
+            )?;
+            Ok(RuntimePreparedHostCall {
+              value: Value::F64(mech_core::Ref::new(42.0)),
+              effect: PreparedRuntimeEffect::AfterCommit(Box::new(
+                CountingAfterCommitEffect {
+                  deliveries: deliveries_for_host.clone(),
+                  fail: false,
+                },
+              )),
+            })
+          },
+        ),
+      )
+      .unwrap();
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(912),
+      "round5/stage_bad_update",
+    );
+
+    assert!(
+      runtime
+        .resolve_and_run_root_module(
+          "root.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    assert!(!runtime.is_poisoned());
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(deliveries.load(Ordering::SeqCst), 0);
+    assert!(runtime.root_symbol_value("baseline").is_ok());
+    assert!(runtime.root_symbol_value("answer").is_err());
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+  }
+
+  #[test]
+  fn post_store_participant_failure_keeps_graph_and_program() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let aborts = Arc::new(AtomicUsize::new(0));
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(
+          FailingCommitEffect {
+            aborts: aborts.clone(),
+          },
+        )),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(
+      error.kind_name(),
+      "RuntimeExternalCommitIndeterminate",
+    );
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+    assert_eq!(aborts.load(Ordering::SeqCst), 0);
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_some(),
+    );
+    assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn after_commit_failure_keeps_graph_program_and_runtime_healthy() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(
+          CountingAfterCommitEffect {
+            deliveries: deliveries.clone(),
+            fail: true,
+          },
+        )),
+      )
+      .unwrap();
+
+    let outcome = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    assert_eq!(outcome.delivery_failures.len(), 1);
+    assert_eq!(deliveries.load(Ordering::SeqCst), 1);
+    assert!(!runtime.is_poisoned());
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_some(),
+    );
+    assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn standalone_run_module_does_not_replace_retained_program() {
+    let mut runtime = runtime_with_sources(&[(
+      "isolated.mec",
+      "isolated := 42\nisolated\n",
+    )]);
+    runtime.run_string("retained := 7").unwrap();
+    let version = runtime
+      .resolve_and_store_module_source(
+        "isolated.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    runtime.run_module(version).unwrap();
+
+    assert!(runtime.root_symbol_value("retained").is_ok());
+    assert!(runtime.root_symbol_value("isolated").is_err());
+  }
+
+  #[test]
+  fn valid_dependency_then_parse_failure_leaves_no_graph() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./valid.mec\n+> ./broken.mec\nanswer := 1\n",
+      ),
+      ("valid.mec", "value := 1\n<+ value\n"),
+      ("broken.mec", "value := [1, 2\n"),
+    ]);
+
+    assert!(
+      runtime
+        .resolve_and_store_module_source(
+          "root.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    for uri in [
+      "memory:root.mec",
+      "memory:valid.mec",
+      "memory:broken.mec",
+    ] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "parse failure exposed {uri}",
+      );
+    }
+  }
+
+  #[test]
+  fn source_budget_failure_after_dependency_staging_leaves_no_graph() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(50);
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+      .insert_string(
+        "root.mec",
+        "+> ./first.mec\n+> ./large.mec\nx := 1\n",
+      )
+      .unwrap();
+    resolver
+      .insert_string(
+        "first.mec",
+        "x := 1\n<+ x\n",
+      )
+      .unwrap();
+    resolver
+      .insert_string(
+        "large.mec",
+        "this_source_is_deliberately_larger_than_the_configured_fifty_byte_limit := 1\n",
+      )
+      .unwrap();
+    let mut runtime = MechRuntime::new(config).unwrap();
+    runtime.set_source_resolver(resolver).unwrap();
+
+    let error = runtime
+      .resolve_and_store_module_source(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert!(
+      error.kind_as::<ResourceBudgetExceededError>().is_some(),
+    );
+    for uri in [
+      "memory:root.mec",
+      "memory:first.mec",
+      "memory:large.mec",
+    ] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "budget failure exposed {uri}",
+      );
+    }
+  }
+
+  #[test]
+  fn module_event_staging_failure_removes_journal_and_context_suffix() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+      .insert_string(
+        "root.mec",
+        "+> ./dep.mec\nanswer := dep/value\n",
+      )
+      .unwrap();
+    resolver
+      .insert_string("dep.mec", "value := 1\n<+ value\n")
+      .unwrap();
+    let mut runtime = MechRuntime::builder()
+      .id_generator(ScriptedEventIdGenerator::new(
+        1,
+        [
+          EventId(100),
+          EventId(101),
+          EventId(102),
+          EventId(102),
+          EventId(103),
+          EventId(104),
+        ],
+      ))
+      .source_resolver(resolver)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .build_module_from_request_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "InvalidRuntimeTransaction");
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(context.transaction, None);
+    assert!(context.events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::SourceResolved { .. }
+        | RuntimeEventKind::ModuleCompiled { .. }
+    )));
+    for uri in ["memory:root.mec", "memory:dep.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+      );
+    }
+  }
+
+  #[test]
+  fn diamond_graph_reuses_one_shared_version() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./left.mec\n+> ./right.mec\nanswer := 1\n",
+      ),
+      (
+        "left.mec",
+        "+> ./shared.mec\nleft := shared/value\n<+ left\n",
+      ),
+      (
+        "right.mec",
+        "+> ./shared.mec\nright := shared/value\n<+ right\n",
+      ),
+      ("shared.mec", "value := 1\n<+ value\n"),
+    ]);
+
+    let root = runtime
+      .resolve_and_store_module_source(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let root = runtime
+      .store
+      .get_module_version(root)
+      .unwrap()
+      .unwrap();
+    assert_eq!(root.dependencies.len(), 2);
+    let left = runtime
+      .store
+      .get_module_version(root.dependencies[0])
+      .unwrap()
+      .unwrap();
+    let right = runtime
+      .store
+      .get_module_version(root.dependencies[1])
+      .unwrap()
+      .unwrap();
+
+    assert_eq!(left.dependencies.len(), 1);
+    assert_eq!(right.dependencies.len(), 1);
+    assert_eq!(left.dependencies[0], right.dependencies[0]);
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:shared.mec")
+        .unwrap()
+        .is_some(),
+    );
+  }
+
+  #[test]
+  fn equal_publication_from_two_transactions_is_idempotent() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut first = runtime.runtime_context().unwrap();
+    let mut second = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut first).unwrap();
+    runtime.begin_transaction(&mut second).unwrap();
+    let first_version = runtime
+      .build_module_from_request_with_context(
+        &mut first,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let second_version = runtime
+      .build_module_from_request_with_context(
+        &mut second,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    assert_eq!(second_version, first_version);
+
+    runtime
+      .commit_runtime_transaction(&mut first)
+      .unwrap();
+    runtime
+      .commit_runtime_transaction(&mut second)
+      .unwrap();
+
+    assert!(
+      runtime
+        .store
+        .get_module_version(first_version)
+        .unwrap()
+        .is_some(),
+    );
+  }
+
+  #[test]
+  fn deterministic_version_conflict_fails_atomically() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let version = runtime
+      .resolve_and_store_module_source(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let committed = runtime
+      .store
+      .get_module_version(version)
+      .unwrap()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id =
+      runtime.begin_transaction(&mut context).unwrap();
+    let unrelated = ModuleRecord::new(
+      module_id("memory:unrelated.mec"),
+      "memory:unrelated.mec",
+    );
+    runtime
+      .active_execution_transaction_mut(transaction_id)
+      .unwrap()
+      .modules
+      .stage_module(unrelated.clone())
+      .unwrap();
+    runtime
+      .active_execution_transaction_mut(transaction_id)
+      .unwrap()
+      .modules
+      .stage_version(ModuleVersionRecord::new(
+        version,
+        committed.module,
+        committed.version.saturating_add(1),
+      ))
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeModuleJournalConflict");
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(
+      runtime.store.get_module(unrelated.id).unwrap().is_none(),
+    );
+    assert_eq!(
+      runtime.store.get_module_version(version).unwrap(),
+      Some(committed),
+    );
+    runtime
+      .abort_runtime_transaction(&mut context, "discard conflict")
+      .unwrap();
+  }
+
+  #[test]
+  fn graph_object_capability_and_effect_commit_together() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let object =
+      ObjectRecord::text(ObjectId(920), "round5", "committed");
+    runtime
+      .put_object_with_context(&mut context, object.clone())
+      .unwrap();
+    let (capability, request) =
+      staged_test_capability(&runtime, CapabilityId(920));
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability.clone(),
+      )
+      .unwrap();
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(
+          CountingAfterCommitEffect {
+            deliveries: deliveries.clone(),
+            fail: false,
+          },
+        )),
+      )
+      .unwrap();
+
+    runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_some(),
+    );
+    assert_eq!(runtime.get_object(object.id).unwrap(), Some(object));
+    assert_eq!(
+      runtime.check_capability(&request).unwrap(),
+      capability.id(),
+    );
+    assert_eq!(deliveries.load(Ordering::SeqCst), 1);
+    assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn outer_abort_discards_graph_object_capability_effect_and_program() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    runtime.run_string("baseline := 7").unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let object =
+      ObjectRecord::text(ObjectId(921), "round5", "discarded");
+    runtime
+      .put_object_with_context(&mut context, object.clone())
+      .unwrap();
+    let (capability, request) =
+      staged_test_capability(&runtime, CapabilityId(921));
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability,
+      )
+      .unwrap();
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(
+          CountingAfterCommitEffect {
+            deliveries: deliveries.clone(),
+            fail: false,
+          },
+        )),
+      )
+      .unwrap();
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard all")
+      .unwrap();
+
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+    assert!(runtime.get_object(object.id).unwrap().is_none());
+    assert!(runtime.check_capability(&request).is_err());
+    assert_eq!(deliveries.load(Ordering::SeqCst), 0);
+    assert!(runtime.root_symbol_value("baseline").is_ok());
+    assert!(runtime.root_symbol_value("answer").is_err());
+  }
+
+  #[test]
+  fn store_failure_exposes_none_of_the_staged_categories() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    runtime.run_string("baseline := 7").unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let object =
+      ObjectRecord::text(ObjectId(922), "round5", "provisional");
+    runtime
+      .put_object_with_context(&mut context, object.clone())
+      .unwrap();
+    let (capability, request) =
+      staged_test_capability(&runtime, CapabilityId(922));
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability,
+      )
+      .unwrap();
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(
+          CountingAfterCommitEffect {
+            deliveries: deliveries.clone(),
+            fail: false,
+          },
+        )),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(
+          ObjectId(9_922),
+          "missing",
+          "invalid update",
+        ),
+      )
+      .unwrap();
+
+    assert!(
+      runtime
+        .commit_runtime_transaction_detailed(&mut context)
+        .is_err(),
+    );
+
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_none(),
+    );
+    assert!(runtime.get_object(object.id).unwrap().is_none());
+    assert!(runtime.check_capability(&request).is_err());
+    assert_eq!(deliveries.load(Ordering::SeqCst), 0);
+    runtime
+      .abort_runtime_transaction(&mut context, "store failure")
+      .unwrap();
+    assert!(runtime.root_symbol_value("baseline").is_ok());
+    assert!(runtime.root_symbol_value("answer").is_err());
+  }
+
+  #[test]
+  fn post_store_failure_preserves_every_durable_category() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .resolve_and_run_root_module_with_context(
+        &mut context,
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap();
+    let object =
+      ObjectRecord::text(ObjectId(923), "round5", "durable");
+    runtime
+      .put_object_with_context(&mut context, object.clone())
+      .unwrap();
+    let (capability, _request) =
+      staged_test_capability(&runtime, CapabilityId(923));
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability.clone(),
+      )
+      .unwrap();
+    let aborts = Arc::new(AtomicUsize::new(0));
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(
+          FailingCommitEffect {
+            aborts: aborts.clone(),
+          },
+        )),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(
+      error.kind_name(),
+      "RuntimeExternalCommitIndeterminate",
+    );
+    assert!(
+      runtime
+        .store
+        .find_module_by_name("memory:root.mec")
+        .unwrap()
+        .is_some(),
+    );
+    assert_eq!(runtime.get_object(object.id).unwrap(), Some(object));
+    assert!(
+      runtime.get_capability(capability.id()).unwrap().is_some(),
+    );
+    assert_eq!(aborts.load(Ordering::SeqCst), 0);
+    assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn direct_resolution_ensure_activation_and_reactive_boundaries_are_unchanged() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let events_before = runtime.list_events(None).unwrap();
+    let transactions_before =
+      runtime.list_transactions(None).unwrap().len();
+
+    assert!(
+      runtime.resolve_source("root.mec").unwrap().is_some(),
+    );
+    assert_eq!(runtime.list_events(None).unwrap(), events_before);
+    assert_eq!(
+      runtime.list_transactions(None).unwrap().len(),
+      transactions_before,
+    );
+
+    let direct_module = runtime
+      .ensure_module("direct", "memory:direct.mec")
+      .unwrap();
+    assert!(
+      runtime.store.get_module(direct_module).unwrap().is_some(),
+    );
+    assert_eq!(
+      runtime.list_transactions(None).unwrap().len(),
+      transactions_before,
+    );
+
+    let version = runtime
+      .resolve_and_store_module_source(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let owner = runtime
+      .store
+      .get_module_version(version)
+      .unwrap()
+      .unwrap()
+      .module;
+    let transaction_count =
+      runtime.list_transactions(None).unwrap().len();
+    runtime.activate_module_version(owner, version).unwrap();
+    assert_eq!(
+      runtime.active_module_version(owner).unwrap(),
+      Some(version),
+    );
+    assert_eq!(
+      runtime.list_transactions(None).unwrap().len(),
+      transaction_count,
+    );
+
+    runtime.run_string("reactive-boundary := 1").unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let error = runtime
+      .step_with_context(&mut context, 1)
+      .unwrap_err();
+    assert_eq!(
+      error.kind_name(),
+      "RuntimeTransactionalReactiveTurnUnsupported",
+    );
+    runtime
+      .abort_runtime_transaction(
+        &mut context,
+        "reactive boundary cleanup",
+      )
+      .unwrap();
   }
 }

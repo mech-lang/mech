@@ -101,11 +101,14 @@ Transactional `step_with_context` and host-input turns are rejected while a
 transaction is active or owns the program. Nontransactional reactive turns
 retain their existing behavior. Compact reactive-turn deltas belong to Round 6.
 
-Retained root-module installation and execution are coordinated after a root
-module version has been built. Module source resolution, compilation,
-module-record persistence, dependency invariant reporting, and the complete
-module-graph store handoff are not included in the program savepoint. Those
-become atomic in Round 5.
+Retained root-module construction and execution now share the same
+runtime-owned program transaction. The existing recursive dependency builder
+stages module and module-version records in the execution transaction, and the
+program operation savepoint carries a module-journal mark. A pre-store root
+failure therefore restores the prior retained program and exposes no partial
+durable graph. After the durable store commit, graph and program state remain
+committed even if an external transactional participant reports commit
+indeterminacy.
 
 One-shot bytecode execution and isolated dependency-module programs continue
 to use temporary programs and are not retained-operation transactions.
