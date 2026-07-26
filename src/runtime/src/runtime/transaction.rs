@@ -78,6 +78,19 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<TransactionId> {
+    self.ensure_runtime_healthy("begin_transaction")?;
+    self.reject_program_operation_reentrancy("begin_transaction")?;
+    self.begin_runtime_transaction_internal(
+      context,
+      RuntimeExecutionTransactionMode::Explicit,
+    )
+  }
+
+  pub(super) fn begin_runtime_transaction_internal(
+    &mut self,
+    context: &mut RuntimeContext,
+    mode: RuntimeExecutionTransactionMode,
+  ) -> MResult<TransactionId> {
     self.validate_context_for_runtime(context)?;
 
     if context.transaction.is_some() {
@@ -90,8 +103,14 @@ impl MechRuntime {
       ));
     }
 
+    let context_baseline = RuntimeContextCheckpoint::capture(context);
     let id = self.next_transaction_id();
-    let transaction = RuntimeTransaction::new(id, context.subject.clone());
+    let transaction = RuntimeExecutionTransaction::new(
+      RuntimeTransaction::new(id, context.subject.clone()),
+      mode,
+      RuntimeTransactionContextIdentity::capture(context),
+      context_baseline.clone(),
+    );
     self.active_transactions.insert(id, transaction);
     context.transaction = Some(id);
 
@@ -104,7 +123,7 @@ impl MechRuntime {
       Ok(event) => event,
       Err(error) => {
         self.active_transactions.remove(&id);
-        context.transaction = None;
+        context_baseline.restore_preserving_consumption(context);
         return Err(error);
       }
     };
@@ -114,7 +133,7 @@ impl MechRuntime {
       .record_event(started_event)
     {
       self.active_transactions.remove(&id);
-      context.transaction = None;
+      context_baseline.restore_preserving_consumption(context);
       return Err(error);
     }
 
@@ -125,27 +144,34 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<TransactionId> {
+    self.ensure_runtime_healthy("commit_runtime_transaction")?;
+    self.reject_program_operation_reentrancy("commit_runtime_transaction")?;
+    self.commit_runtime_transaction_internal(context)
+  }
+
+  pub(super) fn commit_runtime_transaction_internal(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<TransactionId> {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
+    let access = self
+      .active_execution_transaction(transaction_id)?
+      .context_baseline
+      .access_delta(context);
 
     let commit_event = self.make_event(RuntimeEventKind::TransactionCommitted {
       transaction_id,
     });
 
     let commit = {
-      let transaction = self
-        .active_transactions
-        .get_mut(&transaction_id)
-        .ok_or_else(|| {
-          MechError::new(
-            RuntimeTransactionNotFoundError { transaction_id },
-            None,
-          )
-        })?;
+      let transaction = &mut self
+        .active_execution_transaction_mut(transaction_id)?
+        .store;
 
-      transaction.merge_read_set(&context.access.reads)?;
-      transaction.merge_write_set(&context.access.writes)?;
+      transaction.merge_read_set(&access.reads)?;
+      transaction.merge_write_set(&access.writes)?;
 
       let staged_puts: Vec<ObjectRecord> =
         transaction.staged_puts().cloned().collect();
@@ -197,6 +223,9 @@ impl MechRuntime {
 
     self.active_transactions.remove(&transaction_id);
     context.transaction = None;
+    if self.program_transaction_owner == Some(transaction_id) {
+      self.program_transaction_owner = None;
+    }
 
     self.push_persisted_event_to_context(context, commit_event);
 
@@ -208,12 +237,130 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     reason: impl Into<String>,
   ) -> MResult<()> {
+    self.reject_program_operation_reentrancy("abort_runtime_transaction")?;
+    self.abort_runtime_transaction_internal(
+      context,
+      reason.into(),
+      true,
+    )
+  }
+
+  pub(super) fn abort_runtime_transaction_internal(
+    &mut self,
+    context: &mut RuntimeContext,
+    reason: String,
+    restore_program: bool,
+  ) -> MResult<()> {
+    let (transaction_id, rollback_failures) =
+      self.abort_runtime_transaction_cleanup(
+        context,
+        &reason,
+        restore_program,
+      )?;
+
+    if rollback_failures.is_empty() {
+      return Ok(());
+    }
+
+    Err(self.poison_program_operation(
+      "abort_runtime_transaction",
+      Some(transaction_id),
+      reason,
+      rollback_failures,
+    ))
+  }
+
+  pub(super) fn abort_runtime_transaction_cleanup(
+    &mut self,
+    context: &mut RuntimeContext,
+    reason: &str,
+    restore_program: bool,
+  ) -> MResult<(TransactionId, Vec<String>)> {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
-    let reason = reason.into();
+    let envelope = self
+      .active_execution_transaction(transaction_id)?
+      .clone();
+    let owns_program = self.program_transaction_owner == Some(transaction_id);
+    let mut rollback_failures = Vec::new();
 
-    let staged_event_ids = self
+    if owns_program && restore_program {
+      match &envelope.program {
+        Some(baseline) => {
+          if let Err(error) = self.program.restore(baseline.program.clone()) {
+            rollback_failures.push(format!(
+              "program restore failed: {:?}",
+              error,
+            ));
+          }
+          self.restore_live_state(baseline.live.clone());
+        }
+        None => rollback_failures.push(
+          "program owner transaction has no retained-program baseline".to_string(),
+        ),
+      }
+    }
+
+    envelope
+      .context_baseline
+      .restore_preserving_consumption(context);
+    if let Err(error) = self.validate_context_for_runtime(context) {
+      rollback_failures.push(format!(
+        "context baseline restore invariant failed: {:?}",
+        error,
+      ));
+    }
+
+    let transaction = self.active_transactions.remove(&transaction_id);
+    if let Some(transaction) = transaction {
+      if let Err(error) = transaction.store.abort(reason) {
+        rollback_failures.push(format!(
+          "staged store discard invariant failed: {:?}",
+          error,
+        ));
+      }
+    } else {
+      rollback_failures.push(format!(
+        "active execution transaction {} disappeared during abort",
+        transaction_id,
+      ));
+    }
+
+    if owns_program {
+      self.program_transaction_owner = None;
+    }
+
+    let abort_event_result = self.emit_event_immediate_to_context(
+      context,
+      RuntimeEventKind::TransactionAborted {
+        transaction_id,
+        message: reason.to_string(),
+      },
+    );
+
+    if let Err(error) = abort_event_result {
+      rollback_failures.push(format!(
+        "transaction abort audit event failed: {:?}",
+        error,
+      ));
+    }
+
+    Ok((transaction_id, rollback_failures))
+  }
+
+  pub(super) fn active_transaction_mut(
+    &mut self,
+    transaction_id: TransactionId,
+  ) -> MResult<&mut RuntimeTransaction> {
+    Ok(&mut self.active_execution_transaction_mut(transaction_id)?.store)
+  }
+
+  pub(super) fn active_execution_transaction(
+    &self,
+    transaction_id: TransactionId,
+  ) -> MResult<&RuntimeExecutionTransaction> {
+    self
       .active_transactions
       .get(&transaction_id)
       .ok_or_else(|| {
@@ -221,42 +368,13 @@ impl MechRuntime {
           RuntimeTransactionNotFoundError { transaction_id },
           None,
         )
-      })?
-      .staged_event_ids();
-
-    let transaction = self
-      .active_transactions
-      .remove(&transaction_id)
-      .ok_or_else(|| {
-        MechError::new(
-          RuntimeTransactionNotFoundError { transaction_id },
-          None,
-        )
-      })?;
-
-    let _ = transaction.abort(reason.clone())?;
-
-    context
-      .events
-      .retain(|event| !staged_event_ids.contains(&event.id));
-
-    context.transaction = None;
-
-    self.emit_event_immediate_to_context(
-      context,
-      RuntimeEventKind::TransactionAborted {
-        transaction_id,
-        message: reason,
-      },
-    )?;
-
-    Ok(())
+      })
   }
 
-  pub(super) fn active_transaction_mut(
+  pub(super) fn active_execution_transaction_mut(
     &mut self,
     transaction_id: TransactionId,
-  ) -> MResult<&mut RuntimeTransaction> {
+  ) -> MResult<&mut RuntimeExecutionTransaction> {
     self
       .active_transactions
       .get_mut(&transaction_id)

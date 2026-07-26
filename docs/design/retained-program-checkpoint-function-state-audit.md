@@ -26,10 +26,17 @@ The Round 2 audit covered every production `MechFunctionImpl` under `src/`,
 - `NChooseKMatrix<T>` retains `Ref<Matrix<T>>` and can replace the outer matrix
   enum. That outer topology is not a journalable `Value` cell, so checkpoint
   creation returns `TransactionStateUnsupported` before mutation.
-- `RuntimeHostNativeFunction` owns an outer output cell in the runtime layer.
-  Retaining that topology requires the runtime transaction coordinator. The
-  function itself therefore returns `TransactionStateUnsupported` before
-  ordinary program checkpointing can inspect or mutate its state.
+
+## Round 3 runtime-host output state
+
+`RuntimeHostNativeFunction` exposes its outer `Ref<Value>` and complete
+reachable output graph to `ValueStateJournal`. The runtime-owned program
+transaction coordinator now restores this output state when a retained
+operation or explicit transaction rolls back.
+
+Round 3 does not undo arbitrary external effects performed by the host call.
+Host effect preparation, commit, suppression, and compensation belong to
+Round 4.
 
 ## Implementations covered by the default
 
@@ -45,9 +52,7 @@ The Round 2 audit covered every production `MechFunctionImpl` under `src/`,
 - I/O print functions and `ActivationEffectBarrier`, which retain no mutable
   semantic state.
 
-`RuntimeHostNativeFunction` declares the runtime-layer unsupported boundary
-itself. Provider crates under `hosts/` do not directly implement
-`MechFunctionImpl`.
+Provider crates under `hosts/` do not directly implement `MechFunctionImpl`.
 
 Out-of-tree implementations are responsible for honoring this trait contract.
 Hidden mutable state must never inherit the permissive output-backed default.

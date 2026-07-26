@@ -24,6 +24,7 @@ mod host;
 mod id;
 mod module;
 mod object;
+mod program_transaction;
 mod schedule;
 mod service;
 mod task;
@@ -33,6 +34,17 @@ mod transaction;
 mod input_tests;
 
 pub use self::errors::*;
+pub use self::program_transaction::{
+  RuntimeHealth,
+  RuntimePoisonRecord,
+};
+use self::program_transaction::{
+  ActiveRuntimeProgramOperation,
+  RuntimeContextCheckpoint,
+  RuntimeExecutionTransaction,
+  RuntimeExecutionTransactionMode,
+  RuntimeTransactionContextIdentity,
+};
 use crate::runtime::host::*;
 
 use std::sync::Arc;
@@ -57,7 +69,7 @@ use mech_core::{
 };
 
 use mech_program::{
-  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
+  MechProgram, MechProgramCheckpoint, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
 
 
@@ -142,6 +154,7 @@ struct RuntimeLiveStateSnapshot {
   context_template: Option<RuntimeLiveContextTemplate>,
   input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
   persistent_sends: Vec<RuntimePersistentSend>,
+  registration_mode: LiveRegistrationMode,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -480,6 +493,9 @@ impl RuntimeBuilder {
       scheduler: self.scheduler,
       scheduler_policy: self.scheduler_policy,
       active_transactions: HashMap::new(),
+      program_transaction_owner: None,
+      active_program_operation: None,
+      health: RuntimeHealth::Healthy,
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
       resources: RuntimeResourceRegistry::new(),
@@ -555,7 +571,10 @@ pub struct MechRuntime {
   host_policy: Box<dyn HostCallPolicy>,
   scheduler: Box<dyn Scheduler>,
   scheduler_policy: SchedulerPolicy,
-  active_transactions: HashMap<TransactionId, RuntimeTransaction>,
+  active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
+  program_transaction_owner: Option<TransactionId>,
+  active_program_operation: Option<ActiveRuntimeProgramOperation>,
+  health: RuntimeHealth,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
   resources: RuntimeResourceRegistry,
@@ -675,8 +694,20 @@ impl MechRuntime {
     &self.program
   }
 
+  /// Low-level manual escape hatch outside runtime-owned atomic execution.
+  ///
+  /// Callers must not use it while a transaction owns the retained program.
+  /// Runtime internals must not use it to bypass the program coordinator.
   pub fn program_mut(&mut self) -> &mut MechProgram {
     &mut self.program
+  }
+
+  pub fn health(&self) -> &RuntimeHealth {
+    &self.health
+  }
+
+  pub fn is_poisoned(&self) -> bool {
+    matches!(self.health, RuntimeHealth::Poisoned(_))
   }
 
   pub fn bind_context_export(
@@ -1117,11 +1148,20 @@ impl MechRuntime {
   }
 
   fn validate_live_context_candidate(&self, context: &RuntimeContext) -> MResult<()> {
-    if context.transaction.is_some() {
-      return Err(MechError::new(RuntimeInvalidOperationError {
-        operation: "RuntimeTransactionalLiveProgramUnsupported",
-        reason: "live context reads and persistent sends cannot be armed under an active transaction".to_string(),
-      }, None));
+    if let Some(transaction_id) = context.transaction {
+      let active_operation = self.active_program_operation.as_ref();
+      if self.program_transaction_owner != Some(transaction_id)
+        || active_operation.map(|active| active.transaction_id) != Some(transaction_id)
+      {
+        return Err(MechError::new(
+          RuntimeTransactionalLiveRegistrationUnsupported {
+            transaction_id,
+            owner: self.program_transaction_owner,
+            active_operation: active_operation.map(|active| active.operation),
+          },
+          None,
+        ));
+      }
     }
     match &self.live_context_template {
       Some(template) if template.matches_context(context) => Ok(()),
@@ -1144,6 +1184,7 @@ impl MechRuntime {
       context_template: self.live_context_template.clone(),
       input_bindings: self.live_input_bindings.clone(),
       persistent_sends: self.persistent_sends.clone(),
+      registration_mode: self.live_registration_mode,
     }
   }
 
@@ -1151,6 +1192,7 @@ impl MechRuntime {
     self.live_context_template = snapshot.context_template;
     self.live_input_bindings = snapshot.input_bindings;
     self.persistent_sends = snapshot.persistent_sends;
+    self.live_registration_mode = snapshot.registration_mode;
   }
 
   fn live_turn_context(&self) -> MResult<RuntimeContext> {
@@ -1226,24 +1268,13 @@ impl MechRuntime {
     }
 
     if let Some(transaction_id) = context.transaction {
-      let transaction = self
-        .active_transactions
-        .get(&transaction_id)
-        .ok_or_else(|| {
-          MechError::new(
-            RuntimeTransactionNotFoundError { transaction_id },
-            None,
-          )
-        })?;
+      let transaction = self.active_execution_transaction(transaction_id)?;
 
-      if transaction.subject != context.subject {
+      if let Some(reason) = transaction.context_identity.mismatch_reason(context) {
         return Err(MechError::new(
-          RuntimeInvalidOperationError {
-            operation: "validate_context_for_runtime",
-            reason: format!(
-              "transaction {} subject mismatch: transaction owner subject `{}`, supplied context subject `{}`",
-              transaction_id, transaction.subject, context.subject,
-            ),
+          RuntimeTransactionContextMismatch {
+            transaction_id,
+            reason,
           },
           None,
         ));
@@ -1285,7 +1316,7 @@ impl MechRuntime {
     self.trim_events_to_retention(&mut context.events);
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
-        transaction.stage_event(event)?;
+        transaction.store.stage_event(event)?;
         return Ok(id);
       }
     }

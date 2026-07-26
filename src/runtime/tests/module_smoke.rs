@@ -3971,7 +3971,7 @@ fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
   let tree = mech_syntax::parser::parse("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let result = runtime.run_tree_with_context(&mut context, &tree);
   assert!(result.is_err());
-  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(!context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
   assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
   assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
 }

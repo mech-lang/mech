@@ -1,12 +1,13 @@
 //! Runtime transaction state.
 //!
 //! `TransactionRecord` is the durable store record.
-//! `RuntimeTransaction` is the live transaction used while a task or actor turn
-//! is executing.
+//! `RuntimeTransaction` is the staged-store component used while runtime work
+//! is executing. It stages object, task, actor, message, and event changes.
 //!
-//! The transaction stages object writes until commit. This is the first real
-//! transactional boundary. Later, the same shape can be extended to staged actor,
-//! task, module, message, and capability mutations.
+//! The runtime-private `RuntimeExecutionTransaction` coordinates that store
+//! staging with the context baseline, retained-program checkpoints, live
+//! runtime state, and explicit or implicit transaction mode. Program and live
+//! checkpoints intentionally do not belong to this store-facing type.
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

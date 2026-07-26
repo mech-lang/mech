@@ -522,49 +522,68 @@ impl MechRuntime {
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
+    self.preflight_atomic_program_operation(
+      context,
+      "resolve_and_run_root_module_with_context",
+    )?;
 
     let request = request.into();
     request.validate()?;
     let root_specifier = request.specifier.clone();
-    let previous_module_version = context.module_version;
+    let Some(root_version) = self.build_module_from_request_with_context(
+      context,
+      request,
+      options,
+    )? else {
+      return Err(MechError::new(
+        RuntimeRootModuleSourceNotFound { specifier: root_specifier },
+        None,
+      ));
+    };
 
-    let result = (|| -> MResult<Value> {
-      let Some(root_version) = self.build_module_from_request_with_context(
+    let result = self.with_atomic_program_operation(
+      context,
+      "resolve_and_run_root_module_with_context",
+      |runtime, context| {
+        context.module_version = Some(root_version);
+
+        let mut preflight_seen = HashSet::new();
+        runtime.preflight_module_graph_for_scope(
+          context,
+          root_version,
+          &SourceScope::Program,
+          &mut preflight_seen,
+        )?;
+
+        let mut seen = HashSet::new();
+        let mut module_instances = HashMap::new();
+        runtime.execute_module_retained_root_for_scope(
+          context,
+          root_version,
+          &SourceScope::Program,
+          &mut seen,
+          &mut module_instances,
+          turn_started,
+        )
+      },
+    );
+
+    if let Err(error) = &result {
+      let _ = self.emit_event_to_context(
         context,
-        request,
-        options,
-      )? else {
-        return Err(MechError::new(
-          RuntimeRootModuleSourceNotFound { specifier: root_specifier },
-          None,
-        ));
-      };
-
-      context.module_version = Some(root_version);
-
-      let mut preflight_seen = HashSet::new();
-      self.preflight_module_graph_for_scope(
+        RuntimeEventKind::ModuleExecutionFailed {
+          module_version: root_version,
+          message: format!("{:?}", error),
+        },
+      );
+      let _ = self.emit_event_to_context(
         context,
-        root_version,
-        &SourceScope::Program,
-        &mut preflight_seen,
-      )?;
-
-      let mut seen = HashSet::new();
-      let mut module_instances = HashMap::new();
-      let value = self.execute_module_retained_root_for_scope(
-        context,
-        root_version,
-        &SourceScope::Program,
-        &mut seen,
-        &mut module_instances,
-        turn_started,
-      )?;
-      Ok(value)
-    })();
-
-    context.module_version = previous_module_version;
+        RuntimeEventKind::ProgramFailed {
+          task_id: context.task,
+          message: format!("{:?}", error),
+        },
+      );
+    }
     result
   }
 

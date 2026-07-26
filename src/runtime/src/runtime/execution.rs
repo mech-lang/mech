@@ -42,15 +42,7 @@ struct PreparedModuleScopeExecution {
   environment: HashMap<String, ValRef>,
 }
 
-struct ProgramEnvironmentOverlay {
-  entries: Vec<ProgramEnvironmentOverlayEntry>,
-}
-
-struct ProgramEnvironmentOverlayEntry {
-  id: u64,
-  previous_symbol: Option<ValRef>,
-  previous_dictionary: Option<String>,
-}
+struct ProgramEnvironmentOverlay;
 
 fn imports_for_scope<'a>(
   record: &'a ModuleVersionRecord,
@@ -151,7 +143,7 @@ fn materialize_function_imports_for_scope(
 }
 
 impl ProgramEnvironmentOverlay {
-  fn install(program: &mut MechProgram, environment: &HashMap<String, ValRef>) -> MResult<Self> {
+  fn install(program: &mut MechProgram, environment: &HashMap<String, ValRef>) -> MResult<()> {
     let mut ids = HashMap::new();
     for name in environment.keys() {
       let id = hash_str(name);
@@ -166,12 +158,10 @@ impl ProgramEnvironmentOverlay {
       }
     }
 
-    let mut entries = Vec::with_capacity(environment.len());
     let symbols = program.interpreter_mut().symbols();
     let mut symbols_brrw = symbols.borrow_mut();
     for (name, value_ref) in environment {
       let id = hash_str(name);
-      let previous_symbol = symbols_brrw.symbols.get(&id).cloned();
       let previous_dictionary = symbols_brrw.dictionary.borrow().get(&id).cloned();
       if let Some(previous_name) = &previous_dictionary {
         if previous_name != name && !environment.contains_key(previous_name) {
@@ -182,30 +172,11 @@ impl ProgramEnvironmentOverlay {
           }, None));
         }
       }
-      entries.push(ProgramEnvironmentOverlayEntry { id, previous_symbol, previous_dictionary });
       symbols_brrw.symbols.insert(id, value_ref.clone());
       symbols_brrw.dictionary.borrow_mut().insert(id, name.clone());
     }
 
-    Ok(Self { entries })
-  }
-
-  fn restore(self, program: &mut MechProgram) {
-    let symbols = program.interpreter_mut().symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-    for entry in self.entries.into_iter().rev() {
-      if let Some(previous_symbol) = entry.previous_symbol {
-        symbols_brrw.symbols.insert(entry.id, previous_symbol);
-      } else {
-        symbols_brrw.symbols.remove(&entry.id);
-      }
-
-      if let Some(previous_dictionary) = entry.previous_dictionary {
-        symbols_brrw.dictionary.borrow_mut().insert(entry.id, previous_dictionary);
-      } else {
-        symbols_brrw.dictionary.borrow_mut().remove(&entry.id);
-      }
-    }
+    Ok(())
   }
 }
 
@@ -3064,23 +3035,37 @@ impl MechRuntime {
     source: &str,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
-    let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
-      MechError::new(
-        ResourceBudgetExceededError {
-          resource: "source_bytes",
-          used: u64::MAX,
-          requested: 1,
-          max: None,
-        },
-        None,
-      )
-    })?;
-    self.enforce_source_byte_count(context, source_bytes)?;
-    self.run_string_with_context_inner(context, source, turn_started)
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+    let result = self.with_atomic_program_operation(
+      context,
+      "run_string_with_context",
+      |runtime, context| {
+        let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?;
+        runtime.enforce_source_byte_count(context, source_bytes)?;
+        runtime.run_string_operation(context, source, turn_started)
+      },
+    );
+    if let Err(error) = &result {
+      self.emit_program_failure_audit(
+        context,
+        error,
+        profile_started,
+      );
+    }
+    result
   }
 
-  fn run_string_with_context_inner(
+  fn run_string_operation(
     &mut self,
     context: &mut RuntimeContext,
     source: &str,
@@ -3096,8 +3081,6 @@ impl MechRuntime {
         task_id: context.task,
       },
     )?;
-
-    let live_state_before = self.live_state_snapshot();
 
     let result = match mech_syntax::parser::parse(source.trim()) {
       Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
@@ -3130,48 +3113,49 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
-    if result.is_err() {
-      self.restore_live_state(live_state_before);
-    }
-    match &result {
-      Ok(_) => {
+    if result.is_ok() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramCompleted {
+          task_id: context.task,
+        },
+      )?;
+      if let Some(started) = profile_started {
         self.emit_event_to_context(
           context,
-          RuntimeEventKind::ProgramCompleted {
+          RuntimeEventKind::ProgramProfiled {
             task_id: context.task,
+            duration_ns: started.elapsed().as_nanos(),
           },
         )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
       }
     }
 
     result
+  }
+
+  fn emit_program_failure_audit(
+    &mut self,
+    context: &mut RuntimeContext,
+    error: &MechError,
+    profile_started: Option<Instant>,
+  ) {
+    let _ = self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramFailed {
+        task_id: context.task,
+        message: format!("{:?}", error),
+      },
+    );
+    if let Some(started) = profile_started {
+      let _ = self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramProfiled {
+          task_id: context.task,
+          duration_ns: started.elapsed().as_nanos(),
+        },
+      );
+    }
   }
 
   /// Evaluates bytecode in an isolated temporary program. It returns the
@@ -3290,25 +3274,43 @@ impl MechRuntime {
     source: &MechSourceCode,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
-    self.enforce_source_limits(context, source)?;
-    self.run_source_with_context_inner(context, source, turn_started)
+    if let MechSourceCode::ByteCode(bytes) = source {
+      return self.run_bytecode_with_context(context, bytes);
+    }
+
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+    let result = self.with_atomic_program_operation(
+      context,
+      "run_source_with_context",
+      |runtime, context| {
+        runtime.enforce_source_limits(context, source)?;
+        runtime.run_source_operation(context, source, turn_started)
+      },
+    );
+    if let Err(error) = &result {
+      self.emit_program_failure_audit(
+        context,
+        error,
+        profile_started,
+      );
+    }
+    result
   }
 
-  fn run_source_with_context_inner(
+  fn run_source_operation(
     &mut self,
     context: &mut RuntimeContext,
     source: &MechSourceCode,
     turn_started: Instant,
   ) -> MResult<Value> {
     match source {
-      MechSourceCode::String(source) => self.run_string_with_context_inner(context, source, turn_started),
-      MechSourceCode::Tree(tree) => self.run_tree_with_context_timed(context, tree, turn_started),
+      MechSourceCode::String(source) => self.run_string_operation(context, source, turn_started),
+      MechSourceCode::Tree(tree) => self.run_tree_operation(context, tree, turn_started),
       MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context_inner(context, bytes, turn_started),
       MechSourceCode::Program(sources) => {
         let mut value = Value::Empty;
         for source in sources {
-          value = self.run_source_with_context_inner(context, source, turn_started)?;
+          value = self.run_source_operation(context, source, turn_started)?;
         }
         Ok(value)
       }
@@ -3327,10 +3329,23 @@ impl MechRuntime {
     tree: &mech_core::Program,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.run_tree_with_context_timed(context, tree, turn_started)
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+    let result = self.with_atomic_program_operation(
+      context,
+      "run_tree_with_context",
+      |runtime, context| runtime.run_tree_operation(context, tree, turn_started),
+    );
+    if let Err(error) = &result {
+      self.emit_program_failure_audit(
+        context,
+        error,
+        profile_started,
+      );
+    }
+    result
   }
 
-  fn run_tree_with_context_timed(
+  fn run_tree_operation(
     &mut self,
     context: &mut RuntimeContext,
     tree: &mech_core::Program,
@@ -3346,8 +3361,6 @@ impl MechRuntime {
         task_id: context.task,
       },
     )?;
-
-    let live_state_before = self.live_state_snapshot();
 
     let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
       Ok(()) => {
@@ -3377,50 +3390,31 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
-    if result.is_err() {
-      self.restore_live_state(live_state_before);
-    }
-    match &result {
-      Ok(_) => {
+    if result.is_ok() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramCompleted {
+          task_id: context.task,
+        },
+      )?;
+      if let Some(started) = profile_started {
         self.emit_event_to_context(
           context,
-          RuntimeEventKind::ProgramCompleted {
+          RuntimeEventKind::ProgramProfiled {
             task_id: context.task,
+            duration_ns: started.elapsed().as_nanos(),
           },
         )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
       }
     }
 
     result
   }
 
+  /// Low-level manual escape hatch outside runtime-owned atomic execution.
+  ///
+  /// Taking the program bypasses runtime transaction coordination. Callers
+  /// must not use it while a transaction owns the retained program.
   pub fn take_program(&mut self) -> MechProgram {
     let program_config = self.program.config.clone();
     std::mem::replace(&mut self.program, MechProgram::new(program_config))
@@ -3471,6 +3465,17 @@ impl MechRuntime {
     interpreter_id: u64,
     value: &Value,
   ) -> MResult<()> {
+    if let Some(owner) = self.program_transaction_owner {
+      return Err(MechError::new(
+        RuntimeProgramBusy {
+          operation: "bind_ans_for_interpreter",
+          owner,
+          requester: None,
+        },
+        None,
+      ));
+    }
+
     if self.program.bind_ans_for_interpreter(interpreter_id, value) {
       return Ok(());
     }
@@ -3498,6 +3503,7 @@ impl MechRuntime {
   ) -> MResult<()> {
     let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
+    self.reject_transactional_reactive_turn(context, "step_with_context")?;
     context.charge_step()?;
 
     let program_config = self.program.config.clone();
@@ -3872,8 +3878,7 @@ impl MechRuntime {
 
     let result = (|| -> MResult<Value> {
       materialize_function_imports_for_scope(&mut root_program, &prepared.record, scope)?;
-      let overlay = ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
-      let live_state_before = self.live_state_snapshot();
+      ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
 
       self.emit_event_to_context(
         context,
@@ -3893,14 +3898,7 @@ impl MechRuntime {
           Ok(value)
         });
 
-      match result {
-        Ok(value) => Ok(value),
-        Err(error) => {
-          self.restore_live_state(live_state_before);
-          overlay.restore(&mut root_program);
-          Err(error)
-        }
-      }
+      result
     })();
 
     self.program = root_program;
@@ -3913,16 +3911,7 @@ impl MechRuntime {
         )?;
         Ok(value)
       }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ModuleExecutionFailed {
-            module_version: version,
-            message: format!("{:?}", error),
-          },
-        )?;
-        Err(error)
-      }
+      Err(error) => Err(error),
     }
   }
 
@@ -4009,24 +3998,13 @@ impl MechRuntime {
       }
     });
 
-    match &result {
-      Ok(_) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramCompleted {
-            task_id: context.task,
-          },
-        )?;
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-      }
+    if result.is_ok() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramCompleted {
+          task_id: context.task,
+        },
+      )?;
     }
 
     result
@@ -4668,6 +4646,16 @@ impl MechRuntime {
 
   pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
     input.validate()?;
+    if self.program_transaction_owner.is_some() {
+      return Err(MechError::new(
+        RuntimeTransactionalReactiveTurnUnsupported {
+          operation: "apply_host_input",
+          transaction_id: None,
+          owner: self.program_transaction_owner,
+        },
+        None,
+      ));
+    }
     let mut target_updates = Vec::new();
     let mut seen_targets = std::collections::HashSet::new();
     let mut ignored_update_count = 0;
