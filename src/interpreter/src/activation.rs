@@ -4272,10 +4272,11 @@ text := "abc"
         let bodies_before_error = (0..2)
             .map(|arm| body_output_f64(&i, arm))
             .collect::<Vec<_>>();
+        let proposed_before_error = proposed_capture_value(&i, 0, 0);
         set_atom_tuple_event(&i, "pressed", 3.0);
         let error = i.advance_reactive_turn(&[trigger]).unwrap_err();
         assert_eq!(error.kind_name(), "IndexOutOfBounds");
-        assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(3.0)));
+        assert_eq!(proposed_capture_value(&i, 0, 0), proposed_before_error);
         assert_eq!(committed_capture_value(&i, 0, 0), committed_before);
         assert_eq!(arm_pulse_generation(&i, 0), pulse_before);
         assert_eq!(body_output_f64(&i, 0), body_before);

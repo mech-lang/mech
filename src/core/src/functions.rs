@@ -1260,8 +1260,22 @@ impl ReactivePlan {
         }
       }
     }
-    if reactive_consumers != self.reactive_consumers
-      || sampled_consumers != self.sampled_consumers
+    for consumers in reactive_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    for consumers in sampled_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    let mut indexed_reactive_consumers = self.reactive_consumers.clone();
+    let mut indexed_sampled_consumers = self.sampled_consumers.clone();
+    for consumers in indexed_reactive_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    for consumers in indexed_sampled_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    if reactive_consumers != indexed_reactive_consumers
+      || sampled_consumers != indexed_sampled_consumers
     {
       return Err(invalid("consumer indexes do not match node dependencies".into()));
     }
