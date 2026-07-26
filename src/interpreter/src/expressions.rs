@@ -294,10 +294,35 @@ impl MechFunctionImpl for ValueMatrixComprehension {
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(vec![Value::MutableReference(self.out.clone())])
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 }
+
+#[cfg(all(test, feature = "matrix_comprehensions", feature = "functions"))]
+mod matrix_comprehension_transaction_tests {
+    use super::*;
+
+    #[test]
+    fn transaction_state_retains_matrix_comprehension_outer_output_ref() {
+        let out = Ref::new(Value::Empty);
+        let function = ValueMatrixComprehension {
+            arguments: Vec::new(),
+            out: out.clone(),
+        };
+
+        let values = function.transaction_state_values().unwrap();
+        assert_eq!(values.len(), 1);
+        match &values[0] {
+            Value::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
+            other => panic!("expected mutable-reference transaction root, got {other:?}"),
+        }
+    }
+}
+
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueMatrixComprehension {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -848,7 +873,7 @@ fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &Interpr
     symbols_brrw
         .mutable_variables
         .values()
-        .any(|symbol| std::rc::Rc::ptr_eq(&symbol.0, &reference.0))
+        .any(|symbol| symbol.same_handle(reference))
 }
 
 #[cfg(feature = "subscript_formula")]

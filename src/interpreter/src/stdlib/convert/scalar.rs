@@ -54,6 +54,9 @@ struct ConvertSEmpty {
 impl MechFunctionImpl for ConvertSEmpty {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.borrow().clone() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(vec![Value::MutableReference(self.out.clone())])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
@@ -79,6 +82,23 @@ register_descriptor! {
         ),
       }
     },
+  }
+}
+
+#[cfg(test)]
+mod empty_transaction_state_tests {
+  use super::*;
+
+  #[test]
+  fn convert_scalar_empty_exposes_original_outer_value_cell() {
+    let out = Ref::new(Value::Empty);
+    let function = ConvertSEmpty { out: out.clone() };
+    let values = function.transaction_state_values().unwrap();
+    assert_eq!(values.len(), 1);
+    match &values[0] {
+      Value::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
+      value => panic!("expected mutable-reference transaction state, got {value:?}"),
+    }
   }
 }
 

@@ -40,7 +40,9 @@ use super::execution::{
   ActivationEffectBarrierCompiler,
   ActivationEffectPayloadCaptureCompiler,
 };
-use mech_core::{GuardFunctionSafety, Ref, ValueKind};
+use mech_core::{
+  GuardFunctionSafety, Ref, TransactionStateUnsupportedError, ValueKind,
+};
 
 impl MechRuntime {
 
@@ -332,6 +334,21 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
     self.value.borrow().clone()
   }
 
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Err(
+      MechError::new(
+        TransactionStateUnsupportedError {
+          function: self.to_string(),
+          reason:
+            "ordinary retained-program checkpoints cannot own complete runtime host output topology; runtime transaction participation is required"
+              .to_string(),
+        },
+        None,
+      )
+      .with_compiler_loc(),
+    )
+  }
+
   fn to_string(&self) -> String {
     format!("RuntimeHostNativeFunction::{}", self.name)
   }
@@ -348,5 +365,38 @@ impl MechFunctionCompiler for RuntimeHostNativeFunction {
       },
       None,
     ))
+  }
+}
+
+#[cfg(test)]
+mod checkpoint_tests {
+  use super::*;
+
+  #[test]
+  fn runtime_host_native_function_requires_runtime_checkpoint_participation() {
+    let program = MechProgram::new(MechProgramConfig::default());
+    let plan = program.interpreter().plan();
+    let value = Ref::new(Value::Empty);
+    plan.add_function(Box::new(RuntimeHostNativeFunction {
+      name: "test/host".to_string(),
+      host_name: "test/host".to_string(),
+      arguments: Vec::new(),
+      value: value.clone(),
+    }));
+    let plan_before = plan.checkpoint();
+
+    let error = match program.checkpoint() {
+      Ok(_) => panic!("runtime host program checkpoint unexpectedly succeeded"),
+      Err(error) => error,
+    };
+
+    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+    assert!(
+      error
+        .kind_message()
+        .contains("runtime transaction participation"),
+    );
+    assert_eq!(plan.checkpoint(), plan_before);
+    assert_eq!(*value.borrow(), Value::Empty);
   }
 }

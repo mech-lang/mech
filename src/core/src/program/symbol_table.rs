@@ -9,7 +9,8 @@ pub type SymbolTableRef= Ref<SymbolTable>;
 pub struct SymbolTableSnapshot {
   symbols: HashMap<u64, ValRef>,
   mutable_variables: HashMap<u64, ValRef>,
-  dictionary: Dictionary,
+  dictionary: Ref<Dictionary>,
+  dictionary_contents: Dictionary,
   reverse_lookup: HashMap<*const Ref<Value>, u64>,
 }
 
@@ -26,16 +27,40 @@ impl SymbolTable {
     SymbolTableSnapshot {
       symbols: self.symbols.clone(),
       mutable_variables: self.mutable_variables.clone(),
-      dictionary: self.dictionary.borrow().clone(),
+      dictionary: self.dictionary.clone(),
+      dictionary_contents: self.dictionary.borrow().clone(),
       reverse_lookup: self.reverse_lookup.clone(),
     }
   }
 
+  pub fn preflight_restore(&self, snapshot: &SymbolTableSnapshot) -> MResult<()> {
+    snapshot
+      .dictionary
+      .try_borrow_mut()
+      .map(|_| ())
+      .map_err(|_| {
+        MechError::new(
+          ValueStateBorrowConflict {
+            phase: "restore-before",
+            type_name: core::any::type_name::<Dictionary>(),
+            address: snapshot.dictionary.addr(),
+          },
+          None,
+        )
+        .with_compiler_loc()
+      })
+  }
+
+  pub fn apply_restore(&mut self, snapshot: &SymbolTableSnapshot) {
+    self.symbols = snapshot.symbols.clone();
+    self.mutable_variables = snapshot.mutable_variables.clone();
+    self.dictionary = snapshot.dictionary.clone();
+    *self.dictionary.borrow_mut() = snapshot.dictionary_contents.clone();
+    self.reverse_lookup = snapshot.reverse_lookup.clone();
+  }
+
   pub fn restore(&mut self, snapshot: SymbolTableSnapshot) {
-    self.symbols = snapshot.symbols;
-    self.mutable_variables = snapshot.mutable_variables;
-    *self.dictionary.borrow_mut() = snapshot.dictionary;
-    self.reverse_lookup = snapshot.reverse_lookup;
+    self.apply_restore(&snapshot);
   }
 
 
@@ -88,12 +113,14 @@ mod snapshot_tests {
     let outer_ref = table.insert(outer, Value::Index(Ref::new(1)), true);
     table.dictionary.borrow_mut().insert(outer, "outer".to_string());
     let outer_addr = outer_ref.addr();
+    let dictionary_addr = table.dictionary.addr();
     let original_snapshot = table.snapshot();
 
     table.insert(outer, Value::Index(Ref::new(2)), false);
     table.insert(temporary, Value::Index(Ref::new(3)), false);
     table.dictionary.borrow_mut().insert(outer, "changed".to_string());
     table.dictionary.borrow_mut().insert(temporary, "temporary".to_string());
+    table.dictionary = Ref::new(Dictionary::new());
     assert_ne!(table.snapshot(), original_snapshot);
 
     table.restore(original_snapshot.clone());
@@ -101,6 +128,7 @@ mod snapshot_tests {
     assert!(!table.contains(temporary));
     assert!(table.get_mutable(outer).is_some());
     assert_eq!(table.get(outer).unwrap().addr(), outer_addr);
+    assert_eq!(table.dictionary.addr(), dictionary_addr);
     assert_eq!(table.get_symbol_name_by_id(outer).as_deref(), Some("outer"));
   }
 }

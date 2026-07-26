@@ -183,7 +183,6 @@ where
             return Ok(());
         }
         self.target
-            .0
             .try_borrow_mut()
             .map(|_| ())
             .map_err(|_| self.borrow_conflict("restore-before"))
@@ -194,7 +193,6 @@ where
             return Ok(());
         }
         self.target
-            .0
             .try_borrow_mut()
             .map(|_| ())
             .map_err(|_| self.borrow_conflict("restore-after"))
@@ -223,6 +221,10 @@ where
 /// The journal stores shallow payload clones alongside the original cell
 /// handles. Nested cells are journaled separately, preserving addresses,
 /// sharing, cycles, and reactive identities when state is restored.
+///
+/// This is the only checkpoint layer that knows how physical cell payloads are
+/// captured and restored. Higher-level checkpoints coordinate its opaque
+/// preflight and apply operations without reaching into cell storage.
 pub struct ValueStateJournal {
     entries: Vec<Box<dyn ErasedValueStateEntry>>,
     entry_indices: HashMap<ValueStateKey, usize>,
@@ -283,13 +285,32 @@ impl ValueStateJournal {
     ///
     /// Every target is preflighted before the first payload is changed.
     pub fn restore_before(&self) -> MResult<()> {
+        self.preflight_restore_before()?;
+        self.apply_restore_before();
+        Ok(())
+    }
+
+    /// Verifies that every captured before-state target can be mutably borrowed.
+    ///
+    /// Transaction coordinators can call this before mutating any other
+    /// checkpointed subsystem, then call [`Self::apply_restore_before`] after
+    /// all participating checkpoints have passed their own preflight.
+    pub fn preflight_restore_before(&self) -> MResult<()> {
         for entry in &self.entries {
             entry.preflight_restore_before()?;
         }
+        Ok(())
+    }
+
+    /// Restores all captured before-state after a successful preflight.
+    ///
+    /// This method deliberately performs no fallible work. Callers must not
+    /// retain or acquire borrows of captured cells between
+    /// [`Self::preflight_restore_before`] and this method.
+    pub fn apply_restore_before(&self) {
         for entry in &self.entries {
             entry.restore_before_unchecked();
         }
-        Ok(())
     }
 
     /// Records the complete state currently reachable from all saved roots.
@@ -415,7 +436,7 @@ impl ValueStateJournal {
         if !seen.insert(key) {
             return Ok(());
         }
-        let payload = target.0.try_borrow().map_err(|_| {
+        let payload = target.try_borrow().map_err(|_| {
             MechError::new(
                 ValueStateBorrowConflict {
                     phase: side.phase(),
@@ -467,7 +488,7 @@ impl ValueStateJournal {
         if !seen.insert(key) {
             return Ok(());
         }
-        let payload = target.0.try_borrow().map_err(|_| {
+        let payload = target.try_borrow().map_err(|_| {
             MechError::new(
                 ValueStateBorrowConflict {
                     phase: side.phase(),
@@ -1266,6 +1287,24 @@ mod tests {
         assert_eq!(*cell.borrow(), 1.0);
         assert_eq!(cell.addr(), address);
         assert_eq!(value.reactive_root_cell_ids(), vec![identity]);
+    }
+
+    #[test]
+    fn state_journal_split_restore_preflights_before_apply() {
+        let cell = scalar(1.0);
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&scalar_value(&cell)).unwrap();
+        *cell.borrow_mut() = 2.0;
+
+        let held_borrow = cell.borrow();
+        let error = journal.preflight_restore_before().unwrap_err();
+        assert_eq!(error.kind_name(), "ValueStateBorrowConflict");
+        assert_eq!(*held_borrow, 2.0);
+        drop(held_borrow);
+
+        journal.preflight_restore_before().unwrap();
+        journal.apply_restore_before();
+        assert_eq!(*cell.borrow(), 1.0);
     }
 
     #[test]

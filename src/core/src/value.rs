@@ -647,6 +647,11 @@ pub enum Value {
 impl Eq for Value {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+/// A process-local identity used by the reactive scheduler.
+///
+/// This is not a durable cell identity and must not be persisted as transaction
+/// history. Durable history requires a stable logical cell ID that is
+/// independent of the current [`Ref`] backing representation.
 pub struct ReactiveCellId(u64);
 
 impl ReactiveCellId {
