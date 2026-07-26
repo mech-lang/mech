@@ -802,7 +802,78 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::{
+    BasicCapability, ClosureHostFunction, InMemoryDocsProvider, NodeId,
+  };
+  use std::collections::HashSet;
+  use std::sync::atomic::{AtomicUsize, Ordering};
   use std::sync::{Arc, Mutex};
+
+  #[derive(Debug)]
+  struct FailingEventIdGenerator {
+    next: u128,
+    event_call: usize,
+    fail_calls: HashSet<usize>,
+  }
+
+  impl FailingEventIdGenerator {
+    fn new(fail_calls: impl IntoIterator<Item = usize>) -> Self {
+      Self {
+        next: 1,
+        event_call: 0,
+        fail_calls: fail_calls.into_iter().collect(),
+      }
+    }
+
+    fn next_id(&mut self) -> u128 {
+      let id = self.next;
+      self.next = self.next.saturating_add(1);
+      id
+    }
+  }
+
+  impl IdGenerator for FailingEventIdGenerator {
+    fn runtime_id(&mut self) -> RuntimeId {
+      RuntimeId(self.next_id())
+    }
+
+    fn object_id(&mut self) -> ObjectId {
+      ObjectId(self.next_id())
+    }
+
+    fn actor_id(&mut self) -> ActorId {
+      ActorId(self.next_id())
+    }
+
+    fn task_id(&mut self) -> TaskId {
+      TaskId(self.next_id())
+    }
+
+    fn capability_id(&mut self) -> CapabilityId {
+      CapabilityId(self.next_id())
+    }
+
+    fn transaction_id(&mut self) -> TransactionId {
+      TransactionId(self.next_id())
+    }
+
+    fn event_id(&mut self) -> EventId {
+      self.event_call = self.event_call.saturating_add(1);
+      if self.fail_calls.contains(&self.event_call) {
+        EventId(0)
+      } else {
+        EventId(1_000 + self.event_call as u128)
+      }
+    }
+
+    fn node_id(&mut self) -> NodeId {
+      NodeId(self.next_id())
+    }
+
+    fn message_id(&mut self) -> MessageId {
+      MessageId(self.next_id())
+    }
+  }
 
   #[derive(Debug, Clone)]
   struct SyntheticEffectError {
@@ -944,6 +1015,32 @@ mod tests {
     fail_deliver: bool,
   }
 
+  #[derive(Debug)]
+  struct FailOnceAbortEffect {
+    attempts: Arc<AtomicUsize>,
+  }
+
+  impl RuntimeTransactionalEffect for FailOnceAbortEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata("fail-once-abort")
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      if self.attempts.fetch_add(1, Ordering::SeqCst) == 0 {
+        return Err(synthetic_error("deliberate first abort failure"));
+      }
+      Ok(())
+    }
+  }
+
   impl RuntimeAfterCommitEffect for SyntheticAfterCommitEffect {
     fn metadata(&self) -> RuntimeEffectMetadata {
       synthetic_metadata(self.name)
@@ -1072,6 +1169,50 @@ mod tests {
 
     assert_eq!(journal.len(), 2);
     assert_eq!(journal.next_sequence(), 3);
+  }
+
+  #[test]
+  fn failed_savepoint_cleanup_preserves_effect_for_outer_abort_retry() {
+    let attempts = Arc::new(AtomicUsize::new(0));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let result: MResult<()> = runtime.with_atomic_program_operation(
+      &mut context,
+      "fail_once_effect_cleanup",
+      |runtime, context| {
+        let effect_id = runtime.stage_runtime_effect_with_context(
+          context,
+          PreparedRuntimeEffect::Transactional(Box::new(
+            FailOnceAbortEffect {
+              attempts: attempts.clone(),
+            },
+          )),
+        )?;
+        assert_eq!(effect_id.sequence, 0);
+        Err(synthetic_error("deliberate retained operation failure"))
+      },
+    );
+
+    assert_eq!(
+      result.unwrap_err().kind_name(),
+      "RuntimeProgramRollbackFailed",
+    );
+    assert!(runtime.is_poisoned());
+    let transaction = runtime
+      .active_execution_transaction(transaction_id)
+      .unwrap();
+    assert_eq!(transaction.effects.len(), 1);
+    assert_eq!(transaction.effects.next_sequence(), 1);
+    assert_eq!(attempts.load(Ordering::SeqCst), 1);
+
+    runtime
+      .abort_runtime_transaction(&mut context, "retry retained effect abort")
+      .unwrap();
+    assert_eq!(attempts.load(Ordering::SeqCst), 2);
+    assert_eq!(context.transaction, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
   }
 
   #[test]
@@ -1529,6 +1670,452 @@ mod tests {
         RuntimeEventKind::ExternalCommitIndeterminate { .. }
       )
     }));
+  }
+
+  #[test]
+  fn every_prepared_participant_receives_commit_and_all_failures_are_reported() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let delivery_log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = transactional("second", log.clone());
+    second.fail_commit = true;
+    let second_id = runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(second)),
+      )
+      .unwrap();
+    let mut third = transactional("third", log.clone());
+    third.fail_commit = true;
+    let third_id = runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(third)),
+      )
+      .unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(after_commit(
+          "suppressed",
+          delivery_log.clone(),
+        ))),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+    let indeterminate = error
+      .kind_as::<RuntimeExternalCommitIndeterminate>()
+      .unwrap();
+
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "first:prepare",
+        "second:prepare",
+        "third:prepare",
+        "first:commit",
+        "second:commit",
+        "third:commit",
+      ],
+    );
+    assert_eq!(
+      indeterminate
+        .failures
+        .iter()
+        .map(|failure| failure.effect_id)
+        .collect::<Vec<_>>(),
+      vec![second_id, third_id],
+    );
+    assert!(delivery_log.lock().unwrap().is_empty());
+    let poison = match runtime.health() {
+      RuntimeHealth::Healthy => panic!("runtime should be poisoned"),
+      RuntimeHealth::Poisoned(poison) => poison,
+    };
+    assert!(poison
+      .rollback_failures
+      .iter()
+      .any(|outcome| outcome.contains("second commit failed")));
+    assert!(poison
+      .rollback_failures
+      .iter()
+      .any(|outcome| outcome.contains("third commit failed")));
+    assert_eq!(context.transaction, None);
+    assert!(runtime
+      .get_transaction(transaction_id)
+      .unwrap()
+      .is_some());
+    assert_eq!(
+      runtime
+        .list_events(None)
+        .unwrap()
+        .iter()
+        .filter(|event| {
+          matches!(
+            event.kind,
+            RuntimeEventKind::ExternalCommitIndeterminate { .. }
+          )
+        })
+        .count(),
+      2,
+    );
+  }
+
+  #[test]
+  fn poisoned_runtime_rejects_owned_mutations_but_allows_abort_cleanup() {
+    let callback_calls = Arc::new(AtomicUsize::new(0));
+    let observed_calls = callback_calls.clone();
+    let mut runtime = MechRuntime::builder()
+      .resource_provider(Box::new(InMemoryDocsProvider::new()))
+      .build()
+      .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(BasicCapability::from_keys(
+        CapabilityId(900),
+        &subject,
+        "host:demo/poison-gate",
+        ["call"],
+      )))
+      .unwrap();
+    runtime
+      .grant_capability(Arc::new(BasicCapability::from_keys(
+        CapabilityId(901),
+        "task:1",
+        "db://users",
+        [":read"],
+      )))
+      .unwrap();
+    runtime
+      .register_mech_host_function(ClosureHostFunction::new_pure(
+        "demo/poison-gate",
+        move |_services, _context, _args| {
+          observed_calls.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::Empty)
+        },
+      ))
+      .unwrap();
+    let object_id = ObjectId(902);
+    let actor_id = ActorId(903);
+    let task_id = TaskId(904);
+    runtime
+      .put_object(ObjectRecord::text(object_id, "note", "before"))
+      .unwrap();
+    runtime
+      .put_actor(ActorRecord::new(actor_id, "actor:poison"))
+      .unwrap();
+    runtime
+      .put_task(TaskRecord::new(task_id, "task:poison"))
+      .unwrap();
+
+    let mut cleanup_context = runtime.runtime_context().unwrap();
+    let cleanup_transaction = runtime
+      .begin_transaction(&mut cleanup_context)
+      .unwrap();
+    let mut poison_context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut poison_context).unwrap();
+    let mut failing = transactional(
+      "poison-runtime",
+      Arc::new(Mutex::new(Vec::new())),
+    );
+    failing.fail_commit = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut poison_context,
+        PreparedRuntimeEffect::Transactional(Box::new(failing)),
+      )
+      .unwrap();
+    assert_eq!(
+      runtime
+        .commit_runtime_transaction(&mut poison_context)
+        .unwrap_err()
+        .kind_name(),
+      "RuntimeExternalCommitIndeterminate",
+    );
+    assert!(runtime.is_poisoned());
+
+    let mut poison_kinds = Vec::new();
+    poison_kinds.push(
+      runtime
+        .call_host(HostCall::new("demo/poison-gate", Vec::new()))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+          CapabilityId(905),
+          "task:1",
+          "db://other",
+          [":read"],
+        )))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .revoke_capability(CapabilityId(901))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .check_capability(&CapabilityRequest::from_keys(
+          "task:1",
+          ":read",
+          "db://users",
+        ))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .write_resource(RuntimeResourceWriteRequest {
+          base_uri: "docs://manual".to_string(),
+          path: "poisoned".to_string(),
+          context_name: "manual".to_string(),
+          operation: RuntimeCapabilityOperation::Write,
+          value: Value::String(mech_core::Ref::new(
+            "must-not-write".to_string(),
+          )),
+          intent: RuntimeResourceWriteIntent::Assign,
+        })
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .update_object(ObjectRecord::text(
+          object_id,
+          "note",
+          "after",
+        ))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .update_actor(ActorRecord::new(actor_id, "actor:changed"))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .update_task(TaskRecord::new(task_id, "task:changed"))
+        .unwrap_err()
+        .kind_name(),
+    );
+    poison_kinds.push(
+      runtime
+        .stage_runtime_effect_with_context(
+          &mut cleanup_context,
+          effect("must-not-stage"),
+        )
+        .unwrap_err()
+        .kind_name(),
+    );
+
+    assert!(poison_kinds
+      .iter()
+      .all(|kind| *kind == "RuntimePoisoned"));
+    assert_eq!(callback_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(
+      runtime.get_object(object_id).unwrap().unwrap().data,
+      b"before",
+    );
+    assert_eq!(
+      runtime.get_actor(actor_id).unwrap().unwrap().subject,
+      "actor:poison",
+    );
+    assert_eq!(
+      runtime.get_task(task_id).unwrap().unwrap().subject,
+      "task:poison",
+    );
+    assert!(!runtime
+      .capability_kernel()
+      .is_revoked(CapabilityId(901))
+      .unwrap());
+
+    runtime
+      .abort_runtime_transaction(
+        &mut cleanup_context,
+        "poisoned runtime cleanup remains allowed",
+      )
+      .unwrap();
+    assert_eq!(cleanup_context.transaction, None);
+    assert!(!runtime
+      .active_transactions
+      .contains_key(&cleanup_transaction));
+  }
+
+  #[test]
+  fn prepare_failure_audit_failure_is_nonfatal() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder()
+      .id_generator(FailingEventIdGenerator::new([5]))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = transactional("second", log);
+    second.fail_prepare = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "SyntheticEffectError");
+    assert!(error.full_chain_message().contains("second prepare failed"));
+    assert!(!runtime.is_poisoned());
+    assert_eq!(context.transaction, Some(transaction_id));
+    runtime
+      .abort_runtime_transaction(&mut context, "prepare audit cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn compensation_audit_failure_is_nonfatal() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder()
+      .id_generator(FailingEventIdGenerator::new([5]))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(compensatable(
+          "first",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    let mut second = compensatable("second", log);
+    second.fail_apply = true;
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(second)),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "SyntheticEffectError");
+    assert!(error.full_chain_message().contains("second apply failed"));
+    assert!(!runtime.is_poisoned());
+    assert_eq!(context.transaction, Some(transaction_id));
+    runtime
+      .abort_runtime_transaction(&mut context, "compensation audit cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn explicit_abort_audit_failure_does_not_poison() {
+    let mut runtime = MechRuntime::builder()
+      .id_generator(FailingEventIdGenerator::new([5]))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "abortable",
+          Arc::new(Mutex::new(Vec::new())),
+        ))),
+      )
+      .unwrap();
+
+    runtime
+      .abort_runtime_transaction(&mut context, "audit failure abort")
+      .unwrap();
+
+    assert!(!runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+  }
+
+  #[test]
+  fn committed_effect_audit_failure_still_delivers_after_commit() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder()
+      .id_generator(FailingEventIdGenerator::new([6]))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Transactional(Box::new(transactional(
+          "transactional",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(after_commit(
+          "after",
+          log.clone(),
+        ))),
+      )
+      .unwrap();
+
+    let outcome = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    assert_eq!(outcome.delivery_failures, Vec::new());
+    assert_eq!(outcome.audit_failures.len(), 1);
+    assert_eq!(
+      outcome.audit_failures[0].phase,
+      RuntimeEffectFailurePhase::Audit,
+    );
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "transactional:prepare",
+        "transactional:commit",
+        "after:deliver",
+      ],
+    );
+    assert!(!runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
   }
 
   #[test]

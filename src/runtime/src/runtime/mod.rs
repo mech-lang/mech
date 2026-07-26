@@ -1407,6 +1407,7 @@ impl MechRuntime {
   ) -> MResult<EventId> {
     self.validate_context_for_runtime(context)?;
 
+    let context_events_before = context.events.clone();
     let event = self.make_event(kind);
     let id = event.id;
 
@@ -1414,12 +1415,18 @@ impl MechRuntime {
     self.trim_events_to_retention(&mut context.events);
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
-        transaction.store.stage_event(event)?;
+        if let Err(error) = transaction.store.stage_event(event) {
+          context.events = context_events_before;
+          return Err(error);
+        }
         return Ok(id);
       }
     }
 
-    self.store.append_event(event)?;
+    if let Err(error) = self.store.append_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
 
     Ok(id)
   }
@@ -1431,12 +1438,16 @@ impl MechRuntime {
   ) -> MResult<EventId> {
     self.validate_context_for_runtime(context)?;
 
+    let context_events_before = context.events.clone();
     let event = self.make_event(kind);
     let id = event.id;
 
     context.push_event(event.clone());
     self.trim_events_to_retention(&mut context.events);
-    self.store.append_event(event)?;
+    if let Err(error) = self.store.append_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
 
     Ok(id)
   }

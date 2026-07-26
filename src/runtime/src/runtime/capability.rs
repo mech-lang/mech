@@ -530,6 +530,7 @@ mod tests {
     BasicCapability, BasicCapabilityKernel, BasicConstraints,
     CapabilityDerivation,
     CapabilityGrant, CapabilityKernel, CapabilityKernelCheckpoint, Subject,
+    SharedCapabilityKernel,
   };
   use crate::id::{
     ActorId, EventId, IdGenerator, MessageId, NodeId, ObjectId, RuntimeId,
@@ -550,6 +551,23 @@ mod tests {
 
   fn request(subject: &str) -> CapabilityRequest {
     CapabilityRequest::from_keys(subject, ":read", "db://users")
+  }
+
+  fn limited_capability(
+    id: CapabilityId,
+    max_uses: u64,
+  ) -> Arc<dyn Capability> {
+    Arc::new(
+      BasicCapability::from_keys(
+        id,
+        "task:1",
+        "db://users",
+        [":read"],
+      )
+      .with_constraints(
+        BasicConstraints::default().with_max_uses(max_uses),
+      ),
+    )
   }
 
   #[derive(Debug)]
@@ -1036,6 +1054,37 @@ mod tests {
   }
 
   #[test]
+  fn provisional_capability_selection_follows_stable_grant_order() {
+    let first = CapabilityId(100);
+    let second = CapabilityId(101);
+    let mut overlay = RuntimeCapabilityOverlay::default();
+    overlay.stage_grant(capability(first, "task:1", true));
+    overlay.stage_grant(capability(second, "task:1", true));
+
+    for _ in 0..32 {
+      assert_eq!(
+        overlay.preview_check(&request("task:1")).unwrap(),
+        Some(first),
+      );
+    }
+    assert_eq!(
+      overlay.check(&request("task:1")).unwrap(),
+      Some(first),
+    );
+    assert_eq!(
+      overlay
+        .grants()
+        .map(|(id, _)| id)
+        .collect::<Vec<_>>(),
+      vec![first, second],
+    );
+    assert_eq!(
+      overlay.usage_deltas().collect::<Vec<_>>(),
+      vec![(first, 1)],
+    );
+  }
+
+  #[test]
   fn provisional_revocation_does_not_leak_to_other_transactions() {
     let mut runtime = MechRuntime::builder()
       .id_generator(SequentialIdGenerator::starting_at(1))
@@ -1140,6 +1189,76 @@ mod tests {
     assert!(runtime.get_capability(id).unwrap().is_some());
     assert!(runtime.capability_kernel().get(id).unwrap().is_some());
     assert_eq!(runtime.check_capability(&request("task:1")).unwrap(), id);
+  }
+
+  #[test]
+  fn provisional_capability_usage_is_committed_to_live_kernel() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        limited_capability(id, 1),
+      )
+      .unwrap();
+    assert_eq!(
+      runtime
+        .check_capability_with_context(&mut context, &request("task:1"))
+        .unwrap(),
+      id,
+    );
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(runtime.check_capability(&request("task:1")).is_err());
+  }
+
+  #[test]
+  fn store_failure_restores_provisional_usage_delta() {
+    let kernel = SharedCapabilityKernel::new();
+    let observed_kernel = kernel.clone();
+    let mut runtime = MechRuntime::builder()
+      .capability_kernel(kernel)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        limited_capability(id, 2),
+      )
+      .unwrap();
+    runtime
+      .check_capability_with_context(&mut context, &request("task:1"))
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(500), "note", "missing"),
+      )
+      .unwrap();
+
+    assert!(runtime.commit_runtime_transaction(&mut context).is_err());
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(observed_kernel.get(id).unwrap().is_none());
+    assert_eq!(observed_kernel.successful_uses_for_test(id), 0);
+    assert_eq!(
+      runtime
+        .active_execution_transaction(transaction_id)
+        .unwrap()
+        .capabilities
+        .usage_deltas()
+        .collect::<Vec<_>>(),
+      vec![(id, 1)],
+    );
+
+    runtime
+      .abort_runtime_transaction(&mut context, "usage restore cleanup")
+      .unwrap();
   }
 
   #[test]

@@ -201,6 +201,14 @@ impl BasicCapabilityKernel {
     self.uses.get(&id).copied().unwrap_or(0)
   }
 
+  #[cfg(test)]
+  pub(crate) fn successful_uses_for_test(
+    &self,
+    id: CapabilityId,
+  ) -> u64 {
+    self.successful_uses(id)
+  }
+
   fn increment_uses(&mut self, id: CapabilityId) {
     let value = self.uses.entry(id).or_insert(0);
     *value = value.saturating_add(1);
@@ -642,6 +650,14 @@ impl SharedCapabilityKernel {
 
   pub fn from_kernel(kernel: BasicCapabilityKernel) -> Self {
     Self { inner: Arc::new(Mutex::new(kernel)) }
+  }
+
+  #[cfg(test)]
+  pub(crate) fn successful_uses_for_test(
+    &self,
+    id: CapabilityId,
+  ) -> u64 {
+    self.inner.lock().unwrap().successful_uses_for_test(id)
   }
 
 }

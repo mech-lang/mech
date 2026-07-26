@@ -818,6 +818,8 @@ mod tests {
   use crate::{
     ClosureHostFunction, NodeId, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimePreparedHostCall, RuntimeTransactionalEffect,
+    StagedClosureHostFunction,
   };
 
   #[derive(Debug)]
@@ -844,6 +846,76 @@ mod tests {
     PreparedRuntimeEffect::AfterCommit(Box::new(
       SavepointAfterCommitEffect { name },
     ))
+  }
+
+  #[derive(Debug)]
+  struct CommitDecisionEffect {
+    name: &'static str,
+    log: Arc<Mutex<Vec<String>>>,
+    fail_commit: bool,
+  }
+
+  impl RuntimeTransactionalEffect for CommitDecisionEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::HostFunction {
+          name: self.name.to_string(),
+        },
+        "commit-decision",
+      )
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      self
+        .log
+        .lock()
+        .unwrap()
+        .push(format!("{}:prepare", self.name));
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      self
+        .log
+        .lock()
+        .unwrap()
+        .push(format!("{}:commit", self.name));
+      if self.fail_commit {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "commit_decision_test",
+            reason: format!("{} deliberate commit failure", self.name),
+          },
+          None,
+        ));
+      }
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      self
+        .log
+        .lock()
+        .unwrap()
+        .push(format!("{}:abort", self.name));
+      Ok(())
+    }
+  }
+
+  fn grant_program_host_call(
+    runtime: &mut MechRuntime,
+    id: CapabilityId,
+    name: &str,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        id,
+        &BasicSubject::new(&subject),
+        &BasicResource::new(format!("host:{name}")),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
   }
 
   #[derive(Debug)]
@@ -1089,6 +1161,68 @@ mod tests {
         event.kind,
         RuntimeEventKind::TransactionCommitted { .. }
       )
+    }));
+  }
+
+  #[test]
+  fn committed_implicit_participant_failure_never_rolls_back_program() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    for (id, name, fail_commit) in [
+      (CapabilityId(800), "round4/first", false),
+      (CapabilityId(801), "round4/second", true),
+    ] {
+      grant_program_host_call(&mut runtime, id, name);
+      let effect_log = log.clone();
+      runtime
+        .register_mech_host_function(StagedClosureHostFunction::new(
+          name,
+          move |_services, _context, _args| {
+            Ok(RuntimePreparedHostCall {
+              value: Value::F64(mech_core::Ref::new(1.0)),
+              effect: PreparedRuntimeEffect::Transactional(Box::new(
+                CommitDecisionEffect {
+                  name,
+                  log: effect_log.clone(),
+                  fail_commit,
+                },
+              )),
+            })
+          },
+        ))
+        .unwrap();
+    }
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(
+        &mut context,
+        "round4-committed-symbol := 41\nfirst-result := round4/first()\nsecond-result := round4/second()",
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExternalCommitIndeterminate");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "round4/first:prepare",
+        "round4/second:prepare",
+        "round4/first:commit",
+        "round4/second:commit",
+      ],
+    );
+    assert!(runtime
+      .program
+      .root_symbol_value("round4-committed-symbol")
+      .is_ok());
+    assert_eq!(context.transaction, None);
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert!(runtime.active_transactions.is_empty());
+    assert!(runtime.is_poisoned());
+    let transactions = runtime.list_transactions(None).unwrap();
+    assert_eq!(transactions.len(), 1);
+    assert!(!runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::TransactionAborted { .. })
     }));
   }
 
