@@ -1,12 +1,14 @@
 use criterion::{
   BatchSize, Criterion, criterion_group, criterion_main,
 };
-use mech_core::{MResult, MechSourceCode};
+use mech_core::{MResult, MechSourceCode, Value};
 use mech_runtime::{
-  BasicCapability, CapabilityId, CapabilityRequest, MechRuntime, ObjectId,
-  ObjectRecord, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
+  BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
+  CapabilityRequest, MechRuntime, ObjectId, ObjectRecord,
+  PreparedRuntimeEffect, RuntimeAfterCommitEffect,
   RuntimeCompensatableEffect, RuntimeContext, RuntimeEffectMetadata,
-  RuntimeEffectSource, SequentialIdGenerator,
+  RuntimeEffectSource, RuntimePreparedHostCall, SequentialIdGenerator,
+  StagedClosureHostFunction,
 };
 use std::hint::black_box;
 use std::sync::Arc;
@@ -147,6 +149,50 @@ fn explicit_failure_source() -> MechSourceCode {
       "bench-explicit-error := missing-bench-value + 1".to_string(),
     ),
   ])
+}
+
+fn staged_effect_rollback_fixture(
+  count: usize,
+) -> (ExplicitFixture, MechSourceCode) {
+  let mut runtime = retained_runtime();
+  runtime
+    .grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(8_000),
+      &BasicSubject::new(runtime.runtime_context().unwrap().subject),
+      &BasicResource::new("host:bench/staged"),
+      [BasicOperation::new("call")],
+    )))
+    .unwrap();
+  runtime
+    .register_mech_host_function(StagedClosureHostFunction::new(
+      "bench/staged",
+      |_services, _context, _arguments| {
+        Ok(RuntimePreparedHostCall {
+          value: Value::Empty,
+          effect: PreparedRuntimeEffect::AfterCommit(Box::new(
+            BenchmarkAfterCommitEffect { sequence: 0 },
+          )),
+        })
+      },
+    ))
+    .unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.begin_transaction(&mut context).unwrap();
+
+  let mut source = Vec::with_capacity(count.saturating_add(1));
+  for sequence in 0..count {
+    source.push(MechSourceCode::String(format!(
+      "bench-staged-{sequence} := bench/staged()",
+    )));
+  }
+  source.push(MechSourceCode::String(
+    "bench-staged-error := missing-bench-value + 1".to_string(),
+  ));
+
+  (
+    ExplicitFixture { runtime, context },
+    MechSourceCode::Program(source),
+  )
 }
 
 fn program_transaction_benchmarks(c: &mut Criterion) {
@@ -314,11 +360,7 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
     "explicit_effect_savepoint_rollback_with_100_staged",
     |b| {
       b.iter_batched(
-        || {
-          let mut fixture = subsequent_explicit_fixture();
-          stage_after_commit(&mut fixture, 100);
-          (fixture, explicit_failure_source())
-        },
+        || staged_effect_rollback_fixture(100),
         |(mut fixture, source)| {
           let error = fixture
             .runtime
