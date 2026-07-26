@@ -260,7 +260,22 @@ impl MechRuntime {
     let owns_program = self.program_transaction_owner == Some(transaction_id);
     let mut rollback_failures = Vec::new();
 
-    let _ = restore_program;
+    if owns_program && restore_program {
+      match &envelope.program {
+        Some(baseline) => {
+          if let Err(error) = self.program.restore(baseline.program.clone()) {
+            rollback_failures.push(format!(
+              "program restore failed: {:?}",
+              error,
+            ));
+          }
+          self.restore_live_state(baseline.live.clone());
+        }
+        None => rollback_failures.push(
+          "program owner transaction has no retained-program baseline".to_string(),
+        ),
+      }
+    }
 
     envelope
       .context_baseline

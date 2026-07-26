@@ -490,3 +490,48 @@ impl MechRuntime {
     ))
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn program_transaction_outer_abort_restores_program_baseline() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    let root_interpreter_id = runtime.program.interpreter().id;
+    let plan_len_before = runtime.program.interpreter().plan_len();
+
+    runtime
+      .with_atomic_program_operation(
+        &mut context,
+        "program_transaction_test",
+        |runtime, _context| {
+          runtime.program.run_source(&MechSourceCode::String(
+            "round3-owned := 42".to_string(),
+          ))
+        },
+      )
+      .unwrap();
+
+    assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
+    assert!(
+      runtime
+        .program
+        .root_symbol_value("round3-owned")
+        .is_ok(),
+    );
+
+    runtime
+      .abort_runtime_transaction(&mut context, "round3 test abort")
+      .unwrap();
+
+    assert_eq!(context.transaction, None);
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(runtime.program.interpreter().id, root_interpreter_id);
+    assert_eq!(runtime.program.interpreter().plan_len(), plan_len_before);
+    assert!(runtime.program.root_symbol_value("round3-owned").is_err());
+  }
+}
