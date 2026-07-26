@@ -14,7 +14,7 @@
 
 // For example, a function to compute an affine transformation could be registered as a host function, and then called from Mech code like this:
 /*
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/math/affine",
     |_services, _context, args| {
       host_call3(

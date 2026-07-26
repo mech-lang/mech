@@ -75,7 +75,7 @@ fn main() -> MResult<()> {
 
   println!("runtime: {}", short(runtime.id()));
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/text/shout",
     |_services, _context, args| {
       host_call1("demo/text/shout", &args, |text: String| {
@@ -84,7 +84,7 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/text/join",
     |_services, _context, args| {
       host_call2("demo/text/join", &args, |left: String, right: String| {
@@ -93,7 +93,7 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/math/add",
     |_services, _context, args| {
       host_call2("demo/math/add", &args, |left: f64, right: f64| {
@@ -102,7 +102,7 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/math/affine",
     |_services, _context, args| {
       host_call3(
@@ -115,7 +115,7 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/bool/not",
     |_services, _context, args| {
       host_call1("demo/bool/not", &args, |value: bool| {
@@ -124,7 +124,7 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/optional/greet",
     |_services, _context, args| {
       let name = host_arg_optional_string(
@@ -138,14 +138,14 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/value/echo",
     |_services, _context, args| {
       Ok(host_arg_cloned("demo/value/echo", &args, 0)?)
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/result/checked-reciprocal",
     |_services, _context, args| {
       host_call_result1(
