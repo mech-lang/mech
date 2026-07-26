@@ -25,6 +25,7 @@ use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 use crate::capability::{Capability, CapabilityRequest};
 use crate::context::ResourceBudgetExceededError;
 use crate::event::RuntimeEvent;
+use crate::effect::RuntimeEffectRecord;
 use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
   ObjectId, TaskId, TransactionId,
@@ -763,6 +764,7 @@ pub struct TransactionRecord {
   pub actor_updates: Vec<ActorId>,
 
   pub events: Vec<EventId>,
+  pub effects: Vec<RuntimeEffectRecord>,
 }
 
 impl TransactionRecord {
@@ -781,6 +783,7 @@ impl TransactionRecord {
       actor_updates: Vec::new(),
 
       events: Vec::new(),
+      effects: Vec::new(),
     }
   }
 
@@ -816,6 +819,11 @@ impl TransactionRecord {
 
   pub fn with_events(mut self, events: Vec<EventId>) -> Self {
     self.events = events;
+    self
+  }
+
+  pub fn with_effects(mut self, effects: Vec<RuntimeEffectRecord>) -> Self {
+    self.effects = effects;
     self
   }
 

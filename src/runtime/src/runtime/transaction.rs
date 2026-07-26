@@ -19,6 +19,7 @@
 use super::*;
 use crate::{
   AccessSet, CapabilityKernelCheckpoint, RuntimeCommitOutcome,
+  RuntimeEffectFailure, RuntimeEffectFailurePhase,
 };
 
 impl MechRuntime {
@@ -270,9 +271,48 @@ impl MechRuntime {
     self.active_effect_phase = None;
     if let Err(step) = prepare_result {
       let original_error_text = format!("{:?}", step.error);
+      let prepared_ids =
+        envelope.effects.prepared_transactional_ids();
       self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
-      let cleanup = envelope.effects.abort_prepared_reverse();
+      let mut cleanup = envelope.effects.abort_prepared_reverse();
       self.active_effect_phase = None;
+      let failed_ids: HashSet<RuntimeEffectId> = cleanup
+        .iter()
+        .map(|failure| failure.effect_id)
+        .collect();
+      if let Err(error) = self.stage_effect_lifecycle_event(
+        &mut envelope,
+        context,
+        RuntimeEventKind::EffectPreparationFailed {
+          effect_id: step.failure.effect_id,
+          message: step.failure.message.clone(),
+        },
+      ) {
+        cleanup.push(RuntimeEffectFailure {
+          effect_id: step.failure.effect_id,
+          phase: RuntimeEffectFailurePhase::Abort,
+          message: format!(
+            "preparation failure audit event failed: {:?}",
+            error,
+          ),
+        });
+      }
+      for effect_id in prepared_ids {
+        if failed_ids.contains(&effect_id) {
+          continue;
+        }
+        if let Err(error) = self.stage_effect_lifecycle_event(
+          &mut envelope,
+          context,
+          RuntimeEventKind::EffectAborted { effect_id },
+        ) {
+          cleanup.push(RuntimeEffectFailure {
+            effect_id,
+            phase: RuntimeEffectFailurePhase::Abort,
+            message: format!("abort audit event failed: {:?}", error),
+          });
+        }
+      }
       envelope.state = RuntimeExecutionTransactionState::Active;
       self.active_transactions.insert(transaction_id, envelope);
       if cleanup.is_empty() {
@@ -293,10 +333,37 @@ impl MechRuntime {
         Ok(checkpoint) => Some(checkpoint),
         Err(error) => {
           let original_error_text = format!("{:?}", error);
+          let prepared_ids =
+            envelope.effects.prepared_transactional_ids();
           self.active_effect_phase =
             Some(ActiveRuntimeEffectPhase::Aborting);
-          let aborted = envelope.effects.abort_prepared_reverse();
+          let mut aborted = envelope.effects.abort_prepared_reverse();
           self.active_effect_phase = None;
+          let failed_ids: HashSet<RuntimeEffectId> = aborted
+            .iter()
+            .map(|failure| failure.effect_id)
+            .collect();
+          for effect_id in prepared_ids {
+            if failed_ids.contains(&effect_id) {
+              continue;
+            }
+            if let Err(audit_error) =
+              self.stage_effect_lifecycle_event(
+                &mut envelope,
+                context,
+                RuntimeEventKind::EffectAborted { effect_id },
+              )
+            {
+              aborted.push(RuntimeEffectFailure {
+                effect_id,
+                phase: RuntimeEffectFailurePhase::Abort,
+                message: format!(
+                  "abort audit event failed: {:?}",
+                  audit_error,
+                ),
+              });
+            }
+          }
           envelope.state = RuntimeExecutionTransactionState::Active;
           self.active_transactions.insert(transaction_id, envelope);
           if aborted.is_empty() {
@@ -317,6 +384,7 @@ impl MechRuntime {
       let cleanup = self.cleanup_before_store_retry(
         &mut envelope,
         capability_checkpoint,
+        context,
       );
       envelope.state = RuntimeExecutionTransactionState::Active;
       self.active_transactions.insert(transaction_id, envelope);
@@ -339,6 +407,7 @@ impl MechRuntime {
       let cleanup = self.cleanup_before_store_retry(
         &mut envelope,
         capability_checkpoint,
+        context,
       );
       envelope.state = RuntimeExecutionTransactionState::Active;
       self.active_transactions.insert(transaction_id, envelope);
@@ -367,6 +436,7 @@ impl MechRuntime {
         let cleanup = self.cleanup_before_store_retry(
           &mut envelope,
           capability_checkpoint,
+          context,
         );
         envelope.state = RuntimeExecutionTransactionState::Active;
         self.active_transactions.insert(transaction_id, envelope);
@@ -389,6 +459,7 @@ impl MechRuntime {
         let cleanup = self.cleanup_before_store_retry(
           &mut envelope,
           capability_checkpoint,
+          context,
         );
         envelope.state = RuntimeExecutionTransactionState::Active;
         self.active_transactions.insert(transaction_id, envelope);
@@ -407,18 +478,47 @@ impl MechRuntime {
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Committing);
     let participant_result = envelope.effects.commit_transactional();
     self.active_effect_phase = None;
-    if let Err(commit_failure) = participant_result {
-      context.transaction = None;
-      if self.program_transaction_owner == Some(transaction_id) {
-        self.program_transaction_owner = None;
+    let committed_effects = match participant_result {
+      Ok(committed_effects) => committed_effects,
+      Err(commit_failure) => {
+        context.transaction = None;
+        if self.program_transaction_owner == Some(transaction_id) {
+          self.program_transaction_owner = None;
+        }
+        self.push_persisted_event_to_context(context, commit_event);
+        let mut participant_outcomes =
+          commit_failure.participant_outcomes;
+        for effect_id in commit_failure.committed {
+          if let Err(error) = self.emit_event_to_context(
+            context,
+            RuntimeEventKind::TransactionalEffectCommitted { effect_id },
+          ) {
+            participant_outcomes.push(format!(
+              "transactional effect {} commit audit failed: {:?}",
+              effect_id,
+              error,
+            ));
+          }
+        }
+        if let Err(error) = self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ExternalCommitIndeterminate {
+            transaction_id: id,
+            effect_id: commit_failure.step.failure.effect_id,
+          },
+        ) {
+          participant_outcomes.push(format!(
+            "external commit indeterminate audit failed: {:?}",
+            error,
+          ));
+        }
+        return Err(self.poison_external_commit_indeterminate(
+          id,
+          commit_failure.step.failure.effect_id,
+          participant_outcomes,
+        ));
       }
-      self.push_persisted_event_to_context(context, commit_event);
-      return Err(self.poison_external_commit_indeterminate(
-        id,
-        commit_failure.step.failure.effect_id,
-        commit_failure.participant_outcomes,
-      ));
-    }
+    };
 
     context.transaction = None;
     if self.program_transaction_owner == Some(transaction_id) {
@@ -426,9 +526,46 @@ impl MechRuntime {
     }
     self.push_persisted_event_to_context(context, commit_event);
 
+    for effect_id in committed_effects {
+      if let Err(error) = self.emit_event_to_context(
+        context,
+        RuntimeEventKind::TransactionalEffectCommitted { effect_id },
+      ) {
+        return Err(self.poison_external_commit_indeterminate(
+          id,
+          effect_id,
+          vec![format!(
+            "transactional effect {} committed but its audit event failed: {:?}",
+            effect_id,
+            error,
+          )],
+        ));
+      }
+    }
+
+    let after_commit_ids = envelope.effects.after_commit_ids();
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Delivering);
-    let delivery_failures = envelope.effects.deliver_after_commit();
+    let mut delivery_failures = envelope.effects.deliver_after_commit();
     self.active_effect_phase = None;
+    for effect_id in after_commit_ids {
+      let kind = match delivery_failures
+        .iter()
+        .find(|failure| failure.effect_id == effect_id)
+      {
+        Some(failure) => RuntimeEventKind::EffectDeliveryFailed {
+          effect_id,
+          message: failure.message.clone(),
+        },
+        None => RuntimeEventKind::EffectDelivered { effect_id },
+      };
+      if let Err(error) = self.emit_event_to_context(context, kind) {
+        delivery_failures.push(RuntimeEffectFailure {
+          effect_id,
+          phase: RuntimeEffectFailurePhase::Deliver,
+          message: format!("delivery audit event failed: {:?}", error),
+        });
+      }
+    }
 
     Ok(RuntimeCommitOutcome {
       transaction_id: id,
@@ -440,17 +577,29 @@ impl MechRuntime {
     &mut self,
     envelope: &mut RuntimeExecutionTransaction,
     capability_checkpoint: Option<Box<dyn CapabilityKernelCheckpoint>>,
+    context: &mut RuntimeContext,
   ) -> Vec<String> {
+    let compensated_ids =
+      envelope.effects.applied_compensatable_ids();
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Compensating);
     let compensated = envelope.effects.compensate_applied_reverse();
     let capability_restore = capability_checkpoint
       .map(|checkpoint| {
         self.capability_kernel.restore_checkpoint(checkpoint)
       });
+    let aborted_ids = envelope.effects.prepared_transactional_ids();
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
     let aborted = envelope.effects.abort_prepared_reverse();
     self.active_effect_phase = None;
 
+    let failed_compensations: HashSet<RuntimeEffectId> = compensated
+      .iter()
+      .map(|failure| failure.effect_id)
+      .collect();
+    let failed_aborts: HashSet<RuntimeEffectId> = aborted
+      .iter()
+      .map(|failure| failure.effect_id)
+      .collect();
     let mut failures = Self::describe_effect_failures(compensated);
     if let Some(Err(error)) = capability_restore {
       failures.push(format!(
@@ -459,7 +608,57 @@ impl MechRuntime {
       ));
     }
     failures.extend(Self::describe_effect_failures(aborted));
+    for effect_id in compensated_ids {
+      if failed_compensations.contains(&effect_id) {
+        continue;
+      }
+      if let Err(error) = self.stage_effect_lifecycle_event(
+        envelope,
+        context,
+        RuntimeEventKind::EffectCompensated { effect_id },
+      ) {
+        failures.push(format!(
+          "effect {} compensation audit event failed: {:?}",
+          effect_id,
+          error,
+        ));
+      }
+    }
+    for effect_id in aborted_ids {
+      if failed_aborts.contains(&effect_id) {
+        continue;
+      }
+      if let Err(error) = self.stage_effect_lifecycle_event(
+        envelope,
+        context,
+        RuntimeEventKind::EffectAborted { effect_id },
+      ) {
+        failures.push(format!(
+          "effect {} abort audit event failed: {:?}",
+          effect_id,
+          error,
+        ));
+      }
+    }
     failures
+  }
+
+  fn stage_effect_lifecycle_event(
+    &mut self,
+    envelope: &mut RuntimeExecutionTransaction,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    let context_events_before = context.events.clone();
+    let event = self.make_event(kind);
+    let id = event.id;
+    context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
+    if let Err(error) = envelope.store.stage_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
+    Ok(id)
   }
 
   fn apply_capability_overlay(
@@ -520,7 +719,9 @@ impl MechRuntime {
 
     let mut transaction_snapshot = transaction.clone();
     transaction_snapshot.record_event(commit_event.id)?;
-    let transaction_record = transaction_snapshot.into_record()?;
+    let transaction_record = transaction_snapshot
+      .into_record()?
+      .with_effects(envelope.effects.records());
 
     Ok(RuntimeStoreCommit {
       transaction: transaction_record,
@@ -626,9 +827,15 @@ impl MechRuntime {
       ));
     }
 
+    let abortable_effects = envelope.effects.abortable_ids();
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
     let effect_abort_failures = envelope.effects.abort_all();
     self.active_effect_phase = None;
+    let failed_effect_aborts: HashSet<RuntimeEffectId> =
+      effect_abort_failures
+        .iter()
+        .map(|failure| failure.effect_id)
+        .collect();
     rollback_failures.extend(
       Self::describe_effect_failures(effect_abort_failures),
     );
@@ -642,6 +849,22 @@ impl MechRuntime {
 
     if owns_program {
       self.program_transaction_owner = None;
+    }
+
+    for effect_id in abortable_effects {
+      if failed_effect_aborts.contains(&effect_id) {
+        continue;
+      }
+      if let Err(error) = self.emit_event_immediate_to_context(
+        context,
+        RuntimeEventKind::EffectAborted { effect_id },
+      ) {
+        rollback_failures.push(format!(
+          "effect {} abort audit event failed: {:?}",
+          effect_id,
+          error,
+        ));
+      }
     }
 
     let abort_event_result = self.emit_event_immediate_to_context(

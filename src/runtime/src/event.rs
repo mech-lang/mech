@@ -15,6 +15,9 @@ use crate::id::{
   ActorId, CapabilityId, EventId, ModuleVersionId, ObjectId, RuntimeId, TaskId,
   TransactionId, MessageId
 };
+use crate::effect::{
+  RuntimeEffectId, RuntimeEffectProtocol, RuntimeEffectSource,
+};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,6 +80,30 @@ pub enum RuntimeEventKind {
   TransactionCommitted { transaction_id: TransactionId },
   TransactionAborted { transaction_id: TransactionId, message: String },
 
+  EffectStaged {
+    effect_id: RuntimeEffectId,
+    source: RuntimeEffectSource,
+    operation: String,
+    resource: Option<String>,
+    protocol: RuntimeEffectProtocol,
+  },
+  EffectPreparationFailed {
+    effect_id: RuntimeEffectId,
+    message: String,
+  },
+  EffectCompensated { effect_id: RuntimeEffectId },
+  EffectAborted { effect_id: RuntimeEffectId },
+  TransactionalEffectCommitted { effect_id: RuntimeEffectId },
+  EffectDelivered { effect_id: RuntimeEffectId },
+  EffectDeliveryFailed {
+    effect_id: RuntimeEffectId,
+    message: String,
+  },
+  ExternalCommitIndeterminate {
+    transaction_id: TransactionId,
+    effect_id: RuntimeEffectId,
+  },
+
   SchedulerWorkQueued { work: String },
   SchedulerWorkStarted { work: String },
   SchedulerWorkCompleted { work: String },
@@ -127,6 +154,22 @@ impl RuntimeEventKind {
       RuntimeEventKind::TransactionStarted { .. } => ":transaction/started",
       RuntimeEventKind::TransactionCommitted { .. } => ":transaction/committed",
       RuntimeEventKind::TransactionAborted { .. } => ":transaction/aborted",
+      RuntimeEventKind::EffectStaged { .. } => ":effect/staged",
+      RuntimeEventKind::EffectPreparationFailed { .. } => {
+        ":effect/preparation/failed"
+      }
+      RuntimeEventKind::EffectCompensated { .. } => ":effect/compensated",
+      RuntimeEventKind::EffectAborted { .. } => ":effect/aborted",
+      RuntimeEventKind::TransactionalEffectCommitted { .. } => {
+        ":effect/transactional/committed"
+      }
+      RuntimeEventKind::EffectDelivered { .. } => ":effect/delivered",
+      RuntimeEventKind::EffectDeliveryFailed { .. } => {
+        ":effect/delivery/failed"
+      }
+      RuntimeEventKind::ExternalCommitIndeterminate { .. } => {
+        ":effect/commit/indeterminate"
+      }
       RuntimeEventKind::SchedulerWorkQueued { .. } => ":scheduler/work/queued",
       RuntimeEventKind::SchedulerWorkStarted { .. } => ":scheduler/work/started",
       RuntimeEventKind::SchedulerWorkCompleted { .. } => ":scheduler/work/completed",
