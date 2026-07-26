@@ -105,6 +105,28 @@ impl RuntimeCapabilityOverlay {
     Ok(None)
   }
 
+  pub(super) fn preview_check(
+    &self,
+    request: &CapabilityRequest,
+  ) -> MResult<Option<CapabilityId>> {
+    for (id, capability) in &self.grants {
+      if capability.subject_key() != request.subject {
+        continue;
+      }
+      if let Some(max_uses) = capability.max_uses() {
+        let actual = self.uses.get(id).copied().unwrap_or(0);
+        if actual >= max_uses {
+          continue;
+        }
+      }
+      let decision = capability.preview_check(request)?;
+      if decision.allowed {
+        return Ok(Some(*id));
+      }
+    }
+    Ok(None)
+  }
+
   pub(super) fn grants(
     &self,
   ) -> impl Iterator<Item = (CapabilityId, Arc<dyn Capability>)> + '_ {
@@ -422,6 +444,32 @@ impl MechRuntime {
         .check_excluding(request, &revocations);
     }
     self.capability_kernel.check(request)
+  }
+
+  pub(super) fn preview_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+    if let Some(transaction_id) = context.transaction {
+      let provisional = self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .preview_check(request)?;
+      if let Some(capability) = provisional {
+        return Ok(capability);
+      }
+      let revocations = self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .revocation_ids();
+      return self
+        .capability_kernel
+        .preview_check_excluding(request, &revocations);
+    }
+    self.capability_kernel.preview_check(request)
   }
 
   pub fn get_capability(

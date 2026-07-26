@@ -41,7 +41,9 @@ Mech program immediately and owns the effect lifecycle.
 Use `StagedClosureHostFunction::new`. Its callback must only construct the value
 and prepared effect; it must not perform the external mutation itself. Native
 plan construction may invoke the callback to preview the value, but the preview
-effect is discarded. The effect is staged only when the program call executes.
+effect is inert and is simply dropped. Preview does not call \`prepare\`,
+\`commit\`, \`abort\`, \`apply\`, \`compensate\`, or \`deliver\`. The effect is
+staged and enters its lifecycle only when the program call executes.
 
 Choose the effect protocol honestly:
 

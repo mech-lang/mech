@@ -188,7 +188,7 @@ impl MechRuntime {
       .unwrap_or_else(|| {
         default_host_capability_request(context, function.name())
       });
-    self.check_capability_with_context(context, &capability_request)?;
+    self.preview_capability_with_context(context, &capability_request)?;
 
     match function.transaction_mode() {
       HostFunctionTransactionMode::Pure => {
@@ -204,17 +204,7 @@ impl MechRuntime {
       HostFunctionTransactionMode::Staged => {
         let RuntimePreparedHostCall { value, effect } =
           function.stage_call(self, context, call.args)?;
-        if let Err(error) = self.discard_unstaged_runtime_effect(effect) {
-          return Err(self.poison_program_operation(
-            "preview_host_call_with_context",
-            context.transaction,
-            format!(
-              "staged host function `{}` preview cleanup failed",
-              function.name(),
-            ),
-            vec![format!("{:?}", error)],
-          ));
-        }
+        drop(effect);
         Ok(value)
       }
       HostFunctionTransactionMode::ImmediateOnly => {
