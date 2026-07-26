@@ -2355,6 +2355,7 @@ dependencies = [
  "ignore",
  "mech-core",
  "mech-host-cli",
+ "mech-interpreter",
  "mech-program",
  "mech-syntax",
  "notify",
