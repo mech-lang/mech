@@ -130,7 +130,7 @@ y",
 }
 
 #[test]
-fn unary_scalar_output_survives_failure() {
+fn unary_scalar_input_rolls_back_on_failure() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let input = ensure_input(&mut program, "x", Value::F64(Ref::new(1.0)));
     program
@@ -155,12 +155,12 @@ y",
         "WrongShape",
         4,
     );
-    assert_eq!(f64_output(symbol_value(&program, "x")), 2.0);
+    assert_eq!(f64_output(symbol_value(&program, "x")), 1.0);
     assert_eq!(f64_output(symbol_value(&program, "y")), 10.0);
 }
 
 #[test]
-fn binary_scalar_output_survives_failure() {
+fn binary_scalar_input_rolls_back_on_failure() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let input = ensure_input(&mut program, "x", Value::F64(Ref::new(1.0)));
     program
@@ -185,7 +185,7 @@ y",
         "Unsupported",
         5,
     );
-    assert_eq!(f64_output(symbol_value(&program, "x")), 2.0);
+    assert_eq!(f64_output(symbol_value(&program, "x")), 1.0);
     assert_eq!(f64_output(symbol_value(&program, "y")), 4.0);
 }
 
@@ -215,7 +215,7 @@ y",
         "Unsupported",
         5,
     );
-    assert_matrix_output(symbol_value(&program, "x"), &[1.0, 2.0], 1, 2);
+    assert_matrix_output(symbol_value(&program, "x"), &[1.0, 1.0], 1, 2);
     assert_matrix_output(symbol_value(&program, "y"), &[4.0, 4.0], 1, 2);
 }
 
@@ -240,6 +240,6 @@ y",
         .expect_err("a failed reactive view kernel must return an error");
 
     assert_status_error(&error.full_chain_message(), "status-test/view", "Panic", 6);
-    assert_matrix_output(symbol_value(&program, "x"), &[1.0, 2.0], 1, 2);
+    assert_matrix_output(symbol_value(&program, "x"), &[1.0, 1.0], 1, 2);
     assert_matrix_output(symbol_value(&program, "y"), &[10.0, 10.0], 1, 2);
 }

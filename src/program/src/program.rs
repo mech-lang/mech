@@ -1975,6 +1975,41 @@ mod compact_program_reactive_turn_tests {
     )
   }
 
+  fn step_fixture(
+    failing_step: Option<usize>,
+  ) -> (
+    MechProgram,
+    Vec<Ref<usize>>,
+    Vec<Rc<RefCell<usize>>>,
+    Vec<Rc<RefCell<usize>>>,
+  ) {
+    let program = MechProgram::new(MechProgramConfig::default());
+    let interpreter_id = program.interpreter().id;
+    let order = Rc::new(RefCell::new(Vec::new()));
+    let mut outputs = Vec::new();
+    let mut captures = Vec::new();
+    let mut solves = Vec::new();
+    for (step_id, name) in ["first", "second", "third"].into_iter().enumerate() {
+      let output = Ref::new(0usize);
+      let (mut function, capture_count, solve_count) =
+        test_function(name, output.clone(), interpreter_id, order.clone());
+      function.fail = failing_step == Some(step_id + 1);
+      program.interpreter().plan().add_function(Box::new(function));
+      outputs.push(output);
+      captures.push(capture_count);
+      solves.push(solve_count);
+    }
+    (program, outputs, captures, solves)
+  }
+
+  fn ref_values(values: &[Ref<usize>]) -> Vec<usize> {
+    values.iter().map(|value| *value.borrow()).collect()
+  }
+
+  fn counter_values(values: &[Rc<RefCell<usize>>]) -> Vec<usize> {
+    values.iter().map(|value| *value.borrow()).collect()
+  }
+
   fn index_input(
     program: &mut MechProgram,
     interpreter_id: u64,
@@ -2299,19 +2334,55 @@ mod compact_program_reactive_turn_tests {
   }
 
   #[test]
-  fn program_step_is_atomic() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
-    let id = program.interpreter().id;
-    let first_output = Ref::new(1usize);
-    let second_output = Ref::new(2usize);
-    let order = Rc::new(RefCell::new(Vec::new()));
-    let (first, _, _) = test_function("first", first_output.clone(), id, order.clone());
-    let (mut second, _, _) = test_function("second", second_output.clone(), id, order);
-    second.fail = true;
-    program.interpreter().plan().add_function(Box::new(first));
-    program.interpreter().plan().add_function(Box::new(second));
-    program.step(1).unwrap_err();
-    assert_eq!((*first_output.borrow(), *second_output.borrow()), (1, 2));
+  fn step_zero_executes_the_whole_plan_once() {
+    let (mut program, outputs, captures, solves) = step_fixture(None);
+
+    program.step(0).unwrap();
+
+    assert_eq!(ref_values(&outputs), vec![1, 1, 1]);
+    assert_eq!(counter_values(&captures), vec![1, 1, 1]);
+    assert_eq!(counter_values(&solves), vec![1, 1, 1]);
+  }
+
+  #[test]
+  fn positive_step_id_executes_only_that_function_once() {
+    let (mut program, outputs, captures, solves) = step_fixture(None);
+
+    program.step(3).unwrap();
+
+    assert_eq!(ref_values(&outputs), vec![0, 0, 1]);
+    assert_eq!(counter_values(&captures), vec![0, 0, 1]);
+    assert_eq!(counter_values(&solves), vec![0, 0, 1]);
+  }
+
+  #[test]
+  fn selected_step_failure_rolls_back_only_the_operation() {
+    let (mut program, outputs, captures, solves) = step_fixture(Some(3));
+    let selected_output_address = outputs[2].addr();
+    let plan_address = program.interpreter().plan().0.addr();
+
+    let error = program.step(3).unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(error.kind_message().contains("deliberate third failure"));
+    assert_eq!(ref_values(&outputs), vec![0, 0, 0]);
+    assert_eq!(counter_values(&captures), vec![0, 0, 1]);
+    assert_eq!(counter_values(&solves), vec![0, 0, 1]);
+    assert_eq!(outputs[2].addr(), selected_output_address);
+    assert_eq!(program.interpreter().plan().0.addr(), plan_address);
+  }
+
+  #[test]
+  fn whole_plan_failure_still_rolls_back_earlier_functions() {
+    let (mut program, outputs, captures, solves) = step_fixture(Some(3));
+
+    let error = program.step(0).unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(error.kind_message().contains("deliberate third failure"));
+    assert_eq!(ref_values(&outputs), vec![0, 0, 0]);
+    assert_eq!(counter_values(&captures), vec![1, 1, 1]);
+    assert_eq!(counter_values(&solves), vec![1, 1, 1]);
   }
 
   #[test]
@@ -2479,7 +2550,7 @@ mod compact_program_reactive_turn_tests {
       1,
     );
     assert_eq!(journal.interpreter_count(), 1);
-    assert!(journal.cell_count() < 10);
+    assert_eq!(journal.cell_count(), 3);
   }
 
   #[test]
@@ -2527,8 +2598,8 @@ mod compact_program_reactive_turn_tests {
     let (function, _, _) = test_function("step success", output.clone(), id, order);
     program.interpreter().plan().add_function(Box::new(function));
     let mut journal = ProgramReactiveTurnJournal::new();
-    program.step_with_reactive_turn_journal(2, &mut journal).unwrap();
-    assert_eq!(*output.borrow(), 7);
+    program.step_with_reactive_turn_journal(1, &mut journal).unwrap();
+    assert_eq!(*output.borrow(), 6);
     program.rollback_reactive_turn(journal).unwrap();
     assert_eq!(*output.borrow(), 5);
   }

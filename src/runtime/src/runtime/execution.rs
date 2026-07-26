@@ -4316,6 +4316,40 @@ mod tests {
     atomic::{AtomicUsize, Ordering},
   };
 
+  #[cfg(feature = "functions")]
+  struct RuntimeStepProbe {
+    calls: Arc<AtomicUsize>,
+    output: Ref<usize>,
+  }
+
+  #[cfg(feature = "functions")]
+  impl MechFunctionImpl for RuntimeStepProbe {
+    fn solve(&self) {
+      self.calls.fetch_add(1, Ordering::SeqCst);
+      *self.output.borrow_mut() += 1;
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+      self.solve();
+      Ok(())
+    }
+
+    fn out(&self) -> Value {
+      Value::Index(self.output.clone())
+    }
+
+    fn to_string(&self) -> String {
+      "RuntimeStepProbe".into()
+    }
+  }
+
+  #[cfg(all(feature = "functions", feature = "compiler"))]
+  impl MechFunctionCompiler for RuntimeStepProbe {
+    fn compile(&self, _context: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
   #[cfg(all(feature = "record", feature = "tuple", feature = "f64"))]
   #[test]
   fn activation_effect_payload_snapshot_deeply_detaches_scene_values() {
@@ -4542,14 +4576,14 @@ mod tests {
   #[test]
   fn step_with_context_recomputes_runtime_host_function_with_provided_context() {
     let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
-    let calls = Arc::new(AtomicUsize::new(0));
-    let calls_for_host = calls.clone();
+    let host_calls = Arc::new(AtomicUsize::new(0));
+    let host_calls_for_host = host_calls.clone();
     runtime
       .register_mech_host_function(ClosureHostFunction::new_pure(
         "demo/echo",
         move |_services, context, args| {
           assert_eq!(context.subject, "program:step-host-test");
-          calls_for_host.fetch_add(1, Ordering::SeqCst);
+          host_calls_for_host.fetch_add(1, Ordering::SeqCst);
           match &args[0] {
             Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
             Value::MutableReference(value) => match &*value.borrow() {
@@ -4574,40 +4608,31 @@ mod tests {
       .runtime_context()
       .unwrap()
       .with_subject("program:step-host-test");
-    runtime
-      .run_string_with_context(&mut context, "x := 1\ny := demo/echo(x) + 0")
-      .unwrap();
-    let x = runtime
-      .program()
-      .interpreter()
-      .symbols()
-      .borrow()
-      .get(hash_str("x"))
-      .map(|value| value.borrow().clone())
-      .expect("expected x to be bound");
-    let x_ref = match x {
-      Value::F64(value) => value,
-      other => panic!("expected x to be F64, got {:?}", other),
-    };
-    *x_ref.borrow_mut() = 2.0;
-    runtime.step_with_context(&mut context, 3).unwrap();
-
-    *x_ref.borrow_mut() = 2.0;
-    let function = RuntimeHostNativeFunction {
+    let first_calls = Arc::new(AtomicUsize::new(0));
+    let second_calls = Arc::new(AtomicUsize::new(0));
+    let host_output = Ref::new(Value::F64(Ref::new(1.0)));
+    let plan = runtime.program().interpreter().plan();
+    plan.add_function(Box::new(RuntimeStepProbe {
+      calls: first_calls.clone(),
+      output: Ref::new(0),
+    }));
+    plan.add_function(Box::new(RuntimeStepProbe {
+      calls: second_calls.clone(),
+      output: Ref::new(0),
+    }));
+    plan.add_function(Box::new(RuntimeHostNativeFunction {
       name: "demo/echo".to_string(),
       host_name: "demo/echo".to_string(),
-      arguments: vec![Value::F64(x_ref.clone())],
-      value: Ref::new(Value::F64(Ref::new(1.0))),
-    };
-    let calls_before_solve = calls.load(Ordering::SeqCst);
-    let runtime_ptr: *mut MechRuntime = &mut runtime;
-    let context_ptr: *mut RuntimeContext = &mut context;
-    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
-    function.solve();
+      arguments: vec![Value::F64(Ref::new(2.0))],
+      value: host_output.clone(),
+    }));
 
-    assert!(calls.load(Ordering::SeqCst) > calls_before_solve);
-    let y = function.out();
-    match y {
+    runtime.step_with_context(&mut context, 3).unwrap();
+
+    assert_eq!(first_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(second_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(host_calls.load(Ordering::SeqCst), 1);
+    match host_output.borrow().clone() {
       Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
       other => panic!("expected F64(2.0), got {:?}", other),
     }

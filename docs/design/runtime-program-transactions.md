@@ -98,8 +98,11 @@ provider transaction protocol is introduced here.
 
 Whole-program checkpoint work does not run in the reactive inner loop.
 Transactional `step_with_context` and host-input turns are rejected while a
-transaction is active or owns the program. Nontransactional reactive turns
-retain their existing behavior. Compact reactive-turn deltas belong to Round 6.
+transaction is active or owns the program. The core, interpreter, and program
+layers now provide compact program-local reactive-turn rollback. Runtime-owned
+step and host-input turns still do not join RuntimeExecutionTransaction, the
+effect journal, capability overlays, or the runtime store commit. That
+composition remains PR7.
 
 Retained root-module construction and execution now share the same
 runtime-owned program transaction. The existing recursive dependency builder
