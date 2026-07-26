@@ -47,7 +47,9 @@ use self::program_transaction::{
   RuntimeExecutionTransactionState,
   RuntimeTransactionContextIdentity,
 };
-use self::capability::RuntimeCapabilityOverlay;
+use self::capability::{
+  RuntimeCapabilityMutation, RuntimeCapabilityOverlay,
+};
 use self::effect::RuntimeEffectJournal;
 use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use crate::runtime::host::*;

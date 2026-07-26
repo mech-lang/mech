@@ -17,7 +17,9 @@
 // - `context_transaction_id`: Retrieves the active transaction ID from the context.
 
 use super::*;
-use crate::{AccessSet, RuntimeCommitOutcome};
+use crate::{
+  AccessSet, CapabilityKernelCheckpoint, RuntimeCommitOutcome,
+};
 
 impl MechRuntime {
 
@@ -227,7 +229,7 @@ impl MechRuntime {
         )
       })?;
 
-    if envelope.effects.is_empty() {
+    if envelope.effects.is_empty() && envelope.capabilities.is_empty() {
       let commit_event =
         self.make_event(RuntimeEventKind::TransactionCommitted {
           transaction_id,
@@ -284,13 +286,60 @@ impl MechRuntime {
       ));
     }
 
+    let capability_checkpoint = if envelope.capabilities.is_empty() {
+      None
+    } else {
+      match self.capability_kernel.checkpoint() {
+        Ok(checkpoint) => Some(checkpoint),
+        Err(error) => {
+          let original_error_text = format!("{:?}", error);
+          self.active_effect_phase =
+            Some(ActiveRuntimeEffectPhase::Aborting);
+          let aborted = envelope.effects.abort_prepared_reverse();
+          self.active_effect_phase = None;
+          envelope.state = RuntimeExecutionTransactionState::Active;
+          self.active_transactions.insert(transaction_id, envelope);
+          if aborted.is_empty() {
+            return Err(error);
+          }
+          return Err(self.poison_effect_cleanup(
+            "commit_runtime_transaction",
+            transaction_id,
+            original_error_text,
+            Self::describe_effect_failures(aborted),
+          ));
+        }
+      }
+    };
+
+    if let Err(error) = self.apply_capability_overlay(&envelope) {
+      let original_error_text = format!("{:?}", error);
+      let cleanup = self.cleanup_before_store_retry(
+        &mut envelope,
+        capability_checkpoint,
+      );
+      envelope.state = RuntimeExecutionTransactionState::Active;
+      self.active_transactions.insert(transaction_id, envelope);
+      if cleanup.is_empty() {
+        return Err(error);
+      }
+      return Err(self.poison_effect_cleanup(
+        "commit_runtime_transaction",
+        transaction_id,
+        original_error_text,
+        cleanup,
+      ));
+    }
+
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Applying);
     let apply_result = envelope.effects.apply_compensatable();
     self.active_effect_phase = None;
     if let Err(step) = apply_result {
       let original_error_text = format!("{:?}", step.error);
-      let cleanup =
-        self.cleanup_effects_before_store_retry(&mut envelope);
+      let cleanup = self.cleanup_before_store_retry(
+        &mut envelope,
+        capability_checkpoint,
+      );
       envelope.state = RuntimeExecutionTransactionState::Active;
       self.active_transactions.insert(transaction_id, envelope);
       if cleanup.is_empty() {
@@ -315,8 +364,10 @@ impl MechRuntime {
       Ok(commit) => commit,
       Err(error) => {
         let original_error_text = format!("{:?}", error);
-        let cleanup =
-          self.cleanup_effects_before_store_retry(&mut envelope);
+        let cleanup = self.cleanup_before_store_retry(
+          &mut envelope,
+          capability_checkpoint,
+        );
         envelope.state = RuntimeExecutionTransactionState::Active;
         self.active_transactions.insert(transaction_id, envelope);
         if cleanup.is_empty() {
@@ -335,8 +386,10 @@ impl MechRuntime {
       Ok(id) => id,
       Err(error) => {
         let original_error_text = format!("{:?}", error);
-        let cleanup =
-          self.cleanup_effects_before_store_retry(&mut envelope);
+        let cleanup = self.cleanup_before_store_retry(
+          &mut envelope,
+          capability_checkpoint,
+        );
         envelope.state = RuntimeExecutionTransactionState::Active;
         self.active_transactions.insert(transaction_id, envelope);
         if cleanup.is_empty() {
@@ -383,19 +436,51 @@ impl MechRuntime {
     })
   }
 
-  fn cleanup_effects_before_store_retry(
+  fn cleanup_before_store_retry(
     &mut self,
     envelope: &mut RuntimeExecutionTransaction,
+    capability_checkpoint: Option<Box<dyn CapabilityKernelCheckpoint>>,
   ) -> Vec<String> {
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Compensating);
     let compensated = envelope.effects.compensate_applied_reverse();
+    let capability_restore = capability_checkpoint
+      .map(|checkpoint| {
+        self.capability_kernel.restore_checkpoint(checkpoint)
+      });
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
     let aborted = envelope.effects.abort_prepared_reverse();
     self.active_effect_phase = None;
 
     let mut failures = Self::describe_effect_failures(compensated);
+    if let Some(Err(error)) = capability_restore {
+      failures.push(format!(
+        "capability kernel checkpoint restore failed: {:?}",
+        error,
+      ));
+    }
     failures.extend(Self::describe_effect_failures(aborted));
     failures
+  }
+
+  fn apply_capability_overlay(
+    &mut self,
+    envelope: &RuntimeExecutionTransaction,
+  ) -> MResult<()> {
+    for mutation in envelope.capabilities.mutations() {
+      match mutation {
+        RuntimeCapabilityMutation::Grant(capability) => {
+          self
+            .capability_kernel
+            .grant(CapabilityGrant::new(capability))?;
+        }
+        RuntimeCapabilityMutation::Revoke(capability) => {
+          self
+            .capability_kernel
+            .revoke(CapabilityRevocation::new(capability))?;
+        }
+      }
+    }
+    Ok(())
   }
 
   fn build_runtime_store_commit(
@@ -439,6 +524,11 @@ impl MechRuntime {
 
     Ok(RuntimeStoreCommit {
       transaction: transaction_record,
+      capability_grants: envelope.capabilities.grants().collect(),
+      capability_revocations: envelope
+        .capabilities
+        .revocations()
+        .collect(),
       object_puts: staged_puts,
       object_updates: staged_updates,
       task_updates: staged_task_updates,

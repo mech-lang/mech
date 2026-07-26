@@ -115,6 +115,30 @@ impl RuntimeCapabilityOverlay {
     self.revocations.iter().copied()
   }
 
+  pub(super) fn mutations(&self) -> Vec<RuntimeCapabilityMutation> {
+    let mut grants = HashSet::new();
+    let mut revocations = HashSet::new();
+    let mut mutations = Vec::new();
+    for operation in &self.operations {
+      match operation {
+        RuntimeCapabilityMutation::Grant(capability)
+          if self.grants.contains_key(&capability.id())
+            && grants.insert(capability.id()) =>
+        {
+          mutations.push(operation.clone());
+        }
+        RuntimeCapabilityMutation::Revoke(capability)
+          if self.revocations.contains(capability)
+            && revocations.insert(*capability) =>
+        {
+          mutations.push(operation.clone());
+        }
+        _ => {}
+      }
+    }
+    mutations
+  }
+
   fn rebuild(&mut self) {
     self.grants.clear();
     self.revocations.clear();
@@ -411,8 +435,8 @@ mod tests {
   use mech_core::{GenericError, MResult, MechError};
 
   use crate::capability::{
-    BasicCapability, BasicCapabilityKernel, CapabilityDerivation, CapabilityGrant,
-    CapabilityKernel, Subject,
+    BasicCapability, BasicCapabilityKernel, CapabilityDerivation,
+    CapabilityGrant, CapabilityKernel, CapabilityKernelCheckpoint, Subject,
   };
   use crate::id::{
     ActorId, EventId, IdGenerator, MessageId, NodeId, ObjectId, RuntimeId,
@@ -516,6 +540,70 @@ mod tests {
         },
         None,
       ))
+    }
+
+    fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> {
+      self.inner.revoke(revocation)
+    }
+
+    fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> {
+      self.inner.check(request)
+    }
+
+    fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
+      self.inner.get(id)
+    }
+
+    fn list_for_subject(
+      &self,
+      subject: &dyn Subject,
+    ) -> MResult<Vec<CapabilityId>> {
+      self.inner.list_for_subject(subject)
+    }
+
+    fn derive_capability(
+      &mut self,
+      derivation: CapabilityDerivation,
+    ) -> MResult<CapabilityId> {
+      self.inner.derive_capability(derivation)
+    }
+
+    fn is_revoked(&self, id: CapabilityId) -> MResult<bool> {
+      self.inner.is_revoked(id)
+    }
+  }
+
+  #[derive(Debug, Default)]
+  struct FailingCheckpointRestoreKernel {
+    inner: BasicCapabilityKernel,
+  }
+
+  impl CapabilityKernel for FailingCheckpointRestoreKernel {
+    fn checkpoint(
+      &self,
+    ) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+      self.inner.checkpoint()
+    }
+
+    fn restore_checkpoint(
+      &mut self,
+      _checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+    ) -> MResult<()> {
+      Err(MechError::new(
+        GenericError {
+          msg: "deliberate capability checkpoint restore failure"
+            .to_string(),
+        },
+        None,
+      ))
+    }
+
+    fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> {
+      self.inner.grant(grant)
+    }
+
+    fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> {
+      self.inner.rollback_grant(capability)
     }
 
     fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> {
@@ -936,5 +1024,122 @@ mod tests {
     runtime
       .abort_runtime_transaction(&mut context, "test cleanup")
       .unwrap();
+  }
+
+  #[test]
+  fn capability_overlay_commits_kernel_and_store_together() {
+    let mut runtime = MechRuntime::builder()
+      .id_generator(SequentialIdGenerator::starting_at(1))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability(id, "task:1", true),
+      )
+      .unwrap();
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(runtime.get_capability(id).unwrap().is_some());
+    assert!(runtime.capability_kernel().get(id).unwrap().is_some());
+    assert_eq!(runtime.check_capability(&request("task:1")).unwrap(), id);
+  }
+
+  #[test]
+  fn store_commit_failure_restores_capability_kernel_checkpoint() {
+    let mut runtime = MechRuntime::builder()
+      .id_generator(SequentialIdGenerator::starting_at(1))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability(id, "task:1", true),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(500), "note", "missing"),
+      )
+      .unwrap();
+
+    assert!(runtime.commit_runtime_transaction(&mut context).is_err());
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(runtime.capability_kernel().get(id).unwrap().is_none());
+    assert!(runtime.get_capability(id).unwrap().is_none());
+
+    runtime
+      .abort_runtime_transaction(&mut context, "test cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn provisional_grant_then_revoke_cancels_commit_work() {
+    let mut runtime = MechRuntime::builder()
+      .id_generator(SequentialIdGenerator::starting_at(1))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability(id, "task:1", true),
+      )
+      .unwrap();
+    runtime
+      .revoke_capability_with_context(&mut context, id)
+      .unwrap();
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(runtime.get_capability(id).unwrap().is_none());
+    assert!(runtime.capability_kernel().get(id).unwrap().is_none());
+  }
+
+  #[test]
+  fn capability_checkpoint_restore_failure_poisons_runtime() {
+    let mut runtime = MechRuntime::builder()
+      .id_generator(SequentialIdGenerator::starting_at(1))
+      .capability_kernel(FailingCheckpointRestoreKernel::default())
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability(id, "task:1", true),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(500), "note", "missing"),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectCleanupFailed");
+    assert!(runtime.is_poisoned());
+    let RuntimeHealth::Poisoned(poison) = &runtime.health else {
+      panic!("runtime must retain capability cleanup failure");
+    };
+    assert!(poison.rollback_failures.iter().any(|failure| {
+      failure.contains("deliberate capability checkpoint restore failure")
+    }));
   }
 }

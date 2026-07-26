@@ -835,6 +835,8 @@ impl TransactionRecord {
 #[derive(Clone, Debug)]
 pub struct RuntimeStoreCommit {
   pub transaction: TransactionRecord,
+  pub capability_grants: Vec<(CapabilityId, Arc<dyn Capability>)>,
+  pub capability_revocations: Vec<CapabilityId>,
   pub object_puts: Vec<ObjectRecord>,
   pub object_updates: Vec<ObjectRecord>,
   pub task_updates: Vec<TaskRecord>,
@@ -1431,6 +1433,14 @@ impl MechStore for InMemoryStore {
       temporary.enqueue_message(actor, message)?;
     }
 
+    for (capability, grant) in commit.capability_grants {
+      temporary.grant_capability(capability, grant)?;
+    }
+
+    for capability in commit.capability_revocations {
+      temporary.revoke_capability(capability)?;
+    }
+
     for event in commit.events {
       temporary.append_event(event)?;
     }
@@ -1922,6 +1932,8 @@ mod tests {
       transaction: TransactionRecord::new(TransactionId(1), "task:1")
         .with_write_set(vec![ObjectId(1), ObjectId(2)])
         .with_events(vec![EventId(1)]),
+      capability_grants: Vec::new(),
+      capability_revocations: Vec::new(),
       object_puts: vec![ObjectRecord::text(ObjectId(1), "note", "hello")],
       object_updates: vec![ObjectRecord::text(ObjectId(2), "note", "missing")],
       task_updates: Vec::new(),

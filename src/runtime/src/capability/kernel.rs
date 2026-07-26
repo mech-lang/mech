@@ -2,11 +2,25 @@ use crate::*;
 
 use mech_core::*;
 use std::sync::Arc;
+use std::any::Any;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 // -----------------------------------------------------------------------------
 // Capability Kernel Trait
 // -----------------------------------------------------------------------------
+
+pub trait CapabilityKernelCheckpoint: std::fmt::Debug + Send {
+  fn into_any(self: Box<Self>) -> Box<dyn Any>;
+}
+
+impl<T> CapabilityKernelCheckpoint for T
+where
+  T: std::fmt::Debug + Send + Any,
+{
+  fn into_any(self: Box<Self>) -> Box<dyn Any> {
+    self
+  }
+}
 
 /// Capability authority graph and checking interface.
 ///
@@ -14,6 +28,30 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// audited, cryptographic-token-based, or host-specific authority systems should
 /// implement this trait.
 pub trait CapabilityKernel: std::fmt::Debug + Send {
+  fn checkpoint(&self) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel".to_string(),
+        reason: "kernel does not support transaction checkpoints".to_string(),
+      },
+      None,
+    ))
+  }
+
+  fn restore_checkpoint(
+    &mut self,
+    _checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+  ) -> MResult<()> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability kernel".to_string(),
+        reason: "kernel does not support transaction checkpoint restore"
+          .to_string(),
+      },
+      None,
+    ))
+  }
+
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId>;
 
   /// Administratively remove a grant that has not committed.
@@ -148,6 +186,29 @@ impl BasicCapabilityKernel {
 }
 
 impl CapabilityKernel for BasicCapabilityKernel {
+  fn checkpoint(&self) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+    Ok(Box::new(self.clone()))
+  }
+
+  fn restore_checkpoint(
+    &mut self,
+    checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+  ) -> MResult<()> {
+    let snapshot = checkpoint
+      .into_any()
+      .downcast::<BasicCapabilityKernel>()
+      .map_err(|_| MechError::new(
+        TransactionStateUnsupportedError {
+          function: "basic capability kernel".to_string(),
+          reason: "checkpoint belongs to a different kernel implementation"
+            .to_string(),
+        },
+        None,
+      ))?;
+    *self = *snapshot;
+    Ok(())
+  }
+
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> {
     let capability = grant.capability;
     capability.validate()?;
@@ -370,6 +431,19 @@ impl SharedCapabilityKernel {
 }
 
 impl CapabilityKernel for SharedCapabilityKernel {
+  fn checkpoint(&self) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+    self.inner.lock().unwrap().checkpoint()
+  }
+  fn restore_checkpoint(
+    &mut self,
+    checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+  ) -> MResult<()> {
+    self
+      .inner
+      .lock()
+      .unwrap()
+      .restore_checkpoint(checkpoint)
+  }
   fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> { self.inner.lock().unwrap().grant(grant) }
   fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> { self.inner.lock().unwrap().rollback_grant(capability) }
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> { self.inner.lock().unwrap().revoke(revocation) }
