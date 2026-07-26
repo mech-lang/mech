@@ -42,15 +42,7 @@ struct PreparedModuleScopeExecution {
   environment: HashMap<String, ValRef>,
 }
 
-struct ProgramEnvironmentOverlay {
-  entries: Vec<ProgramEnvironmentOverlayEntry>,
-}
-
-struct ProgramEnvironmentOverlayEntry {
-  id: u64,
-  previous_symbol: Option<ValRef>,
-  previous_dictionary: Option<String>,
-}
+struct ProgramEnvironmentOverlay;
 
 fn imports_for_scope<'a>(
   record: &'a ModuleVersionRecord,
@@ -151,7 +143,7 @@ fn materialize_function_imports_for_scope(
 }
 
 impl ProgramEnvironmentOverlay {
-  fn install(program: &mut MechProgram, environment: &HashMap<String, ValRef>) -> MResult<Self> {
+  fn install(program: &mut MechProgram, environment: &HashMap<String, ValRef>) -> MResult<()> {
     let mut ids = HashMap::new();
     for name in environment.keys() {
       let id = hash_str(name);
@@ -166,12 +158,10 @@ impl ProgramEnvironmentOverlay {
       }
     }
 
-    let mut entries = Vec::with_capacity(environment.len());
     let symbols = program.interpreter_mut().symbols();
     let mut symbols_brrw = symbols.borrow_mut();
     for (name, value_ref) in environment {
       let id = hash_str(name);
-      let previous_symbol = symbols_brrw.symbols.get(&id).cloned();
       let previous_dictionary = symbols_brrw.dictionary.borrow().get(&id).cloned();
       if let Some(previous_name) = &previous_dictionary {
         if previous_name != name && !environment.contains_key(previous_name) {
@@ -182,30 +172,11 @@ impl ProgramEnvironmentOverlay {
           }, None));
         }
       }
-      entries.push(ProgramEnvironmentOverlayEntry { id, previous_symbol, previous_dictionary });
       symbols_brrw.symbols.insert(id, value_ref.clone());
       symbols_brrw.dictionary.borrow_mut().insert(id, name.clone());
     }
 
-    Ok(Self { entries })
-  }
-
-  fn restore(self, program: &mut MechProgram) {
-    let symbols = program.interpreter_mut().symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-    for entry in self.entries.into_iter().rev() {
-      if let Some(previous_symbol) = entry.previous_symbol {
-        symbols_brrw.symbols.insert(entry.id, previous_symbol);
-      } else {
-        symbols_brrw.symbols.remove(&entry.id);
-      }
-
-      if let Some(previous_dictionary) = entry.previous_dictionary {
-        symbols_brrw.dictionary.borrow_mut().insert(entry.id, previous_dictionary);
-      } else {
-        symbols_brrw.dictionary.borrow_mut().remove(&entry.id);
-      }
-    }
+    Ok(())
   }
 }
 
@@ -3892,8 +3863,7 @@ impl MechRuntime {
 
     let result = (|| -> MResult<Value> {
       materialize_function_imports_for_scope(&mut root_program, &prepared.record, scope)?;
-      let overlay = ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
-      let live_state_before = self.live_state_snapshot();
+      ProgramEnvironmentOverlay::install(&mut root_program, &prepared.environment)?;
 
       self.emit_event_to_context(
         context,
@@ -3913,14 +3883,7 @@ impl MechRuntime {
           Ok(value)
         });
 
-      match result {
-        Ok(value) => Ok(value),
-        Err(error) => {
-          self.restore_live_state(live_state_before);
-          overlay.restore(&mut root_program);
-          Err(error)
-        }
-      }
+      result
     })();
 
     self.program = root_program;
@@ -3933,16 +3896,7 @@ impl MechRuntime {
         )?;
         Ok(value)
       }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ModuleExecutionFailed {
-            module_version: version,
-            message: format!("{:?}", error),
-          },
-        )?;
-        Err(error)
-      }
+      Err(error) => Err(error),
     }
   }
 
@@ -4029,24 +3983,13 @@ impl MechRuntime {
       }
     });
 
-    match &result {
-      Ok(_) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramCompleted {
-            task_id: context.task,
-          },
-        )?;
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-      }
+    if result.is_ok() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramCompleted {
+          task_id: context.task,
+        },
+      )?;
     }
 
     result
