@@ -1260,8 +1260,22 @@ impl ReactivePlan {
         }
       }
     }
-    if reactive_consumers != self.reactive_consumers
-      || sampled_consumers != self.sampled_consumers
+    for consumers in reactive_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    for consumers in sampled_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    let mut indexed_reactive_consumers = self.reactive_consumers.clone();
+    let mut indexed_sampled_consumers = self.sampled_consumers.clone();
+    for consumers in indexed_reactive_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    for consumers in indexed_sampled_consumers.values_mut() {
+      consumers.sort_unstable();
+    }
+    if reactive_consumers != indexed_reactive_consumers
+      || sampled_consumers != indexed_sampled_consumers
     {
       return Err(invalid("consumer indexes do not match node dependencies".into()));
     }
@@ -1674,7 +1688,17 @@ impl ReactivePlan {
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactivePlanSolveOutcome> {
     let mut outcome = ReactivePlanSolveOutcome::default();
-    self.solve_dirty_cells_into(dirty_cells, &mut outcome)?;
+    self.solve_dirty_cells_into_impl(dirty_cells, &mut outcome, None)?;
+    Ok(outcome)
+  }
+
+  pub fn solve_dirty_cells_with_journal(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactivePlanSolveOutcome> {
+    let mut outcome = ReactivePlanSolveOutcome::default();
+    self.solve_dirty_cells_into_with_journal(dirty_cells, &mut outcome, journal)?;
     Ok(outcome)
   }
 
@@ -1682,6 +1706,24 @@ impl ReactivePlan {
     &mut self,
     dirty_cells: &[ReactiveCellId],
     outcome: &mut ReactivePlanSolveOutcome,
+  ) -> MResult<()> {
+    self.solve_dirty_cells_into_impl(dirty_cells, outcome, None)
+  }
+
+  fn solve_dirty_cells_into_with_journal(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    outcome: &mut ReactivePlanSolveOutcome,
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<()> {
+    self.solve_dirty_cells_into_impl(dirty_cells, outcome, Some(journal))
+  }
+
+  fn solve_dirty_cells_into_impl(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    outcome: &mut ReactivePlanSolveOutcome,
+    mut journal: Option<&mut ReactiveTurnJournal>,
   ) -> MResult<()> {
     let dirty_cells = dirty_cells.iter().copied().collect::<HashSet<_>>();
     let mut work = BTreeSet::new();
@@ -1705,6 +1747,9 @@ impl ReactivePlan {
         continue;
       }
 
+      if let Some(journal) = journal.as_deref_mut() {
+        journal.capture_function_state(node.function.as_ref())?;
+      }
       let status = node.function.solve_reactive()?;
       outcome.executed_nodes.push(node.id);
       match status {
@@ -1726,6 +1771,22 @@ impl ReactivePlan {
   }
 
   pub fn commit_pending_registers(&mut self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
+    self.commit_pending_registers_impl(pending_nodes, None)
+  }
+
+  pub fn commit_pending_registers_with_journal(
+    &mut self,
+    pending_nodes: &[ReactiveNodeId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactiveRegisterCommitOutcome> {
+    self.commit_pending_registers_impl(pending_nodes, Some(journal))
+  }
+
+  fn commit_pending_registers_impl(
+    &mut self,
+    pending_nodes: &[ReactiveNodeId],
+    mut journal: Option<&mut ReactiveTurnJournal>,
+  ) -> MResult<ReactiveRegisterCommitOutcome> {
     let mut unique = HashSet::new();
     let mut ordered = BTreeSet::new();
     for node_id in pending_nodes.iter().copied() {
@@ -1747,6 +1808,12 @@ impl ReactivePlan {
             cell: *cell, first_node, second_node: node.id,
           }, None));
         }
+      }
+    }
+
+    if let Some(journal) = journal.as_deref_mut() {
+      for (_, node_id) in &ordered {
+        journal.capture_function_state(self.nodes[*node_id].function.as_ref())?;
       }
     }
 
@@ -1796,6 +1863,43 @@ impl ReactivePlan {
     state.pending_register_nodes.clear();
     let mut after_commit = ReactivePlanSolveOutcome::default();
     if let Err(error) = self.solve_dirty_cells_into(&register_commit.dirty_cells, &mut after_commit) {
+      state.pending_register_nodes = after_commit.pending_register_nodes;
+      return Err(error);
+    }
+    state.pending_register_nodes = after_commit.pending_register_nodes.clone();
+    Ok(ReactiveTurnOutcome {
+      before_commit,
+      register_commit,
+      after_commit,
+    })
+  }
+
+  pub fn advance_reactive_turn_with_journal(
+    &mut self,
+    state: &mut ReactiveTurnState,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactiveTurnOutcome> {
+    let before_commit = self.solve_dirty_cells_with_journal(dirty_cells, journal)?;
+    let mut pending_register_nodes = std::mem::take(&mut state.pending_register_nodes);
+    pending_register_nodes.extend(before_commit.pending_register_nodes.iter().copied());
+    let register_commit = match self.commit_pending_registers_with_journal(
+      &pending_register_nodes,
+      journal,
+    ) {
+      Ok(outcome) => outcome,
+      Err(error) => {
+        state.pending_register_nodes = pending_register_nodes;
+        return Err(error);
+      }
+    };
+    state.pending_register_nodes.clear();
+    let mut after_commit = ReactivePlanSolveOutcome::default();
+    if let Err(error) = self.solve_dirty_cells_into_with_journal(
+      &register_commit.dirty_cells,
+      &mut after_commit,
+      journal,
+    ) {
       state.pending_register_nodes = after_commit.pending_register_nodes;
       return Err(error);
     }
@@ -2038,8 +2142,29 @@ impl Plan {
     self.0.borrow_mut().solve_dirty_cells(dirty_cells)
   }
 
+  pub fn solve_dirty_cells_with_journal(
+    &self,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactivePlanSolveOutcome> {
+    self
+      .0
+      .borrow_mut()
+      .solve_dirty_cells_with_journal(dirty_cells, journal)
+  }
+
   pub fn commit_pending_registers(&self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
     self.0.borrow_mut().commit_pending_registers(pending_nodes)
+  }
+  pub fn commit_pending_registers_with_journal(
+    &self,
+    pending_nodes: &[ReactiveNodeId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactiveRegisterCommitOutcome> {
+    self
+      .0
+      .borrow_mut()
+      .commit_pending_registers_with_journal(pending_nodes, journal)
   }
   pub fn advance_reactive_turn(
     &self,
@@ -2049,6 +2174,17 @@ impl Plan {
     self.0
       .borrow_mut()
       .advance_reactive_turn(state, dirty_cells)
+  }
+  pub fn advance_reactive_turn_with_journal(
+    &self,
+    state: &mut ReactiveTurnState,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactiveTurnOutcome> {
+    self
+      .0
+      .borrow_mut()
+      .advance_reactive_turn_with_journal(state, dirty_cells, journal)
   }
 
   pub fn get_functions(&self) -> std::cell::Ref<'_, ReactivePlan> {

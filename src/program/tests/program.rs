@@ -1,4 +1,7 @@
 use mech_core::nodes::*;
+use mech_program::{
+  MechProgram, MechProgramConfig, ProgramReactiveTurnJournal,
+};
 
 fn statements(src: &str) -> Vec<Statement> {
   let program = mech_syntax::parser::parse(src).expect("parse failed");
@@ -63,4 +66,19 @@ fn program_browser_resource_write() {
 #[test]
 fn program_browser_resource_define_syntax_is_rejected() {
   assert!(mech_syntax::parser::parse("@browser/title := \"Hello\"").is_err());
+}
+
+#[test]
+fn compact_reactive_turn_journal_is_public_and_single_use() {
+  let mut program = MechProgram::new(MechProgramConfig::default());
+  let mut journal = ProgramReactiveTurnJournal::new();
+
+  program
+    .update_inputs_and_advance_turn_with_journal(&[], &mut journal)
+    .unwrap();
+  let error = program
+    .update_inputs_and_advance_turn_with_journal(&[], &mut journal)
+    .unwrap_err();
+
+  assert_eq!(error.kind_name(), "ProgramReactiveTurnJournalAlreadyUsed");
 }

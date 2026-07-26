@@ -942,6 +942,116 @@ pub struct InterpreterCheckpoint {
   data: Rc<InterpreterCheckpointData>,
 }
 
+/// An opaque checkpoint of scheduler metadata for one reactive operation.
+///
+/// Function values are intentionally excluded and are captured lazily by a
+/// [`ReactiveTurnJournal`] only when their functions execute.
+#[cfg(feature = "functions")]
+pub struct InterpreterReactiveTurnCheckpoint {
+  owner: Rc<()>,
+  interpreter_id: u64,
+  plan: Plan,
+  plan_node_len: usize,
+  activation_registration_depth: usize,
+  reactive_turn_state: ReactiveTurnState,
+  #[cfg(feature = "trace")]
+  trace_events: Ref<Vec<TraceEvent>>,
+  #[cfg(feature = "trace")]
+  trace_event_len: usize,
+}
+
+#[cfg(feature = "functions")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterReactiveTurnOwnerMismatch {
+  pub interpreter_id: u64,
+}
+
+#[cfg(feature = "functions")]
+impl MechErrorKind for InterpreterReactiveTurnOwnerMismatch {
+  fn name(&self) -> &str {
+    "InterpreterReactiveTurnOwnerMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "The reactive-turn checkpoint belongs to a different interpreter than interpreter {}.",
+      self.interpreter_id,
+    )
+  }
+}
+
+#[cfg(feature = "functions")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterReactiveTurnInvariant {
+  pub interpreter_id: u64,
+  pub reason: String,
+}
+
+#[cfg(feature = "functions")]
+impl MechErrorKind for InterpreterReactiveTurnInvariant {
+  fn name(&self) -> &str {
+    "InterpreterReactiveTurnInvariant"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Interpreter {} cannot restore its reactive-turn scheduler state: {}.",
+      self.interpreter_id,
+      self.reason,
+    )
+  }
+}
+
+#[cfg(feature = "functions")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterReactiveTurnBorrowConflict {
+  pub phase: &'static str,
+  pub interpreter_id: u64,
+  pub component: &'static str,
+  pub address: usize,
+}
+
+#[cfg(feature = "functions")]
+impl MechErrorKind for InterpreterReactiveTurnBorrowConflict {
+  fn name(&self) -> &str {
+    "InterpreterReactiveTurnBorrowConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Cannot borrow {} at 0x{:x} for interpreter {} during reactive-turn {}.",
+      self.component,
+      self.address,
+      self.interpreter_id,
+      self.phase,
+    )
+  }
+}
+
+#[cfg(feature = "functions")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterReactiveTurnRollbackFailed {
+  pub interpreter_id: u64,
+  pub original_error: String,
+  pub rollback_error: String,
+}
+
+#[cfg(feature = "functions")]
+impl MechErrorKind for InterpreterReactiveTurnRollbackFailed {
+  fn name(&self) -> &str {
+    "InterpreterReactiveTurnRollbackFailed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Interpreter {} reactive-turn rollback failed after {}: {}.",
+      self.interpreter_id,
+      self.original_error,
+      self.rollback_error,
+    )
+  }
+}
+
 impl Clone for Interpreter {
   fn clone(&self) -> Self {
     Self {
@@ -988,6 +1098,170 @@ impl Clone for Interpreter {
 }
 
 impl Interpreter {
+  #[cfg(feature = "functions")]
+  fn reactive_turn_invariant(&self, reason: impl Into<String>) -> MechError {
+    MechError::new(
+      InterpreterReactiveTurnInvariant {
+        interpreter_id: self.id,
+        reason: reason.into(),
+      },
+      None,
+    )
+    .with_compiler_loc()
+  }
+
+  #[cfg(feature = "functions")]
+  fn reactive_turn_borrow_conflict(
+    &self,
+    phase: &'static str,
+    component: &'static str,
+    address: usize,
+  ) -> MechError {
+    MechError::new(
+      InterpreterReactiveTurnBorrowConflict {
+        phase,
+        interpreter_id: self.id,
+        component,
+        address,
+      },
+      None,
+    )
+    .with_compiler_loc()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn reactive_turn_checkpoint(&self) -> MResult<InterpreterReactiveTurnCheckpoint> {
+    let plan = self.plan();
+    plan.validate_checkpoint_invariants()
+      .map_err(|error| self.reactive_turn_invariant(format!("{:?}", error)))?;
+    plan.validate_checkpoint_turn_state(&self.reactive_turn_state)
+      .map_err(|error| self.reactive_turn_invariant(format!("{:?}", error)))?;
+    #[cfg(feature = "trace")]
+    let trace_event_len = self.trace_events.try_borrow()
+      .map_err(|_| self.reactive_turn_borrow_conflict(
+        "checkpoint",
+        "trace events",
+        self.trace_events.addr(),
+      ))?
+      .len();
+    Ok(InterpreterReactiveTurnCheckpoint {
+      owner: self.checkpoint_owner.clone(),
+      interpreter_id: self.id,
+      plan_node_len: plan.len(),
+      activation_registration_depth: plan.activation_registration_depth(),
+      plan,
+      reactive_turn_state: self.reactive_turn_state.clone(),
+      #[cfg(feature = "trace")]
+      trace_events: self.trace_events.clone(),
+      #[cfg(feature = "trace")]
+      trace_event_len,
+    })
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn preflight_restore_reactive_turn(
+    &self,
+    checkpoint: &InterpreterReactiveTurnCheckpoint,
+  ) -> MResult<()> {
+    if !Rc::ptr_eq(&checkpoint.owner, &self.checkpoint_owner) {
+      return Err(MechError::new(
+        InterpreterReactiveTurnOwnerMismatch {
+          interpreter_id: self.id,
+        },
+        None,
+      ).with_compiler_loc());
+    }
+    if checkpoint.interpreter_id != self.id {
+      return Err(self.reactive_turn_invariant(format!(
+        "checkpoint interpreter ID {} does not match {}",
+        checkpoint.interpreter_id,
+        self.id,
+      )));
+    }
+    let plan = self.plan();
+    if plan.0.addr() != checkpoint.plan.0.addr()
+      || plan.1.addr() != checkpoint.plan.1.addr()
+    {
+      return Err(self.reactive_turn_invariant(
+        "the current plan handles do not match the checkpoint",
+      ));
+    }
+    if plan.len() != checkpoint.plan_node_len {
+      return Err(self.reactive_turn_invariant(format!(
+        "plan length {} does not match checkpoint length {}",
+        plan.len(),
+        checkpoint.plan_node_len,
+      )));
+    }
+    if plan.activation_registration_depth() != checkpoint.activation_registration_depth {
+      return Err(self.reactive_turn_invariant(format!(
+        "activation registration depth {} does not match checkpoint depth {}",
+        plan.activation_registration_depth(),
+        checkpoint.activation_registration_depth,
+      )));
+    }
+    plan.validate_checkpoint_invariants()
+      .map_err(|error| self.reactive_turn_invariant(format!("{:?}", error)))?;
+    plan.validate_checkpoint_turn_state(&checkpoint.reactive_turn_state)
+      .map_err(|error| self.reactive_turn_invariant(format!("{:?}", error)))?;
+    #[cfg(feature = "trace")]
+    {
+      if self.trace_events.addr() != checkpoint.trace_events.addr() {
+        return Err(self.reactive_turn_invariant(
+          "the current trace target does not match the checkpoint",
+        ));
+      }
+      let events = self.trace_events.try_borrow_mut()
+        .map_err(|_| self.reactive_turn_borrow_conflict(
+          "restore",
+          "trace events",
+          self.trace_events.addr(),
+        ))?;
+      if events.len() < checkpoint.trace_event_len {
+        return Err(self.reactive_turn_invariant(format!(
+          "trace length {} is shorter than checkpoint length {}",
+          events.len(),
+          checkpoint.trace_event_len,
+        )));
+      }
+    }
+    Ok(())
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn apply_restore_reactive_turn(
+    &mut self,
+    checkpoint: &InterpreterReactiveTurnCheckpoint,
+  ) {
+    self.reactive_turn_state = checkpoint.reactive_turn_state.clone();
+    #[cfg(feature = "trace")]
+    self.trace_events.borrow_mut().truncate(checkpoint.trace_event_len);
+  }
+
+  #[cfg(feature = "functions")]
+  fn finish_failed_reactive_operation<T>(
+    &mut self,
+    checkpoint: &InterpreterReactiveTurnCheckpoint,
+    journal: &ReactiveTurnJournal,
+    original_error: MechError,
+  ) -> MResult<T> {
+    let rollback_result = self.preflight_restore_reactive_turn(checkpoint)
+      .and_then(|_| journal.preflight_restore_before());
+    if let Err(rollback_error) = rollback_result {
+      return Err(MechError::new(
+        InterpreterReactiveTurnRollbackFailed {
+          interpreter_id: self.id,
+          original_error: format!("{:?}", original_error),
+          rollback_error: format!("{:?}", rollback_error),
+        },
+        None,
+      ).with_compiler_loc());
+    }
+    journal.apply_restore_before();
+    self.apply_restore_reactive_turn(checkpoint);
+    Err(original_error)
+  }
+
   pub fn checkpoint(&self) -> MResult<InterpreterCheckpoint> {
     let mut journal = ValueStateJournal::new();
     let mut seen_children = Vec::new();
@@ -1249,8 +1523,30 @@ impl Interpreter {
     &mut self,
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactiveTurnOutcome> {
+    let checkpoint = self.reactive_turn_checkpoint()?;
+    let mut journal = ReactiveTurnJournal::new();
+    match self.advance_reactive_turn_with_journal(dirty_cells, &mut journal) {
+      Ok(outcome) => Ok(outcome),
+      Err(error) => self.finish_failed_reactive_operation(
+        &checkpoint,
+        &journal,
+        error,
+      ),
+    }
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_with_journal(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<ReactiveTurnOutcome> {
     let plan = self.plan();
-    plan.advance_reactive_turn(&mut self.reactive_turn_state, dirty_cells)
+    plan.advance_reactive_turn_with_journal(
+      &mut self.reactive_turn_state,
+      dirty_cells,
+      journal,
+    )
   }
 
   #[cfg(feature = "functions")]
@@ -1290,6 +1586,25 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
+    let checkpoint = self.reactive_turn_checkpoint()?;
+    let mut journal = ReactiveTurnJournal::new();
+    match self.step_with_reactive_turn_journal(step_id, step_count, &mut journal) {
+      Ok(value) => Ok(value),
+      Err(error) => self.finish_failed_reactive_operation(
+        &checkpoint,
+        &journal,
+        error,
+      ),
+    }
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_reactive_turn_journal(
+    &mut self,
+    step_id: usize,
+    step_count: u64,
+    journal: &mut ReactiveTurnJournal,
+  ) -> MResult<Value> {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
 
@@ -1307,6 +1622,7 @@ impl Interpreter {
         for _ in 0..step_count {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
+            journal.capture_function_state(fxn.as_ref())?;
             fxn.solve_result()?;
             total_durations[idx] += start.elapsed();
           }
@@ -1329,6 +1645,7 @@ impl Interpreter {
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
+            journal.capture_function_state(fxn.as_ref())?;
             fxn.solve_result()?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
@@ -1376,6 +1693,7 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
+      journal.capture_function_state(fxn.as_ref())?;
       fxn.solve_result()?;
     }
 
@@ -2356,6 +2674,380 @@ mod reactive_turn_interpreter_state_tests {
   #[test] fn reactive_turn_interpreter_state_persists_between_calls(){let mut i=interpreter();let(a,b)=first(&mut i);assert_eq!((value(&i,"a"),value(&i,"middle"),value(&i,"b"),value(&i,"output")),(10.,11.,2.,3.));assert!(i.has_pending_reactive_registers());let o=i.advance_reactive_turn(&[]).unwrap();assert_eq!(o.register_commit.committed_nodes,vec![b]);assert!(!o.register_commit.committed_nodes.contains(&a));assert_eq!((value(&i,"a"),value(&i,"middle"),value(&i,"b"),value(&i,"output")),(10.,11.,11.,12.));assert!(o.after_commit.pending_register_nodes.is_empty());assert!(!i.has_pending_reactive_registers());}
   #[test] fn reactive_turn_interpreter_state_clear_plan_resets_pending(){let mut i=interpreter();first(&mut i);assert!(i.has_pending_reactive_registers());assert!(i.plan_len()>0);i.clear_plan();assert_eq!(i.plan_len(),0);assert!(!i.has_pending_reactive_registers());}
   #[test] fn reactive_turn_interpreter_state_clone_preserves_pending(){let mut i=interpreter();first(&mut i);let c=i.clone();assert!(i.has_pending_reactive_registers());assert!(c.has_pending_reactive_registers());assert_eq!(i.plan_len(),c.plan_len());}
+}
+
+#[cfg(all(test, feature = "functions"))]
+mod compact_reactive_turn_checkpoint_tests {
+  use super::*;
+  use std::{cell::RefCell, rc::Rc};
+
+  struct CompactTestFunction {
+    name: &'static str,
+    output: Ref<usize>,
+    captures: Rc<RefCell<usize>>,
+    solves: Rc<RefCell<usize>>,
+    fail_on_solve: Option<usize>,
+    leak_borrow_on_failure: bool,
+  }
+
+  impl CompactTestFunction {
+    fn new(
+      name: &'static str,
+      output: Ref<usize>,
+      captures: Rc<RefCell<usize>>,
+      solves: Rc<RefCell<usize>>,
+    ) -> Self {
+      Self {
+        name,
+        output,
+        captures,
+        solves,
+        fail_on_solve: None,
+        leak_borrow_on_failure: false,
+      }
+    }
+
+    fn execute(&self) -> MResult<()> {
+      let solve = {
+        let mut solves = self.solves.borrow_mut();
+        *solves += 1;
+        *solves
+      };
+      *self.output.borrow_mut() += 1;
+      if self.fail_on_solve == Some(solve) {
+        if self.leak_borrow_on_failure {
+          let borrow = self.output.borrow_mut();
+          std::mem::forget(borrow);
+        }
+        return Err(MechError::new(
+          GenericError { msg: format!("deliberate {} execution failure", self.name) },
+          None,
+        ));
+      }
+      Ok(())
+    }
+  }
+
+  impl MechFunctionImpl for CompactTestFunction {
+    fn solve(&self) {}
+
+    fn solve_result(&self) -> MResult<()> {
+      self.execute()
+    }
+
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+      self.execute()?;
+      Ok(ReactiveSolveStatus::Changed)
+    }
+
+    fn out(&self) -> Value {
+      Value::Index(self.output.clone())
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      *self.captures.borrow_mut() += 1;
+      Ok(vec![Value::Index(self.output.clone())])
+    }
+
+    fn to_string(&self) -> String {
+      self.name.into()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for CompactTestFunction {
+    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+      Ok(0)
+    }
+  }
+
+  fn function(
+    name: &'static str,
+    output: Ref<usize>,
+  ) -> (CompactTestFunction, Rc<RefCell<usize>>, Rc<RefCell<usize>>) {
+    let captures = Rc::new(RefCell::new(0));
+    let solves = Rc::new(RefCell::new(0));
+    (
+      CompactTestFunction::new(name, output, captures.clone(), solves.clone()),
+      captures,
+      solves,
+    )
+  }
+
+  fn add_reactive(
+    interpreter: &Interpreter,
+    function: CompactTestFunction,
+    input: &Ref<usize>,
+  ) -> ReactiveNodeId {
+    interpreter.plan().0.borrow_mut()
+      .register(Box::new(function), &[Value::Index(input.clone())])
+      .unwrap()
+  }
+
+  #[test]
+  fn reactive_turn_checkpoint_contains_only_scheduler_metadata_and_plan_handles() {
+    let interpreter = Interpreter::new(7, 100);
+    let plan = interpreter.plan();
+    let (function, _, _) = function("node", Ref::new(0));
+    plan.add_function(Box::new(function));
+
+    let checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+
+    assert_eq!(checkpoint.interpreter_id, 7);
+    assert_eq!(checkpoint.plan_node_len, 1);
+    assert_eq!(checkpoint.activation_registration_depth, 0);
+    assert_eq!(checkpoint.plan.0.addr(), plan.0.addr());
+    assert_eq!(checkpoint.plan.1.addr(), plan.1.addr());
+  }
+
+  #[test]
+  fn reactive_turn_checkpoint_does_not_capture_function_values() {
+    let interpreter = Interpreter::new(8, 100);
+    let (function, captures, _) = function("node", Ref::new(0));
+    interpreter.plan().add_function(Box::new(function));
+
+    interpreter.reactive_turn_checkpoint().unwrap();
+
+    assert_eq!(*captures.borrow(), 0);
+  }
+
+  #[test]
+  fn reactive_turn_checkpoint_restores_pending_registers_exactly() {
+    let mut interpreter = Interpreter::new(9, 100);
+    interpreter.reactive_turn_state.pending_register_nodes = vec![3, 5, 3];
+    let checkpoint = match interpreter.reactive_turn_checkpoint() {
+      Ok(_) => panic!("invalid pending registers unexpectedly checkpointed"),
+      Err(error) => error,
+    };
+    assert_eq!(checkpoint.kind_name(), "InterpreterReactiveTurnInvariant");
+
+    let (function, _, _) = function("register-shaped", Ref::new(0));
+    let node = interpreter.plan().add_function(Box::new(function));
+    interpreter.plan().0.borrow_mut().nodes[node].kind = ReactiveNodeKind::Register;
+    interpreter.reactive_turn_state.pending_register_nodes = vec![node, node];
+    let checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    interpreter.reactive_turn_state.pending_register_nodes.clear();
+    interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap();
+    interpreter.apply_restore_reactive_turn(&checkpoint);
+    assert_eq!(interpreter.reactive_turn_state.pending_register_nodes, vec![node, node]);
+  }
+
+  #[test]
+  fn reactive_turn_failure_truncates_appended_trace_events() {
+    let mut interpreter = Interpreter::new(10, 100);
+    #[cfg(feature = "trace")]
+    {
+    interpreter.trace = true;
+    interpreter.trace_to_stdout = false;
+    }
+    let output = Ref::new(0);
+    let (mut function, _, _) = function("trace-fail", output);
+    function.fail_on_solve = Some(1);
+    interpreter.plan().add_function(Box::new(function));
+    #[cfg(feature = "trace")]
+    let original_len = interpreter.trace_events.borrow().len();
+
+    interpreter.step(0, 1).unwrap_err();
+
+    #[cfg(feature = "trace")]
+    assert_eq!(interpreter.trace_events.borrow().len(), original_len);
+  }
+
+  #[test]
+  fn reactive_turn_owner_mismatch_fails_before_mutation() {
+    let first = Interpreter::new(11, 100);
+    let second = Interpreter::new(11, 100);
+    let checkpoint = first.reactive_turn_checkpoint().unwrap();
+
+    let error = second.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnOwnerMismatch");
+  }
+
+  #[test]
+  fn reactive_turn_interpreter_id_mismatch_fails_before_mutation() {
+    let mut interpreter = Interpreter::new(12, 100);
+    let checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    interpreter.id = 13;
+
+    let error = interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert!(error.kind_message().contains("interpreter ID"));
+  }
+
+  #[test]
+  fn reactive_turn_plan_handle_mismatch_fails_before_mutation() {
+    let mut interpreter = Interpreter::new(14, 100);
+    let checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    interpreter.state.borrow_mut().plan = Plan::new();
+
+    let error = interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert!(error.kind_message().contains("plan handles"));
+  }
+
+  #[test]
+  fn reactive_turn_plan_length_mismatch_fails_before_mutation() {
+    let interpreter = Interpreter::new(15, 100);
+    let checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    let (function, _, _) = function("tail", Ref::new(0));
+    interpreter.plan().add_function(Box::new(function));
+
+    let error = interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert!(error.kind_message().contains("plan length"));
+  }
+
+  #[test]
+  fn reactive_turn_activation_depth_mismatch_fails_before_mutation() {
+    let interpreter = Interpreter::new(16, 100);
+    let checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    interpreter.plan().push_activation_registration_scope(Vec::new());
+
+    let error = interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert!(error.kind_message().contains("activation registration depth"));
+  }
+
+  #[test]
+  fn reactive_turn_saved_missing_pending_node_is_rejected() {
+    let interpreter = Interpreter::new(17, 100);
+    let mut checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    checkpoint.reactive_turn_state.pending_register_nodes = vec![99];
+
+    let error = interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert!(error.kind_message().contains("does not exist"));
+  }
+
+  #[test]
+  fn reactive_turn_saved_non_register_pending_node_is_rejected() {
+    let interpreter = Interpreter::new(18, 100);
+    let (function, _, _) = function("comb", Ref::new(0));
+    let node = interpreter.plan().add_function(Box::new(function));
+    let mut checkpoint = interpreter.reactive_turn_checkpoint().unwrap();
+    checkpoint.reactive_turn_state.pending_register_nodes = vec![node];
+
+    let error = interpreter.preflight_restore_reactive_turn(&checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
+    assert!(error.kind_message().contains("not a register"));
+  }
+
+  #[test]
+  fn journal_aware_interpreter_turn_leaves_rollback_to_caller() {
+    let mut interpreter = Interpreter::new(19, 100);
+    let input = Ref::new(1usize);
+    let output = Ref::new(4usize);
+    let (mut function, _, _) = function("failure", output.clone());
+    function.fail_on_solve = Some(1);
+    add_reactive(&interpreter, function, &input);
+    let mut journal = ReactiveTurnJournal::new();
+
+    interpreter.advance_reactive_turn_with_journal(
+      &Value::Index(input).reactive_root_cell_ids(),
+      &mut journal,
+    ).unwrap_err();
+
+    assert_eq!(*output.borrow(), 5);
+    journal.restore_before().unwrap();
+    assert_eq!(*output.borrow(), 4);
+  }
+
+  #[test]
+  fn ordinary_interpreter_reactive_turn_rolls_back_on_failure() {
+    let mut interpreter = Interpreter::new(20, 100);
+    let input = Ref::new(1usize);
+    let output = Ref::new(4usize);
+    let (mut function, _, _) = function("failure", output.clone());
+    function.fail_on_solve = Some(1);
+    add_reactive(&interpreter, function, &input);
+
+    interpreter.advance_reactive_turn(
+      &Value::Index(input).reactive_root_cell_ids(),
+    ).unwrap_err();
+
+    assert_eq!(*output.borrow(), 4);
+  }
+
+  #[test]
+  fn ordinary_interpreter_step_rolls_back_earlier_function_mutation() {
+    let mut interpreter = Interpreter::new(21, 100);
+    let first_output = Ref::new(1usize);
+    let second_output = Ref::new(2usize);
+    let (first, _, _) = function("first", first_output.clone());
+    let (mut second, _, _) = function("second", second_output.clone());
+    second.fail_on_solve = Some(1);
+    interpreter.plan().add_function(Box::new(first));
+    interpreter.plan().add_function(Box::new(second));
+
+    interpreter.step(0, 1).unwrap_err();
+
+    assert_eq!((*first_output.borrow(), *second_output.borrow()), (1, 2));
+  }
+
+  #[test]
+  fn repeated_whole_plan_step_restores_before_first_repetition() {
+    let mut interpreter = Interpreter::new(22, 100);
+    let output = Ref::new(10usize);
+    let (mut function, _, _) = function("repeat", output.clone());
+    function.fail_on_solve = Some(3);
+    interpreter.plan().add_function(Box::new(function));
+
+    interpreter.step(0, 4).unwrap_err();
+
+    assert_eq!(*output.borrow(), 10);
+  }
+
+  #[test]
+  fn indexed_step_captures_only_selected_function() {
+    let mut interpreter = Interpreter::new(23, 100);
+    let (first, first_captures, _) = function("first", Ref::new(1));
+    let (second, second_captures, _) = function("second", Ref::new(2));
+    interpreter.plan().add_function(Box::new(first));
+    interpreter.plan().add_function(Box::new(second));
+    let mut journal = ReactiveTurnJournal::new();
+
+    interpreter.step_with_reactive_turn_journal(2, 1, &mut journal).unwrap();
+
+    assert_eq!((*first_captures.borrow(), *second_captures.borrow()), (0, 1));
+  }
+
+  #[test]
+  fn reactive_turn_rollback_failure_retains_original_error() {
+    let mut interpreter = Interpreter::new(24, 100);
+    let output = Ref::new(0usize);
+    let (mut function, _, _) = function("borrow-leak", output);
+    function.fail_on_solve = Some(1);
+    function.leak_borrow_on_failure = true;
+    interpreter.plan().add_function(Box::new(function));
+
+    let error = interpreter.step(0, 1).unwrap_err();
+
+    assert_eq!(error.kind_name(), "InterpreterReactiveTurnRollbackFailed");
+    let rollback = error.kind_as::<InterpreterReactiveTurnRollbackFailed>().unwrap();
+    assert!(rollback.original_error.contains("deliberate borrow-leak execution failure"));
+    assert!(rollback.rollback_error.contains("ValueStateBorrowConflict"));
+  }
+
+  #[test]
+  fn reactive_turn_paths_preserve_plan_identity_without_full_checkpoints() {
+    let mut interpreter = Interpreter::new(25, 100);
+    let plan = interpreter.plan();
+    let plan_address = plan.0.addr();
+    let (function, _, _) = function("success", Ref::new(0));
+    let node = plan.add_function(Box::new(function));
+
+    interpreter.step(0, 2).unwrap();
+
+    assert_eq!(interpreter.plan().0.addr(), plan_address);
+    assert_eq!(interpreter.plan().borrow().nodes[node].id, node);
+  }
 }
 
 #[cfg(all(test, feature = "program", feature = "compiler", feature = "functions", feature = "symbol_table", feature = "variable_define", feature = "f64"))]

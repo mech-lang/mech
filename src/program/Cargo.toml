@@ -197,3 +197,8 @@ criterion = { version = "0.8.2", default-features = false, features = ["cargo_be
 name = "program_checkpoint"
 harness = false
 required-features = ["baselib", "program", "compiler"]
+
+[[bench]]
+name = "reactive_turn_rollback"
+harness = false
+required-features = ["baselib", "program", "compiler"]
