@@ -682,6 +682,11 @@ impl MechRuntime {
         }
       }
     }
+    for (capability, uses) in envelope.capabilities.usage_deltas() {
+      self
+        .capability_kernel
+        .apply_usage_delta(capability, uses)?;
+    }
     Ok(())
   }
 

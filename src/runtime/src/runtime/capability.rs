@@ -28,6 +28,7 @@ pub(super) enum RuntimeCapabilityMutation {
 pub(super) struct RuntimeCapabilityOverlay {
   operations: Vec<RuntimeCapabilityMutation>,
   grants: HashMap<CapabilityId, Arc<dyn Capability>>,
+  grant_order: Vec<CapabilityId>,
   revocations: HashSet<CapabilityId>,
   uses: HashMap<CapabilityId, u64>,
 }
@@ -85,7 +86,10 @@ impl RuntimeCapabilityOverlay {
     &mut self,
     request: &CapabilityRequest,
   ) -> MResult<Option<CapabilityId>> {
-    for (id, capability) in &self.grants {
+    for id in &self.grant_order {
+      let Some(capability) = self.grants.get(id) else {
+        continue;
+      };
       if capability.subject_key() != request.subject {
         continue;
       }
@@ -109,7 +113,10 @@ impl RuntimeCapabilityOverlay {
     &self,
     request: &CapabilityRequest,
   ) -> MResult<Option<CapabilityId>> {
-    for (id, capability) in &self.grants {
+    for id in &self.grant_order {
+      let Some(capability) = self.grants.get(id) else {
+        continue;
+      };
       if capability.subject_key() != request.subject {
         continue;
       }
@@ -130,10 +137,21 @@ impl RuntimeCapabilityOverlay {
   pub(super) fn grants(
     &self,
   ) -> impl Iterator<Item = (CapabilityId, Arc<dyn Capability>)> + '_ {
-    self
-      .grants
-      .iter()
-      .map(|(id, capability)| (*id, capability.clone()))
+    self.grant_order.iter().filter_map(|id| {
+      self
+        .grants
+        .get(id)
+        .map(|capability| (*id, capability.clone()))
+    })
+  }
+
+  pub(super) fn usage_deltas(
+    &self,
+  ) -> impl Iterator<Item = (CapabilityId, u64)> + '_ {
+    self.grant_order.iter().filter_map(|id| {
+      let uses = self.uses.get(id).copied().unwrap_or(0);
+      (uses != 0).then_some((*id, uses))
+    })
   }
 
   pub(super) fn revocations(
@@ -173,14 +191,22 @@ impl RuntimeCapabilityOverlay {
 
   fn rebuild(&mut self) {
     self.grants.clear();
+    self.grant_order.clear();
     self.revocations.clear();
     for operation in &self.operations {
       match operation {
         RuntimeCapabilityMutation::Grant(capability) => {
+          let id = capability.id();
+          self.revocations.remove(&id);
+          if !self.grants.contains_key(&id) {
+            self.grant_order.push(id);
+          }
           self.grants.insert(capability.id(), capability.clone());
         }
         RuntimeCapabilityMutation::Revoke(capability) => {
-          if self.grants.remove(capability).is_none() {
+          if self.grants.remove(capability).is_some() {
+            self.grant_order.retain(|id| id != capability);
+          } else {
             self.revocations.insert(*capability);
           }
         }
