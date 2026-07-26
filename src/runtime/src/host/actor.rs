@@ -36,6 +36,15 @@ impl HostFunction for ActorMessageKindHostFunction {
     HostFunctionTransactionMode::RuntimeManaged
   }
 
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
+  }
+
   fn call(
     &self,
     _services: &mut dyn RuntimeServices,
@@ -93,6 +102,15 @@ impl HostFunction for ActorMessagePayloadHostFunction {
 
   fn transaction_mode(&self) -> HostFunctionTransactionMode {
     HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
   }
 
   fn call(
@@ -154,6 +172,15 @@ impl HostFunction for ActorStateIdHostFunction {
     HostFunctionTransactionMode::RuntimeManaged
   }
 
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
+  }
+
   fn call(
     &self,
     _services: &mut dyn RuntimeServices,
@@ -205,6 +232,15 @@ impl HostFunction for ActorStateGetHostFunction {
 
   fn transaction_mode(&self) -> HostFunctionTransactionMode {
     HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    self.call(services, context, args)
   }
 
   fn call(
@@ -262,6 +298,25 @@ impl HostFunction for ActorStatePutHostFunction {
 
   fn transaction_mode(&self) -> HostFunctionTransactionMode {
     HostFunctionTransactionMode::RuntimeManaged
+  }
+
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    if context.actor.is_none() {
+      return Err(MechError::new(
+        HostInvalidContextError {
+          function: self.name().to_string(),
+          reason: "no actor is bound to the runtime context".to_string(),
+        },
+        None,
+      ));
+    }
+    host_arg_string(self.name(), &args, 0)?;
+    Ok(Value::String(Ref::new(services.next_object_id().to_string())))
   }
 
   fn call(

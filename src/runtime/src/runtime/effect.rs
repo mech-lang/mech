@@ -618,6 +618,30 @@ impl MechRuntime {
     }
     Ok(effect_id)
   }
+
+  pub(super) fn discard_unstaged_runtime_effect(
+    &mut self,
+    mut effect: PreparedRuntimeEffect,
+  ) -> MResult<()> {
+    let result = match &mut effect {
+      PreparedRuntimeEffect::Transactional(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Aborting);
+        let result = effect.abort();
+        self.active_effect_phase = None;
+        result
+      }
+      PreparedRuntimeEffect::Compensatable(effect) => {
+        self.active_effect_phase =
+          Some(ActiveRuntimeEffectPhase::Aborting);
+        let result = effect.abort();
+        self.active_effect_phase = None;
+        result
+      }
+      PreparedRuntimeEffect::AfterCommit(_) => Ok(()),
+    };
+    result
+  }
 }
 
 #[cfg(test)]

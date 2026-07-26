@@ -199,7 +199,7 @@ use crate::event::{
 };
 
 use crate::host::{
-  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy, HostFunction,
+  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy,
   HostFunctionNotFoundError, HostRegistry, InMemoryHostRegistry,
 };
 

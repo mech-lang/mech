@@ -117,6 +117,35 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
     args.len() as u64
   }
 
+  /// Produce the provisional value needed while compiling a native call.
+  ///
+  /// Pure functions may reuse their normal callback. Runtime-managed
+  /// functions must override this method without retaining runtime mutation.
+  fn preview_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<Value> {
+    if matches!(
+      self.transaction_mode(),
+      HostFunctionTransactionMode::Pure
+        | HostFunctionTransactionMode::RuntimeManaged
+    ) {
+      return self.call(services, context, args);
+    }
+    Err(MechError::new(
+      InvalidHostCallError {
+        function: self.name().to_string(),
+        reason: format!(
+          "host function transaction mode {:?} requires an explicit non-mutating preview",
+          self.transaction_mode(),
+        ),
+      },
+      None,
+    ))
+  }
+
   /// Invoke a pure, runtime-managed, or immediate-only host function.
   fn call(
     &self,
@@ -664,6 +693,26 @@ impl MechErrorKind for InvalidHostCallError {
 
   fn message(&self) -> String {
     format!("Invalid host call `{}`: {}", self.function, self.reason)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct HostFunctionTransactionUnsupportedError {
+  pub function: String,
+  pub mode: HostFunctionTransactionMode,
+}
+
+impl MechErrorKind for HostFunctionTransactionUnsupportedError {
+  fn name(&self) -> &str {
+    "HostFunctionTransactionUnsupported"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Host function `{}` uses transaction mode {:?} and cannot run inside a runtime transaction",
+      self.function,
+      self.mode,
+    )
   }
 }
 

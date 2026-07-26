@@ -1626,7 +1626,7 @@ mod tests {
     let observed = Arc::new(Mutex::new(Vec::new()));
     let observed_for_host = observed.clone();
     runtime
-      .register_mech_host_function(ClosureHostFunction::new(
+      .register_mech_host_function(ClosureHostFunction::new_runtime_managed(
         "demo/reenter",
         move |_services, _context, _args| {
           ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {

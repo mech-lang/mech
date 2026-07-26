@@ -4541,7 +4541,7 @@ mod tests {
     let calls = Arc::new(AtomicUsize::new(0));
     let calls_for_host = calls.clone();
     runtime
-      .register_mech_host_function(ClosureHostFunction::new(
+      .register_mech_host_function(ClosureHostFunction::new_pure(
         "demo/echo",
         move |_services, context, args| {
           assert_eq!(context.subject, "program:step-host-test");

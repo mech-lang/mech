@@ -1883,7 +1883,7 @@ fn module_host_call_works_inside_isolated_execution() {
   std::fs::write(root.join("math.mec"), "tau := demo/value()\n<+ tau\n").unwrap();
   std::fs::write(root.join("main.mec"), "+> ./math.mec\nok := math/tau > 40\n").unwrap();
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
-  runtime.register_mech_host_function(ClosureHostFunction::new("demo/value", |_s, _c, _a| Ok(Value::F64(Ref::new(42.0))))).unwrap();
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/value", |_s, _c, _a| Ok(Value::F64(Ref::new(42.0))))).unwrap();
   runtime.grant_capability(std::sync::Arc::new(BasicCapability::new(
     CapabilityId(1),
     &BasicSubject::new("program:module-host-test"),
