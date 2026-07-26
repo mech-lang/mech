@@ -522,7 +522,10 @@ impl MechRuntime {
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
+    self.preflight_atomic_program_operation(
+      context,
+      "resolve_and_run_root_module_with_context",
+    )?;
 
     let request = request.into();
     request.validate()?;

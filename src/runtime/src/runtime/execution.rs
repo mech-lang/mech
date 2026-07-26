@@ -3411,6 +3411,10 @@ impl MechRuntime {
     result
   }
 
+  /// Low-level manual escape hatch outside runtime-owned atomic execution.
+  ///
+  /// Taking the program bypasses runtime transaction coordination. Callers
+  /// must not use it while a transaction owns the retained program.
   pub fn take_program(&mut self) -> MechProgram {
     let program_config = self.program.config.clone();
     std::mem::replace(&mut self.program, MechProgram::new(program_config))
@@ -3461,6 +3465,17 @@ impl MechRuntime {
     interpreter_id: u64,
     value: &Value,
   ) -> MResult<()> {
+    if let Some(owner) = self.program_transaction_owner {
+      return Err(MechError::new(
+        RuntimeProgramBusy {
+          operation: "bind_ans_for_interpreter",
+          owner,
+          requester: None,
+        },
+        None,
+      ));
+    }
+
     if self.program.bind_ans_for_interpreter(interpreter_id, value) {
       return Ok(());
     }

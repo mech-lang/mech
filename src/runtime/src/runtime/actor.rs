@@ -608,12 +608,11 @@ mod tests {
   fn transactional_actor_turn_succeeds_when_subject_matches_owner() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
-    context.subject = "owner".to_string();
-    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-
     let actor = ActorRecord::new(ActorId(1), "owner");
     let message = MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new());
     let turn = ActorTurn::new(actor, message).unwrap();
+    context.bind_actor_turn(&turn);
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime.run_actor_turn_envelope(&mut context, &turn).unwrap();
 

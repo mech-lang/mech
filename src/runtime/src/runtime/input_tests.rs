@@ -676,25 +676,55 @@ fn runtime_reactive_host_input_preflight_failure_mutates_nothing() {
 }
 
 #[test]
-fn transactional_context_cannot_arm_live_program() {
+fn transactional_live_program_is_provisional_until_outer_commit() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
   let mut context = runtime.runtime_context().unwrap();
   grant_read_to(&mut runtime, &context.subject, "test://clock/ticks", "value");
-  runtime.begin_transaction(&mut context).unwrap();
-  let error = format!("{:?}", runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap_err());
-  assert!(error.contains("RuntimeTransactionalLiveProgramUnsupported"), "{error}");
+  let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+  runtime
+    .run_string_with_context(
+      &mut context,
+      "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+    )
+    .unwrap();
+
+  assert!(runtime.live_context_template.is_some());
+  assert!(!runtime.live_input_bindings.is_empty());
+  assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
+  assert!(runtime.program.root_symbol_value("output").is_ok());
+
+  runtime
+    .abort_runtime_transaction(&mut context, "discard live program")
+    .unwrap();
+
+  assert_eq!(context.transaction, None);
   assert!(runtime.live_context_template.is_none());
   assert!(runtime.live_input_bindings.is_empty());
   assert!(runtime.persistent_sends.is_empty());
+  assert!(runtime.program.root_symbol_value("output").is_err());
 }
 
 #[test]
 fn failed_source_does_not_leave_live_state_armed() {
-  let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
+  let (mut runtime, output) = test_runtime_with_output(
+    test_provider_with("test://clock/ticks", "value", 1.0),
+  );
   let mut context_a = runtime.runtime_context().unwrap().with_subject("subject-a");
   grant_read_to(&mut runtime, "subject-a", "test://clock/ticks", "value");
-  let error = runtime.run_string_with_context(&mut context_a, "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\nmissing := @pulse/missing");
+  runtime
+    .grant_capability(RuntimeCapabilityGrant {
+      subject: "subject-a".to_string(),
+      resource: TEST_OUTPUT_BASE_URI.to_string(),
+      operations: vec![RuntimeCapabilityOperation::Write],
+      paths: vec!["line".to_string()],
+    })
+    .unwrap();
+  let error = runtime.run_string_with_context(
+    &mut context_a,
+    "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\n@out/line <- output\nmissing := missing-live-value + 1",
+  );
   assert!(error.is_err());
+  assert!(!output.lines().is_empty());
   assert!(runtime.live_context_template.is_none());
   assert!(runtime.live_input_bindings.is_empty());
   assert!(runtime.persistent_sends.is_empty());
