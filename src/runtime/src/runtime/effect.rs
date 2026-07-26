@@ -581,8 +581,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     effect: PreparedRuntimeEffect,
   ) -> MResult<RuntimeEffectId> {
-    self.ensure_runtime_healthy("stage_runtime_effect_with_context")?;
-    self.reject_effect_reentrancy("stage_runtime_effect_with_context")?;
+    self.ensure_runtime_mutation_allowed(
+      "stage_runtime_effect_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
@@ -660,10 +661,7 @@ impl MechRuntime {
     path: String,
     value: Value,
   ) -> MResult<RuntimeEffectId> {
-    self.ensure_runtime_healthy(
-      "stage_runtime_resource_effect_with_context",
-    )?;
-    self.reject_effect_reentrancy(
+    self.ensure_runtime_mutation_allowed(
       "stage_runtime_resource_effect_with_context",
     )?;
     self.validate_context_for_runtime(context)?;
@@ -745,8 +743,9 @@ impl MechRuntime {
     &mut self,
     mut effect: PreparedRuntimeEffect,
   ) -> MResult<RuntimeEffectId> {
-    self.ensure_runtime_healthy("execute_runtime_effect_immediately")?;
-    self.reject_effect_reentrancy("execute_runtime_effect_immediately")?;
+    self.ensure_runtime_mutation_allowed(
+      "execute_runtime_effect_immediately",
+    )?;
 
     let effect_id = RuntimeEffectId {
       transaction: self.next_transaction_id(),

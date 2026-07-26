@@ -45,6 +45,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     transaction: TransactionRecord,
   ) -> MResult<TransactionId> {
+    self.ensure_runtime_mutation_allowed(
+      "commit_transaction_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -75,6 +78,7 @@ impl MechRuntime {
   }
 
   pub fn append_event(&mut self, event: RuntimeEvent) -> MResult<EventId> {
+    self.ensure_runtime_mutation_allowed("append_event")?;
     self.store.append_event(event)
   }
 
@@ -90,8 +94,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<TransactionId> {
-    self.ensure_runtime_healthy("begin_transaction")?;
-    self.reject_effect_reentrancy("begin_transaction")?;
+    self.ensure_runtime_mutation_allowed("begin_transaction")?;
     self.reject_program_operation_reentrancy("begin_transaction")?;
     self.begin_runtime_transaction_internal(
       context,
@@ -104,6 +107,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     mode: RuntimeExecutionTransactionMode,
   ) -> MResult<TransactionId> {
+    self.ensure_runtime_mutation_allowed(
+      "begin_runtime_transaction_internal",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if context.transaction.is_some() {
@@ -168,8 +174,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<RuntimeCommitOutcome> {
-    self.ensure_runtime_healthy("commit_runtime_transaction")?;
-    self.reject_effect_reentrancy("commit_runtime_transaction")?;
+    self.ensure_runtime_mutation_allowed("commit_runtime_transaction")?;
     self.reject_program_operation_reentrancy("commit_runtime_transaction")?;
     match self.commit_runtime_transaction_detailed_internal(context)? {
       RuntimeCommitResolution::Committed(outcome) => Ok(outcome),
@@ -657,7 +662,7 @@ impl MechRuntime {
     let id = event.id;
     context.push_event(event.clone());
     self.trim_events_to_retention(&mut context.events);
-    if let Err(error) = self.append_event(event) {
+    if let Err(error) = self.store.append_event(event) {
       context.events = context_events_before;
       return Err(error);
     }

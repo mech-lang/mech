@@ -80,8 +80,9 @@ impl MechRuntime {
     &mut self,
     function: impl HostFunction + 'static,
   ) -> MResult<()> {
-    self.ensure_runtime_healthy("register_mech_host_function")?;
-    self.reject_effect_reentrancy("register_mech_host_function")?;
+    self.ensure_runtime_mutation_allowed(
+      "register_mech_host_function",
+    )?;
     let name = function.name().to_string();
 
     self
@@ -166,8 +167,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
-    self.ensure_runtime_healthy("preview_host_call_with_context")?;
-    self.reject_effect_reentrancy("preview_host_call_with_context")?;
+    self.ensure_runtime_mutation_allowed(
+      "preview_host_call_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     call.validate()?;
 
@@ -224,6 +226,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
+    self.ensure_runtime_mutation_allowed("call_host_with_context")?;
     self.validate_context_for_runtime(context)?;
     call.validate()?;
 

@@ -47,6 +47,7 @@ impl MechRuntime {
   }
 
   pub fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("put_actor")?;
     let mut context = self.context_for_actor(&actor)?;
     self.put_actor_with_context(&mut context, actor)
   }
@@ -56,6 +57,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("put_actor_with_context")?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -106,6 +108,7 @@ impl MechRuntime {
     state: Option<ObjectId>,
     capabilities: Vec<CapabilityId>,
   ) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("create_actor")?;
     let id = self.next_actor_id();
 
     let mut actor = ActorRecord::new(id, subject)
@@ -145,6 +148,7 @@ impl MechRuntime {
   }
 
   pub fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("update_actor")?;
     self.store.update_actor(actor)
   }
 
@@ -153,6 +157,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed(
+      "update_actor_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
@@ -174,6 +181,7 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
+    self.ensure_runtime_mutation_allowed("send_message")?;
     let Some(actor_record) = self.store.get_actor(actor)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -195,6 +203,9 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
+    self.ensure_runtime_mutation_allowed(
+      "send_message_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_messages(1)?;
     context.charge_bytes(payload.len() as u64)?;
@@ -302,6 +313,7 @@ impl MechRuntime {
   }
 
   pub fn pop_message(&mut self, actor: ActorId) -> MResult<Option<MessageRecord>> {
+    self.ensure_runtime_mutation_allowed("pop_message")?;
     self.store.pop_message(actor)
   }
 
@@ -310,6 +322,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorId,
   ) -> MResult<Option<MessageRecord>> {
+    self.ensure_runtime_mutation_allowed(
+      "pop_message_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
@@ -363,6 +378,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor_id: ActorId,
   ) -> MResult<Option<ActorTurn>> {
+    self.ensure_runtime_mutation_allowed(
+      "next_actor_turn_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     let Some(actor) = self.get_actor_with_context(context, actor_id)? else {
@@ -387,6 +405,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     turn: &ActorTurn,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("run_actor_turn_envelope")?;
     let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
     turn.validate()?;

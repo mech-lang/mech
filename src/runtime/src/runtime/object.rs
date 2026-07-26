@@ -14,6 +14,7 @@ use super::*;
 impl MechRuntime {
 
   pub fn put_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
+    self.ensure_runtime_mutation_allowed("put_object")?;
     let mut context = self.runtime_context()?;
     self.put_object_with_context(&mut context, object)
   }
@@ -23,6 +24,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     object: ObjectRecord,
   ) -> MResult<ObjectId> {
+    self.ensure_runtime_mutation_allowed("put_object_with_context")?;
     self.validate_context_for_runtime(context)?;
     context.charge_bytes(object.data.len() as u64)?;
 
@@ -82,6 +84,7 @@ impl MechRuntime {
   }
 
   pub fn update_object(&mut self, object: ObjectRecord) -> MResult<ObjectId> {
+    self.ensure_runtime_mutation_allowed("update_object")?;
     let mut context = self.runtime_context()?;
     self.update_object_with_context(&mut context, object)
   }
@@ -91,6 +94,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     object: ObjectRecord,
   ) -> MResult<ObjectId> {
+    self.ensure_runtime_mutation_allowed(
+      "update_object_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_bytes(object.data.len() as u64)?;
 

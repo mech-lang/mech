@@ -249,6 +249,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     capability: Arc<dyn Capability>,
   ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed(
+      "grant_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     capability.validate()?;
@@ -352,6 +355,7 @@ impl MechRuntime {
   }
 
   pub fn revoke_capability(&mut self, capability: CapabilityId) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("revoke_capability")?;
     let mut context = self.runtime_context()?;
     self.revoke_capability_with_context(&mut context, capability)
   }
@@ -361,6 +365,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     capability: CapabilityId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "revoke_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -443,6 +450,7 @@ impl MechRuntime {
     &mut self,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed("check_capability")?;
     self.capability_kernel.check(request)
   }
 
@@ -477,6 +485,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed(
+      "check_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     if let Some(transaction_id) = context.transaction {

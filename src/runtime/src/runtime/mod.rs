@@ -726,6 +726,7 @@ impl MechRuntime {
     module: &str,
     item: &str,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("bind_context_export")?;
     let target = format!("{module}/{item}");
     let base_uri = match self.host_interfaces.resolve_optional(&target)? {
       Some(context) => context.base_uri.clone(),
@@ -743,6 +744,7 @@ impl MechRuntime {
     name: impl Into<String>,
     uri: impl AsRef<str>,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("bind_resource_root")?;
     let name = name.into();
     if !validate_resource_binding_name(&name) {
       return Err(runtime_resource_binding_error(
@@ -856,6 +858,7 @@ impl MechRuntime {
     &mut self,
     spec: RuntimeConfigSpec,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("apply_config_spec")?;
     register_config_spec_resources(&mut self.resources, &spec)?;
     register_config_spec_grants(&mut self.grants, &spec)?;
     Ok(())
@@ -865,6 +868,7 @@ impl MechRuntime {
   where
     G: RuntimeCapabilityGrantInput,
   {
+    self.ensure_runtime_mutation_allowed("grant_capability")?;
     grant.apply(self)
   }
 
@@ -872,6 +876,9 @@ impl MechRuntime {
     &mut self,
     grant: RuntimeCapabilityGrant,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "add_resource_capability_grant",
+    )?;
     self.grants.add_grant(grant)
   }
 
@@ -898,6 +905,9 @@ impl MechRuntime {
     &mut self,
     grant: &RunResourceGrantConfig,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "install_run_resource_grant",
+    )?;
     let context = self.host_interfaces.resolve(&grant.target)?;
     for operation in &grant.operations {
       if !context.operations.iter().any(|allowed| allowed == operation) {
@@ -920,8 +930,9 @@ impl MechRuntime {
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
-    self.ensure_runtime_healthy("register_resource_provider")?;
-    self.reject_effect_reentrancy("register_resource_provider")?;
+    self.ensure_runtime_mutation_allowed(
+      "register_resource_provider",
+    )?;
     self.resources.register_provider(provider)
   }
 
@@ -933,8 +944,7 @@ impl MechRuntime {
     &mut self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<()> {
-    self.ensure_runtime_healthy("write_resource")?;
-    self.reject_effect_reentrancy("write_resource")?;
+    self.ensure_runtime_mutation_allowed("write_resource")?;
     let effect = self.resources.stage_write(request)?;
     self.execute_runtime_effect_immediately(effect)?;
     Ok(())
@@ -945,8 +955,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     mut request: RuntimeResourceWriteRequest,
   ) -> MResult<RuntimeEffectId> {
-    self.ensure_runtime_healthy("write_resource_with_context")?;
-    self.reject_effect_reentrancy("write_resource_with_context")?;
+    self.ensure_runtime_mutation_allowed(
+      "write_resource_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if context.transaction.is_some() {
@@ -995,6 +1006,9 @@ impl MechRuntime {
     self.store.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn store_mut(&mut self) -> &mut dyn MechStore {
     self.store.as_mut()
   }
@@ -1003,6 +1017,9 @@ impl MechRuntime {
     self.capability_kernel.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn capability_kernel_mut(&mut self) -> &mut dyn CapabilityKernel {
     self.capability_kernel.as_mut()
   }
@@ -1011,10 +1028,15 @@ impl MechRuntime {
     self.source_resolver.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
     self.source_resolver.as_mut()
   }
 
+  /// Unchecked administrative replacement outside runtime-owned poison
+  /// enforcement.
   pub fn set_source_resolver(&mut self, source_resolver: impl SourceResolver + 'static) {
     self.source_resolver = Box::new(source_resolver);
   }
@@ -1023,6 +1045,9 @@ impl MechRuntime {
     self.host_registry.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
     self.host_registry.as_mut()
   }
@@ -1031,6 +1056,9 @@ impl MechRuntime {
     self.host_policy.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
     self.host_policy.as_mut()
   }
@@ -1039,6 +1067,9 @@ impl MechRuntime {
     self.scheduler.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
     self.scheduler.as_mut()
   }
@@ -1047,6 +1078,9 @@ impl MechRuntime {
     &self.scheduler_policy
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
     &mut self.scheduler_policy
   }
@@ -1055,6 +1089,9 @@ impl MechRuntime {
     self.actor_behavior_driver.as_ref()
   }
 
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
   pub fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
     self.actor_behavior_driver.as_mut()
   }
@@ -1064,6 +1101,7 @@ impl MechRuntime {
   }
 
   pub fn set_scheduler_policy(&mut self, scheduler_policy: SchedulerPolicy) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("set_scheduler_policy")?;
     scheduler_policy.validate()?;
     self.scheduler_policy = scheduler_policy;
     Ok(())
@@ -1381,7 +1419,7 @@ impl MechRuntime {
       }
     }
 
-    self.append_event(event)?;
+    self.store.append_event(event)?;
 
     Ok(id)
   }
@@ -1398,7 +1436,7 @@ impl MechRuntime {
 
     context.push_event(event.clone());
     self.trim_events_to_retention(&mut context.events);
-    self.append_event(event)?;
+    self.store.append_event(event)?;
 
     Ok(id)
   }

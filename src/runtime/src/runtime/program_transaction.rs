@@ -313,6 +313,14 @@ impl MechRuntime {
     ))
   }
 
+  pub(super) fn ensure_runtime_mutation_allowed(
+    &self,
+    operation: &'static str,
+  ) -> MResult<()> {
+    self.ensure_runtime_healthy(operation)?;
+    self.reject_effect_reentrancy(operation)
+  }
+
   pub(super) fn reject_transactional_reactive_turn(
     &self,
     context: &RuntimeContext,
@@ -615,9 +623,8 @@ impl MechRuntime {
     context: &RuntimeContext,
     operation: &'static str,
   ) -> MResult<()> {
-    self.ensure_runtime_healthy(operation)?;
+    self.ensure_runtime_mutation_allowed(operation)?;
     self.validate_context_for_runtime(context)?;
-    self.reject_effect_reentrancy(operation)?;
     self.reject_program_operation_reentrancy(operation)?;
 
     if let Some(owner) = self.program_transaction_owner {
