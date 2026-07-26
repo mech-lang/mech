@@ -38,10 +38,10 @@ pub(super) struct RuntimeEffectStepFailure {
   pub(super) error: MechError,
 }
 
-pub(super) struct RuntimeEffectCommitFailure {
-  pub(super) step: RuntimeEffectStepFailure,
-  pub(super) participant_outcomes: Vec<String>,
+pub(super) struct RuntimeTransactionalCommitReport {
   pub(super) committed: Vec<RuntimeEffectId>,
+  pub(super) failures: Vec<RuntimeEffectStepFailure>,
+  pub(super) participant_outcomes: Vec<String>,
 }
 
 #[derive(Debug, Default)]
@@ -119,6 +119,24 @@ impl RuntimeEffectJournal {
         Some(entry.id)
       }
     }).collect()
+  }
+
+  pub(super) fn abortable_ids_after(
+    &self,
+    mark: usize,
+  ) -> Vec<RuntimeEffectId> {
+    self.entries
+      .get(mark..)
+      .unwrap_or_default()
+      .iter()
+      .filter_map(|entry| {
+        if matches!(entry.effect, PreparedRuntimeEffect::AfterCommit(_)) {
+          None
+        } else {
+          Some(entry.id)
+        }
+      })
+      .collect()
   }
 
   pub(super) fn validate_active(
@@ -263,12 +281,19 @@ impl RuntimeEffectJournal {
     }
 
     let mut failures = Vec::new();
-    for entry in self.entries[mark..].iter_mut().rev() {
-      if let Err(failure) = abort_effect_entry(entry) {
-        failures.push(failure);
+    let mut tail = self.entries.split_off(mark);
+    let mut failed = Vec::new();
+    while let Some(mut entry) = tail.pop() {
+      match abort_effect_entry(&mut entry) {
+        Ok(()) => {}
+        Err(failure) => {
+          failures.push(failure);
+          failed.push(entry);
+        }
       }
     }
-    self.entries.truncate(mark);
+    failed.reverse();
+    self.entries.extend(failed);
     failures
   }
 
@@ -368,9 +393,10 @@ impl RuntimeEffectJournal {
 
   pub(super) fn commit_transactional(
     &mut self,
-  ) -> Result<Vec<RuntimeEffectId>, RuntimeEffectCommitFailure> {
+  ) -> RuntimeTransactionalCommitReport {
     let mut outcomes = Vec::new();
     let mut committed = Vec::new();
+    let mut failures = Vec::new();
     for entry in &mut self.entries {
       if entry.state != RuntimeEffectState::Prepared {
         continue;
@@ -397,15 +423,15 @@ impl RuntimeEffectJournal {
             entry.id,
             step.failure.message,
           ));
-          return Err(RuntimeEffectCommitFailure {
-            step,
-            participant_outcomes: outcomes,
-            committed,
-          });
+          failures.push(step);
         }
       }
     }
-    Ok(committed)
+    RuntimeTransactionalCommitReport {
+      committed,
+      failures,
+      participant_outcomes: outcomes,
+    }
   }
 
   pub(super) fn deliver_after_commit(
@@ -521,12 +547,17 @@ impl MechRuntime {
   pub(super) fn poison_external_commit_indeterminate(
     &mut self,
     transaction_id: TransactionId,
-    effect_id: RuntimeEffectId,
+    failures: Vec<RuntimeEffectFailure>,
     participant_outcomes: Vec<String>,
   ) -> MechError {
+    let failed_effects = failures
+      .iter()
+      .map(|failure| failure.effect_id.to_string())
+      .collect::<Vec<_>>()
+      .join(", ");
     let original_error = format!(
-      "external effect {} commit failed after runtime store transaction {} committed",
-      effect_id,
+      "external effects [{}] failed to commit after runtime store transaction {} committed",
+      failed_effects,
       transaction_id,
     );
     self.health = RuntimeHealth::Poisoned(RuntimePoisonRecord {
@@ -538,7 +569,7 @@ impl MechRuntime {
     MechError::new(
       RuntimeExternalCommitIndeterminate {
         transaction_id,
-        effect_id,
+        failures,
         participant_outcomes,
       },
       None,
@@ -736,7 +767,11 @@ impl MechRuntime {
         if let Err(error) = commit_result {
           return Err(self.poison_external_commit_indeterminate(
             effect_id.transaction,
-            effect_id,
+            vec![RuntimeEffectFailure {
+              effect_id,
+              phase: RuntimeEffectFailurePhase::Commit,
+              message: format!("{:?}", error),
+            }],
             vec![format!(
               "immediate transactional effect {} commit failed: {:?}",
               effect_id,
@@ -1484,7 +1519,11 @@ mod tests {
       .kind_as::<RuntimeExternalCommitIndeterminate>()
       .unwrap();
     assert_eq!(indeterminate.transaction_id, transaction_id);
-    assert_eq!(indeterminate.effect_id, failing_effect_id);
+    assert_eq!(indeterminate.failures.len(), 1);
+    assert_eq!(
+      indeterminate.failures[0].effect_id,
+      failing_effect_id,
+    );
     assert_eq!(
       *log.lock().unwrap(),
       vec![

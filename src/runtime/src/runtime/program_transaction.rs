@@ -387,25 +387,41 @@ impl MechRuntime {
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
     let effect_rollback = match self.active_transactions.get_mut(&transaction_id) {
       Some(transaction) => {
+        let abortable_ids = transaction
+          .effects
+          .abortable_ids_after(savepoint.effect_mark);
         let effect_failures =
           transaction.effects.rollback_to(savepoint.effect_mark);
         transaction.store = savepoint.store.clone();
         let capability_result = transaction
           .capabilities
           .rollback_to(savepoint.capability_mark);
-        Some((effect_failures, capability_result))
+        Some((effect_failures, capability_result, abortable_ids))
       }
       None => None,
     };
     self.active_effect_phase = None;
     match effect_rollback {
-      Some((effect_failures, capability_result)) => {
+      Some((effect_failures, capability_result, abortable_ids)) => {
+        let failed_effects: HashSet<RuntimeEffectId> = effect_failures
+          .iter()
+          .map(|failure| failure.effect_id)
+          .collect();
         failures.extend(Self::describe_effect_failures(effect_failures));
         if let Err(error) = capability_result {
           failures.push(format!(
             "capability overlay rollback failed: {:?}",
             error,
           ));
+        }
+        for effect_id in abortable_ids {
+          if failed_effects.contains(&effect_id) {
+            continue;
+          }
+          let _ = self.emit_effect_event_outside_transaction(
+            context,
+            RuntimeEventKind::EffectAborted { effect_id },
+          );
         }
       }
       None => failures.push(format!(

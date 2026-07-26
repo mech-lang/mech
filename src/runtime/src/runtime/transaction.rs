@@ -276,6 +276,7 @@ impl MechRuntime {
       return Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
         transaction_id: id,
         delivery_failures: Vec::new(),
+        audit_failures: Vec::new(),
       }));
     }
 
@@ -287,44 +288,29 @@ impl MechRuntime {
       let prepared_ids =
         envelope.effects.prepared_transactional_ids();
       self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
-      let mut cleanup = envelope.effects.abort_prepared_reverse();
+      let cleanup = envelope.effects.abort_prepared_reverse();
       self.active_effect_phase = None;
       let failed_ids: HashSet<RuntimeEffectId> = cleanup
         .iter()
         .map(|failure| failure.effect_id)
         .collect();
-      if let Err(error) = self.stage_effect_lifecycle_event(
+      let _ = self.stage_effect_lifecycle_event(
         &mut envelope,
         context,
         RuntimeEventKind::EffectPreparationFailed {
           effect_id: step.failure.effect_id,
           message: step.failure.message.clone(),
         },
-      ) {
-        cleanup.push(RuntimeEffectFailure {
-          effect_id: step.failure.effect_id,
-          phase: RuntimeEffectFailurePhase::Abort,
-          message: format!(
-            "preparation failure audit event failed: {:?}",
-            error,
-          ),
-        });
-      }
+      );
       for effect_id in prepared_ids {
         if failed_ids.contains(&effect_id) {
           continue;
         }
-        if let Err(error) = self.stage_effect_lifecycle_event(
+        let _ = self.stage_effect_lifecycle_event(
           &mut envelope,
           context,
           RuntimeEventKind::EffectAborted { effect_id },
-        ) {
-          cleanup.push(RuntimeEffectFailure {
-            effect_id,
-            phase: RuntimeEffectFailurePhase::Abort,
-            message: format!("abort audit event failed: {:?}", error),
-          });
-        }
+        );
       }
       envelope.state = RuntimeExecutionTransactionState::Active;
       self.active_transactions.insert(transaction_id, envelope);
@@ -350,7 +336,7 @@ impl MechRuntime {
             envelope.effects.prepared_transactional_ids();
           self.active_effect_phase =
             Some(ActiveRuntimeEffectPhase::Aborting);
-          let mut aborted = envelope.effects.abort_prepared_reverse();
+          let aborted = envelope.effects.abort_prepared_reverse();
           self.active_effect_phase = None;
           let failed_ids: HashSet<RuntimeEffectId> = aborted
             .iter()
@@ -360,22 +346,11 @@ impl MechRuntime {
             if failed_ids.contains(&effect_id) {
               continue;
             }
-            if let Err(audit_error) =
-              self.stage_effect_lifecycle_event(
-                &mut envelope,
-                context,
-                RuntimeEventKind::EffectAborted { effect_id },
-              )
-            {
-              aborted.push(RuntimeEffectFailure {
-                effect_id,
-                phase: RuntimeEffectFailurePhase::Abort,
-                message: format!(
-                  "abort audit event failed: {:?}",
-                  audit_error,
-                ),
-              });
-            }
+            let _ = self.stage_effect_lifecycle_event(
+              &mut envelope,
+              context,
+              RuntimeEventKind::EffectAborted { effect_id },
+            );
           }
           envelope.state = RuntimeExecutionTransactionState::Active;
           self.active_transactions.insert(transaction_id, envelope);
@@ -489,53 +464,8 @@ impl MechRuntime {
     };
 
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Committing);
-    let participant_result = envelope.effects.commit_transactional();
+    let commit_report = envelope.effects.commit_transactional();
     self.active_effect_phase = None;
-    let committed_effects = match participant_result {
-      Ok(committed_effects) => committed_effects,
-      Err(commit_failure) => {
-        context.transaction = None;
-        if self.program_transaction_owner == Some(transaction_id) {
-          self.program_transaction_owner = None;
-        }
-        self.push_persisted_event_to_context(context, commit_event);
-        let mut participant_outcomes =
-          commit_failure.participant_outcomes;
-        for effect_id in commit_failure.committed {
-          if let Err(error) = self.emit_event_to_context(
-            context,
-            RuntimeEventKind::TransactionalEffectCommitted { effect_id },
-          ) {
-            participant_outcomes.push(format!(
-              "transactional effect {} commit audit failed: {:?}",
-              effect_id,
-              error,
-            ));
-          }
-        }
-        if let Err(error) = self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ExternalCommitIndeterminate {
-            transaction_id: id,
-            effect_id: commit_failure.step.failure.effect_id,
-          },
-        ) {
-          participant_outcomes.push(format!(
-            "external commit indeterminate audit failed: {:?}",
-            error,
-          ));
-        }
-        let error = self.poison_external_commit_indeterminate(
-          id,
-          commit_failure.step.failure.effect_id,
-          participant_outcomes,
-        );
-        return Ok(RuntimeCommitResolution::CommittedWithError {
-          transaction_id: id,
-          error,
-        });
-      }
-    };
 
     context.transaction = None;
     if self.program_transaction_owner == Some(transaction_id) {
@@ -543,30 +473,68 @@ impl MechRuntime {
     }
     self.push_persisted_event_to_context(context, commit_event);
 
-    for effect_id in committed_effects {
+    let mut audit_failures = Vec::new();
+    for effect_id in commit_report.committed {
       if let Err(error) = self.emit_event_to_context(
         context,
         RuntimeEventKind::TransactionalEffectCommitted { effect_id },
       ) {
-        return Err(self.poison_effect_cleanup(
-          "commit_runtime_transaction",
-          id,
-          format!(
-            "transactional effect {} committed but its audit event failed",
-            effect_id,
-          ),
-          vec![format!(
-            "transactional effect {} committed but its audit event failed: {:?}",
-            effect_id,
+        audit_failures.push(RuntimeEffectFailure {
+          effect_id,
+          phase: RuntimeEffectFailurePhase::Audit,
+          message: format!(
+            "transactional effect commit audit failed: {:?}",
             error,
-          )],
-        ));
+          ),
+        });
       }
+    }
+
+    if !commit_report.failures.is_empty() {
+      let failures: Vec<RuntimeEffectFailure> = commit_report
+        .failures
+        .into_iter()
+        .map(|step| step.failure)
+        .collect();
+      let mut participant_outcomes = commit_report.participant_outcomes;
+      for failure in &failures {
+        if let Err(error) = self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ExternalCommitIndeterminate {
+            transaction_id: id,
+            effect_id: failure.effect_id,
+          },
+        ) {
+          participant_outcomes.push(format!(
+            "external commit indeterminate audit for effect {} failed: {:?}",
+            failure.effect_id,
+            error,
+          ));
+        }
+      }
+      participant_outcomes.extend(
+        audit_failures.iter().map(|failure| {
+          format!(
+            "effect {} audit failed: {}",
+            failure.effect_id,
+            failure.message,
+          )
+        }),
+      );
+      let error = self.poison_external_commit_indeterminate(
+        id,
+        failures,
+        participant_outcomes,
+      );
+      return Ok(RuntimeCommitResolution::CommittedWithError {
+        transaction_id: id,
+        error,
+      });
     }
 
     let after_commit_ids = envelope.effects.after_commit_ids();
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Delivering);
-    let mut delivery_failures = envelope.effects.deliver_after_commit();
+    let delivery_failures = envelope.effects.deliver_after_commit();
     self.active_effect_phase = None;
     for effect_id in after_commit_ids {
       let kind = match delivery_failures
@@ -580,9 +548,9 @@ impl MechRuntime {
         None => RuntimeEventKind::EffectDelivered { effect_id },
       };
       if let Err(error) = self.emit_event_to_context(context, kind) {
-        delivery_failures.push(RuntimeEffectFailure {
+        audit_failures.push(RuntimeEffectFailure {
           effect_id,
-          phase: RuntimeEffectFailurePhase::Deliver,
+          phase: RuntimeEffectFailurePhase::Audit,
           message: format!("delivery audit event failed: {:?}", error),
         });
       }
@@ -591,6 +559,7 @@ impl MechRuntime {
     Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
       transaction_id: id,
       delivery_failures,
+      audit_failures,
     }))
   }
 
@@ -621,21 +590,14 @@ impl MechRuntime {
       .iter()
       .map(|failure| failure.effect_id)
       .collect();
-    let mut audit_failures = Vec::new();
     for failure in &compensated {
-      if let Err(error) = self.emit_effect_event_outside_transaction(
+      let _ = self.emit_effect_event_outside_transaction(
         context,
         RuntimeEventKind::EffectCompensationFailed {
           effect_id: failure.effect_id,
           message: failure.message.clone(),
         },
-      ) {
-        audit_failures.push(format!(
-          "effect {} compensation failure audit event failed: {:?}",
-          failure.effect_id,
-          error,
-        ));
-      }
+      );
     }
     let mut failures = Self::describe_effect_failures(compensated);
     if let Some(Err(error)) = capability_restore {
@@ -645,37 +607,24 @@ impl MechRuntime {
       ));
     }
     failures.extend(Self::describe_effect_failures(aborted));
-    failures.extend(audit_failures);
     for effect_id in compensated_ids {
       if failed_compensations.contains(&effect_id) {
         continue;
       }
-      if let Err(error) = self.emit_effect_event_outside_transaction(
+      let _ = self.emit_effect_event_outside_transaction(
         context,
         RuntimeEventKind::EffectCompensated { effect_id },
-      ) {
-        failures.push(format!(
-          "effect {} compensation audit event failed: {:?}",
-          effect_id,
-          error,
-        ));
-      }
+      );
     }
     for effect_id in aborted_ids {
       if failed_aborts.contains(&effect_id) {
         continue;
       }
-      if let Err(error) = self.stage_effect_lifecycle_event(
+      let _ = self.stage_effect_lifecycle_event(
         envelope,
         context,
         RuntimeEventKind::EffectAborted { effect_id },
-      ) {
-        failures.push(format!(
-          "effect {} abort audit event failed: {:?}",
-          effect_id,
-          error,
-        ));
-      }
+      );
     }
     failures
   }
@@ -698,7 +647,7 @@ impl MechRuntime {
     Ok(id)
   }
 
-  fn emit_effect_event_outside_transaction(
+  pub(super) fn emit_effect_event_outside_transaction(
     &mut self,
     context: &mut RuntimeContext,
     kind: RuntimeEventKind,
@@ -909,32 +858,19 @@ impl MechRuntime {
       if failed_effect_aborts.contains(&effect_id) {
         continue;
       }
-      if let Err(error) = self.emit_event_immediate_to_context(
+      let _ = self.emit_event_immediate_to_context(
         context,
         RuntimeEventKind::EffectAborted { effect_id },
-      ) {
-        rollback_failures.push(format!(
-          "effect {} abort audit event failed: {:?}",
-          effect_id,
-          error,
-        ));
-      }
+      );
     }
 
-    let abort_event_result = self.emit_event_immediate_to_context(
+    let _ = self.emit_event_immediate_to_context(
       context,
       RuntimeEventKind::TransactionAborted {
         transaction_id,
         message: reason.to_string(),
       },
     );
-
-    if let Err(error) = abort_event_result {
-      rollback_failures.push(format!(
-        "transaction abort audit event failed: {:?}",
-        error,
-      ));
-    }
 
     Ok((transaction_id, rollback_failures))
   }
