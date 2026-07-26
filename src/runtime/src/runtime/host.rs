@@ -41,7 +41,7 @@ use super::execution::{
   ActivationEffectPayloadCaptureCompiler,
 };
 use mech_core::{
-  GuardFunctionSafety, Ref, TransactionStateUnsupportedError, ValueKind,
+  GuardFunctionSafety, Ref, ValueKind,
 };
 
 impl MechRuntime {
@@ -335,18 +335,9 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
   }
 
   fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Err(
-      MechError::new(
-        TransactionStateUnsupportedError {
-          function: self.to_string(),
-          reason:
-            "ordinary retained-program checkpoints cannot own complete runtime host output topology; runtime transaction participation is required"
-              .to_string(),
-        },
-        None,
-      )
-      .with_compiler_loc(),
-    )
+    Ok(vec![
+      Value::MutableReference(self.value.clone()),
+    ])
   }
 
   fn to_string(&self) -> String {
@@ -373,30 +364,25 @@ mod checkpoint_tests {
   use super::*;
 
   #[test]
-  fn runtime_host_native_function_requires_runtime_checkpoint_participation() {
-    let program = MechProgram::new(MechProgramConfig::default());
+  fn runtime_host_native_function_output_round_trips_through_program_checkpoint() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
     let plan = program.interpreter().plan();
     let value = Ref::new(Value::Empty);
+    let value_address = value.addr();
     plan.add_function(Box::new(RuntimeHostNativeFunction {
       name: "test/host".to_string(),
       host_name: "test/host".to_string(),
       arguments: Vec::new(),
       value: value.clone(),
     }));
-    let plan_before = plan.checkpoint();
+    let checkpoint = program.checkpoint().unwrap();
+    let replacement = Ref::new(Value::Index(Ref::new(99)));
+    *value.borrow_mut() = Value::MutableReference(replacement);
 
-    let error = match program.checkpoint() {
-      Ok(_) => panic!("runtime host program checkpoint unexpectedly succeeded"),
-      Err(error) => error,
-    };
+    program.restore(checkpoint).unwrap();
 
-    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
-    assert!(
-      error
-        .kind_message()
-        .contains("runtime transaction participation"),
-    );
-    assert_eq!(plan.checkpoint(), plan_before);
+    assert_eq!(value.addr(), value_address);
     assert_eq!(*value.borrow(), Value::Empty);
+    assert!(program.checkpoint().is_ok());
   }
 }

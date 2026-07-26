@@ -3064,23 +3064,37 @@ impl MechRuntime {
     source: &str,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
-    let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
-      MechError::new(
-        ResourceBudgetExceededError {
-          resource: "source_bytes",
-          used: u64::MAX,
-          requested: 1,
-          max: None,
-        },
-        None,
-      )
-    })?;
-    self.enforce_source_byte_count(context, source_bytes)?;
-    self.run_string_with_context_inner(context, source, turn_started)
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+    let result = self.with_atomic_program_operation(
+      context,
+      "run_string_with_context",
+      |runtime, context| {
+        let source_bytes = u64::try_from(source.as_bytes().len()).map_err(|_| {
+          MechError::new(
+            ResourceBudgetExceededError {
+              resource: "source_bytes",
+              used: u64::MAX,
+              requested: 1,
+              max: None,
+            },
+            None,
+          )
+        })?;
+        runtime.enforce_source_byte_count(context, source_bytes)?;
+        runtime.run_string_operation(context, source, turn_started)
+      },
+    );
+    if let Err(error) = &result {
+      self.emit_program_failure_audit(
+        context,
+        error,
+        profile_started,
+      );
+    }
+    result
   }
 
-  fn run_string_with_context_inner(
+  fn run_string_operation(
     &mut self,
     context: &mut RuntimeContext,
     source: &str,
@@ -3096,8 +3110,6 @@ impl MechRuntime {
         task_id: context.task,
       },
     )?;
-
-    let live_state_before = self.live_state_snapshot();
 
     let result = match mech_syntax::parser::parse(source.trim()) {
       Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
@@ -3130,48 +3142,49 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
-    if result.is_err() {
-      self.restore_live_state(live_state_before);
-    }
-    match &result {
-      Ok(_) => {
+    if result.is_ok() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramCompleted {
+          task_id: context.task,
+        },
+      )?;
+      if let Some(started) = profile_started {
         self.emit_event_to_context(
           context,
-          RuntimeEventKind::ProgramCompleted {
+          RuntimeEventKind::ProgramProfiled {
             task_id: context.task,
+            duration_ns: started.elapsed().as_nanos(),
           },
         )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
       }
     }
 
     result
+  }
+
+  fn emit_program_failure_audit(
+    &mut self,
+    context: &mut RuntimeContext,
+    error: &MechError,
+    profile_started: Option<Instant>,
+  ) {
+    let _ = self.emit_event_to_context(
+      context,
+      RuntimeEventKind::ProgramFailed {
+        task_id: context.task,
+        message: format!("{:?}", error),
+      },
+    );
+    if let Some(started) = profile_started {
+      let _ = self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramProfiled {
+          task_id: context.task,
+          duration_ns: started.elapsed().as_nanos(),
+        },
+      );
+    }
   }
 
   /// Evaluates bytecode in an isolated temporary program. It returns the
@@ -3290,25 +3303,43 @@ impl MechRuntime {
     source: &MechSourceCode,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
-    self.enforce_source_limits(context, source)?;
-    self.run_source_with_context_inner(context, source, turn_started)
+    if let MechSourceCode::ByteCode(bytes) = source {
+      return self.run_bytecode_with_context(context, bytes);
+    }
+
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+    let result = self.with_atomic_program_operation(
+      context,
+      "run_source_with_context",
+      |runtime, context| {
+        runtime.enforce_source_limits(context, source)?;
+        runtime.run_source_operation(context, source, turn_started)
+      },
+    );
+    if let Err(error) = &result {
+      self.emit_program_failure_audit(
+        context,
+        error,
+        profile_started,
+      );
+    }
+    result
   }
 
-  fn run_source_with_context_inner(
+  fn run_source_operation(
     &mut self,
     context: &mut RuntimeContext,
     source: &MechSourceCode,
     turn_started: Instant,
   ) -> MResult<Value> {
     match source {
-      MechSourceCode::String(source) => self.run_string_with_context_inner(context, source, turn_started),
-      MechSourceCode::Tree(tree) => self.run_tree_with_context_timed(context, tree, turn_started),
+      MechSourceCode::String(source) => self.run_string_operation(context, source, turn_started),
+      MechSourceCode::Tree(tree) => self.run_tree_operation(context, tree, turn_started),
       MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context_inner(context, bytes, turn_started),
       MechSourceCode::Program(sources) => {
         let mut value = Value::Empty;
         for source in sources {
-          value = self.run_source_with_context_inner(context, source, turn_started)?;
+          value = self.run_source_operation(context, source, turn_started)?;
         }
         Ok(value)
       }
@@ -3327,10 +3358,23 @@ impl MechRuntime {
     tree: &mech_core::Program,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
-    self.run_tree_with_context_timed(context, tree, turn_started)
+    let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+    let result = self.with_atomic_program_operation(
+      context,
+      "run_tree_with_context",
+      |runtime, context| runtime.run_tree_operation(context, tree, turn_started),
+    );
+    if let Err(error) = &result {
+      self.emit_program_failure_audit(
+        context,
+        error,
+        profile_started,
+      );
+    }
+    result
   }
 
-  fn run_tree_with_context_timed(
+  fn run_tree_operation(
     &mut self,
     context: &mut RuntimeContext,
     tree: &mech_core::Program,
@@ -3346,8 +3390,6 @@ impl MechRuntime {
         task_id: context.task,
       },
     )?;
-
-    let live_state_before = self.live_state_snapshot();
 
     let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
       Ok(()) => {
@@ -3377,44 +3419,21 @@ impl MechRuntime {
     };
 
     let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
-    if result.is_err() {
-      self.restore_live_state(live_state_before);
-    }
-    match &result {
-      Ok(_) => {
+    if result.is_ok() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ProgramCompleted {
+          task_id: context.task,
+        },
+      )?;
+      if let Some(started) = profile_started {
         self.emit_event_to_context(
           context,
-          RuntimeEventKind::ProgramCompleted {
+          RuntimeEventKind::ProgramProfiled {
             task_id: context.task,
+            duration_ns: started.elapsed().as_nanos(),
           },
         )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
-      }
-      Err(error) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::ProgramFailed {
-            task_id: context.task,
-            message: format!("{:?}", error),
-          },
-        )?;
-        if let Some(started) = profile_started {
-          self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramProfiled {
-              task_id: context.task,
-              duration_ns: started.elapsed().as_nanos(),
-            },
-          )?;
-        }
       }
     }
 
