@@ -4,6 +4,29 @@ use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::*;
 
 #[derive(Debug)]
+struct RecordingAfterCommitEffect {
+  scheme: String,
+  operation: String,
+  resource: String,
+  log: Arc<Mutex<Vec<String>>>,
+  entry: String,
+}
+
+impl RuntimeAfterCommitEffect for RecordingAfterCommitEffect {
+  fn metadata(&self) -> RuntimeEffectMetadata {
+    RuntimeEffectMetadata::new(
+      RuntimeEffectSource::ResourceProvider { scheme: self.scheme.clone() },
+      self.operation.clone(),
+    ).with_resource(self.resource.clone())
+  }
+
+  fn deliver(&mut self) -> MResult<()> {
+    self.log.lock().unwrap().push(self.entry.clone());
+    Ok(())
+  }
+}
+
+#[derive(Debug)]
 struct FakeRobotFactory {
   manifest: HostManifestConfig,
   log: Arc<Mutex<Vec<String>>>,
@@ -62,10 +85,15 @@ impl RuntimeResourceProvider for FakeRobotProvider {
       _ => Err(fake_error(format!("unsupported fake robot command path `{}`", request.path))),
     }
   }
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
-    self.log.lock().unwrap().push(request.path);
-    Ok(())
+    Ok(PreparedRuntimeEffect::AfterCommit(Box::new(RecordingAfterCommitEffect {
+      scheme: "fake-robot".to_string(),
+      operation: request.operation.name().to_string(),
+      resource: format!("{}/{}", request.base_uri, request.path),
+      log: self.log.clone(),
+      entry: request.path,
+    })))
   }
 }
 
@@ -426,10 +454,15 @@ impl RuntimeResourceProvider for PlotterProvider {
       _ => Err(fake_error(format!("unsupported plotter command path `{}`", request.path))),
     }
   }
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
-    self.log.lock().unwrap().push(request.operation.name().to_string());
-    Ok(())
+    Ok(PreparedRuntimeEffect::AfterCommit(Box::new(RecordingAfterCommitEffect {
+      scheme: "plotter".to_string(),
+      operation: request.operation.name().to_string(),
+      resource: format!("{}/{}", request.base_uri, request.path),
+      log: self.log.clone(),
+      entry: request.operation.name().to_string(),
+    })))
   }
 }
 

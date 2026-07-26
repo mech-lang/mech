@@ -8,6 +8,7 @@ pub mod host_delegation;
 #[cfg(feature = "host_delegation_signing")]
 pub mod host_delegation_crypto;
 pub mod operation;
+pub mod effect;
 mod resource;
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod input;
@@ -48,6 +49,7 @@ pub use self::id::*;
 pub use self::config::*;
 pub use self::config_profile::*;
 pub use self::operation::*;
+pub use self::effect::*;
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::input::*;
 #[cfg(feature = "host_delegation")]

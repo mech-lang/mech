@@ -66,22 +66,18 @@ fn main() -> MResult<()> {
 
   println!("runtime: {}", short(runtime.id()));
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/value/wrap",
     |_services, _context, args| {
       let input = host_arg_string("demo/value/wrap", &args, 0)?;
 
       let output = format!("rust-wrap({})", input);
 
-      println!("rust demo/value/wrap:");
-      println!("  input:  {:?}", input);
-      println!("  output: {:?}", output);
-
       Ok(value_string(output))
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/value/append",
     |_services, _context, args| {
       let input = host_arg_string("demo/value/append", &args, 0)?;
@@ -89,22 +85,14 @@ fn main() -> MResult<()> {
 
       let output = format!("{}{}", input, suffix);
 
-      println!("rust demo/value/append:");
-      println!("  input:  {:?}", input);
-      println!("  suffix: {:?}", suffix);
-      println!("  output: {:?}", output);
-
       Ok(value_string(output))
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
     "demo/value/inspect",
     |_services, _context, args| {
       let value = host_arg_cloned("demo/value/inspect", &args, 0)?;
-
-      println!("rust demo/value/inspect:");
-      println!("  value: {}", display_value(&value));
 
       // Return the value unchanged so the Mech program's final result is the
       // value Rust inspected.

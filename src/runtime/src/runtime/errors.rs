@@ -7,6 +7,73 @@
 // See /src/core/src/error.rs for the base error types and traits used by these runtime errors.
 
 use super::*;
+use crate::RuntimeEffectId;
+
+#[derive(Debug, Clone)]
+pub struct RuntimeEffectOperationReentrant {
+  pub active_phase: ActiveRuntimeEffectPhase,
+  pub requested_operation: &'static str,
+}
+
+impl MechErrorKind for RuntimeEffectOperationReentrant {
+  fn name(&self) -> &str {
+    "RuntimeEffectOperationReentrant"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime operation `{}` cannot run during effect phase {:?}",
+      self.requested_operation,
+      self.active_phase,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeEffectCleanupFailed {
+  pub operation: &'static str,
+  pub transaction_id: TransactionId,
+  pub original_error: String,
+  pub cleanup_failures: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeEffectCleanupFailed {
+  fn name(&self) -> &str {
+    "RuntimeEffectCleanupFailed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime effect operation `{}` failed ({}) and cleanup was incomplete for transaction {}: {}",
+      self.operation,
+      self.original_error,
+      self.transaction_id,
+      self.cleanup_failures.join("; "),
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeExternalCommitIndeterminate {
+  pub transaction_id: TransactionId,
+  pub effect_id: RuntimeEffectId,
+  pub participant_outcomes: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeExternalCommitIndeterminate {
+  fn name(&self) -> &str {
+    "RuntimeExternalCommitIndeterminate"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime store transaction {} committed, but external effect {} has an indeterminate commit outcome: {}",
+      self.transaction_id,
+      self.effect_id,
+      self.participant_outcomes.join("; "),
+    )
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct RuntimeTransactionContextMismatch {

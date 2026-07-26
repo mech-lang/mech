@@ -19,6 +19,7 @@
 mod actor;
 mod capability;
 mod errors;
+mod effect;
 mod execution;
 mod host;
 mod id;
@@ -43,8 +44,14 @@ use self::program_transaction::{
   RuntimeContextCheckpoint,
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
+  RuntimeExecutionTransactionState,
   RuntimeTransactionContextIdentity,
 };
+use self::capability::{
+  RuntimeCapabilityMutation, RuntimeCapabilityOverlay,
+};
+use self::effect::RuntimeEffectJournal;
+use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use crate::runtime::host::*;
 
 use std::sync::Arc;
@@ -195,7 +202,7 @@ use crate::event::{
 };
 
 use crate::host::{
-  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy, HostFunction,
+  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy,
   HostFunctionNotFoundError, HostRegistry, InMemoryHostRegistry,
 };
 
@@ -495,6 +502,7 @@ impl RuntimeBuilder {
       active_transactions: HashMap::new(),
       program_transaction_owner: None,
       active_program_operation: None,
+      active_effect_phase: None,
       health: RuntimeHealth::Healthy,
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
@@ -574,6 +582,7 @@ pub struct MechRuntime {
   active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
   program_transaction_owner: Option<TransactionId>,
   active_program_operation: Option<ActiveRuntimeProgramOperation>,
+  active_effect_phase: Option<ActiveRuntimeEffectPhase>,
   health: RuntimeHealth,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
@@ -608,6 +617,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
       .field("active_transactions", &self.active_transactions.len())
+      .field("active_effect_phase", &self.active_effect_phase)
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
@@ -910,6 +920,8 @@ impl MechRuntime {
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
+    self.ensure_runtime_healthy("register_resource_provider")?;
+    self.reject_effect_reentrancy("register_resource_provider")?;
     self.resources.register_provider(provider)
   }
 
@@ -921,7 +933,55 @@ impl MechRuntime {
     &mut self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<()> {
-    self.resources.write(request)
+    self.ensure_runtime_healthy("write_resource")?;
+    self.reject_effect_reentrancy("write_resource")?;
+    let effect = self.resources.stage_write(request)?;
+    self.execute_runtime_effect_immediately(effect)?;
+    Ok(())
+  }
+
+  pub fn write_resource_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    mut request: RuntimeResourceWriteRequest,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_healthy("write_resource_with_context")?;
+    self.reject_effect_reentrancy("write_resource_with_context")?;
+    self.validate_context_for_runtime(context)?;
+
+    if context.transaction.is_some() {
+      request.value = request.value.deep_snapshot();
+      let staged_resource = if request.intent
+        == RuntimeResourceWriteIntent::Assign
+      {
+        Some((
+          request.base_uri.clone(),
+          request.path.clone(),
+          request.value.clone(),
+        ))
+      } else {
+        None
+      };
+      let effect = self.resources.stage_write(request)?;
+      return match staged_resource {
+        Some((base_uri, path, value)) => {
+          self.stage_runtime_resource_effect_with_context(
+            context,
+            effect,
+            base_uri,
+            path,
+            value,
+          )
+        }
+        None => self.stage_runtime_effect_with_context(context, effect),
+      };
+    }
+
+    let effect = self.resources.stage_write(request)?;
+    let cost = effect.cost();
+    context.charge_bytes(cost.bytes)?;
+    context.charge_items(cost.items)?;
+    self.execute_runtime_effect_immediately(effect)
   }
 
   pub fn read_resource(
