@@ -156,6 +156,17 @@ pub enum RuntimeEffectFailurePhase {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ActiveRuntimeEffectPhase {
+  Preparing,
+  Applying,
+  Compensating,
+  Aborting,
+  Committing,
+  Delivering,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeEffectFailure {
   pub effect_id: RuntimeEffectId,

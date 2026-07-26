@@ -13,6 +13,12 @@ pub(super) enum RuntimeExecutionTransactionMode {
   ImplicitProgramOperation,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum RuntimeExecutionTransactionState {
+  Active,
+  Committing,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct RuntimeTransactionContextIdentity {
   runtime: RuntimeId,
@@ -174,6 +180,7 @@ pub(super) struct RuntimeExecutionTransaction {
   pub(super) context_baseline: RuntimeContextCheckpoint,
   pub(super) program: Option<RuntimeProgramBaseline>,
   pub(super) effects: RuntimeEffectJournal,
+  pub(super) state: RuntimeExecutionTransactionState,
 }
 
 impl RuntimeExecutionTransaction {
@@ -190,6 +197,7 @@ impl RuntimeExecutionTransaction {
       context_baseline,
       program: None,
       effects: RuntimeEffectJournal::new(),
+      state: RuntimeExecutionTransactionState::Active,
     }
   }
 }
@@ -286,6 +294,22 @@ impl MechRuntime {
     ))
   }
 
+  pub(super) fn reject_effect_reentrancy(
+    &self,
+    requested_operation: &'static str,
+  ) -> MResult<()> {
+    let Some(active_phase) = self.active_effect_phase else {
+      return Ok(());
+    };
+    Err(MechError::new(
+      RuntimeEffectOperationReentrant {
+        active_phase,
+        requested_operation,
+      },
+      None,
+    ))
+  }
+
   pub(super) fn reject_transactional_reactive_turn(
     &self,
     context: &RuntimeContext,
@@ -357,24 +381,21 @@ impl MechRuntime {
 
     self.restore_live_state(savepoint.live.clone());
 
-    match self.active_transactions.get_mut(&transaction_id) {
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let effect_rollback = match self.active_transactions.get_mut(&transaction_id) {
       Some(transaction) => {
-        failures.extend(
-          transaction
-            .effects
-            .rollback_to(savepoint.effect_mark)
-            .into_iter()
-            .map(|failure| {
-              format!(
-                "effect {} {:?} failed during operation rollback: {}",
-                failure.effect_id,
-                failure.phase,
-                failure.message,
-              )
-            }),
-        );
+        let effect_failures =
+          transaction.effects.rollback_to(savepoint.effect_mark);
         transaction.store = savepoint.store.clone();
+        Some(effect_failures)
       }
+      None => None,
+    };
+    self.active_effect_phase = None;
+    match effect_rollback {
+      Some(effect_failures) => failures.extend(
+        Self::describe_effect_failures(effect_failures),
+      ),
       None => failures.push(format!(
         "active execution transaction {} disappeared before operation rollback",
         transaction_id,
@@ -440,19 +461,11 @@ impl MechRuntime {
     let mut failures = Vec::new();
 
     if let Some(mut transaction) = self.active_transactions.remove(&transaction_id) {
+      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let effect_abort_failures = transaction.effects.abort_all();
+      self.active_effect_phase = None;
       failures.extend(
-        transaction
-          .effects
-          .abort_all()
-          .into_iter()
-          .map(|failure| {
-            format!(
-              "best-effort effect {} {:?} failed: {}",
-              failure.effect_id,
-              failure.phase,
-              failure.message,
-            )
-          }),
+        Self::describe_effect_failures(effect_abort_failures),
       );
       if let Err(error) = transaction.store.abort(reason) {
         failures.push(format!(
@@ -576,6 +589,7 @@ impl MechRuntime {
   ) -> MResult<()> {
     self.ensure_runtime_healthy(operation)?;
     self.validate_context_for_runtime(context)?;
+    self.reject_effect_reentrancy(operation)?;
     self.reject_program_operation_reentrancy(operation)?;
 
     if let Some(owner) = self.program_transaction_owner {

@@ -17,6 +17,7 @@
 // - `context_transaction_id`: Retrieves the active transaction ID from the context.
 
 use super::*;
+use crate::{AccessSet, RuntimeCommitOutcome};
 
 impl MechRuntime {
 
@@ -79,6 +80,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
   ) -> MResult<TransactionId> {
     self.ensure_runtime_healthy("begin_transaction")?;
+    self.reject_effect_reentrancy("begin_transaction")?;
     self.reject_program_operation_reentrancy("begin_transaction")?;
     self.begin_runtime_transaction_internal(
       context,
@@ -144,15 +146,38 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<TransactionId> {
+    Ok(
+      self
+        .commit_runtime_transaction_detailed(context)?
+        .transaction_id,
+    )
+  }
+
+  pub fn commit_runtime_transaction_detailed(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<RuntimeCommitOutcome> {
     self.ensure_runtime_healthy("commit_runtime_transaction")?;
+    self.reject_effect_reentrancy("commit_runtime_transaction")?;
     self.reject_program_operation_reentrancy("commit_runtime_transaction")?;
-    self.commit_runtime_transaction_internal(context)
+    self.commit_runtime_transaction_detailed_internal(context)
   }
 
   pub(super) fn commit_runtime_transaction_internal(
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<TransactionId> {
+    Ok(
+      self
+        .commit_runtime_transaction_detailed_internal(context)?
+        .transaction_id,
+    )
+  }
+
+  fn commit_runtime_transaction_detailed_internal(
+    &mut self,
+    context: &mut RuntimeContext,
+  ) -> MResult<RuntimeCommitOutcome> {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
@@ -161,75 +186,267 @@ impl MechRuntime {
       .context_baseline
       .access_delta(context);
 
+    let journal_failures = self
+      .active_execution_transaction(transaction_id)?
+      .effects
+      .validate_active(transaction_id);
+    if !journal_failures.is_empty() {
+      return Err(self.poison_effect_cleanup(
+        "commit_runtime_transaction",
+        transaction_id,
+        "effect journal invariant validation failed".to_string(),
+        journal_failures,
+      ));
+    }
+
+    {
+      let transaction =
+        self.active_execution_transaction_mut(transaction_id)?;
+      if transaction.state != RuntimeExecutionTransactionState::Active {
+        return Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "commit_runtime_transaction",
+            reason: format!(
+              "transaction {} is already committing",
+              transaction_id,
+            ),
+          },
+          None,
+        ));
+      }
+      transaction.state = RuntimeExecutionTransactionState::Committing;
+    }
+
+    let mut envelope = self
+      .active_transactions
+      .remove(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })?;
+
+    if envelope.effects.is_empty() {
+      let commit_event =
+        self.make_event(RuntimeEventKind::TransactionCommitted {
+          transaction_id,
+        });
+      let commit = match Self::build_runtime_store_commit(
+        &mut envelope,
+        &access,
+        &commit_event,
+      ) {
+        Ok(commit) => commit,
+        Err(error) => {
+          envelope.state = RuntimeExecutionTransactionState::Active;
+          self.active_transactions.insert(transaction_id, envelope);
+          return Err(error);
+        }
+      };
+      let id = match self.store.commit_runtime(commit) {
+        Ok(id) => id,
+        Err(error) => {
+          envelope.state = RuntimeExecutionTransactionState::Active;
+          self.active_transactions.insert(transaction_id, envelope);
+          return Err(error);
+        }
+      };
+      context.transaction = None;
+      if self.program_transaction_owner == Some(transaction_id) {
+        self.program_transaction_owner = None;
+      }
+      self.push_persisted_event_to_context(context, commit_event);
+      return Ok(RuntimeCommitOutcome {
+        transaction_id: id,
+        delivery_failures: Vec::new(),
+      });
+    }
+
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Preparing);
+    let prepare_result = envelope.effects.prepare_transactional();
+    self.active_effect_phase = None;
+    if let Err(step) = prepare_result {
+      let original_error_text = format!("{:?}", step.error);
+      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let cleanup = envelope.effects.abort_prepared_reverse();
+      self.active_effect_phase = None;
+      envelope.state = RuntimeExecutionTransactionState::Active;
+      self.active_transactions.insert(transaction_id, envelope);
+      if cleanup.is_empty() {
+        return Err(step.error);
+      }
+      return Err(self.poison_effect_cleanup(
+        "commit_runtime_transaction",
+        transaction_id,
+        original_error_text,
+        Self::describe_effect_failures(cleanup),
+      ));
+    }
+
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Applying);
+    let apply_result = envelope.effects.apply_compensatable();
+    self.active_effect_phase = None;
+    if let Err(step) = apply_result {
+      let original_error_text = format!("{:?}", step.error);
+      let cleanup =
+        self.cleanup_effects_before_store_retry(&mut envelope);
+      envelope.state = RuntimeExecutionTransactionState::Active;
+      self.active_transactions.insert(transaction_id, envelope);
+      if cleanup.is_empty() {
+        return Err(step.error);
+      }
+      return Err(self.poison_effect_cleanup(
+        "commit_runtime_transaction",
+        transaction_id,
+        original_error_text,
+        cleanup,
+      ));
+    }
+
     let commit_event = self.make_event(RuntimeEventKind::TransactionCommitted {
       transaction_id,
     });
-
-    let commit = {
-      let transaction = &mut self
-        .active_execution_transaction_mut(transaction_id)?
-        .store;
-
-      transaction.merge_read_set(&access.reads)?;
-      transaction.merge_write_set(&access.writes)?;
-
-      let staged_puts: Vec<ObjectRecord> =
-        transaction.staged_puts().cloned().collect();
-
-      let staged_updates: Vec<ObjectRecord> =
-        transaction.staged_updates().cloned().collect();
-
-      let staged_task_updates: Vec<TaskRecord> =
-        transaction.staged_task_updates().cloned().collect();
-
-      let staged_actor_updates: Vec<ActorRecord> =
-        transaction.staged_actor_updates().cloned().collect();
-
-      let staged_message_acks: Vec<(ActorId, MessageId)> = transaction
-        .staged_message_acks()
-        .flat_map(|(actor, messages)| {
-          messages.iter().map(move |message| (*actor, *message))
-        })
-        .collect();
-
-      let staged_message_enqueues: Vec<(ActorId, MessageRecord)> = transaction
-        .staged_message_enqueues()
-        .flat_map(|(actor, messages)| {
-          messages.iter().cloned().map(move |message| (*actor, message))
-        })
-        .collect();
-
-      let mut staged_events: Vec<RuntimeEvent> =
-        transaction.staged_events().cloned().collect();
-      staged_events.push(commit_event.clone());
-
-      let mut transaction_snapshot = transaction.clone();
-      transaction_snapshot.record_event(commit_event.id)?;
-      let transaction_record = transaction_snapshot.into_record()?;
-
-      RuntimeStoreCommit {
-        transaction: transaction_record,
-        object_puts: staged_puts,
-        object_updates: staged_updates,
-        task_updates: staged_task_updates,
-        actor_updates: staged_actor_updates,
-        message_acks: staged_message_acks,
-        message_enqueues: staged_message_enqueues,
-        events: staged_events,
+    let commit = match Self::build_runtime_store_commit(
+      &mut envelope,
+      &access,
+      &commit_event,
+    ) {
+      Ok(commit) => commit,
+      Err(error) => {
+        let original_error_text = format!("{:?}", error);
+        let cleanup =
+          self.cleanup_effects_before_store_retry(&mut envelope);
+        envelope.state = RuntimeExecutionTransactionState::Active;
+        self.active_transactions.insert(transaction_id, envelope);
+        if cleanup.is_empty() {
+          return Err(error);
+        }
+        return Err(self.poison_effect_cleanup(
+          "commit_runtime_transaction",
+          transaction_id,
+          original_error_text,
+          cleanup,
+        ));
       }
     };
 
-    let id = self.store.commit_runtime(commit)?;
+    let id = match self.store.commit_runtime(commit) {
+      Ok(id) => id,
+      Err(error) => {
+        let original_error_text = format!("{:?}", error);
+        let cleanup =
+          self.cleanup_effects_before_store_retry(&mut envelope);
+        envelope.state = RuntimeExecutionTransactionState::Active;
+        self.active_transactions.insert(transaction_id, envelope);
+        if cleanup.is_empty() {
+          return Err(error);
+        }
+        return Err(self.poison_effect_cleanup(
+          "commit_runtime_transaction",
+          transaction_id,
+          original_error_text,
+          cleanup,
+        ));
+      }
+    };
 
-    self.active_transactions.remove(&transaction_id);
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Committing);
+    let participant_result = envelope.effects.commit_transactional();
+    self.active_effect_phase = None;
+    if let Err(commit_failure) = participant_result {
+      context.transaction = None;
+      if self.program_transaction_owner == Some(transaction_id) {
+        self.program_transaction_owner = None;
+      }
+      self.push_persisted_event_to_context(context, commit_event);
+      return Err(self.poison_external_commit_indeterminate(
+        id,
+        commit_failure.step.failure.effect_id,
+        commit_failure.participant_outcomes,
+      ));
+    }
+
     context.transaction = None;
     if self.program_transaction_owner == Some(transaction_id) {
       self.program_transaction_owner = None;
     }
-
     self.push_persisted_event_to_context(context, commit_event);
 
-    Ok(id)
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Delivering);
+    let delivery_failures = envelope.effects.deliver_after_commit();
+    self.active_effect_phase = None;
+
+    Ok(RuntimeCommitOutcome {
+      transaction_id: id,
+      delivery_failures,
+    })
+  }
+
+  fn cleanup_effects_before_store_retry(
+    &mut self,
+    envelope: &mut RuntimeExecutionTransaction,
+  ) -> Vec<String> {
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Compensating);
+    let compensated = envelope.effects.compensate_applied_reverse();
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let aborted = envelope.effects.abort_prepared_reverse();
+    self.active_effect_phase = None;
+
+    let mut failures = Self::describe_effect_failures(compensated);
+    failures.extend(Self::describe_effect_failures(aborted));
+    failures
+  }
+
+  fn build_runtime_store_commit(
+    envelope: &mut RuntimeExecutionTransaction,
+    access: &AccessSet,
+    commit_event: &RuntimeEvent,
+  ) -> MResult<RuntimeStoreCommit> {
+    let transaction = &mut envelope.store;
+
+    transaction.merge_read_set(&access.reads)?;
+    transaction.merge_write_set(&access.writes)?;
+
+    let staged_puts: Vec<ObjectRecord> =
+      transaction.staged_puts().cloned().collect();
+    let staged_updates: Vec<ObjectRecord> =
+      transaction.staged_updates().cloned().collect();
+    let staged_task_updates: Vec<TaskRecord> =
+      transaction.staged_task_updates().cloned().collect();
+    let staged_actor_updates: Vec<ActorRecord> =
+      transaction.staged_actor_updates().cloned().collect();
+    let staged_message_acks: Vec<(ActorId, MessageId)> = transaction
+      .staged_message_acks()
+      .flat_map(|(actor, messages)| {
+        messages.iter().map(move |message| (*actor, *message))
+      })
+      .collect();
+    let staged_message_enqueues: Vec<(ActorId, MessageRecord)> = transaction
+      .staged_message_enqueues()
+      .flat_map(|(actor, messages)| {
+        messages.iter().cloned().map(move |message| (*actor, message))
+      })
+      .collect();
+
+    let mut staged_events: Vec<RuntimeEvent> =
+      transaction.staged_events().cloned().collect();
+    staged_events.push(commit_event.clone());
+
+    let mut transaction_snapshot = transaction.clone();
+    transaction_snapshot.record_event(commit_event.id)?;
+    let transaction_record = transaction_snapshot.into_record()?;
+
+    Ok(RuntimeStoreCommit {
+      transaction: transaction_record,
+      object_puts: staged_puts,
+      object_updates: staged_updates,
+      task_updates: staged_task_updates,
+      actor_updates: staged_actor_updates,
+      message_acks: staged_message_acks,
+      message_enqueues: staged_message_enqueues,
+      events: staged_events,
+    })
   }
 
   pub fn abort_runtime_transaction(
@@ -237,6 +454,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     reason: impl Into<String>,
   ) -> MResult<()> {
+    self.reject_effect_reentrancy("abort_runtime_transaction")?;
     self.reject_program_operation_reentrancy("abort_runtime_transaction")?;
     self.abort_runtime_transaction_internal(
       context,
@@ -318,19 +536,11 @@ impl MechRuntime {
       ));
     }
 
+    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let effect_abort_failures = envelope.effects.abort_all();
+    self.active_effect_phase = None;
     rollback_failures.extend(
-      envelope
-        .effects
-        .abort_all()
-        .into_iter()
-        .map(|failure| {
-          format!(
-            "effect {} {:?} failed during transaction abort: {}",
-            failure.effect_id,
-            failure.phase,
-            failure.message,
-          )
-        }),
+      Self::describe_effect_failures(effect_abort_failures),
     );
 
     if let Err(error) = envelope.store.abort(reason) {

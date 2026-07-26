@@ -44,9 +44,11 @@ use self::program_transaction::{
   RuntimeContextCheckpoint,
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
+  RuntimeExecutionTransactionState,
   RuntimeTransactionContextIdentity,
 };
 use self::effect::RuntimeEffectJournal;
+use crate::ActiveRuntimeEffectPhase;
 use crate::runtime::host::*;
 
 use std::sync::Arc;
@@ -497,6 +499,7 @@ impl RuntimeBuilder {
       active_transactions: HashMap::new(),
       program_transaction_owner: None,
       active_program_operation: None,
+      active_effect_phase: None,
       health: RuntimeHealth::Healthy,
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
@@ -576,6 +579,7 @@ pub struct MechRuntime {
   active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
   program_transaction_owner: Option<TransactionId>,
   active_program_operation: Option<ActiveRuntimeProgramOperation>,
+  active_effect_phase: Option<ActiveRuntimeEffectPhase>,
   health: RuntimeHealth,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
@@ -610,6 +614,7 @@ impl std::fmt::Debug for MechRuntime {
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
       .field("active_transactions", &self.active_transactions.len())
+      .field("active_effect_phase", &self.active_effect_phase)
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
