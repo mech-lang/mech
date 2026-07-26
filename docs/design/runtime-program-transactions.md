@@ -126,3 +126,22 @@ Pointer addresses and `ReactiveCellId` are not durable history keys. Durable
 history requires an explicit stable logical cell ID first. This separation
 allows future values to use storage other than `Rc<RefCell<T>>` without
 teaching transaction coordination about the current representation.
+
+## macOS CLI serve-test classification
+
+The first serial CLI failure was
+`serve::tests::poll_workspace_once_updates_registry_after_manual_refresh`.
+It failed identically in three of three runs at both the Round 3 parent
+`7a5b0895771de0d5aeda0885ae4c8ae68cb3390b` and corrective head
+`da384fe619e769dba0ab720348b08ab1733638bd`.
+
+The test expected `server.workspace_session` to be `Some` after loading
+`main.mec`, but the actual value was `None`. A single existing Mech source is
+classified as a configured served project, which does not create a workspace
+session. The assertion failed before the later `source/main.mec` route lookup.
+
+Every run used a canonical temporary root under
+`/private/var/folders/.../T/mech-serve-refresh-*`; no `/var` versus
+`/private/var` comparison was reached. The remaining eleven serial failures
+were follow-on failures from the poisoned current-directory test lock. This is
+a pre-existing CLI fixture failure, not a Round 3 runtime regression.
