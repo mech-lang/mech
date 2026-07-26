@@ -12,6 +12,7 @@
 // Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
 
 use super::*;
+use super::reactive_transaction::PreparedRuntimeHostInput;
 use crate::{SourceDeclaration, SourceImportDeclaration, SourceIndex};
 use crate::RuntimeResourceWritePreflightRequest;
 
@@ -4697,8 +4698,25 @@ impl MechRuntime {
   }
 
   pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
+    self.ensure_runtime_mutation_allowed("apply_host_input")?;
+    self.reject_program_operation_reentrancy("apply_host_input")?;
+    let prepared = self.prepare_runtime_host_input(&input)?;
+    if prepared.binding_count == 0 {
+      return Ok(crate::RuntimeHostInputOutcome {
+        update_count: prepared.update_count,
+        ignored_update_count: prepared.ignored_update_count,
+        binding_count: 0,
+        turn: None,
+      });
+    }
+
     let mut context = self.live_turn_context()?;
-    self.apply_host_input_with_context(&mut context, input)
+    self.validate_context_for_runtime(&context)?;
+    self.validate_live_turn_context(&context)?;
+    self.apply_prepared_host_input_with_context(
+      &mut context,
+      prepared,
+    )
   }
 
   pub fn apply_host_input_with_context(
@@ -4725,6 +4743,14 @@ impl MechRuntime {
       });
     }
 
+    self.apply_prepared_host_input_with_context(context, prepared)
+  }
+
+  fn apply_prepared_host_input_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    prepared: PreparedRuntimeHostInput,
+  ) -> MResult<crate::RuntimeHostInputOutcome> {
     self.with_atomic_reactive_turn(
       context,
       "apply_host_input_with_context",

@@ -910,6 +910,26 @@ fn host_input_preparation_opens_no_transaction_or_budget_charge() {
 }
 
 #[test]
+fn unbound_host_input_without_a_live_program_is_a_noop() {
+  let mut runtime = MechRuntime::builder().build().unwrap();
+  let event_sequence = runtime.event_sequence;
+  let input = RuntimeHostInput::single(
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "missing").unwrap(),
+    RuntimeHostInputValue::F64(4.0),
+  );
+
+  let outcome = runtime.apply_host_input(input).unwrap();
+
+  assert_eq!(outcome.update_count, 1);
+  assert_eq!(outcome.ignored_update_count, 1);
+  assert_eq!(outcome.binding_count, 0);
+  assert!(outcome.turn.is_none());
+  assert_eq!(runtime.event_sequence, event_sequence);
+  assert!(runtime.active_transactions.is_empty());
+  assert_eq!(runtime.program_transaction_owner, None);
+}
+
+#[test]
 fn explicit_host_input_is_provisional_until_outer_decision() {
   let mut runtime =
     test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
