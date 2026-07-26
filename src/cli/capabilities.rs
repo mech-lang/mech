@@ -770,6 +770,6 @@ pub(crate) fn install_file_resolver(
     runtime.set_source_resolver(
         mech_runtime::FileSourceResolver::new(cwd)
             .with_capabilities(access.kernel.clone(), MECH_TOOL_SUBJECT),
-    );
+    )?;
     Ok(())
 }

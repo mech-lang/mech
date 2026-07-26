@@ -803,7 +803,8 @@ impl MechRuntime {
 mod tests {
   use super::*;
   use crate::{
-    BasicCapability, ClosureHostFunction, InMemoryDocsProvider, NodeId,
+    BasicCapability, ClosureHostFunction, InMemoryDocsProvider,
+    InMemorySourceResolver, NodeId, SharedCapabilityKernel,
   };
   use std::collections::HashSet;
   use std::sync::atomic::{AtomicUsize, Ordering};
@@ -1776,10 +1777,13 @@ mod tests {
   }
 
   #[test]
-  fn poisoned_runtime_rejects_owned_mutations_but_allows_abort_cleanup() {
+  fn poisoned_runtime_owned_mutation_is_fail_closed() {
     let callback_calls = Arc::new(AtomicUsize::new(0));
     let observed_calls = callback_calls.clone();
+    let kernel = SharedCapabilityKernel::new();
+    let observed_kernel = kernel.clone();
     let mut runtime = MechRuntime::builder()
+      .capability_kernel(kernel)
       .resource_provider(Box::new(InMemoryDocsProvider::new()))
       .build()
       .unwrap();
@@ -1855,6 +1859,53 @@ mod tests {
         .unwrap_err()
         .kind_name(),
     );
+    let used_steps_before = cleanup_context.budget.used_steps;
+    let capability_uses_before =
+      observed_kernel.successful_uses_for_test(CapabilityId(901));
+    let overlay_uses_before = runtime
+      .active_execution_transaction(cleanup_transaction)
+      .unwrap()
+      .capabilities
+      .usage_deltas()
+      .collect::<Vec<_>>();
+    poison_kinds.push(
+      runtime
+        .check_capability_with_context(
+          &mut cleanup_context,
+          &CapabilityRequest::from_keys(
+            "task:1",
+            ":read",
+            "db://users",
+          ),
+        )
+        .unwrap_err()
+        .kind_name(),
+    );
+    assert_eq!(cleanup_context.budget.used_steps, used_steps_before);
+    assert_eq!(
+      observed_kernel.successful_uses_for_test(CapabilityId(901)),
+      capability_uses_before,
+    );
+    assert_eq!(
+      runtime
+        .active_execution_transaction(cleanup_transaction)
+        .unwrap()
+        .capabilities
+        .usage_deltas()
+        .collect::<Vec<_>>(),
+      overlay_uses_before,
+    );
+    let resolver_before =
+      runtime.source_resolver() as *const dyn SourceResolver;
+    poison_kinds.push(
+      runtime
+        .set_source_resolver(InMemorySourceResolver::new())
+        .unwrap_err()
+        .kind_name(),
+    );
+    let resolver_after =
+      runtime.source_resolver() as *const dyn SourceResolver;
+    assert!(std::ptr::eq(resolver_before, resolver_after));
     poison_kinds.push(
       runtime
         .grant_capability(Arc::new(BasicCapability::from_keys(
@@ -2228,6 +2279,24 @@ mod tests {
     assert_eq!(error.kind_name(), "RuntimeEffectOperationReentrant");
     assert_eq!(context.transaction, None);
     assert!(runtime.active_transactions.is_empty());
+  }
+
+  #[test]
+  fn source_resolver_replacement_is_rejected_while_an_effect_phase_is_active() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let resolver_before =
+      runtime.source_resolver() as *const dyn SourceResolver;
+    runtime.active_effect_phase =
+      Some(ActiveRuntimeEffectPhase::Preparing);
+
+    let error = runtime
+      .set_source_resolver(InMemorySourceResolver::new())
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectOperationReentrant");
+    let resolver_after =
+      runtime.source_resolver() as *const dyn SourceResolver;
+    assert!(std::ptr::eq(resolver_before, resolver_after));
   }
 
   #[test]

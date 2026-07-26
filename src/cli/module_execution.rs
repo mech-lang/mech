@@ -134,7 +134,7 @@ pub(crate) fn execute_source_module_roots(
     }
 
     let mut runtime = RuntimeBuilder::new().config(config).build()?;
-    runtime.set_source_resolver(resolver);
+    runtime.set_source_resolver(resolver)?;
     for root in canonical_roots {
         runtime.resolve_and_run_root_module(
             SourceRequest::new(root.to_string_lossy().to_string()),

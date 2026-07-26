@@ -459,6 +459,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed(
+      "check_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     if let Some(transaction_id) = context.transaction {
@@ -486,7 +489,7 @@ impl MechRuntime {
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
     self.ensure_runtime_mutation_allowed(
-      "check_capability_with_context",
+      "preview_capability_with_context",
     )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;

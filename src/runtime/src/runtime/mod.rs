@@ -1024,7 +1024,7 @@ impl MechRuntime {
     self.capability_kernel.as_mut()
   }
 
-  pub fn source_resolver(&self) -> &dyn SourceResolver {
+  pub fn source_resolver(&self) -> &(dyn SourceResolver + 'static) {
     self.source_resolver.as_ref()
   }
 
@@ -1035,10 +1035,13 @@ impl MechRuntime {
     self.source_resolver.as_mut()
   }
 
-  /// Unchecked administrative replacement outside runtime-owned poison
-  /// enforcement.
-  pub fn set_source_resolver(&mut self, source_resolver: impl SourceResolver + 'static) {
+  pub fn set_source_resolver(
+    &mut self,
+    source_resolver: impl SourceResolver + 'static,
+  ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("set_source_resolver")?;
     self.source_resolver = Box::new(source_resolver);
+    Ok(())
   }
 
   pub fn host_registry(&self) -> &dyn HostRegistry {
