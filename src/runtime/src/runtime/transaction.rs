@@ -251,6 +251,31 @@ impl MechRuntime {
     reason: String,
     restore_program: bool,
   ) -> MResult<()> {
+    let (transaction_id, rollback_failures) =
+      self.abort_runtime_transaction_cleanup(
+        context,
+        &reason,
+        restore_program,
+      )?;
+
+    if rollback_failures.is_empty() {
+      return Ok(());
+    }
+
+    Err(self.poison_program_operation(
+      "abort_runtime_transaction",
+      Some(transaction_id),
+      reason,
+      rollback_failures,
+    ))
+  }
+
+  pub(super) fn abort_runtime_transaction_cleanup(
+    &mut self,
+    context: &mut RuntimeContext,
+    reason: &str,
+    restore_program: bool,
+  ) -> MResult<(TransactionId, Vec<String>)> {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
@@ -280,10 +305,16 @@ impl MechRuntime {
     envelope
       .context_baseline
       .restore_preserving_consumption(context);
+    if let Err(error) = self.validate_context_for_runtime(context) {
+      rollback_failures.push(format!(
+        "context baseline restore invariant failed: {:?}",
+        error,
+      ));
+    }
 
     let transaction = self.active_transactions.remove(&transaction_id);
     if let Some(transaction) = transaction {
-      if let Err(error) = transaction.store.abort(reason.clone()) {
+      if let Err(error) = transaction.store.abort(reason) {
         rollback_failures.push(format!(
           "staged store discard invariant failed: {:?}",
           error,
@@ -304,20 +335,18 @@ impl MechRuntime {
       context,
       RuntimeEventKind::TransactionAborted {
         transaction_id,
-        message: reason.clone(),
+        message: reason.to_string(),
       },
     );
 
-    if !rollback_failures.is_empty() {
-      return Err(self.poison_program_operation(
-        "abort_runtime_transaction",
-        Some(transaction_id),
-        reason,
-        rollback_failures,
+    if let Err(error) = abort_event_result {
+      rollback_failures.push(format!(
+        "transaction abort audit event failed: {:?}",
+        error,
       ));
     }
 
-    abort_event_result.map(|_| ())
+    Ok((transaction_id, rollback_failures))
   }
 
   pub(super) fn active_transaction_mut(

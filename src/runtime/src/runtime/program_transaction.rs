@@ -207,6 +207,35 @@ pub(super) struct ActiveRuntimeProgramOperation {
   pub(super) operation: &'static str,
 }
 
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProgramTransactionTestFault {
+  RemoveImplicitEnvelopeBeforeCleanup,
+  FailImplicitStoreAbort,
+}
+
+#[cfg(test)]
+thread_local! {
+  static PROGRAM_TRANSACTION_TEST_FAULT:
+    std::cell::RefCell<Option<ProgramTransactionTestFault>> =
+      const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn set_program_transaction_test_fault(fault: ProgramTransactionTestFault) {
+  PROGRAM_TRANSACTION_TEST_FAULT.with(|slot| {
+    assert!(
+      slot.replace(Some(fault)).is_none(),
+      "program transaction test fault was already armed",
+    );
+  });
+}
+
+#[cfg(test)]
+fn take_program_transaction_test_fault() -> Option<ProgramTransactionTestFault> {
+  PROGRAM_TRANSACTION_TEST_FAULT.with(|slot| slot.replace(None))
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeHealth {
   Healthy,
@@ -348,6 +377,169 @@ impl MechRuntime {
     failures
   }
 
+  fn validate_implicit_cleanup_complete(
+    &self,
+    context: &RuntimeContext,
+    transaction_id: TransactionId,
+  ) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    if self.active_transactions.contains_key(&transaction_id) {
+      failures.push(format!(
+        "active implicit transaction envelope {} still exists after cleanup",
+        transaction_id,
+      ));
+    }
+    if self.program_transaction_owner == Some(transaction_id) {
+      failures.push(format!(
+        "program owner still references implicit transaction {} after cleanup",
+        transaction_id,
+      ));
+    }
+    if context.transaction == Some(transaction_id) {
+      failures.push(format!(
+        "runtime context still references implicit transaction {} after cleanup",
+        transaction_id,
+      ));
+    }
+    if self
+      .active_program_operation
+      .as_ref()
+      .is_some_and(|active| active.transaction_id == transaction_id)
+    {
+      failures.push(format!(
+        "active program operation still references implicit transaction {} after cleanup",
+        transaction_id,
+      ));
+    }
+
+    failures
+  }
+
+  fn finish_implicit_cleanup_best_effort(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction_id: TransactionId,
+    reason: &str,
+  ) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    if let Some(transaction) = self.active_transactions.remove(&transaction_id) {
+      if let Err(error) = transaction.store.abort(reason) {
+        failures.push(format!(
+          "best-effort staged store discard failed: {:?}",
+          error,
+        ));
+      }
+    }
+    if self.program_transaction_owner == Some(transaction_id) {
+      self.program_transaction_owner = None;
+    }
+    if context.transaction == Some(transaction_id) {
+      context.transaction = None;
+    }
+    if self
+      .active_program_operation
+      .as_ref()
+      .is_some_and(|active| active.transaction_id == transaction_id)
+    {
+      self.active_program_operation = None;
+    }
+
+    failures
+  }
+
+  #[cfg(test)]
+  fn apply_program_transaction_test_fault(
+    &mut self,
+    transaction_id: TransactionId,
+  ) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    match take_program_transaction_test_fault() {
+      Some(ProgramTransactionTestFault::RemoveImplicitEnvelopeBeforeCleanup) => {
+        self.active_transactions.remove(&transaction_id);
+      }
+      Some(ProgramTransactionTestFault::FailImplicitStoreAbort) => {
+        match self.active_transactions.get_mut(&transaction_id) {
+          Some(transaction) => {
+            transaction.store.status =
+              crate::transaction::TransactionStatus::Committed;
+          }
+          None => failures.push(format!(
+            "could not arm staged-store abort failure for missing implicit transaction {}",
+            transaction_id,
+          )),
+        }
+      }
+      None => {}
+    }
+
+    failures
+  }
+
+  fn cleanup_failed_implicit_operation(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &'static str,
+    transaction_id: TransactionId,
+    reason: &str,
+  ) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    #[cfg(test)]
+    failures.extend(
+      self.apply_program_transaction_test_fault(transaction_id),
+    );
+
+    match self.abort_runtime_transaction_cleanup(
+      context,
+      reason,
+      false,
+    ) {
+      Ok((cleaned_transaction_id, cleanup_failures)) => {
+        failures.extend(cleanup_failures);
+        if cleaned_transaction_id != transaction_id {
+          failures.push(format!(
+            "implicit cleanup targeted transaction {}, expected {}",
+            cleaned_transaction_id,
+            transaction_id,
+          ));
+        }
+      }
+      Err(error) => failures.push(format!(
+        "implicit transaction cleanup for `{}` transaction {} could not start: {:?}",
+        operation,
+        transaction_id,
+        error,
+      )),
+    }
+
+    let invariant_failures =
+      self.validate_implicit_cleanup_complete(context, transaction_id);
+    if !invariant_failures.is_empty() {
+      failures.extend(invariant_failures);
+      failures.extend(self.finish_implicit_cleanup_best_effort(
+        context,
+        transaction_id,
+        reason,
+      ));
+      failures.extend(
+        self
+          .validate_implicit_cleanup_complete(context, transaction_id)
+          .into_iter()
+          .map(|failure| {
+            format!(
+              "implicit cleanup invariant remained unsatisfied: {}",
+              failure,
+            )
+          }),
+      );
+    }
+
+    failures
+  }
+
   pub(super) fn preflight_atomic_program_operation(
     &self,
     context: &RuntimeContext,
@@ -467,11 +659,21 @@ impl MechRuntime {
 
     if rollback_failures.is_empty() {
       if implicit {
-        let _ = self.abort_runtime_transaction_internal(
+        let cleanup_failures = self.cleanup_failed_implicit_operation(
           context,
-          format!("retained program operation `{}` failed", operation),
-          false,
+          operation,
+          transaction_id,
+          &format!("retained program operation `{}` failed", operation),
         );
+        if cleanup_failures.is_empty() {
+          return Err(original_error);
+        }
+        return Err(self.poison_program_operation(
+          operation,
+          Some(transaction_id),
+          original_error_text,
+          cleanup_failures,
+        ));
       } else if first_explicit_operation {
         self.program_transaction_owner = None;
         if let Ok(transaction) =
@@ -483,13 +685,17 @@ impl MechRuntime {
       return Err(original_error);
     }
 
+    let mut rollback_failures = rollback_failures;
     if implicit {
-      let _ = self.abort_runtime_transaction_internal(
+      rollback_failures.extend(self.cleanup_failed_implicit_operation(
         context,
-        format!("retained program operation `{}` rollback failed", operation),
-        false,
-      );
-      self.program_transaction_owner = None;
+        operation,
+        transaction_id,
+        &format!(
+          "retained program operation `{}` rollback failed",
+          operation,
+        ),
+      ));
     }
 
     Err(self.poison_program_operation(
@@ -684,7 +890,7 @@ mod tests {
 
     let error = runtime.run_source_with_context(&mut context, &source);
 
-    assert!(error.is_err());
+    assert_eq!(error.unwrap_err().kind_name(), "UndefinedVariable");
     assert!(runtime.program.root_symbol_value("round3-partial").is_err());
     assert_eq!(runtime.program.interpreter().plan_len(), plan_len_before);
     assert_eq!(
@@ -741,6 +947,108 @@ mod tests {
         RuntimeEventKind::ProgramCompleted { .. }
       )
     }));
+  }
+
+  #[test]
+  fn implicit_cleanup_failure_returns_rollback_error_and_poisons_runtime() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let mut implicit_transaction_id = None;
+
+    let result: MResult<()> = runtime.with_atomic_program_operation(
+      &mut context,
+      "implicit_cleanup_failure_test",
+      |_runtime, context| {
+        implicit_transaction_id = context.transaction;
+        set_program_transaction_test_fault(
+          ProgramTransactionTestFault::FailImplicitStoreAbort,
+        );
+        Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "implicit_cleanup_failure_test",
+            reason: "deliberate implicit execution failure".to_string(),
+          },
+          None,
+        ))
+      },
+    );
+
+    let transaction_id =
+      implicit_transaction_id.expect("implicit transaction should be active");
+    let error = result.unwrap_err();
+    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert!(runtime.is_poisoned());
+    let poison = match runtime.health() {
+      RuntimeHealth::Healthy => panic!("runtime should be poisoned"),
+      RuntimeHealth::Poisoned(poison) => poison,
+    };
+    assert!(
+      poison
+        .original_error
+        .contains("deliberate implicit execution failure"),
+    );
+    assert!(poison.rollback_failures.iter().any(|failure| {
+      failure.contains("staged store discard invariant failed")
+        && failure.contains("transaction is not open")
+    }));
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_program_operation.is_none());
+  }
+
+  #[test]
+  fn missing_implicit_envelope_during_cleanup_is_not_hidden() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let mut implicit_transaction_id = None;
+
+    let result: MResult<()> = runtime.with_atomic_program_operation(
+      &mut context,
+      "missing_implicit_envelope_test",
+      |_runtime, context| {
+        implicit_transaction_id = context.transaction;
+        set_program_transaction_test_fault(
+          ProgramTransactionTestFault::RemoveImplicitEnvelopeBeforeCleanup,
+        );
+        Err(MechError::new(
+          RuntimeInvalidOperationError {
+            operation: "missing_implicit_envelope_test",
+            reason: "deliberate implicit execution failure".to_string(),
+          },
+          None,
+        ))
+      },
+    );
+
+    let transaction_id =
+      implicit_transaction_id.expect("implicit transaction should be active");
+    let error = result.unwrap_err();
+    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert!(runtime.is_poisoned());
+    let poison = match runtime.health() {
+      RuntimeHealth::Healthy => panic!("runtime should be poisoned"),
+      RuntimeHealth::Poisoned(poison) => poison,
+    };
+    assert!(
+      poison
+        .original_error
+        .contains("deliberate implicit execution failure"),
+    );
+    assert!(poison.rollback_failures.iter().any(|failure| {
+      failure.contains("implicit transaction cleanup")
+        && failure.contains("could not start")
+    }));
+    assert!(poison.rollback_failures.iter().any(|failure| {
+      failure.contains("program owner still references implicit transaction")
+    }));
+    assert!(poison.rollback_failures.iter().any(|failure| {
+      failure.contains("runtime context still references implicit transaction")
+    }));
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_program_operation.is_none());
   }
 
   #[test]
