@@ -249,7 +249,7 @@ fn benchmark_family(
   }
 
   group.bench_function("capture", |b| {
-    b.iter_batched(
+    b.iter_batched_ref(
       fixture,
       |program| black_box(program.checkpoint().unwrap()),
       batch_size(large_input),

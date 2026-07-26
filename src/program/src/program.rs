@@ -307,6 +307,10 @@ pub struct MechProgram {
 /// [`MechProgram::checkpoint`] and consumed by [`MechProgram::restore`].
 /// It is a process-local savepoint, not a serializable durable-history record
 /// or a source of stable transaction identities.
+///
+/// This checkpoint supports append-only plan elaboration. Removing or
+/// replacing a function object that existed at capture time invalidates
+/// restoration.
 #[derive(Clone)]
 pub struct MechProgramCheckpoint {
   config: MechProgramConfig,

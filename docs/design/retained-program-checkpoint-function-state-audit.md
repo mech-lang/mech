@@ -27,8 +27,9 @@ The Round 2 audit covered every production `MechFunctionImpl` under `src/`,
   enum. That outer topology is not a journalable `Value` cell, so checkpoint
   creation returns `TransactionStateUnsupported` before mutation.
 - `RuntimeHostNativeFunction` owns an outer output cell in the runtime layer.
-  Retaining that topology requires the runtime transaction coordinator, so
-  Round 2 rejects it before inspection or mutation.
+  Retaining that topology requires the runtime transaction coordinator. The
+  function itself therefore returns `TransactionStateUnsupported` before
+  ordinary program checkpointing can inspect or mutate its state.
 
 ## Implementations covered by the default
 
@@ -44,11 +45,36 @@ The Round 2 audit covered every production `MechFunctionImpl` under `src/`,
 - I/O print functions and `ActivationEffectBarrier`, which retain no mutable
   semantic state.
 
-No host crate directly implements `MechFunctionImpl`; runtime host calls are
-represented by the structured unsupported boundary above.
+`RuntimeHostNativeFunction` declares the runtime-layer unsupported boundary
+itself. Provider crates under `hosts/` do not directly implement
+`MechFunctionImpl`.
 
 Out-of-tree implementations are responsible for honoring this trait contract.
 Hidden mutable state must never inherit the permissive output-backed default.
+
+## Plan function-object lifetime constraint
+
+A plan checkpoint retains the identity of every function object that existed
+when the checkpoint was created. It does not clone or take secondary ownership
+of `Box<dyn MechFunction>`. The retained identity is a process-local preflight
+token only, not a durable cell or runtime transaction identity.
+
+Supported structural changes include:
+
+- appending new plan nodes;
+- changing metadata on pre-existing nodes;
+- changing value-backed state owned by pre-existing functions;
+- adding activation registrations and scopes.
+
+Restoration removes appended nodes, restores metadata and registrations, and
+restores value-backed function state.
+
+Removing or replacing a pre-existing function object invalidates the
+checkpoint. Restore detects the missing or changed function identity during
+preflight, returns a structured error, and performs no partial restoration.
+
+Runtime transaction coordination must treat failure to restore a checkpoint as
+a runtime-poisoning condition.
 
 ## Checkpoint architecture guardrails
 

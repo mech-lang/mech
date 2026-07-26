@@ -168,6 +168,12 @@ pub trait MechFunctionImpl {
   /// cells must override this method, while functions whose retained state
   /// cannot be represented by `Value` must return
   /// [`TransactionStateUnsupportedError`].
+  ///
+  /// The function implementation itself owns this checkpoint contract.
+  /// Callers must not infer checkpoint support from [`Self::to_string`],
+  /// [`Debug`] output, type names, module names, or other display metadata. A
+  /// function that requires participation from a higher-level transaction
+  /// coordinator must return [`TransactionStateUnsupportedError`] directly.
   fn transaction_state_values(&self) -> MResult<Vec<Value>> {
     Ok(self.reactive_output_values())
   }
@@ -1031,6 +1037,11 @@ impl ReactivePlanCheckpoint {
   pub fn node_len(&self) -> usize { self.nodes.len() }
 }
 
+/// A process-local structural checkpoint for a [`Plan`].
+///
+/// This checkpoint supports append-only plan elaboration. Removing or
+/// replacing a function object that existed at capture time invalidates
+/// restoration.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PlanCheckpoint {
   reactive: ReactivePlanCheckpoint,
@@ -1405,16 +1416,6 @@ impl ReactivePlan {
   pub fn transaction_state_values(&self) -> MResult<Vec<Value>> {
     let mut values = Vec::new();
     for node in &self.nodes {
-      let function_name = node.function.to_string();
-      if function_name.starts_with("RuntimeHostNativeFunction::") {
-        return Err(MechError::new(
-          TransactionStateUnsupportedError {
-            function: function_name,
-            reason: "runtime host output topology requires runtime transaction participation".to_string(),
-          },
-          None,
-        ).with_compiler_loc());
-      }
       let mut function_values = node.function.transaction_state_values()?;
       if function_values.is_empty() {
         function_values.push(node.function.out());
@@ -3202,28 +3203,37 @@ mod reactive_plan_tests {
     assert_eq!(error.kind_name(), "TransactionStateUnsupported");
   }
 
-  struct RuntimeHostBoundaryFunction;
-  impl MechFunctionImpl for RuntimeHostBoundaryFunction {
+  struct MisleadingRuntimeHostNameFunction {
+    output: ValRef,
+  }
+  impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
     fn solve(&self) {}
-    fn out(&self) -> Value { Value::Empty }
+    fn out(&self) -> Value { Value::MutableReference(self.output.clone()) }
     fn to_string(&self) -> String {
-      "RuntimeHostNativeFunction::test".to_string()
+      "RuntimeHostNativeFunction::misleading-name".to_string()
     }
   }
   #[cfg(feature = "compiler")]
-  impl MechFunctionCompiler for RuntimeHostBoundaryFunction {
+  impl MechFunctionCompiler for MisleadingRuntimeHostNameFunction {
     fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
   }
 
   #[test]
-  fn plan_checkpoint_declines_runtime_host_state_before_inspection() {
+  fn host_like_display_name_does_not_change_checkpoint_behavior() {
     let plan = Plan::new();
-    plan.add_function(Box::new(RuntimeHostBoundaryFunction));
+    let output = Ref::new(Value::Index(Ref::new(42)));
+    plan.add_function(Box::new(MisleadingRuntimeHostNameFunction {
+      output: output.clone(),
+    }));
 
-    let error = plan.transaction_state_values().unwrap_err();
+    let values = plan.transaction_state_values().unwrap();
 
-    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
-    assert!(error.kind_message().contains("runtime transaction participation"));
+    assert!(values.iter().any(
+      |value| matches!(
+        value,
+        Value::MutableReference(cell) if cell.same_handle(&output)
+      ),
+    ));
   }
 
   struct UnschedulableOutputFunction {
