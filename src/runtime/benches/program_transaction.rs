@@ -5,6 +5,7 @@ use mech_core::{MResult, MechSourceCode, Value};
 use mech_runtime::{
   BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
   CapabilityRequest, MechRuntime, ObjectId, ObjectRecord,
+  InMemorySourceResolver, ModuleBuildOptions,
   PreparedRuntimeEffect, RuntimeAfterCommitEffect,
   RuntimeCompensatableEffect, RuntimeContext, RuntimeEffectMetadata,
   RuntimeEffectSource, RuntimePreparedHostCall, SequentialIdGenerator,
@@ -112,6 +113,57 @@ fn retained_runtime() -> MechRuntime {
 
 fn explicit_fixture() -> ExplicitFixture {
   let mut runtime = retained_runtime();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.begin_transaction(&mut context).unwrap();
+  ExplicitFixture { runtime, context }
+}
+
+fn module_options() -> ModuleBuildOptions<'static> {
+  ModuleBuildOptions::new(
+    "benchmark",
+    "v0.3",
+    "native",
+    &[],
+    &[],
+  )
+}
+
+fn retained_root_fixture() -> MechRuntime {
+  let resolver = InMemorySourceResolver::new()
+    .with_string(
+      "root.mec",
+      "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
+    )
+    .with_string(
+      "dep.mec",
+      "value := 41\n<+ value\n",
+    );
+  MechRuntime::builder()
+    .id_generator(SequentialIdGenerator::starting_at(1))
+    .source_resolver(resolver)
+    .build()
+    .unwrap()
+}
+
+fn retained_root_failure_fixture() -> MechRuntime {
+  let resolver = InMemorySourceResolver::new()
+    .with_string(
+      "root.mec",
+      "+> ./dep.mec\n+> ./missing.mec\nanswer := 1\n",
+    )
+    .with_string(
+      "dep.mec",
+      "value := 41\n<+ value\n",
+    );
+  MechRuntime::builder()
+    .id_generator(SequentialIdGenerator::starting_at(1))
+    .source_resolver(resolver)
+    .build()
+    .unwrap()
+}
+
+fn explicit_graph_fixture() -> ExplicitFixture {
+  let mut runtime = retained_root_fixture();
   let mut context = runtime.runtime_context().unwrap();
   runtime.begin_transaction(&mut context).unwrap();
   ExplicitFixture { runtime, context }
@@ -480,6 +532,75 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
       BatchSize::SmallInput,
     )
   });
+
+  group.bench_function(
+    "small_retained_root_with_one_dependency_commits",
+    |b| {
+      b.iter_batched(
+        retained_root_fixture,
+        |mut runtime| {
+          let value = runtime
+            .resolve_and_run_root_module(
+              "root.mec",
+              module_options(),
+            )
+            .unwrap();
+          black_box(value);
+          black_box(runtime)
+        },
+        BatchSize::SmallInput,
+      )
+    },
+  );
+
+  group.bench_function(
+    "retained_root_graph_failure_rolls_back",
+    |b| {
+      b.iter_batched(
+        retained_root_failure_fixture,
+        |mut runtime| {
+          let error = runtime
+            .resolve_and_run_root_module(
+              "root.mec",
+              module_options(),
+            )
+            .unwrap_err();
+          black_box(error);
+          black_box(runtime)
+        },
+        BatchSize::SmallInput,
+      )
+    },
+  );
+
+  group.bench_function(
+    "explicit_graph_build_followed_by_abort",
+    |b| {
+      b.iter_batched(
+        explicit_graph_fixture,
+        |mut fixture| {
+          let version = fixture
+            .runtime
+            .build_module_from_request_with_context(
+              &mut fixture.context,
+              "root.mec",
+              module_options(),
+            )
+            .unwrap();
+          fixture
+            .runtime
+            .abort_runtime_transaction(
+              &mut fixture.context,
+              "benchmark graph abort",
+            )
+            .unwrap();
+          black_box(version);
+          black_box(fixture)
+        },
+        BatchSize::SmallInput,
+      )
+    },
+  );
 
   group.finish();
 }
