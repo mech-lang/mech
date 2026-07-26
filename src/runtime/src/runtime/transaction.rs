@@ -531,9 +531,13 @@ impl MechRuntime {
         context,
         RuntimeEventKind::TransactionalEffectCommitted { effect_id },
       ) {
-        return Err(self.poison_external_commit_indeterminate(
+        return Err(self.poison_effect_cleanup(
+          "commit_runtime_transaction",
           id,
-          effect_id,
+          format!(
+            "transactional effect {} committed but its audit event failed",
+            effect_id,
+          ),
           vec![format!(
             "transactional effect {} committed but its audit event failed: {:?}",
             effect_id,

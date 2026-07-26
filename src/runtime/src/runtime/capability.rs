@@ -128,7 +128,7 @@ impl RuntimeCapabilityOverlay {
     let mut grants = HashSet::new();
     let mut revocations = HashSet::new();
     let mut mutations = Vec::new();
-    for operation in &self.operations {
+    for operation in self.operations.iter().rev() {
       match operation {
         RuntimeCapabilityMutation::Grant(capability)
           if self.grants.contains_key(&capability.id())
@@ -145,6 +145,7 @@ impl RuntimeCapabilityOverlay {
         _ => {}
       }
     }
+    mutations.reverse();
     mutations
   }
 
@@ -1111,6 +1112,47 @@ mod tests {
 
     assert!(runtime.get_capability(id).unwrap().is_none());
     assert!(runtime.capability_kernel().get(id).unwrap().is_none());
+  }
+
+  #[test]
+  fn regrant_after_cancellation_commits_latest_capability() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let id = CapabilityId(100);
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        capability(id, "task:1", true),
+      )
+      .unwrap();
+    runtime
+      .revoke_capability_with_context(&mut context, id)
+      .unwrap();
+    runtime
+      .grant_capability_with_context(
+        &mut context,
+        Arc::new(BasicCapability::from_keys(
+          id,
+          "task:1",
+          "db://projects",
+          [":read"],
+        )),
+      )
+      .unwrap();
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(runtime.check_capability(&request("task:1")).is_err());
+    assert_eq!(
+      runtime
+        .check_capability(&CapabilityRequest::from_keys(
+          "task:1",
+          ":read",
+          "db://projects",
+        ))
+        .unwrap(),
+      id,
+    );
   }
 
   #[test]
