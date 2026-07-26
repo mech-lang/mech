@@ -23,6 +23,14 @@ pub(super) struct RuntimeEffectEntry {
   pub(super) id: RuntimeEffectId,
   pub(super) state: RuntimeEffectState,
   pub(super) effect: PreparedRuntimeEffect,
+  resource_write: Option<RuntimeStagedResourceWrite>,
+}
+
+#[derive(Debug)]
+struct RuntimeStagedResourceWrite {
+  base_uri: String,
+  path: String,
+  value: Value,
 }
 
 pub(super) struct RuntimeEffectStepFailure {
@@ -115,6 +123,34 @@ impl RuntimeEffectJournal {
     transaction: TransactionId,
     effect: PreparedRuntimeEffect,
   ) -> RuntimeEffectId {
+    self.stage_entry(transaction, effect, None)
+  }
+
+  pub(super) fn stage_resource_write(
+    &mut self,
+    transaction: TransactionId,
+    effect: PreparedRuntimeEffect,
+    base_uri: String,
+    path: String,
+    value: Value,
+  ) -> RuntimeEffectId {
+    self.stage_entry(
+      transaction,
+      effect,
+      Some(RuntimeStagedResourceWrite {
+        base_uri,
+        path,
+        value,
+      }),
+    )
+  }
+
+  fn stage_entry(
+    &mut self,
+    transaction: TransactionId,
+    effect: PreparedRuntimeEffect,
+    resource_write: Option<RuntimeStagedResourceWrite>,
+  ) -> RuntimeEffectId {
     let id = RuntimeEffectId {
       transaction,
       sequence: self.next_sequence,
@@ -124,8 +160,24 @@ impl RuntimeEffectJournal {
       id,
       state: RuntimeEffectState::Staged,
       effect,
+      resource_write,
     });
     id
+  }
+
+  pub(super) fn staged_resource_value(
+    &self,
+    base_uri: &str,
+    path: &str,
+  ) -> Option<Value> {
+    self.entries.iter().rev().find_map(|entry| {
+      let write = entry.resource_write.as_ref()?;
+      if write.base_uri == base_uri && write.path == path {
+        Some(write.value.clone())
+      } else {
+        None
+      }
+    })
   }
 
   pub(super) fn rollback_to(
@@ -462,6 +514,55 @@ impl MechRuntime {
         .active_execution_transaction_mut(transaction_id)?
         .effects
         .stage(transaction_id, effect),
+    )
+  }
+
+  pub(super) fn stage_runtime_resource_effect_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    effect: PreparedRuntimeEffect,
+    base_uri: String,
+    path: String,
+    value: Value,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_healthy(
+      "stage_runtime_resource_effect_with_context",
+    )?;
+    self.reject_effect_reentrancy(
+      "stage_runtime_resource_effect_with_context",
+    )?;
+    self.validate_context_for_runtime(context)?;
+
+    let transaction_id = Self::context_transaction_id(context)?;
+    if self.active_execution_transaction(transaction_id)?.state
+      != RuntimeExecutionTransactionState::Active
+    {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "stage_runtime_resource_effect_with_context",
+          reason: format!(
+            "transaction {} is not accepting new effects",
+            transaction_id,
+          ),
+        },
+        None,
+      ));
+    }
+    let cost = effect.cost();
+    context.charge_bytes(cost.bytes)?;
+    context.charge_items(cost.items)?;
+
+    Ok(
+      self
+        .active_execution_transaction_mut(transaction_id)?
+        .effects
+        .stage_resource_write(
+          transaction_id,
+          effect,
+          base_uri,
+          path,
+          value,
+        ),
     )
   }
 

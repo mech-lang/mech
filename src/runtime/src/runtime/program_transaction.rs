@@ -969,6 +969,42 @@ mod tests {
   }
 
   #[test]
+  fn resource_provider_staging_failure_leaves_effect_journal_unchanged() {
+    let mut runtime = MechRuntime::builder()
+      .resource_provider(Box::new(InMemoryDocsProvider::new()))
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let result = runtime.write_resource_with_context(
+      &mut context,
+      RuntimeResourceWriteRequest {
+        base_uri: "docs://manual".to_string(),
+        path: String::new(),
+        context_name: "manual".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value: Value::Bool(mech_core::Ref::new(true)),
+        intent: RuntimeResourceWriteIntent::Assign,
+      },
+    );
+
+    assert!(result.is_err());
+    assert_eq!(
+      runtime
+        .active_execution_transaction(transaction_id)
+        .unwrap()
+        .effects
+        .len(),
+      0,
+    );
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard failed staging")
+      .unwrap();
+  }
+
+  #[test]
   fn program_transaction_implicit_success_commits_program_store_and_events() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();

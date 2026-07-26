@@ -14,6 +14,7 @@ use crate::{
   RuntimeCapabilityGrant, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
   RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInputOutcome, RuntimeIngress,
   RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeResourceWriteIntent, ClosureHostFunction, materialize_host_manifest,
+  PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
 const TEST_CLOCK_BASE_URI: &str =
@@ -30,6 +31,22 @@ struct TestFixtureError(String);
 impl MechErrorKind for TestFixtureError {
   fn name(&self) -> &str { "TestFixtureError" }
   fn message(&self) -> String { self.0.clone() }
+}
+
+struct TestAfterCommitEffect {
+  metadata: RuntimeEffectMetadata,
+  delivery: Box<dyn FnMut() -> MResult<()>>,
+}
+
+impl std::fmt::Debug for TestAfterCommitEffect {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter.debug_struct("TestAfterCommitEffect").field("metadata", &self.metadata).finish_non_exhaustive()
+  }
+}
+
+impl RuntimeAfterCommitEffect for TestAfterCommitEffect {
+  fn metadata(&self) -> RuntimeEffectMetadata { self.metadata.clone() }
+  fn deliver(&mut self) -> MResult<()> { (self.delivery)() }
 }
 
 #[derive(Debug, Default)]
@@ -63,9 +80,14 @@ impl RuntimeResourceProvider for TestOutputProvider {
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     if request.base_uri == TEST_OUTPUT_BASE_URI && request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(TestFixtureError(format!("invalid test output write: {} / {}", request.base_uri, request.path)), None)) }
   }
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
-    self.backend.lines.borrow_mut().push(format!("{}", request.value)); Ok(())
+    let lines = self.backend.lines.clone();
+    let rendered = format!("{}", request.value);
+    Ok(PreparedRuntimeEffect::AfterCommit(Box::new(TestAfterCommitEffect {
+      metadata: RuntimeEffectMetadata::new(RuntimeEffectSource::ResourceProvider { scheme: "test".to_string() }, "send").with_resource(format!("{}/{}", request.base_uri, request.path)),
+      delivery: Box::new(move || { lines.borrow_mut().push(rendered.clone()); Ok(()) }),
+    })))
   }
 }
 
@@ -724,7 +746,7 @@ fn failed_source_does_not_leave_live_state_armed() {
     "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\n@out/line <- output\nmissing := missing-live-value + 1",
   );
   assert!(error.is_err());
-  assert!(!output.lines().is_empty());
+  assert!(output.lines().is_empty());
   assert!(runtime.live_context_template.is_none());
   assert!(runtime.live_input_bindings.is_empty());
   assert!(runtime.persistent_sends.is_empty());
@@ -1184,19 +1206,26 @@ mod persistent_send_tests {
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
       if request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(PersistentSendTestError("bad console write".to_string()), None)) }
     }
-    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
       self.preflight_write(RuntimeResourceWritePreflightRequest {
-        base_uri: request.base_uri,
-        path: request.path,
-        context_name: request.context_name,
-        operation: request.operation,
+        base_uri: request.base_uri.clone(),
+        path: request.path.clone(),
+        context_name: request.context_name.clone(),
+        operation: request.operation.clone(),
         intent: request.intent,
       })?;
-      if let Some(reason) = self.backend.fail_next.borrow_mut().take() {
-        return Err(MechError::new(PersistentSendTestError(reason), None));
-      }
-      self.backend.lines.borrow_mut().push(format!("{}", request.value));
-      Ok(())
+      let backend = self.backend.clone();
+      let rendered = format!("{}", request.value);
+      Ok(PreparedRuntimeEffect::AfterCommit(Box::new(TestAfterCommitEffect {
+        metadata: RuntimeEffectMetadata::new(RuntimeEffectSource::ResourceProvider { scheme: "console".to_string() }, "send").with_resource(format!("{}/{}", request.base_uri, request.path)),
+        delivery: Box::new(move || {
+          if let Some(reason) = backend.fail_next.borrow_mut().take() {
+            return Err(MechError::new(PersistentSendTestError(reason), None));
+          }
+          backend.lines.borrow_mut().push(rendered.clone());
+          Ok(())
+        }),
+      })))
     }
   }
 
@@ -1278,7 +1307,7 @@ mod persistent_send_tests {
                 ))
             }
         }
-        fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
             self.preflight_write(RuntimeResourceWritePreflightRequest {
                 base_uri: request.base_uri.clone(),
                 path: request.path.clone(),
@@ -1287,30 +1316,39 @@ mod persistent_send_tests {
                 intent: request.intent,
             })?;
             let rendered = format!("{}", request.value);
-            let attempt_number = {
-                let mut attempts = self.backend.attempts.borrow_mut();
-                attempts.push(rendered.clone());
-                attempts.len()
-            };
-            let should_fail = {
-                let mut fail_once_at = self.backend.fail_once_at.borrow_mut();
-                if *fail_once_at == Some(attempt_number) {
-                    *fail_once_at = None;
-                    true
-                } else {
-                    false
-                }
-            };
-            if should_fail {
-                return Err(MechError::new(
-                    PersistentSendTestError(format!(
-                        "intentional output failure on attempt {attempt_number}"
-                    )),
-                    None,
-                ));
-            }
-            self.backend.successes.borrow_mut().push(rendered);
-            Ok(())
+            let backend = self.backend.clone();
+            Ok(PreparedRuntimeEffect::AfterCommit(Box::new(TestAfterCommitEffect {
+                metadata: RuntimeEffectMetadata::new(
+                    RuntimeEffectSource::ResourceProvider { scheme: "test".to_string() },
+                    "send",
+                ).with_resource(format!("{}/{}", request.base_uri, request.path)),
+                delivery: Box::new(move || {
+                    let attempt_number = {
+                        let mut attempts = backend.attempts.borrow_mut();
+                        attempts.push(rendered.clone());
+                        attempts.len()
+                    };
+                    let should_fail = {
+                        let mut fail_once_at = backend.fail_once_at.borrow_mut();
+                        if *fail_once_at == Some(attempt_number) {
+                            *fail_once_at = None;
+                            true
+                        } else {
+                            false
+                        }
+                    };
+                    if should_fail {
+                        return Err(MechError::new(
+                            PersistentSendTestError(format!(
+                                "intentional output failure on attempt {attempt_number}"
+                            )),
+                            None,
+                        ));
+                    }
+                    backend.successes.borrow_mut().push(rendered.clone());
+                    Ok(())
+                }),
+            })))
         }
     }
 

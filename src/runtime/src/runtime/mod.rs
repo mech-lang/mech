@@ -940,17 +940,41 @@ impl MechRuntime {
   pub fn write_resource_with_context(
     &mut self,
     context: &mut RuntimeContext,
-    request: RuntimeResourceWriteRequest,
+    mut request: RuntimeResourceWriteRequest,
   ) -> MResult<RuntimeEffectId> {
     self.ensure_runtime_healthy("write_resource_with_context")?;
     self.reject_effect_reentrancy("write_resource_with_context")?;
     self.validate_context_for_runtime(context)?;
 
-    let effect = self.resources.stage_write(request)?;
     if context.transaction.is_some() {
-      return self.stage_runtime_effect_with_context(context, effect);
+      request.value = request.value.deep_snapshot();
+      let staged_resource = if request.intent
+        == RuntimeResourceWriteIntent::Assign
+      {
+        Some((
+          request.base_uri.clone(),
+          request.path.clone(),
+          request.value.clone(),
+        ))
+      } else {
+        None
+      };
+      let effect = self.resources.stage_write(request)?;
+      return match staged_resource {
+        Some((base_uri, path, value)) => {
+          self.stage_runtime_resource_effect_with_context(
+            context,
+            effect,
+            base_uri,
+            path,
+            value,
+          )
+        }
+        None => self.stage_runtime_effect_with_context(context, effect),
+      };
     }
 
+    let effect = self.resources.stage_write(request)?;
     let cost = effect.cost();
     context.charge_bytes(cost.bytes)?;
     context.charge_items(cost.items)?;

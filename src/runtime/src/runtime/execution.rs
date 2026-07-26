@@ -697,6 +697,18 @@ impl MechRuntime {
         path: resolved.provider_path,
       }, None));
     }
+    if let Some(transaction_id) = context.transaction {
+      if let Some(value) = self
+        .active_execution_transaction(transaction_id)?
+        .effects
+        .staged_resource_value(
+          &resolved.provider_base_uri,
+          &resolved.provider_path,
+        )
+      {
+        return Ok(value);
+      }
+    }
     self.resources.read(RuntimeResourceReadRequest {
       base_uri: resolved.provider_base_uri,
       path: resolved.provider_path,
