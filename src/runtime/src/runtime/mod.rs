@@ -46,6 +46,7 @@ use self::program_transaction::{
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
   RuntimeExecutionTransactionState,
+  RuntimeOperationSavepoint,
   RuntimeTransactionContextIdentity,
 };
 use self::capability::{

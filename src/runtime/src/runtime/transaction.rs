@@ -53,6 +53,9 @@ impl MechRuntime {
   ) -> MResult<()> {
     let journal =
       &self.active_execution_transaction(transaction_id)?.modules;
+    if journal.is_empty() {
+      return Ok(());
+    }
 
     for module in journal.module_puts() {
       module.validate()?;

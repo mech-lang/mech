@@ -68,6 +68,44 @@ impl MechRuntime {
     self.store.put_module(module)
   }
 
+  fn ensure_module_for_build_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    name: &str,
+    canonical_uri: &str,
+  ) -> MResult<ModuleId> {
+    let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(module) =
+      self.find_module_by_name_visible(context, canonical_uri)?
+    {
+      return Ok(module.id);
+    }
+
+    let id = module_id(canonical_uri);
+    if let Some(module) = self.get_module_visible(context, id)? {
+      if module.name == canonical_uri {
+        return Ok(id);
+      }
+      return Err(MechError::new(
+        RuntimeModuleJournalConflict {
+          record_type: "module",
+          identity: id.to_string(),
+          reason: "visible module ID maps to another canonical URI"
+            .to_string(),
+        },
+        None,
+      ));
+    }
+
+    let module = ModuleRecord::new(id, canonical_uri)
+      .with_description(name.to_string());
+    self
+      .active_execution_transaction_mut(transaction_id)?
+      .modules
+      .stage_module(module)?;
+    Ok(id)
+  }
+
   fn materialize_manifest_context_imports(
     &mut self,
     record: &mut crate::RuntimeModuleRecord,
@@ -264,6 +302,26 @@ impl MechRuntime {
     self.ensure_runtime_mutation_allowed(
       "build_module_from_resolved_source_with_context",
     )?;
+    self.with_atomic_module_operation(
+      context,
+      "build_module_from_resolved_source_with_context",
+      |runtime, context| {
+        runtime.build_module_from_resolved_source_in_transaction(
+          context,
+          resolved,
+          options,
+        )
+      },
+    )
+  }
+
+  fn build_module_from_resolved_source_in_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    resolved: ResolvedSource,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<ModuleVersionId> {
+    let _ = Self::context_transaction_id(context)?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_resolved_source_with_context_and_graph(
@@ -282,6 +340,7 @@ impl MechRuntime {
     dependency_graph: &mut ModuleDependencyGraph,
   ) -> MResult<ModuleVersionId> {
     self.validate_context_for_runtime(context)?;
+    let transaction_id = Self::context_transaction_id(context)?;
     context.charge_step()?;
 
     if !resolved.is_executable_mech_source() {
@@ -411,7 +470,8 @@ impl MechRuntime {
       self.materialize_manifest_context_imports(&mut record)?;
       Self::validate_runtime_module_record_address_targets(&record)?;
 
-      let module = self.ensure_module(
+      let module = self.ensure_module_for_build_with_context(
+        context,
         &record.name,
         &record.canonical_uri,
       )?;
@@ -422,17 +482,9 @@ impl MechRuntime {
         "ModuleBuilder and runtime module store derived different ModuleId values",
       );
 
-      if self
-        .store
-        .get_module_version(record.module_version)?
-        .is_some()
-      {
-        dependency_graph.cache_version(&canonical_uri, record.module_version);
-        return Ok(record.module_version);
-      }
-
+      let module_version = record.module_version;
       let version = ModuleVersionRecord::new(
-        record.module_version,
+        module_version,
         module,
         1,
       )
@@ -447,18 +499,41 @@ impl MechRuntime {
       .with_capability_requirements(record.capability_requirements);
       validate_module_import_edges(&version)?;
 
-      self.store.put_module_version(version)?;
+      if let Some(existing) =
+        self.get_module_version_visible(context, module_version)?
+      {
+        if existing != version {
+          return Err(MechError::new(
+            RuntimeModuleJournalConflict {
+              record_type: "module_version",
+              identity: module_version.to_string(),
+              reason: "visible version ID maps to different contents"
+                .to_string(),
+            },
+            None,
+          ));
+        }
+        dependency_graph.cache_version(&canonical_uri, module_version);
+        return Ok(module_version);
+      }
 
-      dependency_graph.cache_version(&canonical_uri, record.module_version);
+      let staged = self
+        .active_execution_transaction_mut(transaction_id)?
+        .modules
+        .stage_version(version)?;
 
-      self.emit_event_to_context(
-        context,
-        RuntimeEventKind::ModuleCompiled {
-          module_version: record.module_version,
-        },
-      )?;
+      dependency_graph.cache_version(&canonical_uri, module_version);
 
-      Ok(record.module_version)
+      if staged {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleCompiled {
+            module_version,
+          },
+        )?;
+      }
+
+      Ok(module_version)
     })();
 
     dependency_graph.leave(&canonical_uri);
@@ -513,6 +588,27 @@ impl MechRuntime {
     self.ensure_runtime_mutation_allowed(
       "build_module_from_request_with_context",
     )?;
+    let request = request.into();
+    self.with_atomic_module_operation(
+      context,
+      "build_module_from_request_with_context",
+      |runtime, context| {
+        runtime.build_module_from_request_in_transaction(
+          context,
+          request,
+          options,
+        )
+      },
+    )
+  }
+
+  pub(super) fn build_module_from_request_in_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<Option<ModuleVersionId>> {
+    let _ = Self::context_transaction_id(context)?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_request_with_context_and_graph(
@@ -644,10 +740,16 @@ impl MechRuntime {
     )
     .with_kind(crate::SourceKind::Mech);
 
-    self.build_module_from_resolved_source_with_context(
+    self.with_atomic_module_operation(
       context,
-      resolved,
-      options,
+      "put_source_module_with_context",
+      |runtime, context| {
+        runtime.build_module_from_resolved_source_in_transaction(
+          context,
+          resolved,
+          options,
+        )
+      },
     )
   }
 
@@ -712,7 +814,30 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::SourceKind;
+  use crate::{InMemorySourceResolver, SourceKind};
+
+  fn test_module_options() -> ModuleBuildOptions<'static> {
+    ModuleBuildOptions::new(
+      "test",
+      "v0.3",
+      "native",
+      &[],
+      &[],
+    )
+  }
+
+  fn runtime_with_sources(
+    sources: &[(&str, &str)],
+  ) -> MechRuntime {
+    let mut resolver = InMemorySourceResolver::new();
+    for (specifier, source) in sources {
+      resolver.insert_string(*specifier, *source).unwrap();
+    }
+    let mut runtime =
+      MechRuntime::new(RuntimeConfig::default()).unwrap();
+    runtime.set_source_resolver(resolver).unwrap();
+    runtime
+  }
 
   #[test]
   fn max_source_bytes_rejects_module_source() {
@@ -771,5 +896,340 @@ mod tests {
       .unwrap_err();
 
     assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+  }
+
+  #[test]
+  fn missing_later_dependency_commits_no_graph() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "main.mec",
+        "+> ./first.mec\n+> ./missing.mec\nanswer := 1\n",
+      ),
+      ("first.mec", "value := 1\n<+ value\n"),
+    ]);
+
+    let error = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert!(
+      error
+        .kind_as::<RuntimeModuleDependencyMissingError>()
+        .is_some(),
+      "expected missing dependency, got {error:?}",
+    );
+    for uri in ["memory:main.mec", "memory:first.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "failed graph exposed {uri}",
+      );
+    }
+    assert!(
+      runtime
+        .list_events(None)
+        .unwrap()
+        .iter()
+        .all(|event| !matches!(
+          event.kind,
+          RuntimeEventKind::ModuleCompiled { .. }
+        )),
+    );
+  }
+
+  #[test]
+  fn deep_parse_failure_commits_no_graph() {
+    let mut runtime = runtime_with_sources(&[
+      ("main.mec", "+> ./middle.mec\nanswer := 1\n"),
+      ("middle.mec", "+> ./leaf.mec\nvalue := 1\n"),
+      ("leaf.mec", "value := [1, 2\n"),
+    ]);
+
+    assert!(
+      runtime
+        .resolve_and_store_module_source(
+          "main.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    for uri in [
+      "memory:main.mec",
+      "memory:middle.mec",
+      "memory:leaf.mec",
+    ] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "failed graph exposed {uri}",
+      );
+    }
+  }
+
+  #[test]
+  fn cycle_error_retains_deterministic_path() {
+    let mut runtime = runtime_with_sources(&[
+      ("main.mec", "+> ./middle.mec\nanswer := 1\n"),
+      ("middle.mec", "+> ./leaf.mec\nvalue := 1\n"),
+      ("leaf.mec", "+> ./main.mec\nvalue := 2\n"),
+    ]);
+
+    let error = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+    let cycle = error
+      .kind_as::<RuntimeModuleDependencyCycleError>()
+      .expect("existing cycle error type");
+
+    assert_eq!(
+      cycle.cycle,
+      vec![
+        "memory:main.mec".to_string(),
+        "memory:middle.mec".to_string(),
+        "memory:leaf.mec".to_string(),
+        "memory:main.mec".to_string(),
+      ],
+    );
+  }
+
+  #[test]
+  fn explicit_transaction_owns_provisional_graph_visibility() {
+    let mut runtime = runtime_with_sources(&[(
+      "main.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut owner = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut owner).unwrap();
+
+    let version = runtime
+      .build_module_from_request_with_context(
+        &mut owner,
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let module = module_id("memory:main.mec");
+    let observer = runtime.runtime_context().unwrap();
+
+    assert!(
+      runtime
+        .get_module_visible(&owner, module)
+        .unwrap()
+        .is_some(),
+    );
+    assert!(
+      runtime
+        .get_module_version_visible(&owner, version)
+        .unwrap()
+        .is_some(),
+    );
+    assert!(
+      runtime
+        .get_module_visible(&observer, module)
+        .unwrap()
+        .is_none(),
+    );
+    assert!(
+      runtime
+        .get_module_version_visible(&observer, version)
+        .unwrap()
+        .is_none(),
+    );
+    assert!(runtime.store.get_module(module).unwrap().is_none());
+    assert!(
+      runtime.store.get_module_version(version).unwrap().is_none(),
+    );
+    assert!(
+      runtime
+        .run_module_with_context(&mut owner, version)
+        .is_ok(),
+    );
+    assert!(runtime.run_module(version).is_err());
+
+    runtime
+      .commit_runtime_transaction(&mut owner)
+      .unwrap();
+    assert!(runtime.store.get_module(module).unwrap().is_some());
+    assert!(
+      runtime.store.get_module_version(version).unwrap().is_some(),
+    );
+  }
+
+  #[test]
+  fn explicit_abort_discards_provisional_graph() {
+    let mut runtime = runtime_with_sources(&[(
+      "main.mec",
+      "answer := 42\nanswer\n",
+    )]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let version = runtime
+      .build_module_from_request_with_context(
+        &mut context,
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    runtime
+      .abort_runtime_transaction(&mut context, "discard graph")
+      .unwrap();
+
+    assert!(
+      runtime
+        .store
+        .get_module(module_id("memory:main.mec"))
+        .unwrap()
+        .is_none(),
+    );
+    assert!(
+      runtime.store.get_module_version(version).unwrap().is_none(),
+    );
+  }
+
+  #[test]
+  fn failed_later_build_preserves_earlier_provisional_graph() {
+    let mut runtime = runtime_with_sources(&[
+      ("earlier.mec", "value := 1\nvalue\n"),
+      (
+        "later.mec",
+        "+> ./later-dependency.mec\n+> ./missing.mec\nvalue := 2\n",
+      ),
+      ("later-dependency.mec", "value := 3\n<+ value\n"),
+    ]);
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let earlier = runtime
+      .build_module_from_request_with_context(
+        &mut context,
+        "earlier.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    assert!(
+      runtime
+        .build_module_from_request_with_context(
+          &mut context,
+          "later.mec",
+          test_module_options(),
+        )
+        .is_err(),
+    );
+
+    assert!(
+      runtime
+        .get_module_version_visible(&context, earlier)
+        .unwrap()
+        .is_some(),
+    );
+    for uri in ["memory:later.mec", "memory:later-dependency.mec"] {
+      assert!(
+        runtime
+          .find_module_by_name_visible(&context, uri)
+          .unwrap()
+          .is_none(),
+        "failed operation retained {uri}",
+      );
+    }
+
+    runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap();
+    assert!(
+      runtime.store.get_module_version(earlier).unwrap().is_some(),
+    );
+  }
+
+  #[test]
+  fn committed_equal_version_emits_no_second_compile_event() {
+    let mut runtime = runtime_with_sources(&[(
+      "main.mec",
+      "value := 1\nvalue\n",
+    )]);
+    let first = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let compiled_before = runtime
+      .list_events(None)
+      .unwrap()
+      .iter()
+      .filter(|event| matches!(
+        event.kind,
+        RuntimeEventKind::ModuleCompiled { .. }
+      ))
+      .count();
+
+    let second = runtime
+      .resolve_and_store_module_source(
+        "main.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+    let compiled_after = runtime
+      .list_events(None)
+      .unwrap()
+      .iter()
+      .filter(|event| matches!(
+        event.kind,
+        RuntimeEventKind::ModuleCompiled { .. }
+      ))
+      .count();
+
+    assert_eq!(second, first);
+    assert_eq!(compiled_after, compiled_before);
+  }
+
+  #[test]
+  fn module_only_work_is_allowed_while_another_transaction_owns_program() {
+    let mut runtime = runtime_with_sources(&[(
+      "module-b.mec",
+      "value := 2\nvalue\n",
+    )]);
+    let mut context_a = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context_a).unwrap();
+    runtime
+      .run_string_with_context(
+        &mut context_a,
+        "transaction-a-owner := 1",
+      )
+      .unwrap();
+
+    let mut context_b = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context_b).unwrap();
+    let version = runtime
+      .build_module_from_request_with_context(
+        &mut context_b,
+        "module-b.mec",
+        test_module_options(),
+      )
+      .unwrap()
+      .unwrap();
+
+    assert!(
+      runtime
+        .get_module_version_visible(&context_b, version)
+        .unwrap()
+        .is_some(),
+    );
+    runtime
+      .abort_runtime_transaction(&mut context_b, "discard B")
+      .unwrap();
+    runtime
+      .abort_runtime_transaction(&mut context_a, "discard A")
+      .unwrap();
   }
 }

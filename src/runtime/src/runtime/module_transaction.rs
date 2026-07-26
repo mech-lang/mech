@@ -263,6 +263,171 @@ fn module_journal_conflict<T>(
   ))
 }
 
+impl MechRuntime {
+  pub(super) fn get_module_visible(
+    &self,
+    context: &RuntimeContext,
+    id: ModuleId,
+  ) -> MResult<Option<ModuleRecord>> {
+    if let Some(transaction_id) = context.transaction {
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      if let Some(module) = transaction.modules.get_module(id) {
+        return Ok(Some(module.clone()));
+      }
+    }
+    self.store.get_module(id)
+  }
+
+  pub(super) fn find_module_by_name_visible(
+    &self,
+    context: &RuntimeContext,
+    canonical_uri: &str,
+  ) -> MResult<Option<ModuleRecord>> {
+    if let Some(transaction_id) = context.transaction {
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      if let Some(module) = transaction
+        .modules
+        .find_module_by_name(canonical_uri)
+      {
+        return Ok(Some(module.clone()));
+      }
+    }
+    self.store.find_module_by_name(canonical_uri)
+  }
+
+  pub(super) fn get_module_version_visible(
+    &self,
+    context: &RuntimeContext,
+    id: ModuleVersionId,
+  ) -> MResult<Option<ModuleVersionRecord>> {
+    if let Some(transaction_id) = context.transaction {
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      if let Some(version) = transaction.modules.get_version(id) {
+        return Ok(Some(version.clone()));
+      }
+    }
+    self.store.get_module_version(id)
+  }
+
+  pub(super) fn with_atomic_module_operation<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &'static str,
+    execute: impl FnOnce(
+      &mut MechRuntime,
+      &mut RuntimeContext,
+    ) -> MResult<T>,
+  ) -> MResult<T> {
+    self.ensure_runtime_mutation_allowed(operation)?;
+    self.validate_context_for_runtime(context)?;
+    self.reject_program_operation_reentrancy(operation)?;
+
+    let implicit = context.transaction.is_none();
+    if implicit {
+      self.begin_runtime_transaction_internal(
+        context,
+        RuntimeExecutionTransactionMode::ImplicitModuleOperation,
+      )?;
+    }
+
+    let transaction_id = Self::context_transaction_id(context)?;
+    if self.active_execution_transaction(transaction_id)?.mode
+      != if implicit {
+        RuntimeExecutionTransactionMode::ImplicitModuleOperation
+      } else {
+        RuntimeExecutionTransactionMode::Explicit
+      }
+    {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation,
+          reason: format!(
+            "transaction {} has an incompatible execution mode",
+            transaction_id,
+          ),
+        },
+        None,
+      ));
+    }
+
+    let savepoint =
+      self.capture_runtime_operation_savepoint(context, transaction_id)?;
+    match execute(self, context) {
+      Ok(value) if !implicit => Ok(value),
+      Ok(value) => match self
+        .commit_runtime_transaction_internal(context)
+      {
+        Ok(super::transaction::RuntimeCommitResolution::Committed(_)) => {
+          Ok(value)
+        }
+        Ok(
+          super::transaction::RuntimeCommitResolution::CommittedWithError {
+            error,
+            ..
+          },
+        ) => Err(error),
+        Err(error) => self.finish_failed_module_operation(
+          context,
+          operation,
+          transaction_id,
+          &savepoint,
+          error,
+          true,
+        ),
+      },
+      Err(error) => self.finish_failed_module_operation(
+        context,
+        operation,
+        transaction_id,
+        &savepoint,
+        error,
+        implicit,
+      ),
+    }
+  }
+
+  fn finish_failed_module_operation<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &'static str,
+    transaction_id: TransactionId,
+    savepoint: &RuntimeOperationSavepoint,
+    original_error: MechError,
+    implicit: bool,
+  ) -> MResult<T> {
+    let original_error_text = format!("{:?}", original_error);
+    let mut rollback_failures = self.rollback_runtime_operation(
+      context,
+      transaction_id,
+      savepoint,
+    );
+
+    if implicit {
+      rollback_failures.extend(
+        self.cleanup_failed_implicit_operation(
+          context,
+          operation,
+          transaction_id,
+          &format!("module operation `{}` failed", operation),
+        ),
+      );
+    }
+
+    if rollback_failures.is_empty() {
+      return Err(original_error);
+    }
+    Err(self.poison_program_operation(
+      operation,
+      Some(transaction_id),
+      original_error_text,
+      rollback_failures,
+    ))
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

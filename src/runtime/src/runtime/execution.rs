@@ -3599,7 +3599,9 @@ impl MechRuntime {
       return Ok(());
     }
 
-    let Some(record) = self.store.get_module_version(version)? else {
+    let Some(record) =
+      self.get_module_version_visible(context, version)?
+    else {
       return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
     };
     validate_module_import_edges(&record)?;
@@ -3692,7 +3694,9 @@ impl MechRuntime {
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
   ) -> MResult<PreparedModuleScopeExecution> {
-    let Some(record) = self.store.get_module_version(version)? else {
+    let Some(record) =
+      self.get_module_version_visible(context, version)?
+    else {
       return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
     };
     validate_module_import_edges(&record)?;

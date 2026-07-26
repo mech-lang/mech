@@ -10,6 +10,7 @@ use crate::AccessSet;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeExecutionTransactionMode {
   Explicit,
+  ImplicitModuleOperation,
   ImplicitProgramOperation,
 }
 
@@ -613,7 +614,7 @@ impl MechRuntime {
     failures
   }
 
-  fn cleanup_failed_implicit_operation(
+  pub(super) fn cleanup_failed_implicit_operation(
     &mut self,
     context: &mut RuntimeContext,
     operation: &'static str,
