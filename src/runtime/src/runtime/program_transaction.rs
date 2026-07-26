@@ -175,6 +175,7 @@ pub(super) struct RuntimeProgramBaseline {
 
 pub(super) struct RuntimeExecutionTransaction {
   pub(super) store: RuntimeTransaction,
+  pub(super) modules: RuntimeModuleJournal,
   pub(super) mode: RuntimeExecutionTransactionMode,
   pub(super) context_identity: RuntimeTransactionContextIdentity,
   pub(super) context_baseline: RuntimeContextCheckpoint,
@@ -193,6 +194,7 @@ impl RuntimeExecutionTransaction {
   ) -> Self {
     Self {
       store,
+      modules: RuntimeModuleJournal::new(),
       mode,
       context_identity,
       context_baseline,
@@ -205,13 +207,19 @@ impl RuntimeExecutionTransaction {
 }
 
 #[derive(Clone)]
-pub(super) struct RuntimeProgramOperationSavepoint {
-  pub(super) program: MechProgramCheckpoint,
-  pub(super) live: RuntimeLiveStateSnapshot,
+pub(super) struct RuntimeOperationSavepoint {
   pub(super) store: RuntimeTransaction,
+  pub(super) module_mark: usize,
   pub(super) effect_mark: usize,
   pub(super) capability_mark: usize,
   pub(super) context: RuntimeContextCheckpoint,
+}
+
+#[derive(Clone)]
+pub(super) struct RuntimeProgramOperationSavepoint {
+  pub(super) program: MechProgramCheckpoint,
+  pub(super) live: RuntimeLiveStateSnapshot,
+  pub(super) runtime: RuntimeOperationSavepoint,
 }
 
 #[derive(Clone, Debug)]
@@ -378,19 +386,29 @@ impl MechRuntime {
     ))
   }
 
-  fn rollback_program_operation(
+  pub(super) fn capture_runtime_operation_savepoint(
+    &self,
+    context: &RuntimeContext,
+    transaction_id: TransactionId,
+  ) -> MResult<RuntimeOperationSavepoint> {
+    let transaction =
+      self.active_execution_transaction(transaction_id)?;
+    Ok(RuntimeOperationSavepoint {
+      store: transaction.store.clone(),
+      module_mark: transaction.modules.mark(),
+      effect_mark: transaction.effects.mark(),
+      capability_mark: transaction.capabilities.mark(),
+      context: RuntimeContextCheckpoint::capture(context),
+    })
+  }
+
+  pub(super) fn rollback_runtime_operation(
     &mut self,
     context: &mut RuntimeContext,
     transaction_id: TransactionId,
-    savepoint: &RuntimeProgramOperationSavepoint,
+    savepoint: &RuntimeOperationSavepoint,
   ) -> Vec<String> {
     let mut failures = Vec::new();
-
-    if let Err(error) = self.program.restore(savepoint.program.clone()) {
-      failures.push(format!("program restore failed: {:?}", error));
-    }
-
-    self.restore_live_state(savepoint.live.clone());
 
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
     let effect_rollback = match self.active_transactions.get_mut(&transaction_id) {
@@ -400,17 +418,29 @@ impl MechRuntime {
           .abortable_ids_after(savepoint.effect_mark);
         let effect_failures =
           transaction.effects.rollback_to(savepoint.effect_mark);
-        transaction.store = savepoint.store.clone();
         let capability_result = transaction
           .capabilities
           .rollback_to(savepoint.capability_mark);
-        Some((effect_failures, capability_result, abortable_ids))
+        let module_result =
+          transaction.modules.rollback_to(savepoint.module_mark);
+        transaction.store = savepoint.store.clone();
+        Some((
+          effect_failures,
+          capability_result,
+          module_result,
+          abortable_ids,
+        ))
       }
       None => None,
     };
     self.active_effect_phase = None;
     match effect_rollback {
-      Some((effect_failures, capability_result, abortable_ids)) => {
+      Some((
+        effect_failures,
+        capability_result,
+        module_result,
+        abortable_ids,
+      )) => {
         let failed_effects: HashSet<RuntimeEffectId> = effect_failures
           .iter()
           .map(|failure| failure.effect_id)
@@ -419,6 +449,12 @@ impl MechRuntime {
         if let Err(error) = capability_result {
           failures.push(format!(
             "capability overlay rollback failed: {:?}",
+            error,
+          ));
+        }
+        if let Err(error) = module_result {
+          failures.push(format!(
+            "module journal rollback failed: {:?}",
             error,
           ));
         }
@@ -446,6 +482,27 @@ impl MechRuntime {
       failures.push(format!("context restore invariant failed: {:?}", error));
     }
 
+    failures
+  }
+
+  fn rollback_program_operation(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction_id: TransactionId,
+    savepoint: &RuntimeProgramOperationSavepoint,
+  ) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    if let Err(error) = self.program.restore(savepoint.program.clone()) {
+      failures.push(format!("program restore failed: {:?}", error));
+    }
+
+    self.restore_live_state(savepoint.live.clone());
+    failures.extend(self.rollback_runtime_operation(
+      context,
+      transaction_id,
+      &savepoint.runtime,
+    ));
     failures
   }
 
@@ -706,19 +763,10 @@ impl MechRuntime {
     let savepoint = RuntimeProgramOperationSavepoint {
       program: program_checkpoint,
       live: live_checkpoint,
-      store: self
-        .active_execution_transaction(transaction_id)?
-        .store
-        .clone(),
-      effect_mark: self
-        .active_execution_transaction(transaction_id)?
-        .effects
-        .mark(),
-      capability_mark: self
-        .active_execution_transaction(transaction_id)?
-        .capabilities
-        .mark(),
-      context: RuntimeContextCheckpoint::capture(context),
+      runtime: self.capture_runtime_operation_savepoint(
+        context,
+        transaction_id,
+      )?,
     };
 
     self.active_program_operation = Some(ActiveRuntimeProgramOperation {

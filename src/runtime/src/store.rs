@@ -30,6 +30,7 @@ use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
   ObjectId, TaskId, TransactionId,
 };
+use crate::module_id;
 use crate::resolver::{
   import_requires_source_dependency, ModuleScopeMetadata, SourceAddressReference,
   SourceContextDeclaration, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
@@ -844,6 +845,8 @@ impl TransactionRecord {
 #[derive(Clone, Debug)]
 pub struct RuntimeStoreCommit {
   pub transaction: TransactionRecord,
+  pub module_puts: Vec<ModuleRecord>,
+  pub module_version_puts: Vec<ModuleVersionRecord>,
   pub capability_grants: Vec<(CapabilityId, Arc<dyn Capability>)>,
   pub capability_revocations: Vec<CapabilityId>,
   pub object_puts: Vec<ObjectRecord>,
@@ -940,6 +943,86 @@ impl InMemoryStore {
       ));
     }
 
+    Ok(())
+  }
+
+  fn commit_module_put(
+    &mut self,
+    module: ModuleRecord,
+  ) -> MResult<()> {
+    module.validate()?;
+    if module.id != module_id(&module.name) {
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module.id",
+          reason: "module ID does not match its canonical URI",
+        },
+        None,
+      ));
+    }
+
+    if let Some(existing) = self.modules.get(&module.id) {
+      if existing.name == module.name {
+        return Ok(());
+      }
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module.id",
+          reason: "module ID maps to another canonical URI",
+        },
+        None,
+      ));
+    }
+
+    if let Some(existing_id) =
+      self.modules_by_name.get(&module.name)
+    {
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module.name",
+          reason: if existing_id == &module.id {
+            "module name index is missing its primary record"
+          } else {
+            "canonical URI maps to another module ID"
+          },
+        },
+        None,
+      ));
+    }
+
+    self.modules_by_name.insert(module.name.clone(), module.id);
+    self.modules.insert(module.id, module);
+    Ok(())
+  }
+
+  fn commit_module_version_put(
+    &mut self,
+    version: ModuleVersionRecord,
+  ) -> MResult<()> {
+    version.validate()?;
+    version.validate_import_edges()?;
+    self.ensure_module_exists(version.module)?;
+    for dependency in &version.dependencies {
+      self.ensure_module_version_exists(*dependency)?;
+    }
+    for edge in &version.import_edges {
+      self.ensure_module_version_exists(edge.dependency)?;
+    }
+
+    if let Some(existing) = self.module_versions.get(&version.id) {
+      if existing == &version {
+        return Ok(());
+      }
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module_version.id",
+          reason: "version ID maps to different contents",
+        },
+        None,
+      ));
+    }
+
+    self.module_versions.insert(version.id, version);
     Ok(())
   }
 }
@@ -1418,6 +1501,14 @@ impl MechStore for InMemoryStore {
     let id = commit.transaction.id;
     let mut temporary = self.clone();
 
+    for module in commit.module_puts {
+      temporary.commit_module_put(module)?;
+    }
+
+    for version in commit.module_version_puts {
+      temporary.commit_module_version_put(version)?;
+    }
+
     for object in commit.object_puts {
       temporary.put_object(object)?;
     }
@@ -1599,6 +1690,30 @@ mod tests {
   use crate::event::{
     RuntimeEvent, RuntimeEventKind,
   };
+
+  fn runtime_commit(
+    id: u128,
+    module_puts: Vec<ModuleRecord>,
+    module_version_puts: Vec<ModuleVersionRecord>,
+  ) -> RuntimeStoreCommit {
+    RuntimeStoreCommit {
+      transaction: TransactionRecord::new(
+        TransactionId(id),
+        "test",
+      ),
+      module_puts,
+      module_version_puts,
+      capability_grants: Vec::new(),
+      capability_revocations: Vec::new(),
+      object_puts: Vec::new(),
+      object_updates: Vec::new(),
+      task_updates: Vec::new(),
+      actor_updates: Vec::new(),
+      message_acks: Vec::new(),
+      message_enqueues: Vec::new(),
+      events: Vec::new(),
+    }
+  }
 
   #[test]
   fn module_round_trip() {
@@ -1941,6 +2056,8 @@ mod tests {
       transaction: TransactionRecord::new(TransactionId(1), "task:1")
         .with_write_set(vec![ObjectId(1), ObjectId(2)])
         .with_events(vec![EventId(1)]),
+      module_puts: Vec::new(),
+      module_version_puts: Vec::new(),
       capability_grants: Vec::new(),
       capability_revocations: Vec::new(),
       object_puts: vec![ObjectRecord::text(ObjectId(1), "note", "hello")],
@@ -1959,6 +2076,154 @@ mod tests {
     assert!(store.get_transaction(TransactionId(1)).unwrap().is_none());
     assert!(store.list_events(None).unwrap().is_empty());
     assert!(store.list_transactions(None).unwrap().is_empty());
+  }
+
+  #[test]
+  fn runtime_commit_publishes_module_and_version_together() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec");
+    let version =
+      ModuleVersionRecord::new(ModuleVersionId(10), module.id, 1);
+
+    store
+      .commit_runtime(runtime_commit(
+        1,
+        vec![module.clone()],
+        vec![version.clone()],
+      ))
+      .unwrap();
+
+    assert_eq!(store.get_module(module.id).unwrap(), Some(module));
+    assert_eq!(
+      store.get_module_version(version.id).unwrap(),
+      Some(version),
+    );
+  }
+
+  #[test]
+  fn runtime_commit_missing_module_owner_is_atomic() {
+    let mut store = InMemoryStore::new();
+    let version = ModuleVersionRecord::new(
+      ModuleVersionId(10),
+      module_id("memory://missing.mec"),
+      1,
+    );
+
+    assert!(
+      store
+        .commit_runtime(runtime_commit(1, Vec::new(), vec![version]))
+        .is_err(),
+    );
+    assert!(store.list_transactions(None).unwrap().is_empty());
+    assert!(
+      store
+        .get_module_version(ModuleVersionId(10))
+        .unwrap()
+        .is_none(),
+    );
+  }
+
+  #[test]
+  fn runtime_commit_missing_dependency_is_atomic() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec");
+    let version = ModuleVersionRecord::new(
+      ModuleVersionId(10),
+      module.id,
+      1,
+    )
+    .with_dependencies(vec![ModuleVersionId(99)]);
+
+    assert!(
+      store
+        .commit_runtime(runtime_commit(
+          1,
+          vec![module.clone()],
+          vec![version],
+        ))
+        .is_err(),
+    );
+    assert!(store.get_module(module.id).unwrap().is_none());
+    assert!(store.list_transactions(None).unwrap().is_empty());
+  }
+
+  #[test]
+  fn identical_runtime_module_publication_is_idempotent() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec")
+        .with_description("first");
+    let version =
+      ModuleVersionRecord::new(ModuleVersionId(10), module.id, 1);
+    store
+      .commit_runtime(runtime_commit(
+        1,
+        vec![module.clone()],
+        vec![version.clone()],
+      ))
+      .unwrap();
+
+    store
+      .commit_runtime(runtime_commit(
+        2,
+        vec![
+          ModuleRecord::new(module.id, module.name.clone())
+            .with_description("second"),
+        ],
+        vec![version],
+      ))
+      .unwrap();
+
+    assert_eq!(
+      store
+        .get_module(module.id)
+        .unwrap()
+        .unwrap()
+        .description
+        .as_deref(),
+      Some("first"),
+    );
+  }
+
+  #[test]
+  fn runtime_module_conflict_leaves_other_categories_unchanged() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec");
+    let version =
+      ModuleVersionRecord::new(ModuleVersionId(10), module.id, 1);
+    store
+      .commit_runtime(runtime_commit(
+        1,
+        vec![module.clone()],
+        vec![version],
+      ))
+      .unwrap();
+    let mut conflict = runtime_commit(
+      2,
+      vec![module],
+      vec![ModuleVersionRecord::new(
+        ModuleVersionId(10),
+        module_id("memory://other.mec"),
+        1,
+      )],
+    );
+    conflict.object_puts.push(ObjectRecord::text(
+      ObjectId(20),
+      "note",
+      "must not commit",
+    ));
+
+    assert!(store.commit_runtime(conflict).is_err());
+    assert!(store.get_object(ObjectId(20)).unwrap().is_none());
+    assert!(
+      store
+        .get_transaction(TransactionId(2))
+        .unwrap()
+        .is_none(),
+    );
   }
 
   #[test]
