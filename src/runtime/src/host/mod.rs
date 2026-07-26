@@ -28,6 +28,7 @@ use crate::capability::{
 use crate::context::RuntimeContext;
 
 use crate::service::RuntimeServices;
+use crate::PreparedRuntimeEffect;
 
 pub mod actor;
 pub mod arg;
@@ -45,6 +46,12 @@ pub enum HostFunctionTransactionMode {
   RuntimeManaged,
   Staged,
   ImmediateOnly,
+}
+
+#[derive(Debug)]
+pub struct RuntimePreparedHostCall {
+  pub value: Value,
+  pub effect: PreparedRuntimeEffect,
 }
 
 /// A callable host function.
@@ -110,13 +117,37 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
     args.len() as u64
   }
 
-  /// Invoke the host function.
+  /// Invoke a pure, runtime-managed, or immediate-only host function.
   fn call(
     &self,
-    services: &mut dyn RuntimeServices,
-    context: &mut RuntimeContext,
-    args: Vec<Value>,
-  ) -> MResult<Value>;
+    _services: &mut dyn RuntimeServices,
+    _context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<Value> {
+    Err(MechError::new(
+      InvalidHostCallError {
+        function: self.name().to_string(),
+        reason: "host function does not implement immediate invocation".to_string(),
+      },
+      None,
+    ))
+  }
+
+  /// Prepare a staged host call and its provisional program value.
+  fn stage_call(
+    &self,
+    _services: &mut dyn RuntimeServices,
+    _context: &mut RuntimeContext,
+    _args: Vec<Value>,
+  ) -> MResult<RuntimePreparedHostCall> {
+    Err(MechError::new(
+      InvalidHostCallError {
+        function: self.name().to_string(),
+        reason: "host function does not implement staged invocation".to_string(),
+      },
+      None,
+    ))
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -227,6 +258,83 @@ where
   }
 
   fn call(&self, services: &mut dyn RuntimeServices, context: &mut RuntimeContext, args: Vec<Value>) -> MResult<Value> {
+    (self.function)(services, context, args)
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Staged Closure Host Function
+// -----------------------------------------------------------------------------
+
+pub struct StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  name: String,
+  capability: Option<CapabilityRequest>,
+  function: F,
+}
+
+impl<F> std::fmt::Debug for StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("StagedClosureHostFunction")
+      .field("name", &self.name)
+      .field("capability", &self.capability)
+      .field("function", &"<staged-closure>")
+      .finish()
+  }
+}
+
+impl<F> StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  pub fn new(
+    name: impl Into<String>,
+    function: F,
+  ) -> Self {
+    Self {
+      name: name.into(),
+      capability: None,
+      function,
+    }
+  }
+
+  pub fn with_capability(
+    mut self,
+    capability: CapabilityRequest,
+  ) -> Self {
+    self.capability = Some(capability);
+    self
+  }
+}
+
+impl<F> HostFunction for StagedClosureHostFunction<F>
+where
+  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+{
+  fn name(&self) -> &str {
+    &self.name
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::Staged
+  }
+
+  fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
+    let _ = context;
+    self.capability.clone()
+  }
+
+  fn stage_call(
+    &self,
+    services: &mut dyn RuntimeServices,
+    context: &mut RuntimeContext,
+    args: Vec<Value>,
+  ) -> MResult<RuntimePreparedHostCall> {
     (self.function)(services, context, args)
   }
 }

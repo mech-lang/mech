@@ -43,6 +43,9 @@ use super::execution::{
 use mech_core::{
   GuardFunctionSafety, Ref, ValueKind,
 };
+use crate::{
+  HostFunctionTransactionMode, RuntimePreparedHostCall,
+};
 
 impl MechRuntime {
 
@@ -150,7 +153,26 @@ impl MechRuntime {
 
       self.check_capability_with_context(context, &capability_request)?;
 
-      function.call(self, context, call.args)
+      match function.transaction_mode() {
+        HostFunctionTransactionMode::Staged => {
+          let RuntimePreparedHostCall { value, effect } =
+            function.stage_call(self, context, call.args)?;
+          if context.transaction.is_some() {
+            self.stage_runtime_effect_with_context(context, effect)?;
+          } else {
+            let cost = effect.cost();
+            context.charge_bytes(cost.bytes)?;
+            context.charge_items(cost.items)?;
+            self.execute_runtime_effect_immediately(effect)?;
+          }
+          Ok(value)
+        }
+        HostFunctionTransactionMode::Pure
+        | HostFunctionTransactionMode::RuntimeManaged
+        | HostFunctionTransactionMode::ImmediateOnly => {
+          function.call(self, context, call.args)
+        }
+      }
     })();
 
     match &result {
@@ -358,6 +380,97 @@ impl MechFunctionCompiler for RuntimeHostNativeFunction {
       },
       None,
     ))
+  }
+}
+
+#[cfg(test)]
+mod transaction_tests {
+  use super::*;
+  use std::sync::{Arc, Mutex};
+  use crate::{
+    BasicCapability, BasicOperation, BasicResource, BasicSubject,
+    PreparedRuntimeEffect, RuntimeAfterCommitEffect,
+    RuntimeEffectMetadata, RuntimeEffectSource,
+    StagedClosureHostFunction,
+  };
+
+  #[derive(Debug)]
+  struct RecordingHostEffect {
+    log: Arc<Mutex<Vec<String>>>,
+    entry: String,
+  }
+
+  impl RuntimeAfterCommitEffect for RecordingHostEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      RuntimeEffectMetadata::new(
+        RuntimeEffectSource::HostFunction {
+          name: "demo/staged".to_string(),
+        },
+        "deliver",
+      )
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      self.log.lock().unwrap().push(self.entry.clone());
+      Ok(())
+    }
+  }
+
+  fn grant_host_call(runtime: &mut MechRuntime, name: &str) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        CapabilityId(700),
+        &BasicSubject::new(&subject),
+        &BasicResource::new(format!("host:{name}")),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
+  }
+
+  #[test]
+  fn staged_host_call_returns_value_before_effect_delivery() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    grant_host_call(&mut runtime, "demo/staged");
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let effect_log = log.clone();
+    runtime
+      .register_mech_host_function(StagedClosureHostFunction::new(
+        "demo/staged",
+        move |_services, _context, _args| {
+          Ok(RuntimePreparedHostCall {
+            value: Value::String(Ref::new("provisional".to_string())),
+            effect: PreparedRuntimeEffect::AfterCommit(Box::new(
+              RecordingHostEffect {
+                log: effect_log.clone(),
+                entry: "delivered".to_string(),
+              },
+            )),
+          })
+        },
+      ))
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    let value = runtime
+      .call_host_with_context(
+        &mut context,
+        HostCall::new("demo/staged", Vec::new()),
+      )
+      .unwrap();
+
+    assert_eq!(
+      value,
+      Value::String(Ref::new("provisional".to_string())),
+    );
+    assert!(log.lock().unwrap().is_empty());
+
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+    assert_eq!(
+      log.lock().unwrap().as_slice(),
+      &["delivered".to_string()],
+    );
   }
 }
 
