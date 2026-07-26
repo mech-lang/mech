@@ -706,10 +706,22 @@ impl MechRuntime {
     self.active_program_operation = None;
 
     let original_error = match execution_result {
-      Ok(value) if implicit => match self.commit_runtime_transaction_internal(context) {
-        Ok(_) => return Ok(value),
-        Err(error) => error,
-      },
+      Ok(value) if implicit => {
+        match self.commit_runtime_transaction_internal(context) {
+          Ok(super::transaction::RuntimeCommitResolution::Committed(_)) => {
+            return Ok(value);
+          }
+          Ok(
+            super::transaction::RuntimeCommitResolution::CommittedWithError {
+              error,
+              ..
+            },
+          ) => {
+            return Err(error);
+          }
+          Err(error) => error,
+        }
+      }
       Ok(value) => return Ok(value),
       Err(error) => error,
     };

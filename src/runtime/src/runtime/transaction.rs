@@ -22,6 +22,14 @@ use crate::{
   RuntimeEffectFailure, RuntimeEffectFailurePhase,
 };
 
+pub(super) enum RuntimeCommitResolution {
+  Committed(RuntimeCommitOutcome),
+  CommittedWithError {
+    transaction_id: TransactionId,
+    error: MechError,
+  },
+}
+
 impl MechRuntime {
 
   pub fn commit_transaction(
@@ -163,24 +171,29 @@ impl MechRuntime {
     self.ensure_runtime_healthy("commit_runtime_transaction")?;
     self.reject_effect_reentrancy("commit_runtime_transaction")?;
     self.reject_program_operation_reentrancy("commit_runtime_transaction")?;
-    self.commit_runtime_transaction_detailed_internal(context)
+    match self.commit_runtime_transaction_detailed_internal(context)? {
+      RuntimeCommitResolution::Committed(outcome) => Ok(outcome),
+      RuntimeCommitResolution::CommittedWithError {
+        transaction_id,
+        error,
+      } => {
+        let _ = transaction_id;
+        Err(error)
+      }
+    }
   }
 
   pub(super) fn commit_runtime_transaction_internal(
     &mut self,
     context: &mut RuntimeContext,
-  ) -> MResult<TransactionId> {
-    Ok(
-      self
-        .commit_runtime_transaction_detailed_internal(context)?
-        .transaction_id,
-    )
+  ) -> MResult<RuntimeCommitResolution> {
+    self.commit_runtime_transaction_detailed_internal(context)
   }
 
   fn commit_runtime_transaction_detailed_internal(
     &mut self,
     context: &mut RuntimeContext,
-  ) -> MResult<RuntimeCommitOutcome> {
+  ) -> MResult<RuntimeCommitResolution> {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
@@ -260,10 +273,10 @@ impl MechRuntime {
         self.program_transaction_owner = None;
       }
       self.push_persisted_event_to_context(context, commit_event);
-      return Ok(RuntimeCommitOutcome {
+      return Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
         transaction_id: id,
         delivery_failures: Vec::new(),
-      });
+      }));
     }
 
     self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Preparing);
@@ -512,11 +525,15 @@ impl MechRuntime {
             error,
           ));
         }
-        return Err(self.poison_external_commit_indeterminate(
+        let error = self.poison_external_commit_indeterminate(
           id,
           commit_failure.step.failure.effect_id,
           participant_outcomes,
-        ));
+        );
+        return Ok(RuntimeCommitResolution::CommittedWithError {
+          transaction_id: id,
+          error,
+        });
       }
     };
 
@@ -571,10 +588,10 @@ impl MechRuntime {
       }
     }
 
-    Ok(RuntimeCommitOutcome {
+    Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
       transaction_id: id,
       delivery_failures,
-    })
+    }))
   }
 
   fn cleanup_before_store_retry(
