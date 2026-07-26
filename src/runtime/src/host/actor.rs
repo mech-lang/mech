@@ -32,6 +32,10 @@ impl HostFunction for ActorMessageKindHostFunction {
     "actor/message/kind"
   }
 
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
   fn call(
     &self,
     _services: &mut dyn RuntimeServices,
@@ -85,6 +89,10 @@ impl Default for ActorMessagePayloadHostFunction {
 impl HostFunction for ActorMessagePayloadHostFunction {
   fn name(&self) -> &str {
     "actor/message/payload"
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
   }
 
   fn call(
@@ -142,6 +150,10 @@ impl HostFunction for ActorStateIdHostFunction {
     "actor/state/id"
   }
 
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
+  }
+
   fn call(
     &self,
     _services: &mut dyn RuntimeServices,
@@ -189,6 +201,10 @@ impl Default for ActorStateGetHostFunction {
 impl HostFunction for ActorStateGetHostFunction {
   fn name(&self) -> &str {
     "actor/state/get"
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
   }
 
   fn call(
@@ -242,6 +258,10 @@ impl Default for ActorStatePutHostFunction {
 impl HostFunction for ActorStatePutHostFunction {
   fn name(&self) -> &str {
     "actor/state/put"
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::RuntimeManaged
   }
 
   fn call(

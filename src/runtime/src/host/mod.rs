@@ -39,6 +39,14 @@ pub use self::arg::*;
 // Host Function
 // -----------------------------------------------------------------------------
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HostFunctionTransactionMode {
+  Pure,
+  RuntimeManaged,
+  Staged,
+  ImmediateOnly,
+}
+
 /// A callable host function.
 ///
 /// This trait is the embedder boundary. Implementations can wrap closures,
@@ -54,6 +62,15 @@ pub trait HostFunction: std::fmt::Debug + Send + Sync {
   /// - `ui.render`
   /// - `net.fetch`
   fn name(&self) -> &str;
+
+  /// Declares how the function participates in runtime transactions.
+  ///
+  /// The conservative default is `ImmediateOnly`: existing host callbacks may
+  /// have arbitrary side effects, so retained execution must not invoke them
+  /// inside an implicit or explicit transaction without an explicit contract.
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    HostFunctionTransactionMode::ImmediateOnly
+  }
 
   /// Optional resource key used for capability checks.
   ///
@@ -115,6 +132,7 @@ where
 {
   name: String,
   capability: Option<CapabilityRequest>,
+  transaction_mode: HostFunctionTransactionMode,
   function: F,
 }
 
@@ -126,6 +144,7 @@ where
     f.debug_struct("ClosureHostFunction")
       .field("name", &self.name)
       .field("capability", &self.capability)
+      .field("transaction_mode", &self.transaction_mode)
       .field("function", &"<closure>")
       .finish()
   }
@@ -139,9 +158,44 @@ where
     name: impl Into<String>,
     function: F,
   ) -> Self {
+    Self::with_transaction_mode(
+      name,
+      HostFunctionTransactionMode::ImmediateOnly,
+      function,
+    )
+  }
+
+  pub fn new_pure(
+    name: impl Into<String>,
+    function: F,
+  ) -> Self {
+    Self::with_transaction_mode(
+      name,
+      HostFunctionTransactionMode::Pure,
+      function,
+    )
+  }
+
+  pub fn new_runtime_managed(
+    name: impl Into<String>,
+    function: F,
+  ) -> Self {
+    Self::with_transaction_mode(
+      name,
+      HostFunctionTransactionMode::RuntimeManaged,
+      function,
+    )
+  }
+
+  fn with_transaction_mode(
+    name: impl Into<String>,
+    transaction_mode: HostFunctionTransactionMode,
+    function: F,
+  ) -> Self {
     Self {
       name: name.into(),
       capability: None,
+      transaction_mode,
       function,
     }
   }
@@ -161,6 +215,10 @@ where
 {
   fn name(&self) -> &str {
     &self.name
+  }
+
+  fn transaction_mode(&self) -> HostFunctionTransactionMode {
+    self.transaction_mode
   }
 
   fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
@@ -631,5 +689,34 @@ mod tests {
       .unwrap();
 
     assert_eq!(result, Value::Empty);
+  }
+
+  #[test]
+  fn closure_constructors_require_explicit_transaction_contracts() {
+    let immediate = ClosureHostFunction::new(
+      "host.immediate",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
+    let pure = ClosureHostFunction::new_pure(
+      "host.pure",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
+    let runtime_managed = ClosureHostFunction::new_runtime_managed(
+      "host.runtime-managed",
+      |_services, _ctx, _args| Ok(Value::Empty),
+    );
+
+    assert_eq!(
+      immediate.transaction_mode(),
+      HostFunctionTransactionMode::ImmediateOnly,
+    );
+    assert_eq!(
+      pure.transaction_mode(),
+      HostFunctionTransactionMode::Pure,
+    );
+    assert_eq!(
+      runtime_managed.transaction_mode(),
+      HostFunctionTransactionMode::RuntimeManaged,
+    );
   }
 }

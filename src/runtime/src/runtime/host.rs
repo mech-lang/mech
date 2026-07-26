@@ -76,6 +76,8 @@ impl MechRuntime {
     &mut self,
     function: impl HostFunction + 'static,
   ) -> MResult<()> {
+    self.ensure_runtime_healthy("register_mech_host_function")?;
+    self.reject_effect_reentrancy("register_mech_host_function")?;
     let name = function.name().to_string();
 
     self
