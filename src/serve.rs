@@ -1648,14 +1648,14 @@ mod tests {
   }
 
   #[test]
-  fn server_directory_input_does_not_serve_mcfg_files() {
+  fn server_workspace_discovery_does_not_serve_mcfg_files() {
     let root = temp_root("dir-skips-mcfg");
     std::fs::write(root.join("main.mec"), "x := 1\n").unwrap();
     std::fs::write(root.join("demo.mcfg"), "runtime: {}\n").unwrap();
     let guard = CurrentDirGuard::enter(&root);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec![".".to_string()]).unwrap();
+    server.load_workspace(&Vec::new()).unwrap();
     let registry = server.registry.read().unwrap();
     assert!(registry.get_route("demo.mcfg").is_none());
     assert!(registry.get_route("source/demo.mcfg").is_none());
