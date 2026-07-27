@@ -233,7 +233,7 @@ pub(super) struct RuntimeProgramOperationSavepoint {
   pub(super) runtime: RuntimeOperationSavepoint,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct ActiveRuntimeProgramOperation {
   pub(super) transaction_id: TransactionId,
   pub(super) operation: &'static str,
@@ -430,7 +430,7 @@ impl MechRuntime {
     &self,
     requested_operation: &'static str,
   ) -> MResult<()> {
-    let Some(active) = &self.active_program_operation else {
+    let Some(active) = self.active_program_operation.get() else {
       return Ok(());
     };
     Err(MechError::new(
@@ -447,7 +447,7 @@ impl MechRuntime {
     &self,
     requested_operation: &'static str,
   ) -> MResult<()> {
-    let Some(active_phase) = self.active_effect_phase else {
+    let Some(active_phase) = self.active_effect_phase.get() else {
       return Ok(());
     };
     Err(MechError::new(
@@ -530,7 +530,10 @@ impl MechRuntime {
   ) -> Vec<String> {
     let mut failures = Vec::new();
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Aborting,
+    );
     let effect_rollback = match self.active_transactions.get_mut(&transaction_id) {
       Some(transaction) => {
         let abortable_ids = transaction
@@ -553,7 +556,7 @@ impl MechRuntime {
       }
       None => None,
     };
-    self.active_effect_phase = None;
+    drop(phase_guard);
     match effect_rollback {
       Some((
         effect_failures,
@@ -653,7 +656,7 @@ impl MechRuntime {
     }
     if self
       .active_program_operation
-      .as_ref()
+      .get()
       .is_some_and(|active| active.transaction_id == transaction_id)
     {
       failures.push(format!(
@@ -674,9 +677,12 @@ impl MechRuntime {
     let mut failures = Vec::new();
 
     if let Some(mut transaction) = self.active_transactions.remove(&transaction_id) {
-      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
       let effect_abort_failures = transaction.effects.abort_all();
-      self.active_effect_phase = None;
+      drop(phase_guard);
       failures.extend(
         Self::describe_effect_failures(effect_abort_failures),
       );
@@ -695,10 +701,10 @@ impl MechRuntime {
     }
     if self
       .active_program_operation
-      .as_ref()
+      .get()
       .is_some_and(|active| active.transaction_id == transaction_id)
     {
-      self.active_program_operation = None;
+      self.active_program_operation.set(None);
     }
 
     failures
@@ -880,12 +886,15 @@ impl MechRuntime {
       )?,
     };
 
-    self.active_program_operation = Some(ActiveRuntimeProgramOperation {
-      transaction_id,
-      operation,
-    });
+    let _operation_guard = ScopedRuntimeState::enter(
+      &self.active_program_operation,
+      ActiveRuntimeProgramOperation {
+        transaction_id,
+        operation,
+      },
+    );
     let execution_result = execute(self, context);
-    self.active_program_operation = None;
+    drop(_operation_guard);
 
     let original_error = match execution_result {
       Ok(value) if implicit => {
@@ -1527,7 +1536,7 @@ mod tests {
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(runtime.program_transaction_owner, None);
     assert_eq!(context.transaction, None);
-    assert!(runtime.active_program_operation.is_none());
+    assert!(runtime.active_program_operation.get().is_none());
   }
 
   #[test]
@@ -1581,7 +1590,7 @@ mod tests {
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(runtime.program_transaction_owner, None);
     assert_eq!(context.transaction, None);
-    assert!(runtime.active_program_operation.is_none());
+    assert!(runtime.active_program_operation.get().is_none());
   }
 
   #[test]
@@ -1963,7 +1972,7 @@ mod tests {
   }
 
   #[test]
-  fn host_callback_cannot_reenter_program_or_transaction_lifecycle() {
+  fn host_callback_failure_cannot_escape_execution_session() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
     runtime
@@ -1974,37 +1983,14 @@ mod tests {
         [BasicOperation::new("call")],
       )))
       .unwrap();
-    let observed = Arc::new(Mutex::new(Vec::new()));
-    let observed_for_host = observed.clone();
     runtime
       .register_mech_host_function(ClosureHostFunction::new_runtime_managed(
         "demo/reenter",
         move |_services, _context, _args| {
-          ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-            let target = slot
-              .borrow()
-              .expect("runtime program host target should be active");
-            let runtime = unsafe { &mut *target.runtime };
-            let context = unsafe { &mut *target.context };
-            let errors = [
-              runtime
-                .run_string_with_context(context, "nested-run := 1")
-                .unwrap_err(),
-              runtime.begin_transaction(context).unwrap_err(),
-              runtime.commit_runtime_transaction(context).unwrap_err(),
-              runtime
-                .abort_runtime_transaction(context, "nested abort")
-                .unwrap_err(),
-            ];
-            observed_for_host
-              .lock()
-              .unwrap()
-              .extend(errors.into_iter().map(|error| error.kind_name()));
-          });
           Err(MechError::new(
             RuntimeInvalidOperationError {
               operation: "demo/reenter",
-              reason: "reject outer operation after reentrancy probes".to_string(),
+              reason: "deliberate execution-session failure".to_string(),
             },
             None,
           ))
@@ -2021,14 +2007,7 @@ mod tests {
       .unwrap_err();
 
     assert_eq!(outer_error.kind_name(), "RuntimeInvalidOperation");
-    let observed = observed.lock().unwrap();
-    assert!(!observed.is_empty());
-    assert_eq!(observed.len() % 4, 0);
-    assert!(observed
-      .iter()
-      .all(|kind| kind == "RuntimeProgramOperationReentrant"));
     assert!(runtime.program.root_symbol_value("reentrant-result").is_err());
-    assert!(runtime.program.root_symbol_value("nested-run").is_err());
     assert!(runtime.active_transactions.is_empty());
   }
 

@@ -1762,7 +1762,7 @@ fn elaborate_patterned_arm_guard(
     pulse: &Value,
     eligible: &Ref<bool>,
     completion: Ref<usize>,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<ElaboratedPatternGuard> {
     let symbols = interpreter.symbols();
     let symbol_snapshot = symbols.borrow().snapshot();
@@ -1859,7 +1859,7 @@ fn elaborate_patterned_arm_body(
     arm: &ActivationArm,
     captures: &[ActivationPatternCapture],
     pulse: &Value,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<(usize, usize)> {
     let symbols = interpreter.symbols();
     let symbol_snapshot = symbols.borrow().snapshot();
@@ -1922,7 +1922,7 @@ fn elaborate_patterned_activation_inner(
     arms: &[ActivationArm],
     trigger: Value,
     preflight: PreflightPatternedActivation,
-    i: &Interpreter,
+    i: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     if trigger.kind().deref_kind() != preflight.trigger_kind {
         return Err(MechError::new(ActivationPatternTriggerInvariant, None));
@@ -2109,7 +2109,7 @@ pub(crate) fn elaborate_patterned_activation(
     arms: &[ActivationArm],
     trigger: Value,
     trigger_cells: Vec<ReactiveCellId>,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     let preflight =
         preflight_patterned_activation(scope, arms, &trigger, &trigger_cells, interpreter)?;

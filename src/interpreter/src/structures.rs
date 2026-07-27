@@ -79,7 +79,7 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
   out
 }
 
-pub fn structure(strct: &Structure, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn structure(strct: &Structure, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
     #[cfg(feature = "record")]
@@ -101,7 +101,7 @@ pub fn structure(strct: &Structure, env: Option<&Environment>, p: &Interpreter) 
 }
 
 #[cfg(feature = "tuple")]
-pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut elements = vec![];
   for el in &tpl.elements {
     let result = expression(el, env, p)?;
@@ -112,7 +112,7 @@ pub fn tuple(tpl: &Tuple, env: Option<&Environment>, p: &Interpreter) -> MResult
 }
 
 #[cfg(all(feature = "tuple", feature = "atom"))]
-pub fn tuple_struct(tpl: &TupleStruct, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn tuple_struct(tpl: &TupleStruct, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let payload = expression(&tpl.value, env, p)?;
   let variant_id = tpl.name.hash();
   let state_brrw = p.state.borrow();
@@ -138,14 +138,14 @@ pub fn tuple_struct(tpl: &TupleStruct, env: Option<&Environment>, p: &Interprete
 }
 
 #[cfg(feature = "map")]
-pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn map(mp: &Map, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
     let key = expression(&b.key, env, p)?;
     let val = expression(&b.value, env, p)?;
     m.insert(key,val);
   }
-  
+
   let key_kind = m.keys().next().unwrap().kind();
   // verify that all the keys are the same kind:
   for k in m.keys() {
@@ -156,7 +156,7 @@ pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Valu
       ).with_compiler_loc());
     }
   }
-  
+
   let value_kind = m.values().next().unwrap().kind();
   // verify that all the values are the same kind:
   for v in m.values() {
@@ -176,7 +176,7 @@ pub fn map(mp: &Map, env: Option<&Environment>, p: &Interpreter) -> MResult<Valu
 }
 
 #[cfg(feature = "record")]
-pub fn record(rcrd: &Record, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn record(rcrd: &Record, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
@@ -195,7 +195,7 @@ pub fn record(rcrd: &Record, env: Option<&Environment>, p: &Interpreter) -> MRes
     #[cfg(feature = "convert")]
     if knd != val.kind() {
       let arguments = vec![val.clone(), Value::Kind(knd.clone())];
-      match execute_initialized_indexed_compiler(&plan, &ConvertKind {}, arguments) {
+      match execute_initialized_indexed_compiler(p, &plan, &ConvertKind {}, arguments) {
         Ok(converted_result) => {
           data.insert(name_hash, converted_result);
         }
@@ -306,7 +306,7 @@ register_descriptor!{
 }
 
 #[cfg(feature = "set")]
-pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn set(m: &Set, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let mut elements = Vec::new();
   for el in &m.elements {
@@ -337,7 +337,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
   }
   #[cfg(feature = "functions")]
   {
-    execute_initialized_indexed_compiler(&plan, &SetDefine { kind: element_kind }, elements)
+    execute_initialized_indexed_compiler(p, &plan, &SetDefine { kind: element_kind }, elements)
   }
   #[cfg(not(feature = "functions"))]
   {
@@ -359,10 +359,10 @@ macro_rules! handle_value_kind {
         Ok(u) => vals.push(u.to_value()),
         Err(_) => {
           return Err(MechError::new(
-            TableColumnKindMismatchError { 
-              column_id: id, 
-              expected_kind: $value_kind.clone(), 
-              actual_kind: x.kind() 
+            TableColumnKindMismatchError {
+              column_id: id,
+              expected_kind: $value_kind.clone(),
+              actual_kind: x.kind()
             },
             None
           ).with_compiler_loc());
@@ -380,7 +380,7 @@ fn handle_column_kind(
     id: u64,
     val: Matrix<Value>,
     data_map: &mut IndexMap<u64,(ValueKind,Matrix<Value>)>
-) -> MResult<()> 
+) -> MResult<()>
 {
   match kind {
     #[cfg(feature = "i8")]
@@ -445,7 +445,7 @@ fn handle_column_kind(
 }
 
 #[cfg(feature = "table")]
-pub fn table(t: &Table, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
+pub fn table(t: &Table, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut rows = vec![];
   let headings = table_header(&t.header, env, p)?;
   let mut cols = 0;
@@ -501,7 +501,7 @@ pub fn table(t: &Table, env: Option<&Environment>, p: &Interpreter) -> MResult<V
 }
 
 #[cfg(feature = "kind_annotation")]
-pub fn table_header(fields: &TableHeader, env: Option<&Environment>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
+pub fn table_header(fields: &TableHeader, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
   let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
   for f in &fields.0 {
     let id = f.name.hash();
@@ -514,7 +514,7 @@ pub fn table_header(fields: &TableHeader, env: Option<&Environment>, p: &Interpr
   Ok(headings)
 }
 
-pub fn table_row(r: &TableRow, env: Option<&Environment>, p: &Interpreter) -> MResult<Vec<Value>> {
+pub fn table_row(r: &TableRow, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Vec<Value>> {
   let mut row: Vec<Value> = Vec::new();
   for col in &r.columns {
     let result = table_column(col, env, p)?;
@@ -523,7 +523,7 @@ pub fn table_row(r: &TableRow, env: Option<&Environment>, p: &Interpreter) -> MR
   Ok(row)
 }
 
-pub fn table_column(r: &TableColumn, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> { 
+pub fn table_column(r: &TableColumn, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   expression(&r.element, env, p)
 }
 
@@ -549,7 +549,7 @@ fn is_composite_matrix_cell(value: &Value) -> bool {
 }
 
 #[cfg(feature = "matrix")]
-pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let mut shape = vec![0, 0];
   let mut col: Vec<Value> = Vec::new();
@@ -610,7 +610,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
       return Ok(Value::MatrixValue(Matrix::from_vec(values, row_count, cols)));
     }
 
-    return execute_initialized_indexed_compiler(&plan, &MatrixVertCat {}, col);
+    return execute_initialized_indexed_compiler(p, &plan, &MatrixVertCat {}, col);
   }
   return Err(MechError::new(
     FeatureNotEnabledError,
@@ -619,7 +619,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &Interpreter) -> MResult<Va
 }
 
 #[cfg(feature = "matrix_horzcat")]
-pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
@@ -647,9 +647,9 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
     return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));
   }
-  execute_initialized_indexed_compiler(&plan, &MatrixHorzCat {}, row)
+  execute_initialized_indexed_compiler(p, &plan, &MatrixHorzCat {}, row)
 }
-pub fn matrix_column(r: &MatrixColumn, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn matrix_column(r: &MatrixColumn, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   expression(&r.element, env, p)
 }
 

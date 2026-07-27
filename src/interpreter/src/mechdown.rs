@@ -5,7 +5,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "symbol_table")]
-fn update_ans_symbol(value: &Value, p: &Interpreter) {
+fn update_ans_symbol(value: &Value, p: &InterpreterExecution<'_>) {
   let resolved_value = match value {
     Value::MutableReference(reference) => reference.borrow().clone(),
     _ => value.clone(),
@@ -21,19 +21,19 @@ fn update_ans_symbol(value: &Value, p: &Interpreter) {
   p.dictionary().borrow_mut().insert(ans_id, "ans".to_string());
 }
 
-pub fn program(program: &Program, p: &Interpreter) -> MResult<Value> {
+pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<Value> {
   body(&program.body, p)
 }
 
-pub fn body(body: &Body, p: &Interpreter) -> MResult<Value> {
+pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut result = Ok(Value::Empty);
   for sec in &body.sections {
     result = Ok(section(&sec, p)?);
-  } 
+  }
   result
 }
 
-pub fn section(section: &Section, p: &Interpreter) -> MResult<Value> {
+pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut result = Ok(Value::Empty);
   for el in &section.elements {
     result = Ok(section_element(&el, p)?);
@@ -41,9 +41,9 @@ pub fn section(section: &Section, p: &Interpreter) -> MResult<Value> {
   result
 }
 
-pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Value> {
+pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut hasher = DefaultHasher::new();
-  let mut out = Value::Empty; 
+  let mut out = Value::Empty;
   match element {
     SectionElement::Prompt(x) => x.hash(&mut hasher),
     SectionElement::InfoBlock(x) => x.hash(&mut hasher),
@@ -98,7 +98,14 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           .clone();
         drop(sub_interpreters);
         let pp = pp.borrow();
-        out = eval_fenced_code_block(&block.code, pp.as_ref(), true)?;
+        out = p.with_interpreter(
+          pp.as_ref(),
+          |execution| eval_fenced_code_block(
+            &block.code,
+            execution,
+            true,
+          ),
+        )?;
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
         let (last_code,_) = block.code.last().unwrap();
@@ -142,7 +149,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           }
         }
       }
-      x.hash(&mut hasher); 
+      x.hash(&mut hasher);
     },
     SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
@@ -179,7 +186,13 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           .clone();
         drop(sub_interpreters);
         let pp = pp.borrow();
-        let _ = section(&mika_section.elements, pp.as_ref())?;
+        p.with_interpreter(
+          pp.as_ref(),
+          |execution| section(
+            &mika_section.elements,
+            execution,
+          ),
+        )?;
       }
       return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
     },
@@ -196,7 +209,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
 #[cfg(feature = "functions")]
 fn eval_fenced_code_block(
   code: &Vec<(MechCode, Option<Comment>)>,
-  interpreter: &Interpreter,
+  interpreter: &InterpreterExecution<'_>,
   isolate_errors: bool,
 ) -> MResult<Value> {
   let mut out = Value::Empty;
@@ -225,7 +238,7 @@ fn eval_fenced_code_block(
   Ok(out)
 }
 
-fn inline_eval_id(p: &Interpreter) -> u64 {
+fn inline_eval_id(p: &InterpreterExecution<'_>) -> u64 {
   let next_ix = {
     let mut counter = p.inline_eval_counter.borrow_mut();
     let current = *counter;
@@ -240,7 +253,7 @@ fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection
   hash_str(&format!("mika:{}:{:?}", parent_id, (mika, section)))
 }
 
-pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
+pub fn paragraph_element(element: &ParagraphElement, p: &InterpreterExecution<'_>) -> MResult<(u64,Value)> {
   let result = match element {
     ParagraphElement::EvalInlineMechCode(expr) => {
       let code_id = inline_eval_id(p);
@@ -260,7 +273,7 @@ pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult
   Ok(result)
 }
 
-pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
+pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let par = &cmmt.paragraph;
   for el in par.elements.iter() {
     let (code_id,value) = match paragraph_element(&el, p) {
@@ -287,7 +300,7 @@ fn context_export_error(module: &str, item: &str) -> MechError {
 }
 
 #[cfg(feature = "functions")]
-fn is_context_export(p: &Interpreter, module: &str, item: &str) -> bool {
+fn is_context_export(p: &InterpreterExecution<'_>, module: &str, item: &str) -> bool {
   p.module_manifests
     .borrow()
     .export(module, item)
@@ -295,7 +308,7 @@ fn is_context_export(p: &Interpreter, module: &str, item: &str) -> bool {
 }
 
 #[cfg(feature = "functions")]
-pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<Value> {
+pub fn module_import_runtime(import: &ModuleImport, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let module = import.module.to_string();
   match import.kind {
     ModuleImportKind::Module => {
@@ -368,7 +381,7 @@ pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<
   }
 }
 
-pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
+pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let out = match &code {
     MechCode::ActivationScope(scope) => activation_scope(scope, p),
     MechCode::Expression(expr) => expression(&expr, None, p),
@@ -445,17 +458,17 @@ fn validate_activation_body(body: &[(MechCode, Option<Comment>)], trigger_id: u6
 }
 
 #[cfg(all(feature = "functions", feature = "symbol_table"))]
-fn activation_trigger_cells(scope: &ActivationScope, var: &Var, p: &Interpreter) -> MResult<Vec<ReactiveCellId>> {
+fn activation_trigger_cells(scope: &ActivationScope, var: &Var, p: &InterpreterExecution<'_>) -> MResult<Vec<ReactiveCellId>> {
   let trigger = { let state = p.state.borrow(); state.get_symbol(var.name.hash()) }.ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?;
   let cells = trigger.borrow().reactive_root_cell_ids();
   if cells.is_empty() { return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())); }
   Ok(cells)
 }
 #[cfg(not(all(feature = "functions", feature = "symbol_table")))]
-fn activation_trigger_cells(scope: &ActivationScope, _var: &Var, _p: &Interpreter) -> MResult<Vec<ReactiveCellId>> { Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens())) }
+fn activation_trigger_cells(scope: &ActivationScope, _var: &Var, _p: &InterpreterExecution<'_>) -> MResult<Vec<ReactiveCellId>> { Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens())) }
 
 #[cfg(all(feature = "functions", feature = "symbol_table"))]
-fn elaborate_activation_scope(scope: &ActivationScope, p: &Interpreter, trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> {
+fn elaborate_activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>, trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> {
   match &scope.body {
     ActivationBody::Block(body) => {
       let plan = p.plan();
@@ -492,9 +505,9 @@ fn elaborate_activation_scope(scope: &ActivationScope, p: &Interpreter, trigger_
   }
 }
 #[cfg(not(all(feature = "functions", feature = "symbol_table")))]
-fn elaborate_activation_scope(scope: &ActivationScope, _p: &Interpreter, _trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> { Err(MechError::new(ActivationScopeRegistrationUnsupported,None).with_tokens(scope.tokens())) }
+fn elaborate_activation_scope(scope: &ActivationScope, _p: &InterpreterExecution<'_>, _trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> { Err(MechError::new(ActivationScopeRegistrationUnsupported,None).with_tokens(scope.tokens())) }
 
-fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
+fn activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
   if let ActivationBody::Block(body) = &scope.body {
     validate_activation_body(body, var.name.hash())?;

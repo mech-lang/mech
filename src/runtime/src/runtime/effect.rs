@@ -630,14 +630,17 @@ impl MechRuntime {
         protocol,
       },
     ) {
-      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
       let cleanup = {
         let transaction =
           self.active_execution_transaction_mut(transaction_id)?;
         transaction.store = store_before;
         transaction.effects.rollback_to(effect_mark)
       };
-      self.active_effect_phase = None;
+      drop(phase_guard);
       context.events = context_events_before;
       if cleanup.is_empty() {
         return Err(error);
@@ -716,14 +719,17 @@ impl MechRuntime {
         protocol,
       },
     ) {
-      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
       let cleanup = {
         let transaction =
           self.active_execution_transaction_mut(transaction_id)?;
         transaction.store = store_before;
         transaction.effects.rollback_to(effect_mark)
       };
-      self.active_effect_phase = None;
+      drop(phase_guard);
       context.events = context_events_before;
       if cleanup.is_empty() {
         return Err(error);
@@ -753,16 +759,20 @@ impl MechRuntime {
     };
     match &mut effect {
       PreparedRuntimeEffect::Transactional(effect) => {
-        self.active_effect_phase =
-          Some(ActiveRuntimeEffectPhase::Preparing);
+        let phase_guard = ScopedRuntimeState::enter(
+          &self.active_effect_phase,
+          ActiveRuntimeEffectPhase::Preparing,
+        );
         let prepare_result = effect.prepare();
-        self.active_effect_phase = None;
+        drop(phase_guard);
         prepare_result?;
 
-        self.active_effect_phase =
-          Some(ActiveRuntimeEffectPhase::Committing);
+        let phase_guard = ScopedRuntimeState::enter(
+          &self.active_effect_phase,
+          ActiveRuntimeEffectPhase::Committing,
+        );
         let commit_result = effect.commit();
-        self.active_effect_phase = None;
+        drop(phase_guard);
         if let Err(error) = commit_result {
           return Err(self.poison_external_commit_indeterminate(
             effect_id.transaction,
@@ -780,17 +790,21 @@ impl MechRuntime {
         }
       }
       PreparedRuntimeEffect::Compensatable(effect) => {
-        self.active_effect_phase =
-          Some(ActiveRuntimeEffectPhase::Applying);
+        let phase_guard = ScopedRuntimeState::enter(
+          &self.active_effect_phase,
+          ActiveRuntimeEffectPhase::Applying,
+        );
         let result = effect.apply();
-        self.active_effect_phase = None;
+        drop(phase_guard);
         result?;
       }
       PreparedRuntimeEffect::AfterCommit(effect) => {
-        self.active_effect_phase =
-          Some(ActiveRuntimeEffectPhase::Delivering);
+        let phase_guard = ScopedRuntimeState::enter(
+          &self.active_effect_phase,
+          ActiveRuntimeEffectPhase::Delivering,
+        );
         let result = effect.deliver();
-        self.active_effect_phase = None;
+        drop(phase_guard);
         result?;
       }
     }
@@ -2271,8 +2285,9 @@ mod tests {
   fn mutation_is_rejected_while_an_effect_phase_is_active() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
-    runtime.active_effect_phase =
-      Some(ActiveRuntimeEffectPhase::Preparing);
+    runtime
+      .active_effect_phase
+      .set(Some(ActiveRuntimeEffectPhase::Preparing));
 
     let error = runtime.begin_transaction(&mut context).unwrap_err();
 
@@ -2286,8 +2301,9 @@ mod tests {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let resolver_before =
       runtime.source_resolver() as *const dyn SourceResolver;
-    runtime.active_effect_phase =
-      Some(ActiveRuntimeEffectPhase::Preparing);
+    runtime
+      .active_effect_phase
+      .set(Some(ActiveRuntimeEffectPhase::Preparing));
 
     let error = runtime
       .set_source_resolver(InMemorySourceResolver::new())

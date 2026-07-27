@@ -51,11 +51,10 @@ use crate::{
 
 impl MechRuntime {
 
-  pub(super) fn register_runtime_program_host_functions(
-    &mut self,
-    _context: &mut RuntimeContext,
+  fn install_runtime_program_host_compilers(
     program: &mut MechProgram,
-  ) -> MResult<()> {
+    names: Vec<String>,
+  ) {
     program.register_native_function_compiler(
       ACTIVATION_EFFECT_BARRIER_NAME,
       Arc::new(ActivationEffectBarrierCompiler),
@@ -64,7 +63,7 @@ impl MechRuntime {
       ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
       Arc::new(ActivationEffectPayloadCaptureCompiler),
     );
-    for name in self.host_registry.list_functions()? {
+    for name in names {
       program.register_native_function_compiler(
         name.clone(),
         Arc::new(RuntimeHostNativeFunctionCompiler::new(
@@ -73,7 +72,26 @@ impl MechRuntime {
         )),
       );
     }
+  }
 
+  pub(super) fn register_retained_program_host_functions(
+    &mut self,
+  ) -> MResult<()> {
+    let names = self.host_registry.list_functions()?;
+    Self::install_runtime_program_host_compilers(
+      &mut self.program,
+      names,
+    );
+    Ok(())
+  }
+
+  pub(super) fn register_runtime_program_host_functions(
+    &mut self,
+    _context: &mut RuntimeContext,
+    program: &mut MechProgram,
+  ) -> MResult<()> {
+    let names = self.host_registry.list_functions()?;
+    Self::install_runtime_program_host_compilers(program, names);
     Ok(())
   }
 
@@ -125,7 +143,10 @@ impl MechRuntime {
 
     let result = function.preview_call(self, context, args);
     let mut cleanup_failures = Vec::new();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Aborting,
+    );
     match self.active_transactions.get_mut(&transaction_id) {
       Some(transaction) => {
         cleanup_failures.extend(Self::describe_effect_failures(
@@ -138,7 +159,7 @@ impl MechRuntime {
         transaction_id,
       )),
     }
-    self.active_effect_phase = None;
+    drop(phase_guard);
     context_checkpoint.restore_preserving_consumption(context);
     if let Err(error) = self.validate_context_for_runtime(context) {
       cleanup_failures.push(format!(
@@ -346,12 +367,6 @@ impl MechRuntime {
 }
 
 
-#[derive(Clone, Copy, Debug)]
-pub struct RuntimeProgramHostTarget {
-  pub runtime: *mut MechRuntime,
-  pub context: *mut RuntimeContext,
-}
-
 #[derive(Clone, Debug)]
 pub struct RuntimeHostNativeFunctionCompiler {
   pub mech_name: String,
@@ -379,34 +394,11 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
     &self,
     arguments: &Vec<Value>,
   ) -> MResult<Box<dyn mech_core::MechFunction>> {
-    let value = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      let target = slot.borrow().ok_or_else(|| {
-        MechError::new(
-          RuntimeProgramHostNotActiveError {
-            function: self.mech_name.clone(),
-          },
-          None,
-        )
-      })?;
-
-      // Safety: this target is installed only around `program.run_string(...)`
-      // in `run_string_with_context`. During that call the `MechProgram` has
-      // been moved out of `self`, so calling back into the runtime does not
-      // alias `self.program`.
-      let value = unsafe {
-        (&mut *target.runtime).preview_host_call_with_context(
-          &mut *target.context,
-          HostCall::new(&self.host_name, arguments.clone()),
-        )
-      }?;
-      Ok::<Value, MechError>(value)
-    })?;
-
     Ok(Box::new(RuntimeHostNativeFunction {
       name: self.mech_name.clone(),
       host_name: self.host_name.clone(),
       arguments: arguments.clone(),
-      value: Ref::new(value),
+      value: Ref::new(Value::Empty),
     }))
   }
 }
@@ -443,6 +435,10 @@ impl RuntimeHostNativeFunction {
   fn update_output(&self, next: Value) -> MResult<()> {
     let expected = self.value.borrow().kind();
     let actual = next.kind();
+    if expected == ValueKind::Empty {
+      *self.value.borrow_mut() = next.deep_snapshot();
+      return Ok(());
+    }
     mech_program::apply_stable_value_update(self.value.clone(), next)
       .map(|_| ())
       .map_err(|error| {
@@ -458,36 +454,22 @@ impl RuntimeHostNativeFunction {
       })
   }
 
-  fn solve_inner(&self) -> MResult<()> {
-    let next = ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-      let target = slot.borrow().ok_or_else(|| {
-        MechError::new(
-          RuntimeProgramHostNotActiveError {
-            function: self.name.clone(),
-          },
-          None,
-        )
-      })?;
-
-      // Safety: callers install the active runtime-program host target around
-      // program execution/stepping. Runtime host functions intentionally do not
-      // retain the original context pointer because persisted programs may be
-      // solved later with a different active RuntimeContext.
-      unsafe {
-        (&mut *target.runtime).call_host_value_with_context(
-          &mut *target.context,
-          HostCall::new(&self.host_name, self.arguments.clone()),
-        )
-      }
-    })?;
-
+  fn solve_inner(
+    &self,
+    services: &mut dyn mech_core::MechExecutionServices,
+  ) -> MResult<()> {
+    let next = services.invoke_native(
+      &self.host_name,
+      &self.arguments,
+    )?;
     self.update_output(next)
   }
 }
 
 impl MechFunctionImpl for RuntimeHostNativeFunction {
   fn solve(&self) {
-    if let Err(error) = self.solve_inner() {
+    let mut services = mech_core::NoMechExecutionServices;
+    if let Err(error) = self.solve_inner(&mut services) {
       eprintln!(
         "[Mech Runtime Host Error] function `{}` failed during solve; preserving previous output: {:?}",
         self.name,
@@ -497,7 +479,23 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
   }
 
   fn solve_result(&self) -> MResult<()> {
-    self.solve_inner()
+    let mut services = mech_core::NoMechExecutionServices;
+    self.solve_inner(&mut services)
+  }
+
+  fn solve_result_with(
+    &self,
+    services: &mut dyn mech_core::MechExecutionServices,
+  ) -> MResult<()> {
+    self.solve_inner(services)
+  }
+
+  fn solve_reactive_with(
+    &self,
+    services: &mut dyn mech_core::MechExecutionServices,
+  ) -> MResult<mech_core::ReactiveSolveStatus> {
+    self.solve_inner(services)?;
+    Ok(mech_core::ReactiveSolveStatus::Changed)
   }
 
   fn out(&self) -> Value {

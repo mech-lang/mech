@@ -221,13 +221,16 @@ impl MechRuntime {
       };
 
     let mut program_journal = ProgramReactiveTurnJournal::new();
-    self.active_program_operation = Some(ActiveRuntimeProgramOperation {
-      transaction_id,
-      operation,
-    });
+    let _operation_guard = ScopedRuntimeState::enter(
+      &self.active_program_operation,
+      ActiveRuntimeProgramOperation {
+        transaction_id,
+        operation,
+      },
+    );
     let execution_result =
       execute(self, context, &mut program_journal);
-    self.active_program_operation = None;
+    drop(_operation_guard);
 
     match execution_result {
       Ok(value) if implicit => {
@@ -1148,7 +1151,7 @@ mod tests {
   }
 
   #[test]
-  fn reactive_host_callback_rejects_nested_lifecycle_but_allows_staging() {
+  fn reactive_host_callback_uses_scoped_transaction_services() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
     runtime
@@ -1160,147 +1163,29 @@ mod tests {
       )))
       .unwrap();
     runtime
-      .grant_capability(Arc::new(BasicCapability::new(
-        CapabilityId(921),
-        &BasicSubject::new(&subject),
-        &BasicResource::new("db://reactive-staging"),
-        [BasicOperation::read()],
-      )))
-      .unwrap();
-    let observed = Arc::new(Mutex::new(Vec::new()));
-    let observed_for_host = observed.clone();
-    runtime
       .register_mech_host_function(
         ClosureHostFunction::new_runtime_managed(
           "demo/reactive-reenter",
-          move |_services, _context, _args| {
-            ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-              let target = slot
-                .borrow()
-                .expect("runtime program host target should be active");
-              let runtime = unsafe { &mut *target.runtime };
-              let context = unsafe { &mut *target.context };
-              if runtime
-                .active_program_operation
-                .as_ref()
-                .is_some_and(|active| {
-                  active.operation == "step_with_context"
-                })
-              {
-                let tree =
-                  mech_syntax::parser::parse("nested-tree := 1")
-                    .unwrap();
-                let source = MechSourceCode::String(
-                  "nested-source := 1".to_string(),
-                );
-                let interpreter_id = runtime.program.interpreter().id;
-                let probes = vec![
-                  (
-                    "step",
-                    runtime.step_with_context(context, 0).unwrap_err(),
-                  ),
-                  (
-                    "host_input",
-                    runtime
-                      .apply_host_input_with_context(
-                        context,
-                        crate::RuntimeHostInput::single(
-                          crate::RuntimeHostInputSource::new(
-                            "test://reentrant/input",
-                            "value",
-                          )
-                          .unwrap(),
-                          crate::RuntimeHostInputValue::F64(1.0),
-                        ),
-                      )
-                      .unwrap_err(),
-                  ),
-                  (
-                    "run_string",
-                    runtime
-                      .run_string_with_context(
-                        context,
-                        "nested-string := 1",
-                      )
-                      .unwrap_err(),
-                  ),
-                  (
-                    "run_tree",
-                    runtime
-                      .run_tree_with_context(context, &tree)
-                      .unwrap_err(),
-                  ),
-                  (
-                    "run_source",
-                    runtime
-                      .run_source_with_context(context, &source)
-                      .unwrap_err(),
-                  ),
-                  (
-                    "begin",
-                    runtime.begin_transaction(context).unwrap_err(),
-                  ),
-                  (
-                    "commit",
-                    runtime
-                      .commit_runtime_transaction(context)
-                      .unwrap_err(),
-                  ),
-                  (
-                    "abort",
-                    runtime
-                      .abort_runtime_transaction(
-                        context,
-                        "nested abort",
-                      )
-                      .unwrap_err(),
-                  ),
-                  (
-                    "bind_ans",
-                    runtime
-                      .bind_ans_for_interpreter(
-                        interpreter_id,
-                        &Value::Empty,
-                      )
-                      .unwrap_err(),
-                  ),
-                ];
-                observed_for_host.lock().unwrap().extend(
-                  probes.into_iter().map(|(name, error)| {
-                    (name, error.kind_name())
-                  }),
-                );
-
-                runtime
-                  .put_object_with_context(
-                    context,
-                    ObjectRecord::text(
-                      ObjectId(922),
-                      "note",
-                      "reactive staging",
-                    ),
-                  )
-                  .unwrap();
-                runtime
-                  .check_capability_with_context(
-                    context,
-                    &CapabilityRequest::new(
-                      &BasicSubject::new(&context.subject),
-                      &BasicOperation::read(),
-                      &BasicResource::new(
-                        "db://reactive-staging",
-                      ),
-                    ),
-                  )
-                  .unwrap();
-                runtime
-                  .emit_event_to_context(
-                    context,
-                    RuntimeEventKind::RuntimeTickStarted,
-                  )
-                  .unwrap();
-              }
-            });
+          move |services, context, _args| {
+            let object = ObjectRecord::text(
+              ObjectId(922),
+              "note",
+              "reactive staging",
+            );
+            if services
+              .get_object_with_context(context, object.id)?
+              .is_some()
+            {
+              services.update_object_with_context(
+                context,
+                object,
+              )?;
+            } else {
+              services.put_object_with_context(
+                context,
+                object,
+              )?;
+            }
             Ok(Value::F64(Ref::new(1.0)))
           },
         ),
@@ -1313,23 +1198,10 @@ mod tests {
         "reactive-result := demo/reactive-reenter()",
       )
       .unwrap();
-    observed.lock().unwrap().clear();
 
     runtime.step_with_context(&mut context, 0).unwrap();
 
-    let observed = observed.lock().unwrap();
-    assert_eq!(observed.len(), 9);
-    for (name, kind) in observed.iter() {
-      if *name == "bind_ans" {
-        assert_eq!(*kind, "RuntimeProgramBusy");
-      } else {
-        assert_eq!(*kind, "RuntimeProgramOperationReentrant");
-      }
-    }
     assert!(runtime.get_object(ObjectId(922)).unwrap().is_some());
-    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
-      matches!(event.kind, RuntimeEventKind::RuntimeTickStarted)
-    }));
   }
 
   #[test]

@@ -21,6 +21,7 @@ mod capability;
 mod errors;
 mod effect;
 mod execution;
+mod execution_session;
 mod host;
 mod id;
 mod module;
@@ -58,10 +59,9 @@ use self::capability::{
 use self::effect::RuntimeEffectJournal;
 use self::module_transaction::RuntimeModuleJournal;
 use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
-use crate::runtime::host::*;
-
 use std::sync::Arc;
-use std::cell::RefCell;
+use std::cell::Cell;
+use std::rc::Rc;
 use std::collections::{HashMap, HashSet};
 #[cfg(all(
   target_arch = "wasm32",
@@ -251,12 +251,6 @@ use crate::actor_behavior::{
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
 use crate::{register_config_spec_grants, register_config_spec_resources, HostFunction, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
-
-thread_local! {
-  static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
-    RefCell::new(None);
-}
-
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -563,8 +557,8 @@ impl RuntimeBuilder {
       scheduler_policy: self.scheduler_policy,
       active_transactions: HashMap::new(),
       program_transaction_owner: None,
-      active_program_operation: None,
-      active_effect_phase: None,
+      active_program_operation: Rc::new(Cell::new(None)),
+      active_effect_phase: Rc::new(Cell::new(None)),
       health: RuntimeHealth::Healthy,
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
@@ -636,6 +630,28 @@ impl RuntimeBuilder {
 // MechRuntime
 // -----------------------------------------------------------------------------
 
+struct ScopedRuntimeState<T: Copy> {
+  state: Rc<Cell<Option<T>>>,
+  previous: Option<T>,
+}
+
+impl<T: Copy> ScopedRuntimeState<T> {
+  fn enter(
+    state: &Rc<Cell<Option<T>>>,
+    value: T,
+  ) -> Self {
+    let state = Rc::clone(state);
+    let previous = state.replace(Some(value));
+    Self { state, previous }
+  }
+}
+
+impl<T: Copy> Drop for ScopedRuntimeState<T> {
+  fn drop(&mut self) {
+    self.state.set(self.previous);
+  }
+}
+
 pub struct MechRuntime {
   id: RuntimeId,
   event_sequence: u64,
@@ -651,8 +667,10 @@ pub struct MechRuntime {
   scheduler_policy: SchedulerPolicy,
   active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
   program_transaction_owner: Option<TransactionId>,
-  active_program_operation: Option<ActiveRuntimeProgramOperation>,
-  active_effect_phase: Option<ActiveRuntimeEffectPhase>,
+  active_program_operation:
+    Rc<Cell<Option<ActiveRuntimeProgramOperation>>>,
+  active_effect_phase:
+    Rc<Cell<Option<ActiveRuntimeEffectPhase>>>,
   health: RuntimeHealth,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
@@ -687,7 +705,10 @@ impl std::fmt::Debug for MechRuntime {
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
       .field("active_transactions", &self.active_transactions.len())
-      .field("active_effect_phase", &self.active_effect_phase)
+      .field(
+        "active_effect_phase",
+        &self.active_effect_phase.get(),
+      )
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
@@ -1454,7 +1475,7 @@ impl MechRuntime {
 
   fn validate_live_context_candidate(&self, context: &RuntimeContext) -> MResult<()> {
     if let Some(transaction_id) = context.transaction {
-      let active_operation = self.active_program_operation.as_ref();
+      let active_operation = self.active_program_operation.get();
       if self.program_transaction_owner != Some(transaction_id)
         || active_operation.map(|active| active.transaction_id) != Some(transaction_id)
       {

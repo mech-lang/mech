@@ -1,4 +1,6 @@
 use crate::*;
+use std::cell::RefCell as StdRefCell;
+use std::ops::Deref;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Write};
@@ -1523,9 +1525,26 @@ impl Interpreter {
     &mut self,
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactiveTurnOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.advance_reactive_turn_with_services(
+      dirty_cells,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_with_services(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ReactiveTurnOutcome> {
     let checkpoint = self.reactive_turn_checkpoint()?;
     let mut journal = ReactiveTurnJournal::new();
-    match self.advance_reactive_turn_with_journal(dirty_cells, &mut journal) {
+    match self.advance_reactive_turn_with_journal_and_services(
+      dirty_cells,
+      &mut journal,
+      services,
+    ) {
       Ok(outcome) => Ok(outcome),
       Err(error) => self.finish_failed_reactive_operation(
         &checkpoint,
@@ -1541,11 +1560,27 @@ impl Interpreter {
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
   ) -> MResult<ReactiveTurnOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.advance_reactive_turn_with_journal_and_services(
+      dirty_cells,
+      journal,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_with_journal_and_services(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ReactiveTurnOutcome> {
     let plan = self.plan();
-    plan.advance_reactive_turn_with_journal(
+    plan.advance_reactive_turn_with_journal_and_services(
       &mut self.reactive_turn_state,
       dirty_cells,
       journal,
+      services,
     )
   }
 
@@ -1581,14 +1616,39 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn solve_plan(&mut self) -> MResult<Value> {
-    self.step(0, 1)
+    let mut services = NoMechExecutionServices;
+    self.solve_plan_with_services(&mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_plan_with_services(
+    &mut self,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
+    self.step_with_services(0, 1, services)
   }
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.step_with_services(step_id, step_count, &mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_services(
+    &mut self,
+    step_id: usize,
+    step_count: u64,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
     let checkpoint = self.reactive_turn_checkpoint()?;
     let mut journal = ReactiveTurnJournal::new();
-    match self.step_with_reactive_turn_journal(step_id, step_count, &mut journal) {
+    match self.step_with_reactive_turn_journal_and_services(
+      step_id,
+      step_count,
+      &mut journal,
+      services,
+    ) {
       Ok(value) => Ok(value),
       Err(error) => self.finish_failed_reactive_operation(
         &checkpoint,
@@ -1604,6 +1664,23 @@ impl Interpreter {
     step_id: usize,
     step_count: u64,
     journal: &mut ReactiveTurnJournal,
+  ) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.step_with_reactive_turn_journal_and_services(
+      step_id,
+      step_count,
+      journal,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_reactive_turn_journal_and_services(
+    &mut self,
+    step_id: usize,
+    step_count: u64,
+    journal: &mut ReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
   ) -> MResult<Value> {
     let state_brrw = self.state.borrow();
     let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
@@ -1623,7 +1700,7 @@ impl Interpreter {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
             journal.capture_function_state(fxn.as_ref())?;
-            fxn.solve_result()?;
+            fxn.solve_result_with(services)?;
             total_durations[idx] += start.elapsed();
           }
         }
@@ -1646,7 +1723,7 @@ impl Interpreter {
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
             journal.capture_function_state(fxn.as_ref())?;
-            fxn.solve_result()?;
+            fxn.solve_result_with(services)?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
               let output = if output.chars().count() > 96 {
@@ -1694,7 +1771,7 @@ impl Interpreter {
 
     for _ in 0..step_count {
       journal.capture_function_state(fxn.as_ref())?;
-      fxn.solve_result()?;
+      fxn.solve_result_with(services)?;
     }
 
     Ok(fxn.out().clone())
@@ -1702,14 +1779,23 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.interpret_with_services(tree, &mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn interpret_with_services(
+    &mut self,
+    tree: &Program,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
     self.code.push(MechSourceCode::Tree(tree.clone()));
-    catch_unwind(AssertUnwindSafe(|| {
-      let result = program(tree, &self);
-      match self.state.borrow().plan.borrow().last() {
-        Some(last_step) => self.out = last_step.out().clone(),
-        None => self.out = Value::Empty,
-      }
-      result
+    let result = catch_unwind(AssertUnwindSafe(|| {
+      let execution = InterpreterExecution::new(
+        self,
+        services,
+      );
+      program(tree, &execution)
     }))
     .map_err(|err| {
       match err.downcast_ref::<&'static str>() {
@@ -1727,7 +1813,7 @@ impl Interpreter {
             )
             .with_compiler_loc()
           }
-        } 
+        }
         None => {
           MechError::new(
             UnknownPanicError {
@@ -1738,9 +1824,14 @@ impl Interpreter {
           .with_compiler_loc()
         }
       }
-    })?
+    })??;
+    match self.state.borrow().plan.borrow().last() {
+      Some(last_step) => self.out = last_step.out().clone(),
+      None => self.out = Value::Empty,
+    }
+    Ok(result)
   }
-    
+
 
   #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
@@ -3078,5 +3169,52 @@ mod decoded_variable_definition_symbol_metadata_tests {
     let state = decoded.state.borrow();
     assert!(state.get_mutable_symbol(input_id).is_none());
     assert!(state.get_mutable_symbol(state_id).is_some());
+  }
+}
+pub struct InterpreterExecution<'a> {
+  interpreter: &'a Interpreter,
+  services: StdRefCell<&'a mut dyn MechExecutionServices>,
+}
+
+impl<'a> InterpreterExecution<'a> {
+  pub fn new(
+    interpreter: &'a Interpreter,
+    services: &'a mut dyn MechExecutionServices,
+  ) -> Self {
+    Self {
+      interpreter,
+      services: StdRefCell::new(services),
+    }
+  }
+
+  pub fn with_services<T>(
+    &self,
+    operation: impl FnOnce(
+      &mut dyn MechExecutionServices,
+    ) -> MResult<T>,
+  ) -> MResult<T> {
+    let mut services = self.services.borrow_mut();
+    operation(&mut **services)
+  }
+
+  pub fn with_interpreter<T>(
+    &self,
+    interpreter: &Interpreter,
+    operation: impl FnOnce(&InterpreterExecution<'_>) -> MResult<T>,
+  ) -> MResult<T> {
+    let mut services = self.services.borrow_mut();
+    let execution = InterpreterExecution::new(
+      interpreter,
+      &mut **services,
+    );
+    operation(&execution)
+  }
+}
+
+impl Deref for InterpreterExecution<'_> {
+  type Target = Interpreter;
+
+  fn deref(&self) -> &Self::Target {
+    self.interpreter
   }
 }

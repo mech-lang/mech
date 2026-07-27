@@ -671,12 +671,30 @@ impl MechProgram {
   }
 
   pub fn run_string(&mut self, source: &str) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.run_string_with_services(source, &mut services)
+  }
+
+  pub fn run_string_with_services(
+    &mut self,
+    source: &str,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
     let tree = parser::parse(source.trim())?;
-    self.run_tree(&tree)
+    self.run_tree_with_services(&tree, services)
   }
 
   pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
-    self.interpreter.interpret(tree)
+    let mut services = NoMechExecutionServices;
+    self.run_tree_with_services(tree, &mut services)
+  }
+
+  pub fn run_tree_with_services(
+    &mut self,
+    tree: &mech_core::Program,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
+    self.interpreter.interpret_with_services(tree, services)
   }
 
   pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<Value> {
@@ -775,8 +793,22 @@ impl MechProgram {
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, step_id: u64) -> MResult<()> {
+    let mut services = NoMechExecutionServices;
+    self.step_with_services(step_id, &mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_services(
+    &mut self,
+    step_id: u64,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<()> {
     let mut journal = ProgramReactiveTurnJournal::new();
-    match self.step_with_reactive_turn_journal(step_id, &mut journal) {
+    match self.step_with_reactive_turn_journal_and_services(
+      step_id,
+      &mut journal,
+      services,
+    ) {
       Ok(()) => Ok(()),
       Err(error) => self.finish_failed_reactive_operation("step", journal, error),
     }
@@ -788,12 +820,28 @@ impl MechProgram {
     step_id: u64,
     journal: &mut ProgramReactiveTurnJournal,
   ) -> MResult<()> {
+    let mut services = NoMechExecutionServices;
+    self.step_with_reactive_turn_journal_and_services(
+      step_id,
+      journal,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn step_with_reactive_turn_journal_and_services(
+    &mut self,
+    step_id: u64,
+    journal: &mut ProgramReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<()> {
     journal.begin_operation("step")?;
     self.capture_reactive_interpreter(self.interpreter.id, journal)?;
-    self.interpreter.step_with_reactive_turn_journal(
+    self.interpreter.step_with_reactive_turn_journal_and_services(
       step_id as usize,
       1,
       &mut journal.values,
+      services,
     )?;
     Ok(())
   }
@@ -911,11 +959,27 @@ impl MechProgram {
     interpreter_id: u64,
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactiveTurnOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.advance_reactive_turn_with_services(
+      interpreter_id,
+      dirty_cells,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_with_services(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ReactiveTurnOutcome> {
     let mut journal = ProgramReactiveTurnJournal::new();
-    match self.advance_reactive_turn_with_journal(
+    match self.advance_reactive_turn_with_journal_and_services(
       interpreter_id,
       dirty_cells,
       &mut journal,
+      services,
     ) {
       Ok(outcome) => Ok(outcome),
       Err(error) => self.finish_failed_reactive_operation(
@@ -933,10 +997,31 @@ impl MechProgram {
     dirty_cells: &[ReactiveCellId],
     journal: &mut ProgramReactiveTurnJournal,
   ) -> MResult<ReactiveTurnOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.advance_reactive_turn_with_journal_and_services(
+      interpreter_id,
+      dirty_cells,
+      journal,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_with_journal_and_services(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+    journal: &mut ProgramReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ReactiveTurnOutcome> {
     journal.begin_operation("advance_reactive_turn")?;
     self.capture_reactive_interpreter(interpreter_id, journal)?;
     let Some(result) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
-      interpreter.advance_reactive_turn_with_journal(dirty_cells, &mut journal.values)
+      interpreter.advance_reactive_turn_with_journal_and_services(
+        dirty_cells,
+        &mut journal.values,
+        services,
+      )
     }) else {
       return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
     };
@@ -952,8 +1037,25 @@ impl MechProgram {
     &mut self,
     updates: &[ProgramInputUpdate],
   ) -> MResult<ProgramInputTurnOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.update_inputs_and_advance_turn_with_services(
+      updates,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn update_inputs_and_advance_turn_with_services(
+    &mut self,
+    updates: &[ProgramInputUpdate],
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ProgramInputTurnOutcome> {
     let mut journal = ProgramReactiveTurnJournal::new();
-    match self.update_inputs_and_advance_turn_with_journal(updates, &mut journal) {
+    match self.update_inputs_and_advance_turn_with_journal_and_services(
+      updates,
+      &mut journal,
+      services,
+    ) {
       Ok(outcome) => Ok(outcome),
       Err(error) => self.finish_failed_reactive_operation(
         "update_inputs_and_advance_turn",
@@ -968,6 +1070,21 @@ impl MechProgram {
     &mut self,
     updates: &[ProgramInputUpdate],
     journal: &mut ProgramReactiveTurnJournal,
+  ) -> MResult<ProgramInputTurnOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.update_inputs_and_advance_turn_with_journal_and_services(
+      updates,
+      journal,
+      &mut services,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn update_inputs_and_advance_turn_with_journal_and_services(
+    &mut self,
+    updates: &[ProgramInputUpdate],
+    journal: &mut ProgramReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
   ) -> MResult<ProgramInputTurnOutcome> {
     journal.begin_operation("update_inputs_and_advance_turn")?;
     let prepared = self.prepare_input_updates(updates)?;
@@ -985,9 +1102,10 @@ impl MechProgram {
         &mut self.interpreter,
         interpreter_id,
         &mut |interpreter| {
-          interpreter.advance_reactive_turn_with_journal(
+          interpreter.advance_reactive_turn_with_journal_and_services(
             &dirty_cells,
             &mut journal.values,
+            services,
           )
         },
       ) else {
@@ -1010,17 +1128,41 @@ impl MechProgram {
 
   #[cfg(feature = "functions")]
   pub fn solve_plan(&mut self) -> MResult<ProgramSolveOutcome> {
+    let mut services = NoMechExecutionServices;
+    self.solve_plan_with_services(&mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_plan_with_services(
+    &mut self,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ProgramSolveOutcome> {
     let plan_len = self.interpreter.plan_len();
-    let value = self.interpreter.solve_plan()?;
+    let value = self.interpreter.solve_plan_with_services(services)?;
     Ok(ProgramSolveOutcome { value, plan_len })
   }
 
   pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.run_source_with_services(source, &mut services)
+  }
+
+  pub fn run_source_with_services(
+    &mut self,
+    source: &MechSourceCode,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
     match source {
-      MechSourceCode::String(source) => self.run_string(source),
-      MechSourceCode::Tree(tree) => self.run_tree(tree),
+      MechSourceCode::String(source) => {
+        self.run_string_with_services(source, services)
+      }
+      MechSourceCode::Tree(tree) => {
+        self.run_tree_with_services(tree, services)
+      }
       MechSourceCode::ByteCode(bytecode) => self.run_bytecode(bytecode),
-      MechSourceCode::Program(sources) => self.run_sources(sources),
+      MechSourceCode::Program(sources) => {
+        self.run_sources_with_services(sources, services)
+      }
       unsupported => Err(MechError::new(
         UnsupportedProgramSourceError {
           source_kind: format!("{:?}", unsupported),
@@ -1031,10 +1173,19 @@ impl MechProgram {
   }
 
   pub fn run_sources(&mut self, sources: &[MechSourceCode]) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.run_sources_with_services(sources, &mut services)
+  }
+
+  pub fn run_sources_with_services(
+    &mut self,
+    sources: &[MechSourceCode],
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
     let mut value = Value::Empty;
 
     for source in sources {
-      value = self.run_source(source)?;
+      value = self.run_source_with_services(source, services)?;
     }
 
     Ok(value)

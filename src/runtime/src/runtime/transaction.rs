@@ -405,16 +405,22 @@ impl MechRuntime {
       }));
     }
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Preparing);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Preparing,
+    );
     let prepare_result = envelope.effects.prepare_transactional();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     if let Err(step) = prepare_result {
       let original_error_text = format!("{:?}", step.error);
       let prepared_ids =
         envelope.effects.prepared_transactional_ids();
-      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
       let cleanup = envelope.effects.abort_prepared_reverse();
-      self.active_effect_phase = None;
+      drop(phase_guard);
       let failed_ids: HashSet<RuntimeEffectId> = cleanup
         .iter()
         .map(|failure| failure.effect_id)
@@ -459,10 +465,12 @@ impl MechRuntime {
           let original_error_text = format!("{:?}", error);
           let prepared_ids =
             envelope.effects.prepared_transactional_ids();
-          self.active_effect_phase =
-            Some(ActiveRuntimeEffectPhase::Aborting);
+          let phase_guard = ScopedRuntimeState::enter(
+            &self.active_effect_phase,
+            ActiveRuntimeEffectPhase::Aborting,
+          );
           let aborted = envelope.effects.abort_prepared_reverse();
-          self.active_effect_phase = None;
+          drop(phase_guard);
           let failed_ids: HashSet<RuntimeEffectId> = aborted
             .iter()
             .map(|failure| failure.effect_id)
@@ -512,9 +520,12 @@ impl MechRuntime {
       ));
     }
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Applying);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Applying,
+    );
     let apply_result = envelope.effects.apply_compensatable();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     if let Err(step) = apply_result {
       let original_error_text = format!("{:?}", step.error);
       let cleanup = self.cleanup_before_store_retry(
@@ -588,9 +599,12 @@ impl MechRuntime {
       }
     };
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Committing);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Committing,
+    );
     let commit_report = envelope.effects.commit_transactional();
-    self.active_effect_phase = None;
+    drop(phase_guard);
 
     context.transaction = None;
     if self.program_transaction_owner == Some(transaction_id) {
@@ -658,9 +672,12 @@ impl MechRuntime {
     }
 
     let after_commit_ids = envelope.effects.after_commit_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Delivering);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Delivering,
+    );
     let delivery_failures = envelope.effects.deliver_after_commit();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     for effect_id in after_commit_ids {
       let kind = match delivery_failures
         .iter()
@@ -696,16 +713,25 @@ impl MechRuntime {
   ) -> Vec<String> {
     let compensated_ids =
       envelope.effects.applied_compensatable_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Compensating);
-    let compensated = envelope.effects.compensate_applied_reverse();
+    let compensated = {
+      let _phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Compensating,
+      );
+      envelope.effects.compensate_applied_reverse()
+    };
     let capability_restore = capability_checkpoint
       .map(|checkpoint| {
         self.capability_kernel.restore(checkpoint)
       });
     let aborted_ids = envelope.effects.prepared_transactional_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
-    let aborted = envelope.effects.abort_prepared_reverse();
-    self.active_effect_phase = None;
+    let aborted = {
+      let _phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
+      envelope.effects.abort_prepared_reverse()
+    };
 
     let failed_compensations: HashSet<RuntimeEffectId> = compensated
       .iter()
@@ -963,9 +989,12 @@ impl MechRuntime {
     }
 
     let abortable_effects = envelope.effects.abortable_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Aborting,
+    );
     let effect_abort_failures = envelope.effects.abort_all();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     let failed_effect_aborts: HashSet<RuntimeEffectId> =
       effect_abort_failures
         .iter()
