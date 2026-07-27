@@ -904,7 +904,11 @@ impl MechRuntime {
         operation,
       },
     );
-    let execution_result = execute(self, context);
+    let execution_result = execute(self, context).and_then(|value| {
+      #[cfg(feature = "invariant_define")]
+      self.program.validate_integrity_constraints()?;
+      Ok(value)
+    });
     drop(_operation_guard);
 
     let original_error = match execution_result {
@@ -1348,6 +1352,140 @@ mod tests {
         RuntimeEventKind::TransactionCommitted { .. }
       )
     }));
+  }
+
+  #[test]
+  fn invalid_implicit_program_operation_rolls_back_before_publication() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime.run_string("integrity-anchor := 1.0").unwrap();
+    let events_before = runtime.list_events(None).unwrap().len();
+    let mut context = runtime.runtime_context().unwrap();
+
+    let error = runtime
+      .run_string_with_context(
+        &mut context,
+        "integrity-discarded := 2.0\nintegrity-invalid! := false",
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-anchor")
+      .is_ok());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-discarded")
+      .is_err());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-invalid!")
+      .is_err());
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    let events = runtime.list_events(None).unwrap();
+    let new_events = &events[events_before..];
+    assert!(new_events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })
+    }));
+    assert!(!new_events.iter().any(|event| {
+      matches!(event.kind, RuntimeEventKind::ProgramCompleted { .. })
+    }));
+  }
+
+  #[test]
+  fn invalid_explicit_program_operation_rolls_back_only_its_savepoint() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .run_string_with_context(
+        &mut context,
+        "integrity-kept := 1.0\nintegrity-valid! := true",
+      )
+      .unwrap();
+
+    let error = runtime
+      .run_string_with_context(
+        &mut context,
+        "integrity-discarded := 2.0\nintegrity-invalid! := false",
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-kept")
+      .is_ok());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-valid!")
+      .is_ok());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-discarded")
+      .is_err());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-invalid!")
+      .is_err());
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+
+    runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap();
+    assert_eq!(context.transaction, None);
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-kept")
+      .is_ok());
+  }
+
+  #[test]
+  fn final_explicit_commit_revalidates_without_consuming_transaction() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .run_string_with_context(&mut context, "integrity-final! := true")
+      .unwrap();
+    let result = runtime
+      .program
+      .interpreter()
+      .state
+      .borrow()
+      .integrity_constraints
+      .get(&hash_str("integrity-final!"))
+      .unwrap()
+      .result
+      .clone();
+    if let Value::Bool(value) = &*result.borrow() {
+      *value.borrow_mut() = false;
+    } else {
+      panic!("constraint result must be bool");
+    }
+
+    let error = runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+    if let Value::Bool(value) = &*result.borrow() {
+      *value.borrow_mut() = true;
+    } else {
+      panic!("constraint result must be bool");
+    }
+    runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap();
+    assert_eq!(context.transaction, None);
+    assert_eq!(runtime.program_transaction_owner, None);
   }
 
   #[test]

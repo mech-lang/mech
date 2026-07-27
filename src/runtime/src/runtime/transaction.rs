@@ -321,6 +321,31 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
+    let (transaction_mode, has_program_baseline) = {
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      (transaction.mode, transaction.program.is_some())
+    };
+    if has_program_baseline
+      && self.program_transaction_owner != Some(transaction_id)
+    {
+      return self.coordinator_invariant_failure(
+        "commit_runtime_transaction",
+        Some(transaction_id),
+        format!(
+          "transaction {} contains a retained-program baseline but program ownership is {:?}",
+          transaction_id,
+          self.program_transaction_owner,
+        ),
+      );
+    }
+    #[cfg(feature = "invariant_define")]
+    if transaction_mode
+      == super::program_transaction::RuntimeExecutionTransactionMode::Explicit
+      && self.program_transaction_owner == Some(transaction_id)
+    {
+      self.program.validate_integrity_constraints()?;
+    }
     let access = self
       .active_execution_transaction(transaction_id)?
       .context_baseline

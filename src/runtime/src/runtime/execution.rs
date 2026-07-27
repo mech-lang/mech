@@ -4121,6 +4121,17 @@ impl MechRuntime {
         return Err(error);
       }
     };
+    #[cfg(feature = "invariant_define")]
+    if let Err(error) = module_program.validate_integrity_constraints() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleExecutionFailed {
+          module_version: version,
+          message: format!("{:?}", error),
+        },
+      )?;
+      return Err(error);
+    }
     let mut exports = HashMap::new();
     {
       let symbols = module_program.interpreter_mut().symbols();

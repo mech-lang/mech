@@ -452,6 +452,10 @@ impl MechRuntime {
           }
           Err(error) => error,
         };
+        // Integrity validation runs inside the program journal before this
+        // runtime finalizer. A rejected candidate therefore intentionally
+        // leaves finalization pending so the runtime savepoint can discard
+        // provisional effects and context changes.
         self.finish_failed_reactive_runtime_turn(
           context,
           operation,
