@@ -96,6 +96,17 @@ fn receiver_snapshot(
   }
 }
 
+fn acceptance_payloads(payloads: &[f64]) -> String {
+  format!(
+    "[{}]",
+    payloads
+      .iter()
+      .map(|payload| payload.to_string())
+      .collect::<Vec<_>>()
+      .join(", "),
+  )
+}
+
 #[derive(Debug)]
 struct ReceiverTransactionalEffect {
   payload: f64,
@@ -974,7 +985,10 @@ safe-target! := receiver-result <= maximum-target
     .unwrap();
   let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
   assert_eq!(f64_value(&source_value(&runtime, &source)), 90.0);
-  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 90.0);
+  let baseline_target = f64_value(&symbol_value(&runtime, "target"));
+  assert_eq!(baseline_target, 90.0);
+  let maximum_target = f64_value(&symbol_value(&runtime, "maximum-target"));
+  assert_eq!(maximum_target, 120.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 90.0);
   match symbol_value(&runtime, "safe-target!") {
     Value::Bool(value) => assert!(*value.borrow()),
@@ -983,6 +997,12 @@ safe-target! := receiver-result <= maximum-target
   assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
   assert!(runtime.active_transactions.is_empty());
   assert_eq!(runtime.program_transaction_owner, None);
+
+  eprintln!("=== TRANSACTIONAL INTEGRITY ACCEPTANCE TEST ===");
+  eprintln!();
+  eprintln!("baseline");
+  eprintln!("target={baseline_target}");
+  eprintln!("maximum={maximum_target}");
 
   let installed_receiver = receiver_snapshot(&receiver);
   let installed_store_commits = store_commit_calls.load(Ordering::SeqCst);
@@ -1002,46 +1022,39 @@ safe-target! := receiver-result <= maximum-target
     ))
     .unwrap();
   assert_eq!(f64_value(&source_value(&runtime, &source)), 100.0);
-  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  let live_target = f64_value(&symbol_value(&runtime, "target"));
+  assert_eq!(live_target, 100.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 100.0);
   match symbol_value(&runtime, "safe-target!") {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected scalar constraint result, got {other:?}"),
   }
   let after_100 = receiver_snapshot(&receiver);
+  let staged = &after_100.staged_payloads[before_100.staged_payloads.len()..];
+  let prepared =
+    &after_100.prepared_payloads[before_100.prepared_payloads.len()..];
+  let committed =
+    &after_100.committed_payloads[before_100.committed_payloads.len()..];
+  let aborted = &after_100.aborted_payloads[before_100.aborted_payloads.len()..];
+  let delivered =
+    &after_100.delivered_payloads[before_100.delivered_payloads.len()..];
+  let store_commits =
+    store_commit_calls.load(Ordering::SeqCst) - store_before_100;
+  let capability_uses =
+    observed_kernel.successful_uses_for_test(receiver_capability_id)
+      - capability_before_100;
   assert_eq!(after_100.stage_count, before_100.stage_count + 1);
   assert_eq!(after_100.prepare_count, before_100.prepare_count + 1);
   assert_eq!(after_100.commit_count, before_100.commit_count + 1);
   assert_eq!(after_100.delivery_count, before_100.delivery_count + 1);
   assert_eq!(after_100.abort_count, before_100.abort_count);
-  assert_eq!(
-    &after_100.staged_payloads[before_100.staged_payloads.len()..],
-    &[100.0],
-  );
-  assert_eq!(
-    &after_100.prepared_payloads[before_100.prepared_payloads.len()..],
-    &[100.0],
-  );
-  assert_eq!(
-    &after_100.committed_payloads[before_100.committed_payloads.len()..],
-    &[100.0],
-  );
-  assert_eq!(
-    &after_100.delivered_payloads[before_100.delivered_payloads.len()..],
-    &[100.0],
-  );
-  assert_eq!(
-    &after_100.aborted_payloads[before_100.aborted_payloads.len()..],
-    &[] as &[f64],
-  );
-  assert_eq!(
-    store_commit_calls.load(Ordering::SeqCst),
-    store_before_100 + 1,
-  );
-  assert_eq!(
-    observed_kernel.successful_uses_for_test(receiver_capability_id),
-    capability_before_100 + 1,
-  );
+  assert_eq!(staged, &[100.0]);
+  assert_eq!(prepared, &[100.0]);
+  assert_eq!(committed, &[100.0]);
+  assert_eq!(delivered, &[100.0]);
+  assert_eq!(aborted, &[] as &[f64]);
+  assert_eq!(store_commits, 1);
+  assert_eq!(capability_uses, 1);
   let events = runtime.list_events(None).unwrap();
   let operation_events = &events[events_before_100..];
   assert_eq!(
@@ -1070,6 +1083,19 @@ safe-target! := receiver-result <= maximum-target
   assert!(runtime.active_transactions.is_empty());
   assert_eq!(runtime.program_transaction_owner, None);
 
+  eprintln!();
+  eprintln!("TURN input=100");
+  eprintln!("decision=COMMIT");
+  eprintln!("receiver.stage={}", acceptance_payloads(staged));
+  eprintln!("receiver.prepare={}", acceptance_payloads(prepared));
+  eprintln!("receiver.commit={}", acceptance_payloads(committed));
+  eprintln!("receiver.abort={}", acceptance_payloads(aborted));
+  eprintln!("receiver.deliver={}", acceptance_payloads(delivered));
+  eprintln!("store_commits=+{store_commits}");
+  eprintln!("capability_uses=+{capability_uses}");
+  eprintln!("live_target={live_target}");
+  eprintln!("runtime_health={:?}", runtime.runtime_health());
+
   let before_150 = receiver_snapshot(&receiver);
   let store_before_150 = store_commit_calls.load(Ordering::SeqCst);
   let capability_before_150 =
@@ -1094,46 +1120,39 @@ safe-target! := receiver-result <= maximum-target
   assert_eq!(violation.actual.as_deref(), Some("150"));
   assert_eq!(violation.expected.as_deref(), Some("120"));
   let after_150 = receiver_snapshot(&receiver);
+  let staged = &after_150.staged_payloads[before_150.staged_payloads.len()..];
+  let prepared =
+    &after_150.prepared_payloads[before_150.prepared_payloads.len()..];
+  let committed =
+    &after_150.committed_payloads[before_150.committed_payloads.len()..];
+  let aborted = &after_150.aborted_payloads[before_150.aborted_payloads.len()..];
+  let delivered =
+    &after_150.delivered_payloads[before_150.delivered_payloads.len()..];
+  let store_commits =
+    store_commit_calls.load(Ordering::SeqCst) - store_before_150;
+  let capability_uses =
+    observed_kernel.successful_uses_for_test(receiver_capability_id)
+      - capability_before_150;
   assert_eq!(after_150.stage_count, before_150.stage_count + 1);
   assert_eq!(after_150.abort_count, before_150.abort_count + 1);
   assert_eq!(after_150.prepare_count, before_150.prepare_count);
   assert_eq!(after_150.commit_count, before_150.commit_count);
   assert_eq!(after_150.delivery_count, before_150.delivery_count);
-  assert_eq!(
-    &after_150.staged_payloads[before_150.staged_payloads.len()..],
-    &[150.0],
-  );
-  assert_eq!(
-    &after_150.aborted_payloads[before_150.aborted_payloads.len()..],
-    &[150.0],
-  );
-  assert_eq!(
-    &after_150.prepared_payloads[before_150.prepared_payloads.len()..],
-    &[] as &[f64],
-  );
-  assert_eq!(
-    &after_150.committed_payloads[before_150.committed_payloads.len()..],
-    &[] as &[f64],
-  );
-  assert_eq!(
-    &after_150.delivered_payloads[before_150.delivered_payloads.len()..],
-    &[] as &[f64],
-  );
+  assert_eq!(staged, &[150.0]);
+  assert_eq!(aborted, &[150.0]);
+  assert_eq!(prepared, &[] as &[f64]);
+  assert_eq!(committed, &[] as &[f64]);
+  assert_eq!(delivered, &[] as &[f64]);
   assert_eq!(f64_value(&source_value(&runtime, &source)), 100.0);
-  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  let restored_live_target = f64_value(&symbol_value(&runtime, "target"));
+  assert_eq!(restored_live_target, 100.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 100.0);
   match symbol_value(&runtime, "safe-target!") {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected scalar constraint result, got {other:?}"),
   }
-  assert_eq!(
-    store_commit_calls.load(Ordering::SeqCst),
-    store_before_150,
-  );
-  assert_eq!(
-    observed_kernel.successful_uses_for_test(receiver_capability_id),
-    capability_before_150,
-  );
+  assert_eq!(store_commits, 0);
+  assert_eq!(capability_uses, 0);
   assert!(runtime.active_transactions.is_empty());
   assert_eq!(runtime.program_transaction_owner, None);
   let events = runtime.list_events(None).unwrap();
@@ -1185,6 +1204,28 @@ safe-target! := receiver-result <= maximum-target
   assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
   assert!(!runtime.is_poisoned());
 
+  eprintln!();
+  eprintln!("TURN input=150");
+  eprintln!("decision=ABORT");
+  eprintln!("constraint={}", violation.name);
+  eprintln!("actual={}", violation.actual.as_deref().unwrap());
+  eprintln!(
+    "expected_maximum={}",
+    violation.expected.as_deref().unwrap(),
+  );
+  eprintln!("receiver.stage={}", acceptance_payloads(staged));
+  eprintln!("receiver.prepare={}", acceptance_payloads(prepared));
+  eprintln!("receiver.commit={}", acceptance_payloads(committed));
+  eprintln!("receiver.abort={}", acceptance_payloads(aborted));
+  eprintln!("receiver.deliver={}", acceptance_payloads(delivered));
+  eprintln!("store_commits=+{store_commits}");
+  eprintln!("capability_uses=+{capability_uses}");
+  eprintln!("restored_live_target={restored_live_target}");
+  eprintln!(
+    "event_order=TransactionAborted before IntegrityConstraintViolated",
+  );
+  eprintln!("runtime_health={:?}", runtime.runtime_health());
+
   let before_110 = receiver_snapshot(&receiver);
   let store_before_110 = store_commit_calls.load(Ordering::SeqCst);
   let capability_before_110 =
@@ -1197,46 +1238,39 @@ safe-target! := receiver-result <= maximum-target
     ))
     .unwrap();
   assert_eq!(f64_value(&source_value(&runtime, &source)), 110.0);
-  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 110.0);
+  let live_target = f64_value(&symbol_value(&runtime, "target"));
+  assert_eq!(live_target, 110.0);
   assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 110.0);
   match symbol_value(&runtime, "safe-target!") {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected scalar constraint result, got {other:?}"),
   }
   let after_110 = receiver_snapshot(&receiver);
+  let staged = &after_110.staged_payloads[before_110.staged_payloads.len()..];
+  let prepared =
+    &after_110.prepared_payloads[before_110.prepared_payloads.len()..];
+  let committed =
+    &after_110.committed_payloads[before_110.committed_payloads.len()..];
+  let aborted = &after_110.aborted_payloads[before_110.aborted_payloads.len()..];
+  let delivered =
+    &after_110.delivered_payloads[before_110.delivered_payloads.len()..];
+  let store_commits =
+    store_commit_calls.load(Ordering::SeqCst) - store_before_110;
+  let capability_uses =
+    observed_kernel.successful_uses_for_test(receiver_capability_id)
+      - capability_before_110;
   assert_eq!(after_110.stage_count, before_110.stage_count + 1);
   assert_eq!(after_110.prepare_count, before_110.prepare_count + 1);
   assert_eq!(after_110.commit_count, before_110.commit_count + 1);
   assert_eq!(after_110.delivery_count, before_110.delivery_count + 1);
   assert_eq!(after_110.abort_count, before_110.abort_count);
-  assert_eq!(
-    &after_110.staged_payloads[before_110.staged_payloads.len()..],
-    &[110.0],
-  );
-  assert_eq!(
-    &after_110.prepared_payloads[before_110.prepared_payloads.len()..],
-    &[110.0],
-  );
-  assert_eq!(
-    &after_110.committed_payloads[before_110.committed_payloads.len()..],
-    &[110.0],
-  );
-  assert_eq!(
-    &after_110.delivered_payloads[before_110.delivered_payloads.len()..],
-    &[110.0],
-  );
-  assert_eq!(
-    &after_110.aborted_payloads[before_110.aborted_payloads.len()..],
-    &[] as &[f64],
-  );
-  assert_eq!(
-    store_commit_calls.load(Ordering::SeqCst),
-    store_before_110 + 1,
-  );
-  assert_eq!(
-    observed_kernel.successful_uses_for_test(receiver_capability_id),
-    capability_before_110 + 1,
-  );
+  assert_eq!(staged, &[110.0]);
+  assert_eq!(prepared, &[110.0]);
+  assert_eq!(committed, &[110.0]);
+  assert_eq!(delivered, &[110.0]);
+  assert_eq!(aborted, &[] as &[f64]);
+  assert_eq!(store_commits, 1);
+  assert_eq!(capability_uses, 1);
   let events = runtime.list_events(None).unwrap();
   let operation_events = &events[events_before_110..];
   assert_eq!(
@@ -1265,35 +1299,56 @@ safe-target! := receiver-result <= maximum-target
   assert!(runtime.active_transactions.is_empty());
   assert_eq!(runtime.program_transaction_owner, None);
 
-  assert_eq!(
-    &after_110.committed_payloads[installed_receiver.committed_payloads.len()..],
-    &[100.0, 110.0],
-  );
-  assert_eq!(
-    &after_110.delivered_payloads[installed_receiver.delivered_payloads.len()..],
-    &[100.0, 110.0],
-  );
-  assert_eq!(
-    &after_110.staged_payloads[installed_receiver.staged_payloads.len()..],
-    &[100.0, 150.0, 110.0],
-  );
-  assert_eq!(
-    &after_110.aborted_payloads[installed_receiver.aborted_payloads.len()..],
-    &[150.0],
-  );
-  assert_eq!(
-    &after_110.prepared_payloads[installed_receiver.prepared_payloads.len()..],
-    &[100.0, 110.0],
-  );
-  assert_eq!(
-    store_commit_calls.load(Ordering::SeqCst),
-    installed_store_commits + 2,
-  );
-  assert_eq!(
-    observed_kernel.successful_uses_for_test(receiver_capability_id),
-    installed_capability_uses + 2,
-  );
+  eprintln!();
+  eprintln!("TURN input=110");
+  eprintln!("decision=COMMIT");
+  eprintln!("receiver.stage={}", acceptance_payloads(staged));
+  eprintln!("receiver.prepare={}", acceptance_payloads(prepared));
+  eprintln!("receiver.commit={}", acceptance_payloads(committed));
+  eprintln!("receiver.abort={}", acceptance_payloads(aborted));
+  eprintln!("receiver.deliver={}", acceptance_payloads(delivered));
+  eprintln!("store_commits=+{store_commits}");
+  eprintln!("capability_uses=+{capability_uses}");
+  eprintln!("live_target={live_target}");
+  eprintln!("runtime_health={:?}", runtime.runtime_health());
+
+  let staged =
+    &after_110.staged_payloads[installed_receiver.staged_payloads.len()..];
+  let prepared =
+    &after_110.prepared_payloads[installed_receiver.prepared_payloads.len()..];
+  let committed =
+    &after_110.committed_payloads[installed_receiver.committed_payloads.len()..];
+  let aborted =
+    &after_110.aborted_payloads[installed_receiver.aborted_payloads.len()..];
+  let delivered =
+    &after_110.delivered_payloads[installed_receiver.delivered_payloads.len()..];
+  let store_commits =
+    store_commit_calls.load(Ordering::SeqCst) - installed_store_commits;
+  let capability_uses =
+    observed_kernel.successful_uses_for_test(receiver_capability_id)
+      - installed_capability_uses;
+  assert_eq!(committed, &[100.0, 110.0]);
+  assert_eq!(delivered, &[100.0, 110.0]);
+  assert_eq!(staged, &[100.0, 150.0, 110.0]);
+  assert_eq!(aborted, &[150.0]);
+  assert_eq!(prepared, &[100.0, 110.0]);
+  assert_eq!(store_commits, 2);
+  assert_eq!(capability_uses, 2);
   assert!(runtime.list_events(None).unwrap().len() > installed_events);
+  assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
+
+  eprintln!();
+  eprintln!("SUMMARY");
+  eprintln!("staged={}", acceptance_payloads(staged));
+  eprintln!("prepared={}", acceptance_payloads(prepared));
+  eprintln!("committed={}", acceptance_payloads(committed));
+  eprintln!("aborted={}", acceptance_payloads(aborted));
+  eprintln!("delivered={}", acceptance_payloads(delivered));
+  eprintln!("store_commits=+{store_commits}");
+  eprintln!("capability_uses=+{capability_uses}");
+  eprintln!("runtime_health={:?}", runtime.runtime_health());
+  eprintln!();
+  eprintln!("=== ACCEPTANCE TEST PASSED ===");
 }
 
 #[test]
