@@ -27,6 +27,7 @@ mod module;
 mod module_transaction;
 mod object;
 mod program_transaction;
+mod reactive_transaction;
 mod schedule;
 mod service;
 mod task;
@@ -47,10 +48,11 @@ use self::program_transaction::{
   RuntimeExecutionTransactionMode,
   RuntimeExecutionTransactionState,
   RuntimeOperationSavepoint,
+  RuntimeProgramOwnershipAcquisition,
   RuntimeTransactionContextIdentity,
 };
 use self::capability::{
-  RuntimeCapabilityMutation, RuntimeCapabilityOverlay,
+  RuntimeCapabilityOverlay,
 };
 use self::effect::RuntimeEffectJournal;
 use self::module_transaction::RuntimeModuleJournal;

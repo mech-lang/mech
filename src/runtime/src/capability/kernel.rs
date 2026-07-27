@@ -119,6 +119,28 @@ pub trait CapabilityKernel: std::fmt::Debug + Send {
     ))
   }
 
+  fn preview_check_excluding_with_pending_uses(
+    &self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+    pending_uses: &HashMap<CapabilityId, u64>,
+  ) -> MResult<CapabilityId> {
+    if pending_uses.values().any(|uses| *uses != 0) {
+      return Err(MechError::new(
+        TransactionStateUnsupportedError {
+          function:
+            "capability kernel transactional preview".to_string(),
+          reason:
+            "kernel does not support preview with transaction-local use reservations"
+              .to_string(),
+        },
+        None,
+      ));
+    }
+
+    self.preview_check_excluding(request, excluded)
+  }
+
   fn apply_usage_delta(
     &mut self,
     _capability: CapabilityId,
@@ -325,10 +347,11 @@ impl BasicCapabilityKernel {
     ))
   }
 
-  fn preview_check_with_exclusions(
+  fn preview_check_with_exclusions_and_pending_uses(
     &self,
     request: &CapabilityRequest,
     excluded: &HashSet<CapabilityId>,
+    pending_uses: &HashMap<CapabilityId, u64>,
   ) -> MResult<CapabilityId> {
     let Some(ids) = self.by_subject.get(&request.subject) else {
       return Err(MechError::new(
@@ -358,7 +381,22 @@ impl BasicCapabilityKernel {
         continue;
       };
       if let Some(max_uses) = capability.max_uses() {
-        let actual = self.successful_uses(*id);
+        let committed = self.successful_uses(*id);
+        let pending = pending_uses.get(id).copied().unwrap_or(0);
+        let actual = committed.checked_add(pending).ok_or_else(|| {
+          MechError::new(
+            CapabilityDeniedError {
+              subject: request.subject.clone(),
+              operation: request.operation.clone(),
+              resource: request.resource.clone(),
+              reason: format!(
+                "usage count overflow for capability {}",
+                id,
+              ),
+            },
+            None,
+          )
+        })?;
         if actual >= max_uses {
           last_reason = Some(format!(
             "use limit exceeded: max {}, actual {}",
@@ -486,7 +524,11 @@ impl CapabilityKernel for BasicCapabilityKernel {
     &self,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
-    self.preview_check_with_exclusions(request, &HashSet::new())
+    self.preview_check_with_exclusions_and_pending_uses(
+      request,
+      &HashSet::new(),
+      &HashMap::new(),
+    )
   }
 
   fn preview_check_excluding(
@@ -494,7 +536,24 @@ impl CapabilityKernel for BasicCapabilityKernel {
     request: &CapabilityRequest,
     excluded: &HashSet<CapabilityId>,
   ) -> MResult<CapabilityId> {
-    self.preview_check_with_exclusions(request, excluded)
+    self.preview_check_with_exclusions_and_pending_uses(
+      request,
+      excluded,
+      &HashMap::new(),
+    )
+  }
+
+  fn preview_check_excluding_with_pending_uses(
+    &self,
+    request: &CapabilityRequest,
+    excluded: &HashSet<CapabilityId>,
+    pending_uses: &HashMap<CapabilityId, u64>,
+  ) -> MResult<CapabilityId> {
+    self.preview_check_with_exclusions_and_pending_uses(
+      request,
+      excluded,
+      pending_uses,
+    )
   }
 
   fn apply_usage_delta(
@@ -683,6 +742,7 @@ impl CapabilityKernel for SharedCapabilityKernel {
   fn check_excluding(&mut self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().check_excluding(request, excluded) }
   fn preview_check(&self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check(request) }
   fn preview_check_excluding(&self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check_excluding(request, excluded) }
+  fn preview_check_excluding_with_pending_uses(&self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>, pending_uses: &HashMap<CapabilityId, u64>) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check_excluding_with_pending_uses(request, excluded, pending_uses) }
   fn apply_usage_delta(&mut self, capability: CapabilityId, uses: u64) -> MResult<()> { self.inner.lock().unwrap().apply_usage_delta(capability, uses) }
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> { self.inner.lock().unwrap().get(id) }
   fn list_for_subject(&self, subject: &dyn Subject) -> MResult<Vec<CapabilityId>> { self.inner.lock().unwrap().list_for_subject(subject) }

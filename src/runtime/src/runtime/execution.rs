@@ -12,6 +12,7 @@
 // Both methods have corresponding _with_context versions that accept a mutable reference to a RuntimeContext, allowing for execution within the context of an active transaction. This ensures that any changes made during execution are properly staged within the transaction that if an error occurs, the transaction can be rolled back to maintain consistency.
 
 use super::*;
+use super::reactive_transaction::PreparedRuntimeHostInput;
 use crate::{SourceDeclaration, SourceImportDeclaration, SourceIndex};
 use crate::RuntimeResourceWritePreflightRequest;
 
@@ -3502,37 +3503,48 @@ impl MechRuntime {
   }
 
   #[cfg(feature = "functions")]
-  pub fn step(&mut self, count: u64) -> MResult<()> {
+  pub fn step(&mut self, step_id: u64) -> MResult<()> {
     let mut context = self.runtime_context()?;
-    self.step_with_context(&mut context, count)
+    self.step_with_context(&mut context, step_id)
   }
 
   #[cfg(feature = "functions")]
   pub fn step_with_context(
     &mut self,
     context: &mut RuntimeContext,
-    count: u64,
+    step_id: u64,
   ) -> MResult<()> {
-    let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
-    self.reject_transactional_reactive_turn(context, "step_with_context")?;
-    context.charge_step()?;
+    self.with_atomic_reactive_turn(
+      context,
+      "step_with_context",
+      |runtime, context, program_journal| {
+        context.charge_step()?;
+        let turn_started = Instant::now();
+        let program_config = runtime.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut runtime.program,
+          MechProgram::new(program_config),
+        );
 
-    let program_config = self.program.config.clone();
-    let mut program = std::mem::replace(
-      &mut self.program,
-      MechProgram::new(program_config),
-    );
+        let result = {
+          let runtime_ptr: *mut MechRuntime = runtime;
+          let context_ptr: *mut RuntimeContext = context;
+          let _host_guard =
+            ActiveRuntimeProgramHostGuard::install(
+              runtime_ptr,
+              context_ptr,
+            );
+          program.step_with_reactive_turn_journal(
+            step_id,
+            program_journal,
+          )
+        };
 
-    let runtime_ptr: *mut MechRuntime = self;
-    let context_ptr: *mut RuntimeContext = context;
-    let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
-
-    let result = program.step(count);
-
-    self.program = program;
-    result?;
-    self.enforce_turn_duration(turn_started)
+        runtime.program = program;
+        result?;
+        runtime.enforce_turn_duration(turn_started)
+      },
+    )
   }
 
   pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
@@ -4686,43 +4698,13 @@ impl MechRuntime {
   }
 
   pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
-    input.validate()?;
-    if self.program_transaction_owner.is_some() {
-      return Err(MechError::new(
-        RuntimeTransactionalReactiveTurnUnsupported {
-          operation: "apply_host_input",
-          transaction_id: None,
-          owner: self.program_transaction_owner,
-        },
-        None,
-      ));
-    }
-    let mut target_updates = Vec::new();
-    let mut seen_targets = std::collections::HashSet::new();
-    let mut ignored_update_count = 0;
-
-    for update in &input.updates {
-      let Some(bindings) = self.live_input_bindings.get(&update.source).cloned() else {
-        ignored_update_count += 1;
-        continue;
-      };
-      if bindings.is_empty() {
-        ignored_update_count += 1;
-        continue;
-      }
-      let value = update.value.clone().into_mech_value()?;
-      for program_input in bindings {
-        if !seen_targets.insert(program_input) {
-          return Err(MechError::new(mech_program::ProgramInputDuplicateTarget { input: program_input }, None));
-        }
-        target_updates.push(mech_program::ProgramInputUpdate { input: program_input, value: value.clone() });
-      }
-    }
-
-    if target_updates.is_empty() {
+    self.ensure_runtime_mutation_allowed("apply_host_input")?;
+    self.reject_program_operation_reentrancy("apply_host_input")?;
+    let prepared = self.prepare_runtime_host_input(&input)?;
+    if prepared.binding_count == 0 {
       return Ok(crate::RuntimeHostInputOutcome {
-        update_count: input.updates.len(),
-        ignored_update_count,
+        update_count: prepared.update_count,
+        ignored_update_count: prepared.ignored_update_count,
         binding_count: 0,
         turn: None,
       });
@@ -4730,43 +4712,84 @@ impl MechRuntime {
 
     let mut context = self.live_turn_context()?;
     self.validate_context_for_runtime(&context)?;
-    context.charge_step()?;
+    self.validate_live_turn_context(&context)?;
+    self.apply_prepared_host_input_with_context(
+      &mut context,
+      prepared,
+    )
+  }
 
-    let turn_started = Instant::now();
+  pub fn apply_host_input_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    input: crate::RuntimeHostInput,
+  ) -> MResult<crate::RuntimeHostInputOutcome> {
+    self.ensure_runtime_mutation_allowed(
+      "apply_host_input_with_context",
+    )?;
+    self.validate_context_for_runtime(context)?;
+    self.reject_program_operation_reentrancy(
+      "apply_host_input_with_context",
+    )?;
+    self.validate_live_turn_context(context)?;
+    let prepared = self.prepare_runtime_host_input(&input)?;
 
-    let program_config = self.program.config.clone();
-    let mut program = std::mem::replace(
-      &mut self.program,
-      MechProgram::new(program_config),
-    );
+    if prepared.binding_count == 0 {
+      return Ok(crate::RuntimeHostInputOutcome {
+        update_count: prepared.update_count,
+        ignored_update_count: prepared.ignored_update_count,
+        binding_count: 0,
+        turn: None,
+      });
+    }
 
-    let result = (|| -> MResult<crate::RuntimeHostInputOutcome> {
-      let runtime_ptr: *mut MechRuntime = self;
-      let context_ptr: *mut RuntimeContext = &mut context;
-      let _host_guard = ActiveRuntimeProgramHostGuard::install(runtime_ptr, context_ptr);
+    self.apply_prepared_host_input_with_context(context, prepared)
+  }
 
-      // The program API performs complete input preflight, commits the
-      // accepted input batch, and advances one persistent reactive turn
-      // per affected interpreter. Errors after input admission preserve
-      // accepted writes and completed register commits.
-      let turn =
-        program.update_inputs_and_advance_turn(
-          &target_updates,
-        )?;
-      self.enforce_turn_duration(turn_started)?;
-      self.execute_persistent_sends(&mut context, &turn)?;
+  fn apply_prepared_host_input_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    prepared: PreparedRuntimeHostInput,
+  ) -> MResult<crate::RuntimeHostInputOutcome> {
+    self.with_atomic_reactive_turn(
+      context,
+      "apply_host_input_with_context",
+      move |runtime, context, program_journal| {
+        context.charge_step()?;
+        let turn_started = Instant::now();
+        let program_config = runtime.program.config.clone();
+        let mut program = std::mem::replace(
+          &mut runtime.program,
+          MechProgram::new(program_config),
+        );
 
-      Ok(crate::RuntimeHostInputOutcome {
-        update_count: input.updates.len(),
-        ignored_update_count,
-        binding_count: turn.updated_count,
-        turn: Some(turn),
-      })
-    })();
+        let result = {
+          let runtime_ptr: *mut MechRuntime = runtime;
+          let context_ptr: *mut RuntimeContext = context;
+          let _host_guard =
+            ActiveRuntimeProgramHostGuard::install(
+              runtime_ptr,
+              context_ptr,
+            );
+          program.update_inputs_and_advance_turn_with_journal(
+            &prepared.updates,
+            program_journal,
+          )
+        };
 
-    self.program = program;
+        runtime.program = program;
+        let turn = result?;
+        runtime.enforce_turn_duration(turn_started)?;
+        runtime.execute_persistent_sends(context, &turn)?;
 
-    result
+        Ok(crate::RuntimeHostInputOutcome {
+          update_count: prepared.update_count,
+          ignored_update_count: prepared.ignored_update_count,
+          binding_count: prepared.binding_count,
+          turn: Some(turn),
+        })
+      },
+    )
   }
 
   fn execute_persistent_sends(&mut self, context: &mut RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
