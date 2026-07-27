@@ -239,6 +239,7 @@ fn runtime_reads_configured_browser_dom_path() {
     "browser",
     "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "body/title");
   let value = runtime.read_bound_resource("browser", "body/title").unwrap();
   assert_eq!(snapshot_string(value), "Hello");
 }
@@ -251,6 +252,7 @@ fn runtime_writes_configured_browser_dom_path() {
     "browser",
     "browser://dom/",
   );
+  grant_runtime_context_write(&mut runtime, "body/title");
   runtime
     .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
     .unwrap();
@@ -299,6 +301,7 @@ fn runtime_wildcard_dom_path_accepts_children() {
     "browser",
     "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "body/content/title");
   assert!(runtime.read_bound_resource("browser", "body/content/title").is_ok());
 }
 
@@ -480,6 +483,7 @@ fn runtime_browser_dom_uses_generic_resource_provider_dispatch() {
     "browser",
     "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "body/title");
 
   let value = runtime.read_bound_resource("browser", "body/title").unwrap();
 
@@ -522,6 +526,10 @@ fn runtime_scopes_dom_operations_to_manifest_entry_path() {
     "browser",
     "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "panel/text");
+  grant_runtime_context_write(&mut runtime, "panel/text");
+  grant_runtime_context_write(&mut runtime, "panel/value");
+  grant_runtime_context_read(&mut runtime, "panel/value");
   assert!(runtime.read_bound_resource("browser", "panel/text").is_ok());
   assert!(runtime.write_bound_resource("browser", "panel/text", &Value::from("blocked".to_string())).is_err());
   assert!(runtime.write_bound_resource("browser", "panel/value", &Value::from("writable".to_string())).is_ok());
