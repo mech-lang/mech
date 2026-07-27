@@ -10,15 +10,19 @@ use crate::cli::capabilities;
 use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
 use crate::cli::run::{
-    RunInputMode, cli_module_options, new_cli_runtime, run_cli_root_module_with_events,
-    run_cli_source_code_with_events, run_cli_source_with_events,
+    RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver,
+    run_cli_root_module_with_events, run_cli_source_code_with_events,
+    run_cli_source_with_events,
 };
 use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
     collect_sources_with_events,
 };
-use mech_runtime::{RuntimeEvent, RuntimeEventKind, SourceKind, SourceRequest};
+use mech_runtime::{
+    RuntimeEvent, RuntimeEventKind, RuntimeValueSnapshot, SourceKind,
+    SourceRequest,
+};
 
 #[derive(Debug, Clone)]
 struct CliRunError {
@@ -196,10 +200,10 @@ fn render_config_event(event: &config::ConfigLoadEvent) {
     }
 }
 
-fn print_value(value: &Value) {
+fn print_value(value: &RuntimeValueSnapshot) {
     println!("{}", value.kind());
     #[cfg(feature = "pretty_print")]
-    println!("{}", value.pretty_print());
+    println!("{}", value.as_value().pretty_print());
     #[cfg(not(feature = "pretty_print"))]
     println!("{:#?}", value);
 }
@@ -217,19 +221,19 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_capability_events(&plan.filesystem_access.events);
     #[cfg(feature = "repl")]
     let repl_runtime_config = Some(plan.runtime_config.clone());
-    let mut runtime = new_cli_runtime(
+    let mut runtime = new_cli_runtime_with_source_resolver(
         plan.runtime_config,
         &plan.cli_grants,
         &plan.configured_hosts,
         &plan.configured_run_grants,
-    )?;
-    capabilities::install_file_resolver(
-        &mut runtime,
-        &plan.filesystem_access,
-        &std::env::current_dir()?,
+        mech_runtime::FileSourceResolver::new(&std::env::current_dir()?)
+            .with_capabilities(
+                plan.filesystem_access.kernel.clone(),
+                MECH_TOOL_SUBJECT,
+            ),
     )?;
 
-    let result: MResult<Value> = match &plan.input_mode {
+    let result: MResult<RuntimeValueSnapshot> = match &plan.input_mode {
         RunInputMode::InlineSource(source) => {
             run_cli_source_with_events(&mut runtime, source.trim())
                 .map(|(value, events)| {
@@ -239,10 +243,10 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         }
         _ => {
             if plan.run_paths.is_empty() {
-                Ok(Value::Empty)
+                Ok(RuntimeValueSnapshot::capture(&Value::Empty))
             } else {
                 let fs_kernel = plan.filesystem_access.kernel.clone();
-                let mut last = Value::Empty;
+                let mut last = RuntimeValueSnapshot::capture(&Value::Empty);
                 for p in &plan.run_paths {
                     for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
                         let (value, events) = if SourceKind::from_path(&target) == SourceKind::Mech {
@@ -285,7 +289,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                 return Ok(CliOutcome::EnterRepl(
                     crate::cli::commands::repl::ReplStartup {
                         runtime_config: repl_runtime_config,
-                        seed_program: Some(runtime.take_program()),
+                        seed_bytecode: Some(runtime.compile_program_bytecode()?),
                     },
                 ));
             }

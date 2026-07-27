@@ -90,7 +90,7 @@ pub(crate) struct ReplStartup {
     #[cfg(feature = "run")]
     pub runtime_config: Option<RuntimeConfig>,
     #[cfg(all(feature = "run", feature = "repl"))]
-    pub seed_program: Option<MechProgram>,
+    pub seed_bytecode: Option<Vec<u8>>,
 }
 
 pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
@@ -165,25 +165,24 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
 
     #[cfg(all(feature = "repl", feature = "run"))]
     let mut repl = {
-        if let Some(program) = startup.seed_program {
-            MechRepl::from(program)
-        } else {
-            let config = startup
-                .runtime_config
-                .unwrap_or_else(RuntimeConfig::default);
-            config.validate()?;
-            let mut repl_program = MechProgram::new(MechProgramConfig {
-                name: config.name.clone(),
-                environment: MechProgramEnvironment::default(),
-            });
-            repl_program.configure(
-                config.diagnostics.debug_enabled,
-                config.diagnostics.trace_enabled,
-                config.diagnostics.profile_enabled,
-                config.limits.max_steps_per_turn_as_usize()?,
-            );
-            MechRepl::from(repl_program)
+        let config = startup
+            .runtime_config
+            .unwrap_or_else(RuntimeConfig::default);
+        config.validate()?;
+        let mut repl_program = MechProgram::new(MechProgramConfig {
+            name: config.name.clone(),
+            environment: MechProgramEnvironment::default(),
+        });
+        repl_program.configure(
+            config.diagnostics.debug_enabled,
+            config.diagnostics.trace_enabled,
+            config.diagnostics.profile_enabled,
+            config.limits.max_steps_per_turn_as_usize()?,
+        );
+        if let Some(bytecode) = startup.seed_bytecode {
+            repl_program.run_bytecode(&bytecode)?;
         }
+        MechRepl::from(repl_program)
     };
 
     #[cfg(all(feature = "repl", not(feature = "run")))]

@@ -13,6 +13,8 @@ mod resource;
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod input;
 pub mod host_interface;
+#[cfg(any(feature = "program", feature = "compiler"))]
+mod snapshot;
 
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod runtime;
@@ -58,6 +60,8 @@ pub use self::host_delegation::*;
 pub use self::host_delegation_crypto::*;
 pub use self::resource::*;
 pub use self::host_interface::*;
+#[cfg(any(feature = "program", feature = "compiler"))]
+pub use self::snapshot::*;
 
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::runtime::*;

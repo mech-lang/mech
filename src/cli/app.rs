@@ -197,7 +197,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
                 #[cfg(feature = "run")]
                 runtime_config: None,
                 #[cfg(all(feature = "run", feature = "repl"))]
-                seed_program: None,
+                seed_bytecode: None,
             },
         ));
     }

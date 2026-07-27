@@ -15,8 +15,8 @@ use mech_runtime::{
   RuntimeBuilder,
   ModuleBuildOptions,
   RuntimeConfig,
-  RuntimeContextBuilder,
   SourceRequest,
+  TaskRecord,
 };
 
 fn main() -> MResult<()> {
@@ -86,9 +86,11 @@ fn main() -> MResult<()> {
 
   runtime.grant_capability(Arc::new(capability))?;
 
-  let mut host_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("task:host-example")
-    .build()?;
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "task:host-example",
+  );
+  let mut host_context = runtime.context_for_task(&task)?;
 
   let host_result = runtime.call_host_with_context(
     &mut host_context,

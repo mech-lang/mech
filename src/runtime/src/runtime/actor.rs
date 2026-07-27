@@ -465,7 +465,7 @@ impl ActorBehaviorRuntime for MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
-    MechRuntime::call_host_with_context(self, context, call)
+    MechRuntime::call_host_value_with_context(self, context, call)
   }
 }
 

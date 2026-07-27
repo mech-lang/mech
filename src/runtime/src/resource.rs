@@ -84,16 +84,16 @@ struct RuntimeResourceProviderEntry {
 }
 
 #[derive(Debug, Default)]
-pub struct RuntimeResourceRegistry {
+pub(crate) struct RuntimeResourceRegistry {
   providers: Vec<RuntimeResourceProviderEntry>,
 }
 
 impl RuntimeResourceRegistry {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self::default()
   }
 
-  pub fn register_provider(
+  pub(crate) fn register_provider(
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
@@ -140,11 +140,11 @@ impl RuntimeResourceRegistry {
     Ok(())
   }
 
-  pub fn has_provider(&self, scheme: &str) -> bool {
+  pub(crate) fn has_provider(&self, scheme: &str) -> bool {
     self.providers.iter().any(|entry| entry.scheme == scheme)
   }
 
-  pub fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
+  pub(crate) fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
     let scheme = resource_uri_scheme(candidate)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, candidate) else {
       return Ok(None);
@@ -155,7 +155,7 @@ impl RuntimeResourceRegistry {
     Ok(Some(resource_uri_origin(candidate)?.to_string()))
   }
 
-  pub fn base_uris_equivalent(&self, left: &str, right: &str) -> bool {
+  pub(crate) fn base_uris_equivalent(&self, left: &str, right: &str) -> bool {
     let left = left.trim_end_matches('/');
     let right = right.trim_end_matches('/');
 
@@ -191,7 +191,7 @@ impl RuntimeResourceRegistry {
     self.providers.get_mut(index)
   }
 
-  pub fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+  pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
@@ -202,7 +202,7 @@ impl RuntimeResourceRegistry {
     entry.provider.read(request)
   }
 
-  pub fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+  pub(crate) fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
@@ -213,7 +213,7 @@ impl RuntimeResourceRegistry {
     entry.provider.preflight_write(request)
   }
 
-  pub fn stage_write(
+  pub(crate) fn stage_write(
     &mut self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {

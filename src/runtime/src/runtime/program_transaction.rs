@@ -13,6 +13,7 @@ pub(super) enum RuntimeExecutionTransactionMode {
   ImplicitModuleOperation,
   ImplicitProgramOperation,
   ImplicitReactiveTurn,
+  ImplicitResourceOperation,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

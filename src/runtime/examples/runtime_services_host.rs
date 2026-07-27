@@ -17,8 +17,8 @@ use mech_runtime::{
   ObjectRecord,
   RuntimeBuilder,
   ModuleBuildOptions,
-  RuntimeContextBuilder,
   SourceRequest,
+  ActorTurn,
 };
 
 fn short(id: impl Display) -> String {
@@ -106,18 +106,21 @@ fn main() -> MResult<()> {
     )))?;
   }
 
-  let mut context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:services-host")
-    .actor(actor)
-    .build()?;
+  let actor_record = runtime
+    .get_actor(actor)?
+    .expect("actor should exist");
+  let queued_message = runtime
+    .peek_message(actor)?
+    .expect("expected actor message");
+  let expected_turn = ActorTurn::new(actor_record, queued_message)?;
+  let mut context = runtime.context_for_actor_turn(&expected_turn)?;
 
   runtime.begin_transaction(&mut context)?;
 
   let turn = runtime
     .next_actor_turn_with_context(&mut context, actor)?
     .expect("expected actor turn");
-
-  context.bind_actor_turn(&turn);
+  assert_eq!(turn, expected_turn);
 
   let kind = runtime.call_host_with_context(
     &mut context,

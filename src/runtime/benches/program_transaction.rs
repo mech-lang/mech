@@ -206,17 +206,9 @@ fn explicit_failure_source() -> MechSourceCode {
 fn staged_effect_rollback_fixture(
   count: usize,
 ) -> (ExplicitFixture, MechSourceCode) {
-  let mut runtime = retained_runtime();
-  runtime
-    .grant_capability(Arc::new(BasicCapability::new(
-      CapabilityId(8_000),
-      &BasicSubject::new(runtime.runtime_context().unwrap().subject),
-      &BasicResource::new("host:bench/staged"),
-      [BasicOperation::new("call")],
-    )))
-    .unwrap();
-  runtime
-    .register_mech_host_function(StagedClosureHostFunction::new(
+  let mut runtime = MechRuntime::builder()
+    .id_generator(SequentialIdGenerator::starting_at(1))
+    .host_function(StagedClosureHostFunction::new(
       "bench/staged",
       |_services, _context, _arguments| {
         Ok(RuntimePreparedHostCall {
@@ -227,6 +219,19 @@ fn staged_effect_rollback_fixture(
         })
       },
     ))
+    .unwrap()
+    .build()
+    .unwrap();
+  runtime.run_string("bench-anchor := 1").unwrap();
+  runtime
+    .grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(8_000),
+      &BasicSubject::new(
+        runtime.runtime_context().unwrap().subject().to_string(),
+      ),
+      &BasicResource::new("host:bench/staged"),
+      [BasicOperation::new("call")],
+    )))
     .unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime.begin_transaction(&mut context).unwrap();

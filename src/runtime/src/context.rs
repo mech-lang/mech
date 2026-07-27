@@ -361,22 +361,22 @@ impl MechErrorKind for RuntimeContextDerivedBaseUnsupported {
 
 #[derive(Clone, Debug)]
 pub struct RuntimeContext {
-  pub runtime: RuntimeId,
-  pub subject: String,
-  pub task: Option<TaskId>,
-  pub actor: Option<ActorId>,
-  pub access: AccessSet,
-  pub module_version: Option<ModuleVersionId>,
-  pub transaction: Option<TransactionId>,
-  pub capabilities: Vec<CapabilityId>,
-  pub budget: ResourceBudget,
-  pub events: Vec<RuntimeEvent>,
-  pub actor_message: Option<MessageRecord>,
-  pub actor_state: Option<ObjectId>,
+  pub(crate) runtime: RuntimeId,
+  pub(crate) subject: String,
+  pub(crate) task: Option<TaskId>,
+  pub(crate) actor: Option<ActorId>,
+  pub(crate) access: AccessSet,
+  pub(crate) module_version: Option<ModuleVersionId>,
+  pub(crate) transaction: Option<TransactionId>,
+  pub(crate) capabilities: Vec<CapabilityId>,
+  pub(crate) budget: ResourceBudget,
+  pub(crate) events: Vec<RuntimeEvent>,
+  pub(crate) actor_message: Option<MessageRecord>,
+  pub(crate) actor_state: Option<ObjectId>,
 }
 
 impl RuntimeContext {
-  pub fn new(runtime: RuntimeId, subject: impl Into<String>) -> Self {
+  pub(crate) fn new(runtime: RuntimeId, subject: impl Into<String>) -> Self {
     Self {
       runtime,
       subject: subject.into(),
@@ -393,41 +393,41 @@ impl RuntimeContext {
     }
   }
 
-  pub fn runtime(runtime: RuntimeId) -> Self {
+  pub(crate) fn runtime(runtime: RuntimeId) -> Self {
     Self::new(runtime, format!("runtime:{}", runtime))
   }
 
-  pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
+  pub(crate) fn with_subject(mut self, subject: impl Into<String>) -> Self {
     self.subject = subject.into();
     self
   }
 
-  pub fn with_task(mut self, task: TaskId) -> Self {
+  pub(crate) fn with_task(mut self, task: TaskId) -> Self {
     self.task = Some(task);
     self
   }
 
-  pub fn with_actor(mut self, actor: ActorId) -> Self {
+  pub(crate) fn with_actor(mut self, actor: ActorId) -> Self {
     self.actor = Some(actor);
     self
   }
 
-  pub fn with_module_version(mut self, module_version: ModuleVersionId) -> Self {
+  pub(crate) fn with_module_version(mut self, module_version: ModuleVersionId) -> Self {
     self.module_version = Some(module_version);
     self
   }
 
-  pub fn with_transaction(mut self, transaction: TransactionId) -> Self {
+  pub(crate) fn with_transaction(mut self, transaction: TransactionId) -> Self {
     self.transaction = Some(transaction);
     self
   }
 
-  pub fn with_capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
+  pub(crate) fn with_capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
     self.capabilities = capabilities;
     self
   }
 
-  pub fn with_budget(mut self, budget: ResourceBudget) -> Self {
+  pub(crate) fn with_budget(mut self, budget: ResourceBudget) -> Self {
     self.budget = budget;
     self
   }
@@ -482,11 +482,11 @@ impl RuntimeContext {
     }
   }
 
-  pub fn push_event(&mut self, event: RuntimeEvent) {
+  pub(crate) fn push_event(&mut self, event: RuntimeEvent) {
     self.events.push(event);
   }
 
-  pub fn drain_events(&mut self) -> Vec<RuntimeEvent> {
+  pub(crate) fn drain_events(&mut self) -> Vec<RuntimeEvent> {
     std::mem::take(&mut self.events)
   }
 
@@ -494,41 +494,41 @@ impl RuntimeContext {
     self.capabilities.contains(&capability)
   }
 
-  pub fn add_capability(&mut self, capability: CapabilityId) {
+  pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
     if !self.capabilities.contains(&capability) {
       self.capabilities.push(capability);
     }
   }
 
-  pub fn remove_capability(&mut self, capability: CapabilityId) {
+  pub(crate) fn remove_capability(&mut self, capability: CapabilityId) {
     self.capabilities.retain(|id| *id != capability);
   }
 
-  pub fn charge_step(&mut self) -> MResult<()> {
+  pub(crate) fn charge_step(&mut self) -> MResult<()> {
     self.budget.charge_steps(1)
   }
 
-  pub fn charge_steps(&mut self, steps: u64) -> MResult<()> {
+  pub(crate) fn charge_steps(&mut self, steps: u64) -> MResult<()> {
     self.budget.charge_steps(steps)
   }
 
-  pub fn charge_bytes(&mut self, bytes: u64) -> MResult<()> {
+  pub(crate) fn charge_bytes(&mut self, bytes: u64) -> MResult<()> {
     self.budget.charge_bytes(bytes)
   }
 
-  pub fn charge_items(&mut self, items: u64) -> MResult<()> {
+  pub(crate) fn charge_items(&mut self, items: u64) -> MResult<()> {
     self.budget.charge_items(items)
   }
 
-  pub fn charge_messages(&mut self, messages: u64) -> MResult<()> {
+  pub(crate) fn charge_messages(&mut self, messages: u64) -> MResult<()> {
     self.budget.charge_messages(messages)
   }
 
-  pub fn record_read(&mut self, object: ObjectId) {
+  pub(crate) fn record_read(&mut self, object: ObjectId) {
     self.access.read(object);
   }
 
-  pub fn record_write(&mut self, object: ObjectId) {
+  pub(crate) fn record_write(&mut self, object: ObjectId) {
     self.access.write(object);
   }
 
@@ -536,7 +536,7 @@ impl RuntimeContext {
     self.events.iter().map(|event| event.id).collect()
   }
 
-  pub fn bind_actor_turn(&mut self, turn: &ActorTurn) {
+  pub(crate) fn bind_actor_turn(&mut self, turn: &ActorTurn) {
     self.actor = Some(turn.actor);
     self.subject = turn.subject.clone();
     self.actor_message = Some(turn.message.clone());
@@ -559,6 +559,38 @@ impl RuntimeContext {
     self.actor_state
   }
 
+  pub fn runtime_id(&self) -> RuntimeId {
+    self.runtime
+  }
+
+  pub fn subject(&self) -> &str {
+    &self.subject
+  }
+
+  pub fn task_id(&self) -> Option<TaskId> {
+    self.task
+  }
+
+  pub fn actor_id(&self) -> Option<ActorId> {
+    self.actor
+  }
+
+  pub fn module_version(&self) -> Option<ModuleVersionId> {
+    self.module_version
+  }
+
+  pub fn transaction_id(&self) -> Option<TransactionId> {
+    self.transaction
+  }
+
+  pub fn budget(&self) -> &ResourceBudget {
+    &self.budget
+  }
+
+  pub fn events(&self) -> &[RuntimeEvent] {
+    &self.events
+  }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -566,7 +598,7 @@ impl RuntimeContext {
 // -----------------------------------------------------------------------------
 
 #[derive(Clone, Debug)]
-pub struct RuntimeContextBuilder {
+pub(crate) struct RuntimeContextBuilder {
   runtime: RuntimeId,
   subject: Option<String>,
   task: Option<TaskId>,
@@ -581,7 +613,7 @@ pub struct RuntimeContextBuilder {
 }
 
 impl RuntimeContextBuilder {
-  pub fn new(runtime: RuntimeId) -> Self {
+  pub(crate) fn new(runtime: RuntimeId) -> Self {
     Self {
       runtime,
       subject: None,
@@ -597,57 +629,57 @@ impl RuntimeContextBuilder {
     }
   }
 
-  pub fn actor_message(mut self, message: MessageRecord) -> Self {
+  pub(crate) fn actor_message(mut self, message: MessageRecord) -> Self {
     self.actor_message = Some(message);
     self
   }
 
-  pub fn actor_state(mut self, state: ObjectId) -> Self {
+  pub(crate) fn actor_state(mut self, state: ObjectId) -> Self {
     self.actor_state = Some(state);
     self
   }
 
-  pub fn subject(mut self, subject: impl Into<String>) -> Self {
+  pub(crate) fn subject(mut self, subject: impl Into<String>) -> Self {
     self.subject = Some(subject.into());
     self
   }
 
-  pub fn task(mut self, task: TaskId) -> Self {
+  pub(crate) fn task(mut self, task: TaskId) -> Self {
     self.task = Some(task);
     self
   }
 
-  pub fn actor(mut self, actor: ActorId) -> Self {
+  pub(crate) fn actor(mut self, actor: ActorId) -> Self {
     self.actor = Some(actor);
     self
   }
 
-  pub fn module_version(mut self, module_version: ModuleVersionId) -> Self {
+  pub(crate) fn module_version(mut self, module_version: ModuleVersionId) -> Self {
     self.module_version = Some(module_version);
     self
   }
 
-  pub fn transaction(mut self, transaction: TransactionId) -> Self {
+  pub(crate) fn transaction(mut self, transaction: TransactionId) -> Self {
     self.transaction = Some(transaction);
     self
   }
 
-  pub fn capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
+  pub(crate) fn capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
     self.capabilities = capabilities;
     self
   }
 
-  pub fn budget(mut self, budget: ResourceBudget) -> Self {
+  pub(crate) fn budget(mut self, budget: ResourceBudget) -> Self {
     self.budget = budget;
     self
   }
 
-  pub fn access(mut self, access: AccessSet) -> Self {
+  pub(crate) fn access(mut self, access: AccessSet) -> Self {
     self.access = access;
     self
   }
 
-  pub fn build(self) -> MResult<RuntimeContext> {
+  pub(crate) fn build(self) -> MResult<RuntimeContext> {
     let subject = self.subject.unwrap_or_else(|| {
       if let Some(actor) = self.actor {
         format!("actor:{}", actor)

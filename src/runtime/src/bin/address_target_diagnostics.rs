@@ -40,7 +40,7 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
   match runtime.resolve_and_store_module_source("main.mec", options) {
     Ok(Some(version)) => {
       println!("main module version: {version}");
-      let record = runtime.store().get_module_version(version).unwrap().unwrap();
+      let record = runtime.get_module_version(version).unwrap().unwrap();
       println!("scoped address references:");
       for scope in &record.scopes {
         for reference in &scope.address_references {

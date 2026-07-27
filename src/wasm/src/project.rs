@@ -789,8 +789,8 @@ mod tests {
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
 
-    fn assert_f64(value: mech_core::Value, expected: f64) {
-        match value {
+    fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
+        match value.into_value() {
             mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
             mech_core::Value::MutableReference(value) => match &*value.borrow() {
                 mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),

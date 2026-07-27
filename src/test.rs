@@ -1,6 +1,5 @@
 use crate::*;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -326,52 +325,31 @@ pub(crate) fn run_mech_tests_without_tree(
         continue;
       }
     };
-    let program = runtime.take_program();
-
-    let state = &program.interpreter().state.borrow();
+    let invariants = runtime.invariant_snapshots();
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
-
-    let mut violations: HashMap<u64, CaseDetail> = HashMap::new();
-    for v in &state.invariant_violations {
-      if let Some(inv) = v.error.kind_as::<InvariantViolationError>() {
-        violations.insert(v.id, CaseDetail {
-          name: state.invariants.get(&v.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", v.id)),
-          expression: inv.expression.clone(),
-          reason: inv.reason.clone(),
-          evaluated_kind: inv.evaluated_kind.clone(),
-          actual: inv.lhs_value.clone().unwrap_or_else(|| "?".to_string()),
-          expected: inv.rhs_value.clone().unwrap_or_else(|| "?".to_string()),
-        });
-      }
-    }
 
     let mut passed_cases = Vec::new();
     let mut failed_cases = Vec::new();
-    let width = state.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
-    for (id, (name, value)) in state.invariants.iter() {
-      match &*value.borrow() {
-        Value::Bool(b) if *b.borrow() => {
-          println!("{:<width$}   ✓", name, width=width);
-          passed_cases.push(CaseDetail {
-            name: name.clone(),
-            expression: state.invariant_expressions.get(id).cloned().unwrap_or_else(|| name.clone()),
-            reason: state.invariant_evaluations.get(id).map(|e| e.reason.clone()).unwrap_or_else(|| "evaluated to true".to_string()),
-            evaluated_kind: state.invariant_evaluations.get(id).map(|e| e.evaluated_kind.clone()).unwrap_or_else(|| "bool".to_string()),
-            actual: state.invariant_evaluations.get(id).map(|e| e.actual.clone()).unwrap_or_else(|| "true".to_string()),
-            expected: state.invariant_evaluations.get(id).map(|e| e.expected.clone()).unwrap_or_else(|| "true".to_string()),
-          });
-        }
-        _ => {
-          println!("{:<width$}   ✗", name, width=width);
-          failed_cases.push(violations.remove(id).unwrap_or(CaseDetail {
-            name: name.clone(),
-            expression: state.invariant_expressions.get(id).cloned().unwrap_or_default(),
-            reason: "Invariant evaluated to false or non-bool value".to_string(),
-            evaluated_kind: "bool".to_string(),
-            actual: "?".to_string(),
-            expected: "?".to_string()
-          }));
-        }
+    let width = invariants.iter().map(|case| case.name.len()).max().unwrap_or(0);
+    for invariant in invariants {
+      println!(
+        "{:<width$}   {}",
+        invariant.name,
+        if invariant.passed { "✓" } else { "✗" },
+        width=width,
+      );
+      let detail = CaseDetail {
+        name: invariant.name,
+        expression: invariant.expression,
+        reason: invariant.reason,
+        evaluated_kind: invariant.evaluated_kind,
+        actual: invariant.actual,
+        expected: invariant.expected,
+      };
+      if invariant.passed {
+        passed_cases.push(detail);
+      } else {
+        failed_cases.push(detail);
       }
     }
 

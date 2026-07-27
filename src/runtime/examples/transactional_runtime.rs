@@ -2,9 +2,19 @@ use mech_core::MResult;
 
 use mech_runtime::{
   InMemorySourceResolver,
+  MechRuntime,
   RuntimeBuilder,
-  RuntimeContextBuilder,
+  RuntimeContext,
+  TaskRecord,
 };
+
+fn mailbox_context(runtime: &mut MechRuntime) -> MResult<RuntimeContext> {
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "actor:transactional-mailbox",
+  );
+  runtime.context_for_task(&task)
+}
 
 fn main() -> MResult<()> {
   let source_resolver = InMemorySourceResolver::new();
@@ -64,10 +74,7 @@ fn main() -> MResult<()> {
   // message from the durable mailbox. Aborting should discard the staged ack.
   // ---------------------------------------------------------------------------
 
-  let mut abort_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:transactional-mailbox")
-    .actor(actor)
-    .build()?;
+  let mut abort_context = mailbox_context(&mut runtime)?;
 
   let abort_transaction = runtime.begin_transaction(&mut abort_context)?;
 
@@ -110,10 +117,7 @@ fn main() -> MResult<()> {
   // This time the staged ack should be applied at commit.
   // ---------------------------------------------------------------------------
 
-  let mut commit_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:transactional-mailbox")
-    .actor(actor)
-    .build()?;
+  let mut commit_context = mailbox_context(&mut runtime)?;
 
   let commit_transaction = runtime.begin_transaction(&mut commit_context)?;
 
@@ -156,10 +160,7 @@ fn main() -> MResult<()> {
   // This proves the mailbox can be drained through staged acks.
   // ---------------------------------------------------------------------------
 
-  let mut final_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:transactional-mailbox")
-    .actor(actor)
-    .build()?;
+  let mut final_context = mailbox_context(&mut runtime)?;
 
   let final_transaction = runtime.begin_transaction(&mut final_context)?;
 
@@ -193,10 +194,7 @@ fn main() -> MResult<()> {
   // Also prove staged enqueues are invisible until commit.
   // ---------------------------------------------------------------------------
 
-  let mut enqueue_abort_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:transactional-mailbox")
-    .actor(actor)
-    .build()?;
+  let mut enqueue_abort_context = mailbox_context(&mut runtime)?;
 
   let enqueue_abort_transaction =
     runtime.begin_transaction(&mut enqueue_abort_context)?;
@@ -244,10 +242,7 @@ fn main() -> MResult<()> {
     staged_aborted_message,
   );
 
-  let mut enqueue_commit_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:transactional-mailbox")
-    .actor(actor)
-    .build()?;
+  let mut enqueue_commit_context = mailbox_context(&mut runtime)?;
 
   let enqueue_commit_transaction =
     runtime.begin_transaction(&mut enqueue_commit_context)?;

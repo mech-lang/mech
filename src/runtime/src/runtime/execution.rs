@@ -13,7 +13,10 @@
 
 use super::*;
 use super::reactive_transaction::PreparedRuntimeHostInput;
-use crate::{SourceDeclaration, SourceImportDeclaration, SourceIndex};
+use crate::{
+  RuntimeModuleResult, RuntimeValueSnapshot, SourceDeclaration,
+  SourceImportDeclaration, SourceIndex,
+};
 use crate::RuntimeResourceWritePreflightRequest;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -564,7 +567,7 @@ impl MechRuntime {
     self.with_live_registration_mode(
       crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
       |runtime| {
-        runtime.run_string_with_context(context, source)
+        runtime.run_string_value_with_context(context, source)
       },
     )
   }
@@ -3038,11 +3041,25 @@ impl MechRuntime {
       }, None))
   }
 
-  pub fn run_string(&mut self, source: &str) -> MResult<Value> {
+  pub fn run_string(
+    &mut self,
+    source: &str,
+  ) -> MResult<RuntimeValueSnapshot> {
     let mut context = self.runtime_context()?;
     self.run_string_with_context(&mut context, source)
   }
+
   pub fn run_string_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .run_string_value_with_context(context, source)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub(crate) fn run_string_value_with_context(
     &mut self,
     context: &mut RuntimeContext,
     source: &str,
@@ -3178,6 +3195,16 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     bytecode: &[u8],
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .run_bytecode_value_with_context(context, bytecode)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
+  }
+
+  fn run_bytecode_value_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    bytecode: &[u8],
   ) -> MResult<Value> {
     let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
@@ -3285,10 +3312,28 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     source: &MechSourceCode,
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .run_source_value_with_context(context, source)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub fn run_source(
+    &mut self,
+    source: &MechSourceCode,
+  ) -> MResult<RuntimeValueSnapshot> {
+    let mut context = self.runtime_context()?;
+    self.run_source_with_context(&mut context, source)
+  }
+
+  pub(crate) fn run_source_value_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
   ) -> MResult<Value> {
     let turn_started = Instant::now();
     if let MechSourceCode::ByteCode(bytes) = source {
-      return self.run_bytecode_with_context(context, bytes);
+      return self.run_bytecode_value_with_context(context, bytes);
     }
 
     let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -3331,12 +3376,25 @@ impl MechRuntime {
     }
   }
 
-  pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
+  pub fn run_tree(
+    &mut self,
+    tree: &mech_core::Program,
+  ) -> MResult<RuntimeValueSnapshot> {
     let mut context = self.runtime_context()?;
     self.run_tree_with_context(&mut context, tree)
   }
 
   pub fn run_tree_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    tree: &mech_core::Program,
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .run_tree_value_with_context(context, tree)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub(crate) fn run_tree_value_with_context(
     &mut self,
     context: &mut RuntimeContext,
     tree: &mech_core::Program,
@@ -3424,13 +3482,81 @@ impl MechRuntime {
     result
   }
 
-  /// Low-level manual escape hatch outside runtime-owned atomic execution.
-  ///
-  /// Taking the program bypasses runtime transaction coordination. Callers
-  /// must not use it while a transaction owns the retained program.
-  pub fn take_program(&mut self) -> MechProgram {
-    let program_config = self.program.config.clone();
-    std::mem::replace(&mut self.program, MechProgram::new(program_config))
+  #[cfg(feature = "compiler")]
+  pub fn compile_program_bytecode(&mut self) -> MResult<Vec<u8>> {
+    self.ensure_runtime_mutation_allowed("compile_program_bytecode")?;
+    self.reject_program_operation_reentrancy("compile_program_bytecode")?;
+    if let Some(transaction_id) = self.program_transaction_owner {
+      return Err(MechError::new(RuntimeProgramBusy {
+        operation: "compile_program_bytecode",
+        owner: transaction_id,
+        requester: None,
+      }, None));
+    }
+    self.program.compile_bytecode()
+  }
+
+  pub fn invariant_snapshots(
+    &self,
+  ) -> Vec<crate::RuntimeInvariantSnapshot> {
+    let state = self.program.interpreter().state.borrow();
+    let violations = state
+      .invariant_violations
+      .iter()
+      .filter_map(|violation| {
+        violation
+          .error
+          .kind_as::<mech_core::InvariantViolationError>()
+          .map(|error| (violation.id, error))
+      })
+      .collect::<HashMap<_, _>>();
+    let mut ids = state.invariants.keys().copied().collect::<Vec<_>>();
+    ids.sort_unstable();
+    ids
+      .into_iter()
+      .filter_map(|id| {
+        let (name, value) = state.invariants.get(&id)?;
+        let passed = matches!(
+          &*value.borrow(),
+          Value::Bool(value) if *value.borrow()
+        );
+        let evaluation = state.invariant_evaluations.get(&id);
+        let violation = violations.get(&id);
+        Some(crate::RuntimeInvariantSnapshot {
+          id,
+          name: name.clone(),
+          passed,
+          expression: violation
+            .map(|error| error.expression.clone())
+            .or_else(|| state.invariant_expressions.get(&id).cloned())
+            .unwrap_or_else(|| name.clone()),
+          reason: violation
+            .map(|error| error.reason.clone())
+            .or_else(|| evaluation.map(|value| value.reason.clone()))
+            .unwrap_or_else(|| {
+              if passed {
+                "evaluated to true".to_string()
+              } else {
+                "Invariant evaluated to false or non-bool value".to_string()
+              }
+            }),
+          evaluated_kind: violation
+            .map(|error| error.evaluated_kind.clone())
+            .or_else(|| evaluation.map(|value| value.evaluated_kind.clone()))
+            .unwrap_or_else(|| "bool".to_string()),
+          actual: violation
+            .and_then(|error| error.lhs_value.clone())
+            .or_else(|| evaluation.map(|value| value.actual.clone()))
+            .unwrap_or_else(|| {
+              if passed { "true" } else { "?" }.to_string()
+            }),
+          expected: violation
+            .and_then(|error| error.rhs_value.clone())
+            .or_else(|| evaluation.map(|value| value.expected.clone()))
+            .unwrap_or_else(|| "true".to_string()),
+        })
+      })
+      .collect()
   }
 
   pub fn out_string(&self) -> String {
@@ -3441,12 +3567,20 @@ impl MechRuntime {
     self.program.has_interpreter(interpreter_id)
   }
 
+  pub fn root_plan_len(&self) -> usize {
+    self.program.interpreter().plan_len()
+  }
+
   pub fn output_value_for_interpreter(
     &self,
     interpreter_id: u64,
     output_id: u64,
-  ) -> Option<Value> {
-    self.program.output_value_for_interpreter(interpreter_id, output_id)
+  ) -> Option<RuntimeValueSnapshot> {
+    self
+      .program
+      .output_value_for_interpreter(interpreter_id, output_id)
+      .as_ref()
+      .map(RuntimeValueSnapshot::capture)
   }
 
   pub fn symbol_name_for_interpreter_output(
@@ -3461,16 +3595,45 @@ impl MechRuntime {
     &self,
     interpreter_id: u64,
     names: &[String],
-  ) -> Option<Vec<(String, Value)>> {
-    self.program.symbol_values_for_interpreter(interpreter_id, names)
+  ) -> Option<Vec<(String, RuntimeValueSnapshot)>> {
+    self
+      .program
+      .symbol_values_for_interpreter(interpreter_id, names)
+      .map(|values| {
+        values
+          .into_iter()
+          .map(|(name, value)| {
+            (name, RuntimeValueSnapshot::capture(&value))
+          })
+          .collect()
+      })
   }
 
-  pub fn root_symbol_value(&self, name: &str) -> MResult<Value> {
-    self.program.root_symbol_value(name)
+  pub fn root_symbol_value(
+    &self,
+    name: &str,
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .program
+      .root_symbol_value(name)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
   }
 
-  pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, Value)>> {
-    self.program.root_symbol_values(names)
+  pub fn root_symbol_values(
+    &self,
+    names: &[&str],
+  ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
+    self
+      .program
+      .root_symbol_values(names)
+      .map(|values| {
+        values
+          .into_iter()
+          .map(|(name, value)| {
+            (name, RuntimeValueSnapshot::capture(&value))
+          })
+          .collect()
+      })
   }
 
   pub fn bind_ans_for_interpreter(
@@ -3547,7 +3710,10 @@ impl MechRuntime {
     )
   }
 
-  pub fn run_module(&mut self, version: ModuleVersionId) -> MResult<Value> {
+  pub fn run_module(
+    &mut self,
+    version: ModuleVersionId,
+  ) -> MResult<RuntimeModuleResult> {
     let mut context = self.runtime_context()?
       .with_module_version(version);
 
@@ -3558,7 +3724,7 @@ impl MechRuntime {
     &mut self,
     version: ModuleVersionId,
     scope: SourceScope,
-  ) -> MResult<Value> {
+  ) -> MResult<RuntimeModuleResult> {
     let mut context = self.runtime_context()?
       .with_module_version(version);
 
@@ -3569,7 +3735,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     version: ModuleVersionId,
-  ) -> MResult<Value> {
+  ) -> MResult<RuntimeModuleResult> {
     self.run_module_scope_with_context(context, version, SourceScope::Program)
   }
 
@@ -3578,7 +3744,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     version: ModuleVersionId,
     scope: SourceScope,
-  ) -> MResult<Value> {
+  ) -> MResult<RuntimeModuleResult> {
     let turn_started = Instant::now();
     let mut preflight_seen = HashSet::new();
     self.preflight_module_graph_for_scope(context, version, &scope, &mut preflight_seen)?;
@@ -3595,7 +3761,7 @@ impl MechRuntime {
     )?;
 
     self.enforce_turn_duration(turn_started)?;
-    Ok(instance.result)
+    Ok(instance.detached_result())
   }
 
   pub(super) fn preflight_module_graph_for_scope(
@@ -4880,7 +5046,12 @@ mod root_symbol_snapshot_runtime_tests {
   fn runtime_delegates_root_symbol_value() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     runtime.run_string("answer := 42.0").unwrap();
-    assert_eq!(f64_value(&runtime.root_symbol_value("answer").unwrap()), 42.0);
+    assert_eq!(
+      f64_value(
+        runtime.root_symbol_value("answer").unwrap().as_value(),
+      ),
+      42.0,
+    );
   }
 
   #[test]
@@ -4889,8 +5060,8 @@ mod root_symbol_snapshot_runtime_tests {
     runtime.run_string("a := 1.0\nb := 2.0").unwrap();
     let rows = runtime.root_symbol_values(&["b", "a"]).unwrap();
     assert_eq!(rows[0].0, "b");
-    assert_eq!(f64_value(&rows[0].1), 2.0);
+    assert_eq!(f64_value(rows[0].1.as_value()), 2.0);
     assert_eq!(rows[1].0, "a");
-    assert_eq!(f64_value(&rows[1].1), 1.0);
+    assert_eq!(f64_value(rows[1].1.as_value()), 1.0);
   }
 }

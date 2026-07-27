@@ -10,6 +10,7 @@ use mech_runtime::{
   SourceKind,
   SourceRequest,
   SourceResolver,
+  TaskRecord,
 };
 
 #[derive(Debug)]
@@ -75,9 +76,11 @@ fn main() -> MResult<()> {
 
   println!("runtime: {}", short(runtime.id()));
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:runtime-dependency-cycle");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:runtime-dependency-cycle",
+  );
+  let mut context = runtime.context_for_task(&task)?;
 
   let target = runtime_target();
   let options = ModuleBuildOptions::new(

@@ -129,7 +129,7 @@ impl MechErrorKind for RuntimeConfigSpecInvalidResource {
   }
 }
 
-pub fn register_config_spec_resources(
+pub(crate) fn register_config_spec_resources(
   registry: &mut RuntimeResourceRegistry,
   spec: &RuntimeConfigSpec,
 ) -> MResult<()> {

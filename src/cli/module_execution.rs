@@ -133,8 +133,10 @@ pub(crate) fn execute_source_module_roots(
         resolver.add_root(root);
     }
 
-    let mut runtime = RuntimeBuilder::new().config(config).build()?;
-    runtime.set_source_resolver(resolver)?;
+    let mut runtime = RuntimeBuilder::new()
+        .config(config)
+        .source_resolver(resolver)
+        .build()?;
     for root in canonical_roots {
         runtime.resolve_and_run_root_module(
             SourceRequest::new(root.to_string_lossy().to_string()),
@@ -147,6 +149,7 @@ pub(crate) fn execute_source_module_roots(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_runtime::RuntimeValueSnapshot;
 
     fn temp_root(label: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -190,8 +193,8 @@ mod tests {
         );
     }
 
-    fn assert_f64(value: Value, expected: f64) {
-        match value {
+    fn assert_f64(value: RuntimeValueSnapshot, expected: f64) {
+        match value.into_value() {
             Value::F64(value) => assert_eq!(*value.borrow(), expected),
             Value::MutableReference(value) => match &*value.borrow() {
                 Value::F64(value) => assert_eq!(*value.borrow(), expected),

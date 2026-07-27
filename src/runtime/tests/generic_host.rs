@@ -132,9 +132,8 @@ impl RuntimeResourceProvider for AliasProvider {
 }
 
 fn runtime_with_alias_provider() -> MechRuntime {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime
-    .register_resource_provider(Box::new(
+  RuntimeBuilder::new()
+    .resource_provider(Box::new(
       AliasProvider::new(&[
         "test://default/context",
         "test://context",
@@ -144,8 +143,8 @@ fn runtime_with_alias_provider() -> MechRuntime {
         "test://context",
       ]),
     ))
-    .unwrap();
-  runtime
+    .build()
+    .unwrap()
 }
 
 fn grant_test_read(runtime: &mut MechRuntime, resource: &str) {
@@ -277,9 +276,9 @@ fn provider_advertised_alias_grant_does_not_authorize_unregistered_base() {
 
 #[test]
 fn provider_advertised_alias_grants_do_not_use_string_heuristics() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime
-    .register_resource_provider(Box::new(AliasProvider::new(&["test://context"])))
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(AliasProvider::new(&["test://context"])))
+    .build()
     .unwrap();
   grant_test_read(&mut runtime, "test://context");
 
@@ -293,12 +292,12 @@ fn provider_advertised_alias_grants_do_not_use_string_heuristics() {
 
 #[test]
 fn multiple_provider_bases_are_not_implicit_aliases() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime
-    .register_resource_provider(Box::new(AliasProvider::new(&[
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(AliasProvider::new(&[
       "test://default/context",
       "test://context",
     ])))
+    .build()
     .unwrap();
   grant_test_read(&mut runtime, "test://context");
 
@@ -320,8 +319,10 @@ fn in_memory_docs_bases_are_not_implicit_aliases() {
     .insert("docs://guide", "title", Value::String(Ref::new("guide".to_string())))
     .unwrap();
 
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime.register_resource_provider(Box::new(docs)).unwrap();
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(docs))
+    .build()
+    .unwrap();
   runtime
     .grant_capability(RuntimeCapabilityGrant {
       subject: "subject".to_string(),
@@ -341,7 +342,7 @@ fn in_memory_docs_bases_are_not_implicit_aliases() {
 
 #[test]
 fn host_instance_same_provider_builtin_configures_default() {
-  let mut runtime = RuntimeBuilder::new()
+  RuntimeBuilder::new()
     .host_factory(Box::new(FakeBrowserFactory::new()))
     .unwrap()
     .host_instance(HostInstanceConfig {
@@ -349,14 +350,15 @@ fn host_instance_same_provider_builtin_configures_default() {
       provider: "browser".to_string(),
       settings: ConfigValue::Map(Default::default()),
     })
+    .context_export_binding("dom", "browser", "dom")
+    .unwrap()
     .build()
     .unwrap();
-  runtime.bind_context_export("dom", "browser", "dom").unwrap();
 }
 
 #[test]
 fn host_instance_custom_browser_name_succeeds() {
-  let mut runtime = RuntimeBuilder::new()
+  RuntimeBuilder::new()
     .host_factory(Box::new(FakeBrowserFactory::new()))
     .unwrap()
     .host_instance(HostInstanceConfig {
@@ -364,9 +366,10 @@ fn host_instance_custom_browser_name_succeeds() {
       provider: "browser".to_string(),
       settings: ConfigValue::Map(Default::default()),
     })
+    .context_export_binding("dom", "ui", "dom")
+    .unwrap()
     .build()
     .unwrap();
-  runtime.bind_context_export("dom", "ui", "dom").unwrap();
 }
 
 #[test]

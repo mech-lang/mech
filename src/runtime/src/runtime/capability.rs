@@ -14,7 +14,7 @@
 use super::*;
 use crate::{
   CapabilityAlreadyExistsError, CapabilityNotFoundError,
-  CapabilityNotRevocableError,
+  CapabilityNotRevocableError, RuntimeCapabilitySnapshot,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -276,6 +276,22 @@ fn finish_failed_capability_grant(
 }
 
 impl MechRuntime {
+  pub fn get_capability_snapshot(
+    &self,
+    id: CapabilityId,
+  ) -> MResult<Option<RuntimeCapabilitySnapshot>> {
+    self.capability_kernel.get(id).map(|capability| {
+      capability.map(|capability| RuntimeCapabilitySnapshot {
+        id: capability.id(),
+        subject: capability.subject_key().to_string(),
+        revocable: capability.is_revocable(),
+        delegable: capability.is_delegable(),
+        attenuable: capability.is_attenuable(),
+        max_uses: capability.max_uses(),
+      })
+    })
+  }
+
 
   pub fn grant_capability_with_context(
     &mut self,

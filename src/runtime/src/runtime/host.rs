@@ -46,6 +46,7 @@ use mech_core::{
 use crate::{
   HostFunction, HostFunctionTransactionMode,
   HostFunctionTransactionUnsupportedError, RuntimePreparedHostCall,
+  RuntimeValueSnapshot,
 };
 
 impl MechRuntime {
@@ -76,7 +77,7 @@ impl MechRuntime {
     Ok(())
   }
 
-  pub fn register_mech_host_function(
+  pub(crate) fn register_mech_host_function(
     &mut self,
     function: impl HostFunction + 'static,
   ) -> MResult<()> {
@@ -100,7 +101,10 @@ impl MechRuntime {
     Ok(())
   }
 
-  pub fn call_host(&mut self, call: HostCall) -> MResult<Value> {
+  pub fn call_host(
+    &mut self,
+    call: HostCall,
+  ) -> MResult<RuntimeValueSnapshot> {
     let mut context = self.runtime_context()?;
     self.call_host_with_context(&mut context, call)
   }
@@ -222,6 +226,16 @@ impl MechRuntime {
   }
 
   pub fn call_host_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    call: HostCall,
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .call_host_value_with_context(context, call)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub(crate) fn call_host_value_with_context(
     &mut self,
     context: &mut RuntimeContext,
     call: HostCall,
@@ -460,7 +474,7 @@ impl RuntimeHostNativeFunction {
       // retain the original context pointer because persisted programs may be
       // solved later with a different active RuntimeContext.
       unsafe {
-        (&mut *target.runtime).call_host_with_context(
+        (&mut *target.runtime).call_host_value_with_context(
           &mut *target.context,
           HostCall::new(&self.host_name, self.arguments.clone()),
         )
@@ -710,8 +724,8 @@ mod transaction_tests {
       .unwrap();
 
     assert_eq!(
-      value,
-      Value::String(Ref::new("provisional".to_string())),
+      value.as_value(),
+      &Value::String(Ref::new("provisional".to_string())),
     );
     assert!(log.lock().unwrap().is_empty());
 

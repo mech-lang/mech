@@ -12,6 +12,7 @@ use mech_runtime::{
   CapabilityId,
   ClosureHostFunction,
   RuntimeBuilder,
+  TaskRecord,
 };
 
 use mech_runtime::arg::host_arg_string;
@@ -40,35 +41,31 @@ fn fmt_value(value: &Value) -> String {
 fn main() -> MResult<()> {
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
+    .host_function(ClosureHostFunction::new_pure(
+      "demo/echo",
+      |_services, _context, args| {
+        let text = host_arg_string("demo/echo", &args, 0)?;
+        Ok(Value::String(Ref::new(format!(
+          "rust echoed: {}",
+          text,
+        ))))
+      },
+    ))?
+    .host_function(ClosureHostFunction::new_pure(
+      "demo/join",
+      |_services, _context, args| {
+        let left = host_arg_string("demo/join", &args, 0)?;
+        let right = host_arg_string("demo/join", &args, 1)?;
+        Ok(Value::String(Ref::new(format!(
+          "{} + {}",
+          left,
+          right,
+        ))))
+      },
+    ))?
     .build()?;
 
   println!("runtime: {}", short(runtime.id()));
-
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-    "demo/echo",
-    |_services, _context, args| {
-      let text = host_arg_string("demo/echo", &args, 0)?;
-
-      Ok(Value::String(Ref::new(format!(
-        "rust echoed: {}",
-        text,
-      ))))
-    },
-  ))?;
-
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-    "demo/join",
-    |_services, _context, args| {
-      let left = host_arg_string("demo/join", &args, 0)?;
-      let right = host_arg_string("demo/join", &args, 1)?;
-
-      Ok(Value::String(Ref::new(format!(
-        "{} + {}",
-        left,
-        right,
-      ))))
-    },
-  ))?;
 
   let subject = BasicSubject::new("program:arbitrary-rust-host");
 
@@ -84,9 +81,11 @@ fn main() -> MResult<()> {
     )))?;
   }
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:arbitrary-rust-host");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:arbitrary-rust-host",
+  );
+  let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(
     &mut context,
@@ -95,9 +94,9 @@ fn main() -> MResult<()> {
     "#,
   )?;
 
-  println!("echo result: {}", fmt_value(&value));
+  println!("echo result: {}", fmt_value(value.as_value()));
 
-  match value {
+  match value.into_value() {
     Value::String(text) => {
       assert_eq!(&*text.borrow(), "rust echoed: in rust");
     }
@@ -106,9 +105,11 @@ fn main() -> MResult<()> {
     }
   }
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:arbitrary-rust-host");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:arbitrary-rust-host",
+  );
+  let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(
     &mut context,
@@ -117,9 +118,9 @@ fn main() -> MResult<()> {
     "#,
   )?;
 
-  println!("join result: {}", fmt_value(&value));
+  println!("join result: {}", fmt_value(value.as_value()));
 
-  match value {
+  match value.into_value() {
     Value::String(text) => {
       assert_eq!(&*text.borrow(), "left + right");
     }

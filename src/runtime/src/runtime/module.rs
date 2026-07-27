@@ -623,7 +623,7 @@ impl MechRuntime {
     &mut self,
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
-  ) -> MResult<Value> {
+  ) -> MResult<crate::RuntimeValueSnapshot> {
     self.ensure_runtime_mutation_allowed(
       "resolve_and_run_root_module",
     )?;
@@ -632,6 +632,21 @@ impl MechRuntime {
   }
 
   pub fn resolve_and_run_root_module_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<crate::RuntimeValueSnapshot> {
+    self
+      .resolve_and_run_root_module_value_with_context(
+        context,
+        request,
+        options,
+      )
+      .map(|value| crate::RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub(crate) fn resolve_and_run_root_module_value_with_context(
     &mut self,
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,

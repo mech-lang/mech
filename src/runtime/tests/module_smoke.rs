@@ -106,12 +106,12 @@ fn runtime_read_grant_for(subject: &str, resource: &str, path: &str) -> RuntimeC
 }
 
 fn runtime_context_read_grant(runtime: &MechRuntime, resource: &str, path: &str) -> RuntimeCapabilityGrant {
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime_read_grant_for(&subject, resource, path)
 }
 
 fn runtime_context_write_grant(runtime: &MechRuntime, resource: &str, path: &str) -> RuntimeCapabilityGrant {
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime_write_grant_for(&subject, resource, path)
 }
 
@@ -173,7 +173,7 @@ fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) 
 }
 
 fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   for resource in ["cli://cli/stdout", "cli://stdout"] {
     runtime.grant_capability(RuntimeCapabilityGrant {
       subject: subject.clone(),
@@ -184,9 +184,19 @@ fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
   }
 }
 
+fn context_for_subject(
+  runtime: &mut MechRuntime,
+  subject: &str,
+) -> mech_core::MResult<RuntimeContext> {
+  let task = TaskRecord::new(runtime.next_task_id(), subject);
+  runtime.context_for_task(&task)
+}
+
 fn run_module_as_main(runtime: &mut MechRuntime, version: ModuleVersionId) -> mech_core::MResult<Value> {
-  let mut context = runtime.runtime_context()?.with_subject("task://main");
-  runtime.run_module_with_context(&mut context, version)
+  let mut context = context_for_subject(runtime, "task://main")?;
+  runtime
+    .run_module_with_context(&mut context, version)
+    .map(|result| result.result.into_value())
 }
 
 fn bool_value(value: bool) -> Value {
@@ -204,22 +214,44 @@ fn module_options() -> ModuleBuildOptions<'static> {
   ModuleBuildOptions::new("test", "v0.3", "native", &[], &[])
 }
 
-fn assert_bool_true(result: Value, label: &str) {
-  match result {
+trait IntoTestValue {
+  fn into_test_value(self) -> Value;
+}
+
+impl IntoTestValue for Value {
+  fn into_test_value(self) -> Value {
+    self
+  }
+}
+
+impl IntoTestValue for RuntimeValueSnapshot {
+  fn into_test_value(self) -> Value {
+    self.into_value()
+  }
+}
+
+impl IntoTestValue for RuntimeModuleResult {
+  fn into_test_value(self) -> Value {
+    self.result.into_value()
+  }
+}
+
+fn assert_bool_true(result: impl IntoTestValue, label: &str) {
+  match result.into_test_value() {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from {label}, got {:?}", other),
   }
 }
 
-fn assert_bool_false(result: Value, label: &str) {
-  match result {
+fn assert_bool_false(result: impl IntoTestValue, label: &str) {
+  match result.into_test_value() {
     Value::Bool(value) => assert!(!*value.borrow()),
     other => panic!("expected bool result from {label}, got {:?}", other),
   }
 }
 
-fn assert_f64(result: Value, expected: f64, label: &str) {
-  match result {
+fn assert_f64(result: impl IntoTestValue, expected: f64, label: &str) {
+  match result.into_test_value() {
     Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
     Value::MutableReference(value) => match &*value.borrow() {
       Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
@@ -245,7 +277,7 @@ ok := math/tau > 6.0
     .unwrap()
     .unwrap();
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
 
   assert_bool_true(result, "direct run_string normal import");
 }
@@ -257,7 +289,7 @@ fn resolved_retained_root_imports_sibling_module() {
   let mut runtime = runtime_with_root(&root);
   let result = runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
   assert_f64(result, 42.0, "retained root sibling import");
-  assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0, "retained root answer");
+  assert_f64(runtime.root_symbol_value("answer").unwrap().into_value(), 42.0, "retained root answer");
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -280,7 +312,7 @@ fn resolved_retained_root_import_namespace_exports_are_visible() {
   std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
   let mut runtime = runtime_with_root(&root);
   runtime.resolve_and_run_root_module("main.mec", module_options()).unwrap();
-  assert_f64(runtime.root_symbol_value("dep/value").unwrap(), 41.0, "retained root namespace export");
+  assert_f64(runtime.root_symbol_value("dep/value").unwrap().into_value(), 41.0, "retained root namespace export");
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -352,7 +384,7 @@ fn retained_root_context_read_creates_live_binding_and_recomputes() {
     RuntimeHostInputSource::new("docs://numbers", "increment").unwrap(),
     RuntimeHostInputValue::F64(10.0),
   )).unwrap();
-  assert_f64(runtime.root_symbol_value("output").unwrap(), 11.0, "root recompute after host input");
+  assert_f64(runtime.root_symbol_value("output").unwrap().into_value(), 11.0, "root recompute after host input");
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -365,7 +397,7 @@ fn failed_retained_root_restores_live_state_and_imported_environment() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).in_memory_docs(provider).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://numbers", "increment")).unwrap();
   runtime.resolve_and_run_root_module("ok.mec", module_options()).unwrap();
-  assert_f64(runtime.root_symbol_value("dep/value").unwrap(), 41.0, "initial imported environment");
+  assert_f64(runtime.root_symbol_value("dep/value").unwrap().into_value(), 41.0, "initial imported environment");
 
   std::fs::write(root.join("dep.mec"), "value := 99\n<+ value\n").unwrap();
   std::fs::write(
@@ -375,7 +407,7 @@ fn failed_retained_root_restores_live_state_and_imported_environment() {
   let error = runtime.resolve_and_run_root_module("bad.mec", module_options()).unwrap_err();
   assert!(format!("{error:?}").contains("missing"), "expected root execution failure, got {error:?}");
   assert!(!runtime.has_live_input_bindings(), "failed root must restore live input bindings");
-  assert_f64(runtime.root_symbol_value("dep/value").unwrap(), 41.0, "restored imported environment");
+  assert_f64(runtime.root_symbol_value("dep/value").unwrap().into_value(), 41.0, "restored imported environment");
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -390,18 +422,56 @@ fn in_memory_docs_provider_write_then_read_returns_value() {
 
 #[test]
 fn resource_registry_write_then_read_returns_value() {
-  let mut registry = RuntimeResourceRegistry::new();
-  registry.register_provider(Box::new(InMemoryDocsProvider::new())).unwrap();
-  let effect = registry.stage_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
-  apply_prepared_effect(effect).unwrap();
-  let value = registry.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
+  let mut runtime = RuntimeBuilder::new()
+    .in_memory_docs(InMemoryDocsProvider::new())
+    .resource_binding("manual", "docs://manual")
+    .unwrap()
+    .build()
+    .unwrap();
+  runtime
+    .grant_capability(runtime_context_write_grant(
+      &runtime,
+      "docs://manual",
+      "intro/title",
+    ))
+    .unwrap();
+  runtime
+    .grant_capability(runtime_context_read_grant(
+      &runtime,
+      "docs://manual",
+      "intro/title",
+    ))
+    .unwrap();
+  runtime
+    .write_bound_resource(
+      "manual",
+      "intro/title",
+      &bool_value(true),
+    )
+    .unwrap();
+  let value = runtime.read_bound_resource("manual", "intro/title").unwrap();
   assert_bool_true(value, "registry write then read");
 }
 
 #[test]
 fn resource_registry_write_missing_provider_fails() {
-  let mut registry = RuntimeResourceRegistry::new();
-  let result = registry.stage_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let mut runtime = RuntimeBuilder::new()
+    .resource_binding("manual", "docs://manual")
+    .unwrap()
+    .build()
+    .unwrap();
+  runtime
+    .grant_capability(runtime_context_write_grant(
+      &runtime,
+      "docs://manual",
+      "intro/title",
+    ))
+    .unwrap();
+  let result = runtime.write_bound_resource(
+    "manual",
+    "intro/title",
+    &bool_value(true),
+  );
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceProviderNotFound"), "expected missing provider error, got {error}");
@@ -476,7 +546,7 @@ fn repeated_interpreter_fences_merge_before_resolution_and_execution() {
   let root = setup_modules("~~~mech:foo\nx := 1\n~~~\n\nprose stays out\n\n~~~mech:foo\ny := x + 1\n<+ y\n~~~\n\nresult := @foo/y\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
     other => panic!("expected merged interpreter result, got {:?}", other),
@@ -488,7 +558,7 @@ fn faux_tilde_interpreter_fence_inside_markdown_backtick_block_is_ignored() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n```text\n~~~mech:foo\nbroken := missing\n~~~\n```\n\nresult := @foo/ok\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "interpreter ignores faux tilde fence");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "interpreter ignores faux tilde fence");
 }
 
 #[test]
@@ -496,7 +566,7 @@ fn faux_backtick_interpreter_fence_inside_markdown_tilde_block_is_ignored() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n~~~text\n```mech:foo\nbroken := missing\n```\n~~~\n\nresult := @foo/ok\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "interpreter ignores faux backtick fence");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "interpreter ignores faux backtick fence");
 }
 
 #[test]
@@ -572,7 +642,7 @@ fn distinct_interpreter_and_context_names_pass() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\n@manual := docs://foo{:read(ok)}\n\nresult := @foo/ok\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   assert_bool_true(result, "distinct interpreter/context names");
 }
 
@@ -587,7 +657,7 @@ fn context_docs_read_returns_value() {
     .unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   assert_bool_true(result, "context docs read");
 }
 
@@ -604,7 +674,7 @@ fn context_docs_read_uses_provider_base_for_full_requested_uri() {
     .unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual/intro", "title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   assert_bool_true(result, "context docs read from most specific provider");
 }
 
@@ -745,11 +815,11 @@ fn direct_provider_registration_still_works() {
     .unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "direct docs provider registration");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "direct docs provider registration");
 }
 
 #[test]
-fn apply_config_spec_after_build_registers_docs() {
+fn builder_config_spec_registers_docs() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
   let spec = RuntimeConfigSpec::new().with_resource(
     RuntimeResourceConfigSpec::InMemoryDocs(
@@ -759,26 +829,26 @@ fn apply_config_spec_after_build_registers_docs() {
   ).with_capability_grant(read_grant("docs://manual", "intro/title"));
   let mut runtime = RuntimeBuilder::new()
     .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
     .build()
     .unwrap();
-  runtime.apply_config_spec(spec).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "applied config spec docs read");
 }
 
 #[test]
-fn apply_config_spec_after_docs_fallback_can_coexist() {
+fn builder_config_spec_and_docs_fallback_can_coexist() {
   let spec = RuntimeConfigSpec::new().with_resource(
     RuntimeResourceConfigSpec::InMemoryDocs(
       RuntimeInMemoryDocsResourceSpec::new("docs://manual")
         .with_entry("intro/title", bool_value(true)),
     ),
   );
-  let mut runtime = RuntimeBuilder::new()
+  RuntimeBuilder::new()
     .in_memory_docs(InMemoryDocsProvider::new())
+    .config_spec(spec)
     .build()
     .unwrap();
-  runtime.apply_config_spec(spec).unwrap();
 }
 
 #[test]
@@ -799,18 +869,17 @@ fn config_spec_conflicts_with_existing_same_docs_base() {
 }
 
 #[test]
-fn apply_config_spec_conflicts_with_existing_same_docs_base() {
+fn builder_config_spec_conflicts_with_existing_same_docs_base() {
   let spec = RuntimeConfigSpec::new().with_resource(
     RuntimeResourceConfigSpec::InMemoryDocs(
       RuntimeInMemoryDocsResourceSpec::new("docs://manual")
         .with_entry("intro/title", bool_value(true)),
     ),
   );
-  let mut runtime = RuntimeBuilder::new()
+  let result = RuntimeBuilder::new()
     .in_memory_docs(docs_provider_with("docs://manual", "other/title", bool_value(true)))
-    .build()
-    .unwrap();
-  let result = runtime.apply_config_spec(spec);
+    .config_spec(spec)
+    .build();
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceProviderConflict"), "expected provider conflict, got {error}");
@@ -854,7 +923,7 @@ fn registered_module_manifest_context_import_still_resolves() {
     .resolve_and_store_module_source("main.mec", module_options())
     .unwrap()
     .unwrap();
-  let result = match runtime.run_module(version).unwrap() {
+  let result = match runtime.run_module(version).unwrap().result.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -906,7 +975,7 @@ fn interpreter_address_still_works() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/ok\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   assert_bool_true(result, "interpreter address");
 }
 
@@ -915,7 +984,7 @@ fn string_and_comment_address_text_are_not_targets() {
   let root = setup_modules("~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\ntext := \"@bar\"\n-- @bar\n\nok := true\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   let program = main.scopes.iter().find(|scope| scope.scope == SourceScope::Program).unwrap();
   assert!(program.address_references.is_empty(), "expected no program address references, got {:?}", program.address_references);
   let result = runtime.run_module(version);
@@ -923,7 +992,7 @@ fn string_and_comment_address_text_are_not_targets() {
 }
 
 fn foo_scope(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleVersionId) -> SourceScope {
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   main.scopes.iter().find_map(|metadata| match &metadata.scope {
     SourceScope::Interpreter(interpreter) if interpreter.namespace_str == "foo" => Some(metadata.scope.clone()),
     SourceScope::Interpreter(_) | SourceScope::Program => None,
@@ -931,7 +1000,7 @@ fn foo_scope(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleV
 }
 
 fn interpreter_scope_named(runtime: &mech_runtime::MechRuntime, version: mech_runtime::ModuleVersionId, name: &str) -> SourceScope {
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   main.scopes.iter().find_map(|metadata| match &metadata.scope {
     SourceScope::Interpreter(interpreter) if interpreter.namespace_str == name => Some(metadata.scope.clone()),
     SourceScope::Interpreter(_) | SourceScope::Program => None,
@@ -1002,7 +1071,7 @@ fn context_docs_read_prefix_wildcard_allows_nested_path() {
     .unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/*")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   assert_bool_true(result, "context docs prefix wildcard");
 }
 
@@ -1048,7 +1117,7 @@ fn interpreter_scope_context_docs_read_returns_value() {
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let foo = foo_scope(&runtime, version);
-  let result = runtime.run_module_scope(version, foo).unwrap();
+  let result = runtime.run_module_scope(version, foo).unwrap().result.into_value();
   assert_bool_true(result, "interpreter scope context docs read");
 }
 
@@ -1070,7 +1139,7 @@ fn interpreter_address_still_works_from_program() {
   let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/ok\n");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   assert_bool_true(result, "interpreter address from program");
 }
 
@@ -1121,7 +1190,7 @@ fn derived_context_unknown_base_is_rejected() {
 #[test]
 fn direct_runtime_derived_context_without_host_read_preflights() {
   let mut runtime = runtime_with_browser_manifest();
-  runtime.run_string("@base := docs://manual{:read(*)}\n@docs := @base\nx := 1\n").unwrap();
+  runtime.run_string("@base := docs://manual{:read(*)}\n@docs := @base\nx := 1\n").unwrap().into_value();
 }
 
 #[test]
@@ -1131,7 +1200,7 @@ fn direct_runtime_derived_context_read_uses_alias() {
     .build()
     .unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
-  let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base\nresult := @docs/intro/title\n").unwrap();
+  let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base\nresult := @docs/intro/title\n").unwrap().into_value();
   match result {
     Value::String(value) => assert_eq!(&*value.borrow(), "Hello"),
     other => panic!("expected docs title string, got {other:?}"),
@@ -1158,7 +1227,7 @@ fn interpreter_scope_imports_work() {
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let scope = foo_scope(&runtime, version);
-  let result = runtime.run_module_scope(version, scope).unwrap();
+  let result = runtime.run_module_scope(version, scope).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module scope run, got {:?}", other),
@@ -1183,7 +1252,7 @@ fn program_cannot_see_fenced_import_but_interpreter_can() {
   assert!(error.contains("UndefinedVariable"));
   assert!(error.contains("math/tau"));
 
-  let result = runtime.run_module_scope(version, scope).unwrap();
+  let result = runtime.run_module_scope(version, scope).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module scope run, got {:?}", other),
@@ -1200,18 +1269,18 @@ fn interpreter_scope_exports_only_interpreter_exports() {
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let scope = foo_scope(&runtime, version);
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   let foo = main.scopes.iter().find(|metadata| metadata.scope == scope).unwrap();
   assert!(foo.exports.iter().any(|export| export.name == "foo-value"));
   assert!(!foo.exports.iter().any(|export| export.name == "program-value"));
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(!*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
   }
 
-  let result = runtime.run_module_scope(version, scope).unwrap();
+  let result = runtime.run_module_scope(version, scope).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module scope run, got {:?}", other),
@@ -1230,7 +1299,7 @@ fn interpreter_scope_executes_only_matching_import_edges() {
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let scope = foo_scope(&runtime, version);
-  let result = runtime.run_module_scope(version, scope).unwrap();
+  let result = runtime.run_module_scope(version, scope).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module scope run, got {:?}", other),
@@ -1263,7 +1332,7 @@ fn program_reads_interpreter_export_by_indexed_address() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from addressed interpreter export, got {:?}", other),
@@ -1277,7 +1346,7 @@ fn program_reads_interpreter_export_by_address_with_interpreter_import() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from addressed interpreter export with import, got {:?}", other),
@@ -1314,7 +1383,7 @@ fn program_reads_only_requested_interpreter_export() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from requested addressed export, got {:?}", other),
@@ -1413,7 +1482,7 @@ fn module_records_store_scoped_source_declarations_without_execution_changes() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
 
   assert_eq!(main.imports.len(), 3);
   assert_eq!(main.exports.len(), 3);
@@ -1470,12 +1539,12 @@ fn program_scope_imports_still_work() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   let program = main.scopes.iter().find(|scope| scope.scope == SourceScope::Program).unwrap();
   assert_eq!(program.imports.len(), 1);
   assert_eq!(program.imports[0].specifier, "./math.mec");
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1492,7 +1561,7 @@ fn fenced_import_does_not_leak_to_program_scope() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main.imports.len(), 1);
   let program = main.scopes.iter().find(|scope| scope.scope == SourceScope::Program);
   assert!(program.map(|scope| scope.imports.is_empty()).unwrap_or(true));
@@ -1519,7 +1588,7 @@ fn program_and_fenced_imports_do_not_mix() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   let program = main.scopes.iter().find(|scope| scope.scope == SourceScope::Program).unwrap();
   assert_eq!(program.imports.len(), 1);
   assert_eq!(program.imports[0].specifier, "./math.mec");
@@ -1530,7 +1599,7 @@ fn program_and_fenced_imports_do_not_mix() {
   assert_eq!(foo.imports.len(), 1);
   assert_eq!(foo.imports[0].specifier, "./foo.mec");
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1547,7 +1616,7 @@ fn program_and_fenced_can_import_same_module_without_duplicate_program_binding()
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main.imports.len(), 2);
   assert_eq!(main.import_edges.len(), 2);
 
@@ -1562,7 +1631,7 @@ fn program_and_fenced_can_import_same_module_without_duplicate_program_binding()
   assert_eq!(foo_edges.len(), 1);
   assert_eq!(foo_edges[0].import.specifier, "./math.mec");
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1598,7 +1667,7 @@ fn module_records_keep_flat_metadata_for_compatibility() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main.imports.len(), 2);
   assert_eq!(main.import_edges.len(), 2);
   assert!(main.import_edges.iter().any(|edge| edge.scope == SourceScope::Program && edge.import.specifier == "./math.mec"));
@@ -1619,7 +1688,7 @@ fn module_records_keep_flat_metadata_for_compatibility() {
   assert_eq!(foo.imports.len(), 1);
   assert_eq!(foo.imports[0].specifier, "./foo.mec");
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1632,11 +1701,11 @@ fn build_dependency_graph() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main_version = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main_version = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main_version.dependencies.len(), 1);
   assert_eq!(main_version.imports.len(), 1);
   assert_eq!(main_version.import_edges.len(), 1);
-  let dep_version = runtime.store().get_module_version(main_version.dependencies[0]).unwrap().unwrap();
+  let dep_version = runtime.get_module_version(main_version.dependencies[0]).unwrap().unwrap();
   assert!(dep_version.exports.iter().any(|e| e.name == "tau"));
 }
 
@@ -1648,7 +1717,7 @@ fn run_module() {
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
   let result = runtime.run_module(version);
   assert!(result.is_ok());
-  match result.unwrap() {
+  match result.unwrap().result.into_value() {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
   }
@@ -1660,7 +1729,7 @@ fn file_import_exposes_exports_under_file_stem_namespace() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1699,7 +1768,7 @@ fn namespace_import_exposes_exports_under_module_namespace() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1712,7 +1781,7 @@ fn single_import_exposes_export_unqualified() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1725,7 +1794,7 @@ fn wildcard_import_exposes_all_exports_unqualified() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(*value.borrow()),
     other => panic!("expected bool result from module run, got {:?}", other),
@@ -1771,7 +1840,7 @@ fn re_export_works() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   match result { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
 }
 
@@ -1781,7 +1850,7 @@ fn module_version_records_import_edges() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main.imports.len(), 1);
   assert_eq!(main.contexts.len(), 0);
   assert_eq!(main.dependencies.len(), 1);
@@ -1801,7 +1870,7 @@ fn module_version_records_multiple_import_edges_in_order() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main.import_edges.len(), 2);
   assert_eq!(main.import_edges[0].scope, SourceScope::Program);
   assert_eq!(main.import_edges[1].scope, SourceScope::Program);
@@ -1809,7 +1878,7 @@ fn module_version_records_multiple_import_edges_in_order() {
   assert_eq!(main.import_edges[1].import.specifier, "./b.mec");
   assert!(main.dependencies.contains(&main.import_edges[0].dependency));
   assert!(main.dependencies.contains(&main.import_edges[1].dependency));
-  match runtime.run_module(version).unwrap() { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
+  match runtime.run_module(version).unwrap().result.into_value() { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
 }
 
 #[test]
@@ -1818,7 +1887,7 @@ fn module_version_records_contexts() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(main.contexts.len(), 1);
   assert_eq!(main.contexts[0].name, "main");
   assert_eq!(main.contexts[0].capabilities.len(), 2);
@@ -1882,8 +1951,15 @@ fn module_host_call_works_inside_isolated_execution() {
   std::fs::create_dir_all(&root).unwrap();
   std::fs::write(root.join("math.mec"), "tau := demo/value()\n<+ tau\n").unwrap();
   std::fs::write(root.join("main.mec"), "+> ./math.mec\nok := math/tau > 40\n").unwrap();
-  let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/value", |_s, _c, _a| Ok(Value::F64(Ref::new(42.0))))).unwrap();
+  let mut runtime = RuntimeBuilder::new()
+    .source_resolver(FileSourceResolver::new(&root))
+    .host_function(ClosureHostFunction::new_pure(
+      "demo/value",
+      |_s, _c, _a| Ok(Value::F64(Ref::new(42.0))),
+    ))
+    .unwrap()
+    .build()
+    .unwrap();
   runtime.grant_capability(std::sync::Arc::new(BasicCapability::new(
     CapabilityId(1),
     &BasicSubject::new("program:module-host-test"),
@@ -1892,8 +1968,8 @@ fn module_host_call_works_inside_isolated_execution() {
   ))).unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let mut context = runtime.runtime_context().unwrap().with_subject("program:module-host-test");
-  let result = runtime.run_module_with_context(&mut context, version).unwrap();
+  let mut context = context_for_subject(&mut runtime, "program:module-host-test").unwrap();
+  let result = runtime.run_module_with_context(&mut context, version).unwrap().result.into_value();
   match result { Value::Bool(v) => assert!(*v.borrow()), other => panic!("expected bool got {:?}", other) }
 }
 
@@ -1903,9 +1979,9 @@ fn repeated_run_module_is_not_stale() {
   let mut runtime = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)).build().unwrap();
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().unwrap();
-  let first = runtime.run_module(version).unwrap();
+  let first = runtime.run_module(version).unwrap().result.into_value();
   std::fs::write(root.join("math.mec"), "tau := 5.0\n<+ tau\n").unwrap();
-  let second = runtime.run_module(version).unwrap();
+  let second = runtime.run_module(version).unwrap().result.into_value();
   match (first, second) {
     (Value::Bool(a), Value::Bool(b)) => {
       assert!(*a.borrow());
@@ -2032,23 +2108,23 @@ fn direct_provider_read_with_runtime_grant_still_works() {
     .in_memory_docs(provider)
     .build()
     .unwrap();
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime.grant_capability(runtime_read_grant_for(&subject, "docs://manual", "intro/title")).unwrap();
   assert!(runtime.has_capability_grant(&subject, "docs://manual", &RuntimeCapabilityOperation::Read, "intro/title"));
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "runtime grant");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "runtime grant");
 }
 
 #[test]
-fn apply_config_spec_after_build_registers_resources_and_grants() {
+fn builder_config_spec_registers_resources_and_grants() {
   let root = setup_modules("@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n");
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://manual", "intro/title"));
   let mut runtime = RuntimeBuilder::new()
     .source_resolver(FileSourceResolver::new(&root))
+    .config_spec(spec)
     .build()
     .unwrap();
-  runtime.apply_config_spec(spec).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   assert_bool_true(run_module_as_main(&mut runtime, version).unwrap(), "apply spec");
 }
@@ -2126,7 +2202,7 @@ fn workspace_load_target_without_imports() {
   let target = snapshot.targets.get("main").unwrap();
   assert!(snapshot.sources.contains_key(&target.canonical_uri));
   assert!(workspace.target("main").is_some());
-  assert_bool_true(runtime.run_module(target.module_version).unwrap(), "workspace target");
+  assert_bool_true(runtime.run_module(target.module_version).unwrap().result.into_value(), "workspace target");
 }
 
 #[test]
@@ -2167,7 +2243,7 @@ fn workspace_load_target_with_local_import() {
   }));
 
   assert_bool_true(
-    runtime.run_module(target.module_version).unwrap(),
+    runtime.run_module(target.module_version).unwrap().result.into_value(),
     "workspace imported target",
   );
 }
@@ -2208,7 +2284,7 @@ fn workspace_load_relative_target_uses_workspace_root() {
 
   let target = snapshot.targets.get("main").unwrap();
   assert_eq!(target.specifier, "main.mec");
-  let result = runtime.run_module(target.module_version).unwrap();
+  let result = runtime.run_module(target.module_version).unwrap().result.into_value();
   match result {
     Value::Bool(value) => assert!(!*value.borrow()),
     other => panic!("expected false bool result from workspace root target, got {:?}", other),
@@ -2274,7 +2350,7 @@ fn workspace_load_multiple_targets_continues_after_failure() {
   assert_eq!(snapshot.diagnostics.len(), 1);
   assert_eq!(snapshot.diagnostics[0].target.as_deref(), Some("missing"));
   let target = snapshot.targets.get("main").unwrap();
-  assert_bool_true(runtime.run_module(target.module_version).unwrap(), "workspace surviving target");
+  assert_bool_true(runtime.run_module(target.module_version).unwrap().result.into_value(), "workspace surviving target");
 }
 
 
@@ -2316,7 +2392,7 @@ fn workspace_refresh_modified_dependency_reloads_target() {
   ).unwrap();
 
   let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
-  assert_bool_false(runtime.run_module(snapshot.targets["main"].module_version).unwrap(), "initial workspace dependency");
+  assert_bool_false(runtime.run_module(snapshot.targets["main"].module_version).unwrap().result.into_value(), "initial workspace dependency");
   std::fs::write(root.join("math.mec"), "value := true\n<+ value\n").unwrap();
 
   let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
@@ -2325,7 +2401,7 @@ fn workspace_refresh_modified_dependency_reloads_target() {
   assert!(refresh.changes[0].canonical_uri.ends_with("/math.mec"));
   assert_eq!(refresh.affected_targets, vec!["main"]);
   assert!(refresh.refresh_diagnostics.is_empty());
-  assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace dependency");
+  assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap().result.into_value(), "refreshed workspace dependency");
 }
 
 #[test]
@@ -2375,7 +2451,7 @@ fn workspace_refresh_modified_target_reloads_target() {
   ).unwrap();
 
   let snapshot = workspace.load(&mut runtime, module_options()).unwrap();
-  assert_bool_false(runtime.run_module(snapshot.targets["main"].module_version).unwrap(), "initial workspace target");
+  assert_bool_false(runtime.run_module(snapshot.targets["main"].module_version).unwrap().result.into_value(), "initial workspace target");
   std::fs::write(root.join("main.mec"), "result := true\n").unwrap();
 
   let refresh = workspace.refresh(&mut runtime, module_options()).unwrap();
@@ -2384,7 +2460,7 @@ fn workspace_refresh_modified_target_reloads_target() {
   assert!(refresh.changes[0].canonical_uri.ends_with("/main.mec"));
   assert_eq!(refresh.affected_targets, vec!["main"]);
   assert!(refresh.refresh_diagnostics.is_empty());
-  assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap(), "refreshed workspace target");
+  assert_bool_true(runtime.run_module(refresh.snapshot.targets["main"].module_version).unwrap().result.into_value(), "refreshed workspace target");
 }
 
 #[test]
@@ -2419,7 +2495,7 @@ fn workspace_refresh_preserves_unaffected_diagnostics() {
 
   let target = refresh.snapshot.targets.get("main").unwrap();
   assert_bool_true(
-    runtime.run_module(target.module_version).unwrap(),
+    runtime.run_module(target.module_version).unwrap().result.into_value(),
     "refreshed workspace target with retained diagnostic",
   );
 }
@@ -2529,7 +2605,7 @@ result := @foo/ok\n",
     .unwrap()
     .unwrap();
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
 
   match result {
     Value::Bool(value) => assert_eq!(*value.borrow(), true),
@@ -2560,7 +2636,7 @@ result := @foo/ok\n",
     .unwrap()
     .unwrap();
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
 
   match result {
     Value::Bool(value) => assert_eq!(*value.borrow(), true),
@@ -2573,7 +2649,7 @@ fn manifest_context_import_materializes_without_source_dependency() {
   let root = setup_modules("+> @ui := browser/dom\nx := 1\n");
   let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
 
   assert_eq!(record.imports.len(), 1);
   assert_eq!(record.import_edges.len(), 0);
@@ -2610,7 +2686,7 @@ fn context_import_alias_is_not_bound_as_value_import() {
   let root = setup_modules("+> @ui := browser/dom\n+> ./math.mec\nresult := ui\n");
   let mut runtime = runtime_with_root_and_browser_manifest(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(record.imports.len(), 2);
   assert_eq!(record.import_edges.len(), 1);
   assert!(record.import_edges.iter().all(|edge| !matches!(edge.import.alias, Some(SourceImportAlias::Context(_)))));
@@ -2625,7 +2701,7 @@ fn context_import_alias_is_not_bound_as_value_import() {
 #[test]
 fn direct_runtime_normal_import_is_not_dropped() {
   let mut runtime = runtime_with_browser_manifest();
-  let result = runtime.run_string("+> math/sin\nresult := sin(0)\n").unwrap();
+  let result = runtime.run_string("+> math/sin\nresult := sin(0)\n").unwrap().into_value();
 
   match result {
     Value::F64(value) => assert_eq!(*value.borrow(), 0.0),
@@ -2754,10 +2830,10 @@ fn function_module_import_source_edge_takes_precedence() {
     .resolve_and_store_module_source("main.mec", module_options())
     .unwrap()
     .unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(record.import_edges.len(), 1);
 
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
 
   assert_f64(result, 6.28318, "source module import precedence");
   std::fs::remove_dir_all(root).unwrap();
@@ -2791,7 +2867,7 @@ fn workspace_module_build_allows_linked_stdlib_namespace_import_without_source_f
     .unwrap();
 
   let version = version.unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   assert!(record.dependencies.is_empty());
   assert!(record.import_edges.is_empty());
   std::fs::remove_dir_all(root).unwrap();
@@ -2807,7 +2883,7 @@ fn workspace_module_build_allows_linked_stdlib_item_import_without_source_file()
     .unwrap();
 
   let version = version.unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   assert!(record.dependencies.is_empty());
   assert!(record.import_edges.is_empty());
   std::fs::remove_dir_all(root).unwrap();
@@ -2821,11 +2897,11 @@ ok := math/tau > 6.0
   let mut runtime = runtime_with_root(&root);
 
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(record.dependencies.len(), 1);
   assert_eq!(record.import_edges.len(), 1);
 
-  assert_bool_true(runtime.run_module(version).unwrap(), "local namespace import");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "local namespace import");
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -2837,11 +2913,11 @@ ok := tau > 6.0
   let mut runtime = runtime_with_root(&root);
 
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   assert_eq!(record.dependencies.len(), 1);
   assert_eq!(record.import_edges.len(), 1);
 
-  assert_bool_true(runtime.run_module(version).unwrap(), "local item import");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "local item import");
   std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -2868,7 +2944,7 @@ fn stored_module_manifest_context_import_ordering_supports_derived_alias() {
     .unwrap()
     .unwrap();
 
-  let record = runtime.store().get_module_version(version).unwrap().unwrap();
+  let record = runtime.get_module_version(version).unwrap().unwrap();
   let program_scope = record
     .scopes
     .iter()
@@ -3152,9 +3228,14 @@ fn with_test_cli_registers_cli_provider_for_instance_bases() {
 #[test]
 fn runtime_bind_context_export_resolves_host_interface() {
   let backend = FakeCliBackend::default();
-  let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-
-  runtime.bind_context_export("out", "cli", "stdout").unwrap();
+  let runtime = with_test_cli(
+    RuntimeBuilder::new()
+      .context_export_binding("out", "cli", "stdout")
+      .unwrap(),
+    backend,
+  )
+  .build()
+  .unwrap();
 
   let binding = runtime.resource_binding("out").unwrap();
   assert_eq!(binding.base_uri, "cli://cli/stdout");
@@ -3172,13 +3253,13 @@ fn runtime_bind_context_export_falls_back_to_module_manifest() {
       operations: vec!["read".to_string()],
     }],
   };
-  let mut runtime = RuntimeBuilder::new()
+  let runtime = RuntimeBuilder::new()
     .module_manifest(manifest)
+    .unwrap()
+    .context_export_binding("doc", "docs", "page")
     .unwrap()
     .build()
     .unwrap();
-
-  runtime.bind_context_export("doc", "docs", "page").unwrap();
 
   let binding = runtime.resource_binding("doc").unwrap();
   assert_eq!(binding.base_uri, "docs://manual");
@@ -3197,14 +3278,15 @@ fn runtime_bind_context_export_host_unknown_context_does_not_fallback() {
     }],
   };
   let backend = FakeCliBackend::default();
-  let mut runtime = with_test_cli(
-    RuntimeBuilder::new().module_manifest(manifest).unwrap(),
+  let result = with_test_cli(
+    RuntimeBuilder::new()
+      .module_manifest(manifest)
+      .unwrap()
+      .context_export_binding("bad", "cli", "missing")
+      .unwrap(),
     backend,
   )
-  .build()
-  .unwrap();
-
-  let result = runtime.bind_context_export("bad", "cli", "missing");
+  .build();
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("HostInterfaceUnknownContext"), "got {error}");
@@ -3261,7 +3343,7 @@ fn cli_manifest_env_import_reads_through_runtime() {
 ")
     .unwrap();
 
-  let result = match result {
+  let result = match result.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3392,8 +3474,7 @@ fn cli_host_env_manifest_import_reads_with_runtime_grant() {
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
-  let id = hash_str("home");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  let value = runtime.root_symbol_value("home").unwrap().into_value();
   match value {
     Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/mech-home"),
     other => panic!("expected string home, got {other:?}"),
@@ -3406,7 +3487,7 @@ fn cli_host_stdout_send_writes_line_with_runtime_grant() {
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap().into_value();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
@@ -3416,7 +3497,7 @@ fn cli_host_stderr_send_writes_text_with_runtime_grant() {
   let stderr = backend.stderr.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
-  runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n").unwrap();
+  runtime.run_string("+> @err := cli/stderr\n@err/text <- \"warning\"\n").unwrap().into_value();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
 }
 
@@ -3492,7 +3573,7 @@ fn default_cli_stdout_grant_allows_send() {
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://cli/stdout", "text")).unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap().into_value();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
@@ -3501,7 +3582,7 @@ fn narrow_env_grant_permits_path_but_denies_home() {
   let backend = FakeCliBackend::default().with_env("PATH", "/bin").with_env("HOME", "/tmp/home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://cli/env", "PATH")).unwrap();
-  runtime.run_string("+> @env := cli/env\npath := @env/PATH\n").unwrap();
+  runtime.run_string("+> @env := cli/env\npath := @env/PATH\n").unwrap().into_value();
   let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
   assert!(result.is_err());
   assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
@@ -3513,7 +3594,7 @@ fn narrow_stdout_grant_permits_line_but_denies_text() {
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap();
+  runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap().into_value();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n");
   assert!(result.is_err());
   assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
@@ -3705,7 +3786,7 @@ fn activation_arm_context_read_pattern_is_lowered_when_allowed() {
     "MECH_ACTIVATION_PATTERN".to_string(),
     "expected".to_string(),
   );
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime.grant_capability(RuntimeCapabilityGrant {
     subject,
     resource: "cli://cli/env".to_string(),
@@ -3728,12 +3809,10 @@ event := \"expected\"
 
   assert!(result.is_ok(), "allowed activation context pattern failed: {result:?}");
   assert_eq!(runtime.live_input_binding_count(), 1);
-  let registration = {
-    let plan = runtime.program().interpreter().plan();
-    let registrations = plan.pattern_activation_registrations();
-    assert_eq!(registrations.len(), 1);
-    registrations[0].clone()
-  };
+  assert_bool_true(
+    runtime.root_symbol_value("selected").unwrap(),
+    "the initial activation should match the host pattern",
+  );
 
   let update = runtime.apply_host_input(RuntimeHostInput::single(
     RuntimeHostInputSource::new("cli://env", "MECH_ACTIVATION_PATTERN").unwrap(),
@@ -3741,47 +3820,10 @@ event := \"expected\"
   )).unwrap();
   assert_eq!(update.binding_count, 1);
   assert_eq!(update.ignored_update_count, 0);
-  if let Some(turn) = &update.turn {
-    for interpreter_turn in &turn.interpreter_turns {
-      let executed_nodes = interpreter_turn
-        .turn
-        .before_commit
-        .executed_nodes
-        .iter()
-        .chain(interpreter_turn.turn.after_commit.executed_nodes.iter())
-        .copied()
-        .collect::<Vec<_>>();
-      assert!(!executed_nodes.contains(&registration.scope_pulse_node));
-      assert!(!executed_nodes.contains(&registration.selector_node));
-      for arm in &registration.arms {
-        assert!(!executed_nodes.contains(&arm.matcher_node));
-        assert!(!executed_nodes.contains(&arm.finalizer_node));
-        assert!(!executed_nodes.contains(&arm.gate_node));
-      }
-    }
-  }
-
-  let trigger = {
-    let symbols = runtime.program().interpreter().symbols();
-    let event = symbols.borrow().get(hash_str("event")).unwrap().borrow().clone();
-    event.reactive_root_cell_ids()[0]
-  };
-  let trigger_turn = runtime
-    .program_mut()
-    .interpreter_mut()
-    .advance_reactive_turn(&[trigger])
-    .unwrap();
-  let changed_nodes = trigger_turn
-    .before_commit
-    .changed_nodes
-    .iter()
-    .chain(trigger_turn.after_commit.changed_nodes.iter())
-    .copied()
-    .collect::<Vec<_>>();
-  assert!(!changed_nodes.contains(&registration.arms[0].gate_node));
-  assert!(
-    changed_nodes.contains(&registration.arms[1].gate_node),
-    "the trigger did not sample the updated pattern value",
+  runtime.run_string("event = \"next\"\n").unwrap();
+  assert_bool_true(
+    runtime.root_symbol_value("selected").unwrap(),
+    "the supported reactive turn should sample the updated host pattern",
   );
 }
 
@@ -3845,7 +3887,7 @@ fn match_arm_context_read_pattern_compares_value_when_allowed() {
     "expected".to_string(),
   );
 
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime.grant_capability(RuntimeCapabilityGrant {
     subject,
     resource: "cli://cli/env".to_string(),
@@ -3862,7 +3904,7 @@ result
 ",
   ).unwrap();
 
-  let matching = match matching {
+  let matching = match matching.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3877,7 +3919,7 @@ mismatch
 ",
   ).unwrap();
 
-  let mismatching = match mismatching {
+  let mismatching = match mismatching.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3892,7 +3934,7 @@ wrapped
 ",
   ).unwrap();
 
-  let wrapped_matching = match wrapped_matching {
+  let wrapped_matching = match wrapped_matching.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3910,7 +3952,7 @@ wrappedMismatch
 ",
   ).unwrap();
 
-  let wrapped_mismatching = match wrapped_mismatching {
+  let wrapped_mismatching = match wrapped_mismatching.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3945,7 +3987,7 @@ matched
 ",
   ).unwrap();
 
-  let bool_matching = match bool_matching {
+  let bool_matching = match bool_matching.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3964,7 +4006,7 @@ mismatched
 ",
   ).unwrap();
 
-  let bool_mismatching = match bool_mismatching {
+  let bool_mismatching = match bool_mismatching.into_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -3984,9 +4026,9 @@ fn run_tree_with_context_preflight_failure_emits_failure_and_profile_events() {
   let tree = mech_syntax::parser::parse("+> @env := cli/env\nhome := @env/HOME\n").unwrap();
   let result = runtime.run_tree_with_context(&mut context, &tree);
   assert!(result.is_err());
-  assert!(!context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
-  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
-  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
+  assert!(!context.events().iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(context.events().iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
+  assert!(context.events().iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
 }
 
 
@@ -4025,7 +4067,7 @@ fn module_preflight_denial_emits_program_failed_event() {
   );
   assert!(
     !context
-      .events
+      .events()
       .iter()
       .any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })),
     "graph preflight should fail before module program execution starts"
@@ -4038,8 +4080,7 @@ fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\n").unwrap();
-  let id = hash_str("home");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  let value = runtime.root_symbol_value("home").unwrap();
   assert_string_value(value, "/tmp/direct-home");
 }
 
@@ -4049,7 +4090,7 @@ fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
-  runtime.run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"hello\"\n").unwrap();
+  runtime.run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"hello\"\n").unwrap().into_value();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
@@ -4059,7 +4100,7 @@ fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
   let stderr = backend.stderr.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
-  runtime.run_string("@err := cli://stderr{:write(text)}\n@err/text <- \"warning\"\n").unwrap();
+  runtime.run_string("@err := cli://stderr{:write(text)}\n@err/text <- \"warning\"\n").unwrap().into_value();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
 }
 
@@ -4088,7 +4129,7 @@ fn cli_context_module_read_exports_value() {
   let mut runtime = with_test_cli(RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
   let result = match result {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
@@ -4107,7 +4148,7 @@ fn cli_context_module_send_is_not_stripped() {
   let mut runtime = with_test_cli(RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)), backend).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  runtime.run_module(version).unwrap();
+  runtime.run_module(version).unwrap().result.into_value();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
   assert_eq!(runtime.persistent_send_count(), 0);
 }
@@ -4213,8 +4254,8 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
   }
 }
 
-fn assert_string_value(value: Value, expected: &str) {
-  let value = match value {
+fn assert_string_value(value: impl IntoTestValue, expected: &str) {
+  let value = match value.into_test_value() {
     Value::MutableReference(value) => value.borrow().clone(),
     other => other,
   };
@@ -4230,8 +4271,7 @@ fn cli_context_direct_read_resolves_inside_formula_expression() {
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
   runtime.run_string("+> @env := cli/env\nmsg := \"HOME=\" + @env/HOME\n").unwrap();
-  let id = hash_str("msg");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  let value = runtime.root_symbol_value("msg").unwrap();
   assert_string_value(value, "HOME=/tmp/home");
 }
 
@@ -4240,7 +4280,7 @@ fn cli_context_standalone_expression_returns_env_value() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
-  let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap();
+  let value = runtime.run_string("+> @env := cli/env\n@env/HOME\n").unwrap().into_value();
   assert_string_value(value, "/tmp/home");
 }
 
@@ -4278,7 +4318,7 @@ fn docs_context_write_with_runtime_grant_reaches_provider() {
   let writes = provider.writes.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   runtime.grant_capability(runtime_context_write_grant(&runtime, "docs://manual", "intro/title")).unwrap();
-  runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n").unwrap();
+  runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n").unwrap().into_value();
   let writes = writes.lock().unwrap();
   assert_eq!(writes.len(), 1);
   assert_eq!(writes[0].0, "docs://manual");
@@ -4293,8 +4333,7 @@ fn browser_context_subroot_normalizes_to_provider_base_path() {
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "browser://dom", "counter/text")).unwrap();
   runtime.run_string("@ui := browser://dom/counter{:read(text)}\ntitle := @ui/text\n").unwrap();
-  let id = hash_str("title");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  let value = runtime.root_symbol_value("title").unwrap();
   assert_string_value(value, "count");
 }
 
@@ -4305,8 +4344,7 @@ fn docs_context_subroot_normalizes_to_provider_base_path() {
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
   runtime.run_string("@manual := docs://manual/intro{:read(title)}\ntitle := @manual/title\n").unwrap();
-  let id = hash_str("title");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  let value = runtime.root_symbol_value("title").unwrap();
   assert_string_value(value, "Manual");
 }
 
@@ -4316,7 +4354,7 @@ fn context_write_uses_active_runtime_context_subject() {
   let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
   let writes = provider.writes.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
-  let mut context = runtime.runtime_context().unwrap().with_subject("task://custom");
+  let mut context = context_for_subject(&mut runtime, "task://custom").unwrap();
 
   runtime.grant_capability(runtime_write_grant_for("task://custom", "docs://manual", "intro/title")).unwrap();
 
@@ -4334,7 +4372,7 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
   let writes = provider.writes.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
   runtime.grant_capability(runtime_write_grant_for("task://main", "docs://manual", "intro/title")).unwrap();
-  let mut context = runtime.runtime_context().unwrap().with_subject("task://custom");
+  let mut context = context_for_subject(&mut runtime, "task://custom").unwrap();
 
   let result = runtime.run_string_with_context(
     &mut context,
@@ -4351,7 +4389,7 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 fn unqualified_fenced_context_import_is_available_to_program_execution() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/fenced-home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  let mut context = runtime.runtime_context().unwrap().with_subject("task://fenced");
+  let mut context = context_for_subject(&mut runtime, "task://fenced").unwrap();
   runtime.grant_capability(RuntimeCapabilityGrant {
     subject: "task://fenced".to_string(),
     resource: "cli://cli/env".to_string(),
@@ -4368,8 +4406,7 @@ home := @env/HOME
 ",
   ).unwrap();
 
-  let id = hash_str("home");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
+  let value = runtime.root_symbol_value("home").unwrap();
   assert_string_value(value, "/tmp/fenced-home");
 }
 
@@ -4443,7 +4480,7 @@ fn module_context_read_after_context_write_uses_execution_order() {
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
 
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
 
   assert_string_value(result, "hello");
 }
@@ -4465,7 +4502,7 @@ fn module_context_read_after_context_write_ignores_stale_provider_value() {
   runtime.grant_capability(runtime_context_read_grant(&runtime, "docs://manual", "intro/title")).unwrap();
 
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  let result = runtime.run_module(version).unwrap();
+  let result = runtime.run_module(version).unwrap().result.into_value();
 
   assert_string_value(result, "new");
 }
@@ -4483,12 +4520,11 @@ fn direct_context_read_resolves_inside_op_assign() {
 
   runtime.run_string("@numbers := docs://numbers{:read(increment)}\n~total := 1.0\ntotal += @numbers/increment\n").unwrap();
 
-  let id = hash_str("total");
-  let value = runtime.program().interpreter().symbols().borrow().get(id).unwrap().borrow().clone();
-  match value {
-    Value::F64(value) => assert_eq!(*value.borrow(), 3.0),
-    other => panic!("expected f64 total, got {other:?}"),
-  }
+  assert_f64(
+    runtime.root_symbol_value("total").unwrap(),
+    3.0,
+    "direct context read inside op-assign",
+  );
 }
 
 
@@ -4799,7 +4835,7 @@ result := @foo/ok
 ");
   let mut runtime = runtime_with_root(&root);
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
-  assert_bool_true(runtime.run_module(version).unwrap(), "interpreter address from program");
+  assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "interpreter address from program");
 }
 
 #[test]
@@ -4930,7 +4966,7 @@ result := pick("not-secret") == "missed"
     .unwrap();
 
   assert_bool_true(
-    runtime.run_module(version).unwrap(),
+    runtime.run_module(version).unwrap().result.into_value(),
     "module interpreter address pattern should compare, not capture",
   );
 }
@@ -4956,7 +4992,7 @@ result := pick("secret") == "matched"
     .unwrap();
 
   assert_bool_true(
-    runtime.run_module(version).unwrap(),
+    runtime.run_module(version).unwrap().result.into_value(),
     "module interpreter address pattern should match exported value",
   );
 }
@@ -4974,30 +5010,25 @@ fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
   runtime
     .run_source_with_context(&mut context, &MechSourceCode::String("y := 1.0".to_string()))
     .unwrap();
-  let plan_len = runtime.program().interpreter().plan_len();
-  let y = runtime.program().interpreter().symbols().borrow().get(hash_str("y")).unwrap();
-  let y_ptr = y.as_ptr();
-  assert_eq!(*y.borrow().as_f64().unwrap().borrow(), 1.0);
-  assert!(runtime.program().interpreter().symbols().borrow().get(hash_str("x")).is_none());
+  let plan_len = runtime.root_plan_len();
+  assert_f64(runtime.root_symbol_value("y").unwrap(), 1.0, "initial y");
+  assert!(runtime.root_symbol_value("x").is_err());
 
   let bytecode_result = runtime
     .run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode))
     .unwrap();
-  assert_eq!(bytecode_result, Value::F64(Ref::new(2.0)));
-  let symbols = runtime.program().interpreter().symbols();
-  let y_after = symbols.borrow().get(hash_str("y")).unwrap();
-  assert_eq!(y_after.as_ptr(), y_ptr);
-  assert_eq!(*y_after.borrow().as_f64().unwrap().borrow(), 1.0);
-  assert!(symbols.borrow().get(hash_str("x")).is_none());
-  assert_eq!(runtime.program().interpreter().plan_len(), plan_len);
+  assert_f64(bytecode_result, 2.0, "bytecode result");
+  assert_f64(runtime.root_symbol_value("y").unwrap(), 1.0, "restored y");
+  assert!(runtime.root_symbol_value("x").is_err());
+  assert_eq!(runtime.root_plan_len(), plan_len);
 
   let result = runtime
     .run_source_with_context(&mut context, &MechSourceCode::String("x := 3.0".to_string()))
     .unwrap();
 
-  assert_eq!(result, Value::F64(Ref::new(3.0)));
-  assert_eq!(*runtime.program().interpreter().symbols().borrow().get(hash_str("x")).unwrap().borrow().as_f64().unwrap().borrow(), 3.0);
-  assert_eq!(*runtime.program().interpreter().symbols().borrow().get(hash_str("y")).unwrap().borrow().as_f64().unwrap().borrow(), 1.0);
+  assert_f64(result, 3.0, "source result");
+  assert_f64(runtime.root_symbol_value("x").unwrap(), 3.0, "source x");
+  assert_f64(runtime.root_symbol_value("y").unwrap(), 1.0, "preserved y");
 }
 
 #[test]
@@ -5018,7 +5049,9 @@ fn run_bytecode_error_restores_previous_program_state() {
     .run_source_with_context(&mut context, &MechSourceCode::String("z := y + 1".to_string()))
     .unwrap();
 
-  assert_eq!(result, Value::F64(Ref::new(2.0)));
+  assert_f64(result, 2.0, "source after rejected bytecode");
+  assert_f64(runtime.root_symbol_value("y").unwrap(), 1.0, "restored y");
+  assert!(runtime.root_symbol_value("x").is_err());
 }
 
 #[test]
@@ -5033,8 +5066,8 @@ fn run_source_with_context_bytecode_emits_completion_and_profile_events() {
   let mut context = runtime.runtime_context().unwrap();
   let result = runtime.run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode)).unwrap();
 
-  assert_eq!(result, Value::F64(Ref::new(3.0)));
-  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
-  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramCompleted { .. })));
-  assert!(context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
+  assert_f64(result, 3.0, "bytecode result");
+  assert!(context.events().iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramStarted { .. })));
+  assert!(context.events().iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramCompleted { .. })));
+  assert!(context.events().iter().any(|event| matches!(event.kind, RuntimeEventKind::ProgramProfiled { .. })));
 }
