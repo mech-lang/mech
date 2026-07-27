@@ -4,8 +4,46 @@ use super::*;
 use std::cell::RefCell;
 use mech_core::MechExecutionServices;
 use mech_program::{
-  ProgramInputUpdate, ProgramTurnFinalization,
+  ExecutionServicesBorrowConflict, ProgramInputUpdate,
+  ProgramTurnFinalization,
 };
+
+#[cfg(test)]
+thread_local! {
+  static COORDINATED_SERVICE_REENTRY:
+    RefCell<Option<&'static str>> = const { RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn arm_coordinated_service_reentry(name: &'static str) {
+  COORDINATED_SERVICE_REENTRY.with(|armed| {
+    assert!(
+      armed.replace(Some(name)).is_none(),
+      "coordinated service reentry was already armed",
+    );
+  });
+}
+
+#[cfg(test)]
+fn take_coordinated_service_reentry(name: &str) -> bool {
+  COORDINATED_SERVICE_REENTRY.with(|armed| {
+    if *armed.borrow() != Some(name) {
+      return false;
+    }
+    armed.replace(None);
+    true
+  })
+}
+
+fn execution_services_borrow_conflict(
+  operation: &'static str,
+) -> MechError {
+  MechError::new(
+    ExecutionServicesBorrowConflict { operation },
+    None,
+  )
+  .with_compiler_loc()
+}
 
 struct RuntimeCoordinatedTurn<'a> {
   runtime: &'a mut MechRuntime,
@@ -25,7 +63,21 @@ impl MechExecutionServices
     name: &str,
     arguments: &[Value],
   ) -> MResult<Value> {
-    let mut turn = self.turn.borrow_mut();
+    let mut turn = self
+      .turn
+      .try_borrow_mut()
+      .map_err(|_| {
+        execution_services_borrow_conflict(
+          "runtime_invoke_native",
+        )
+      })?;
+    #[cfg(test)]
+    if take_coordinated_service_reentry(name) {
+      let mut nested = RuntimeCoordinatedExecutionServices {
+        turn: self.turn,
+      };
+      return nested.invoke_native(name, arguments);
+    }
     let RuntimeCoordinatedTurn {
       runtime,
       context,
@@ -294,7 +346,16 @@ impl MechRuntime {
     let execution_result = std::panic::catch_unwind(
       std::panic::AssertUnwindSafe(|| {
         let mut finalize = |value: &T| {
-          let mut turn = turn.borrow_mut();
+          let mut turn = match turn.try_borrow_mut() {
+            Ok(turn) => turn,
+            Err(_) => {
+              return ProgramTurnFinalization::Rollback(
+                execution_services_borrow_conflict(
+                  "runtime_finalize_reactive_turn",
+                ),
+              );
+            }
+          };
           let RuntimeCoordinatedTurn {
             runtime,
             context,
@@ -354,6 +415,8 @@ impl MechRuntime {
       }),
     );
     {
+      // The execution callback has returned, so every adapter and finalizer
+      // borrow is out of scope. This local RefCell never escapes this method.
       let mut turn = turn.borrow_mut();
       turn.runtime.program = program;
     }
@@ -489,10 +552,11 @@ mod tests {
     BasicSubject, SharedCapabilityKernel,
   };
   use crate::{
-    PlannedRuntimeManagedHostFunction,
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect,
+    PlannedPureHostFunction, PlannedRuntimeManagedHostFunction,
+    PlannedStagedHostFunction, PreparedRuntimeEffect,
+    RuntimeAfterCommitEffect,
     RuntimeEffectMetadata, RuntimeEffectSource,
-    RuntimeTransactionalEffect,
+    RuntimePreparedHostCall, RuntimeTransactionalEffect,
   };
   use super::super::program_transaction::{
     reset_runtime_program_checkpoint_count,
@@ -506,6 +570,65 @@ mod tests {
     output: Ref<usize>,
     calls: Rc<RefCell<usize>>,
     fail_on_call: Option<usize>,
+  }
+
+  struct ReentrantRuntimeServiceFunction {
+    output: Ref<usize>,
+    staged_host: &'static str,
+    reentrant_host: &'static str,
+  }
+
+  impl ReentrantRuntimeServiceFunction {
+    fn execute(
+      &self,
+      services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+      *self.output.borrow_mut() += 1;
+      services.invoke_native(self.staged_host, &[])?;
+      services.invoke_native(self.reentrant_host, &[])?;
+      Ok(())
+    }
+  }
+
+  impl MechFunctionImpl for ReentrantRuntimeServiceFunction {
+    fn solve(&self) {}
+
+    fn solve_result_with(
+      &self,
+      services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+      self.execute(services)
+    }
+
+    fn solve_reactive_with(
+      &self,
+      services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+      self.execute(services)?;
+      Ok(ReactiveSolveStatus::Changed)
+    }
+
+    fn out(&self) -> Value {
+      Value::Index(self.output.clone())
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(vec![Value::Index(self.output.clone())])
+    }
+
+    fn to_string(&self) -> String {
+      "ReentrantRuntimeServiceFunction".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for ReentrantRuntimeServiceFunction {
+    fn compile(
+      &self,
+      _context: &mut CompileCtx,
+    ) -> MResult<Register> {
+      Ok(0)
+    }
   }
 
   #[derive(Debug)]
@@ -650,6 +773,109 @@ mod tests {
         fail_on_call,
       }));
     (output, calls)
+  }
+
+  #[test]
+  fn reentrant_runtime_service_borrow_returns_structured_error_and_recovers() {
+    const STAGED_HOST: &str = "test/reentrant-staged";
+    const REENTRANT_HOST: &str = "test/reentrant-service";
+
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let effect_log = log.clone();
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
+        STAGED_HOST,
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |_context, _arguments| {
+          Ok(RuntimePreparedHostCall {
+            value: Value::F64(Ref::new(1.0)).into(),
+            effect: PreparedRuntimeEffect::Transactional(Box::new(
+              ReactiveTransactionalProbe {
+                log: effect_log.clone(),
+                fail_prepare: false,
+                fail_commit: false,
+                fail_abort: false,
+              },
+            )),
+          })
+        },
+      ))
+      .unwrap()
+      .host_function(PlannedPureHostFunction::new(
+        REENTRANT_HOST,
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, name) in [
+      (CapabilityId(940), STAGED_HOST),
+      (CapabilityId(941), REENTRANT_HOST),
+    ] {
+      runtime
+        .grant_capability(Arc::new(BasicCapability::new(
+          id,
+          &BasicSubject::new(&subject),
+          &BasicResource::new(format!("host:{name}")),
+          [BasicOperation::new("call")],
+        )))
+        .unwrap();
+    }
+    let output = Ref::new(0usize);
+    runtime
+      .program
+      .interpreter()
+      .plan()
+      .add_function(Box::new(ReentrantRuntimeServiceFunction {
+        output: output.clone(),
+        staged_host: STAGED_HOST,
+        reentrant_host: REENTRANT_HOST,
+      }));
+    let mut context = runtime.runtime_context().unwrap();
+    arm_coordinated_service_reentry(REENTRANT_HOST);
+
+    let result = std::panic::catch_unwind(
+      std::panic::AssertUnwindSafe(|| {
+        runtime.step_with_context(&mut context, 0)
+      }),
+    );
+
+    let error = result
+      .expect("reentrant runtime service access must not panic")
+      .unwrap_err();
+    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
+    assert_eq!(
+      error
+        .kind_as::<ExecutionServicesBorrowConflict>()
+        .unwrap()
+        .operation,
+      "runtime_invoke_native",
+    );
+    assert_eq!(*output.borrow(), 0);
+    assert_eq!(*log.lock().unwrap(), vec!["abort"]);
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+
+    runtime.step_with_context(&mut context, 0).unwrap();
+
+    assert_eq!(*output.borrow(), 1);
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["abort", "prepare", "commit"],
+    );
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(context.transaction, None);
   }
 
 

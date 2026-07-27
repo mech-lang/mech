@@ -1663,7 +1663,16 @@ impl Interpreter {
     services: &mut dyn MechExecutionServices,
   ) -> MResult<Value> {
     let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
+    let mut plan_brrw = state_brrw
+      .plan
+      .0
+      .try_borrow_mut()
+      .map_err(|_| {
+        self.reactive_turn_borrow_conflict(
+          "execute",
+          "plan",
+        )
+      })?; // RefMut<Vec<Box<dyn MechFunction>>>
 
     if plan_brrw.is_empty() {
       return Err(MechError::new(NoStepsInPlanError, None).with_compiler_loc());

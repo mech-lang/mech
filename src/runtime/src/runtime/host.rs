@@ -381,7 +381,6 @@ impl MechFunctionCompiler for RuntimeHostNativeFunction {
 #[cfg(test)]
 mod transaction_tests {
   use super::*;
-  use mech_interpreter::ExecutionServicesBorrowConflict;
   use std::sync::{Arc, Mutex};
   use std::sync::atomic::{AtomicUsize, Ordering};
   use crate::{
@@ -991,39 +990,6 @@ mod transaction_tests {
     assert!(runtime.program.root_symbol_value("discarded").is_err());
     assert!(runtime.active_program_operation.get().is_none());
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
-  }
-
-  #[test]
-  fn execution_service_borrow_conflict_rolls_back_without_poisoning_runtime() {
-    let mut runtime = MechRuntime::builder()
-      .host_function(PlannedPureHostFunction::new(
-        "sealed/reentrant-service",
-        |_context, _arguments| {
-          Ok(Value::F64(Ref::new(1.0)).into())
-        },
-        |_context, _arguments| {
-          Err(MechError::new(
-            ExecutionServicesBorrowConflict {
-              operation: "reentrant_native_invocation",
-            },
-            None,
-          ))
-        },
-      ))
-      .unwrap()
-      .build()
-      .unwrap();
-    grant_host_call(&mut runtime, "sealed/reentrant-service");
-
-    let error = runtime
-      .run_string("discarded := sealed/reentrant-service()")
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
-    assert!(runtime.program.root_symbol_value("discarded").is_err());
-    assert!(runtime.active_program_operation.get().is_none());
-    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
-    runtime.run_string("recovered := 1.0").unwrap();
   }
 
   #[test]

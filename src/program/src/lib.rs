@@ -9,6 +9,7 @@
 #![allow(warnings)]
 
 use mech_core::*;
+pub use mech_interpreter::ExecutionServicesBorrowConflict;
 
 #[cfg(feature = "program")]
 pub mod program;
