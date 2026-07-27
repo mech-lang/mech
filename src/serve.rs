@@ -2024,7 +2024,7 @@ mod tests {
     let guard = CurrentDirGuard::enter(&root);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["main.mec".to_string()]).unwrap();
+    server.load_workspace(&Vec::new()).unwrap();
     assert!(server.registry.read().unwrap().get_route("main.mec").is_some());
     assert!(server.registry.read().unwrap().get_route("source/main.mec").is_some());
     drop(guard);
@@ -2032,14 +2032,18 @@ mod tests {
   }
 
   #[test]
-  fn server_load_workspace_with_explicit_target_does_not_load_unrelated_mec() {
+  fn server_workspace_with_explicit_target_does_not_load_unrelated_mec() {
     let root = temp_root("explicit-no-discovery");
     std::fs::write(root.join("test2.mec"), "x := 1\n").unwrap();
     std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
+    std::fs::write(root.join("style.css"), "body {}\n").unwrap();
     let guard = CurrentDirGuard::enter(&root);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["test2.mec".to_string()]).unwrap();
+    server.load_workspace(&vec![
+      "test2.mec".to_string(),
+      "style.css".to_string(),
+    ]).unwrap();
     let registry = server.registry.read().unwrap();
     assert!(registry.get_route("test2.mec").is_some());
     assert!(registry.get_route("source/test2.mec").is_some());
