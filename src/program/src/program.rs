@@ -823,13 +823,11 @@ impl MechProgram {
     finalize: impl FnOnce() -> ProgramTurnFinalization,
   ) -> MResult<()> {
     let mut journal = ProgramReactiveTurnJournal::new();
-    let execution = unsafe {
-      self.step_with_reactive_turn_journal_unchecked(
-        step_id,
-        &mut journal,
-        services,
-      )
-    };
+    let execution = self.step_with_reactive_turn_journal(
+      step_id,
+      &mut journal,
+      services,
+    );
     match execution {
       Ok(()) => match finalize() {
         ProgramTurnFinalization::Commit => Ok(()),
@@ -849,7 +847,7 @@ impl MechProgram {
   }
 
   #[cfg(feature = "functions")]
-  unsafe fn step_with_reactive_turn_journal_unchecked(
+  fn step_with_reactive_turn_journal(
     &mut self,
     step_id: u64,
     journal: &mut ProgramReactiveTurnJournal,
@@ -857,15 +855,13 @@ impl MechProgram {
   ) -> MResult<()> {
     journal.begin_operation("step")?;
     self.capture_reactive_interpreter(self.interpreter.id, journal)?;
-    unsafe {
-      self.interpreter
-        .step_with_reactive_turn_journal_and_services_unchecked(
-          step_id as usize,
-          1,
-          &mut journal.values,
-          services,
-        )?;
-    }
+    self.interpreter
+      .step_with_reactive_turn_journal_and_services(
+        step_id as usize,
+        1,
+        &mut journal.values,
+        services,
+      )?;
     Ok(())
   }
 
@@ -998,14 +994,12 @@ impl MechProgram {
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
     let mut journal = ProgramReactiveTurnJournal::new();
-    let execution = unsafe {
-      self.advance_reactive_turn_with_journal_unchecked(
-        interpreter_id,
-        dirty_cells,
-        &mut journal,
-        services,
-      )
-    };
+    let execution = self.advance_reactive_turn_with_journal(
+      interpreter_id,
+      dirty_cells,
+      &mut journal,
+      services,
+    );
     match execution {
       Ok(outcome) => Ok(outcome),
       Err(error) => self.finish_failed_reactive_operation(
@@ -1017,7 +1011,7 @@ impl MechProgram {
   }
 
   #[cfg(feature = "functions")]
-  unsafe fn advance_reactive_turn_with_journal_unchecked(
+  fn advance_reactive_turn_with_journal(
     &mut self,
     interpreter_id: u64,
     dirty_cells: &[ReactiveCellId],
@@ -1027,14 +1021,12 @@ impl MechProgram {
     journal.begin_operation("advance_reactive_turn")?;
     self.capture_reactive_interpreter(interpreter_id, journal)?;
     let Some(result) = with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
-      unsafe {
-        interpreter
-          .advance_reactive_turn_with_journal_and_services_unchecked(
-            dirty_cells,
-            &mut journal.values,
-            services,
-          )
-      }
+      interpreter
+        .advance_reactive_turn_with_journal_and_services(
+          dirty_cells,
+          &mut journal.values,
+          services,
+        )
     }) else {
       return Err(MechError::new(ProgramInputError { reason: format!("missing interpreter {interpreter_id}") }, None));
     };
@@ -1080,13 +1072,11 @@ impl MechProgram {
     ) -> ProgramTurnFinalization,
   ) -> MResult<ProgramInputTurnOutcome> {
     let mut journal = ProgramReactiveTurnJournal::new();
-    let execution = unsafe {
-      self.update_inputs_and_advance_turn_with_journal_unchecked(
-        updates,
-        &mut journal,
-        services,
-      )
-    };
+    let execution = self.update_inputs_and_advance_turn_with_journal(
+      updates,
+      &mut journal,
+      services,
+    );
     match execution {
       Ok(outcome) => match finalize(&outcome) {
         ProgramTurnFinalization::Commit => Ok(outcome),
@@ -1110,7 +1100,7 @@ impl MechProgram {
   }
 
   #[cfg(feature = "functions")]
-  unsafe fn update_inputs_and_advance_turn_with_journal_unchecked(
+  fn update_inputs_and_advance_turn_with_journal(
     &mut self,
     updates: &[ProgramInputUpdate],
     journal: &mut ProgramReactiveTurnJournal,
@@ -1132,14 +1122,12 @@ impl MechProgram {
         &mut self.interpreter,
         interpreter_id,
         &mut |interpreter| {
-          unsafe {
-            interpreter
-              .advance_reactive_turn_with_journal_and_services_unchecked(
-                &dirty_cells,
-                &mut journal.values,
-                services,
-              )
-          }
+          interpreter
+            .advance_reactive_turn_with_journal_and_services(
+              &dirty_cells,
+              &mut journal.values,
+              services,
+            )
         },
       ) else {
         return Err(MechError::new(
@@ -1166,13 +1154,11 @@ impl MechProgram {
     journal: &mut ProgramReactiveTurnJournal,
   ) -> MResult<ProgramInputTurnOutcome> {
     let mut services = NoMechExecutionServices;
-    unsafe {
-      self.update_inputs_and_advance_turn_with_journal_unchecked(
-        updates,
-        journal,
-        &mut services,
-      )
-    }
+    self.update_inputs_and_advance_turn_with_journal(
+      updates,
+      journal,
+      &mut services,
+    )
   }
 
   #[cfg(all(test, feature = "functions"))]
@@ -1183,14 +1169,12 @@ impl MechProgram {
     journal: &mut ProgramReactiveTurnJournal,
   ) -> MResult<ReactiveTurnOutcome> {
     let mut services = NoMechExecutionServices;
-    unsafe {
-      self.advance_reactive_turn_with_journal_unchecked(
-        interpreter_id,
-        dirty_cells,
-        journal,
-        &mut services,
-      )
-    }
+    self.advance_reactive_turn_with_journal(
+      interpreter_id,
+      dirty_cells,
+      journal,
+      &mut services,
+    )
   }
 
   #[cfg(all(test, feature = "functions"))]
@@ -1200,13 +1184,11 @@ impl MechProgram {
     journal: &mut ProgramReactiveTurnJournal,
   ) -> MResult<()> {
     let mut services = NoMechExecutionServices;
-    unsafe {
-      self.step_with_reactive_turn_journal_unchecked(
-        step_id,
-        journal,
-        &mut services,
-      )
-    }
+    self.step_with_reactive_turn_journal(
+      step_id,
+      journal,
+      &mut services,
+    )
   }
 
   #[cfg(feature = "functions")]

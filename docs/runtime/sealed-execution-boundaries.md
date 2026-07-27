@@ -105,7 +105,7 @@ cannot edit active context identity, transaction, budget maxima, event storage,
 or access sets. Structural components are selected through the builder before
 runtime creation.
 
-The only unsafe journal integration is inside the interpreter implementation
-and the program crate that coordinates it. The runtime sees sealed operations
-and detached snapshots. No compatibility bypass, rewind facility, or history
-mechanism is part of this boundary.
+Journal integration is safe Rust. The lower-level interpreter entry points are
+used only by the program crate, while runtime code coordinates turns through
+sealed operations and `ProgramTurnFinalization`. No compatibility bypass,
+rewind facility, or history mechanism is part of this boundary.

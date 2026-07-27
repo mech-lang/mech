@@ -30,15 +30,12 @@ fail_if_found \
   'RuntimeCapabilityGrantRegistry|HostFunctionTransactionMode|ImmediateOnly' \
   src --glob 'src/*/src/**/*.rs'
 
-# The interpreter defines the unsafe primitives and uses one primitive to
-# implement another. Outside that implementation, only mech-program may invoke
-# journal-aware unchecked interpreter entry points.
+# Runtime orchestration must use the program-owned finalization protocol and
+# must never invoke lower-level interpreter journal coordination directly.
 fail_if_found \
-  "unchecked interpreter journal APIs are invoked outside mech-program" \
-  '\.(advance_reactive_turn_with_journal(_and_services)?_unchecked|step_with_reactive_turn_journal(_and_services)?_unchecked)[[:space:]]*[(]' \
-  src \
-  --glob '*.rs' \
-  --glob '!src/program/src/**' \
-  --glob '!src/interpreter/src/interpreter.rs'
+  "runtime invokes interpreter journal coordination directly" \
+  '\.(advance_reactive_turn_with_journal(_and_services)?|step_with_reactive_turn_journal(_and_services)?)[[:space:]]*[(]' \
+  src/runtime/src \
+  --glob '*.rs'
 
 echo "runtime boundary audit passed"
