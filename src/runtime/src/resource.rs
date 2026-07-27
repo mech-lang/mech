@@ -8,6 +8,9 @@ use crate::{
   RuntimeCompensatableEffect, RuntimeEffectCost, RuntimeEffectMetadata,
   RuntimeEffectSource,
 };
+use crate::runtime::extension::{
+  catch_extension, invoke_extension,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
@@ -59,8 +62,8 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
     ))
   }
 
-  fn stage_write(
-    &mut self,
+  fn prepare_write(
+    &self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {
     Err(MechError::new(
@@ -95,7 +98,17 @@ impl RuntimeResourceRegistry {
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
-    let scheme = provider.scheme().to_string();
+    let (scheme, bases) = catch_extension(
+      "resource provider",
+      "registration metadata",
+      || {
+        (
+          provider.scheme().to_string(),
+          provider.base_uris(),
+        )
+      },
+    )
+    .map_err(|panic| panic.into_error())?;
     if scheme.is_empty() {
       return Err(MechError::new(
         RuntimeResourceInvalidUri {
@@ -106,7 +119,6 @@ impl RuntimeResourceRegistry {
       ));
     }
 
-    let bases = provider.base_uris();
     for base in &bases {
       let base_scheme = resource_uri_scheme(base)?;
       if base_scheme != scheme {
@@ -161,17 +173,6 @@ impl RuntimeResourceRegistry {
       .or_else(|| self.providers.iter().find(|entry| entry.scheme == scheme && entry.bases.is_empty()))
   }
 
-  fn provider_entry_for_mut(&mut self, scheme: &str, uri: &str) -> Option<&mut RuntimeResourceProviderEntry> {
-    let index = self.providers
-      .iter()
-      .enumerate()
-      .filter(|(_, entry)| entry.scheme == scheme && entry.bases.iter().any(|base| resource_base_matches(base, uri)))
-      .max_by_key(|(_, entry)| entry.bases.iter().filter(|base| resource_base_matches(base, uri)).map(|base| base.len()).max().unwrap_or(0))
-      .map(|(index, _)| index)
-      .or_else(|| self.providers.iter().position(|entry| entry.scheme == scheme && entry.bases.is_empty()))?;
-    self.providers.get_mut(index)
-  }
-
   pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -180,7 +181,11 @@ impl RuntimeResourceRegistry {
         None,
       ));
     };
-    entry.provider.read(request)
+    invoke_extension(
+      format!("resource provider `{scheme}`"),
+      "read",
+      || entry.provider.read(request),
+    )
   }
 
   pub(crate) fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -191,21 +196,29 @@ impl RuntimeResourceRegistry {
         None,
       ));
     };
-    entry.provider.preflight_write(request)
+    invoke_extension(
+      format!("resource provider `{scheme}`"),
+      "preflight_write",
+      || entry.provider.preflight_write(request),
+    )
   }
 
-  pub(crate) fn stage_write(
-    &mut self,
+  pub(crate) fn prepare_write(
+    &self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-    let Some(entry) = self.provider_entry_for_mut(&scheme, &request.base_uri) else {
+    let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
         RuntimeResourceProviderNotFound { scheme, uri: request.base_uri },
         None,
       ));
     };
-    entry.provider.stage_write(request)
+    invoke_extension(
+      format!("resource provider `{scheme}`"),
+      "prepare_write",
+      || entry.provider.prepare_write(request),
+    )
   }
 }
 
@@ -342,8 +355,8 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     Ok(())
   }
 
-  fn stage_write(
-    &mut self,
+  fn prepare_write(
+    &self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {

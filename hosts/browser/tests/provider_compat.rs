@@ -83,7 +83,7 @@ fn browser_dom_write_is_deferred_until_delivery() {
   let backend = RecordingDomBackend::default();
   let observed = backend.clone();
   let mut provider = BrowserResourceProvider::new(authority(), backend);
-  let effect = provider.stage_write(RuntimeResourceWriteRequest {
+  let effect = provider.prepare_write(RuntimeResourceWriteRequest {
     base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
     path: "body/header/title".to_string(),
     context_name: "ui".to_string(),

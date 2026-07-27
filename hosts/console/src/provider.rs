@@ -91,7 +91,7 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
     Ok(())
   }
 
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),

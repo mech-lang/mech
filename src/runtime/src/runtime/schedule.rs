@@ -35,7 +35,11 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.enqueue_work(work)?;
+    extension::invoke_extension(
+      "scheduler",
+      "enqueue_work",
+      || self.scheduler.enqueue_work(work),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -65,9 +69,13 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
-    let tick = collect_tick(
-      self.scheduler.as_mut(),
-      &self.scheduler_policy,
+    let tick = extension::invoke_extension(
+      "scheduler",
+      "collect_tick",
+      || collect_tick(
+        self.scheduler.as_mut(),
+        &self.scheduler_policy,
+      ),
     )?;
 
     self.drain_scheduler_events(context)?;
@@ -100,7 +108,11 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.complete_work(work, outcome)?;
+    extension::invoke_extension(
+      "scheduler",
+      "complete_work",
+      || self.scheduler.complete_work(work, outcome),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -129,7 +141,12 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.fail_work(work, message.into())?;
+    let message = message.into();
+    extension::invoke_extension(
+      "scheduler",
+      "fail_work",
+      || self.scheduler.fail_work(work, message),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -320,7 +337,11 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<()> {
-    let events = self.scheduler.drain_events();
+    let events = extension::invoke_extension_value(
+      "scheduler",
+      "drain_events",
+      || self.scheduler.drain_events(),
+    )?;
 
     for event in events {
       self.emit_event_to_context(context, event)?;

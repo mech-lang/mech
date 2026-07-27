@@ -117,16 +117,30 @@ impl RuntimeCapabilityOverlay {
       let Some(capability) = self.grants.get(id) else {
         continue;
       };
-      if capability.subject_key() != request.subject {
+      let subject = extension::invoke_extension_value(
+        "capability",
+        "subject_key",
+        || capability.subject_key().to_string(),
+      )?;
+      if subject != request.subject {
         continue;
       }
-      if let Some(max_uses) = capability.max_uses() {
+      let max_uses = extension::invoke_extension_value(
+        "capability",
+        "max_uses",
+        || capability.max_uses(),
+      )?;
+      if let Some(max_uses) = max_uses {
         let actual = self.uses.get(id).copied().unwrap_or(0);
         if actual >= max_uses {
           continue;
         }
       }
-      let decision = capability.preview_check(request)?;
+      let decision = extension::invoke_extension(
+        "capability",
+        "preview_check",
+        || capability.preview_check(request),
+      )?;
       if decision.allowed {
         return Ok(Some(*id));
       }
@@ -177,9 +191,9 @@ impl RuntimeCapabilityOverlay {
     self.operations.push(operation);
     if let Err(error) = self.rebuild() {
       self.operations.pop();
-      self.rebuild().expect(
-        "previous capability overlay state must remain valid",
-      );
+      if let Err(rollback_error) = self.rebuild() {
+        return Err(rollback_error.with_source(error));
+      }
       return Err(error);
     }
     Ok(())
@@ -194,12 +208,16 @@ impl RuntimeCapabilityOverlay {
     for operation in &self.operations {
       match operation {
         RuntimeCapabilityMutation::Grant(capability) => {
-          let id = capability.id();
+          let id = extension::invoke_extension_value(
+            "capability",
+            "id",
+            || capability.id(),
+          )?;
           self.revocations.remove(&id);
           if !self.grants.contains_key(&id) {
             self.grant_order.push(id);
           }
-          self.grants.insert(capability.id(), capability.clone());
+          self.grants.insert(id, capability.clone());
         }
         RuntimeCapabilityMutation::Revoke(capability) => {
           if self.grants.remove(capability).is_some() {
@@ -308,16 +326,22 @@ impl MechRuntime {
     &self,
     id: CapabilityId,
   ) -> MResult<Option<RuntimeCapabilitySnapshot>> {
-    self.capability_kernel.get(id).map(|capability| {
-      capability.map(|capability| RuntimeCapabilitySnapshot {
+    let Some(capability) = self.capability_kernel.get(id)? else {
+      return Ok(None);
+    };
+    let snapshot = extension::invoke_extension_value(
+      "capability",
+      "snapshot",
+      || RuntimeCapabilitySnapshot {
         id: capability.id(),
         subject: capability.subject_key().to_string(),
         revocable: capability.is_revocable(),
         delegable: capability.is_delegable(),
         attenuable: capability.is_attenuable(),
         max_uses: capability.max_uses(),
-      })
-    })
+      },
+    )?;
+    Ok(Some(snapshot))
   }
 
 
@@ -331,9 +355,17 @@ impl MechRuntime {
     )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    capability.validate()?;
+    extension::invoke_extension(
+      "capability",
+      "validate",
+      || capability.validate(),
+    )?;
 
-    let id = capability.id();
+    let id = extension::invoke_extension_value(
+      "capability",
+      "id",
+      || capability.id(),
+    )?;
 
     if let Some(transaction_id) = context.transaction {
       if self
@@ -476,7 +508,12 @@ impl MechRuntime {
           None,
         ));
       };
-      if !existing.is_revocable() {
+      let revocable = extension::invoke_extension_value(
+        "capability",
+        "is_revocable",
+        || existing.is_revocable(),
+      )?;
+      if !revocable {
         return Err(MechError::new(
           CapabilityNotRevocableError { capability },
           None,

@@ -1,5 +1,8 @@
 use super::*;
 use super::capability::check_transactional_capability;
+use super::extension::{
+  catch_extension, invoke_extension,
+};
 
 use mech_core::MechExecutionServices;
 use crate::{
@@ -135,9 +138,13 @@ impl RuntimeSessionServices<'_> {
     effect: PreparedRuntimeEffect,
   ) -> MResult<RuntimeEffectId> {
     self.validate_context()?;
-    let cost = effect.cost();
-    let metadata = effect.metadata();
-    let protocol = effect.protocol();
+    let (metadata, protocol) = catch_extension(
+      "prepared runtime effect",
+      "metadata",
+      || (effect.metadata(), effect.protocol()),
+    )
+    .map_err(|panic| panic.into_error())?;
+    let cost = metadata.cost;
     self.context.charge_bytes(cost.bytes)?;
     self.context.charge_items(cost.items)?;
     let store_before = self.transaction.store.clone();
@@ -310,7 +317,11 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         name: name.to_string(),
       },
     )?;
-    let Some(function) = host_registry.get_function(name)? else {
+    let Some(function) = invoke_extension(
+      "host registry",
+      "get_function",
+      || host_registry.get_function(name),
+    )? else {
       services.emit_event(
         RuntimeEventKind::HostCallFailed {
           name: name.to_string(),
@@ -332,44 +343,83 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     let call_context =
       RuntimeCallContext::capture(services.context);
     let result = (|| -> MResult<RuntimeValueSnapshot> {
-      host_policy.validate_call(
-        &call_context,
-        &function,
-        &arguments,
+      invoke_extension(
+        "host call policy",
+        "validate_call",
+        || {
+          host_policy.validate_call(
+            &call_context,
+            &function,
+            &arguments,
+          )
+        },
       )?;
+      let component = format!("host function `{name}`");
+      let (estimated_items, estimated_bytes) =
+        catch_extension(
+          component.clone(),
+          "plan cost",
+          || {
+            (
+              function.estimated_cost_items(&arguments),
+              function.estimated_cost_bytes(&arguments),
+            )
+          },
+        )
+        .map_err(|panic| panic.into_error())?;
       services.context.charge_items(
-        function.estimated_cost_items(&arguments),
+        estimated_items,
       )?;
       services.context.charge_bytes(
-        function.estimated_cost_bytes(&arguments),
+        estimated_bytes,
       )?;
-      let capability_request = function
-        .required_capability(&call_context)
+      let capability_request = catch_extension(
+        component.clone(),
+        "required_capability",
+        || function.required_capability(&call_context),
+      )
+        .map_err(|panic| panic.into_error())?
         .unwrap_or_else(|| {
           default_host_capability_request(
             &call_context,
-            function.name(),
+            name,
           )
         });
       services.check_capability(&capability_request)?;
       match function {
         RegisteredHostFunction::Pure(function) => {
-          function.invoke(&call_context, arguments)
+          invoke_extension(
+            component,
+            "invoke",
+            || function.invoke(&call_context, arguments),
+          )
         }
         RegisteredHostFunction::RuntimeManaged(function) => {
-          function.invoke(
-            &mut services,
-            &call_context,
-            arguments,
+          invoke_extension(
+            component,
+            "invoke",
+            || {
+              function.invoke(
+                &mut services,
+                &call_context,
+                arguments,
+              )
+            },
           )
         }
         RegisteredHostFunction::Staged(function) => {
           let RuntimePreparedHostCall {
             value,
             effect,
-          } = function.prepare(
-            &call_context,
-            arguments,
+          } = invoke_extension(
+            component,
+            "prepare",
+            || {
+              function.prepare(
+                &call_context,
+                arguments,
+              )
+            },
           )?;
           services.stage_effect(effect)?;
           Ok(value)

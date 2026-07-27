@@ -168,6 +168,11 @@ pub trait MechStore: std::fmt::Debug + Send {
     Ok(())
   }
 
+  /// Applies one atomic, all-or-nothing durable runtime batch.
+  ///
+  /// Returning `Err` means no element of the batch committed. Returning `Ok`
+  /// means the complete batch committed. The runtime does not supply database
+  /// isolation against external writers.
   fn commit_runtime(
     &mut self,
     commit: RuntimeStoreCommit,

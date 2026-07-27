@@ -142,7 +142,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
       .map_err(browser_capability_error)
   }
 
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),

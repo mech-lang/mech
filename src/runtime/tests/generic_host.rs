@@ -85,7 +85,7 @@ impl RuntimeResourceProvider for FakeRobotProvider {
       _ => Err(fake_error(format!("unsupported fake robot command path `{}`", request.path))),
     }
   }
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     Ok(PreparedRuntimeEffect::AfterCommit(Box::new(RecordingAfterCommitEffect {
       scheme: "fake-robot".to_string(),
@@ -463,7 +463,7 @@ impl RuntimeResourceProvider for PlotterProvider {
       _ => Err(fake_error(format!("unsupported plotter command path `{}`", request.path))),
     }
   }
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     Ok(PreparedRuntimeEffect::AfterCommit(Box::new(RecordingAfterCommitEffect {
       scheme: "plotter".to_string(),

@@ -388,6 +388,15 @@ impl MechRuntime {
       let id = match self.store.commit_runtime(commit) {
         Ok(id) => id,
         Err(error) => {
+          if let Some(resolution) =
+            self.resolve_indeterminate_store_commit(
+              context,
+              transaction_id,
+              &error,
+            )
+          {
+            return Ok(resolution);
+          }
           envelope.state = RuntimeExecutionTransactionState::Active;
           self.active_transactions.insert(transaction_id, envelope);
           return Err(error);
@@ -579,6 +588,15 @@ impl MechRuntime {
     let id = match self.store.commit_runtime(commit) {
       Ok(id) => id,
       Err(error) => {
+        if let Some(resolution) =
+          self.resolve_indeterminate_store_commit(
+            context,
+            transaction_id,
+            &error,
+          )
+        {
+          return Ok(resolution);
+        }
         let original_error_text = format!("{:?}", error);
         let cleanup = self.cleanup_before_store_retry(
           &mut envelope,
@@ -703,6 +721,30 @@ impl MechRuntime {
       delivery_failures,
       audit_failures,
     }))
+  }
+
+  fn resolve_indeterminate_store_commit(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction_id: TransactionId,
+    error: &MechError,
+  ) -> Option<RuntimeCommitResolution> {
+    error
+      .kind_as::<RuntimeStoreCommitIndeterminate>()?;
+    context.transaction = None;
+    if self.program_transaction_owner == Some(transaction_id) {
+      self.program_transaction_owner = None;
+    }
+    self.health = RuntimeHealth::Poisoned(RuntimePoisonRecord {
+      operation: "commit_runtime_transaction".to_string(),
+      transaction_id: Some(transaction_id),
+      original_error: format!("{error:?}"),
+      rollback_failures: Vec::new(),
+    });
+    Some(RuntimeCommitResolution::CommittedWithError {
+      transaction_id,
+      error: error.clone(),
+    })
   }
 
   fn cleanup_before_store_retry(
@@ -876,7 +918,7 @@ impl MechRuntime {
     transaction_snapshot.record_event(commit_event.id)?;
     let transaction_record = transaction_snapshot
       .into_record()?
-      .with_effects(envelope.effects.records());
+      .with_effects(envelope.effects.records()?);
 
     Ok(RuntimeStoreCommit {
       transaction: transaction_record,

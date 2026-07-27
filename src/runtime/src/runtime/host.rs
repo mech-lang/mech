@@ -35,6 +35,7 @@
 
 
 use super::*;
+use super::extension::invoke_extension;
 use super::execution::{
   ACTIVATION_EFFECT_BARRIER_NAME,
   ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
@@ -233,9 +234,14 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
       .iter()
       .map(RuntimeValueSnapshot::capture)
       .collect::<Vec<_>>();
-    let planned = self
-      .function
-      .plan(&self.context, &argument_snapshots)?;
+    let planned = invoke_extension(
+      format!("host function `{}`", self.host_name),
+      "plan",
+      || {
+        self.function
+          .plan(&self.context, &argument_snapshots)
+      },
+    )?;
     Ok(Box::new(RuntimeHostNativeFunction {
       name: self.mech_name.clone(),
       host_name: self.host_name.clone(),

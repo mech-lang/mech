@@ -80,7 +80,7 @@ fn main() {
   let mut provider = InMemoryDocsProvider::new();
   println!("provider write/read:");
   println!("  write docs://manual intro/title = true");
-  let effect = provider.stage_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: Value::Bool(Ref::new(true)), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  let effect = provider.prepare_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: Value::Bool(Ref::new(true)), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   match effect {
     PreparedRuntimeEffect::Compensatable(mut effect) => effect.apply().unwrap(),
     other => panic!("in-memory docs returned unexpected effect protocol: {:?}", other.protocol()),

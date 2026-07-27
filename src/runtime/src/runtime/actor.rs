@@ -441,7 +441,11 @@ impl MechRuntime {
       Box::new(NoActorBehaviorDriver::new()),
     );
 
-    let driver_result = driver.run_actor_turn(self, context, turn);
+    let driver_result = extension::invoke_extension(
+      "actor behavior driver",
+      "run_actor_turn",
+      || driver.run_actor_turn(self, context, turn),
+    );
 
     self.actor_behavior_driver = driver;
 

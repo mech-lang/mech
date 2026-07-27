@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind};
 use crate::{ConfigValue, RuntimeHostInputDriver, RuntimeResourceProvider};
+use crate::runtime::extension::{
+  invoke_extension,
+  invoke_extension_value,
+};
 use super::{validate_host_interface, HostInstanceConfig, HostInterfaceCatalog, HostManifestConfig, MaterializedHostInterface, validate_host_manifest};
 
 pub trait RuntimeHostFactory: std::fmt::Debug {
@@ -22,10 +26,19 @@ pub struct RuntimeHostFactoryRegistry { factories: HashMap<String, Box<dyn Runti
 impl RuntimeHostFactoryRegistry {
   pub fn new() -> Self { Self::default() }
   pub fn register(&mut self, factory: Box<dyn RuntimeHostFactory>) -> MResult<()> {
-    let provider = factory.provider_name().to_string();
+    let provider = invoke_extension_value(
+      "host factory",
+      "provider_name",
+      || factory.provider_name().to_string(),
+    )?;
+    let manifest = invoke_extension_value(
+      "host factory",
+      "manifest",
+      || factory.manifest().clone(),
+    )?;
     if provider.trim().is_empty() { return Err(error("RuntimeHostProviderInvalid", "host provider name must be non-empty")); }
-    if factory.manifest().provider != provider { return Err(error("RuntimeHostManifestProviderMismatch", format!("host factory `{provider}` manifest provider is `{}`", factory.manifest().provider))); }
-    validate_host_manifest(factory.manifest())?;
+    if manifest.provider != provider { return Err(error("RuntimeHostManifestProviderMismatch", format!("host factory `{provider}` manifest provider is `{}`", manifest.provider))); }
+    validate_host_manifest(&manifest)?;
     if self.factories.contains_key(&provider) { return Err(error("RuntimeHostProviderConflict", format!("host provider `{provider}` is already registered"))); }
     self.factories.insert(provider, factory);
     Ok(())
@@ -36,8 +49,16 @@ impl RuntimeHostFactoryRegistry {
 
   pub fn instantiate(&self, config: &HostInstanceConfig) -> MResult<RuntimeHostInstallation> {
     let Some(factory) = self.factories.get(&config.provider) else { return Err(error("RuntimeHostProviderNotFound", format!("host provider `{}` is not registered", config.provider))); };
-    factory.validate_settings(&config.name, &config.settings)?;
-    let installation = factory.instantiate(&config.name, &config.settings)?;
+    invoke_extension(
+      "host factory",
+      "validate_settings",
+      || factory.validate_settings(&config.name, &config.settings),
+    )?;
+    let installation = invoke_extension(
+      "host factory",
+      "instantiate",
+      || factory.instantiate(&config.name, &config.settings),
+    )?;
     if installation.interface.instance != config.name { return Err(error("RuntimeHostInstallationMismatch", "host installation returned mismatched instance")); }
     if installation.interface.provider != config.provider { return Err(error("RuntimeHostInstallationMismatch", "host installation returned mismatched provider")); }
     validate_host_interface(&installation.interface)?;

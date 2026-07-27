@@ -1,14 +1,18 @@
 //! Runtime-owned effect journal and lifecycle mechanics.
 
 use super::*;
+use super::extension::{
+  catch_extension, invoke_extension,
+};
 use crate::{
   PreparedRuntimeEffect, RuntimeEffectFailure, RuntimeEffectFailurePhase,
-  RuntimeEffectId, RuntimeEffectRecord,
+  RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectProtocol,
+  RuntimeEffectRecord,
 };
 #[cfg(test)]
 use crate::{
   RuntimeAfterCommitEffect, RuntimeCompensatableEffect,
-  RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect,
+  RuntimeEffectSource, RuntimeTransactionalEffect,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -63,13 +67,17 @@ impl RuntimeEffectJournal {
     self.entries.is_empty()
   }
 
-  pub(super) fn records(&self) -> Vec<RuntimeEffectRecord> {
+  pub(super) fn records(&self) -> MResult<Vec<RuntimeEffectRecord>> {
     self.entries.iter().map(|entry| {
-      RuntimeEffectRecord::new(
+      let (metadata, protocol) = effect_description(
         entry.id,
-        entry.effect.metadata(),
-        entry.effect.protocol(),
-      )
+        &entry.effect,
+      )?;
+      Ok(RuntimeEffectRecord::new(
+        entry.id,
+        metadata,
+        protocol,
+      ))
     }).collect()
   }
 
@@ -311,7 +319,11 @@ impl RuntimeEffectJournal {
       let PreparedRuntimeEffect::Transactional(effect) = &mut entry.effect else {
         continue;
       };
-      if let Err(error) = effect.prepare() {
+      if let Err(error) = invoke_extension(
+        format!("transactional effect {}", entry.id),
+        "prepare",
+        || effect.prepare(),
+      ) {
         return Err(effect_step_failure(
           entry.id,
           RuntimeEffectFailurePhase::Prepare,
@@ -334,7 +346,11 @@ impl RuntimeEffectJournal {
       let PreparedRuntimeEffect::Transactional(effect) = &mut entry.effect else {
         continue;
       };
-      match effect.abort() {
+      match invoke_extension(
+        format!("transactional effect {}", entry.id),
+        "abort",
+        || effect.abort(),
+      ) {
         Ok(()) => entry.state = RuntimeEffectState::Staged,
         Err(error) => failures.push(RuntimeEffectFailure {
           effect_id: entry.id,
@@ -356,7 +372,11 @@ impl RuntimeEffectJournal {
       let PreparedRuntimeEffect::Compensatable(effect) = &mut entry.effect else {
         continue;
       };
-      if let Err(error) = effect.apply() {
+      if let Err(error) = invoke_extension(
+        format!("compensatable effect {}", entry.id),
+        "apply",
+        || effect.apply(),
+      ) {
         return Err(effect_step_failure(
           entry.id,
           RuntimeEffectFailurePhase::Apply,
@@ -379,7 +399,11 @@ impl RuntimeEffectJournal {
       let PreparedRuntimeEffect::Compensatable(effect) = &mut entry.effect else {
         continue;
       };
-      match effect.compensate() {
+      match invoke_extension(
+        format!("compensatable effect {}", entry.id),
+        "compensate",
+        || effect.compensate(),
+      ) {
         Ok(()) => entry.state = RuntimeEffectState::Staged,
         Err(error) => failures.push(RuntimeEffectFailure {
           effect_id: entry.id,
@@ -404,7 +428,11 @@ impl RuntimeEffectJournal {
       let PreparedRuntimeEffect::Transactional(effect) = &mut entry.effect else {
         continue;
       };
-      match effect.commit() {
+      match invoke_extension(
+        format!("transactional effect {}", entry.id),
+        "commit",
+        || effect.commit(),
+      ) {
         Ok(()) => {
           outcomes.push(format!(
             "transactional effect {} committed",
@@ -442,7 +470,11 @@ impl RuntimeEffectJournal {
       let PreparedRuntimeEffect::AfterCommit(effect) = &mut entry.effect else {
         continue;
       };
-      if let Err(error) = effect.deliver() {
+      if let Err(error) = invoke_extension(
+        format!("after-commit effect {}", entry.id),
+        "deliver",
+        || effect.deliver(),
+      ) {
         failures.push(RuntimeEffectFailure {
           effect_id: entry.id,
           phase: RuntimeEffectFailurePhase::Deliver,
@@ -478,19 +510,31 @@ fn abort_effect_entry(
       RuntimeEffectState::Staged
         | RuntimeEffectState::Prepared
         | RuntimeEffectState::Applied,
-    ) => effect.abort().map_err(|error| {
+    ) => invoke_extension(
+      format!("transactional effect {}", entry.id),
+      "abort",
+      || effect.abort(),
+    ).map_err(|error| {
       (RuntimeEffectFailurePhase::Abort, error)
     }),
     (
       PreparedRuntimeEffect::Compensatable(effect),
       RuntimeEffectState::Applied,
-    ) => effect.compensate().map_err(|error| {
+    ) => invoke_extension(
+      format!("compensatable effect {}", entry.id),
+      "compensate",
+      || effect.compensate(),
+    ).map_err(|error| {
       (RuntimeEffectFailurePhase::Compensate, error)
     }),
     (
       PreparedRuntimeEffect::Compensatable(effect),
       RuntimeEffectState::Staged | RuntimeEffectState::Prepared,
-    ) => effect.abort().map_err(|error| {
+    ) => invoke_extension(
+      format!("compensatable effect {}", entry.id),
+      "abort",
+      || effect.abort(),
+    ).map_err(|error| {
       (RuntimeEffectFailurePhase::Abort, error)
     }),
     (PreparedRuntimeEffect::AfterCommit(_), _) => Ok(()),
@@ -501,6 +545,18 @@ fn abort_effect_entry(
     phase,
     message: format!("{:?}", error),
   })
+}
+
+fn effect_description(
+  id: RuntimeEffectId,
+  effect: &PreparedRuntimeEffect,
+) -> MResult<(RuntimeEffectMetadata, RuntimeEffectProtocol)> {
+  catch_extension(
+    format!("effect {id}"),
+    "metadata",
+    || (effect.metadata(), effect.protocol()),
+  )
+  .map_err(|panic| panic.into_error())
 }
 
 impl MechRuntime {
@@ -601,9 +657,13 @@ impl MechRuntime {
         None,
       ));
     }
-    let cost = effect.cost();
-    let metadata = effect.metadata();
-    let protocol = effect.protocol();
+    let (metadata, protocol) = catch_extension(
+      "prepared runtime effect",
+      "metadata",
+      || (effect.metadata(), effect.protocol()),
+    )
+    .map_err(|panic| panic.into_error())?;
+    let cost = metadata.cost;
     context.charge_bytes(cost.bytes)?;
     context.charge_items(cost.items)?;
     let store_before = self
@@ -684,9 +744,13 @@ impl MechRuntime {
         None,
       ));
     }
-    let cost = effect.cost();
-    let metadata = effect.metadata();
-    let protocol = effect.protocol();
+    let (metadata, protocol) = catch_extension(
+      "prepared runtime effect",
+      "metadata",
+      || (effect.metadata(), effect.protocol()),
+    )
+    .map_err(|panic| panic.into_error())?;
+    let cost = metadata.cost;
     context.charge_bytes(cost.bytes)?;
     context.charge_items(cost.items)?;
     let store_before = self

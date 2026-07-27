@@ -4977,16 +4977,29 @@ impl MechRuntime {
     self.live_input_binding_count() > 0
   }
 
-  pub fn driven_live_input_binding_count(&self) -> usize {
-    self.live_input_bindings
-      .iter()
-      .filter(|(source, _)| self.input_drivers[..self.attached_input_driver_count].iter().any(|driver| driver.drives(source)))
-      .map(|(_, bindings)| bindings.len())
-      .sum()
+  pub fn driven_live_input_binding_count(&self) -> MResult<usize> {
+    let mut count = 0;
+    for (source, bindings) in &self.live_input_bindings {
+      let mut driven = false;
+      for driver in &self.input_drivers[..self.attached_input_driver_count] {
+        if extension::invoke_extension_value(
+          "host input driver",
+          "drives",
+          || driver.drives(source),
+        )? {
+          driven = true;
+          break;
+        }
+      }
+      if driven {
+        count += bindings.len();
+      }
+    }
+    Ok(count)
   }
 
-  pub fn has_driven_live_input_bindings(&self) -> bool {
-    self.driven_live_input_binding_count() > 0
+  pub fn has_driven_live_input_bindings(&self) -> MResult<bool> {
+    Ok(self.driven_live_input_binding_count()? > 0)
   }
 
   pub fn pending_host_input_count(&self) -> MResult<usize> {
@@ -5113,19 +5126,57 @@ impl MechRuntime {
     }
     let mut started = vec![false; self.attached_input_driver_count];
     for index in 0..self.attached_input_driver_count {
-      if self.input_drivers[index].is_live() { continue; }
+      if extension::invoke_extension_value(
+        "host input driver",
+        "is_live",
+        || self.input_drivers[index].is_live(),
+      )? {
+        continue;
+      }
       let has_driven_input = {
         let driver = &self.input_drivers[index];
         self
           .live_input_bindings
           .iter()
-          .any(|(source, bindings)| !bindings.is_empty() && driver.drives(source))
+          .try_fold(false, |driven, (source, bindings)| {
+            if driven || bindings.is_empty() {
+              return Ok(driven);
+            }
+            extension::invoke_extension_value(
+              "host input driver",
+              "drives",
+              || driver.drives(source),
+            )
+          })?
       };
       if !has_driven_input { continue; }
-      if let Err(error) = self.input_drivers[index].start() {
-        for index in (0..self.attached_input_driver_count).rev() {
-          if !started[index] { continue; }
-          let _ = self.input_drivers[index].stop();
+      if let Err(error) = extension::invoke_extension(
+        "host input driver",
+        "start",
+        || self.input_drivers[index].start(),
+      ) {
+        let mut cleanup_failures = Vec::new();
+        for cleanup_index in (0..self.attached_input_driver_count).rev() {
+          if !started[cleanup_index] { continue; }
+          if let Err(cleanup_error) = extension::invoke_extension(
+            "host input driver",
+            "stop",
+            || self.input_drivers[cleanup_index].stop(),
+          ) {
+            cleanup_failures.push(format!(
+              "input driver {} stop failed: {:?}",
+              cleanup_index,
+              cleanup_error,
+            ));
+          }
+        }
+        if !cleanup_failures.is_empty() {
+          return Err(self.poison_program_operation(
+            "start_input_drivers",
+            None,
+            format!("{:?}", error),
+            cleanup_failures,
+          ));
         }
         return Err(error);
       }
@@ -5136,10 +5187,29 @@ impl MechRuntime {
 
   pub fn stop_input_drivers(&mut self) -> MResult<()> {
     let mut first_error = None;
+    let mut panic_failures = Vec::new();
     for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
-      if let Err(error) = driver.stop() {
+      if let Err(error) = extension::invoke_extension(
+        "host input driver",
+        "stop",
+        || driver.stop(),
+      ) {
+        if error.kind_name() == "RuntimeExtensionPanicked" {
+          panic_failures.push(format!("{:?}", error));
+        }
         if first_error.is_none() { first_error = Some(error); }
       }
+    }
+    if !panic_failures.is_empty() {
+      return Err(self.poison_program_operation(
+        "stop_input_drivers",
+        None,
+        first_error
+          .as_ref()
+          .map(|error| format!("{:?}", error))
+          .unwrap_or_else(|| "input driver cleanup panicked".to_string()),
+        panic_failures,
+      ));
     }
     if let Some(error) = first_error { return Err(error); }
     Ok(())

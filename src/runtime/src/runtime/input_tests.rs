@@ -81,7 +81,7 @@ impl RuntimeResourceProvider for TestOutputProvider {
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     if request.base_uri == TEST_OUTPUT_BASE_URI && request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(TestFixtureError(format!("invalid test output write: {} / {}", request.base_uri, request.path)), None)) }
   }
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     let lines = self.backend.lines.clone();
     let rendered = format!("{}", request.value);
@@ -1594,7 +1594,7 @@ mod persistent_send_tests {
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
       if request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(PersistentSendTestError("bad console write".to_string()), None)) }
     }
-    fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
       self.preflight_write(RuntimeResourceWritePreflightRequest {
         base_uri: request.base_uri.clone(),
         path: request.path.clone(),
@@ -1694,7 +1694,7 @@ mod persistent_send_tests {
                 ))
             }
         }
-        fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+        fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
             self.preflight_write(RuntimeResourceWritePreflightRequest {
                 base_uri: request.base_uri.clone(),
                 path: request.path.clone(),

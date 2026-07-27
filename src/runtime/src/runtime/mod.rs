@@ -22,6 +22,7 @@ mod errors;
 mod effect;
 mod execution;
 mod execution_session;
+pub(crate) mod extension;
 mod host;
 mod id;
 mod module;
@@ -37,6 +38,10 @@ mod transaction;
 mod input_tests;
 
 pub use self::errors::*;
+pub use self::extension::{
+  RuntimeExtensionPanicked,
+  RuntimeStoreCommitIndeterminate,
+};
 pub use self::program_transaction::{
   RuntimeHealth,
   RuntimePoisonRecord,
@@ -306,8 +311,16 @@ impl Default for RuntimeBuilder {
     Self {
       config: RuntimeConfig::default(),
       id_generator: Box::new(DefaultIdGenerator::new()),
-      store: Box::new(InMemoryStore::new()),
-      capability_kernel: Box::new(BasicCapabilityKernel::new()),
+      store: Box::new(
+        extension::RuntimeStoreBoundary::new(
+          Box::new(InMemoryStore::new()),
+        ),
+      ),
+      capability_kernel: Box::new(
+        extension::RuntimeCapabilityKernelBoundary::new(
+          Box::new(BasicCapabilityKernel::new()),
+        ),
+      ),
       source_resolver: Box::new(InMemorySourceResolver::new()),
       host_registry: Box::new(InMemoryHostRegistry::new()),
       host_policy: Box::new(DefaultHostCallPolicy),
@@ -345,7 +358,9 @@ impl RuntimeBuilder {
   }
 
   pub fn store(mut self, store: impl MechStore + 'static) -> Self {
-    self.store = Box::new(store);
+    self.store = Box::new(
+      extension::RuntimeStoreBoundary::new(Box::new(store)),
+    );
     self
   }
 
@@ -353,7 +368,11 @@ impl RuntimeBuilder {
     mut self,
     capability_kernel: impl CapabilityKernel + 'static,
   ) -> Self {
-    self.capability_kernel = Box::new(capability_kernel);
+    self.capability_kernel = Box::new(
+      extension::RuntimeCapabilityKernelBoundary::new(
+        Box::new(capability_kernel),
+      ),
+    );
     self
   }
 
@@ -377,9 +396,12 @@ impl RuntimeBuilder {
     mut self,
     function: impl Into<RegisteredHostFunction>,
   ) -> MResult<Self> {
-    self
-      .host_registry
-      .register_function(function.into())?;
+    let function = function.into();
+    extension::invoke_extension(
+      "host registry",
+      "register_function",
+      || self.host_registry.register_function(function),
+    )?;
     Ok(self)
   }
 
@@ -597,13 +619,36 @@ impl RuntimeBuilder {
 
     let ingress = runtime.ingress();
     for index in 0..runtime.input_drivers.len() {
-      if let Err(error) = runtime.input_drivers[index].attach(ingress.clone()) {
+      if let Err(error) = extension::invoke_extension(
+        "host input driver",
+        "attach",
+        || runtime.input_drivers[index].attach(ingress.clone()),
+      ) {
         let _ = runtime.close_ingress();
+        let mut cleanup_failures = Vec::new();
         for rollback_index in (0..=index).rev() {
-          let _ = runtime.input_drivers[rollback_index].stop();
+          if let Err(cleanup_error) = extension::invoke_extension(
+            "host input driver",
+            "stop",
+            || runtime.input_drivers[rollback_index].stop(),
+          ) {
+            cleanup_failures.push(format!(
+              "input driver {} stop failed: {:?}",
+              rollback_index,
+              cleanup_error,
+            ));
+          }
         }
         runtime.attached_input_driver_count = 0;
         runtime.input_driver_cleanup_armed = false;
+        if !cleanup_failures.is_empty() {
+          return Err(runtime.poison_program_operation(
+            "build",
+            None,
+            format!("{:?}", error),
+            cleanup_failures,
+          ));
+        }
         return Err(error);
       }
       runtime.attached_input_driver_count += 1;
@@ -1084,7 +1129,7 @@ impl MechRuntime {
     } else {
       None
     };
-    let effect = self.resources.stage_write(request)?;
+    let effect = self.resources.prepare_write(request)?;
     match staged_resource {
       Some((base_uri, path, value)) => {
         self.stage_runtime_resource_effect_with_context(
@@ -1804,7 +1849,11 @@ impl Drop for MechRuntime {
     if self.input_driver_cleanup_armed {
       let _ = self.close_ingress();
       for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
-        let _ = driver.stop();
+        let _ = extension::catch_extension(
+          "host input driver",
+          "stop",
+          || driver.stop(),
+        );
       }
       self.input_driver_cleanup_armed = false;
     }

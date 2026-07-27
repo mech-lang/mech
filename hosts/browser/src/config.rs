@@ -1839,7 +1839,7 @@ config := {
       Ok(())
     }
 
-    fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<mech_runtime::PreparedRuntimeEffect> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<mech_runtime::PreparedRuntimeEffect> {
       self.preflight_write(RuntimeResourceWritePreflightRequest {
         base_uri: request.base_uri.clone(),
         path: request.path.clone(),

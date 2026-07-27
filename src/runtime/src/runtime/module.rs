@@ -236,7 +236,11 @@ impl MechRuntime {
     let request = request.into();
     request.validate()?;
 
-    self.source_resolver.resolve(&request)
+    extension::invoke_extension(
+      "source resolver",
+      "resolve",
+      || self.source_resolver.resolve(&request),
+    )
   }
 
   pub fn resolve_source_with_context(
@@ -253,7 +257,11 @@ impl MechRuntime {
     let request = request.into();
     request.validate()?;
 
-    let resolved = self.source_resolver.resolve(&request)?;
+    let resolved = extension::invoke_extension(
+      "source resolver",
+      "resolve",
+      || self.source_resolver.resolve(&request),
+    )?;
 
     if let Some(source) = &resolved {
       self.emit_event_to_context(

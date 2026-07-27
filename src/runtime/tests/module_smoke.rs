@@ -476,7 +476,7 @@ fn failed_retained_root_restores_live_state_and_imported_environment() {
 #[test]
 fn in_memory_docs_provider_write_then_read_returns_value() {
   let mut provider = InMemoryDocsProvider::new();
-  let effect = provider.stage_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  let effect = provider.prepare_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
   apply_prepared_effect(effect).unwrap();
   let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   assert_bool_true(value, "provider write then read");
@@ -544,7 +544,7 @@ fn resource_registry_write_missing_provider_fails() {
 #[test]
 fn in_memory_docs_write_invalid_scheme_fails() {
   let mut provider = InMemoryDocsProvider::new();
-  let result = provider.stage_write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.prepare_write(RuntimeResourceWriteRequest { base_uri: "db://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
@@ -554,7 +554,7 @@ fn in_memory_docs_write_invalid_scheme_fails() {
 #[test]
 fn in_memory_docs_write_empty_path_fails() {
   let mut provider = InMemoryDocsProvider::new();
-  let result = provider.stage_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.prepare_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: String::new(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceInvalidUri"), "expected invalid URI error, got {error}");
@@ -572,7 +572,7 @@ impl RuntimeResourceProvider for ReadOnlyDocsProvider {
 #[test]
 fn provider_default_write_is_unsupported() {
   let mut provider = ReadOnlyDocsProvider;
-  let result = provider.stage_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
+  let result = provider.prepare_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: bool_value(true), intent: RuntimeResourceWriteIntent::Assign });
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
   assert!(error.contains("RuntimeResourceWriteUnsupported"), "expected unsupported write error, got {error}");
@@ -4355,7 +4355,7 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
       .ok_or_else(|| mech_core::MechError::new(RuntimeResourcePathNotFound { base_uri: request.base_uri, path: request.path }, None))
   }
 
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> mech_core::MResult<PreparedRuntimeEffect> {
     Ok(PreparedRuntimeEffect::Compensatable(Box::new(RecordingResourceWriteEffect {
       scheme: self.scheme.to_string(),
       base_uri: request.base_uri,
