@@ -4,6 +4,7 @@
 
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
+#![forbid(unsafe_code)]
 #![allow(dead_code)]
 #![allow(warnings)]
 

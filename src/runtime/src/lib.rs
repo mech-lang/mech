@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "no_std", no_std)]
+#![forbid(unsafe_code)]
 
 pub mod id;
 pub mod config;

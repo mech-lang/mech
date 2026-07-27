@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Audit unsafe boundaries
+        run: scripts/check-unsafe-boundaries.sh
+
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
 
