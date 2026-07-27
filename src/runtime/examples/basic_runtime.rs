@@ -27,6 +27,7 @@ fn main() -> MResult<()> {
   host_registry.insert(DeterministicHostFunction::new(
     "host.empty",
     |_context, _args| Ok(Value::Empty),
+    |_context, _args| Ok(Value::Empty),
   ))?;
 
   let mut runtime = RuntimeBuilder::new()

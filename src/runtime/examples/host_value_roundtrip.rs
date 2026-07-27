@@ -65,6 +65,7 @@ fn main() -> MResult<()> {
     .capability_kernel(BasicCapabilityKernel::new())
     .host_function(DeterministicHostFunction::new(
       "demo/value/wrap",
+      |_context, _args| Ok(value_string(String::new())),
       |_context, args| {
         let input = host_arg_string("demo/value/wrap", &args, 0)?;
         Ok(value_string(format!("rust-wrap({})", input)))
@@ -72,6 +73,7 @@ fn main() -> MResult<()> {
     ))?
     .host_function(DeterministicHostFunction::new(
       "demo/value/append",
+      |_context, _args| Ok(value_string(String::new())),
       |_context, args| {
         let input = host_arg_string("demo/value/append", &args, 0)?;
         let suffix = host_arg_string("demo/value/append", &args, 1)?;
@@ -80,6 +82,7 @@ fn main() -> MResult<()> {
     ))?
     .host_function(DeterministicHostFunction::new(
       "demo/value/inspect",
+      |_context, args| host_arg_cloned("demo/value/inspect", &args, 0),
       |_context, args| {
         host_arg_cloned("demo/value/inspect", &args, 0)
       },

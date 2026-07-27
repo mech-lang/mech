@@ -636,6 +636,9 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
 fn live_host_string_output_recomputes_without_replacing_reference() {
   let host = DeterministicHostFunction::new(
     "demo/live-label",
+    |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+      Ok(Value::String(Ref::new(String::new())))
+    },
     |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
       Ok(Value::String(Ref::new(format!("tick:{}", host_f64_argument(&args[0])))))
     },

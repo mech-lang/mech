@@ -67,6 +67,11 @@ fn main() -> MResult<()> {
     .capability_kernel(BasicCapabilityKernel::new())
     .host_function(DeterministicHostFunction::new(
       "demo/matrix/v1",
+      |_context, args| {
+        host_call0("demo/matrix/v1", &args, || {
+          matrix_f64(vec![0.0; 3], 1, 3)
+        })
+      },
       move |_context, args| {
         host_call0("demo/matrix/v1", &args, || {
           matrix_f64((*v1_host).clone(), 1, 3)
@@ -75,6 +80,11 @@ fn main() -> MResult<()> {
     ))?
     .host_function(DeterministicHostFunction::new(
       "demo/matrix/v2",
+      |_context, args| {
+        host_call0("demo/matrix/v2", &args, || {
+          matrix_f64(vec![0.0; 3], 1, 3)
+        })
+      },
       move |_context, args| {
         host_call0("demo/matrix/v2", &args, || {
           matrix_f64((*v2_host).clone(), 1, 3)

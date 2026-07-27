@@ -207,8 +207,15 @@ impl RegisteredHostFunction {
   }
 }
 
-pub struct DeterministicHostFunction<F, R>
+pub struct DeterministicHostFunction<P, F, R>
 where
+  P: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
   F: for<'context, 'arguments> Fn(
       &'context RuntimeCallContext,
       &'arguments [RuntimeValueSnapshot],
@@ -219,12 +226,20 @@ where
 {
   name: String,
   capability: Option<CapabilityRequest>,
+  plan: P,
   function: F,
   result: PhantomData<fn() -> R>,
 }
 
-impl<F, R> DeterministicHostFunction<F, R>
+impl<P, F, R> DeterministicHostFunction<P, F, R>
 where
+  P: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
   F: for<'context, 'arguments> Fn(
       &'context RuntimeCallContext,
       &'arguments [RuntimeValueSnapshot],
@@ -235,11 +250,13 @@ where
 {
   pub fn new(
     name: impl Into<String>,
+    plan: P,
     function: F,
   ) -> Self {
     Self {
       name: name.into(),
       capability: None,
+      plan,
       function,
       result: PhantomData,
     }
@@ -254,8 +271,15 @@ where
   }
 }
 
-impl<F, R> std::fmt::Debug for DeterministicHostFunction<F, R>
+impl<P, F, R> std::fmt::Debug for DeterministicHostFunction<P, F, R>
 where
+  P: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
   F: for<'context, 'arguments> Fn(
       &'context RuntimeCallContext,
       &'arguments [RuntimeValueSnapshot],
@@ -273,8 +297,15 @@ where
   }
 }
 
-impl<F, R> HostFunctionPlan for DeterministicHostFunction<F, R>
+impl<P, F, R> HostFunctionPlan for DeterministicHostFunction<P, F, R>
 where
+  P: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
   F: for<'context, 'arguments> Fn(
       &'context RuntimeCallContext,
       &'arguments [RuntimeValueSnapshot],
@@ -291,7 +322,7 @@ where
     context: &RuntimeCallContext,
     arguments: &[RuntimeValueSnapshot],
   ) -> MResult<RuntimeValueSnapshot> {
-    (self.function)(context, arguments).map(Into::into)
+    (self.plan)(context, arguments).map(Into::into)
   }
 
   fn required_capability(
@@ -302,8 +333,15 @@ where
   }
 }
 
-impl<F, R> PureHostFunction for DeterministicHostFunction<F, R>
+impl<P, F, R> PureHostFunction for DeterministicHostFunction<P, F, R>
 where
+  P: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
   F: for<'context, 'arguments> Fn(
       &'context RuntimeCallContext,
       &'arguments [RuntimeValueSnapshot],
@@ -322,9 +360,16 @@ where
   }
 }
 
-impl<F, R> From<DeterministicHostFunction<F, R>>
+impl<P, F, R> From<DeterministicHostFunction<P, F, R>>
   for RegisteredHostFunction
 where
+  P: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
   F: for<'context, 'arguments> Fn(
       &'context RuntimeCallContext,
       &'arguments [RuntimeValueSnapshot],
@@ -334,7 +379,7 @@ where
     + 'static,
   R: Into<RuntimeValueSnapshot> + 'static,
 {
-  fn from(function: DeterministicHostFunction<F, R>) -> Self {
+  fn from(function: DeterministicHostFunction<P, F, R>) -> Self {
     Self::Pure(Arc::new(function))
   }
 }
@@ -1066,10 +1111,15 @@ mod tests {
       &RuntimeCallContext,
       &[RuntimeValueSnapshot],
     ) -> MResult<Value>,
+    impl Fn(
+      &RuntimeCallContext,
+      &[RuntimeValueSnapshot],
+    ) -> MResult<Value>,
     Value,
   > {
     DeterministicHostFunction::new(
       name,
+      |_context, _arguments| Ok(Value::Empty),
       |_context, _arguments| Ok(Value::Empty),
     )
   }
@@ -1125,5 +1175,33 @@ mod tests {
     let invoked = function.invoke(&context, Vec::new()).unwrap();
     assert_eq!(planned.kind(), mech_core::ValueKind::Empty);
     assert_eq!(invoked.kind(), mech_core::ValueKind::Empty);
+  }
+
+  #[test]
+  fn deterministic_function_planning_never_invokes_host_behavior() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let invocations = Arc::new(AtomicUsize::new(0));
+    let invocation_counter = invocations.clone();
+    let function = DeterministicHostFunction::new(
+      "host.counted",
+      |_context, _arguments| Ok(Value::Empty),
+      move |_context, _arguments| {
+        invocation_counter.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Empty)
+      },
+    );
+    let context = RuntimeContext::new(RuntimeId(1), "task:1");
+    let context = RuntimeCallContext::capture(&context);
+
+    let planned = function.plan(&context, &[]).unwrap();
+
+    assert_eq!(planned.kind(), mech_core::ValueKind::Empty);
+    assert_eq!(invocations.load(Ordering::SeqCst), 0);
+
+    let invoked = function.invoke(&context, Vec::new()).unwrap();
+
+    assert_eq!(invoked.kind(), mech_core::ValueKind::Empty);
+    assert_eq!(invocations.load(Ordering::SeqCst), 1);
   }
 }

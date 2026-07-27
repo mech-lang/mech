@@ -249,6 +249,9 @@ fn failing_host_input_fixture() -> HostInputFixture {
     .resource_provider(Box::new(BenchInputProvider))
     .host_function(DeterministicHostFunction::new(
       "bench/fail-tail",
+      |_context, arguments| {
+        Ok(copied_host_f64(&arguments))
+      },
       move |_context, arguments| {
         if fail_for_host.load(Ordering::SeqCst) {
           return Err(MechError::new(
@@ -294,6 +297,9 @@ fn capability_host_input_fixture() -> HostInputFixture {
     .resource_provider(Box::new(BenchInputProvider))
     .host_function(DeterministicHostFunction::new(
       "bench/capability",
+      |_context, arguments| {
+        Ok(copied_host_f64(&arguments))
+      },
       |_context, arguments| {
         Ok(copied_host_f64(&arguments))
       },

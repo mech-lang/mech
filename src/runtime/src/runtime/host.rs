@@ -17,6 +17,7 @@
 /*
   let runtime = MechRuntime::builder().host_function(DeterministicHostFunction::new(
     "demo/math/affine",
+    |_context, _args| Ok(value_f64(0.0)),
     |_context, args| {
       host_call3(
         "demo/math/affine",

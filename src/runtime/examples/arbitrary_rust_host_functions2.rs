@@ -90,6 +90,7 @@ fn main() -> MResult<()> {
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/text/shout",
+    |_context, _args| Ok(value_string(String::new())),
     |_context, args| {
       host_call1("demo/text/shout", &args, |text: String| {
         text.to_uppercase()
@@ -99,6 +100,7 @@ fn main() -> MResult<()> {
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/text/join",
+    |_context, _args| Ok(value_string(String::new())),
     |_context, args| {
       host_call2("demo/text/join", &args, |left: String, right: String| {
         format!("{} {}", left, right)
@@ -108,6 +110,7 @@ fn main() -> MResult<()> {
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/math/add",
+    |_context, _args| Ok(value_f64(0.0)),
     |_context, args| {
       host_call2("demo/math/add", &args, |left: f64, right: f64| {
         left + right
@@ -117,6 +120,7 @@ fn main() -> MResult<()> {
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/math/affine",
+    |_context, _args| Ok(value_f64(0.0)),
     |_context, args| {
       host_call3(
         "demo/math/affine",
@@ -130,6 +134,7 @@ fn main() -> MResult<()> {
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/bool/not",
+    |_context, _args| Ok(value_bool(false)),
     |_context, args| {
       host_call1("demo/bool/not", &args, |value: bool| {
         !value
@@ -139,6 +144,7 @@ fn main() -> MResult<()> {
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/optional/greet",
+    |_context, _args| Ok(value_string(String::new())),
     |_context, args| {
       let name = host_arg_optional_string(
         "demo/optional/greet",
@@ -156,10 +162,14 @@ fn main() -> MResult<()> {
     |_context, args| {
       Ok(host_arg_cloned("demo/value/echo", &args, 0)?)
     },
+    |_context, args| {
+      Ok(host_arg_cloned("demo/value/echo", &args, 0)?)
+    },
   ))?;
 
   builder = builder.host_function(DeterministicHostFunction::new(
     "demo/result/checked-reciprocal",
+    |_context, _args| Ok(value_f64(0.0)),
     |_context, args| {
       host_call_result1(
         "demo/result/checked-reciprocal",

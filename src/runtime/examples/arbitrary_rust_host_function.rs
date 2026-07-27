@@ -43,6 +43,7 @@ fn main() -> MResult<()> {
     .capability_kernel(BasicCapabilityKernel::new())
     .host_function(DeterministicHostFunction::new(
       "demo/echo",
+      |_context, _args| Ok(Value::String(Ref::new(String::new()))),
       |_context, args| {
         let text = host_arg_string("demo/echo", &args, 0)?;
         Ok(Value::String(Ref::new(format!(
@@ -53,6 +54,7 @@ fn main() -> MResult<()> {
     ))?
     .host_function(DeterministicHostFunction::new(
       "demo/join",
+      |_context, _args| Ok(Value::String(Ref::new(String::new()))),
       |_context, args| {
         let left = host_arg_string("demo/join", &args, 0)?;
         let right = host_arg_string("demo/join", &args, 1)?;

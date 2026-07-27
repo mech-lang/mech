@@ -2017,6 +2017,7 @@ fn module_host_call_works_inside_isolated_execution() {
     .source_resolver(FileSourceResolver::new(&root))
     .host_function(DeterministicHostFunction::new(
       "demo/value",
+      |_context, _arguments| Ok(Value::F64(Ref::new(0.0))),
       |_context, _arguments| Ok(Value::F64(Ref::new(42.0))),
     ))
     .unwrap()
