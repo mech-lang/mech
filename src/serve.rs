@@ -2112,7 +2112,9 @@ mod tests {
     server.html_shim = "<html><head></head><body></body></html>".to_string();
     server.host_config = Some(empty_host_config());
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["main.mec".to_string()]).unwrap();
+    // Empty inputs exercise the watchable workspace path; a single source is
+    // intentionally served as a static configured project.
+    server.load_workspace(&Vec::new()).unwrap();
     std::fs::write(root.join("main.mec"), "x := 2\n").unwrap();
     let session = server.workspace_session.as_ref().unwrap();
     let mut session = session.lock().unwrap();
