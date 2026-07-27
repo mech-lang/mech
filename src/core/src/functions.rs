@@ -100,8 +100,6 @@ impl Debug for FunctionDescriptor {
   }
 }
 
-unsafe impl Sync for FunctionDescriptor {}
-
 #[repr(C)]
 pub struct FunctionCompilerDescriptor {
   pub name: &'static str,
@@ -114,16 +112,12 @@ impl Debug for FunctionCompilerDescriptor {
   }
 }
 
-unsafe impl Sync for FunctionCompilerDescriptor {}
-
 #[repr(C)]
 #[derive(Clone, Debug)]
 pub struct ModuleItemDescriptor {
   pub module: &'static str,
   pub item: &'static str,
 }
-
-unsafe impl Sync for ModuleItemDescriptor {}
 
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
@@ -284,7 +278,7 @@ pub enum GuardFunctionSafety {
   Unsupported,
 }
 
-pub trait NativeFunctionCompiler {
+pub trait NativeFunctionCompiler: Send + Sync {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 
   /// Whether this compiler can be elaborated into a static activation-guard
@@ -2457,6 +2451,16 @@ impl PrettyPrint for Plan {
 #[cfg(test)]
 mod reactive_plan_tests {
   use super::*;
+
+  fn assert_send_sync<T: Send + Sync>() {}
+
+  #[test]
+  fn native_compiler_descriptors_are_send_and_sync_without_manual_promises() {
+    assert_send_sync::<FunctionDescriptor>();
+    assert_send_sync::<FunctionCompilerDescriptor>();
+    assert_send_sync::<ModuleItemDescriptor>();
+    assert_send_sync::<StaticNativeFunctionCompiler>();
+  }
 
   struct PureStaticTestCompiler;
   struct DefaultTestCompiler;
