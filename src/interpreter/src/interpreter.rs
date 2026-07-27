@@ -1235,13 +1235,12 @@ impl Interpreter {
   fn finish_failed_reactive_operation<T>(
     &mut self,
     checkpoint: &InterpreterReactiveTurnCheckpoint,
-    participant: &mut ReactiveJournalParticipant<'_>,
+    participant: ReactiveJournalParticipant<'_>,
     original_error: MechError,
   ) -> MResult<T> {
     let rollback_result = self.preflight_restore_reactive_turn(checkpoint)
       .and_then(|_| participant.preflight_restore_before());
     if let Err(rollback_error) = rollback_result {
-      participant.commit();
       return Err(MechError::new(
         InterpreterReactiveTurnRollbackFailed {
           interpreter_id: self.id,
@@ -1531,10 +1530,10 @@ impl Interpreter {
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
     let checkpoint = self.reactive_turn_checkpoint()?;
-    with_reactive_journal_participant(|participant| {
+    with_reactive_journal_participant(|mut participant| {
       let execution = self.advance_reactive_turn_participating(
         dirty_cells,
-        participant,
+        &mut participant,
         services,
       );
       match execution {
@@ -1551,10 +1550,11 @@ impl Interpreter {
     })
   }
 
-  /// Participates in a program-owned reactive operation.
+  /// Participates in one coordinator-backed reactive operation.
   ///
-  /// The capability can only be received inside the sealed journal callback;
-  /// callers cannot construct or retain it.
+  /// The capability can only be received by value inside the auto-finalizing
+  /// journal callback. Callers cannot construct, escape, clone, or reuse it
+  /// after its owner commits or rolls back.
   #[cfg(feature = "functions")]
   pub fn advance_reactive_turn_participating(
     &mut self,
@@ -1629,11 +1629,11 @@ impl Interpreter {
     services: &mut dyn MechExecutionServices,
   ) -> MResult<Value> {
     let checkpoint = self.reactive_turn_checkpoint()?;
-    with_reactive_journal_participant(|participant| {
+    with_reactive_journal_participant(|mut participant| {
       let execution = self.step_reactive_turn_participating(
         step_id,
         step_count,
-        participant,
+        &mut participant,
         services,
       );
       match execution {
@@ -1650,10 +1650,11 @@ impl Interpreter {
     })
   }
 
-  /// Participates in a program-owned stepping operation.
+  /// Participates in one coordinator-backed stepping operation.
   ///
-  /// The capability can only be received inside the sealed journal callback;
-  /// callers cannot construct or retain it.
+  /// The capability can only be received by value inside the auto-finalizing
+  /// journal callback. Callers cannot construct, escape, clone, or reuse it
+  /// after its owner commits or rolls back.
   #[cfg(feature = "functions")]
   pub fn step_reactive_turn_participating(
     &mut self,
@@ -3016,12 +3017,12 @@ mod compact_reactive_turn_checkpoint_tests {
     let (mut function, _, _) = function("failure", output.clone());
     function.fail_on_solve = Some(1);
     add_reactive(&interpreter, function, &input);
-    with_reactive_journal_participant(|participant| {
+    with_reactive_journal_participant(|mut participant| {
       let mut services = NoMechExecutionServices;
       interpreter
         .advance_reactive_turn_participating(
           &Value::Index(input).reactive_root_cell_ids(),
-          participant,
+          &mut participant,
           &mut services,
         )
         .unwrap_err();
@@ -3086,12 +3087,12 @@ mod compact_reactive_turn_checkpoint_tests {
     let (second, second_captures, _) = function("second", Ref::new(2));
     interpreter.plan().add_function(Box::new(first));
     interpreter.plan().add_function(Box::new(second));
-    with_reactive_journal_participant(|participant| {
+    with_reactive_journal_participant(|mut participant| {
       let mut services = NoMechExecutionServices;
       interpreter.step_reactive_turn_participating(
         2,
         1,
-        participant,
+        &mut participant,
         &mut services,
       )?;
       assert_eq!(
@@ -3115,9 +3116,21 @@ mod compact_reactive_turn_checkpoint_tests {
 
     let error = interpreter.step(0, 1).unwrap_err();
 
-    assert_eq!(error.kind_name(), "InterpreterReactiveTurnRollbackFailed");
-    let rollback = error.kind_as::<InterpreterReactiveTurnRollbackFailed>().unwrap();
-    assert!(rollback.original_error.contains("deliberate borrow-leak execution failure"));
+    assert_eq!(
+      error.kind_name(),
+      "ReactiveJournalAutomaticRollbackFailed",
+    );
+    let rollback = error
+      .kind_as::<ReactiveJournalAutomaticRollbackFailed>()
+      .unwrap();
+    let original_error = rollback.original_error.as_ref().unwrap();
+    assert!(
+      original_error.contains("InterpreterReactiveTurnRollbackFailed"),
+    );
+    assert!(
+      original_error.contains("deliberate borrow-leak execution failure"),
+    );
+    assert!(original_error.contains("ValueStateBorrowConflict"));
     assert!(rollback.rollback_error.contains("ValueStateBorrowConflict"));
   }
 

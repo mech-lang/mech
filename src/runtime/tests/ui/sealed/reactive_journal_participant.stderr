@@ -4,4 +4,4 @@ error: cannot construct `ReactiveJournalParticipant<'_>` with struct literal syn
 5 |   ReactiveJournalParticipant {}
   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: private fields `journal` and `finalized` that were not provided
+  = note: private fields `journal` and `finalization` that were not provided

@@ -2,6 +2,7 @@ use crate::{
   MResult, MechError, MechErrorKind, MechFunction, ValRef, Value,
   ValueStateJournal,
 };
+use std::cell::Cell;
 
 /// The value-state portion of one ephemeral reactive turn.
 ///
@@ -75,7 +76,7 @@ impl Default for ReactiveTurnJournal {
 /// captured values if the operation exits without explicit finalization.
 pub struct ReactiveJournalParticipant<'journal> {
   journal: &'journal mut ReactiveTurnJournal,
-  finalized: bool,
+  finalization: &'journal Cell<ReactiveJournalFinalizationState>,
 }
 
 impl ReactiveJournalParticipant<'_> {
@@ -98,13 +99,15 @@ impl ReactiveJournalParticipant<'_> {
     self.journal.preflight_restore_before()
   }
 
-  pub fn apply_restore_before(&mut self) {
+  pub fn apply_restore_before(self) {
     self.journal.apply_restore_before();
-    self.finalized = true;
+    self.finalization
+      .set(ReactiveJournalFinalizationState::RolledBack);
   }
 
-  pub fn commit(&mut self) {
-    self.finalized = true;
+  pub fn commit(self) {
+    self.finalization
+      .set(ReactiveJournalFinalizationState::Committed);
   }
 
   pub fn cell_count(&self) -> usize {
@@ -118,12 +121,13 @@ impl ReactiveJournalParticipant<'_> {
   pub(crate) fn journal_mut(&mut self) -> &mut ReactiveTurnJournal {
     self.journal
   }
+}
 
-  fn restore_unfinalized(&mut self) -> MResult<()> {
-    self.journal.restore_before()?;
-    self.finalized = true;
-    Ok(())
-  }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReactiveJournalFinalizationState {
+  Pending,
+  Committed,
+  RolledBack,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -174,36 +178,41 @@ impl MechErrorKind for ReactiveJournalAutomaticRollbackFailed {
 /// reported as a coordination error.
 pub fn with_reactive_journal_participant<T>(
   operation: impl FnOnce(
-    &mut ReactiveJournalParticipant<'_>,
+    ReactiveJournalParticipant<'_>,
   ) -> MResult<T>,
 ) -> MResult<T> {
   let mut journal = ReactiveTurnJournal::new();
-  let mut participant = ReactiveJournalParticipant {
+  let finalization =
+    Cell::new(ReactiveJournalFinalizationState::Pending);
+  let participant = ReactiveJournalParticipant {
     journal: &mut journal,
-    finalized: false,
+    finalization: &finalization,
   };
-  let result = operation(&mut participant);
-  if participant.finalized {
-    return result;
-  }
-  match participant.restore_unfinalized() {
-    Ok(()) => match result {
-      Ok(_) => Err(MechError::new(
-        ReactiveJournalFinalizationMissing,
-        None,
-      )),
-      Err(error) => Err(error),
-    },
-    Err(rollback_error) => Err(MechError::new(
-      ReactiveJournalAutomaticRollbackFailed {
-        original_error: result
-          .as_ref()
-          .err()
-          .map(|error| format!("{:?}", error)),
-        rollback_error: format!("{:?}", rollback_error),
-      },
-      None,
-    )),
+  let result = operation(participant);
+  match finalization.get() {
+    ReactiveJournalFinalizationState::Committed
+    | ReactiveJournalFinalizationState::RolledBack => result,
+    ReactiveJournalFinalizationState::Pending => {
+      match journal.restore_before() {
+        Ok(()) => match result {
+          Ok(_) => Err(MechError::new(
+            ReactiveJournalFinalizationMissing,
+            None,
+          )),
+          Err(error) => Err(error),
+        },
+        Err(rollback_error) => Err(MechError::new(
+          ReactiveJournalAutomaticRollbackFailed {
+            original_error: result
+              .as_ref()
+              .err()
+              .map(|error| format!("{:?}", error)),
+            rollback_error: format!("{:?}", rollback_error),
+          },
+          None,
+        )),
+      }
+    }
   }
 }
 
@@ -212,6 +221,146 @@ mod tests {
   use super::*;
   use crate::*;
   use std::{cell::RefCell, rc::Rc};
+
+  fn deliberate_journal_error(message: &'static str) -> MechError {
+    MechError::new(
+      GenericError {
+        msg: message.to_string(),
+      },
+      None,
+    )
+  }
+
+  #[test]
+  fn reactive_journal_pending_error_restores_and_returns_original_error() {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant::<()>(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        Err(deliberate_journal_error(
+          "deliberate pending journal error",
+        ))
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(
+      error
+        .kind_message()
+        .contains("deliberate pending journal error"),
+    );
+    assert_eq!(*value.borrow(), 1);
+  }
+
+  #[test]
+  fn reactive_journal_pending_success_restores_and_reports_missing_finalization(
+  ) {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        Ok(())
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(
+      error.kind_name(),
+      "ReactiveJournalFinalizationMissing",
+    );
+    assert_eq!(*value.borrow(), 1);
+  }
+
+  #[test]
+  fn reactive_journal_explicit_commit_retains_mutation() {
+    let value = Ref::new(1usize);
+
+    with_reactive_journal_participant(|mut participant| {
+      participant.capture_value(&Value::Index(value.clone()))?;
+      *value.borrow_mut() = 2;
+      participant.commit();
+      Ok(())
+    })
+    .unwrap();
+
+    assert_eq!(*value.borrow(), 2);
+  }
+
+  #[test]
+  fn reactive_journal_commit_with_error_retains_mutation_and_error() {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant::<()>(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        participant.commit();
+        Err(deliberate_journal_error(
+          "deliberate committed journal error",
+        ))
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(
+      error
+        .kind_message()
+        .contains("deliberate committed journal error"),
+    );
+    assert_eq!(*value.borrow(), 2);
+  }
+
+  #[test]
+  fn reactive_journal_explicit_rollback_restores_and_returns_original_error() {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant::<()>(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        participant.preflight_restore_before()?;
+        participant.apply_restore_before();
+        Err(deliberate_journal_error(
+          "deliberate rolled-back journal error",
+        ))
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(
+      error
+        .kind_message()
+        .contains("deliberate rolled-back journal error"),
+    );
+    assert_eq!(*value.borrow(), 1);
+  }
+
+  #[test]
+  fn reactive_journal_finalization_states_are_distinct() {
+    assert_ne!(
+      ReactiveJournalFinalizationState::Pending,
+      ReactiveJournalFinalizationState::Committed,
+    );
+    assert_ne!(
+      ReactiveJournalFinalizationState::Pending,
+      ReactiveJournalFinalizationState::RolledBack,
+    );
+    assert_ne!(
+      ReactiveJournalFinalizationState::Committed,
+      ReactiveJournalFinalizationState::RolledBack,
+    );
+  }
 
   struct JournalFunction {
     name: &'static str,

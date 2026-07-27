@@ -309,17 +309,15 @@ pub struct MechProgram {
 ///
 /// This is deliberately private. Safe callers choose a finalization outcome;
 /// only the program decides whether the journal is retained or applied.
-struct ProgramReactiveTurnJournal<'participant, 'journal> {
-  participant: &'participant mut ReactiveJournalParticipant<'journal>,
+struct ProgramReactiveTurnJournal<'journal> {
+  participant: ReactiveJournalParticipant<'journal>,
   interpreters: BTreeMap<u64, InterpreterReactiveTurnCheckpoint>,
   used: bool,
 }
 
-impl<'participant, 'journal>
-  ProgramReactiveTurnJournal<'participant, 'journal>
-{
+impl<'journal> ProgramReactiveTurnJournal<'journal> {
   fn new(
-    participant: &'participant mut ReactiveJournalParticipant<'journal>,
+    participant: ReactiveJournalParticipant<'journal>,
   ) -> Self {
     Self {
       participant,
@@ -351,7 +349,7 @@ impl<'participant, 'journal>
     self.participant.is_empty() && self.interpreters.is_empty()
   }
 
-  fn commit(&mut self) {
+  fn commit(self) {
     self.participant.commit();
   }
 }
@@ -423,7 +421,7 @@ impl MechProgram {
   fn capture_reactive_interpreter(
     &self,
     interpreter_id: u64,
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
   ) -> MResult<()> {
     let Some((actual_id, checkpoint)) = with_interpreter(
       &self.interpreter,
@@ -455,7 +453,7 @@ impl MechProgram {
   #[cfg(feature = "functions")]
   fn preflight_reactive_turn_rollback(
     &self,
-    journal: &ProgramReactiveTurnJournal<'_, '_>,
+    journal: &ProgramReactiveTurnJournal<'_>,
   ) -> MResult<()> {
     for (interpreter_id, checkpoint) in &journal.interpreters {
       let Some(result) = with_interpreter(
@@ -479,30 +477,29 @@ impl MechProgram {
   }
 
   #[cfg(feature = "functions")]
-  fn apply_reactive_turn_rollback(
+  fn rollback_reactive_turn(
     &mut self,
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
-  ) {
-    journal.participant.apply_restore_before();
-    for (interpreter_id, checkpoint) in &journal.interpreters {
+    journal: ProgramReactiveTurnJournal<'_>,
+  ) -> MResult<()> {
+    self.preflight_reactive_turn_rollback(&journal)?;
+    let ProgramReactiveTurnJournal {
+      participant,
+      interpreters,
+      ..
+    } = journal;
+    participant.apply_restore_before();
+    for (interpreter_id, checkpoint) in &interpreters {
       with_interpreter_mut(
         &mut self.interpreter,
         *interpreter_id,
-        &mut |interpreter| interpreter.apply_restore_reactive_turn(checkpoint),
-      ).expect("reactive-turn rollback preflight located every interpreter");
+        &mut |interpreter| {
+          interpreter.apply_restore_reactive_turn(checkpoint)
+        },
+      )
+      .expect(
+        "reactive-turn rollback preflight located every interpreter",
+      );
     }
-  }
-
-  #[cfg(feature = "functions")]
-  fn rollback_reactive_turn(
-    &mut self,
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
-  ) -> MResult<()> {
-    if let Err(error) = self.preflight_reactive_turn_rollback(journal) {
-      journal.commit();
-      return Err(error);
-    }
-    self.apply_reactive_turn_rollback(journal);
     Ok(())
   }
 
@@ -510,7 +507,7 @@ impl MechProgram {
   fn finish_failed_reactive_operation<T>(
     &mut self,
     operation: &'static str,
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: ProgramReactiveTurnJournal<'_>,
     original_error: MechError,
   ) -> MResult<T> {
     match self.rollback_reactive_turn(journal) {
@@ -852,7 +849,7 @@ impl MechProgram {
           ProgramTurnFinalization::Rollback(error) => {
             self.finish_failed_reactive_operation(
               "step",
-              &mut journal,
+              journal,
               error,
             )
           }
@@ -863,7 +860,7 @@ impl MechProgram {
         },
         Err(error) => self.finish_failed_reactive_operation(
           "step",
-          &mut journal,
+          journal,
           error,
         ),
       }
@@ -874,7 +871,7 @@ impl MechProgram {
   fn step_with_reactive_turn_journal(
     &mut self,
     step_id: u64,
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
     services: &mut dyn MechExecutionServices,
   ) -> MResult<()> {
     journal.begin_operation("step")?;
@@ -883,7 +880,7 @@ impl MechProgram {
       .step_reactive_turn_participating(
         step_id as usize,
         1,
-        journal.participant,
+        &mut journal.participant,
         services,
       )?;
     Ok(())
@@ -1032,7 +1029,7 @@ impl MechProgram {
         }
         Err(error) => self.finish_failed_reactive_operation(
           "advance_reactive_turn",
-          &mut journal,
+          journal,
           error,
         ),
       }
@@ -1044,7 +1041,7 @@ impl MechProgram {
     &mut self,
     interpreter_id: u64,
     dirty_cells: &[ReactiveCellId],
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
     journal.begin_operation("advance_reactive_turn")?;
@@ -1053,7 +1050,7 @@ impl MechProgram {
       interpreter
         .advance_reactive_turn_participating(
           dirty_cells,
-          journal.participant,
+          &mut journal.participant,
           services,
         )
     }) else {
@@ -1116,7 +1113,7 @@ impl MechProgram {
           ProgramTurnFinalization::Rollback(error) => {
             self.finish_failed_reactive_operation(
               "update_inputs_and_advance_turn",
-              &mut journal,
+              journal,
               error,
             )
           }
@@ -1127,7 +1124,7 @@ impl MechProgram {
         },
         Err(error) => self.finish_failed_reactive_operation(
           "update_inputs_and_advance_turn",
-          &mut journal,
+          journal,
           error,
         ),
       }
@@ -1138,7 +1135,7 @@ impl MechProgram {
   fn update_inputs_and_advance_turn_with_journal(
     &mut self,
     updates: &[ProgramInputUpdate],
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ProgramInputTurnOutcome> {
     journal.begin_operation("update_inputs_and_advance_turn")?;
@@ -1160,7 +1157,7 @@ impl MechProgram {
           interpreter
             .advance_reactive_turn_participating(
               &dirty_cells,
-              journal.participant,
+              &mut journal.participant,
               services,
             )
         },
@@ -1186,7 +1183,7 @@ impl MechProgram {
   fn update_inputs_and_advance_turn_with_journal_for_test(
     &mut self,
     updates: &[ProgramInputUpdate],
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
   ) -> MResult<ProgramInputTurnOutcome> {
     let mut services = NoMechExecutionServices;
     self.update_inputs_and_advance_turn_with_journal(
@@ -1201,7 +1198,7 @@ impl MechProgram {
     &mut self,
     interpreter_id: u64,
     dirty_cells: &[ReactiveCellId],
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
   ) -> MResult<ReactiveTurnOutcome> {
     let mut services = NoMechExecutionServices;
     self.advance_reactive_turn_with_journal(
@@ -1216,7 +1213,7 @@ impl MechProgram {
   fn step_with_reactive_turn_journal_for_test(
     &mut self,
     step_id: u64,
-    journal: &mut ProgramReactiveTurnJournal<'_, '_>,
+    journal: &mut ProgramReactiveTurnJournal<'_>,
   ) -> MResult<()> {
     let mut services = NoMechExecutionServices;
     self.step_with_reactive_turn_journal(
@@ -1231,12 +1228,12 @@ impl MechProgram {
     &mut self,
     operation: impl FnOnce(
       &mut Self,
-      &mut ProgramReactiveTurnJournal<'_, '_>,
+      ProgramReactiveTurnJournal<'_>,
     ) -> MResult<T>,
   ) -> MResult<T> {
     with_reactive_journal_participant(|participant| {
-      let mut journal = ProgramReactiveTurnJournal::new(participant);
-      operation(self, &mut journal)
+      let journal = ProgramReactiveTurnJournal::new(participant);
+      operation(self, journal)
     })
   }
 
@@ -2485,11 +2482,11 @@ mod compact_program_reactive_turn_tests {
     }
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program
             .update_inputs_and_advance_turn_with_journal_for_test(
               &updates,
-              journal,
+              &mut journal,
             )?;
           assert_eq!(*shared.borrow(), 7);
           program.rollback_reactive_turn(journal)
@@ -2565,11 +2562,11 @@ mod compact_program_reactive_turn_tests {
     }
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program
             .update_inputs_and_advance_turn_with_journal_for_test(
               &updates,
-              journal,
+              &mut journal,
             )?;
           for id in [10, 20] {
             with_interpreter(
@@ -2750,11 +2747,11 @@ mod compact_program_reactive_turn_tests {
     add_reactive(&program, id, function, &inner);
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program
             .update_inputs_and_advance_turn_with_journal_for_test(
               &[update(input, 2)],
-              journal,
+              &mut journal,
             )
             .unwrap_err();
           assert_eq!((*inner.borrow(), *output.borrow()), (2, 4));
@@ -2776,10 +2773,10 @@ mod compact_program_reactive_turn_tests {
     add_reactive(&program, id, function, &inner);
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(input, 2)],
-            journal,
+            &mut journal,
           )?;
           program.rollback_reactive_turn(journal)
         },
@@ -2795,10 +2792,10 @@ mod compact_program_reactive_turn_tests {
     let (input, _, inner) = index_input(&mut program, id, "input", 1);
     let error = program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(input, 2)],
-            journal,
+            &mut journal,
           )?;
           Ok(())
         },
@@ -2815,15 +2812,15 @@ mod compact_program_reactive_turn_tests {
     let (input, _, inner) = index_input(&mut program, id, "input", 1);
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(input, 2)],
-            journal,
+            &mut journal,
           )?;
           let error = program
             .update_inputs_and_advance_turn_with_journal_for_test(
               &[update(input, 3)],
-              journal,
+              &mut journal,
             )
             .unwrap_err();
           assert_eq!(
@@ -2839,16 +2836,16 @@ mod compact_program_reactive_turn_tests {
   }
 
   #[test]
-  fn rollback_preflight_failure_changes_nothing() {
+  fn rollback_preflight_failure_uses_automatic_value_restore() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let id = program.interpreter().id;
     let (input, _, inner) = index_input(&mut program, id, "input", 1);
     let error = program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(input, 2)],
-            journal,
+            &mut journal,
           )?;
           let (tail, _, _) = test_function(
             "topology-tail",
@@ -2863,7 +2860,7 @@ mod compact_program_reactive_turn_tests {
       .unwrap_err();
 
     assert_eq!(error.kind_name(), "InterpreterReactiveTurnInvariant");
-    assert_eq!(*inner.borrow(), 2);
+    assert_eq!(*inner.borrow(), 1);
   }
 
   #[test]
@@ -2880,9 +2877,17 @@ mod compact_program_reactive_turn_tests {
 
     let error = program.update_inputs_and_advance_turn(&[update(input, 2)]).unwrap_err();
 
-    assert_eq!(error.kind_name(), "ProgramReactiveTurnRollbackFailed");
-    let rollback = error.kind_as::<ProgramReactiveTurnRollbackFailed>().unwrap();
-    assert!(rollback.original_error.contains("deliberate borrow leak failure"));
+    assert_eq!(
+      error.kind_name(),
+      "ReactiveJournalAutomaticRollbackFailed",
+    );
+    let rollback = error
+      .kind_as::<ReactiveJournalAutomaticRollbackFailed>()
+      .unwrap();
+    let original_error = rollback.original_error.as_ref().unwrap();
+    assert!(original_error.contains("ProgramReactiveTurnRollbackFailed"));
+    assert!(original_error.contains("deliberate borrow leak failure"));
+    assert!(original_error.contains("ValueStateBorrowConflict"));
     assert!(rollback.rollback_error.contains("ValueStateBorrowConflict"));
   }
 
@@ -2926,10 +2931,10 @@ mod compact_program_reactive_turn_tests {
     }
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(selected.unwrap(), 9000)],
-            journal,
+            &mut journal,
           )?;
           assert_eq!(*selected_capture.unwrap().borrow(), 1);
           assert_eq!(
@@ -2955,11 +2960,11 @@ mod compact_program_reactive_turn_tests {
     let (input, _, _) = index_input(&mut program, id, "input", 1);
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           assert!(journal.is_empty());
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(input, 2)],
-            journal,
+            &mut journal,
           )?;
           assert_eq!(journal.interpreter_count(), 1);
           assert!(journal.cell_count() > 0);
@@ -2982,11 +2987,11 @@ mod compact_program_reactive_turn_tests {
     add_reactive(&program, id, function, &input);
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.advance_reactive_turn_with_journal_for_test(
             id,
             &Value::Index(input).reactive_root_cell_ids(),
-            journal,
+            &mut journal,
           )?;
           assert_eq!(*output.borrow(), 6);
           program.rollback_reactive_turn(journal)
@@ -3006,8 +3011,11 @@ mod compact_program_reactive_turn_tests {
     program.interpreter().plan().add_function(Box::new(function));
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
-          program.step_with_reactive_turn_journal_for_test(1, journal)?;
+        |program, mut journal| {
+          program.step_with_reactive_turn_journal_for_test(
+            1,
+            &mut journal,
+          )?;
           assert_eq!(*output.borrow(), 6);
           program.rollback_reactive_turn(journal)
         },
@@ -3017,16 +3025,16 @@ mod compact_program_reactive_turn_tests {
   }
 
   #[test]
-  fn rollback_rejects_disappeared_interpreter_before_value_restore() {
+  fn rollback_missing_interpreter_uses_automatic_value_restore() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     add_child(&mut program, 77);
     let (input, _, inner) = index_input(&mut program, 77, "input", 1);
     let error = program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           program.update_inputs_and_advance_turn_with_journal_for_test(
             &[update(input, 2)],
-            journal,
+            &mut journal,
           )?;
           program
             .interpreter_mut()
@@ -3039,7 +3047,7 @@ mod compact_program_reactive_turn_tests {
       .unwrap_err();
 
     assert_eq!(error.kind_name(), "ProgramInputError");
-    assert_eq!(*inner.borrow(), 2);
+    assert_eq!(*inner.borrow(), 1);
   }
 
   #[test]
@@ -3049,11 +3057,11 @@ mod compact_program_reactive_turn_tests {
     let (input, _, inner) = index_input(&mut program, id, "input", 1);
     program
       .with_program_reactive_turn_journal_for_test(
-        |program, journal| {
+        |program, mut journal| {
           let error = program
             .update_inputs_and_advance_turn_with_journal_for_test(
               &[update(input, 2), update(input, 3)],
-              journal,
+              &mut journal,
             )
             .unwrap_err();
           assert_eq!(error.kind_name(), "ProgramInputDuplicateTarget");
