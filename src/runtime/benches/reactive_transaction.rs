@@ -11,14 +11,17 @@ use mech_program::{
 };
 use mech_runtime::{
   BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
-  ClosureHostFunction, MechRuntime, ObjectRecord,
+  DeterministicHostFunction, HostArgumentValue,
+  MechRuntime, ObjectRecord,
+  PlannedRuntimeManagedHostFunction,
+  PlannedStagedHostFunction,
   PreparedRuntimeEffect,
   RuntimeAfterCommitEffect, RuntimeCapabilityGrant,
   RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectMetadata,
   RuntimeEffectSource, RuntimeHostInput, RuntimeHostInputSource,
   RuntimeHostInputValue, RuntimePreparedHostCall,
   RuntimeResourceProvider, RuntimeResourceReadRequest,
-  SequentialIdGenerator, StagedClosureHostFunction,
+  SequentialIdGenerator,
 };
 use std::hint::black_box;
 use std::sync::{
@@ -213,8 +216,13 @@ fn register_source(count: usize) -> String {
   source
 }
 
-fn copied_host_f64(arguments: &[Value]) -> Value {
-  let value = match arguments.first() {
+fn copied_host_f64(
+  arguments: &[impl HostArgumentValue],
+) -> Value {
+  let value = match arguments
+    .first()
+    .map(HostArgumentValue::host_argument_value)
+  {
     Some(Value::F64(value)) => *value.borrow(),
     Some(Value::MutableReference(value)) => {
       match &*value.borrow() {
@@ -237,9 +245,9 @@ fn failing_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "bench/fail-tail",
-      move |_services, _context, arguments| {
+      move |_context, arguments| {
         if fail_for_host.load(Ordering::SeqCst) {
           return Err(MechError::new(
             GenericError {
@@ -282,9 +290,9 @@ fn capability_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "bench/capability",
-      |_services, _context, arguments| {
+      |_context, arguments| {
         Ok(copied_host_f64(&arguments))
       },
     ))
@@ -318,11 +326,14 @@ fn effect_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
-    .host_function(StagedClosureHostFunction::new(
+    .host_function(PlannedStagedHostFunction::new(
       "bench/after-commit",
-      |_services, _context, arguments| {
+      |_context, arguments| {
+        Ok(copied_host_f64(arguments).into())
+      },
+      |_context, arguments| {
         Ok(RuntimePreparedHostCall {
-          value: copied_host_f64(&arguments),
+          value: copied_host_f64(&arguments).into(),
           effect: PreparedRuntimeEffect::AfterCommit(Box::new(
             BenchAfterCommitEffect,
           )),
@@ -359,15 +370,17 @@ fn object_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(PlannedRuntimeManagedHostFunction::new(
       "bench/object",
-      |services, context, arguments| {
-        let id = services.next_object_id();
-        services.put_object_with_context(
-          context,
+      |_context, arguments| {
+        Ok(copied_host_f64(arguments).into())
+      },
+      |services, _context, arguments| {
+        let id = services.allocate_object_id()?;
+        services.put_object(
           ObjectRecord::text(id, "benchmark", "reactive turn"),
         )?;
-        Ok(copied_host_f64(&arguments))
+        Ok(copied_host_f64(&arguments).into())
       },
     ))
     .unwrap()

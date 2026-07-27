@@ -991,10 +991,10 @@ mod tests {
     BasicCapability, BasicOperation, BasicResource, BasicSubject,
   };
   use crate::{
-    ClosureHostFunction, NodeId, PreparedRuntimeEffect,
+    NodeId, PlannedRuntimeManagedHostFunction,
+    PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimePreparedHostCall, RuntimeTransactionalEffect,
-    StagedClosureHostFunction,
   };
 
   #[derive(Debug)]
@@ -1342,19 +1342,21 @@ mod tests {
   #[test]
   fn committed_implicit_participant_failure_never_rolls_back_program() {
     let log = Arc::new(Mutex::new(Vec::new()));
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut builder = MechRuntime::builder();
     for (id, name, fail_commit) in [
       (CapabilityId(800), "round4/first", false),
       (CapabilityId(801), "round4/second", true),
     ] {
-      grant_program_host_call(&mut runtime, id, name);
       let effect_log = log.clone();
-      runtime
-        .register_mech_host_function(StagedClosureHostFunction::new(
+      builder = builder
+        .host_function(PlannedStagedHostFunction::new(
           name,
-          move |_services, _context, _args| {
+          |_context, _args| {
+            Ok(Value::F64(mech_core::Ref::new(1.0)).into())
+          },
+          move |_context, _args| {
             Ok(RuntimePreparedHostCall {
-              value: Value::F64(mech_core::Ref::new(1.0)),
+              value: Value::F64(mech_core::Ref::new(1.0)).into(),
               effect: PreparedRuntimeEffect::Transactional(Box::new(
                 CommitDecisionEffect {
                   name,
@@ -1366,6 +1368,13 @@ mod tests {
           },
         ))
         .unwrap();
+    }
+    let mut runtime = builder.build().unwrap();
+    for (id, name) in [
+      (CapabilityId(800), "round4/first"),
+      (CapabilityId(801), "round4/second"),
+    ] {
+      grant_program_host_call(&mut runtime, id, name);
     }
     let mut context = runtime.runtime_context().unwrap();
 
@@ -1973,19 +1982,10 @@ mod tests {
 
   #[test]
   fn host_callback_failure_cannot_escape_execution_session() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    let subject = runtime.runtime_context().unwrap().subject;
-    runtime
-      .grant_capability(Arc::new(BasicCapability::new(
-        CapabilityId(500),
-        &BasicSubject::new(&subject),
-        &BasicResource::new("host:demo/reenter"),
-        [BasicOperation::new("call")],
-      )))
-      .unwrap();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new_runtime_managed(
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedRuntimeManagedHostFunction::new(
         "demo/reenter",
+        |_context, _args| Ok(Value::Empty.into()),
         move |_services, _context, _args| {
           Err(MechError::new(
             RuntimeInvalidOperationError {
@@ -1996,6 +1996,17 @@ mod tests {
           ))
         },
       ))
+      .unwrap()
+      .build()
+      .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        CapabilityId(500),
+        &BasicSubject::new(&subject),
+        &BasicResource::new("host:demo/reenter"),
+        [BasicOperation::new("call")],
+      )))
       .unwrap();
     let mut context = runtime.runtime_context().unwrap();
 

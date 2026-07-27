@@ -2,10 +2,10 @@ use super::*;
 
 use mech_core::MechExecutionServices;
 use crate::{
-  CapabilityRequest, HostFunctionTransactionMode,
-  HostFunctionTransactionUnsupportedError,
-  InvalidHostFunctionError, PreparedRuntimeEffect,
-  RuntimePreparedHostCall,
+  CapabilityRequest, InvalidHostFunctionError,
+  PreparedRuntimeEffect, RegisteredHostFunction,
+  RuntimeCallContext, RuntimeManagedServices,
+  RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 
 pub(crate) struct RuntimeExecutionSession<'a> {
@@ -31,13 +31,12 @@ struct RuntimeSessionServices<'a> {
   capability_kernel: &'a mut dyn CapabilityKernel,
   resources: &'a mut RuntimeResourceRegistry,
   event_sequence: &'a mut u64,
+  context: &'a mut RuntimeContext,
 }
 
 impl RuntimeSessionServices<'_> {
-  fn validate_context(
-    &self,
-    context: &RuntimeContext,
-  ) -> MResult<()> {
+  fn validate_context(&self) -> MResult<()> {
+    let context = &*self.context;
     context.validate()?;
     if context.runtime != self.runtime_id {
       return Err(MechError::new(
@@ -90,11 +89,10 @@ impl RuntimeSessionServices<'_> {
 
   fn emit_event(
     &mut self,
-    context: &mut RuntimeContext,
     kind: RuntimeEventKind,
   ) -> MResult<EventId> {
-    self.validate_context(context)?;
-    let context_events_before = context.events.clone();
+    self.validate_context()?;
+    let context_events_before = self.context.events.clone();
     let event = RuntimeEvent::new(
       self.id_generator.event_id(),
       {
@@ -105,13 +103,13 @@ impl RuntimeSessionServices<'_> {
       kind,
     );
     let id = event.id;
-    context.push_event(event.clone());
+    self.context.push_event(event.clone());
     Self::trim_context_events(
       self.max_events,
-      &mut context.events,
+      &mut self.context.events,
     );
     if let Err(error) = self.transaction.store.stage_event(event) {
-      context.events = context_events_before;
+      self.context.events = context_events_before;
       return Err(error);
     }
     Ok(id)
@@ -119,11 +117,10 @@ impl RuntimeSessionServices<'_> {
 
   fn check_capability(
     &mut self,
-    context: &mut RuntimeContext,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
-    self.validate_context(context)?;
-    context.charge_step()?;
+    self.validate_context()?;
+    self.context.charge_step()?;
     if let Some(capability) =
       self.transaction.capabilities.check(request)?
     {
@@ -149,25 +146,23 @@ impl RuntimeSessionServices<'_> {
 
   fn stage_effect(
     &mut self,
-    context: &mut RuntimeContext,
     effect: PreparedRuntimeEffect,
   ) -> MResult<RuntimeEffectId> {
-    self.validate_context(context)?;
+    self.validate_context()?;
     let cost = effect.cost();
     let metadata = effect.metadata();
     let protocol = effect.protocol();
-    context.charge_bytes(cost.bytes)?;
-    context.charge_items(cost.items)?;
+    self.context.charge_bytes(cost.bytes)?;
+    self.context.charge_items(cost.items)?;
     let store_before = self.transaction.store.clone();
     let effect_mark = self.transaction.effects.mark();
-    let context_events_before = context.events.clone();
+    let context_events_before = self.context.events.clone();
     let transaction_id = self.transaction.store.id;
     let effect_id = self
       .transaction
       .effects
       .stage(transaction_id, effect);
     if let Err(error) = self.emit_event(
-      context,
       RuntimeEventKind::EffectStaged {
         effect_id,
         source: metadata.source,
@@ -179,7 +174,7 @@ impl RuntimeSessionServices<'_> {
       self.transaction.store = store_before;
       let cleanup =
         self.transaction.effects.rollback_to(effect_mark);
-      context.events = context_events_before;
+      self.context.events = context_events_before;
       if cleanup.is_empty() {
         return Err(error);
       }
@@ -197,18 +192,18 @@ impl RuntimeSessionServices<'_> {
   }
 }
 
-impl RuntimeServices for RuntimeSessionServices<'_> {
-  fn next_object_id(&mut self) -> ObjectId {
-    self.id_generator.object_id()
+impl RuntimeManagedServices for RuntimeSessionServices<'_> {
+  fn allocate_object_id(&mut self) -> MResult<ObjectId> {
+    self.validate_context()?;
+    Ok(self.id_generator.object_id())
   }
 
-  fn get_object_with_context(
+  fn get_object(
     &mut self,
-    context: &mut RuntimeContext,
     id: ObjectId,
   ) -> MResult<Option<ObjectRecord>> {
-    self.validate_context(context)?;
-    context.record_read(id);
+    self.validate_context()?;
+    self.context.record_read(id);
     if let Some(object) =
       self.transaction.store.get_staged_object(id)
     {
@@ -217,18 +212,16 @@ impl RuntimeServices for RuntimeSessionServices<'_> {
     self.store.get_object(id)
   }
 
-  fn put_object_with_context(
+  fn put_object(
     &mut self,
-    context: &mut RuntimeContext,
     object: ObjectRecord,
   ) -> MResult<ObjectId> {
-    self.validate_context(context)?;
-    context.charge_bytes(object.data.len() as u64)?;
+    self.validate_context()?;
+    self.context.charge_bytes(object.data.len() as u64)?;
     let id = object.id;
     self.transaction.store.stage_put_object(object)?;
-    context.record_write(id);
+    self.context.record_write(id);
     self.emit_event(
-      context,
       RuntimeEventKind::ObjectCreated {
         object_id: id,
       },
@@ -236,18 +229,16 @@ impl RuntimeServices for RuntimeSessionServices<'_> {
     Ok(id)
   }
 
-  fn update_object_with_context(
+  fn update_object(
     &mut self,
-    context: &mut RuntimeContext,
     object: ObjectRecord,
   ) -> MResult<ObjectId> {
-    self.validate_context(context)?;
-    context.charge_bytes(object.data.len() as u64)?;
+    self.validate_context()?;
+    self.context.charge_bytes(object.data.len() as u64)?;
     let id = object.id;
     self.transaction.store.stage_update_object(object)?;
-    context.record_write(id);
+    self.context.record_write(id);
     self.emit_event(
-      context,
       RuntimeEventKind::ObjectUpdated {
         object_id: id,
       },
@@ -255,12 +246,11 @@ impl RuntimeServices for RuntimeSessionServices<'_> {
     Ok(id)
   }
 
-  fn get_actor_with_context(
+  fn get_actor(
     &mut self,
-    context: &mut RuntimeContext,
     id: ActorId,
   ) -> MResult<Option<ActorRecord>> {
-    self.validate_context(context)?;
+    self.validate_context()?;
     if let Some(actor) =
       self.transaction.store.get_staged_actor(id)
     {
@@ -269,15 +259,23 @@ impl RuntimeServices for RuntimeSessionServices<'_> {
     self.store.get_actor(id)
   }
 
-  fn update_actor_with_context(
+  fn update_actor(
     &mut self,
-    context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
-    self.validate_context(context)?;
+    self.validate_context()?;
     let id = actor.id;
     self.transaction.store.stage_actor_update(actor)?;
     Ok(id)
+  }
+
+  fn set_current_actor_state(
+    &mut self,
+    state: ObjectId,
+  ) -> MResult<()> {
+    self.validate_context()?;
+    self.context.actor_state = Some(state);
+    Ok(())
   }
 }
 
@@ -309,8 +307,9 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
       capability_kernel: &mut **capability_kernel,
       resources,
       event_sequence,
+      context,
     };
-    services.validate_context(context)?;
+    services.validate_context()?;
     if name.trim().is_empty() {
       return Err(MechError::new(
         InvalidHostFunctionError {
@@ -321,14 +320,12 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
       ));
     }
     services.emit_event(
-      context,
       RuntimeEventKind::HostCallStarted {
         name: name.to_string(),
       },
     )?;
     let Some(function) = host_registry.get_function(name)? else {
       services.emit_event(
-        context,
         RuntimeEventKind::HostCallFailed {
           name: name.to_string(),
           message: "host function not found".to_string(),
@@ -342,63 +339,54 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
       ));
     };
 
-    let result = (|| -> MResult<Value> {
-      let mode = function.transaction_mode();
-      if mode == HostFunctionTransactionMode::ImmediateOnly {
-        return Err(MechError::new(
-          HostFunctionTransactionUnsupportedError {
-            function: function.name().to_string(),
-            mode,
-          },
-          None,
-        ));
-      }
+    let arguments = arguments
+      .iter()
+      .map(RuntimeValueSnapshot::capture)
+      .collect::<Vec<_>>();
+    let call_context =
+      RuntimeCallContext::capture(services.context);
+    let result = (|| -> MResult<RuntimeValueSnapshot> {
       host_policy.validate_call(
-        context,
-        function.as_ref(),
-        arguments,
+        &call_context,
+        &function,
+        &arguments,
       )?;
-      context.charge_items(
-        function.estimated_cost_items(arguments),
+      services.context.charge_items(
+        function.estimated_cost_items(&arguments),
       )?;
-      context.charge_bytes(
-        function.estimated_cost_bytes(arguments),
+      services.context.charge_bytes(
+        function.estimated_cost_bytes(&arguments),
       )?;
       let capability_request = function
-        .required_capability(context)
+        .required_capability(&call_context)
         .unwrap_or_else(|| {
           default_host_capability_request(
-            context,
+            &call_context,
             function.name(),
           )
         });
-      services.check_capability(
-        context,
-        &capability_request,
-      )?;
-      match mode {
-        HostFunctionTransactionMode::Staged => {
+      services.check_capability(&capability_request)?;
+      match function {
+        RegisteredHostFunction::Pure(function) => {
+          function.invoke(&call_context, arguments)
+        }
+        RegisteredHostFunction::RuntimeManaged(function) => {
+          function.invoke(
+            &mut services,
+            &call_context,
+            arguments,
+          )
+        }
+        RegisteredHostFunction::Staged(function) => {
           let RuntimePreparedHostCall {
             value,
             effect,
-          } = function.stage_call(
-            &mut services,
-            context,
-            arguments.to_vec(),
+          } = function.prepare(
+            &call_context,
+            arguments,
           )?;
-          services.stage_effect(context, effect)?;
+          services.stage_effect(effect)?;
           Ok(value)
-        }
-        HostFunctionTransactionMode::Pure
-        | HostFunctionTransactionMode::RuntimeManaged => {
-          function.call(
-            &mut services,
-            context,
-            arguments.to_vec(),
-          )
-        }
-        HostFunctionTransactionMode::ImmediateOnly => {
-          unreachable!()
         }
       }
     })();
@@ -406,7 +394,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     match &result {
       Ok(_) => {
         services.emit_event(
-          context,
           RuntimeEventKind::HostCallCompleted {
             name: name.to_string(),
           },
@@ -414,7 +401,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
       }
       Err(error) => {
         services.emit_event(
-          context,
           RuntimeEventKind::HostCallFailed {
             name: name.to_string(),
             message: format!("{error:?}"),
@@ -422,7 +408,9 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         )?;
       }
     }
-    result
+    result.map(|snapshot| {
+      snapshot.into_value().deep_snapshot()
+    })
   }
 }
 
@@ -482,6 +470,53 @@ impl MechRuntime {
       event_sequence,
     };
     execute(program, &mut session)
+  }
+
+  pub(super) fn with_runtime_execution_session<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    execute: impl FnOnce(
+      &mut RuntimeExecutionSession<'_>,
+    ) -> MResult<T>,
+  ) -> MResult<T> {
+    let transaction_id = Self::context_transaction_id(context)?;
+    let max_events = self.execution_session_max_events();
+    let MechRuntime {
+      id,
+      event_sequence,
+      id_generator,
+      store,
+      capability_kernel,
+      host_registry,
+      host_policy,
+      active_transactions,
+      resources,
+      ..
+    } = self;
+    let transaction = active_transactions
+      .get_mut(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError {
+            transaction_id,
+          },
+          None,
+        )
+      })?;
+    let mut session = RuntimeExecutionSession {
+      runtime_id: *id,
+      max_events,
+      context,
+      transaction,
+      id_generator: id_generator.as_mut(),
+      store: store.as_mut(),
+      capability_kernel: capability_kernel.as_mut(),
+      resources,
+      host_registry: host_registry.as_ref(),
+      host_policy: host_policy.as_ref(),
+      event_sequence,
+    };
+    execute(&mut session)
   }
 
   pub(super) fn with_isolated_program_execution_session<T>(

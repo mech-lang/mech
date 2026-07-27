@@ -9,7 +9,7 @@ use mech_runtime::{
   PreparedRuntimeEffect, RuntimeAfterCommitEffect,
   RuntimeCompensatableEffect, RuntimeContext, RuntimeEffectMetadata,
   RuntimeEffectSource, RuntimePreparedHostCall, SequentialIdGenerator,
-  StagedClosureHostFunction,
+  PlannedStagedHostFunction,
 };
 use std::hint::black_box;
 use std::sync::Arc;
@@ -208,11 +208,14 @@ fn staged_effect_rollback_fixture(
 ) -> (ExplicitFixture, MechSourceCode) {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
-    .host_function(StagedClosureHostFunction::new(
+    .host_function(PlannedStagedHostFunction::new(
       "bench/staged",
-      |_services, _context, _arguments| {
+      |_context, _arguments| {
+        Ok(Value::Empty.into())
+      },
+      |_context, _arguments| {
         Ok(RuntimePreparedHostCall {
-          value: Value::Empty,
+          value: Value::Empty.into(),
           effect: PreparedRuntimeEffect::AfterCommit(Box::new(
             BenchmarkAfterCommitEffect { sequence: 0 },
           )),

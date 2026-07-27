@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Display, Formatter};
+use std::ops::Deref;
 
 use mech_core::{Value, ValueKind};
 
@@ -29,6 +30,20 @@ impl RuntimeValueSnapshot {
 
   pub fn into_value(self) -> Value {
     self.value
+  }
+}
+
+impl From<Value> for RuntimeValueSnapshot {
+  fn from(value: Value) -> Self {
+    Self::capture(&value)
+  }
+}
+
+impl Deref for RuntimeValueSnapshot {
+  type Target = Value;
+
+  fn deref(&self) -> &Self::Target {
+    self.as_value()
   }
 }
 

@@ -817,8 +817,9 @@ impl MechRuntime {
 mod tests {
   use super::*;
   use crate::{
-    BasicCapability, ClosureHostFunction, InMemoryDocsProvider,
-    InMemorySourceResolver, NodeId, SharedCapabilityKernel,
+    BasicCapability, InMemoryDocsProvider,
+    InMemorySourceResolver, NodeId, PlannedPureHostFunction,
+    RuntimeCallContext, RuntimeValueSnapshot, SharedCapabilityKernel,
   };
   use std::collections::HashSet;
   use std::sync::atomic::{AtomicUsize, Ordering};
@@ -1799,6 +1800,17 @@ mod tests {
     let mut runtime = MechRuntime::builder()
       .capability_kernel(kernel)
       .resource_provider(Box::new(InMemoryDocsProvider::new()))
+      .host_function(PlannedPureHostFunction::new(
+        "demo/poison-gate",
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::Empty.into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+          observed_calls.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::Empty.into())
+        },
+      ))
+      .unwrap()
       .build()
       .unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
@@ -1817,15 +1829,6 @@ mod tests {
         "db://users",
         [":read"],
       )))
-      .unwrap();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new_pure(
-        "demo/poison-gate",
-        move |_services, _context, _args| {
-          observed_calls.fetch_add(1, Ordering::SeqCst);
-          Ok(Value::Empty)
-        },
-      ))
       .unwrap();
     let object_id = ObjectId(902);
     let actor_id = ActorId(903);

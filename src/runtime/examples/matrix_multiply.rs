@@ -12,7 +12,7 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
   RuntimeBuilder,
   TaskRecord,
 };
@@ -65,17 +65,17 @@ fn main() -> MResult<()> {
   let v2_host = v2.clone();
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "demo/matrix/v1",
-      move |_services, _context, args| {
+      move |_context, args| {
         host_call0("demo/matrix/v1", &args, || {
           matrix_f64((*v1_host).clone(), 1, 3)
         })
       },
     ))?
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "demo/matrix/v2",
-      move |_services, _context, args| {
+      move |_context, args| {
         host_call0("demo/matrix/v2", &args, || {
           matrix_f64((*v2_host).clone(), 1, 3)
         })

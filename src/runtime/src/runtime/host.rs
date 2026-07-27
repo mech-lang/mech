@@ -5,7 +5,8 @@
 
 // The runtime provides the following host methods:
 
-// - `register_mech_host_function`: Registers a new host function that can be called from Mech programs. The function must implement the `HostFunction` trait, which defines how the function is called and what arguments it accepts.
+// - `MechRuntimeBuilder::host_function`: Registers a planned host function
+//   before the runtime is built.
 // - `call_host`: Executes a host call by name with the provided arguments. It emits events for the start, completion, and failure of the host call, allowing for observability of host interactions. It also checks the host policy to ensure that the call is allowed and charges the appropriate costs based on the function's estimated cost. A version of the function that accepts a MechRuntimeContext is also provided.
 
 // Furthermore, this file defines two structs:
@@ -14,9 +15,9 @@
 
 // For example, a function to compute an affine transformation could be registered as a host function, and then called from Mech code like this:
 /*
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
+  let runtime = MechRuntime::builder().host_function(DeterministicHostFunction::new(
     "demo/math/affine",
-    |_services, _context, args| {
+    |_context, args| {
       host_call3(
         "demo/math/affine",
         &args,
@@ -25,7 +26,7 @@
         },
       )
     },
-  ))?;
+  ))?.build()?;
 */
 // Then in Mech:
 /*
@@ -41,11 +42,11 @@ use super::execution::{
   ActivationEffectPayloadCaptureCompiler,
 };
 use mech_core::{
-  GuardFunctionSafety, Ref, ValueKind,
+  GuardFunctionSafety, MechExecutionServices, Ref,
+  ValueKind,
 };
 use crate::{
-  HostFunction, HostFunctionTransactionMode,
-  HostFunctionTransactionUnsupportedError, RuntimePreparedHostCall,
+  RegisteredHostFunction, RuntimeCallContext,
   RuntimeValueSnapshot,
 };
 
@@ -53,7 +54,8 @@ impl MechRuntime {
 
   fn install_runtime_program_host_compilers(
     program: &mut MechProgram,
-    names: Vec<String>,
+    context: RuntimeCallContext,
+    functions: Vec<RegisteredHostFunction>,
   ) {
     program.register_native_function_compiler(
       ACTIVATION_EFFECT_BARRIER_NAME,
@@ -63,12 +65,15 @@ impl MechRuntime {
       ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
       Arc::new(ActivationEffectPayloadCaptureCompiler),
     );
-    for name in names {
+    for function in functions {
+      let name = function.name().to_string();
       program.register_native_function_compiler(
         name.clone(),
         Arc::new(RuntimeHostNativeFunctionCompiler::new(
           name.clone(),
           name,
+          context.clone(),
+          function,
         )),
       );
     }
@@ -76,47 +81,51 @@ impl MechRuntime {
 
   pub(super) fn register_retained_program_host_functions(
     &mut self,
+    context: &RuntimeContext,
   ) -> MResult<()> {
-    let names = self.host_registry.list_functions()?;
+    let functions =
+      self.registered_host_functions()?;
     Self::install_runtime_program_host_compilers(
       &mut self.program,
-      names,
+      RuntimeCallContext::capture(context),
+      functions,
     );
     Ok(())
   }
 
   pub(super) fn register_runtime_program_host_functions(
     &mut self,
-    _context: &mut RuntimeContext,
+    context: &mut RuntimeContext,
     program: &mut MechProgram,
   ) -> MResult<()> {
-    let names = self.host_registry.list_functions()?;
-    Self::install_runtime_program_host_compilers(program, names);
+    let functions = self.registered_host_functions()?;
+    Self::install_runtime_program_host_compilers(
+      program,
+      RuntimeCallContext::capture(context),
+      functions,
+    );
     Ok(())
   }
 
-  pub(crate) fn register_mech_host_function(
-    &mut self,
-    function: impl HostFunction + 'static,
-  ) -> MResult<()> {
-    self.ensure_runtime_mutation_allowed(
-      "register_mech_host_function",
-    )?;
-    let name = function.name().to_string();
-
+  fn registered_host_functions(
+    &self,
+  ) -> MResult<Vec<RegisteredHostFunction>> {
     self
       .host_registry
-      .register_function(Arc::new(function))?;
-
-    self.program.register_native_function_compiler(
-      name.clone(),
-      Arc::new(RuntimeHostNativeFunctionCompiler::new(
-        name.clone(),
-        name,
-      )),
-    );
-
-    Ok(())
+      .list_functions()?
+      .into_iter()
+      .map(|name| {
+        self
+          .host_registry
+          .get_function(&name)?
+          .ok_or_else(|| {
+            MechError::new(
+              HostFunctionNotFoundError { name },
+              None,
+            )
+          })
+      })
+      .collect()
   }
 
   pub fn call_host(
@@ -125,125 +134,6 @@ impl MechRuntime {
   ) -> MResult<RuntimeValueSnapshot> {
     let mut context = self.runtime_context()?;
     self.call_host_with_context(&mut context, call)
-  }
-
-  fn preview_runtime_managed_host_function(
-    &mut self,
-    context: &mut RuntimeContext,
-    function: &dyn HostFunction,
-    args: Vec<Value>,
-  ) -> MResult<Value> {
-    let transaction_id = Self::context_transaction_id(context)?;
-    let context_checkpoint = RuntimeContextCheckpoint::capture(context);
-    let (store, effect_mark) = {
-      let transaction =
-        self.active_execution_transaction(transaction_id)?;
-      (transaction.store.clone(), transaction.effects.mark())
-    };
-
-    let result = function.preview_call(self, context, args);
-    let mut cleanup_failures = Vec::new();
-    let phase_guard = ScopedRuntimeState::enter(
-      &self.active_effect_phase,
-      ActiveRuntimeEffectPhase::Aborting,
-    );
-    match self.active_transactions.get_mut(&transaction_id) {
-      Some(transaction) => {
-        cleanup_failures.extend(Self::describe_effect_failures(
-          transaction.effects.rollback_to(effect_mark),
-        ));
-        transaction.store = store;
-      }
-      None => cleanup_failures.push(format!(
-        "runtime-managed host preview lost transaction {}",
-        transaction_id,
-      )),
-    }
-    drop(phase_guard);
-    context_checkpoint.restore_preserving_consumption(context);
-    if let Err(error) = self.validate_context_for_runtime(context) {
-      cleanup_failures.push(format!(
-        "runtime-managed host preview context restore failed: {:?}",
-        error,
-      ));
-    }
-
-    if cleanup_failures.is_empty() {
-      return result;
-    }
-
-    let original_error = match result {
-      Ok(_) => format!(
-        "runtime-managed host function `{}` preview cleanup failed",
-        function.name(),
-      ),
-      Err(error) => format!("{:?}", error),
-    };
-    Err(self.poison_program_operation(
-      "preview_runtime_managed_host_function",
-      Some(transaction_id),
-      original_error,
-      cleanup_failures,
-    ))
-  }
-
-  fn preview_host_call_with_context(
-    &mut self,
-    context: &mut RuntimeContext,
-    call: HostCall,
-  ) -> MResult<Value> {
-    self.ensure_runtime_mutation_allowed(
-      "preview_host_call_with_context",
-    )?;
-    self.validate_context_for_runtime(context)?;
-    call.validate()?;
-
-    let Some(function) = self.host_registry.get_function(&call.name)? else {
-      return Err(MechError::new(
-        HostFunctionNotFoundError {
-          name: call.name,
-        },
-        None,
-      ));
-    };
-
-    self
-      .host_policy
-      .validate_call(context, function.as_ref(), &call.args)?;
-    let capability_request = function
-      .required_capability(context)
-      .unwrap_or_else(|| {
-        default_host_capability_request(context, function.name())
-      });
-    self.preview_capability_with_context(context, &capability_request)?;
-
-    match function.transaction_mode() {
-      HostFunctionTransactionMode::Pure => {
-        function.preview_call(self, context, call.args)
-      }
-      HostFunctionTransactionMode::RuntimeManaged => {
-        self.preview_runtime_managed_host_function(
-          context,
-          function.as_ref(),
-          call.args,
-        )
-      }
-      HostFunctionTransactionMode::Staged => {
-        let RuntimePreparedHostCall { value, effect } =
-          function.stage_call(self, context, call.args)?;
-        drop(effect);
-        Ok(value)
-      }
-      HostFunctionTransactionMode::ImmediateOnly => {
-        Err(MechError::new(
-          HostFunctionTransactionUnsupportedError {
-            function: function.name().to_string(),
-            mode: HostFunctionTransactionMode::ImmediateOnly,
-          },
-          None,
-        ))
-      }
-    }
   }
 
   pub fn call_host_with_context(
@@ -264,105 +154,44 @@ impl MechRuntime {
     self.ensure_runtime_mutation_allowed("call_host_with_context")?;
     self.validate_context_for_runtime(context)?;
     call.validate()?;
-
-    let name = call.name.clone();
-
-    self.emit_event_to_context(
-      context,
-      RuntimeEventKind::HostCallStarted {
-        name: name.clone(),
-      },
-    )?;
-
-    let Some(function) = self.host_registry.get_function(&call.name)? else {
-      self.emit_event_to_context(
-        context,
-        RuntimeEventKind::HostCallFailed {
-          name: name.clone(),
-          message: "host function not found".to_string(),
-        },
-      )?;
-
-      return Err(MechError::new(
-        HostFunctionNotFoundError {
-          name,
-        },
-        None,
-      ));
+    let implicit = context.transaction.is_none();
+    let transaction_id = if implicit {
+      Some(self.begin_transaction(context)?)
+    } else {
+      context.transaction
     };
-
-    let result = (|| -> MResult<Value> {
-      let transaction_mode = function.transaction_mode();
-      if context.transaction.is_some()
-        && transaction_mode == HostFunctionTransactionMode::ImmediateOnly
-      {
-        return Err(MechError::new(
-          HostFunctionTransactionUnsupportedError {
-            function: function.name().to_string(),
-            mode: transaction_mode,
-          },
-          None,
-        ));
-      }
-
-      self
-        .host_policy
-        .validate_call(context, function.as_ref(), &call.args)?;
-
-      context.charge_items(function.estimated_cost_items(&call.args))?;
-      context.charge_bytes(function.estimated_cost_bytes(&call.args))?;
-
-      let capability_request = function
-        .required_capability(context)
-        .unwrap_or_else(|| {
-          default_host_capability_request(context, function.name())
-        });
-
-      self.check_capability_with_context(context, &capability_request)?;
-
-      match function.transaction_mode() {
-        HostFunctionTransactionMode::Staged => {
-          let RuntimePreparedHostCall { value, effect } =
-            function.stage_call(self, context, call.args)?;
-          if context.transaction.is_some() {
-            self.stage_runtime_effect_with_context(context, effect)?;
-          } else {
-            let cost = effect.cost();
-            context.charge_bytes(cost.bytes)?;
-            context.charge_items(cost.items)?;
-            self.execute_runtime_effect_immediately(effect)?;
-          }
-          Ok(value)
-        }
-        HostFunctionTransactionMode::Pure
-        | HostFunctionTransactionMode::RuntimeManaged
-        | HostFunctionTransactionMode::ImmediateOnly => {
-          function.call(self, context, call.args)
-        }
-      }
-    })();
-
-    match &result {
-      Ok(_) => {
-        self.emit_event_to_context(
-          context,
-          RuntimeEventKind::HostCallCompleted {
-            name,
-          },
-        )?;
+    let result = self.with_runtime_execution_session(
+      context,
+      |session| {
+        session.invoke_native(&call.name, &call.args)
+      },
+    );
+    if !implicit {
+      return result;
+    }
+    match result {
+      Ok(value) => {
+        self.commit_runtime_transaction(context)?;
+        Ok(value)
       }
       Err(error) => {
-        self.emit_event_to_context(
+        let original = format!("{error:?}");
+        match self.abort_runtime_transaction(
           context,
-          RuntimeEventKind::HostCallFailed {
-            name,
-            message: format!("{:?}", error),
-          },
-        )?;
+          format!("host call `{}` failed", call.name),
+        ) {
+          Ok(()) => Err(error),
+          Err(cleanup_error) => Err(self.poison_program_operation(
+            "call_host_with_context",
+            transaction_id,
+            original,
+            vec![format!(
+              "implicit host transaction cleanup failed: {cleanup_error:?}",
+            )],
+          )),
+        }
       }
     }
-
-    result
   }
 }
 
@@ -371,16 +200,22 @@ impl MechRuntime {
 pub struct RuntimeHostNativeFunctionCompiler {
   pub mech_name: String,
   pub host_name: String,
+  pub context: RuntimeCallContext,
+  pub function: RegisteredHostFunction,
 }
 
 impl RuntimeHostNativeFunctionCompiler {
   pub fn new(
     mech_name: impl Into<String>,
     host_name: impl Into<String>,
+    context: RuntimeCallContext,
+    function: RegisteredHostFunction,
   ) -> Self {
     Self {
       mech_name: mech_name.into(),
       host_name: host_name.into(),
+      context,
+      function,
     }
   }
 }
@@ -394,11 +229,20 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
     &self,
     arguments: &Vec<Value>,
   ) -> MResult<Box<dyn mech_core::MechFunction>> {
+    let argument_snapshots = arguments
+      .iter()
+      .map(RuntimeValueSnapshot::capture)
+      .collect::<Vec<_>>();
+    let planned = self
+      .function
+      .plan(&self.context, &argument_snapshots)?;
     Ok(Box::new(RuntimeHostNativeFunction {
       name: self.mech_name.clone(),
       host_name: self.host_name.clone(),
       arguments: arguments.clone(),
-      value: Ref::new(Value::Empty),
+      value: Ref::new(
+        planned.into_value().deep_snapshot(),
+      ),
     }))
   }
 }
@@ -535,10 +379,11 @@ mod transaction_tests {
   use crate::{
     BasicCapability, BasicConstraints, BasicOperation, BasicResource,
     BasicSubject, Capability, CapabilityDecision, CapabilityRequest,
-    ClosureHostFunction,
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect,
+    PlannedPureHostFunction, PlannedRuntimeManagedHostFunction,
+    PlannedStagedHostFunction, PreparedRuntimeEffect,
+    RuntimeAfterCommitEffect,
     RuntimeEffectMetadata, RuntimeEffectSource,
-    RuntimeTransactionalEffect, StagedClosureHostFunction,
+    RuntimePreparedHostCall, RuntimeTransactionalEffect,
   };
 
   #[derive(Debug)]
@@ -691,16 +536,17 @@ mod transaction_tests {
 
   #[test]
   fn staged_host_call_returns_value_before_effect_delivery() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_host_call(&mut runtime, "demo/staged");
     let log = Arc::new(Mutex::new(Vec::new()));
     let effect_log = log.clone();
-    runtime
-      .register_mech_host_function(StagedClosureHostFunction::new(
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
         "demo/staged",
-        move |_services, _context, _args| {
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::String(Ref::new("provisional".to_string())).into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
           Ok(RuntimePreparedHostCall {
-            value: Value::String(Ref::new("provisional".to_string())),
+            value: Value::String(Ref::new("provisional".to_string())).into(),
             effect: PreparedRuntimeEffect::AfterCommit(Box::new(
               RecordingHostEffect {
                 log: effect_log.clone(),
@@ -710,7 +556,10 @@ mod transaction_tests {
           })
         },
       ))
+      .unwrap()
+      .build()
       .unwrap();
+    grant_host_call(&mut runtime, "demo/staged");
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
 
@@ -735,72 +584,25 @@ mod transaction_tests {
   }
 
   #[test]
-  fn immediate_only_host_is_rejected_before_transactional_callback() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_host_call(&mut runtime, "demo/immediate");
+  fn planned_pure_host_runs_inside_implicit_and_explicit_transactions() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new(
-        "demo/immediate",
-        move |_services, _context, _args| {
-          callback_calls.fetch_add(1, Ordering::SeqCst);
-          Ok(Value::Empty)
-        },
-      ))
-      .unwrap();
-
-    runtime
-      .call_host(HostCall::new("demo/immediate", Vec::new()))
-      .unwrap();
-    assert_eq!(calls.load(Ordering::SeqCst), 1);
-
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    let error = runtime
-      .call_host_with_context(
-        &mut context,
-        HostCall::new("demo/immediate", Vec::new()),
-      )
-      .unwrap_err();
-
-    assert_eq!(
-      error.kind_name(),
-      "HostFunctionTransactionUnsupported",
-    );
-    assert_eq!(calls.load(Ordering::SeqCst), 1);
-    runtime
-      .abort_runtime_transaction(&mut context, "discard rejection test")
-      .unwrap();
-
-    let implicit_error = runtime
-      .run_string("result := demo/immediate()")
-      .unwrap_err();
-    assert_eq!(
-      implicit_error.kind_name(),
-      "HostFunctionTransactionUnsupported",
-    );
-    assert_eq!(calls.load(Ordering::SeqCst), 1);
-  }
-
-  #[test]
-  fn pure_host_runs_inside_implicit_and_explicit_transactions() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_host_call(&mut runtime, "demo/pure");
-    let calls = Arc::new(AtomicUsize::new(0));
-    let callback_calls = calls.clone();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new_pure(
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedPureHostFunction::new(
         "demo/pure",
-        move |_services, _context, _args| {
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::F64(Ref::new(42.0)).into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
           callback_calls.fetch_add(1, Ordering::SeqCst);
-          Ok(Value::F64(Ref::new(42.0)))
+          Ok(Value::F64(Ref::new(42.0)).into())
         },
       ))
       .unwrap();
+    let mut runtime = runtime.build().unwrap();
+    grant_host_call(&mut runtime, "demo/pure");
 
     runtime.run_string("implicit := demo/pure()").unwrap();
-
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
     runtime
@@ -811,91 +613,119 @@ mod transaction_tests {
       .unwrap();
     runtime.commit_runtime_transaction(&mut context).unwrap();
 
-    assert_eq!(calls.load(Ordering::SeqCst), 4);
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
   }
 
   #[test]
-  fn pure_host_preview_does_not_consume_single_use_capability() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+  fn planning_never_invokes_a_host_callback() {
+    let invocations = Arc::new(AtomicUsize::new(0));
+    let callback_invocations = invocations.clone();
+    let runtime = MechRuntime::builder()
+      .host_function(PlannedPureHostFunction::new(
+        "demo/plan-only",
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::Empty.into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+          callback_invocations.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::Empty.into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
+
+    assert_eq!(invocations.load(Ordering::SeqCst), 0);
+    assert!(runtime.program.root_symbol_value("missing").is_err());
+  }
+
+  #[test]
+  fn pure_host_planning_does_not_consume_single_use_capability() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedPureHostFunction::new(
+        "demo/pure-limited",
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+          callback_calls.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
     grant_limited_host_call(
       &mut runtime,
       CapabilityId(710),
       "demo/pure-limited",
     );
-    let calls = Arc::new(AtomicUsize::new(0));
-    let callback_calls = calls.clone();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new_pure(
-        "demo/pure-limited",
-        move |_services, _context, _args| {
-          callback_calls.fetch_add(1, Ordering::SeqCst);
-          Ok(Value::F64(Ref::new(1.0)))
-        },
-      ))
-      .unwrap();
 
     runtime
       .run_string("pure-limited-result := demo/pure-limited()")
       .unwrap();
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert!(runtime
       .call_host(HostCall::new("demo/pure-limited", Vec::new()))
       .is_err());
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
   }
 
   #[test]
-  fn runtime_managed_preview_does_not_consume_single_use_capability() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+  fn runtime_managed_planning_does_not_consume_single_use_capability() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    let mut runtime = MechRuntime::builder()
+      .host_function(
+        PlannedRuntimeManagedHostFunction::new(
+          "demo/managed-limited",
+          |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+            Ok(Value::F64(Ref::new(1.0)).into())
+          },
+          move |_services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+            callback_calls.fetch_add(1, Ordering::SeqCst);
+            Ok(Value::F64(Ref::new(1.0)).into())
+          },
+        ),
+      )
+      .unwrap()
+      .build()
+      .unwrap();
     grant_limited_host_call(
       &mut runtime,
       CapabilityId(711),
       "demo/managed-limited",
     );
-    let calls = Arc::new(AtomicUsize::new(0));
-    let callback_calls = calls.clone();
-    runtime
-      .register_mech_host_function(
-        ClosureHostFunction::new_runtime_managed(
-          "demo/managed-limited",
-          move |_services, _context, _args| {
-            callback_calls.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::F64(Ref::new(1.0)))
-          },
-        ),
-      )
-      .unwrap();
 
     runtime
       .run_string("managed-limited-result := demo/managed-limited()")
       .unwrap();
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert!(runtime
       .call_host(HostCall::new("demo/managed-limited", Vec::new()))
       .is_err());
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
   }
 
   #[test]
-  fn staged_preview_does_not_consume_single_use_capability() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_limited_host_call(
-      &mut runtime,
-      CapabilityId(712),
-      "demo/staged-limited",
-    );
+  fn staged_planning_does_not_consume_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let deliveries = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
     let delivered = deliveries.clone();
-    runtime
-      .register_mech_host_function(StagedClosureHostFunction::new(
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
         "demo/staged-limited",
-        move |_services, _context, _args| {
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
           callback_calls.fetch_add(1, Ordering::SeqCst);
           let delivered = delivered.clone();
           Ok(RuntimePreparedHostCall {
-            value: Value::F64(Ref::new(1.0)),
+            value: Value::F64(Ref::new(1.0)).into(),
             effect: PreparedRuntimeEffect::AfterCommit(Box::new(
               CountingAfterCommitEffect {
                 deliveries: delivered,
@@ -904,22 +734,44 @@ mod transaction_tests {
           })
         },
       ))
+      .unwrap()
+      .build()
       .unwrap();
+    grant_limited_host_call(
+      &mut runtime,
+      CapabilityId(712),
+      "demo/staged-limited",
+    );
 
     runtime
       .run_string("staged-limited-result := demo/staged-limited()")
       .unwrap();
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert_eq!(deliveries.load(Ordering::SeqCst), 1);
     assert!(runtime
       .call_host(HostCall::new("demo/staged-limited", Vec::new()))
       .is_err());
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
   }
 
   #[test]
   fn custom_capability_without_preview_contract_fails_closed() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let callback_calls = calls.clone();
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedPureHostFunction::new(
+        "demo/unsupported-preview",
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::Empty.into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+          callback_calls.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::Empty.into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
     runtime
       .grant_capability(Arc::new(PreviewUnsupportedCapability {
@@ -928,18 +780,6 @@ mod transaction_tests {
         resource: "host:demo/unsupported-preview".to_string(),
       }))
       .unwrap();
-    let calls = Arc::new(AtomicUsize::new(0));
-    let callback_calls = calls.clone();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new_pure(
-        "demo/unsupported-preview",
-        move |_services, _context, _args| {
-          callback_calls.fetch_add(1, Ordering::SeqCst);
-          Ok(Value::Empty)
-        },
-      ))
-      .unwrap();
-
     let error = runtime
       .run_string(
         "unsupported-preview-result := demo/unsupported-preview()",
@@ -951,17 +791,18 @@ mod transaction_tests {
   }
 
   #[test]
-  fn staged_preview_drops_inert_effect_without_lifecycle_calls() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_host_call(&mut runtime, "demo/staged-lifecycle");
+  fn staged_planning_does_not_create_effects() {
     let lifecycle = Arc::new(Mutex::new(Vec::new()));
     let effect_log = lifecycle.clone();
-    runtime
-      .register_mech_host_function(StagedClosureHostFunction::new(
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
         "demo/staged-lifecycle",
-        move |_services, _context, _args| {
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
           Ok(RuntimePreparedHostCall {
-            value: Value::F64(Ref::new(1.0)),
+            value: Value::F64(Ref::new(1.0)).into(),
             effect: PreparedRuntimeEffect::Transactional(Box::new(
               PreviewLifecycleEffect {
                 log: effect_log.clone(),
@@ -970,7 +811,11 @@ mod transaction_tests {
           })
         },
       ))
+      .unwrap()
+      .build()
       .unwrap();
+    assert!(lifecycle.lock().unwrap().is_empty());
+    grant_host_call(&mut runtime, "demo/staged-lifecycle");
 
     runtime
       .run_string(
@@ -986,16 +831,17 @@ mod transaction_tests {
 
   #[test]
   fn failed_later_operation_discards_only_its_staged_host_effect() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_host_call(&mut runtime, "demo/staged");
     let log = Arc::new(Mutex::new(Vec::new()));
     let effect_log = log.clone();
-    runtime
-      .register_mech_host_function(StagedClosureHostFunction::new(
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
         "demo/staged",
-        move |_services, _context, _args| {
+        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+          Ok(Value::String(Ref::new("provisional".to_string())).into())
+        },
+        move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
           Ok(RuntimePreparedHostCall {
-            value: Value::String(Ref::new("provisional".to_string())),
+            value: Value::String(Ref::new("provisional".to_string())).into(),
             effect: PreparedRuntimeEffect::AfterCommit(Box::new(
               RecordingHostEffect {
                 log: effect_log.clone(),
@@ -1005,7 +851,10 @@ mod transaction_tests {
           })
         },
       ))
+      .unwrap()
+      .build()
       .unwrap();
+    grant_host_call(&mut runtime, "demo/staged");
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
 
@@ -1033,36 +882,38 @@ mod transaction_tests {
   }
 
   #[test]
-  fn runtime_managed_preview_does_not_duplicate_staged_mutation() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    grant_host_call(&mut runtime, "demo/runtime-managed");
+  fn runtime_managed_planning_does_not_duplicate_staged_mutation() {
     let observed_ids = Arc::new(Mutex::new(Vec::new()));
     let callback_ids = observed_ids.clone();
-    runtime
-      .register_mech_host_function(
-        ClosureHostFunction::new_runtime_managed(
+    let mut runtime = MechRuntime::builder()
+      .host_function(
+        PlannedRuntimeManagedHostFunction::new(
           "demo/runtime-managed",
-          move |services, context, _args| {
-            let id = services.next_object_id();
+          |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+            Ok(Value::String(Ref::new("planned".to_string())).into())
+          },
+          move |services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+            let id = services.allocate_object_id()?;
             callback_ids.lock().unwrap().push(id);
-            services.put_object_with_context(
-              context,
+            services.put_object(
               ObjectRecord::text(id, "preview-test", "value"),
             )?;
-            Ok(Value::String(Ref::new(id.to_string())))
+            Ok(Value::String(Ref::new(id.to_string())).into())
           },
         ),
       )
+      .unwrap()
+      .build()
       .unwrap();
+    grant_host_call(&mut runtime, "demo/runtime-managed");
 
     runtime
       .run_string("result := demo/runtime-managed()")
       .unwrap();
 
     let ids = observed_ids.lock().unwrap().clone();
-    assert_eq!(ids.len(), 2);
-    assert!(runtime.store().get_object(ids[0]).unwrap().is_none());
-    assert!(runtime.store().get_object(ids[1]).unwrap().is_some());
+    assert_eq!(ids.len(), 1);
+    assert!(runtime.store().get_object(ids[0]).unwrap().is_some());
   }
 }
 

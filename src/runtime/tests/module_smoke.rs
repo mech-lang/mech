@@ -1953,9 +1953,9 @@ fn module_host_call_works_inside_isolated_execution() {
   std::fs::write(root.join("main.mec"), "+> ./math.mec\nok := math/tau > 40\n").unwrap();
   let mut runtime = RuntimeBuilder::new()
     .source_resolver(FileSourceResolver::new(&root))
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "demo/value",
-      |_s, _c, _a| Ok(Value::F64(Ref::new(42.0))),
+      |_context, _arguments| Ok(Value::F64(Ref::new(42.0))),
     ))
     .unwrap()
     .build()

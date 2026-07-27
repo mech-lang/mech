@@ -17,6 +17,7 @@
 //! Host functions should be capability-checked before invocation.
 
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use mech_core::{MResult, MechError, MechErrorKind, Value};
@@ -25,10 +26,11 @@ use crate::capability::{
   CapabilityRequest, Operation, Resource,
 };
 
+use crate::context::RuntimeCallContext;
+#[cfg(test)]
 use crate::context::RuntimeContext;
-
-use crate::service::RuntimeServices;
-use crate::PreparedRuntimeEffect;
+use crate::service::RuntimeManagedServices;
+use crate::{PreparedRuntimeEffect, RuntimeValueSnapshot};
 
 pub mod actor;
 pub mod arg;
@@ -37,226 +39,209 @@ pub use self::actor::*;
 pub use self::arg::*;
 
 // -----------------------------------------------------------------------------
-// Host Function
+// Host Function Planning and Invocation
 // -----------------------------------------------------------------------------
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum HostFunctionTransactionMode {
-  Pure,
-  RuntimeManaged,
-  Staged,
-  ImmediateOnly,
-}
 
 #[derive(Debug)]
 pub struct RuntimePreparedHostCall {
-  pub value: Value,
+  pub value: RuntimeValueSnapshot,
   pub effect: PreparedRuntimeEffect,
 }
 
-/// A callable host function.
-///
-/// This trait is the embedder boundary. Implementations can wrap closures,
-/// native functions, database handles, UI calls, device APIs, etc.
-pub trait HostFunction: std::fmt::Debug + Send + Sync {
-  /// Stable host-visible name.
-  ///
-  /// Examples:
-  ///
-  /// - `clock.now`
-  /// - `fs.read`
-  /// - `db.query`
-  /// - `ui.render`
-  /// - `net.fetch`
+pub trait HostFunctionPlan: std::fmt::Debug + Send + Sync {
   fn name(&self) -> &str;
 
-  /// Declares how the function participates in runtime transactions.
-  ///
-  /// The conservative default is `ImmediateOnly`: existing host callbacks may
-  /// have arbitrary side effects, so retained execution must not invoke them
-  /// inside an implicit or explicit transaction without an explicit contract.
-  fn transaction_mode(&self) -> HostFunctionTransactionMode {
-    HostFunctionTransactionMode::ImmediateOnly
-  }
+  fn plan(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot>;
 
-  /// Optional resource key used for capability checks.
-  ///
-  /// If this returns `None`, the default resource key is `host:<name>`.
-  fn resource(&self) -> Option<&dyn Resource> {
-    None
-  }
-
-  /// Optional operation key used for capability checks.
-  ///
-  /// If this returns `None`, the default operation key is `call`.
-  fn operation(&self) -> Option<&dyn Operation> {
-    None
-  }
-
-  /// Optional explicit capability request.
-  ///
-  /// If this returns `Some`, the runtime should check this request directly.
-  /// If this returns `None`, the registry builds a request from context subject,
-  /// operation, and resource.
-  fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
+  fn required_capability(
+    &self,
+    context: &RuntimeCallContext,
+  ) -> Option<CapabilityRequest> {
     let _ = context;
     None
   }
 
-  /// Estimated bytes charged before the call.
-  ///
-  /// Implementations can override this for predictable costs. Dynamic output
-  /// costs can be charged by host code through the context as needed.
-  fn estimated_cost_bytes(&self, args: &[Value]) -> u64 {
-    let _ = args;
+  fn estimated_cost_bytes(
+    &self,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> u64 {
+    let _ = arguments;
     0
   }
 
-  /// Estimated item count charged before the call.
-  fn estimated_cost_items(&self, args: &[Value]) -> u64 {
-    args.len() as u64
-  }
-
-  /// Produce the provisional value needed while compiling a native call.
-  ///
-  /// Pure functions may reuse their normal callback. Runtime-managed
-  /// functions must override this method without retaining runtime mutation.
-  fn preview_call(
+  fn estimated_cost_items(
     &self,
-    services: &mut dyn RuntimeServices,
-    context: &mut RuntimeContext,
-    args: Vec<Value>,
-  ) -> MResult<Value> {
-    if matches!(
-      self.transaction_mode(),
-      HostFunctionTransactionMode::Pure
-        | HostFunctionTransactionMode::RuntimeManaged
-    ) {
-      return self.call(services, context, args);
-    }
-    Err(MechError::new(
-      InvalidHostCallError {
-        function: self.name().to_string(),
-        reason: format!(
-          "host function transaction mode {:?} requires an explicit non-mutating preview",
-          self.transaction_mode(),
-        ),
-      },
-      None,
-    ))
-  }
-
-  /// Invoke a pure, runtime-managed, or immediate-only host function.
-  fn call(
-    &self,
-    _services: &mut dyn RuntimeServices,
-    _context: &mut RuntimeContext,
-    _args: Vec<Value>,
-  ) -> MResult<Value> {
-    Err(MechError::new(
-      InvalidHostCallError {
-        function: self.name().to_string(),
-        reason: "host function does not implement immediate invocation".to_string(),
-      },
-      None,
-    ))
-  }
-
-  /// Prepare a staged host call and its provisional program value.
-  fn stage_call(
-    &self,
-    _services: &mut dyn RuntimeServices,
-    _context: &mut RuntimeContext,
-    _args: Vec<Value>,
-  ) -> MResult<RuntimePreparedHostCall> {
-    Err(MechError::new(
-      InvalidHostCallError {
-        function: self.name().to_string(),
-        reason: "host function does not implement staged invocation".to_string(),
-      },
-      None,
-    ))
+    arguments: &[RuntimeValueSnapshot],
+  ) -> u64 {
+    arguments.len() as u64
   }
 }
 
-// -----------------------------------------------------------------------------
-// Closure Host Function
-// -----------------------------------------------------------------------------
+pub trait PureHostFunction: HostFunctionPlan {
+  fn invoke(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot>;
+}
 
-/// Simple closure-backed host function.
-///
-/// Useful for tests and embedding small APIs.
-pub struct ClosureHostFunction<F>
+pub trait RuntimeManagedHostFunction: HostFunctionPlan {
+  fn invoke(
+    &self,
+    services: &mut dyn RuntimeManagedServices,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot>;
+}
+
+pub trait StagedHostFunction: HostFunctionPlan {
+  fn prepare(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimePreparedHostCall>;
+}
+
+#[derive(Clone)]
+pub enum RegisteredHostFunction {
+  Pure(Arc<dyn PureHostFunction>),
+  RuntimeManaged(Arc<dyn RuntimeManagedHostFunction>),
+  Staged(Arc<dyn StagedHostFunction>),
+}
+
+impl std::fmt::Debug for RegisteredHostFunction {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::Pure(function) => formatter
+        .debug_tuple("Pure")
+        .field(function)
+        .finish(),
+      Self::RuntimeManaged(function) => formatter
+        .debug_tuple("RuntimeManaged")
+        .field(function)
+        .finish(),
+      Self::Staged(function) => formatter
+        .debug_tuple("Staged")
+        .field(function)
+        .finish(),
+    }
+  }
+}
+
+impl RegisteredHostFunction {
+  pub fn name(&self) -> &str {
+    match self {
+      Self::Pure(function) => function.name(),
+      Self::RuntimeManaged(function) => function.name(),
+      Self::Staged(function) => function.name(),
+    }
+  }
+
+  pub fn plan(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot> {
+    match self {
+      Self::Pure(function) => function.plan(context, arguments),
+      Self::RuntimeManaged(function) => {
+        function.plan(context, arguments)
+      }
+      Self::Staged(function) => function.plan(context, arguments),
+    }
+  }
+
+  pub fn required_capability(
+    &self,
+    context: &RuntimeCallContext,
+  ) -> Option<CapabilityRequest> {
+    match self {
+      Self::Pure(function) => {
+        function.required_capability(context)
+      }
+      Self::RuntimeManaged(function) => {
+        function.required_capability(context)
+      }
+      Self::Staged(function) => {
+        function.required_capability(context)
+      }
+    }
+  }
+
+  pub fn estimated_cost_bytes(
+    &self,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> u64 {
+    match self {
+      Self::Pure(function) => {
+        function.estimated_cost_bytes(arguments)
+      }
+      Self::RuntimeManaged(function) => {
+        function.estimated_cost_bytes(arguments)
+      }
+      Self::Staged(function) => {
+        function.estimated_cost_bytes(arguments)
+      }
+    }
+  }
+
+  pub fn estimated_cost_items(
+    &self,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> u64 {
+    match self {
+      Self::Pure(function) => {
+        function.estimated_cost_items(arguments)
+      }
+      Self::RuntimeManaged(function) => {
+        function.estimated_cost_items(arguments)
+      }
+      Self::Staged(function) => {
+        function.estimated_cost_items(arguments)
+      }
+    }
+  }
+}
+
+pub struct DeterministicHostFunction<F, R>
 where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
 {
   name: String,
   capability: Option<CapabilityRequest>,
-  transaction_mode: HostFunctionTransactionMode,
   function: F,
+  result: PhantomData<fn() -> R>,
 }
 
-impl<F> std::fmt::Debug for ClosureHostFunction<F>
+impl<F, R> DeterministicHostFunction<F, R>
 where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
-{
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("ClosureHostFunction")
-      .field("name", &self.name)
-      .field("capability", &self.capability)
-      .field("transaction_mode", &self.transaction_mode)
-      .field("function", &"<closure>")
-      .finish()
-  }
-}
-
-impl<F> ClosureHostFunction<F>
-where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
 {
   pub fn new(
     name: impl Into<String>,
     function: F,
   ) -> Self {
-    Self::with_transaction_mode(
-      name,
-      HostFunctionTransactionMode::ImmediateOnly,
-      function,
-    )
-  }
-
-  pub fn new_pure(
-    name: impl Into<String>,
-    function: F,
-  ) -> Self {
-    Self::with_transaction_mode(
-      name,
-      HostFunctionTransactionMode::Pure,
-      function,
-    )
-  }
-
-  pub fn new_runtime_managed(
-    name: impl Into<String>,
-    function: F,
-  ) -> Self {
-    Self::with_transaction_mode(
-      name,
-      HostFunctionTransactionMode::RuntimeManaged,
-      function,
-    )
-  }
-
-  fn with_transaction_mode(
-    name: impl Into<String>,
-    transaction_mode: HostFunctionTransactionMode,
-    function: F,
-  ) -> Self {
     Self {
       name: name.into(),
       capability: None,
-      transaction_mode,
       function,
+      result: PhantomData,
     }
   }
 
@@ -269,66 +254,154 @@ where
   }
 }
 
-impl<F> HostFunction for ClosureHostFunction<F>
+impl<F, R> std::fmt::Debug for DeterministicHostFunction<F, R>
 where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+  F: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
 {
-  fn name(&self) -> &str {
-    &self.name
-  }
-
-  fn transaction_mode(&self) -> HostFunctionTransactionMode {
-    self.transaction_mode
-  }
-
-  fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
-    let _ = context;
-    self.capability.clone()
-  }
-
-  fn call(&self, services: &mut dyn RuntimeServices, context: &mut RuntimeContext, args: Vec<Value>) -> MResult<Value> {
-    (self.function)(services, context, args)
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Staged Closure Host Function
-// -----------------------------------------------------------------------------
-
-pub struct StagedClosureHostFunction<F>
-where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
-{
-  name: String,
-  capability: Option<CapabilityRequest>,
-  function: F,
-}
-
-impl<F> std::fmt::Debug for StagedClosureHostFunction<F>
-where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
-{
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("StagedClosureHostFunction")
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter
+      .debug_struct("DeterministicHostFunction")
       .field("name", &self.name)
       .field("capability", &self.capability)
-      .field("function", &"<staged-closure>")
-      .finish()
+      .finish_non_exhaustive()
   }
 }
 
-impl<F> StagedClosureHostFunction<F>
+impl<F, R> HostFunctionPlan for DeterministicHostFunction<F, R>
 where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
+  F: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
+  R: Into<RuntimeValueSnapshot>,
 {
-  pub fn new(
+  fn name(&self) -> &str { &self.name }
+
+  fn plan(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.function)(context, arguments).map(Into::into)
+  }
+
+  fn required_capability(
+    &self,
+    _context: &RuntimeCallContext,
+  ) -> Option<CapabilityRequest> {
+    self.capability.clone()
+  }
+}
+
+impl<F, R> PureHostFunction for DeterministicHostFunction<F, R>
+where
+  F: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
+  R: Into<RuntimeValueSnapshot>,
+{
+  fn invoke(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.function)(context, &arguments).map(Into::into)
+  }
+}
+
+impl<F, R> From<DeterministicHostFunction<F, R>>
+  for RegisteredHostFunction
+where
+  F: for<'context, 'arguments> Fn(
+      &'context RuntimeCallContext,
+      &'arguments [RuntimeValueSnapshot],
+    ) -> MResult<R>
+    + Send
+    + Sync
+    + 'static,
+  R: Into<RuntimeValueSnapshot> + 'static,
+{
+  fn from(function: DeterministicHostFunction<F, R>) -> Self {
+    Self::Pure(Arc::new(function))
+  }
+}
+
+type HostPlanCallback = dyn Fn(
+    &RuntimeCallContext,
+    &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot>
+  + Send
+  + Sync;
+
+type PureHostInvocationCallback = dyn Fn(
+    &RuntimeCallContext,
+    Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot>
+  + Send
+  + Sync;
+
+type RuntimeManagedHostInvocationCallback = dyn Fn(
+    &mut dyn RuntimeManagedServices,
+    &RuntimeCallContext,
+    Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot>
+  + Send
+  + Sync;
+
+type StagedHostPreparationCallback = dyn Fn(
+    &RuntimeCallContext,
+    Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimePreparedHostCall>
+  + Send
+  + Sync;
+
+pub struct PlannedPureHostFunction {
+  name: String,
+  capability: Option<CapabilityRequest>,
+  plan: Arc<HostPlanCallback>,
+  invoke: Arc<PureHostInvocationCallback>,
+}
+
+impl PlannedPureHostFunction {
+  pub fn new<P, I>(
     name: impl Into<String>,
-    function: F,
-  ) -> Self {
+    plan: P,
+    invoke: I,
+  ) -> Self
+  where
+    P: Fn(
+        &RuntimeCallContext,
+        &[RuntimeValueSnapshot],
+      ) -> MResult<RuntimeValueSnapshot>
+      + Send
+      + Sync
+      + 'static,
+    I: Fn(
+        &RuntimeCallContext,
+        Vec<RuntimeValueSnapshot>,
+      ) -> MResult<RuntimeValueSnapshot>
+      + Send
+      + Sync
+      + 'static,
+  {
     Self {
       name: name.into(),
       capability: None,
-      function,
+      plan: Arc::new(plan),
+      invoke: Arc::new(invoke),
     }
   }
 
@@ -341,30 +414,238 @@ where
   }
 }
 
-impl<F> HostFunction for StagedClosureHostFunction<F>
-where
-  F: Fn(&mut dyn RuntimeServices, &mut RuntimeContext, Vec<Value>) -> MResult<RuntimePreparedHostCall> + Send + Sync + 'static,
-{
-  fn name(&self) -> &str {
-    &self.name
+impl std::fmt::Debug for PlannedPureHostFunction {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter
+      .debug_struct("PlannedPureHostFunction")
+      .field("name", &self.name)
+      .field("capability", &self.capability)
+      .finish_non_exhaustive()
+  }
+}
+
+impl HostFunctionPlan for PlannedPureHostFunction {
+  fn name(&self) -> &str { &self.name }
+
+  fn plan(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.plan)(context, arguments)
   }
 
-  fn transaction_mode(&self) -> HostFunctionTransactionMode {
-    HostFunctionTransactionMode::Staged
-  }
-
-  fn required_capability(&self, context: &RuntimeContext) -> Option<CapabilityRequest> {
-    let _ = context;
+  fn required_capability(
+    &self,
+    _context: &RuntimeCallContext,
+  ) -> Option<CapabilityRequest> {
     self.capability.clone()
   }
+}
 
-  fn stage_call(
+impl PureHostFunction for PlannedPureHostFunction {
+  fn invoke(
     &self,
-    services: &mut dyn RuntimeServices,
-    context: &mut RuntimeContext,
-    args: Vec<Value>,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.invoke)(context, arguments)
+  }
+}
+
+impl From<PlannedPureHostFunction> for RegisteredHostFunction {
+  fn from(function: PlannedPureHostFunction) -> Self {
+    Self::Pure(Arc::new(function))
+  }
+}
+
+pub struct PlannedRuntimeManagedHostFunction {
+  name: String,
+  capability: Option<CapabilityRequest>,
+  plan: Arc<HostPlanCallback>,
+  invoke: Arc<RuntimeManagedHostInvocationCallback>,
+}
+
+impl PlannedRuntimeManagedHostFunction {
+  pub fn new<P, I>(
+    name: impl Into<String>,
+    plan: P,
+    invoke: I,
+  ) -> Self
+  where
+    P: Fn(
+        &RuntimeCallContext,
+        &[RuntimeValueSnapshot],
+      ) -> MResult<RuntimeValueSnapshot>
+      + Send
+      + Sync
+      + 'static,
+    I: Fn(
+        &mut dyn RuntimeManagedServices,
+        &RuntimeCallContext,
+        Vec<RuntimeValueSnapshot>,
+      ) -> MResult<RuntimeValueSnapshot>
+      + Send
+      + Sync
+      + 'static,
+  {
+    Self {
+      name: name.into(),
+      capability: None,
+      plan: Arc::new(plan),
+      invoke: Arc::new(invoke),
+    }
+  }
+
+  pub fn with_capability(
+    mut self,
+    capability: CapabilityRequest,
+  ) -> Self {
+    self.capability = Some(capability);
+    self
+  }
+}
+
+impl std::fmt::Debug for PlannedRuntimeManagedHostFunction {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter
+      .debug_struct("PlannedRuntimeManagedHostFunction")
+      .field("name", &self.name)
+      .field("capability", &self.capability)
+      .finish_non_exhaustive()
+  }
+}
+
+impl HostFunctionPlan for PlannedRuntimeManagedHostFunction {
+  fn name(&self) -> &str { &self.name }
+
+  fn plan(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.plan)(context, arguments)
+  }
+
+  fn required_capability(
+    &self,
+    _context: &RuntimeCallContext,
+  ) -> Option<CapabilityRequest> {
+    self.capability.clone()
+  }
+}
+
+impl RuntimeManagedHostFunction for PlannedRuntimeManagedHostFunction {
+  fn invoke(
+    &self,
+    services: &mut dyn RuntimeManagedServices,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.invoke)(services, context, arguments)
+  }
+}
+
+impl From<PlannedRuntimeManagedHostFunction>
+  for RegisteredHostFunction
+{
+  fn from(
+    function: PlannedRuntimeManagedHostFunction,
+  ) -> Self {
+    Self::RuntimeManaged(Arc::new(function))
+  }
+}
+
+pub struct PlannedStagedHostFunction {
+  name: String,
+  capability: Option<CapabilityRequest>,
+  plan: Arc<HostPlanCallback>,
+  prepare: Arc<StagedHostPreparationCallback>,
+}
+
+impl PlannedStagedHostFunction {
+  pub fn new<P, F>(
+    name: impl Into<String>,
+    plan: P,
+    prepare: F,
+  ) -> Self
+  where
+    P: Fn(
+        &RuntimeCallContext,
+        &[RuntimeValueSnapshot],
+      ) -> MResult<RuntimeValueSnapshot>
+      + Send
+      + Sync
+      + 'static,
+    F: Fn(
+        &RuntimeCallContext,
+        Vec<RuntimeValueSnapshot>,
+      ) -> MResult<RuntimePreparedHostCall>
+      + Send
+      + Sync
+      + 'static,
+  {
+    Self {
+      name: name.into(),
+      capability: None,
+      plan: Arc::new(plan),
+      prepare: Arc::new(prepare),
+    }
+  }
+
+  pub fn with_capability(
+    mut self,
+    capability: CapabilityRequest,
+  ) -> Self {
+    self.capability = Some(capability);
+    self
+  }
+}
+
+impl std::fmt::Debug for PlannedStagedHostFunction {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter
+      .debug_struct("PlannedStagedHostFunction")
+      .field("name", &self.name)
+      .field("capability", &self.capability)
+      .finish_non_exhaustive()
+  }
+}
+
+impl HostFunctionPlan for PlannedStagedHostFunction {
+  fn name(&self) -> &str { &self.name }
+
+  fn plan(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<RuntimeValueSnapshot> {
+    (self.plan)(context, arguments)
+  }
+
+  fn required_capability(
+    &self,
+    _context: &RuntimeCallContext,
+  ) -> Option<CapabilityRequest> {
+    self.capability.clone()
+  }
+}
+
+impl StagedHostFunction for PlannedStagedHostFunction {
+  fn prepare(
+    &self,
+    context: &RuntimeCallContext,
+    arguments: Vec<RuntimeValueSnapshot>,
   ) -> MResult<RuntimePreparedHostCall> {
-    (self.function)(services, context, args)
+    (self.prepare)(context, arguments)
+  }
+}
+
+impl From<PlannedStagedHostFunction>
+  for RegisteredHostFunction
+{
+  fn from(function: PlannedStagedHostFunction) -> Self {
+    Self::Staged(Arc::new(function))
   }
 }
 
@@ -376,12 +657,18 @@ where
 pub trait HostRegistry: std::fmt::Debug + Send {
   fn register_function(
     &mut self,
-    function: Arc<dyn HostFunction>,
+    function: RegisteredHostFunction,
   ) -> MResult<()>;
 
-  fn get_function(&self, name: &str) -> MResult<Option<Arc<dyn HostFunction>>>;
+  fn get_function(
+    &self,
+    name: &str,
+  ) -> MResult<Option<RegisteredHostFunction>>;
 
-  fn remove_function(&mut self, name: &str) -> MResult<Option<Arc<dyn HostFunction>>>;
+  fn remove_function(
+    &mut self,
+    name: &str,
+  ) -> MResult<Option<RegisteredHostFunction>>;
 
   fn list_functions(&self) -> MResult<Vec<String>>;
 }
@@ -389,7 +676,7 @@ pub trait HostRegistry: std::fmt::Debug + Send {
 /// Default in-memory host registry.
 #[derive(Clone, Debug, Default)]
 pub struct InMemoryHostRegistry {
-  functions: HashMap<String, Arc<dyn HostFunction>>,
+  functions: HashMap<String, RegisteredHostFunction>,
 }
 
 impl InMemoryHostRegistry {
@@ -399,9 +686,9 @@ impl InMemoryHostRegistry {
 
   pub fn insert(
     &mut self,
-    function: impl HostFunction + 'static,
+    function: impl Into<RegisteredHostFunction>,
   ) -> MResult<()> {
-    self.register_function(Arc::new(function))
+    self.register_function(function.into())
   }
 
   pub fn contains(&self, name: &str) -> bool {
@@ -420,7 +707,7 @@ impl InMemoryHostRegistry {
 impl HostRegistry for InMemoryHostRegistry {
   fn register_function(
     &mut self,
-    function: Arc<dyn HostFunction>,
+    function: RegisteredHostFunction,
   ) -> MResult<()> {
     let name = function.name().to_string();
 
@@ -445,7 +732,10 @@ impl HostRegistry for InMemoryHostRegistry {
     Ok(())
   }
 
-  fn get_function(&self, name: &str) -> MResult<Option<Arc<dyn HostFunction>>> {
+  fn get_function(
+    &self,
+    name: &str,
+  ) -> MResult<Option<RegisteredHostFunction>> {
     if name.trim().is_empty() {
       return Err(MechError::new(
         InvalidHostFunctionError {
@@ -459,7 +749,10 @@ impl HostRegistry for InMemoryHostRegistry {
     Ok(self.functions.get(name).cloned())
   }
 
-  fn remove_function(&mut self, name: &str) -> MResult<Option<Arc<dyn HostFunction>>> {
+  fn remove_function(
+    &mut self,
+    name: &str,
+  ) -> MResult<Option<RegisteredHostFunction>> {
     if name.trim().is_empty() {
       return Err(MechError::new(
         InvalidHostFunctionError {
@@ -496,9 +789,9 @@ impl HostRegistry for InMemoryHostRegistry {
 pub trait HostCallPolicy: std::fmt::Debug + Send + Sync {
   fn validate_call(
     &self,
-    context: &RuntimeContext,
-    function: &dyn HostFunction,
-    args: &[Value],
+    context: &RuntimeCallContext,
+    function: &RegisteredHostFunction,
+    arguments: &[RuntimeValueSnapshot],
   ) -> MResult<()>;
 }
 
@@ -513,12 +806,10 @@ pub struct DefaultHostCallPolicy;
 impl HostCallPolicy for DefaultHostCallPolicy {
   fn validate_call(
     &self,
-    context: &RuntimeContext,
-    function: &dyn HostFunction,
-    args: &[Value],
+    context: &RuntimeCallContext,
+    function: &RegisteredHostFunction,
+    arguments: &[RuntimeValueSnapshot],
   ) -> MResult<()> {
-    context.validate()?;
-
     if function.name().trim().is_empty() {
       return Err(MechError::new(
         InvalidHostFunctionError {
@@ -529,7 +820,8 @@ impl HostCallPolicy for DefaultHostCallPolicy {
       ));
     }
 
-    let _ = args;
+    let _ = context;
+    let _ = arguments;
     Ok(())
   }
 }
@@ -611,31 +903,47 @@ impl Operation for HostOperation {
 }
 
 pub fn default_host_capability_request(
-  context: &RuntimeContext,
+  context: &RuntimeCallContext,
   function_name: &str,
 ) -> CapabilityRequest {
   let resource = HostResource::function(function_name);
   let operation = HostOperation::call();
 
-  context.capability_request(&operation, &resource)
-}
-
-// -----------------------------------------------------------------------------
-// Helpers
-// -----------------------------------------------------------------------------
-
-fn context_payload_cost_unavailable() -> u64 {
-  0
+  CapabilityRequest {
+    subject: context.subject().to_string(),
+    operation: operation.key().to_string(),
+    resource: resource.key().to_string(),
+    context: crate::CapabilityContext {
+      local: true,
+      bytes: None,
+      items: None,
+      duration_ms: None,
+    },
+  }
 }
 
 pub fn register_actor_context_host_functions(
   registry: &mut dyn HostRegistry,
 ) -> MResult<()> {
-  registry.register_function(Arc::new(ActorMessageKindHostFunction::new()))?;
-  registry.register_function(Arc::new(ActorMessagePayloadHostFunction::new()))?;
-  registry.register_function(Arc::new(ActorStateIdHostFunction::new()))?;
-  registry.register_function(Arc::new(ActorStateGetHostFunction::new()))?;
-  registry.register_function(Arc::new(ActorStatePutHostFunction::new()))?;
+  registry.register_function(RegisteredHostFunction::Pure(
+    Arc::new(ActorMessageKindHostFunction::new()),
+  ))?;
+  registry.register_function(RegisteredHostFunction::Pure(
+    Arc::new(ActorMessagePayloadHostFunction::new()),
+  ))?;
+  registry.register_function(RegisteredHostFunction::Pure(
+    Arc::new(ActorStateIdHostFunction::new()),
+  ))?;
+  registry.register_function(
+    RegisteredHostFunction::RuntimeManaged(Arc::new(
+      ActorStateGetHostFunction::new(),
+    )),
+  )?;
+  registry.register_function(
+    RegisteredHostFunction::RuntimeManaged(Arc::new(
+      ActorStatePutHostFunction::new(),
+    )),
+  )?;
 
   Ok(())
 }
@@ -697,26 +1005,6 @@ impl MechErrorKind for InvalidHostCallError {
 }
 
 #[derive(Debug, Clone)]
-pub struct HostFunctionTransactionUnsupportedError {
-  pub function: String,
-  pub mode: HostFunctionTransactionMode,
-}
-
-impl MechErrorKind for HostFunctionTransactionUnsupportedError {
-  fn name(&self) -> &str {
-    "HostFunctionTransactionUnsupported"
-  }
-
-  fn message(&self) -> String {
-    format!(
-      "Host function `{}` uses transaction mode {:?} and cannot run inside a runtime transaction",
-      self.function,
-      self.mode,
-    )
-  }
-}
-
-#[derive(Debug, Clone)]
 pub struct InvalidHostCallFieldError {
   pub field: &'static str,
   pub reason: &'static str,
@@ -769,22 +1057,27 @@ impl MechErrorKind for HostFunctionNotFoundError {
 #[cfg(test)]
 mod tests {
   use super::*;
-
   use crate::id::RuntimeId;
-  use crate::service::NoRuntimeServices;
+
+  fn empty_function(
+    name: &'static str,
+  ) -> DeterministicHostFunction<
+    impl Fn(
+      &RuntimeCallContext,
+      &[RuntimeValueSnapshot],
+    ) -> MResult<Value>,
+    Value,
+  > {
+    DeterministicHostFunction::new(
+      name,
+      |_context, _arguments| Ok(Value::Empty),
+    )
+  }
 
   #[test]
   fn registry_registers_and_lists_functions() {
     let mut registry = InMemoryHostRegistry::new();
-
-    registry
-      .insert(ClosureHostFunction::new(
-        "host.echo",
-        |_services, _ctx, args| {
-          Ok(args.into_iter().next().unwrap_or(Value::Empty))
-        },
-      ))
-      .unwrap();
+    registry.insert(empty_function("host.echo")).unwrap();
 
     let names = registry.list_functions().unwrap();
 
@@ -796,17 +1089,8 @@ mod tests {
   fn registry_rejects_duplicate_functions() {
     let mut registry = InMemoryHostRegistry::new();
 
-    registry
-      .insert(ClosureHostFunction::new(
-        "host.echo",
-        |_services, _ctx, _args| Ok(Value::Empty),
-      ))
-      .unwrap();
-
-    let result = registry.insert(ClosureHostFunction::new(
-      "host.echo",
-      |_services, _ctx, _args| Ok(Value::Empty),
-    ));
+    registry.insert(empty_function("host.echo")).unwrap();
+    let result = registry.insert(empty_function("host.echo"));
 
     assert!(result.is_err());
   }
@@ -823,6 +1107,7 @@ mod tests {
   #[test]
   fn default_host_capability_request_uses_context_subject() {
     let context = RuntimeContext::new(RuntimeId(1), "task:1");
+    let context = RuntimeCallContext::capture(&context);
 
     let request = default_host_capability_request(&context, "host.echo");
 
@@ -832,48 +1117,13 @@ mod tests {
   }
 
   #[test]
-  fn closure_function_calls() {
-    let function = ClosureHostFunction::new(
-      "host.empty",
-      |_services, _ctx, _args| Ok(Value::Empty),
-    );
-
-    let mut services = NoRuntimeServices;
-    let mut context = RuntimeContext::new(RuntimeId(1), "task:1");
-
-    let result = function
-      .call(&mut services, &mut context, Vec::new())
-      .unwrap();
-
-    assert_eq!(result, Value::Empty);
-  }
-
-  #[test]
-  fn closure_constructors_require_explicit_transaction_contracts() {
-    let immediate = ClosureHostFunction::new(
-      "host.immediate",
-      |_services, _ctx, _args| Ok(Value::Empty),
-    );
-    let pure = ClosureHostFunction::new_pure(
-      "host.pure",
-      |_services, _ctx, _args| Ok(Value::Empty),
-    );
-    let runtime_managed = ClosureHostFunction::new_runtime_managed(
-      "host.runtime-managed",
-      |_services, _ctx, _args| Ok(Value::Empty),
-    );
-
-    assert_eq!(
-      immediate.transaction_mode(),
-      HostFunctionTransactionMode::ImmediateOnly,
-    );
-    assert_eq!(
-      pure.transaction_mode(),
-      HostFunctionTransactionMode::Pure,
-    );
-    assert_eq!(
-      runtime_managed.transaction_mode(),
-      HostFunctionTransactionMode::RuntimeManaged,
-    );
+  fn deterministic_function_plans_and_invokes_snapshots() {
+    let function = empty_function("host.empty");
+    let context = RuntimeContext::new(RuntimeId(1), "task:1");
+    let context = RuntimeCallContext::capture(&context);
+    let planned = function.plan(&context, &[]).unwrap();
+    let invoked = function.invoke(&context, Vec::new()).unwrap();
+    assert_eq!(planned.kind(), mech_core::ValueKind::Empty);
+    assert_eq!(invoked.kind(), mech_core::ValueKind::Empty);
   }
 }

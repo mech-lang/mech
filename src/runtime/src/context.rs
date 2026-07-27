@@ -375,6 +375,70 @@ pub struct RuntimeContext {
   pub(crate) actor_state: Option<ObjectId>,
 }
 
+#[derive(Clone, Debug)]
+pub struct RuntimeCallContext {
+  runtime: RuntimeId,
+  subject: String,
+  task: Option<TaskId>,
+  actor: Option<ActorId>,
+  module_version: Option<ModuleVersionId>,
+  transaction: Option<TransactionId>,
+  actor_message: Option<MessageRecord>,
+  actor_state: Option<ObjectId>,
+  remaining_steps: Option<u64>,
+  remaining_bytes: Option<u64>,
+  remaining_items: Option<u64>,
+  remaining_messages: Option<u64>,
+}
+
+impl RuntimeCallContext {
+  pub(crate) fn capture(context: &RuntimeContext) -> Self {
+    Self {
+      runtime: context.runtime,
+      subject: context.subject.clone(),
+      task: context.task,
+      actor: context.actor,
+      module_version: context.module_version,
+      transaction: context.transaction,
+      actor_message: context.actor_message.clone(),
+      actor_state: context.actor_state,
+      remaining_steps: context.budget.remaining_steps(),
+      remaining_bytes: context.budget.remaining_bytes(),
+      remaining_items: context.budget.remaining_items(),
+      remaining_messages: context.budget.remaining_messages(),
+    }
+  }
+
+  pub fn runtime(&self) -> RuntimeId { self.runtime }
+  pub fn subject(&self) -> &str { &self.subject }
+  pub fn task(&self) -> Option<TaskId> { self.task }
+  pub fn actor(&self) -> Option<ActorId> { self.actor }
+  pub fn module_version(&self) -> Option<ModuleVersionId> {
+    self.module_version
+  }
+  pub fn transaction(&self) -> Option<TransactionId> {
+    self.transaction
+  }
+  pub fn actor_message(&self) -> Option<&MessageRecord> {
+    self.actor_message.as_ref()
+  }
+  pub fn actor_state(&self) -> Option<ObjectId> {
+    self.actor_state
+  }
+  pub fn remaining_steps(&self) -> Option<u64> {
+    self.remaining_steps
+  }
+  pub fn remaining_bytes(&self) -> Option<u64> {
+    self.remaining_bytes
+  }
+  pub fn remaining_items(&self) -> Option<u64> {
+    self.remaining_items
+  }
+  pub fn remaining_messages(&self) -> Option<u64> {
+    self.remaining_messages
+  }
+}
+
 impl RuntimeContext {
   pub(crate) fn new(runtime: RuntimeId, subject: impl Into<String>) -> Self {
     Self {

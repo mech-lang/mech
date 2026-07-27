@@ -10,7 +10,7 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
   RuntimeBuilder,
   TaskRecord,
 };
@@ -63,24 +63,24 @@ fn assert_string(value: Value, expected: &str) {
 fn main() -> MResult<()> {
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "demo/value/wrap",
-      |_services, _context, args| {
+      |_context, args| {
         let input = host_arg_string("demo/value/wrap", &args, 0)?;
         Ok(value_string(format!("rust-wrap({})", input)))
       },
     ))?
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "demo/value/append",
-      |_services, _context, args| {
+      |_context, args| {
         let input = host_arg_string("demo/value/append", &args, 0)?;
         let suffix = host_arg_string("demo/value/append", &args, 1)?;
         Ok(value_string(format!("{}{}", input, suffix)))
       },
     ))?
-    .host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "demo/value/inspect",
-      |_services, _context, args| {
+      |_context, args| {
         host_arg_cloned("demo/value/inspect", &args, 0)
       },
     ))?

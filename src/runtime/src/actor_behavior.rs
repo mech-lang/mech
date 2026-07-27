@@ -16,13 +16,12 @@ use mech_core::{
 use crate::actor::ActorTurn;
 use crate::context::RuntimeContext;
 use crate::host::HostCall;
-use crate::service::RuntimeServices;
 
 // -----------------------------------------------------------------------------
 // Runtime surface exposed to actor behavior drivers
 // -----------------------------------------------------------------------------
 
-pub trait ActorBehaviorRuntime: RuntimeServices {
+pub trait ActorBehaviorRuntime {
   fn call_host_with_context(
     &mut self,
     context: &mut RuntimeContext,

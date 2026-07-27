@@ -3270,7 +3270,7 @@ impl MechRuntime {
     let result = match mech_syntax::parser::parse(source.trim()) {
       Ok(tree) => match self.preflight_context_capabilities(context, &tree, &SourceScope::Program) {
         Ok(()) => {
-          self.register_retained_program_host_functions()?;
+          self.register_retained_program_host_functions(context)?;
           self.run_tree_on_program(
             context,
             &mut RuntimeProgramTarget::Retained,
@@ -3567,7 +3567,7 @@ impl MechRuntime {
 
     let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program) {
       Ok(()) => {
-        self.register_retained_program_host_functions()?;
+        self.register_retained_program_host_functions(context)?;
         self.run_tree_on_program(
           context,
           &mut RuntimeProgramTarget::Retained,
@@ -4230,7 +4230,7 @@ impl MechRuntime {
   ) -> MResult<Value> {
     match target {
       RuntimeProgramTarget::Retained => {
-        self.register_retained_program_host_functions()?;
+        self.register_retained_program_host_functions(context)?;
       }
       RuntimeProgramTarget::Isolated(program) => {
         self.register_runtime_program_host_functions(
@@ -4610,7 +4610,8 @@ mod tests {
   use super::*;
   use crate::runtime::host::RuntimeHostNativeFunction;
   use crate::{
-    BasicCapability, BasicOperation, BasicResource, BasicSubject, ClosureHostFunction,
+    BasicCapability, BasicOperation, BasicResource, BasicSubject,
+    PlannedPureHostFunction, RuntimeCallContext, RuntimeValueSnapshot,
   };
   use mech_core::Ref;
   use std::sync::{
@@ -4877,25 +4878,30 @@ mod tests {
   #[cfg(feature = "functions")]
   #[test]
   fn step_with_context_recomputes_runtime_host_function_with_provided_context() {
-    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
     let host_calls = Arc::new(AtomicUsize::new(0));
     let host_calls_for_host = host_calls.clone();
-    runtime
-      .register_mech_host_function(ClosureHostFunction::new_pure(
+    let mut runtime = MechRuntime::builder()
+      .config(RuntimeConfig::default())
+      .host_function(PlannedPureHostFunction::new(
         "demo/echo",
-        move |_services, context, args| {
-          assert_eq!(context.subject, "program:step-host-test");
+        |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+          Ok(args[0].clone())
+        },
+        move |context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
+          assert_eq!(context.subject(), "program:step-host-test");
           host_calls_for_host.fetch_add(1, Ordering::SeqCst);
-          match &args[0] {
+          match args[0].as_value() {
             Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
             Value::MutableReference(value) => match &*value.borrow() {
               Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
               other => panic!("expected F64 mutable reference, got {:?}", other),
             },
             other => panic!("expected F64 argument, got {:?}", other),
-          }
+          }.map(Into::into)
         },
       ))
+      .unwrap()
+      .build()
       .unwrap();
     runtime
       .grant_capability(Arc::new(BasicCapability::new(

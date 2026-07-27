@@ -30,7 +30,6 @@ mod object;
 mod program_transaction;
 mod reactive_transaction;
 mod schedule;
-mod service;
 mod task;
 mod transaction;
 
@@ -241,7 +240,6 @@ use crate::transaction::{
 
 use crate::actor::ActorTurn;
 
-use crate::{RuntimeServices};
 use crate::input::RuntimeHostInputQueueState;
 
 use crate::actor_behavior::{
@@ -250,7 +248,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostFunction, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RegisteredHostFunction, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -383,11 +381,11 @@ impl RuntimeBuilder {
 
   pub fn host_function(
     mut self,
-    function: impl HostFunction + 'static,
+    function: impl Into<RegisteredHostFunction>,
   ) -> MResult<Self> {
     self
       .host_registry
-      .register_function(Arc::new(function))?;
+      .register_function(function.into())?;
     Ok(self)
   }
 

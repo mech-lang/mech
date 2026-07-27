@@ -843,7 +843,8 @@ mod tests {
     RuntimeAfterCommitEffect, RuntimeEffectMetadata,
     RuntimeEffectSource, RuntimePreparedHostCall,
     RuntimeTransactionalEffect, SourceKind, SourceResolver,
-    StagedClosureHostFunction,
+    PlannedRuntimeManagedHostFunction,
+    PlannedStagedHostFunction,
   };
   use std::collections::VecDeque;
   use std::sync::Arc;
@@ -1009,14 +1010,19 @@ mod tests {
   fn runtime_with_sources(
     sources: &[(&str, &str)],
   ) -> MechRuntime {
+    runtime_builder_with_sources(sources).build().unwrap()
+  }
+
+  fn runtime_builder_with_sources(
+    sources: &[(&str, &str)],
+  ) -> RuntimeBuilder {
     let mut resolver = InMemorySourceResolver::new();
     for (specifier, source) in sources {
       resolver.insert_string(*specifier, *source).unwrap();
     }
-    let mut runtime =
-      MechRuntime::new(RuntimeConfig::default()).unwrap();
-    runtime.set_source_resolver(resolver).unwrap();
-    runtime
+    MechRuntime::builder()
+      .config(RuntimeConfig::default())
+      .source_resolver(resolver)
   }
 
   fn grant_host_call(
@@ -1615,7 +1621,9 @@ mod tests {
 
   #[test]
   fn failed_root_does_not_deliver_dependency_after_commit_effect() {
-    let mut runtime = runtime_with_sources(&[
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    let deliveries_for_host = deliveries.clone();
+    let mut runtime = runtime_builder_with_sources(&[
       (
         "root.mec",
         "+> ./dep.mec\nanswer := missing\nanswer\n",
@@ -1624,16 +1632,16 @@ mod tests {
         "dep.mec",
         "value := round5/after_commit()\n<+ value\n",
       ),
-    ]);
-    let deliveries = Arc::new(AtomicUsize::new(0));
-    let deliveries_for_host = deliveries.clone();
-    runtime
-      .register_mech_host_function(
-        StagedClosureHostFunction::new(
+    ])
+      .host_function(
+        PlannedStagedHostFunction::new(
           "round5/after_commit",
-          move |_services, _context, _args| {
+          |_context, _args| {
+            Ok(Value::F64(mech_core::Ref::new(1.0)).into())
+          },
+          move |_context, _args| {
             Ok(RuntimePreparedHostCall {
-              value: Value::F64(mech_core::Ref::new(1.0)),
+              value: Value::F64(mech_core::Ref::new(1.0)).into(),
               effect: PreparedRuntimeEffect::AfterCommit(Box::new(
                 CountingAfterCommitEffect {
                   deliveries: deliveries_for_host.clone(),
@@ -1644,6 +1652,8 @@ mod tests {
           },
         ),
       )
+      .unwrap()
+      .build()
       .unwrap();
     grant_host_call(
       &mut runtime,
@@ -1794,39 +1804,32 @@ mod tests {
 
   #[test]
   fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
-    let mut runtime = runtime_with_sources(&[(
+    let mut runtime = runtime_builder_with_sources(&[(
       "root.mec",
       "answer := round5/stage_bad_update()\nanswer\n",
-    )]);
-    runtime.run_string("baseline := 7").unwrap();
-    let deliveries = Arc::new(AtomicUsize::new(0));
-    let deliveries_for_host = deliveries.clone();
-    runtime
-      .register_mech_host_function(
-        StagedClosureHostFunction::new(
+    )])
+      .host_function(
+        PlannedRuntimeManagedHostFunction::new(
           "round5/stage_bad_update",
-          move |services, context, _args| {
-            services.update_object_with_context(
-              context,
+          |_context, _args| {
+            Ok(Value::F64(mech_core::Ref::new(42.0)).into())
+          },
+          move |services, _context, _args| {
+            services.update_object(
               ObjectRecord::text(
                 ObjectId(912),
                 "missing",
                 "invalid update",
               ),
             )?;
-            Ok(RuntimePreparedHostCall {
-              value: Value::F64(mech_core::Ref::new(42.0)),
-              effect: PreparedRuntimeEffect::AfterCommit(Box::new(
-                CountingAfterCommitEffect {
-                  deliveries: deliveries_for_host.clone(),
-                  fail: false,
-                },
-              )),
-            })
+            Ok(Value::F64(mech_core::Ref::new(42.0)).into())
           },
         ),
       )
+      .unwrap()
+      .build()
       .unwrap();
+    runtime.run_string("baseline := 7").unwrap();
     grant_host_call(
       &mut runtime,
       CapabilityId(912),
@@ -1844,7 +1847,6 @@ mod tests {
 
     assert!(!runtime.is_poisoned());
     assert!(runtime.active_transactions.is_empty());
-    assert_eq!(deliveries.load(Ordering::SeqCst), 0);
     assert!(runtime.root_symbol_value("baseline").is_ok());
     assert!(runtime.root_symbol_value("answer").is_err());
     assert!(

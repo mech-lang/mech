@@ -357,8 +357,8 @@ mod tests {
     BasicCapability, BasicConstraints, BasicOperation, BasicResource,
     BasicSubject, SharedCapabilityKernel,
   };
-  use crate::ClosureHostFunction;
   use crate::{
+    PlannedRuntimeManagedHostFunction,
     PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimeTransactionalEffect,
@@ -1152,7 +1152,29 @@ mod tests {
 
   #[test]
   fn reactive_host_callback_uses_scoped_transaction_services() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedRuntimeManagedHostFunction::new(
+        "demo/reactive-reenter",
+        |_context, _args| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |services, _context, _args| {
+          let object = ObjectRecord::text(
+            ObjectId(922),
+            "note",
+            "reactive staging",
+          );
+          if services.get_object(object.id)?.is_some() {
+            services.update_object(object)?;
+          } else {
+            services.put_object(object)?;
+          }
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
     runtime
       .grant_capability(Arc::new(BasicCapability::new(
@@ -1161,35 +1183,6 @@ mod tests {
         &BasicResource::new("host:demo/reactive-reenter"),
         [BasicOperation::new("call")],
       )))
-      .unwrap();
-    runtime
-      .register_mech_host_function(
-        ClosureHostFunction::new_runtime_managed(
-          "demo/reactive-reenter",
-          move |services, context, _args| {
-            let object = ObjectRecord::text(
-              ObjectId(922),
-              "note",
-              "reactive staging",
-            );
-            if services
-              .get_object_with_context(context, object.id)?
-              .is_some()
-            {
-              services.update_object_with_context(
-                context,
-                object,
-              )?;
-            } else {
-              services.put_object_with_context(
-                context,
-                object,
-              )?;
-            }
-            Ok(Value::F64(Ref::new(1.0)))
-          },
-        ),
-      )
       .unwrap();
     let mut context = runtime.runtime_context().unwrap();
     runtime
