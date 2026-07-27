@@ -15,8 +15,8 @@ use mech_runtime::{
   ObjectRecord,
   RuntimeBuilder,
   ModuleBuildOptions,
-  RuntimeContextBuilder,
   SourceRequest,
+  ActorTurn,
   register_actor_context_host_functions,
 };
 
@@ -61,11 +61,31 @@ fn main() -> MResult<()> {
     "count=0",
   ))?;
 
+  let subject = BasicSubject::new("actor:context-host");
+  let capability_ids = vec![
+    CapabilityId(1),
+    CapabilityId(2),
+    CapabilityId(3),
+  ];
+
+  for (id, name) in [
+    (CapabilityId(1), "actor/message/kind"),
+    (CapabilityId(2), "actor/message/payload"),
+    (CapabilityId(3), "actor/state/id"),
+  ] {
+    runtime.grant_capability(Arc::new(BasicCapability::new(
+      id,
+      &subject,
+      &BasicResource::new(format!("host:{}", name)),
+      [BasicOperation::new("call")],
+    )))?;
+  }
+
   let actor = runtime.create_actor(
     "actor:context-host",
     Some(actor_version),
     Some(state_id),
-    Vec::new(),
+    capability_ids,
   )?;
 
   let message = runtime.send_message(
@@ -78,45 +98,21 @@ fn main() -> MResult<()> {
   println!("state: {}", state_id);
   println!("message: {}", message);
 
-  let subject = BasicSubject::new("actor:context-host");
-
-  let capability_kind = BasicCapability::new(
-    CapabilityId(1),
-    &subject,
-    &BasicResource::new("host:actor/message/kind"),
-    [BasicOperation::new("call")],
-  );
-
-  let capability_payload = BasicCapability::new(
-    CapabilityId(2),
-    &subject,
-    &BasicResource::new("host:actor/message/payload"),
-    [BasicOperation::new("call")],
-  );
-
-  let capability_state = BasicCapability::new(
-    CapabilityId(3),
-    &subject,
-    &BasicResource::new("host:actor/state/id"),
-    [BasicOperation::new("call")],
-  );
-
-  runtime.grant_capability(Arc::new(capability_kind))?;
-  runtime.grant_capability(Arc::new(capability_payload))?;
-  runtime.grant_capability(Arc::new(capability_state))?;
-
-  let mut context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:context-host")
-    .actor(actor)
-    .build()?;
+  let actor_record = runtime
+    .get_actor(actor)?
+    .expect("actor should exist");
+  let queued_message = runtime
+    .peek_message(actor)?
+    .expect("expected actor message");
+  let expected_turn = ActorTurn::new(actor_record, queued_message)?;
+  let mut context = runtime.context_for_actor_turn(&expected_turn)?;
 
   runtime.begin_transaction(&mut context)?;
 
   let turn = runtime
     .next_actor_turn_with_context(&mut context, actor)?
     .expect("expected actor turn");
-
-  context.bind_actor_turn(&turn);
+  assert_eq!(turn, expected_turn);
 
   let kind = runtime.call_host_with_context(
     &mut context,

@@ -1,0 +1,16 @@
+error[E0308]: mismatched types
+  --> tests/ui/sealed/interpreter_advance_participating_without_capability.rs:12:5
+   |
+10 |   let _ = interpreter.advance_reactive_turn_participating(
+   |                       ----------------------------------- arguments to this method are incorrect
+11 |     &[],
+12 |     &mut forged,
+   |     ^^^^^^^^^^^ expected `&mut ReactiveJournalParticipant<'_>`, found `&mut ForgedParticipant`
+   |
+   = note: expected mutable reference `&mut ReactiveJournalParticipant<'_>`
+              found mutable reference `&mut ForgedParticipant`
+note: method defined here
+  --> $WORKSPACE/src/interpreter/src/interpreter.rs
+   |
+   |   pub fn advance_reactive_turn_participating(
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

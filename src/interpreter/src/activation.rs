@@ -788,6 +788,10 @@ impl MechFunctionImpl for ScopePulse {
     fn to_string(&self) -> String {
         "ActivationPatternScopePulse".into()
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 struct Matcher {
     pattern: CompiledPattern,
@@ -881,6 +885,10 @@ impl MechFunctionImpl for MatchGate {
     fn to_string(&self) -> String {
         "ActivationPatternGuardMatchGate".into()
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 struct UnmatchedFinalize {
     matched: Ref<bool>,
@@ -994,6 +1002,10 @@ impl MechFunctionImpl for Gate {
     fn to_string(&self) -> String {
         "ActivationPatternArmGate".into()
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(feature = "compiler")]
@@ -1762,7 +1774,7 @@ fn elaborate_patterned_arm_guard(
     pulse: &Value,
     eligible: &Ref<bool>,
     completion: Ref<usize>,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<ElaboratedPatternGuard> {
     let symbols = interpreter.symbols();
     let symbol_snapshot = symbols.borrow().snapshot();
@@ -1859,7 +1871,7 @@ fn elaborate_patterned_arm_body(
     arm: &ActivationArm,
     captures: &[ActivationPatternCapture],
     pulse: &Value,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<(usize, usize)> {
     let symbols = interpreter.symbols();
     let symbol_snapshot = symbols.borrow().snapshot();
@@ -1922,7 +1934,7 @@ fn elaborate_patterned_activation_inner(
     arms: &[ActivationArm],
     trigger: Value,
     preflight: PreflightPatternedActivation,
-    i: &Interpreter,
+    i: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     if trigger.kind().deref_kind() != preflight.trigger_kind {
         return Err(MechError::new(ActivationPatternTriggerInvariant, None));
@@ -2109,7 +2121,7 @@ pub(crate) fn elaborate_patterned_activation(
     arms: &[ActivationArm],
     trigger: Value,
     trigger_cells: Vec<ReactiveCellId>,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     let preflight =
         preflight_patterned_activation(scope, arms, &trigger, &trigger_cells, interpreter)?;
@@ -2251,6 +2263,10 @@ mod tests {
         fn to_string(&self) -> String {
             "FailingPatternRegister".to_string()
         }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for FailingPatternRegister {
@@ -2260,14 +2276,24 @@ mod tests {
     }
 
     struct FailingPatternRegisterCompiler {
-        sink: Ref<f64>,
         solve_calls: Arc<AtomicUsize>,
         stage_calls: Arc<AtomicUsize>,
     }
     impl NativeFunctionCompiler for FailingPatternRegisterCompiler {
-        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+            let argument = arguments
+                .first()
+                .ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "failing pattern register expects one f64 sink".to_string(),
+                        },
+                        None,
+                    )
+                })?;
+            let sink = argument.as_f64()?;
             Ok(Box::new(FailingPatternRegister {
-                sink: self.sink.clone(),
+                sink,
                 solve_calls: self.solve_calls.clone(),
                 stage_calls: self.stage_calls.clone(),
             }))
@@ -3316,7 +3342,6 @@ event := 0.0
 ~second := 2.0
 "#,
         );
-        let second_sink = symbol(&interpreter, "second").as_f64().unwrap().clone();
         let solve_calls = Arc::new(AtomicUsize::new(0));
         let stage_calls = Arc::new(AtomicUsize::new(0));
         interpreter
@@ -3325,7 +3350,6 @@ event := 0.0
             .insert_function_compiler(
                 "test/failing-pattern-register",
                 Arc::new(FailingPatternRegisterCompiler {
-                    sink: second_sink,
                     solve_calls: solve_calls.clone(),
                     stage_calls: stage_calls.clone(),
                 }),
@@ -3336,7 +3360,7 @@ event := 0.0
 ~> event
   | value => {
       first = value
-      test/failing-pattern-register()
+      test/failing-pattern-register(second)
     }
   | * => {
       fallback := 0.0

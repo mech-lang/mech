@@ -85,7 +85,7 @@ impl RuntimeResourceProvider for FakeRobotProvider {
       _ => Err(fake_error(format!("unsupported fake robot command path `{}`", request.path))),
     }
   }
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     Ok(PreparedRuntimeEffect::AfterCommit(Box::new(RecordingAfterCommitEffect {
       scheme: "fake-robot".to_string(),
@@ -105,58 +105,63 @@ fn fake_error(message: impl Into<String>) -> MechError { MechError::new(FakeRobo
 #[derive(Debug)]
 struct AliasProvider {
   bases: Vec<String>,
-  equivalent_groups: Vec<Vec<String>>,
 }
 
 impl AliasProvider {
   fn new(bases: &[&str]) -> Self {
     Self {
       bases: bases.iter().map(|base| base.to_string()).collect(),
-      equivalent_groups: Vec::new(),
     }
   }
 
-  fn with_equivalent_group(mut self, group: &[&str]) -> Self {
-    self.equivalent_groups.push(group.iter().map(|base| base.to_string()).collect());
-    self
-  }
 }
 
 impl RuntimeResourceProvider for AliasProvider {
   fn scheme(&self) -> &str { "test" }
   fn base_uris(&self) -> Vec<String> { self.bases.clone() }
-  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> { self.equivalent_groups.clone() }
   fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
     Ok(Value::String(Ref::new("ok".to_string())))
   }
 }
 
 fn runtime_with_alias_provider() -> MechRuntime {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime
-    .register_resource_provider(Box::new(
+  RuntimeBuilder::new()
+    .resource_provider(Box::new(
       AliasProvider::new(&[
-        "test://default/context",
-        "test://context",
-      ])
-      .with_equivalent_group(&[
         "test://default/context",
         "test://context",
       ]),
     ))
-    .unwrap();
-  runtime
+    .build()
+    .unwrap()
 }
 
 fn grant_test_read(runtime: &mut MechRuntime, resource: &str) {
+  let capability = ResourcePathCapability::exact(
+    runtime.next_capability_id(),
+    "subject",
+    resource,
+    ["read"],
+    "item",
+  )
+  .unwrap();
   runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject: "subject".to_string(),
-      resource: resource.to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec!["item".to_string()],
-    })
+    .grant_capability(Arc::new(capability))
     .unwrap();
+}
+
+fn allows_test_read(
+  runtime: &mut MechRuntime,
+  resource: &str,
+  path: &str,
+) -> bool {
+  runtime
+    .check_capability(&CapabilityRequest::from_keys(
+      "subject",
+      "read",
+      format!("{}/{}", resource.trim_end_matches('/'), path),
+    ))
+    .is_ok()
 }
 
 #[derive(Debug)]
@@ -237,27 +242,30 @@ fn duplicate_host_instance_registration_fails_generically() {
 }
 
 #[test]
-fn provider_advertised_alias_grant_authorizes_materialized_base() {
+fn provider_advertised_alias_grant_does_not_change_resource_identity() {
   let mut runtime = runtime_with_alias_provider();
   grant_test_read(&mut runtime, "test://context");
 
-  assert!(runtime.has_capability_grant(
-    "subject",
+  assert!(!allows_test_read(
+    &mut runtime,
     "test://default/context",
-    &RuntimeCapabilityOperation::Read,
+    "item",
+  ));
+  assert!(allows_test_read(
+    &mut runtime,
+    "test://context",
     "item",
   ));
 }
 
 #[test]
-fn provider_advertised_materialized_grant_authorizes_alias_base() {
+fn provider_advertised_materialized_grant_does_not_authorize_alias() {
   let mut runtime = runtime_with_alias_provider();
   grant_test_read(&mut runtime, "test://default/context");
 
-  assert!(runtime.has_capability_grant(
-    "subject",
+  assert!(!allows_test_read(
+    &mut runtime,
     "test://context",
-    &RuntimeCapabilityOperation::Read,
     "item",
   ));
 }
@@ -267,45 +275,42 @@ fn provider_advertised_alias_grant_does_not_authorize_unregistered_base() {
   let mut runtime = runtime_with_alias_provider();
   grant_test_read(&mut runtime, "test://context");
 
-  assert!(!runtime.has_capability_grant(
-    "subject",
+  assert!(!allows_test_read(
+    &mut runtime,
     "test://other/context",
-    &RuntimeCapabilityOperation::Read,
     "item",
   ));
 }
 
 #[test]
 fn provider_advertised_alias_grants_do_not_use_string_heuristics() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime
-    .register_resource_provider(Box::new(AliasProvider::new(&["test://context"])))
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(AliasProvider::new(&["test://context"])))
+    .build()
     .unwrap();
   grant_test_read(&mut runtime, "test://context");
 
-  assert!(!runtime.has_capability_grant(
-    "subject",
+  assert!(!allows_test_read(
+    &mut runtime,
     "test://default/context",
-    &RuntimeCapabilityOperation::Read,
     "item",
   ));
 }
 
 #[test]
 fn multiple_provider_bases_are_not_implicit_aliases() {
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime
-    .register_resource_provider(Box::new(AliasProvider::new(&[
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(AliasProvider::new(&[
       "test://default/context",
       "test://context",
     ])))
+    .build()
     .unwrap();
   grant_test_read(&mut runtime, "test://context");
 
-  assert!(!runtime.has_capability_grant(
-    "subject",
+  assert!(!allows_test_read(
+    &mut runtime,
     "test://default/context",
-    &RuntimeCapabilityOperation::Read,
     "item",
   ));
 }
@@ -320,28 +325,30 @@ fn in_memory_docs_bases_are_not_implicit_aliases() {
     .insert("docs://guide", "title", Value::String(Ref::new("guide".to_string())))
     .unwrap();
 
-  let mut runtime = RuntimeBuilder::new().build().unwrap();
-  runtime.register_resource_provider(Box::new(docs)).unwrap();
-  runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject: "subject".to_string(),
-      resource: "docs://manual".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec!["title".to_string()],
-    })
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(docs))
+    .build()
     .unwrap();
-
-  assert!(!runtime.has_capability_grant(
+  let capability = ResourcePathCapability::exact(
+    runtime.next_capability_id(),
     "subject",
+    "docs://manual",
+    ["read"],
+    "title",
+  )
+  .unwrap();
+  runtime.grant_capability(Arc::new(capability)).unwrap();
+
+  assert!(!allows_test_read(
+    &mut runtime,
     "docs://guide",
-    &RuntimeCapabilityOperation::Read,
     "title",
   ));
 }
 
 #[test]
 fn host_instance_same_provider_builtin_configures_default() {
-  let mut runtime = RuntimeBuilder::new()
+  RuntimeBuilder::new()
     .host_factory(Box::new(FakeBrowserFactory::new()))
     .unwrap()
     .host_instance(HostInstanceConfig {
@@ -349,14 +356,15 @@ fn host_instance_same_provider_builtin_configures_default() {
       provider: "browser".to_string(),
       settings: ConfigValue::Map(Default::default()),
     })
+    .context_export_binding("dom", "browser", "dom")
+    .unwrap()
     .build()
     .unwrap();
-  runtime.bind_context_export("dom", "browser", "dom").unwrap();
 }
 
 #[test]
 fn host_instance_custom_browser_name_succeeds() {
-  let mut runtime = RuntimeBuilder::new()
+  RuntimeBuilder::new()
     .host_factory(Box::new(FakeBrowserFactory::new()))
     .unwrap()
     .host_instance(HostInstanceConfig {
@@ -364,9 +372,10 @@ fn host_instance_custom_browser_name_succeeds() {
       provider: "browser".to_string(),
       settings: ConfigValue::Map(Default::default()),
     })
+    .context_export_binding("dom", "ui", "dom")
+    .unwrap()
     .build()
     .unwrap();
-  runtime.bind_context_export("dom", "ui", "dom").unwrap();
 }
 
 #[test]
@@ -454,7 +463,7 @@ impl RuntimeResourceProvider for PlotterProvider {
       _ => Err(fake_error(format!("unsupported plotter command path `{}`", request.path))),
     }
   }
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     Ok(PreparedRuntimeEffect::AfterCommit(Box::new(RecordingAfterCommitEffect {
       scheme: "plotter".to_string(),

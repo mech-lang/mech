@@ -1,8 +1,8 @@
 # Runtime-owned program transactions
 
-Round 3 gives every runtime-owned retained-program operation one atomic
-internal boundary. The runtime coordinates four existing mechanisms rather
-than teaching any one of them about the others:
+Every runtime-owned retained-program operation has one atomic internal
+boundary. The runtime coordinates the following mechanisms rather than
+teaching any one of them about the others:
 
 - `MechProgramCheckpoint` owns structural program rollback and treats its
   value-state journal as opaque.
@@ -10,8 +10,9 @@ than teaching any one of them about the others:
 - `RuntimeLiveStateSnapshot` captures live input bindings, persistent sends,
   the live context template, and registration mode.
 - `RuntimeContextCheckpoint` captures operation context.
-
-Arbitrary provider and host effects are outside this boundary.
+- the effect journal coordinates transactional, compensatable, and
+  after-commit host and provider work;
+- the capability overlay records provisional grants, revocations, and uses.
 
 ## Implicit retained operations
 
@@ -89,20 +90,26 @@ Runtime-host plan nodes expose their outer output cell and reachable value
 graph to the checkpoint journal. Rollback therefore restores the output cell's
 identity, topology, and payload.
 
-Round 3 does not undo an arbitrary external effect already performed by a host
-function, provider write, or capability-kernel mutation. Host-effect
-preparation, suppression, commit, and compensation belong to Round 4. No
-provider transaction protocol is introduced here.
+Host compilation calls a planning interface only. Runtime invocation uses an
+explicit execution session and one of three distinct interfaces: pure,
+runtime-managed, or staged. Staged hosts and resource providers return
+prepared effects without performing the external mutation. The runtime owns
+prepare, commit, abort, apply, compensate, and after-commit delivery.
+
+Provider preparation takes `&self`. It must validate and construct inert
+effect state only; external mutation belongs to the returned effect protocol.
+Capability authorization for hosts and resources always goes through the
+capability kernel and transaction overlay.
 
 ## Reactive and module boundaries
 
-Whole-program checkpoint work does not run in the reactive inner loop.
-Transactional `step_with_context` and host-input turns are rejected while a
-transaction is active or owns the program. The core, interpreter, and program
-layers now provide compact program-local reactive-turn rollback. Runtime-owned
-step and host-input turns still do not join RuntimeExecutionTransaction, the
-effect journal, capability overlays, or the runtime store commit. That
-composition remains PR7.
+Whole-program checkpoint work does not run in the reactive inner loop. The
+core, interpreter, and program layers provide compact program-local
+reactive-turn rollback, and the runtime coordinates that compact journal with
+the active `RuntimeExecutionTransaction`, effects, capability overlays,
+provider work, and store commit. A pre-store failure restores program state
+before discarding staged runtime work. A post-store error retains program
+state.
 
 Retained root-module construction and execution now share the same
 runtime-owned program transaction. The existing recursive dependency builder
@@ -115,11 +122,8 @@ indeterminacy.
 
 One-shot bytecode execution and isolated dependency-module programs continue
 to use temporary programs and are not retained-operation transactions.
-
-`program_mut` and `take_program` remain low-level compatibility escape hatches.
-They are outside runtime-owned atomic guarantees, runtime internals must not
-use them to bypass the coordinator, and callers must not use them while a
-transaction owns the retained program.
+Public callers cannot obtain the retained program, its journal, or mutable
+runtime component handles.
 
 ## Value storage guardrails
 

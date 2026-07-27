@@ -236,7 +236,11 @@ impl MechRuntime {
     let request = request.into();
     request.validate()?;
 
-    self.source_resolver.resolve(&request)
+    extension::invoke_extension(
+      "source resolver",
+      "resolve",
+      || self.source_resolver.resolve(&request),
+    )
   }
 
   pub fn resolve_source_with_context(
@@ -253,7 +257,11 @@ impl MechRuntime {
     let request = request.into();
     request.validate()?;
 
-    let resolved = self.source_resolver.resolve(&request)?;
+    let resolved = extension::invoke_extension(
+      "source resolver",
+      "resolve",
+      || self.source_resolver.resolve(&request),
+    )?;
 
     if let Some(source) = &resolved {
       self.emit_event_to_context(
@@ -623,7 +631,7 @@ impl MechRuntime {
     &mut self,
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
-  ) -> MResult<Value> {
+  ) -> MResult<crate::RuntimeValueSnapshot> {
     self.ensure_runtime_mutation_allowed(
       "resolve_and_run_root_module",
     )?;
@@ -632,6 +640,21 @@ impl MechRuntime {
   }
 
   pub fn resolve_and_run_root_module_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<crate::RuntimeValueSnapshot> {
+    self
+      .resolve_and_run_root_module_value_with_context(
+        context,
+        request,
+        options,
+      )
+      .map(|value| crate::RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub(crate) fn resolve_and_run_root_module_value_with_context(
     &mut self,
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
@@ -828,7 +851,8 @@ mod tests {
     RuntimeAfterCommitEffect, RuntimeEffectMetadata,
     RuntimeEffectSource, RuntimePreparedHostCall,
     RuntimeTransactionalEffect, SourceKind, SourceResolver,
-    StagedClosureHostFunction,
+    PlannedRuntimeManagedHostFunction,
+    PlannedStagedHostFunction,
   };
   use std::collections::VecDeque;
   use std::sync::Arc;
@@ -916,6 +940,18 @@ mod tests {
   }
 
   #[derive(Debug)]
+  struct PanickingSourceResolver;
+
+  impl SourceResolver for PanickingSourceResolver {
+    fn resolve(
+      &self,
+      _request: &SourceRequest,
+    ) -> MResult<Option<ResolvedSource>> {
+      panic!("deliberate source resolver panic");
+    }
+  }
+
+  #[derive(Debug)]
   struct CountingAfterCommitEffect {
     deliveries: Arc<AtomicUsize>,
     fail: bool,
@@ -994,14 +1030,19 @@ mod tests {
   fn runtime_with_sources(
     sources: &[(&str, &str)],
   ) -> MechRuntime {
+    runtime_builder_with_sources(sources).build().unwrap()
+  }
+
+  fn runtime_builder_with_sources(
+    sources: &[(&str, &str)],
+  ) -> RuntimeBuilder {
     let mut resolver = InMemorySourceResolver::new();
     for (specifier, source) in sources {
       resolver.insert_string(*specifier, *source).unwrap();
     }
-    let mut runtime =
-      MechRuntime::new(RuntimeConfig::default()).unwrap();
-    runtime.set_source_resolver(resolver).unwrap();
-    runtime
+    MechRuntime::builder()
+      .config(RuntimeConfig::default())
+      .source_resolver(resolver)
   }
 
   fn grant_host_call(
@@ -1560,6 +1601,101 @@ mod tests {
   }
 
   #[test]
+  fn retained_root_integrity_failure_exposes_no_graph_or_completion() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "integrity-root-value := 2.0\nintegrity-root-limit := 1.0\nintegrity-root-safe! := integrity-root-value <= integrity-root-limit\nintegrity-root-value\n",
+    )]);
+    runtime.run_string("integrity-baseline := 7").unwrap();
+    let events_before = runtime.list_events(None).unwrap().len();
+
+    let error = runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert!(runtime.program.root_symbol_value("integrity-baseline").is_ok());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-root-value")
+      .is_err());
+    assert!(runtime
+      .store
+      .find_module_by_name("memory:root.mec")
+      .unwrap()
+      .is_none());
+    let events = runtime.list_events(None).unwrap();
+    let operation_events = &events[events_before..];
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ProgramFailed { .. }
+    )));
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::IntegrityConstraintViolated { .. }
+    )));
+    assert!(operation_events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::ProgramCompleted { .. }
+        | RuntimeEventKind::ModuleExecutionCompleted { .. }
+    )));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
+  fn isolated_dependency_integrity_failure_prevents_root_materialization() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./dep.mec\nintegrity-root-ran := dep/value\nintegrity-root-ran\n",
+      ),
+      (
+        "dep.mec",
+        "value := 2.0\nlimit := 1.0\ndep-safe! := value <= limit\n<+ value\n",
+      ),
+    ]);
+    let events_before = runtime.list_events(None).unwrap().len();
+
+    let error = runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-root-ran")
+      .is_err());
+    for uri in ["memory:root.mec", "memory:dep.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "invalid dependency exposed {uri}",
+      );
+    }
+    let events = runtime.list_events(None).unwrap();
+    let operation_events = &events[events_before..];
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ProgramFailed { .. }
+    )));
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::IntegrityConstraintViolated { .. }
+    )));
+    assert!(operation_events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::ProgramCompleted { .. }
+        | RuntimeEventKind::ModuleExecutionCompleted { .. }
+    )));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
   fn retained_root_missing_later_dependency_has_no_partial_graph_or_version_audit() {
     let mut runtime = runtime_with_sources(&[
       (
@@ -1600,7 +1736,9 @@ mod tests {
 
   #[test]
   fn failed_root_does_not_deliver_dependency_after_commit_effect() {
-    let mut runtime = runtime_with_sources(&[
+    let deliveries = Arc::new(AtomicUsize::new(0));
+    let deliveries_for_host = deliveries.clone();
+    let mut runtime = runtime_builder_with_sources(&[
       (
         "root.mec",
         "+> ./dep.mec\nanswer := missing\nanswer\n",
@@ -1609,16 +1747,16 @@ mod tests {
         "dep.mec",
         "value := round5/after_commit()\n<+ value\n",
       ),
-    ]);
-    let deliveries = Arc::new(AtomicUsize::new(0));
-    let deliveries_for_host = deliveries.clone();
-    runtime
-      .register_mech_host_function(
-        StagedClosureHostFunction::new(
+    ])
+      .host_function(
+        PlannedStagedHostFunction::new(
           "round5/after_commit",
-          move |_services, _context, _args| {
+          |_context, _args| {
+            Ok(Value::F64(mech_core::Ref::new(1.0)).into())
+          },
+          move |_context, _args| {
             Ok(RuntimePreparedHostCall {
-              value: Value::F64(mech_core::Ref::new(1.0)),
+              value: Value::F64(mech_core::Ref::new(1.0)).into(),
               effect: PreparedRuntimeEffect::AfterCommit(Box::new(
                 CountingAfterCommitEffect {
                   deliveries: deliveries_for_host.clone(),
@@ -1629,6 +1767,8 @@ mod tests {
           },
         ),
       )
+      .unwrap()
+      .build()
       .unwrap();
     grant_host_call(
       &mut runtime,
@@ -1779,39 +1919,32 @@ mod tests {
 
   #[test]
   fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
-    let mut runtime = runtime_with_sources(&[(
+    let mut runtime = runtime_builder_with_sources(&[(
       "root.mec",
       "answer := round5/stage_bad_update()\nanswer\n",
-    )]);
-    runtime.run_string("baseline := 7").unwrap();
-    let deliveries = Arc::new(AtomicUsize::new(0));
-    let deliveries_for_host = deliveries.clone();
-    runtime
-      .register_mech_host_function(
-        StagedClosureHostFunction::new(
+    )])
+      .host_function(
+        PlannedRuntimeManagedHostFunction::new(
           "round5/stage_bad_update",
-          move |services, context, _args| {
-            services.update_object_with_context(
-              context,
+          |_context, _args| {
+            Ok(Value::F64(mech_core::Ref::new(42.0)).into())
+          },
+          move |services, _context, _args| {
+            services.update_object(
               ObjectRecord::text(
                 ObjectId(912),
                 "missing",
                 "invalid update",
               ),
             )?;
-            Ok(RuntimePreparedHostCall {
-              value: Value::F64(mech_core::Ref::new(42.0)),
-              effect: PreparedRuntimeEffect::AfterCommit(Box::new(
-                CountingAfterCommitEffect {
-                  deliveries: deliveries_for_host.clone(),
-                  fail: false,
-                },
-              )),
-            })
+            Ok(Value::F64(mech_core::Ref::new(42.0)).into())
           },
         ),
       )
+      .unwrap()
+      .build()
       .unwrap();
+    runtime.run_string("baseline := 7").unwrap();
     grant_host_call(
       &mut runtime,
       CapabilityId(912),
@@ -1829,7 +1962,6 @@ mod tests {
 
     assert!(!runtime.is_poisoned());
     assert!(runtime.active_transactions.is_empty());
-    assert_eq!(deliveries.load(Ordering::SeqCst), 0);
     assert!(runtime.root_symbol_value("baseline").is_ok());
     assert!(runtime.root_symbol_value("answer").is_err());
     assert!(
@@ -2502,6 +2634,21 @@ mod tests {
     );
     assert_eq!(aborts.load(Ordering::SeqCst), 0);
     assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn source_resolver_panic_is_converted_without_poisoning() {
+    let mut runtime = MechRuntime::builder()
+      .source_resolver(PanickingSourceResolver)
+      .build()
+      .unwrap();
+
+    let error = runtime.resolve_source("panic.mec").unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate source resolver panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("resolver-panic-recovery := 1.0").unwrap();
   }
 
   #[test]

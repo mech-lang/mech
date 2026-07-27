@@ -1,29 +1,36 @@
-use crate::{MResult, MechFunction, ValRef, Value, ValueStateJournal};
+use crate::{
+  MResult, MechError, MechErrorKind, MechFunction, ValRef, Value,
+  ValueStateJournal,
+};
+use std::cell::Cell;
 
 /// The value-state portion of one ephemeral reactive turn.
 ///
 /// This journal deliberately contains only before-state. It is consumed by
 /// higher-level rollback coordinators and never becomes durable history.
-pub struct ReactiveTurnJournal {
+pub(crate) struct ReactiveTurnJournal {
   values: ValueStateJournal,
 }
 
 impl ReactiveTurnJournal {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self {
       values: ValueStateJournal::new(),
     }
   }
 
-  pub fn capture_value(&mut self, value: &Value) -> MResult<()> {
+  pub(crate) fn capture_value(&mut self, value: &Value) -> MResult<()> {
     self.values.capture_value(value)
   }
 
-  pub fn capture_val_ref(&mut self, value: &ValRef) -> MResult<()> {
+  pub(crate) fn capture_val_ref(&mut self, value: &ValRef) -> MResult<()> {
     self.values.capture_val_ref(value)
   }
 
-  pub fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
+  pub(crate) fn capture_function_state(
+    &mut self,
+    function: &dyn MechFunction,
+  ) -> MResult<()> {
     let mut values = function.transaction_state_values()?;
     if values.is_empty() {
       values.push(function.out());
@@ -34,23 +41,23 @@ impl ReactiveTurnJournal {
     Ok(())
   }
 
-  pub fn preflight_restore_before(&self) -> MResult<()> {
+  pub(crate) fn preflight_restore_before(&self) -> MResult<()> {
     self.values.preflight_restore_before()
   }
 
-  pub fn apply_restore_before(&self) {
+  pub(crate) fn apply_restore_before(&self) {
     self.values.apply_restore_before();
   }
 
-  pub fn restore_before(&self) -> MResult<()> {
+  pub(crate) fn restore_before(&self) -> MResult<()> {
     self.values.restore_before()
   }
 
-  pub fn cell_count(&self) -> usize {
+  pub(crate) fn cell_count(&self) -> usize {
     self.values.cell_count()
   }
 
-  pub fn is_empty(&self) -> bool {
+  pub(crate) fn is_empty(&self) -> bool {
     self.values.is_empty()
   }
 }
@@ -61,11 +68,299 @@ impl Default for ReactiveTurnJournal {
   }
 }
 
+/// A lifetime-bound capability for participating in one coordinated reactive
+/// operation.
+///
+/// The value journal and constructor are private. Callers can receive this
+/// capability only inside [`with_reactive_journal_participant`], which restores
+/// captured values if the operation exits without explicit finalization.
+pub struct ReactiveJournalParticipant<'journal> {
+  journal: &'journal mut ReactiveTurnJournal,
+  finalization: &'journal Cell<ReactiveJournalFinalizationState>,
+}
+
+impl ReactiveJournalParticipant<'_> {
+  pub fn capture_value(&mut self, value: &Value) -> MResult<()> {
+    self.journal.capture_value(value)
+  }
+
+  pub fn capture_val_ref(&mut self, value: &ValRef) -> MResult<()> {
+    self.journal.capture_val_ref(value)
+  }
+
+  pub fn capture_function_state(
+    &mut self,
+    function: &dyn MechFunction,
+  ) -> MResult<()> {
+    self.journal.capture_function_state(function)
+  }
+
+  pub fn preflight_restore_before(&self) -> MResult<()> {
+    self.journal.preflight_restore_before()
+  }
+
+  pub fn apply_restore_before(self) {
+    self.journal.apply_restore_before();
+    self.finalization
+      .set(ReactiveJournalFinalizationState::RolledBack);
+  }
+
+  pub fn commit(self) {
+    self.finalization
+      .set(ReactiveJournalFinalizationState::Committed);
+  }
+
+  pub fn cell_count(&self) -> usize {
+    self.journal.cell_count()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.journal.is_empty()
+  }
+
+  pub(crate) fn journal_mut(&mut self) -> &mut ReactiveTurnJournal {
+    self.journal
+  }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReactiveJournalFinalizationState {
+  Pending,
+  Committed,
+  RolledBack,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReactiveJournalFinalizationMissing;
+
+impl MechErrorKind for ReactiveJournalFinalizationMissing {
+  fn name(&self) -> &str {
+    "ReactiveJournalFinalizationMissing"
+  }
+
+  fn message(&self) -> String {
+    "A reactive journal participant returned success without finalization; captured values were rolled back."
+      .to_string()
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReactiveJournalAutomaticRollbackFailed {
+  pub original_error: Option<String>,
+  pub rollback_error: String,
+}
+
+impl MechErrorKind for ReactiveJournalAutomaticRollbackFailed {
+  fn name(&self) -> &str {
+    "ReactiveJournalAutomaticRollbackFailed"
+  }
+
+  fn message(&self) -> String {
+    match &self.original_error {
+      Some(original_error) => format!(
+        "Reactive journal coordination failed with {}; automatic rollback also failed with {}.",
+        original_error,
+        self.rollback_error,
+      ),
+      None => format!(
+        "A reactive journal participant returned without finalization and automatic rollback failed with {}.",
+        self.rollback_error,
+      ),
+    }
+  }
+}
+
+/// Runs one operation with an opaque reactive-journal participant.
+///
+/// The participant cannot escape this callback. An error path that has not
+/// already been finalized is rolled back automatically. A successful path must
+/// explicitly commit or apply rollback; otherwise it is rolled back and
+/// reported as a coordination error.
+pub fn with_reactive_journal_participant<T>(
+  operation: impl FnOnce(
+    ReactiveJournalParticipant<'_>,
+  ) -> MResult<T>,
+) -> MResult<T> {
+  let mut journal = ReactiveTurnJournal::new();
+  let finalization =
+    Cell::new(ReactiveJournalFinalizationState::Pending);
+  let participant = ReactiveJournalParticipant {
+    journal: &mut journal,
+    finalization: &finalization,
+  };
+  let result = operation(participant);
+  match finalization.get() {
+    ReactiveJournalFinalizationState::Committed
+    | ReactiveJournalFinalizationState::RolledBack => result,
+    ReactiveJournalFinalizationState::Pending => {
+      match journal.restore_before() {
+        Ok(()) => match result {
+          Ok(_) => Err(MechError::new(
+            ReactiveJournalFinalizationMissing,
+            None,
+          )),
+          Err(error) => Err(error),
+        },
+        Err(rollback_error) => Err(MechError::new(
+          ReactiveJournalAutomaticRollbackFailed {
+            original_error: result
+              .as_ref()
+              .err()
+              .map(|error| format!("{:?}", error)),
+            rollback_error: format!("{:?}", rollback_error),
+          },
+          None,
+        )),
+      }
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::*;
   use std::{cell::RefCell, rc::Rc};
+
+  fn deliberate_journal_error(message: &'static str) -> MechError {
+    MechError::new(
+      GenericError {
+        msg: message.to_string(),
+      },
+      None,
+    )
+  }
+
+  #[test]
+  fn reactive_journal_pending_error_restores_and_returns_original_error() {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant::<()>(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        Err(deliberate_journal_error(
+          "deliberate pending journal error",
+        ))
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(
+      error
+        .kind_message()
+        .contains("deliberate pending journal error"),
+    );
+    assert_eq!(*value.borrow(), 1);
+  }
+
+  #[test]
+  fn reactive_journal_pending_success_restores_and_reports_missing_finalization(
+  ) {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        Ok(())
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(
+      error.kind_name(),
+      "ReactiveJournalFinalizationMissing",
+    );
+    assert_eq!(*value.borrow(), 1);
+  }
+
+  #[test]
+  fn reactive_journal_explicit_commit_retains_mutation() {
+    let value = Ref::new(1usize);
+
+    with_reactive_journal_participant(|mut participant| {
+      participant.capture_value(&Value::Index(value.clone()))?;
+      *value.borrow_mut() = 2;
+      participant.commit();
+      Ok(())
+    })
+    .unwrap();
+
+    assert_eq!(*value.borrow(), 2);
+  }
+
+  #[test]
+  fn reactive_journal_commit_with_error_retains_mutation_and_error() {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant::<()>(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        participant.commit();
+        Err(deliberate_journal_error(
+          "deliberate committed journal error",
+        ))
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(
+      error
+        .kind_message()
+        .contains("deliberate committed journal error"),
+    );
+    assert_eq!(*value.borrow(), 2);
+  }
+
+  #[test]
+  fn reactive_journal_explicit_rollback_restores_and_returns_original_error() {
+    let value = Ref::new(1usize);
+
+    let error = with_reactive_journal_participant::<()>(
+      |mut participant| {
+        participant
+          .capture_value(&Value::Index(value.clone()))?;
+        *value.borrow_mut() = 2;
+        participant.preflight_restore_before()?;
+        participant.apply_restore_before();
+        Err(deliberate_journal_error(
+          "deliberate rolled-back journal error",
+        ))
+      },
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "GenericError");
+    assert!(
+      error
+        .kind_message()
+        .contains("deliberate rolled-back journal error"),
+    );
+    assert_eq!(*value.borrow(), 1);
+  }
+
+  #[test]
+  fn reactive_journal_finalization_states_are_distinct() {
+    assert_ne!(
+      ReactiveJournalFinalizationState::Pending,
+      ReactiveJournalFinalizationState::Committed,
+    );
+    assert_ne!(
+      ReactiveJournalFinalizationState::Pending,
+      ReactiveJournalFinalizationState::RolledBack,
+    );
+    assert_ne!(
+      ReactiveJournalFinalizationState::Committed,
+      ReactiveJournalFinalizationState::RolledBack,
+    );
+  }
 
   struct JournalFunction {
     name: &'static str,
@@ -158,6 +453,11 @@ mod tests {
     sink: Ref<usize>,
     next: usize,
     outputs: Vec<ReactiveCellId>,
+  }
+
+  impl crate::functions::reactive_register_sealed::Sealed
+    for JournalRegisterCommit
+  {
   }
 
   impl ReactiveRegisterCommit for JournalRegisterCommit {

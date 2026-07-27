@@ -6,7 +6,7 @@ fn deliver(
   provider: &mut ConsoleResourceProvider<RecordingConsoleBackend>,
   request: RuntimeResourceWriteRequest,
 ) {
-  match provider.stage_write(request).unwrap() {
+  match provider.prepare_write(request).unwrap() {
     PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver().unwrap(),
     effect => panic!("expected console after-commit effect, got {effect:?}"),
   }
@@ -32,7 +32,7 @@ fn provider_writes_line_to_backend() {
 fn provider_rejects_unknown_path() {
   let backend = RecordingConsoleBackend::new();
   let mut provider = ConsoleResourceProvider::new("console", backend);
-  let err = provider.stage_write(RuntimeResourceWriteRequest {
+  let err = provider.prepare_write(RuntimeResourceWriteRequest {
     base_uri: "console://console/output".to_string(),
     path: "text".to_string(),
     context_name: "out".to_string(),

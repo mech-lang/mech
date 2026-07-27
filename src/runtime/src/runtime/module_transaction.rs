@@ -264,6 +264,20 @@ fn module_journal_conflict<T>(
 }
 
 impl MechRuntime {
+  pub fn get_module(
+    &self,
+    id: ModuleId,
+  ) -> MResult<Option<ModuleRecord>> {
+    self.store.get_module(id)
+  }
+
+  pub fn get_module_version(
+    &self,
+    id: ModuleVersionId,
+  ) -> MResult<Option<ModuleVersionRecord>> {
+    self.store.get_module_version(id)
+  }
+
   pub(super) fn get_module_visible(
     &self,
     context: &RuntimeContext,

@@ -5,7 +5,7 @@ use crate::stdlib::convert::ConvertKind;
 // Literals
 // ----------------------------------------------------------------------------
 
-pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
+pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<Value> {
   match &ltrl {
     Literal::Empty(_) => Ok(empty()),
     #[cfg(feature = "bool")]
@@ -26,12 +26,12 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "kind_annotation")]
-pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
+pub fn kind_value(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let kind = kind_annotation(knd, p)?;
   Ok(Value::Kind(kind.to_value_kind(&p.state.borrow().kinds)?))
 }
 
-pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
+pub fn kind_annotation(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<Kind> {
   match knd {
     NodeKind::Kind(knd) => {
       let knda = kind_annotation(knd, p)?;
@@ -83,7 +83,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
                 ExpectedNumericForKindSizeError, None
                 ).with_compiler_loc())
               }
-            } 
+            }
           }
         }
       }
@@ -129,16 +129,16 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
 }
 
 #[cfg(feature = "convert")]
-pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
+pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let value = literal(ltrl,p)?;
   let kind = kind_annotation(&knd_attn.kind, p)?;
   let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
   let plan = p.plan();
-  execute_initialized_indexed_compiler(&plan, &ConvertKind {}, args)
+  execute_initialized_indexed_compiler(p, &plan, &ConvertKind {}, args)
 }
 
 #[cfg(feature = "atom")]
-pub fn atom(atm: &Atom, p: &Interpreter) -> Value {
+pub fn atom(atm: &Atom, p: &InterpreterExecution<'_>) -> Value {
   let id = atm.name.hash();
   let state = p.state.borrow();
   let dictionary = state.dictionary.clone();
@@ -149,7 +149,7 @@ pub fn atom(atm: &Atom, p: &Interpreter) -> Value {
   Value::Atom(Ref::new(MechAtom((id, dictionary))))
 }
 
-pub fn number(num: &Number, p: &Interpreter) -> MResult<Value> {
+pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<Value> {
   match num {
     Number::Real(num) => real(num, p),
     #[cfg(feature = "complex")]
@@ -159,7 +159,7 @@ pub fn number(num: &Number, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "complex")]
-fn complex(num: &C64Node, p: &Interpreter) -> MResult<Value> {
+fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let im: f64 = match real(&num.imaginary.number, p)?.as_f64() {
     Ok(val) => *val.borrow(),
     Err(_) => 0.0,
@@ -169,7 +169,7 @@ fn complex(num: &C64Node, p: &Interpreter) -> MResult<Value> {
       let re: f64 = match real(&real_val, p)?.as_f64() {
         Ok(val) => *val.borrow(),
         Err(_) => 0.0,
-      };      
+      };
       Value::C64(Ref::new(C64::new(re, im)))
     },
     None => Value::C64(Ref::new(C64::new(0.0, im))),
@@ -177,7 +177,7 @@ fn complex(num: &C64Node, p: &Interpreter) -> MResult<Value> {
   Ok(result)
 }
 
-pub fn real(rl: &RealNumber, p: &Interpreter) -> MResult<Value> {
+pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let result = match rl {
     #[cfg(feature = "math_neg")]
     RealNumber::Negated(num) => negated(num, p)?,
@@ -208,7 +208,7 @@ pub fn real(rl: &RealNumber, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "math_neg")]
-pub fn negated(num: &RealNumber, p: &Interpreter) -> MResult<Value> {
+pub fn negated(num: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let num_val = real(&num, p)?;
   let result = match num_val {
     #[cfg(feature = "i8")]

@@ -83,6 +83,10 @@ macro_rules! horizontal_concatenate {
         fn solve(&self) {}
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
 
       #[cfg(feature = "compiler")]
@@ -145,6 +149,10 @@ macro_rules! horzcat_two_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
@@ -208,6 +216,10 @@ macro_rules! horzcat_three_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
@@ -273,6 +285,10 @@ macro_rules! horzcat_four_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
@@ -330,6 +346,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -405,6 +425,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -484,6 +508,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -555,6 +583,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -617,6 +649,10 @@ where
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "row_vectord")]
 #[cfg(feature = "compiler")]
@@ -692,6 +728,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateRDN\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "row_vectord")]
 #[cfg(feature = "compiler")]
@@ -856,6 +896,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -915,6 +959,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrix1")]
 #[cfg(feature = "compiler")]
@@ -977,6 +1025,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "row_vector2")]
 #[cfg(feature = "compiler")]
@@ -1042,6 +1094,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "row_vector3")]
 #[cfg(feature = "compiler")]
@@ -1110,6 +1166,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "row_vector4")]
 #[cfg(feature = "compiler")]
@@ -1177,6 +1237,10 @@ where
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "row_vectord")]
 #[cfg(feature = "compiler")]
@@ -1228,6 +1292,10 @@ macro_rules! horzcat_single {
       fn solve(&self) { }
       fn out(&self) -> Value { self.out.to_value() }
        fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $name<T> 
@@ -1316,6 +1384,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -1380,6 +1452,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -1443,6 +1519,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[cfg(feature = "compiler")]
@@ -1507,6 +1587,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[cfg(feature = "compiler")]
@@ -1579,6 +1663,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -1651,6 +1739,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -1723,6 +1815,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -1795,6 +1891,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -1861,6 +1961,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -1927,6 +2031,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -1995,6 +2103,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -2063,6 +2175,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -2131,6 +2247,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -2200,6 +2320,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -2269,6 +2393,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -2338,6 +2466,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -2406,6 +2538,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -2484,6 +2620,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -2552,6 +2692,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
@@ -2657,6 +2801,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -2726,6 +2874,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
@@ -2798,6 +2950,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -2867,6 +3023,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -2936,6 +3096,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3005,6 +3169,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3074,6 +3242,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3146,6 +3318,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3218,6 +3394,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3290,6 +3470,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3362,6 +3546,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3434,6 +3622,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3579,6 +3771,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3651,6 +3847,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
@@ -3723,6 +3923,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T> 
@@ -3794,6 +3998,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T> 
@@ -3865,6 +4073,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>

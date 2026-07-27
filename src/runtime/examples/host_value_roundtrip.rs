@@ -10,8 +10,9 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
   RuntimeBuilder,
+  TaskRecord,
 };
 
 use mech_runtime::host::*;
@@ -62,43 +63,33 @@ fn assert_string(value: Value, expected: &str) {
 fn main() -> MResult<()> {
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
+    .host_function(DeterministicHostFunction::new(
+      "demo/value/wrap",
+      |_context, _args| Ok(value_string(String::new())),
+      |_context, args| {
+        let input = host_arg_string("demo/value/wrap", &args, 0)?;
+        Ok(value_string(format!("rust-wrap({})", input)))
+      },
+    ))?
+    .host_function(DeterministicHostFunction::new(
+      "demo/value/append",
+      |_context, _args| Ok(value_string(String::new())),
+      |_context, args| {
+        let input = host_arg_string("demo/value/append", &args, 0)?;
+        let suffix = host_arg_string("demo/value/append", &args, 1)?;
+        Ok(value_string(format!("{}{}", input, suffix)))
+      },
+    ))?
+    .host_function(DeterministicHostFunction::new(
+      "demo/value/inspect",
+      |_context, args| host_arg_cloned("demo/value/inspect", &args, 0),
+      |_context, args| {
+        host_arg_cloned("demo/value/inspect", &args, 0)
+      },
+    ))?
     .build()?;
 
   println!("runtime: {}", short(runtime.id()));
-
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-    "demo/value/wrap",
-    |_services, _context, args| {
-      let input = host_arg_string("demo/value/wrap", &args, 0)?;
-
-      let output = format!("rust-wrap({})", input);
-
-      Ok(value_string(output))
-    },
-  ))?;
-
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-    "demo/value/append",
-    |_services, _context, args| {
-      let input = host_arg_string("demo/value/append", &args, 0)?;
-      let suffix = host_arg_string("demo/value/append", &args, 1)?;
-
-      let output = format!("{}{}", input, suffix);
-
-      Ok(value_string(output))
-    },
-  ))?;
-
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-    "demo/value/inspect",
-    |_services, _context, args| {
-      let value = host_arg_cloned("demo/value/inspect", &args, 0)?;
-
-      // Return the value unchanged so the Mech program's final result is the
-      // value Rust inspected.
-      Ok(value)
-    },
-  ))?;
 
   let subject = BasicSubject::new("program:host-value-roundtrip");
 
@@ -126,9 +117,16 @@ fn main() -> MResult<()> {
   println!("mech source:");
   println!("{}", source.trim());
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-value-roundtrip");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:host-value-roundtrip",
+  )
+    .with_capabilities(vec![
+      CapabilityId(1),
+      CapabilityId(2),
+      CapabilityId(3),
+    ]);
+  let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(
     &mut context,
@@ -136,9 +134,9 @@ fn main() -> MResult<()> {
   )?;
 
   println!();
-  println!("program result: {}", display_value(&value));
+  println!("program result: {}", display_value(value.as_value()));
 
-  assert_string(value, "rust-wrap(mech) runtime");
+  assert_string(value.into_value(), "rust-wrap(mech) runtime");
 
   runtime.shutdown()?;
 

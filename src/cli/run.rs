@@ -2,7 +2,8 @@ use clap::{Arg, ArgAction};
 use mech_core::*;
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, ModuleBuildOptions, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, RuntimeEvent, SourceRequest, parse_host_context_target,
+    RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeValueSnapshot,
+    SourceRequest, SourceResolver, parse_host_context_target,
 };
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
@@ -468,6 +469,27 @@ pub fn new_cli_runtime(
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
+    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants)?.build()
+}
+
+pub fn new_cli_runtime_with_source_resolver(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    source_resolver: impl SourceResolver + 'static,
+) -> MResult<MechRuntime> {
+    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants)?
+        .source_resolver(source_resolver)
+        .build()
+}
+
+fn cli_runtime_builder(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+) -> MResult<RuntimeBuilder> {
     for host in configured_hosts {
         if host.name == "cli" && host.provider != "cli" {
             return Err(MechError::new(
@@ -518,7 +540,7 @@ pub fn new_cli_runtime(
         }
     }
 
-    builder.build()
+    Ok(builder)
 }
 
 #[derive(Debug, Clone)]
@@ -579,19 +601,19 @@ pub fn effective_run_runtime_config(
 pub fn run_cli_source_with_events(
     runtime: &mut MechRuntime,
     source: &str,
-) -> MResult<(Value, Vec<RuntimeEvent>)> {
+) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
     let mut context = runtime.runtime_context()?;
     let result = runtime.run_string_with_context(&mut context, source)?;
-    Ok((result, context.events))
+    Ok((result, context.events().to_vec()))
 }
 
 pub fn run_cli_source_code_with_events(
     runtime: &mut MechRuntime,
     source: &MechSourceCode,
-) -> MResult<(Value, Vec<RuntimeEvent>)> {
+) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
     let mut context = runtime.runtime_context()?;
     let result = runtime.run_source_with_context(&mut context, source)?;
-    Ok((result, context.events))
+    Ok((result, context.events().to_vec()))
 }
 
 pub fn cli_module_options() -> ModuleBuildOptions<'static> {
@@ -608,17 +630,23 @@ pub fn run_cli_root_module_with_events(
     runtime: &mut MechRuntime,
     request: SourceRequest,
     options: ModuleBuildOptions<'_>,
-) -> MResult<(Value, Vec<RuntimeEvent>)> {
+) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
     let mut context = runtime.runtime_context()?;
     let result = runtime.resolve_and_run_root_module_with_context(&mut context, request, options)?;
-    Ok((result, context.events))
+    Ok((result, context.events().to_vec()))
 }
 
-pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<Value> {
+pub fn run_cli_source(
+    runtime: &mut MechRuntime,
+    source: &str,
+) -> MResult<RuntimeValueSnapshot> {
     run_cli_source_with_events(runtime, source).map(|(value, _)| value)
 }
 
-pub fn run_cli_source_code(runtime: &mut MechRuntime, source: &MechSourceCode) -> MResult<Value> {
+pub fn run_cli_source_code(
+    runtime: &mut MechRuntime,
+    source: &MechSourceCode,
+) -> MResult<RuntimeValueSnapshot> {
     run_cli_source_code_with_events(runtime, source).map(|(value, _)| value)
 }
 

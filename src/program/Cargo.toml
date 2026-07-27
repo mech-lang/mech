@@ -202,3 +202,8 @@ required-features = ["baselib", "program", "compiler"]
 name = "reactive_turn_rollback"
 harness = false
 required-features = ["baselib", "program", "compiler"]
+
+[[bench]]
+name = "integrity_constraints"
+harness = false
+required-features = ["baselib", "program", "compiler", "invariant_define"]

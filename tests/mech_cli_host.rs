@@ -212,6 +212,63 @@ fn repl_after_file_execution_preserves_loaded_program_state() {
   );
 }
 
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+#[test]
+fn run_project_repl_retains_runtime_host_behavior() {
+  let root = temp_root("runtime-backed-repl");
+  let project = root.join("project");
+  std::fs::create_dir_all(&project).unwrap();
+  std::fs::write(
+    project.join("runtime_repl.mec"),
+    r#"+> @out := cli/stdout
+
+startup := "pre-repl-runtime-host-ok"
+@out/line <- startup
+"startup-complete"
+"#,
+  )
+  .unwrap();
+  std::fs::write(
+    project.join("mech.mcfg"),
+    r#"config := {
+  run: {
+    paths: ["runtime_repl.mec"]
+  }
+}
+"#,
+  )
+  .unwrap();
+
+  let project_arg = project.to_string_lossy().to_string();
+  let output = run_mech_with_stdin(
+    &root,
+    &["run", project_arg.as_str(), "--repl"],
+    "startup\n@out/line <- \"repl-runtime-host-ok\"\n:quit\n",
+  );
+  let combined = combined_output(&output);
+
+  assert!(
+    output.status.success(),
+    "runtime-backed project REPL should exit cleanly:
+{combined}"
+  );
+  assert!(
+    combined.contains("pre-repl-runtime-host-ok"),
+    "the project host read/write did not run before entering the REPL:
+{combined}"
+  );
+  assert!(
+    combined.matches("pre-repl-runtime-host-ok").count() >= 2,
+    "the startup symbol was not retained in the runtime-backed REPL:
+{combined}"
+  );
+  assert!(
+    combined.contains("repl-runtime-host-ok"),
+    "the retained runtime did not execute a later REPL host write:
+{combined}"
+  );
+}
+
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
 fn mech_run_profile_output_comes_from_runtime_event() {
@@ -624,7 +681,7 @@ x := @env/HOME
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  let combined = assert_failure_contains(output, "CapabilityDenied");
   assert!(
     !combined.contains("must-not-write"),
     "provider wrote denied string: {combined}"
@@ -688,7 +745,7 @@ fn mech_run_config_can_deny_stdout() {
     .output()
     .unwrap();
 
-  assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  assert_failure_contains(output, "CapabilityDenied");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -727,7 +784,7 @@ fn mech_run_config_can_narrow_stdout_to_line() {
     .current_dir(&root)
     .output()
     .unwrap();
-  assert_failure_contains(bad, "RuntimeCapabilityGrantDenied");
+  assert_failure_contains(bad, "CapabilityDenied");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -770,7 +827,7 @@ fn mech_run_config_can_narrow_env_to_path() {
     .current_dir(&root)
     .output()
     .unwrap();
-  assert_failure_contains(bad, "RuntimeCapabilityGrantDenied");
+  assert_failure_contains(bad, "CapabilityDenied");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -846,7 +903,7 @@ fn mech_run_configured_cli_alias_grant_does_not_imply_default_cli_stdout() {
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  let combined = assert_failure_contains(output, "CapabilityDenied");
   assert!(
     !combined.contains("should-fail"),
     "provider wrote denied string: {combined}"
@@ -957,7 +1014,7 @@ ys := { "hit" | @env/HOME <- ["anything"] }
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  let combined = assert_failure_contains(output, "CapabilityDenied");
   assert!(
     !combined.contains("must-not-write"),
     "provider wrote before generator-pattern preflight failed:\n{combined}"

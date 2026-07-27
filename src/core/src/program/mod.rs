@@ -1,9 +1,11 @@
 use crate::*;
 use std::io::Cursor;
 #[cfg(not(feature = "no_std"))]
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 #[cfg(feature = "no_std")]
 use hashbrown::HashSet;
+#[cfg(feature = "no_std")]
+use alloc::collections::BTreeMap;
 
 #[cfg(any(feature = "compiler", feature = "program"))]
 pub mod compiler;
@@ -26,26 +28,20 @@ pub type Dictionary = HashMap<u64,String>;
 pub type KindTable = HashMap<u64, ValueKind>;
 #[cfg(feature = "enum")]
 pub type EnumTable = HashMap<u64, MechEnum>;
-#[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-pub type InvariantTable = HashMap<u64, (String, ValRef)>;
-#[cfg(feature = "invariant_define")]
-pub type InvariantExpressionTable = HashMap<u64, String>;
 #[cfg(feature = "invariant_define")]
 #[derive(Clone, Debug)]
-pub struct InvariantEvaluation {
-  pub reason: String,
-  pub evaluated_kind: String,
-  pub actual: String,
-  pub expected: String,
-}
-#[cfg(feature = "invariant_define")]
-pub type InvariantEvaluationTable = HashMap<u64, InvariantEvaluation>;
-#[cfg(feature = "invariant_define")]
-#[derive(Clone, Debug)]
-pub struct InvariantViolation {
+pub struct IntegrityConstraint {
   pub id: u64,
-  pub error: MechError,
+  pub name: String,
+  pub expression: String,
+  pub result: ValRef,
+  pub lhs: Option<ValRef>,
+  pub operator: Option<FormulaOperator>,
+  pub rhs: Option<ValRef>,
+  pub tokens: Vec<Token>,
 }
+#[cfg(feature = "invariant_define")]
+pub type IntegrityConstraintTable = BTreeMap<u64, IntegrityConstraint>;
 
 pub struct ProgramState {
   #[cfg(feature = "symbol_table")]
@@ -59,14 +55,8 @@ pub struct ProgramState {
   pub kinds: KindTable,
   #[cfg(feature = "enum")]
   pub enums: EnumTable,
-  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-  pub invariants: InvariantTable,
   #[cfg(feature = "invariant_define")]
-  pub invariant_violations: Vec<InvariantViolation>,
-  #[cfg(feature = "invariant_define")]
-  pub invariant_expressions: InvariantExpressionTable,
-  #[cfg(feature = "invariant_define")]
-  pub invariant_evaluations: InvariantEvaluationTable,
+  pub integrity_constraints: IntegrityConstraintTable,
   pub dictionary: Ref<Dictionary>,
 }
 
@@ -84,14 +74,8 @@ impl Clone for ProgramState {
       kinds: self.kinds.clone(),
       #[cfg(feature = "enum")]
       enums: self.enums.clone(),
-      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-      invariants: self.invariants.clone(),
       #[cfg(feature = "invariant_define")]
-      invariant_violations: self.invariant_violations.clone(),
-      #[cfg(feature = "invariant_define")]
-      invariant_expressions: self.invariant_expressions.clone(),
-      #[cfg(feature = "invariant_define")]
-      invariant_evaluations: self.invariant_evaluations.clone(),
+      integrity_constraints: self.integrity_constraints.clone(),
       dictionary: self.dictionary.clone(),
     }
   }
@@ -111,14 +95,8 @@ impl ProgramState {
       kinds: KindTable::new(),
       #[cfg(feature = "enum")]
       enums: EnumTable::new(),
-      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-      invariants: InvariantTable::new(),
       #[cfg(feature = "invariant_define")]
-      invariant_violations: vec![],
-      #[cfg(feature = "invariant_define")]
-      invariant_expressions: InvariantExpressionTable::new(),
-      #[cfg(feature = "invariant_define")]
-      invariant_evaluations: InvariantEvaluationTable::new(),
+      integrity_constraints: IntegrityConstraintTable::new(),
       dictionary: Ref::new(Dictionary::new()),
     }
   }

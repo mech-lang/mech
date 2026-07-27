@@ -8,6 +8,9 @@ use crate::{
   RuntimeCompensatableEffect, RuntimeEffectCost, RuntimeEffectMetadata,
   RuntimeEffectSource,
 };
+use crate::extension::{
+  catch_extension, invoke_extension,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeResourceReadRequest {
@@ -46,8 +49,6 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 
   fn base_uris(&self) -> Vec<String> { Vec::new() }
 
-  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> { Vec::new() }
-
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -61,8 +62,8 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
     ))
   }
 
-  fn stage_write(
-    &mut self,
+  fn prepare_write(
+    &self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {
     Err(MechError::new(
@@ -84,20 +85,30 @@ struct RuntimeResourceProviderEntry {
 }
 
 #[derive(Debug, Default)]
-pub struct RuntimeResourceRegistry {
+pub(crate) struct RuntimeResourceRegistry {
   providers: Vec<RuntimeResourceProviderEntry>,
 }
 
 impl RuntimeResourceRegistry {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self::default()
   }
 
-  pub fn register_provider(
+  pub(crate) fn register_provider(
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
-    let scheme = provider.scheme().to_string();
+    let (scheme, bases) = catch_extension(
+      "resource provider",
+      "registration metadata",
+      || {
+        (
+          provider.scheme().to_string(),
+          provider.base_uris(),
+        )
+      },
+    )
+    .map_err(|panic| panic.into_error())?;
     if scheme.is_empty() {
       return Err(MechError::new(
         RuntimeResourceInvalidUri {
@@ -108,7 +119,6 @@ impl RuntimeResourceRegistry {
       ));
     }
 
-    let bases = provider.base_uris();
     for base in &bases {
       let base_scheme = resource_uri_scheme(base)?;
       if base_scheme != scheme {
@@ -140,11 +150,11 @@ impl RuntimeResourceRegistry {
     Ok(())
   }
 
-  pub fn has_provider(&self, scheme: &str) -> bool {
+  pub(crate) fn has_provider(&self, scheme: &str) -> bool {
     self.providers.iter().any(|entry| entry.scheme == scheme)
   }
 
-  pub fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
+  pub(crate) fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
     let scheme = resource_uri_scheme(candidate)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, candidate) else {
       return Ok(None);
@@ -155,23 +165,6 @@ impl RuntimeResourceRegistry {
     Ok(Some(resource_uri_origin(candidate)?.to_string()))
   }
 
-  pub fn base_uris_equivalent(&self, left: &str, right: &str) -> bool {
-    let left = left.trim_end_matches('/');
-    let right = right.trim_end_matches('/');
-
-    if left == right {
-      return true;
-    }
-
-    self.providers.iter().any(|entry| {
-      entry.provider.equivalent_base_uri_groups().iter().any(|group| {
-        let has_left = group.iter().any(|base| base.trim_end_matches('/') == left);
-        let has_right = group.iter().any(|base| base.trim_end_matches('/') == right);
-        has_left && has_right
-      })
-    })
-  }
-
   fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {
     self.providers
       .iter()
@@ -180,18 +173,7 @@ impl RuntimeResourceRegistry {
       .or_else(|| self.providers.iter().find(|entry| entry.scheme == scheme && entry.bases.is_empty()))
   }
 
-  fn provider_entry_for_mut(&mut self, scheme: &str, uri: &str) -> Option<&mut RuntimeResourceProviderEntry> {
-    let index = self.providers
-      .iter()
-      .enumerate()
-      .filter(|(_, entry)| entry.scheme == scheme && entry.bases.iter().any(|base| resource_base_matches(base, uri)))
-      .max_by_key(|(_, entry)| entry.bases.iter().filter(|base| resource_base_matches(base, uri)).map(|base| base.len()).max().unwrap_or(0))
-      .map(|(index, _)| index)
-      .or_else(|| self.providers.iter().position(|entry| entry.scheme == scheme && entry.bases.is_empty()))?;
-    self.providers.get_mut(index)
-  }
-
-  pub fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+  pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
@@ -199,10 +181,14 @@ impl RuntimeResourceRegistry {
         None,
       ));
     };
-    entry.provider.read(request)
+    invoke_extension(
+      format!("resource provider `{scheme}`"),
+      "read",
+      || entry.provider.read(request),
+    )
   }
 
-  pub fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+  pub(crate) fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
     let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
@@ -210,21 +196,29 @@ impl RuntimeResourceRegistry {
         None,
       ));
     };
-    entry.provider.preflight_write(request)
+    invoke_extension(
+      format!("resource provider `{scheme}`"),
+      "preflight_write",
+      || entry.provider.preflight_write(request),
+    )
   }
 
-  pub fn stage_write(
-    &mut self,
+  pub(crate) fn prepare_write(
+    &self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {
     let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-    let Some(entry) = self.provider_entry_for_mut(&scheme, &request.base_uri) else {
+    let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
       return Err(MechError::new(
         RuntimeResourceProviderNotFound { scheme, uri: request.base_uri },
         None,
       ));
     };
-    entry.provider.stage_write(request)
+    invoke_extension(
+      format!("resource provider `{scheme}`"),
+      "prepare_write",
+      || entry.provider.prepare_write(request),
+    )
   }
 }
 
@@ -361,8 +355,8 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
     Ok(())
   }
 
-  fn stage_write(
-    &mut self,
+  fn prepare_write(
+    &self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
@@ -634,6 +628,7 @@ impl MechErrorKind for RuntimeResourceCapabilityDenied {
 mod tests {
   use super::*;
   use mech_core::Ref;
+  use std::sync::Arc;
 
   fn bool_value(value: bool) -> Value {
     Value::Bool(Ref::new(value))
@@ -658,6 +653,62 @@ mod tests {
     }
   }
 
+  fn grant_docs_write(runtime: &mut crate::MechRuntime) {
+    let subject = runtime.runtime_context().unwrap().subject().to_string();
+    let capability = crate::ResourcePathCapability::wildcard(
+      runtime.next_capability_id(),
+      subject,
+      "docs://manual",
+      ["write"],
+    )
+    .unwrap();
+    runtime.grant_capability(Arc::new(capability)).unwrap();
+  }
+
+  #[derive(Debug)]
+  struct PanickingProvider;
+
+  impl RuntimeResourceProvider for PanickingProvider {
+    fn scheme(&self) -> &str { "panic" }
+
+    fn base_uris(&self) -> Vec<String> {
+      vec!["panic://provider".to_string()]
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+      panic!("deliberate provider read panic");
+    }
+
+    fn preflight_write(
+      &self,
+      _request: RuntimeResourceWritePreflightRequest,
+    ) -> MResult<()> {
+      Ok(())
+    }
+
+    fn prepare_write(
+      &self,
+      _request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+      panic!("deliberate provider prepare panic");
+    }
+  }
+
+  fn grant_panic_resource(
+    runtime: &mut crate::MechRuntime,
+    operation: &str,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject().to_string();
+    let capability = crate::ResourcePathCapability::wildcard(
+      runtime.next_capability_id(),
+      subject,
+      "panic://provider",
+      [operation],
+    )
+    .unwrap();
+    runtime.grant_capability(Arc::new(capability)).unwrap();
+  }
+
   #[test]
   fn docs_write_is_invisible_until_explicit_commit() {
     let provider = InMemoryDocsProvider::new();
@@ -666,6 +717,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
 
@@ -699,6 +751,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
     runtime
@@ -729,6 +782,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
     runtime
@@ -777,6 +831,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
 
     runtime
       .write_resource(write_request("intro/enabled", true))
@@ -786,5 +841,42 @@ mod tests {
       observed.read(read_request("intro/enabled")).unwrap(),
       bool_value(true),
     );
+  }
+
+  #[test]
+  fn provider_panics_are_converted_before_external_effects_exist() {
+    let mut runtime = crate::MechRuntime::builder()
+      .resource_provider(Box::new(PanickingProvider))
+      .build()
+      .unwrap();
+    grant_panic_resource(&mut runtime, "read");
+    grant_panic_resource(&mut runtime, "write");
+
+    let read_error = runtime
+      .read_resource(RuntimeResourceReadRequest {
+        base_uri: "panic://provider".to_string(),
+        path: "value".to_string(),
+        context_name: "panic".to_string(),
+      })
+      .unwrap_err();
+    assert_eq!(read_error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{read_error:?}")
+      .contains("deliberate provider read panic"));
+
+    let write_error = runtime
+      .write_resource(RuntimeResourceWriteRequest {
+        base_uri: "panic://provider".to_string(),
+        path: "value".to_string(),
+        context_name: "panic".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value: bool_value(true),
+        intent: RuntimeResourceWriteIntent::Assign,
+      })
+      .unwrap_err();
+    assert_eq!(write_error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{write_error:?}")
+      .contains("deliberate provider prepare panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("provider-panic-recovery := 1.0").unwrap();
   }
 }

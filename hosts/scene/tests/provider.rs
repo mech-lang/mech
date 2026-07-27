@@ -13,7 +13,7 @@ fn deliver_write(
     provider: &mut dyn RuntimeResourceProvider,
     request: RuntimeResourceWriteRequest,
 ) -> mech_core::MResult<()> {
-    match provider.stage_write(request)? {
+    match provider.prepare_write(request)? {
         PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver(),
         effect => panic!("expected scene after-commit effect, got {effect:?}"),
     }
@@ -468,11 +468,11 @@ fn latest_scene_replaces_older_scene() {
 }
 
 #[test]
-fn scene_stage_write_does_not_render_before_delivery() {
+fn scene_prepare_write_does_not_render_before_delivery() {
     let backend = RecordingSceneBackend::new();
     let mut provider = SceneResourceProvider::new("view", backend.clone());
     let effect = provider
-        .stage_write(RuntimeResourceWriteRequest {
+        .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "scene://view/frame".to_string(),
             path: "replace".to_string(),
             context_name: "view".to_string(),

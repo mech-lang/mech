@@ -8,6 +8,7 @@ Read about progress on our [blog](https://mech-lang.org/blog/), follow us on Twi
 
 - analog-clock - A maintained native/browser project using time, console, and scene hosts.
 - browser-dom-demo - A static browser bundle demonstrating browser DOM grants.
+- transactional-integrity - An integrity-constraint declaration example.
 - aspirational - These programs don't yet work, but they will eventually once missing features are implemented.
 - working - These programs are functional and demonstrate features that are implemented so far.
 

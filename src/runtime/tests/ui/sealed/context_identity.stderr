@@ -1,0 +1,17 @@
+error[E0616]: field `runtime` of struct `RuntimeContext` is private
+ --> tests/ui/sealed/context_identity.rs:8:11
+  |
+8 |   context.runtime = RuntimeId(2);
+  |           ^^^^^^^ private field
+
+error[E0616]: field `subject` of struct `RuntimeContext` is private
+ --> tests/ui/sealed/context_identity.rs:9:11
+  |
+9 |   context.subject = "forged".to_string();
+  |           ^^^^^^^ private field
+
+error[E0616]: field `transaction` of struct `RuntimeContext` is private
+  --> tests/ui/sealed/context_identity.rs:10:11
+   |
+10 |   context.transaction = Some(TransactionId(3));
+   |           ^^^^^^^^^^^ private field

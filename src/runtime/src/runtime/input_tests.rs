@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
-use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use std::thread;
 use std::time::Duration;
 
@@ -9,12 +9,14 @@ use mech_core::{hash_str, MResult, MechError, MechErrorKind, ReactiveCellId, Rea
 
 use super::*;
 use crate::{
-  BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
+  BasicCapability, BasicConstraints, BasicOperation, BasicResource, BasicSubject, CapabilityId,
   ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig,
-  RuntimeCapabilityGrant, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
+  PlannedStagedHostFunction, ResourcePathCapability, ResourcePathScope, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
   RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInputOutcome, RuntimeIngress,
-  RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeResourceWriteIntent, ClosureHostFunction, materialize_host_manifest,
+  RuntimeAuthorityScope,
+  RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeResourceWriteIntent, DeterministicHostFunction, HostArgumentValue, PlannedPureHostFunction, RegisteredHostFunction, RuntimeCallContext, RuntimeValueSnapshot, materialize_host_manifest,
   PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
+  RuntimePreparedHostCall, RuntimeTransactionalEffect, SharedCapabilityKernel,
 };
 
 const TEST_CLOCK_BASE_URI: &str =
@@ -50,6 +52,89 @@ impl RuntimeAfterCommitEffect for TestAfterCommitEffect {
 }
 
 #[derive(Debug, Default)]
+struct ReceiverCounters {
+  stage_count: AtomicUsize,
+  prepare_count: AtomicUsize,
+  commit_count: AtomicUsize,
+  abort_count: AtomicUsize,
+  delivery_count: AtomicUsize,
+  staged_payloads: Mutex<Vec<f64>>,
+  prepared_payloads: Mutex<Vec<f64>>,
+  committed_payloads: Mutex<Vec<f64>>,
+  aborted_payloads: Mutex<Vec<f64>>,
+  delivered_payloads: Mutex<Vec<f64>>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ReceiverSnapshot {
+  stage_count: usize,
+  prepare_count: usize,
+  commit_count: usize,
+  abort_count: usize,
+  delivery_count: usize,
+  staged_payloads: Vec<f64>,
+  prepared_payloads: Vec<f64>,
+  committed_payloads: Vec<f64>,
+  aborted_payloads: Vec<f64>,
+  delivered_payloads: Vec<f64>,
+}
+
+fn receiver_snapshot(
+  counters: &ReceiverCounters,
+) -> ReceiverSnapshot {
+  ReceiverSnapshot {
+    stage_count: counters.stage_count.load(Ordering::SeqCst),
+    prepare_count: counters.prepare_count.load(Ordering::SeqCst),
+    commit_count: counters.commit_count.load(Ordering::SeqCst),
+    abort_count: counters.abort_count.load(Ordering::SeqCst),
+    delivery_count: counters.delivery_count.load(Ordering::SeqCst),
+    staged_payloads: counters.staged_payloads.lock().unwrap().clone(),
+    prepared_payloads: counters.prepared_payloads.lock().unwrap().clone(),
+    committed_payloads: counters.committed_payloads.lock().unwrap().clone(),
+    aborted_payloads: counters.aborted_payloads.lock().unwrap().clone(),
+    delivered_payloads: counters.delivered_payloads.lock().unwrap().clone(),
+  }
+}
+
+#[derive(Debug)]
+struct ReceiverTransactionalEffect {
+  payload: f64,
+  counters: Arc<ReceiverCounters>,
+}
+
+impl RuntimeTransactionalEffect for ReceiverTransactionalEffect {
+  fn metadata(&self) -> RuntimeEffectMetadata {
+    RuntimeEffectMetadata::new(
+      RuntimeEffectSource::HostFunction {
+        name: "test/receiver-send".to_string(),
+      },
+      "receiver-send",
+    )
+    .with_resource("test://receiver/delivery")
+  }
+
+  fn prepare(&mut self) -> MResult<()> {
+    self.counters.prepare_count.fetch_add(1, Ordering::SeqCst);
+    self.counters.prepared_payloads.lock().unwrap().push(self.payload);
+    Ok(())
+  }
+
+  fn commit(&mut self) -> MResult<()> {
+    self.counters.commit_count.fetch_add(1, Ordering::SeqCst);
+    self.counters.committed_payloads.lock().unwrap().push(self.payload);
+    self.counters.delivery_count.fetch_add(1, Ordering::SeqCst);
+    self.counters.delivered_payloads.lock().unwrap().push(self.payload);
+    Ok(())
+  }
+
+  fn abort(&mut self) -> MResult<()> {
+    self.counters.abort_count.fetch_add(1, Ordering::SeqCst);
+    self.counters.aborted_payloads.lock().unwrap().push(self.payload);
+    Ok(())
+  }
+}
+
+#[derive(Debug, Default)]
 struct TestResourceProvider { values: BTreeMap<String, BTreeMap<String, Value>> }
 impl TestResourceProvider {
   fn new() -> Self { Self::default() }
@@ -80,7 +165,7 @@ impl RuntimeResourceProvider for TestOutputProvider {
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
     if request.base_uri == TEST_OUTPUT_BASE_URI && request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(TestFixtureError(format!("invalid test output write: {} / {}", request.base_uri, request.path)), None)) }
   }
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest { base_uri: request.base_uri.clone(), path: request.path.clone(), context_name: request.context_name.clone(), operation: request.operation.clone(), intent: request.intent })?;
     let lines = self.backend.lines.clone();
     let rendered = format!("{}", request.value);
@@ -98,8 +183,8 @@ fn f64_value(value: &Value) -> f64 {
   }
 }
 
-fn host_f64_argument(value: &Value) -> f64 {
-  match value {
+fn host_f64_argument(value: &impl HostArgumentValue) -> f64 {
+  match value.host_argument_value() {
     Value::F64(value) => *value.borrow(),
     Value::MutableReference(value) => match &*value.borrow() {
       Value::F64(value) => *value.borrow(),
@@ -195,17 +280,18 @@ fn test_provider_with(base_uri: &str, path: &str, value: f64) -> TestResourcePro
 
 fn grant_read(runtime: &mut MechRuntime, resource: &str, path: &str) {
   let subject = runtime.runtime_context().unwrap().subject;
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: resource.to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec![path.to_string()],
-  }).unwrap();
+  grant_resource(
+    runtime,
+    &subject,
+    resource,
+    RuntimeCapabilityOperation::Read,
+    &[path],
+  );
 }
 
 fn grant_write(runtime: &mut MechRuntime, resource: &str, path: &str) {
   let subject = runtime.runtime_context().unwrap().subject;
-  runtime.grant_capability(RuntimeCapabilityGrant { subject, resource: resource.to_string(), operations: vec![RuntimeCapabilityOperation::Write], paths: vec![path.to_string()] }).unwrap();
+  grant_resource(runtime, &subject, resource, RuntimeCapabilityOperation::Write, &[path]);
 }
 
 fn grant_read_to(
@@ -213,19 +299,41 @@ fn grant_read_to(
   subject: &str,
   resource: &str,
   path: &str,
-) {
-  runtime
-    .grant_capability(
-      RuntimeCapabilityGrant {
-        subject: subject.to_string(),
-        resource: resource.to_string(),
-        operations: vec![
-          RuntimeCapabilityOperation::Read,
-        ],
-        paths: vec![path.to_string()],
-      },
-    )
-    .unwrap();
+) -> CapabilityId {
+  grant_resource(
+    runtime,
+    subject,
+    resource,
+    RuntimeCapabilityOperation::Read,
+    &[path],
+  )
+}
+
+fn grant_resource(
+  runtime: &mut MechRuntime,
+  subject: &str,
+  resource: &str,
+  operation: RuntimeCapabilityOperation,
+  paths: &[&str],
+) -> CapabilityId {
+  let scopes = paths.iter().map(|path| {
+    if *path == "*" {
+      ResourcePathScope::Wildcard
+    } else if let Some(prefix) = path.strip_suffix("/*") {
+      ResourcePathScope::Prefix(prefix.to_string())
+    } else {
+      ResourcePathScope::Exact((*path).to_string())
+    }
+  });
+  let capability = ResourcePathCapability::new(
+    runtime.next_capability_id(),
+    subject,
+    resource,
+    [operation.name()],
+    scopes,
+  )
+  .unwrap();
+  runtime.grant_capability(Arc::new(capability)).unwrap()
 }
 
 fn grant_host_call(
@@ -250,31 +358,31 @@ fn grant_host_call(
     .unwrap();
 }
 
-fn register_sleep_host(
-  runtime: &mut MechRuntime,
+fn sleep_host(
   name: &str,
-) {
-  runtime
-    .register_mech_host_function(
-      ClosureHostFunction::new_pure(
+) -> RegisteredHostFunction {
+  PlannedPureHostFunction::new(
         name,
-        move |_services, _context, args| {
+        |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+          Ok(args.first().cloned().unwrap_or_else(|| Value::Empty.into()))
+        },
+        move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
           thread::sleep(
             Duration::from_millis(5),
           );
 
-          match args.first() {
+          let value = match args.first().map(RuntimeValueSnapshot::as_value) {
             Some(Value::F64(value)) =>
-              Ok(Value::F64(
+              Value::F64(
                 Ref::new(*value.borrow()),
-              )),
+              ),
 
             Some(Value::MutableReference(value)) =>
               match &*value.borrow() {
                 Value::F64(value) =>
-                  Ok(Value::F64(
+                  Value::F64(
                     Ref::new(*value.borrow()),
-                  )),
+                  ),
 
                 other =>
                   panic!(
@@ -286,16 +394,28 @@ fn register_sleep_host(
               panic!(
                 "expected f64 argument, got {other:?}",
               ),
-          }
+          };
+          Ok(value.into())
         },
-      ),
-    )
-    .unwrap();
+      )
+      .into()
 }
 
 fn test_runtime(provider: TestResourceProvider) -> MechRuntime {
   RuntimeBuilder::new()
     .resource_provider(Box::new(provider))
+    .build()
+    .unwrap()
+}
+
+fn test_runtime_with_host(
+  provider: TestResourceProvider,
+  function: impl Into<RegisteredHostFunction>,
+) -> MechRuntime {
+  RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .host_function(function)
+    .unwrap()
     .build()
     .unwrap()
 }
@@ -310,6 +430,21 @@ fn test_runtime_with_output(provider: TestResourceProvider) -> (MechRuntime, Rec
   (runtime, output)
 }
 
+fn test_runtime_with_output_host(
+  provider: TestResourceProvider,
+  function: impl Into<RegisteredHostFunction>,
+) -> (MechRuntime, RecordingTestOutput) {
+  let output = RecordingTestOutput::default();
+  let runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .resource_provider(Box::new(TestOutputProvider { backend: output.clone() }))
+    .host_function(function)
+    .unwrap()
+    .build()
+    .unwrap();
+  (runtime, output)
+}
+
 #[test]
 fn canonical_host_input_updates_live_context_read() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
@@ -319,6 +454,7 @@ fn canonical_host_input_updates_live_context_read() {
 
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
   let canonical = RuntimeHostInputSource::new("test://clock/ticks", "value").unwrap();
+  let source_identity = source_cell(&runtime, &canonical);
   assert!(runtime.live_input_bindings.contains_key(&canonical));
   assert!(runtime.live_input_bindings.keys().all(|source| !source.base_uri().contains("pulse") && !source.path().contains("pulse")));
 
@@ -332,10 +468,11 @@ fn canonical_host_input_updates_live_context_read() {
   assert!(outcome.turn.is_none());
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
 
-  runtime.ingress().submit(RuntimeHostInput::single(canonical, RuntimeHostInputValue::F64(5.0))).unwrap();
+  runtime.ingress().submit(RuntimeHostInput::single(canonical.clone(), RuntimeHostInputValue::F64(5.0))).unwrap();
   let outcomes = runtime.drain_host_inputs(1).unwrap();
   assert_eq!(outcomes.len(), 1);
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+  assert_eq!(source_cell(&runtime, &canonical), source_identity);
 }
 
 #[test]
@@ -430,20 +567,23 @@ fn runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers
 
 #[test]
 fn patterned_activation_guard_rejects_runtime_host_before_elaboration() {
-  let mut runtime = test_runtime(TestResourceProvider::new());
-  let subject = runtime.runtime_context().unwrap().subject;
-  grant_host_call(&mut runtime, &subject, 43, "host:demo/audit");
   let calls = Arc::new(AtomicUsize::new(0));
   let host_calls = calls.clone();
-  runtime
-    .register_mech_host_function(ClosureHostFunction::new_pure(
+  let mut runtime = test_runtime_with_host(
+    TestResourceProvider::new(),
+    PlannedPureHostFunction::new(
       "demo/audit",
-      move |_services, _context, _args| {
-        host_calls.fetch_add(1, Ordering::SeqCst);
-        Ok(Value::Bool(Ref::new(true)))
+      |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+        Ok(Value::Bool(Ref::new(true)).into())
       },
-    ))
-    .unwrap();
+      move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+        host_calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Bool(Ref::new(true)).into())
+      },
+    ),
+  );
+  let subject = runtime.runtime_context().unwrap().subject;
+  grant_host_call(&mut runtime, &subject, 43, "host:demo/audit");
   runtime
     .run_string("event := (:released, 1.0)\nsentinel := 7.0")
     .unwrap();
@@ -501,7 +641,22 @@ fn patterned_activation_guard_rejects_runtime_host_before_elaboration() {
 
 #[test]
 fn live_input_recomputes_runtime_host_function() {
-  let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  let host = PlannedPureHostFunction::new(
+    "demo/live-plus-one",
+    |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+      Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+    },
+    move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
+      host_calls.fetch_add(1, Ordering::SeqCst);
+      Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+    },
+  );
+  let mut runtime = test_runtime_with_host(
+    test_provider_with("test://clock/ticks", "value", 1.0),
+    host,
+  );
   grant_read(&mut runtime, "test://clock/ticks", "value");
   runtime
     .grant_capability(Arc::new(BasicCapability::new(
@@ -511,19 +666,6 @@ fn live_input_recomputes_runtime_host_function() {
       [BasicOperation::new("call")],
     )))
     .unwrap();
-  let calls = Arc::new(AtomicUsize::new(0));
-  let host_calls = calls.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/live-plus-one", move |_services, _context, args| {
-    host_calls.fetch_add(1, Ordering::SeqCst);
-    match &args[0] {
-      Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
-      Value::MutableReference(value) => match &*value.borrow() {
-        Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow() + 1.0))),
-        other => panic!("expected f64 mutable reference, got {other:?}"),
-      },
-      other => panic!("expected f64 argument, got {other:?}"),
-    }
-  })).unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\noutput := demo/live-plus-one(@pulse/value) + 0").unwrap();
   let initial_calls = calls.load(Ordering::SeqCst);
@@ -539,14 +681,25 @@ fn live_input_recomputes_runtime_host_function() {
 #[test]
 fn runtime_reactive_host_input_executes_only_reachable_branch() {
   let provider = TestResourceProvider::new().with_value(TEST_CLOCK_BASE_URI, "left", Value::F64(Ref::new(1.0))).with_value(TEST_CLOCK_BASE_URI, "right", Value::F64(Ref::new(2.0)));
-  let mut runtime = test_runtime(provider);
+  let left_calls = Arc::new(AtomicUsize::new(0)); let right_calls = Arc::new(AtomicUsize::new(0));
+  let left_host_calls = left_calls.clone();
+  let right_host_calls = right_calls.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .host_function(PlannedPureHostFunction::new(
+      "demo/left-branch",
+      |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 100.0)).into()),
+      move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| { left_host_calls.fetch_add(1, Ordering::SeqCst); Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 100.0)).into()) },
+    )).unwrap()
+    .host_function(PlannedPureHostFunction::new(
+      "demo/right-branch",
+      |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 200.0)).into()),
+      move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| { right_host_calls.fetch_add(1, Ordering::SeqCst); Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 200.0)).into()) },
+    )).unwrap()
+    .build().unwrap();
   grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "left"); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "right");
   let subject = runtime.runtime_context().unwrap().subject;
   grant_host_call(&mut runtime, &subject, 91, "host:demo/left-branch"); grant_host_call(&mut runtime, &subject, 92, "host:demo/right-branch");
-  let left_calls = Arc::new(AtomicUsize::new(0)); let right_calls = Arc::new(AtomicUsize::new(0));
-  for (name, calls, add) in [("demo/left-branch", left_calls.clone(), 100.0), ("demo/right-branch", right_calls.clone(), 200.0)] {
-    runtime.register_mech_host_function(ClosureHostFunction::new_pure(name, move |_services, _context, args| { calls.fetch_add(1, Ordering::SeqCst); let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + add))) })).unwrap();
-  }
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(left), :read(right)}\nleft-output := demo/left-branch(@pulse/left)\nright-output := demo/right-branch(@pulse/right)").unwrap();
   let left_calls_before = left_calls.load(Ordering::SeqCst);
   let right_calls_before = right_calls.load(Ordering::SeqCst);
@@ -565,21 +718,22 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
 
 #[test]
 fn live_host_string_output_recomputes_without_replacing_reference() {
-  let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
+  let host = DeterministicHostFunction::new(
+    "demo/live-label",
+    |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+      Ok(Value::String(Ref::new(String::new())))
+    },
+    |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+      Ok(Value::String(Ref::new(format!("tick:{}", host_f64_argument(&args[0])))))
+    },
+  );
+  let mut runtime = test_runtime_with_host(
+    test_provider_with("test://clock/ticks", "value", 1.0),
+    host,
+  );
   grant_read(&mut runtime, "test://clock/ticks", "value");
   let subject = runtime.runtime_context().unwrap().subject;
   grant_host_call(&mut runtime, &subject, 45, "host:demo/live-label");
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/live-label", |_services, _context, args| {
-    let value = match &args[0] {
-      Value::F64(value) => *value.borrow(),
-      Value::MutableReference(value) => match &*value.borrow() {
-        Value::F64(value) => *value.borrow(),
-        other => panic!("expected f64 mutable reference, got {other:?}"),
-      },
-      other => panic!("expected f64 argument, got {other:?}"),
-    };
-    Ok(Value::String(Ref::new(format!("tick:{value}"))))
-  })).unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\noutput := demo/live-label(@pulse/value)").unwrap();
   let before = runtime.program.interpreter().symbols().borrow().get(hash_str("output")).unwrap();
@@ -605,28 +759,28 @@ fn live_host_string_output_recomputes_without_replacing_reference() {
 
 #[test]
 fn live_host_output_kind_change_preserves_previous_output() {
-  let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  let mut runtime = test_runtime_with_host(
+    test_provider_with("test://clock/ticks", "value", 1.0),
+    PlannedPureHostFunction::new(
+      "demo/kind-change",
+      |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+        Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+      },
+      move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
+        let call = host_calls.fetch_add(1, Ordering::SeqCst);
+        if call == 0 {
+          Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+        } else {
+          Ok(Value::String(Ref::new("bad-kind".to_string())).into())
+        }
+      },
+    ),
+  );
   grant_read(&mut runtime, "test://clock/ticks", "value");
   let subject = runtime.runtime_context().unwrap().subject;
   grant_host_call(&mut runtime, &subject, 46, "host:demo/kind-change");
-  let calls = Arc::new(AtomicUsize::new(0));
-  let host_calls = calls.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/kind-change", move |_services, _context, args| {
-    let call = host_calls.fetch_add(1, Ordering::SeqCst);
-    if call < 2 {
-      let value = match &args[0] {
-        Value::F64(value) => *value.borrow(),
-        Value::MutableReference(value) => match &*value.borrow() {
-          Value::F64(value) => *value.borrow(),
-          other => panic!("expected f64 mutable reference, got {other:?}"),
-        },
-        other => panic!("expected f64 argument, got {other:?}"),
-      };
-      Ok(Value::F64(Ref::new(value + 1.0)))
-    } else {
-      Ok(Value::String(Ref::new("bad-kind".to_string())))
-    }
-  })).unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/kind-change(@pulse/value)\noutput := host-result + 0").unwrap();
   assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
@@ -655,28 +809,511 @@ fn live_host_output_kind_change_preserves_previous_output() {
 
 #[test]
 fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
-  let (mut runtime, output) = test_runtime_with_output(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0)); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value"); grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
-  let subject = runtime.runtime_context().unwrap().subject; grant_host_call(&mut runtime, &subject, 47, "host:demo/fails-after-first");
   let calls = Arc::new(AtomicUsize::new(0)); let host_calls = calls.clone(); let fail_host = Arc::new(AtomicBool::new(false)); let fail_host_for_call = fail_host.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/fails-after-first", move |_services, _context, args| { host_calls.fetch_add(1, Ordering::SeqCst); if fail_host_for_call.load(Ordering::SeqCst) { return Err(MechError::new(DeliberateHostCallError, None)); } let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + 1.0))) })).unwrap();
+  let (mut runtime, output) = test_runtime_with_output_host(
+    test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0),
+    PlannedPureHostFunction::new(
+      "demo/fails-after-first",
+      |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into()),
+      move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| { host_calls.fetch_add(1, Ordering::SeqCst); if fail_host_for_call.load(Ordering::SeqCst) { return Err(MechError::new(DeliberateHostCallError, None)); } let input = host_f64_argument(&args[0]); Ok(Value::F64(Ref::new(input + 1.0)).into()) },
+    ),
+  ); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value"); grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+  let subject = runtime.runtime_context().unwrap().subject; grant_host_call(&mut runtime, &subject, 47, "host:demo/fails-after-first");
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result + 0\n@out/line <- output").unwrap();
-  let calls_before = calls.load(Ordering::SeqCst); let input_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap(); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); let host_result_pointer = match &*host_result.borrow() { Value::F64(value) => value.as_ptr(), other => panic!("expected f64 host result, got {other:?}") }; let plan_before = plan_snapshot(&runtime); let lines_before = output.lines();
+  let calls_before = calls.load(Ordering::SeqCst); let input_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap(); let input_identity = source_cell(&runtime, &input_source); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); let host_result_pointer = match &*host_result.borrow() { Value::F64(value) => value.as_ptr(), other => panic!("expected f64 host result, got {other:?}") }; let plan_before = plan_snapshot(&runtime); let lines_before = output.lines();
   assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(output.lines().len(), 1); assert_eq!(runtime.persistent_send_count(), 1);
-  fail_host.store(true, Ordering::SeqCst); let error = runtime.apply_host_input(RuntimeHostInput::single(input_source.clone(), RuntimeHostInputValue::F64(9.0))).unwrap_err(); assert!(format!("{error:?}").contains("DeliberateHostCallError")); assert!(calls.load(Ordering::SeqCst) > calls_before); assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); match &*host_result.borrow() { Value::F64(value) => assert_eq!(value.as_ptr(), host_result_pointer), other => panic!("expected f64 host result, got {other:?}") }; assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(plan_snapshot(&runtime), plan_before); assert_eq!(output.lines(), lines_before); assert_eq!(runtime.persistent_send_count(), 1); runtime.run_string("recovery := 1").unwrap(); assert_eq!(f64_value(&symbol_value(&runtime, "recovery")), 1.0);
+  fail_host.store(true, Ordering::SeqCst); let error = runtime.apply_host_input(RuntimeHostInput::single(input_source.clone(), RuntimeHostInputValue::F64(9.0))).unwrap_err(); assert!(format!("{error:?}").contains("DeliberateHostCallError")); assert!(calls.load(Ordering::SeqCst) > calls_before); assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); assert_eq!(source_cell(&runtime, &input_source), input_identity); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); match &*host_result.borrow() { Value::F64(value) => assert_eq!(value.as_ptr(), host_result_pointer), other => panic!("expected f64 host result, got {other:?}") }; assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(plan_snapshot(&runtime), plan_before); assert_eq!(output.lines(), lines_before); assert_eq!(runtime.persistent_send_count(), 1); runtime.run_string("recovery := 1").unwrap(); assert_eq!(f64_value(&symbol_value(&runtime, "recovery")), 1.0);
+}
+
+#[test]
+fn integrity_invalid_host_input_is_restored_before_output_audit_and_recovery() {
+  let provider = test_provider_with(TEST_CLOCK_BASE_URI, "value", 90.0);
+  let (mut runtime, output) = test_runtime_with_output(provider);
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+  runtime
+    .run_string(
+      "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\ntarget := @pulse/value\nmaximum-target := 120.0\ncontroller-command := target\nsafe-target! := target <= maximum-target\n@out/line <- controller-command",
+    )
+    .unwrap();
+  let source =
+    RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  let initial_deliveries = output.lines().len();
+
+  runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::F64(100.0),
+    ))
+    .unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  assert_eq!(output.lines().len(), initial_deliveries + 1);
+  let deliveries_before_invalid = output.lines().len();
+  let events_before_invalid = runtime.list_events(None).unwrap().len();
+
+  let error = runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::F64(150.0),
+    ))
+    .unwrap_err();
+
+  assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+  let failures = error
+    .kind_as::<mech_program::IntegrityConstraintViolationSet>()
+    .unwrap();
+  assert_eq!(failures.violations.len(), 1);
+  assert_eq!(failures.violations[0].actual.as_deref(), Some("150"));
+  assert_eq!(failures.violations[0].expected.as_deref(), Some("120"));
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 100.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  assert_eq!(
+    f64_value(&symbol_value(&runtime, "controller-command")),
+    100.0,
+  );
+  match symbol_value(&runtime, "safe-target!") {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected scalar constraint result, got {other:?}"),
+  }
+  assert_eq!(output.lines().len(), deliveries_before_invalid);
+  assert!(runtime.active_transactions.is_empty());
+  assert!(!runtime.is_poisoned());
+  let events = runtime.list_events(None).unwrap();
+  let audit = events[events_before_invalid..]
+    .iter()
+    .find_map(|event| match &event.kind {
+      RuntimeEventKind::IntegrityConstraintViolated {
+        violations,
+        ..
+      } => violations.first(),
+      _ => None,
+    })
+    .expect("invalid candidate emits a detached integrity audit");
+  assert_eq!(audit.actual.as_deref(), Some("150"));
+  assert_eq!(audit.expected.as_deref(), Some("120"));
+
+  runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source,
+      RuntimeHostInputValue::F64(110.0),
+    ))
+    .unwrap();
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 110.0);
+  assert_eq!(output.lines().len(), deliveries_before_invalid + 1);
+  assert!(!runtime.is_poisoned());
+}
+
+#[test]
+fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
+  let receiver = Arc::new(ReceiverCounters::default());
+  let receiver_for_stage = receiver.clone();
+  let receiver_host = PlannedStagedHostFunction::new(
+    "test/receiver-send",
+    |_context: &RuntimeCallContext, arguments: &[RuntimeValueSnapshot]| {
+      let payload = host_f64_argument(&arguments[0]);
+      Ok(Value::F64(Ref::new(payload)).into())
+    },
+    move |_context: &RuntimeCallContext, arguments: Vec<RuntimeValueSnapshot>| {
+      let payload = host_f64_argument(&arguments[0]);
+      receiver_for_stage.stage_count.fetch_add(1, Ordering::SeqCst);
+      receiver_for_stage.staged_payloads.lock().unwrap().push(payload);
+      Ok(RuntimePreparedHostCall {
+        value: Value::F64(Ref::new(payload)).into(),
+        effect: PreparedRuntimeEffect::Transactional(Box::new(
+          ReceiverTransactionalEffect {
+            payload,
+            counters: receiver_for_stage.clone(),
+          },
+        )),
+      })
+    },
+  );
+  let store_commit_calls = Arc::new(AtomicUsize::new(0));
+  let store = InMemoryStore::new()
+    .with_commit_runtime_counter_for_test(store_commit_calls.clone());
+  let kernel = SharedCapabilityKernel::new();
+  let observed_kernel = kernel.clone();
+  let provider = TestResourceProvider::new().with_value(
+    TEST_CLOCK_BASE_URI,
+    "value",
+    Value::F64(Ref::new(90.0)),
+  );
+  let mut runtime = RuntimeBuilder::new()
+    .store(store)
+    .capability_kernel(kernel)
+    .resource_provider(Box::new(provider))
+    .host_function(receiver_host)
+    .unwrap()
+    .build()
+    .unwrap();
+  grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  let receiver_capability_id = CapabilityId(970);
+  let capability = BasicCapability::new(
+    receiver_capability_id,
+    &BasicSubject::new(&subject),
+    &BasicResource::new("host:test/receiver-send"),
+    [BasicOperation::new("call")],
+  )
+  .with_constraints(
+    BasicConstraints::default().with_max_uses(8),
+  );
+  runtime.grant_capability(Arc::new(capability)).unwrap();
+  runtime
+    .run_string(
+      r#"@pulse := test://clock/ticks{:read(value)}
+
+target := @pulse/value
+maximum-target := 120.0
+
+receiver-result := test/receiver-send(target)
+
+safe-target! := receiver-result <= maximum-target
+"#,
+    )
+    .unwrap();
+  let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 90.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 90.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 90.0);
+  match symbol_value(&runtime, "safe-target!") {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected scalar constraint result, got {other:?}"),
+  }
+  assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
+  assert!(runtime.active_transactions.is_empty());
+  assert_eq!(runtime.program_transaction_owner, None);
+
+  let installed_receiver = receiver_snapshot(&receiver);
+  let installed_store_commits = store_commit_calls.load(Ordering::SeqCst);
+  let installed_capability_uses =
+    observed_kernel.successful_uses_for_test(receiver_capability_id);
+  let installed_events = runtime.list_events(None).unwrap().len();
+
+  let before_100 = receiver_snapshot(&receiver);
+  let store_before_100 = store_commit_calls.load(Ordering::SeqCst);
+  let capability_before_100 =
+    observed_kernel.successful_uses_for_test(receiver_capability_id);
+  let events_before_100 = runtime.list_events(None).unwrap().len();
+  runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::F64(100.0),
+    ))
+    .unwrap();
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 100.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 100.0);
+  match symbol_value(&runtime, "safe-target!") {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected scalar constraint result, got {other:?}"),
+  }
+  let after_100 = receiver_snapshot(&receiver);
+  assert_eq!(after_100.stage_count, before_100.stage_count + 1);
+  assert_eq!(after_100.prepare_count, before_100.prepare_count + 1);
+  assert_eq!(after_100.commit_count, before_100.commit_count + 1);
+  assert_eq!(after_100.delivery_count, before_100.delivery_count + 1);
+  assert_eq!(after_100.abort_count, before_100.abort_count);
+  assert_eq!(
+    &after_100.staged_payloads[before_100.staged_payloads.len()..],
+    &[100.0],
+  );
+  assert_eq!(
+    &after_100.prepared_payloads[before_100.prepared_payloads.len()..],
+    &[100.0],
+  );
+  assert_eq!(
+    &after_100.committed_payloads[before_100.committed_payloads.len()..],
+    &[100.0],
+  );
+  assert_eq!(
+    &after_100.delivered_payloads[before_100.delivered_payloads.len()..],
+    &[100.0],
+  );
+  assert_eq!(
+    &after_100.aborted_payloads[before_100.aborted_payloads.len()..],
+    &[] as &[f64],
+  );
+  assert_eq!(
+    store_commit_calls.load(Ordering::SeqCst),
+    store_before_100 + 1,
+  );
+  assert_eq!(
+    observed_kernel.successful_uses_for_test(receiver_capability_id),
+    capability_before_100 + 1,
+  );
+  let events = runtime.list_events(None).unwrap();
+  let operation_events = &events[events_before_100..];
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::TransactionStarted { .. }
+    )).count(),
+    1,
+  );
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::TransactionCommitted { .. }
+    )).count(),
+    1,
+  );
+  assert!(!operation_events.iter().any(|event| matches!(
+    event.kind,
+    RuntimeEventKind::TransactionAborted { .. }
+  )));
+  assert!(!operation_events.iter().any(|event| matches!(
+    event.kind,
+    RuntimeEventKind::IntegrityConstraintViolated { .. }
+  )));
+  assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
+  assert!(runtime.active_transactions.is_empty());
+  assert_eq!(runtime.program_transaction_owner, None);
+
+  let before_150 = receiver_snapshot(&receiver);
+  let store_before_150 = store_commit_calls.load(Ordering::SeqCst);
+  let capability_before_150 =
+    observed_kernel.successful_uses_for_test(receiver_capability_id);
+  let events_before_150 = runtime.list_events(None).unwrap().len();
+  let error = runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::F64(150.0),
+    ))
+    .unwrap_err();
+  let failures = error
+    .kind_as::<mech_program::IntegrityConstraintViolationSet>()
+    .expect("invalid candidate returns integrity violations");
+  assert_eq!(failures.violations.len(), 1);
+  let violation = &failures.violations[0];
+  assert_eq!(violation.name, "safe-target!");
+  assert_eq!(
+    violation.reason,
+    mech_program::IntegrityConstraintFailureReason::EvaluatedFalse,
+  );
+  assert_eq!(violation.actual.as_deref(), Some("150"));
+  assert_eq!(violation.expected.as_deref(), Some("120"));
+  let after_150 = receiver_snapshot(&receiver);
+  assert_eq!(after_150.stage_count, before_150.stage_count + 1);
+  assert_eq!(after_150.abort_count, before_150.abort_count + 1);
+  assert_eq!(after_150.prepare_count, before_150.prepare_count);
+  assert_eq!(after_150.commit_count, before_150.commit_count);
+  assert_eq!(after_150.delivery_count, before_150.delivery_count);
+  assert_eq!(
+    &after_150.staged_payloads[before_150.staged_payloads.len()..],
+    &[150.0],
+  );
+  assert_eq!(
+    &after_150.aborted_payloads[before_150.aborted_payloads.len()..],
+    &[150.0],
+  );
+  assert_eq!(
+    &after_150.prepared_payloads[before_150.prepared_payloads.len()..],
+    &[] as &[f64],
+  );
+  assert_eq!(
+    &after_150.committed_payloads[before_150.committed_payloads.len()..],
+    &[] as &[f64],
+  );
+  assert_eq!(
+    &after_150.delivered_payloads[before_150.delivered_payloads.len()..],
+    &[] as &[f64],
+  );
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 100.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 100.0);
+  match symbol_value(&runtime, "safe-target!") {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected scalar constraint result, got {other:?}"),
+  }
+  assert_eq!(
+    store_commit_calls.load(Ordering::SeqCst),
+    store_before_150,
+  );
+  assert_eq!(
+    observed_kernel.successful_uses_for_test(receiver_capability_id),
+    capability_before_150,
+  );
+  assert!(runtime.active_transactions.is_empty());
+  assert_eq!(runtime.program_transaction_owner, None);
+  let events = runtime.list_events(None).unwrap();
+  let operation_events = &events[events_before_150..];
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::TransactionStarted { .. }
+    )).count(),
+    1,
+  );
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::TransactionAborted { .. }
+    )).count(),
+    1,
+  );
+  assert!(!operation_events.iter().any(|event| matches!(
+    event.kind,
+    RuntimeEventKind::TransactionCommitted { .. }
+  )));
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::IntegrityConstraintViolated { .. }
+    )).count(),
+    1,
+  );
+  let abort_index = operation_events.iter().position(|event| matches!(
+    event.kind,
+    RuntimeEventKind::TransactionAborted { .. }
+  )).unwrap();
+  let audit_index = operation_events.iter().position(|event| matches!(
+    event.kind,
+    RuntimeEventKind::IntegrityConstraintViolated { .. }
+  )).unwrap();
+  assert!(abort_index < audit_index);
+  let audit = operation_events.iter().find_map(|event| match &event.kind {
+    RuntimeEventKind::IntegrityConstraintViolated {
+      violations,
+      ..
+    } => violations.first(),
+    _ => None,
+  }).unwrap();
+  assert_eq!(audit.actual.as_deref(), Some("150"));
+  assert_eq!(audit.expected.as_deref(), Some("120"));
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
+  assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
+  assert!(!runtime.is_poisoned());
+
+  let before_110 = receiver_snapshot(&receiver);
+  let store_before_110 = store_commit_calls.load(Ordering::SeqCst);
+  let capability_before_110 =
+    observed_kernel.successful_uses_for_test(receiver_capability_id);
+  let events_before_110 = runtime.list_events(None).unwrap().len();
+  runtime
+    .apply_host_input(RuntimeHostInput::single(
+      source.clone(),
+      RuntimeHostInputValue::F64(110.0),
+    ))
+    .unwrap();
+  assert_eq!(f64_value(&source_value(&runtime, &source)), 110.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "target")), 110.0);
+  assert_eq!(f64_value(&symbol_value(&runtime, "receiver-result")), 110.0);
+  match symbol_value(&runtime, "safe-target!") {
+    Value::Bool(value) => assert!(*value.borrow()),
+    other => panic!("expected scalar constraint result, got {other:?}"),
+  }
+  let after_110 = receiver_snapshot(&receiver);
+  assert_eq!(after_110.stage_count, before_110.stage_count + 1);
+  assert_eq!(after_110.prepare_count, before_110.prepare_count + 1);
+  assert_eq!(after_110.commit_count, before_110.commit_count + 1);
+  assert_eq!(after_110.delivery_count, before_110.delivery_count + 1);
+  assert_eq!(after_110.abort_count, before_110.abort_count);
+  assert_eq!(
+    &after_110.staged_payloads[before_110.staged_payloads.len()..],
+    &[110.0],
+  );
+  assert_eq!(
+    &after_110.prepared_payloads[before_110.prepared_payloads.len()..],
+    &[110.0],
+  );
+  assert_eq!(
+    &after_110.committed_payloads[before_110.committed_payloads.len()..],
+    &[110.0],
+  );
+  assert_eq!(
+    &after_110.delivered_payloads[before_110.delivered_payloads.len()..],
+    &[110.0],
+  );
+  assert_eq!(
+    &after_110.aborted_payloads[before_110.aborted_payloads.len()..],
+    &[] as &[f64],
+  );
+  assert_eq!(
+    store_commit_calls.load(Ordering::SeqCst),
+    store_before_110 + 1,
+  );
+  assert_eq!(
+    observed_kernel.successful_uses_for_test(receiver_capability_id),
+    capability_before_110 + 1,
+  );
+  let events = runtime.list_events(None).unwrap();
+  let operation_events = &events[events_before_110..];
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::TransactionStarted { .. }
+    )).count(),
+    1,
+  );
+  assert_eq!(
+    operation_events.iter().filter(|event| matches!(
+      event.kind,
+      RuntimeEventKind::TransactionCommitted { .. }
+    )).count(),
+    1,
+  );
+  assert!(!operation_events.iter().any(|event| matches!(
+    event.kind,
+    RuntimeEventKind::TransactionAborted { .. }
+  )));
+  assert!(!operation_events.iter().any(|event| matches!(
+    event.kind,
+    RuntimeEventKind::IntegrityConstraintViolated { .. }
+  )));
+  assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
+  assert!(runtime.active_transactions.is_empty());
+  assert_eq!(runtime.program_transaction_owner, None);
+
+  assert_eq!(
+    &after_110.committed_payloads[installed_receiver.committed_payloads.len()..],
+    &[100.0, 110.0],
+  );
+  assert_eq!(
+    &after_110.delivered_payloads[installed_receiver.delivered_payloads.len()..],
+    &[100.0, 110.0],
+  );
+  assert_eq!(
+    &after_110.staged_payloads[installed_receiver.staged_payloads.len()..],
+    &[100.0, 150.0, 110.0],
+  );
+  assert_eq!(
+    &after_110.aborted_payloads[installed_receiver.aborted_payloads.len()..],
+    &[150.0],
+  );
+  assert_eq!(
+    &after_110.prepared_payloads[installed_receiver.prepared_payloads.len()..],
+    &[100.0, 110.0],
+  );
+  assert_eq!(
+    store_commit_calls.load(Ordering::SeqCst),
+    installed_store_commits + 2,
+  );
+  assert_eq!(
+    observed_kernel.successful_uses_for_test(receiver_capability_id),
+    installed_capability_uses + 2,
+  );
+  assert!(runtime.list_events(None).unwrap().len() > installed_events);
 }
 
 #[test]
 fn live_host_empty_output_can_recompute() {
-  let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
+  let calls = Arc::new(AtomicUsize::new(0));
+  let host_calls = calls.clone();
+  let mut runtime = test_runtime_with_host(
+    test_provider_with("test://clock/ticks", "value", 1.0),
+    PlannedPureHostFunction::new(
+      "demo/live-empty",
+      |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| Ok(Value::Empty.into()),
+      move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
+        host_calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Empty.into())
+      },
+    ),
+  );
   grant_read(&mut runtime, "test://clock/ticks", "value");
   let subject = runtime.runtime_context().unwrap().subject;
   grant_host_call(&mut runtime, &subject, 48, "host:demo/live-empty");
-  let calls = Arc::new(AtomicUsize::new(0));
-  let host_calls = calls.clone();
-  runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/live-empty", move |_services, _context, _args| {
-    host_calls.fetch_add(1, Ordering::SeqCst);
-    Ok(Value::Empty)
-  })).unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\noutput := demo/live-empty(@pulse/value)").unwrap();
   assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
@@ -733,14 +1370,13 @@ fn failed_source_does_not_leave_live_state_armed() {
   );
   let mut context_a = runtime.runtime_context().unwrap().with_subject("subject-a");
   grant_read_to(&mut runtime, "subject-a", "test://clock/ticks", "value");
-  runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject: "subject-a".to_string(),
-      resource: TEST_OUTPUT_BASE_URI.to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["line".to_string()],
-    })
-    .unwrap();
+  grant_resource(
+    &mut runtime,
+    "subject-a",
+    TEST_OUTPUT_BASE_URI,
+    RuntimeCapabilityOperation::Write,
+    &["line"],
+  );
   let error = runtime.run_string_with_context(
     &mut context_a,
     "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\n@out/line <- output\nmissing := missing-live-value + 1",
@@ -763,12 +1399,13 @@ fn duration_failure_restores_live_state() {
   let mut runtime = RuntimeBuilder::new()
     .config(config)
     .resource_provider(Box::new(test_provider_with("test://clock/ticks", "value", 1.0)))
+    .host_function(sleep_host("demo/source-sleep"))
+    .unwrap()
     .build()
     .unwrap();
   let mut context = runtime.runtime_context().unwrap();
   grant_read_to(&mut runtime, &context.subject, "test://clock/ticks", "value");
   grant_host_call(&mut runtime, &context.subject, 43, "host:demo/source-sleep");
-  register_sleep_host(&mut runtime, "demo/source-sleep");
   let error = format!("{:?}", runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\nslow := demo/source-sleep(@pulse/value)").unwrap_err());
   assert!(error.contains("turn_duration_ms") || error.contains("ResourceBudgetExceeded"), "{error}");
   assert!(runtime.live_context_template.is_none());
@@ -802,12 +1439,13 @@ fn live_turn_enforces_step_budget() {
 fn live_turn_enforces_duration_limit() {
   let mut runtime = RuntimeBuilder::new()
     .resource_provider(Box::new(test_provider_with("test://clock/ticks", "value", 1.0)))
+    .host_function(sleep_host("demo/live-sleep"))
+    .unwrap()
     .build()
     .unwrap();
   let mut context = runtime.runtime_context().unwrap();
   grant_read_to(&mut runtime, &context.subject, "test://clock/ticks", "value");
   grant_host_call(&mut runtime, &context.subject, 44, "host:demo/live-sleep");
-  register_sleep_host(&mut runtime, "demo/live-sleep");
   runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\nslow := demo/live-sleep(@pulse/value)").unwrap();
   runtime.config.limits.max_turn_duration_ms = Some(1);
   let error = format!("{:?}", runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://clock/ticks", "value").unwrap(), RuntimeHostInputValue::F64(2.0))).unwrap_err());
@@ -838,9 +1476,22 @@ fn changed_actor_message_rejects_live_context_reuse() {
 #[test]
 fn live_context_capability_order_does_not_cause_mismatch() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
-  let mut context_a = runtime.runtime_context().unwrap().with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
-  let mut context_b = runtime.runtime_context().unwrap().with_capabilities(vec![CapabilityId(2), CapabilityId(1)]);
-  grant_read_to(&mut runtime, &context_a.subject, "test://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  let read = grant_read_to(
+    &mut runtime,
+    &subject,
+    "test://clock/ticks",
+    "value",
+  );
+  let unused = CapabilityId(2);
+  let mut context_a = runtime
+    .runtime_context()
+    .unwrap()
+    .with_capabilities(vec![read, unused]);
+  let mut context_b = runtime
+    .runtime_context()
+    .unwrap()
+    .with_capabilities(vec![unused, read]);
   runtime.run_string_with_context(&mut context_a, "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap();
   runtime.run_string_with_context(&mut context_b, "@pulse := test://clock/ticks{:read(value)}\nother := @pulse/value").unwrap();
 }
@@ -1077,7 +1728,8 @@ fn host_input_context_accepts_transaction_capabilities_but_rejects_drift() {
     .unwrap();
 
   let mut drift = runtime.live_turn_context().unwrap();
-  drift.add_capability(CapabilityId(999));
+  drift.authority =
+    RuntimeAuthorityScope::allow_list([CapabilityId(999)]);
   let error = runtime
     .apply_host_input_with_context(
       &mut drift,
@@ -1163,6 +1815,7 @@ struct MockDriverState {
   fail_attach: bool,
   fail_start: bool,
   fail_stop: bool,
+  panic_start: bool,
   attached_ingress: Option<RuntimeIngress>,
   stop_observed_closed_ingress: bool,
   log: Vec<String>,
@@ -1204,6 +1857,9 @@ impl RuntimeHostInputDriver for MockDriver {
     let event = format!("start:{}", self.name);
     state.log.push(event.clone());
     self.events.borrow_mut().push(event);
+    if state.panic_start {
+      panic!("deliberate input driver start panic");
+    }
     if state.fail_start { return Err(mock_error("MockStartError", format!("start failed for {}", self.name))); }
     state.live = true;
     Ok(())
@@ -1332,6 +1988,32 @@ fn start_failure_stops_only_drivers_started_by_the_call() {
   assert_eq!((b.borrow().start_count, b.borrow().stop_count), (1, 0));
   assert_eq!((c.borrow().start_count, c.borrow().stop_count), (0, 0));
   assert!(!a.borrow().live && !b.borrow().live && !c.borrow().live);
+}
+
+#[test]
+fn input_driver_panic_is_converted_and_started_drivers_are_stopped() {
+  let a = Rc::new(RefCell::new(MockDriverState::default()));
+  let b = Rc::new(RefCell::new(MockDriverState {
+    panic_start: true,
+    ..Default::default()
+  }));
+  let (drivers, events) =
+    drivers_with_events(&[("a", a.clone()), ("b", b.clone())]);
+  let mut runtime = runtime_with_drivers(drivers).unwrap();
+  bind_single_mock_input(&mut runtime);
+
+  let error = runtime.start_input_drivers().unwrap_err();
+
+  assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+  assert!(format!("{error:?}").contains("deliberate input driver start panic"));
+  assert_eq!(
+    events.borrow().as_slice(),
+    ["attach:a", "attach:b", "start:a", "start:b", "stop:a"],
+  );
+  assert_eq!((a.borrow().start_count, a.borrow().stop_count), (1, 1));
+  assert_eq!((b.borrow().start_count, b.borrow().stop_count), (1, 0));
+  assert!(!runtime.is_poisoned());
+  runtime.run_string("input-driver-panic-recovery := 1.0").unwrap();
 }
 
 #[test]
@@ -1502,7 +2184,7 @@ mod persistent_send_tests {
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
       if request.path == "line" && request.intent == RuntimeResourceWriteIntent::Send { Ok(()) } else { Err(MechError::new(PersistentSendTestError("bad console write".to_string()), None)) }
     }
-    fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
       self.preflight_write(RuntimeResourceWritePreflightRequest {
         base_uri: request.base_uri.clone(),
         path: request.path.clone(),
@@ -1536,14 +2218,13 @@ mod persistent_send_tests {
   const TIME_PATHS: &[&str] = &["unix-ms", "hour", "minute", "second", "millisecond"];
 
     fn grant_write_to(runtime: &mut MechRuntime, subject: &str, resource: &str, path: &str) {
-        runtime
-            .grant_capability(RuntimeCapabilityGrant {
-                subject: subject.to_string(),
-                resource: resource.to_string(),
-                operations: vec![RuntimeCapabilityOperation::Write],
-                paths: vec![path.to_string()],
-            })
-            .unwrap();
+        grant_resource(
+            runtime,
+            subject,
+            resource,
+            RuntimeCapabilityOperation::Write,
+            &[path],
+        );
     }
 
     #[derive(Clone, Debug, Default)]
@@ -1603,7 +2284,7 @@ mod persistent_send_tests {
                 ))
             }
         }
-        fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+        fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
             self.preflight_write(RuntimeResourceWritePreflightRequest {
                 base_uri: request.base_uri.clone(),
                 path: request.path.clone(),
@@ -1655,12 +2336,7 @@ mod persistent_send_tests {
 
   fn grant(runtime: &mut MechRuntime, resource: &str, operation: RuntimeCapabilityOperation, paths: &[&str]) {
     let subject = runtime.runtime_context().unwrap().subject;
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: resource.to_string(),
-      operations: vec![operation],
-      paths: paths.iter().map(|path| path.to_string()).collect(),
-    }).unwrap();
+    grant_resource(runtime, &subject, resource, operation, paths);
   }
 
   fn runtime_with_console(initial: TimeSnapshot, fail_next: bool) -> (MechRuntime, ManualTimeInputDriver, RecordingConsoleBackend) {
@@ -1728,19 +2404,20 @@ clock-output := (hour, minute, second)
       .build()
       .unwrap();
     let subject = "task:live-custom";
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.to_string(),
-      resource: "time://clock/clock".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: TIME_PATHS.iter().map(|path| path.to_string()).collect(),
-    }).unwrap();
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.to_string(),
-      resource: "console://console/output".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["line".to_string()],
-    }).unwrap();
-    assert!(!runtime.has_capability_grant(&runtime.runtime_context().unwrap().subject, "console://console/output", &RuntimeCapabilityOperation::Write, "line"));
+    grant_resource(
+      &mut runtime,
+      subject,
+      "time://clock/clock",
+      RuntimeCapabilityOperation::Read,
+      TIME_PATHS,
+    );
+    grant_resource(
+      &mut runtime,
+      subject,
+      "console://console/output",
+      RuntimeCapabilityOperation::Write,
+      &["line"],
+    );
 
     let mut context = runtime.runtime_context().unwrap().with_subject(subject);
     runtime.run_string_with_context(&mut context, r#"@out := console://console/output{:write(line)}
@@ -1885,7 +2562,10 @@ render-tick := @clock/hour
       "tick",
       Value::F64(Ref::new(0.0)),
     );
-    let (mut runtime, output) = test_runtime_with_output(provider);
+    let (mut runtime, output) = test_runtime_with_output_host(
+      provider,
+      sleep_host("demo/activation-duration-sleep"),
+    );
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
     runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
@@ -1994,7 +2674,10 @@ render-tick := @tick/tick
       "tick",
       Value::F64(Ref::new(0.0)),
     );
-    let (mut runtime, output) = test_runtime_with_output(provider);
+    let (mut runtime, output) = test_runtime_with_output_host(
+      provider,
+      sleep_host("demo/activation-duration-sleep"),
+    );
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
     let subject = runtime.runtime_context().unwrap().subject;
@@ -2003,10 +2686,6 @@ render-tick := @tick/tick
       &subject,
       195,
       "host:demo/activation-duration-sleep",
-    );
-    register_sleep_host(
-      &mut runtime,
-      "demo/activation-duration-sleep",
     );
     runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
 @out := test://effects/output{:write(line)}
@@ -2228,7 +2907,7 @@ render-tick := @tick/tick
   #[test]
   fn patterned_activation_send_preserves_custom_live_authority() {
     let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);let default_subject=runtime.runtime_context().unwrap().subject;let custom_subject="task:patterned-activation-send-custom";grant_read_to(&mut runtime,custom_subject,"test://render/timer","tick");grant_write_to(&mut runtime,custom_subject,TEST_OUTPUT_BASE_URI,"line");
-    assert!(!runtime.has_capability_grant(&default_subject,"test://render/timer",&RuntimeCapabilityOperation::Read,"tick"));assert!(!runtime.has_capability_grant(&default_subject,TEST_OUTPUT_BASE_URI,&RuntimeCapabilityOperation::Write,"line"));
+    assert!(runtime.check_capability(&CapabilityRequest::from_keys(&default_subject,"read","test://render/timer/tick")).is_err());assert!(runtime.check_capability(&CapabilityRequest::from_keys(&default_subject,"write",format!("{TEST_OUTPUT_BASE_URI}/line"))).is_err());
     let mut context=runtime.runtime_context().unwrap().with_subject(custom_subject);
     runtime.run_string_with_context(&mut context,r#"@tick := test://render/timer{:read(tick)}
 @out := test://effects/output{:write(line)}
@@ -2325,9 +3004,10 @@ other-value := other-tick + 1.0
 
   #[test]
   fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
-    let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0))).with_value("test://other/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);grant_read(&mut runtime,"test://render/timer","tick");grant_read(&mut runtime,"test://other/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
-    let subject=runtime.runtime_context().unwrap().subject;grant_host_call(&mut runtime,&subject,194,"host:demo/patterned-body-fail-second");let calls=Arc::new(AtomicUsize::new(0));let host_calls=calls.clone();
-    runtime.register_mech_host_function(ClosureHostFunction::new_pure("demo/patterned-body-fail-second",move |_services,_context,args|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==2{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))))})).unwrap();
+    let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0))).with_value("test://other/timer","tick",Value::F64(Ref::new(0.0)));let calls=Arc::new(AtomicUsize::new(0));let host_calls=calls.clone();
+    let host = PlannedPureHostFunction::new("demo/patterned-body-fail-second", |_context: &RuntimeCallContext,args: &[RuntimeValueSnapshot]| Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into()), move |_context: &RuntimeCallContext,args: Vec<RuntimeValueSnapshot>|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==1{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())});
+    let(mut runtime,output)=test_runtime_with_output_host(provider, host);grant_read(&mut runtime,"test://render/timer","tick");grant_read(&mut runtime,"test://other/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
+    let subject=runtime.runtime_context().unwrap().subject;grant_host_call(&mut runtime,&subject,194,"host:demo/patterned-body-fail-second");
     runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
 @other := test://other/timer{:read(tick)}
 @out := test://effects/output{:write(line)}
@@ -2344,10 +3024,10 @@ other-value := other-tick + 1.0
       fallback := 0.0
     }
 "#).unwrap();
-    let plan=activation_plan_snapshot(&runtime);assert_eq!(calls.load(Ordering::SeqCst),1);assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
-    let error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://render/timer","tick").unwrap(),RuntimeHostInputValue::F64(1.0))).unwrap_err();assert!(error.kind_as::<DeliberateHostCallError>().is_some());assert_eq!(calls.load(Ordering::SeqCst),2);assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let plan=activation_plan_snapshot(&runtime);assert_eq!(calls.load(Ordering::SeqCst),0);assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
+    let error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://render/timer","tick").unwrap(),RuntimeHostInputValue::F64(1.0))).unwrap_err();assert!(error.kind_as::<DeliberateHostCallError>().is_some());assert_eq!(calls.load(Ordering::SeqCst),1);assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
     let unrelated=apply_f64_input(&mut runtime,"test://other/timer","tick",7.0);assert!(unrelated.turn.is_some());assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
-    let retry=apply_f64_input(&mut runtime,"test://render/timer","tick",1.0);assert!(retry.turn.is_some());assert_eq!(calls.load(Ordering::SeqCst),3);assert_eq!(f64_value(&symbol_value(&runtime,"state")),1.0);assert_eq!(output.lines(),vec!["0"]);assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),1);
+    let retry=apply_f64_input(&mut runtime,"test://render/timer","tick",1.0);assert!(retry.turn.is_some());assert_eq!(calls.load(Ordering::SeqCst),2);assert_eq!(f64_value(&symbol_value(&runtime,"state")),1.0);assert_eq!(output.lines(),vec!["0"]);assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),1);
   }
 
   #[test]
@@ -2431,7 +3111,24 @@ render-tick := @tick/tick
             "tick",
             Value::F64(Ref::new(0.0)),
         );
-        let (mut runtime, output) = test_runtime_with_output(provider);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let host_calls = calls.clone();
+        let (mut runtime, output) = test_runtime_with_output_host(
+            provider,
+            PlannedPureHostFunction::new(
+                "demo/activation-fail-second",
+                |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+                    Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
+                },
+                move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
+                    let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
+                    if call_number == 1 {
+                        return Err(MechError::new(DeliberateHostCallError, None));
+                    }
+                    Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
+                },
+            ),
+        );
         grant_read(&mut runtime, "test://render/timer", "tick");
         grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
         let subject = runtime.runtime_context().unwrap().subject;
@@ -2441,20 +3138,6 @@ render-tick := @tick/tick
             193,
             "host:demo/activation-fail-second",
         );
-        let calls = Arc::new(AtomicUsize::new(0));
-        let host_calls = calls.clone();
-        runtime
-            .register_mech_host_function(ClosureHostFunction::new_pure(
-                "demo/activation-fail-second",
-                move |_services, _context, args| {
-                    let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
-                    if call_number == 2 {
-                        return Err(MechError::new(DeliberateHostCallError, None));
-                    }
-                    Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))))
-                },
-            ))
-            .unwrap();
         runtime
             .run_string(
                 r#"@tick := test://render/timer{:read(tick)}
@@ -2472,8 +3155,8 @@ render-tick := @tick/tick
         let plan_before = activation_plan_snapshot(&runtime);
         assert_eq!(
             calls.load(Ordering::SeqCst),
-            1,
-            "host function must compile once during load"
+            0,
+            "host invocation must not run during planning"
         );
         assert!(output.lines().is_empty());
         assert_eq!(activation_send_count(&runtime), 1);
@@ -2487,13 +3170,13 @@ render-tick := @tick/tick
             error.kind_as::<DeliberateHostCallError>().is_some(),
             "unexpected error: {error:?}"
         );
-        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
         assert!(output.lines().is_empty());
         assert_eq!(activation_send_count(&runtime), 1);
         assert_eq!(activation_plan_snapshot(&runtime), plan_before);
         let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
         assert!(retry.turn.is_some());
-        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
         assert_eq!(output.lines().len(), 1);
         assert_eq!(recorded_f64(&output, 0), 1.0);
         assert_eq!(activation_send_count(&runtime), 1);
@@ -2610,18 +3293,16 @@ latest := render-tick + 1.0
         let custom_subject = "task:activation-send-custom";
         grant_read_to(&mut runtime, custom_subject, "test://render/timer", "tick");
         grant_write_to(&mut runtime, custom_subject, TEST_OUTPUT_BASE_URI, "line");
-        assert!(!runtime.has_capability_grant(
+        assert!(runtime.check_capability(&CapabilityRequest::from_keys(
             &default_subject,
-            "test://render/timer",
-            &RuntimeCapabilityOperation::Read,
-            "tick"
-        ));
-        assert!(!runtime.has_capability_grant(
+            "read",
+            "test://render/timer/tick",
+        )).is_err());
+        assert!(runtime.check_capability(&CapabilityRequest::from_keys(
             &default_subject,
-            TEST_OUTPUT_BASE_URI,
-            &RuntimeCapabilityOperation::Write,
-            "line"
-        ));
+            "write",
+            format!("{TEST_OUTPUT_BASE_URI}/line"),
+        )).is_err());
         let mut context = runtime
             .runtime_context()
             .unwrap()

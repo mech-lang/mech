@@ -35,7 +35,11 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.enqueue_work(work)?;
+    extension::invoke_extension(
+      "scheduler",
+      "enqueue_work",
+      || self.scheduler.enqueue_work(work),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -65,9 +69,13 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
-    let tick = collect_tick(
-      self.scheduler.as_mut(),
-      &self.scheduler_policy,
+    let tick = extension::invoke_extension(
+      "scheduler",
+      "collect_tick",
+      || collect_tick(
+        self.scheduler.as_mut(),
+        &self.scheduler_policy,
+      ),
     )?;
 
     self.drain_scheduler_events(context)?;
@@ -100,7 +108,11 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.complete_work(work, outcome)?;
+    extension::invoke_extension(
+      "scheduler",
+      "complete_work",
+      || self.scheduler.complete_work(work, outcome),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -129,7 +141,12 @@ impl MechRuntime {
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.fail_work(work, message.into())?;
+    let message = message.into();
+    extension::invoke_extension(
+      "scheduler",
+      "fail_work",
+      || self.scheduler.fail_work(work, message),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -320,13 +337,101 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<()> {
-    let events = self.scheduler.drain_events();
+    let events = extension::invoke_extension_value(
+      "scheduler",
+      "drain_events",
+      || self.scheduler.drain_events(),
+    )?;
 
     for event in events {
       self.emit_event_to_context(context, event)?;
     }
 
     Ok(())
+  }
+}
+
+#[cfg(test)]
+mod panic_tests {
+  use super::*;
+  use crate::{ScheduledWorkFailure, ScheduledWorkOutcome};
+
+  #[derive(Debug, Default)]
+  struct PanickingScheduler {
+    inner: InMemoryScheduler,
+  }
+
+  impl Scheduler for PanickingScheduler {
+    fn enqueue_work(&mut self, _work: ScheduledWork) -> MResult<()> {
+      panic!("deliberate scheduler enqueue panic");
+    }
+
+    fn next_work(&mut self) -> MResult<Option<ScheduledWork>> {
+      self.inner.next_work()
+    }
+
+    fn complete_work(
+      &mut self,
+      work: ScheduledWork,
+      outcome: RuntimeTurnOutcome,
+    ) -> MResult<()> {
+      self.inner.complete_work(work, outcome)
+    }
+
+    fn fail_work(
+      &mut self,
+      work: ScheduledWork,
+      message: String,
+    ) -> MResult<()> {
+      self.inner.fail_work(work, message)
+    }
+
+    fn begin_tick(&mut self) -> MResult<()> {
+      self.inner.begin_tick()
+    }
+
+    fn complete_tick(&mut self, work_count: u64) -> MResult<()> {
+      self.inner.complete_tick(work_count)
+    }
+
+    fn len(&self) -> usize {
+      self.inner.len()
+    }
+
+    fn queued_work(&self) -> Vec<ScheduledWork> {
+      self.inner.queued_work()
+    }
+
+    fn completed(&self) -> &[ScheduledWorkOutcome] {
+      self.inner.completed()
+    }
+
+    fn failures(&self) -> &[ScheduledWorkFailure] {
+      self.inner.failures()
+    }
+
+    fn pending_events(&self) -> &[RuntimeEventKind] {
+      self.inner.pending_events()
+    }
+
+    fn drain_events(&mut self) -> Vec<RuntimeEventKind> {
+      self.inner.drain_events()
+    }
+  }
+
+  #[test]
+  fn scheduler_panic_is_converted_without_poisoning() {
+    let mut runtime = MechRuntime::builder()
+      .scheduler(PanickingScheduler::default())
+      .build()
+      .unwrap();
+
+    let error = runtime.enqueue_task(TaskId(1)).unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate scheduler enqueue panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("scheduler-panic-recovery := 1.0").unwrap();
   }
 }
 

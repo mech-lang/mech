@@ -130,8 +130,8 @@ trait ErasedValueStateEntry {
     fn has_after(&self) -> bool;
     fn preflight_restore_before(&self) -> MResult<()>;
     fn preflight_restore_after(&self) -> MResult<()>;
-    fn restore_before_unchecked(&self);
-    fn restore_after_unchecked(&self);
+    fn apply_restore_before(&self);
+    fn apply_restore_after(&self);
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
@@ -154,7 +154,6 @@ where
             ValueStateBorrowConflict {
                 phase,
                 type_name: type_name::<T>(),
-                address: self.key.address,
             },
             None,
         )
@@ -198,13 +197,13 @@ where
             .map_err(|_| self.borrow_conflict("restore-after"))
     }
 
-    fn restore_before_unchecked(&self) {
+    fn apply_restore_before(&self) {
         if let Some(before) = &self.before {
             *self.target.borrow_mut() = before.clone();
         }
     }
 
-    fn restore_after_unchecked(&self) {
+    fn apply_restore_after(&self) {
         if let Some(after) = &self.after {
             *self.target.borrow_mut() = after.clone();
         }
@@ -309,7 +308,7 @@ impl ValueStateJournal {
     /// [`Self::preflight_restore_before`] and this method.
     pub fn apply_restore_before(&self) {
         for entry in &self.entries {
-            entry.restore_before_unchecked();
+            entry.apply_restore_before();
         }
     }
 
@@ -441,7 +440,6 @@ impl ValueStateJournal {
                 ValueStateBorrowConflict {
                     phase: side.phase(),
                     type_name: type_name::<T>(),
-                    address: key.address,
                 },
                 None,
             )
@@ -493,7 +491,6 @@ impl ValueStateJournal {
                 ValueStateBorrowConflict {
                     phase: side.phase(),
                     type_name: type_name::<T>(),
-                    address: key.address,
                 },
                 None,
             )
@@ -511,7 +508,6 @@ impl ValueStateJournal {
                     MechError::new(
                         ValueStateEntryTypeMismatch {
                             type_name: type_name::<T>(),
-                            address: key.address,
                         },
                         None,
                     )
@@ -1086,7 +1082,7 @@ impl CommittedValueStateDelta {
             entry.preflight_restore_before()?;
         }
         for entry in &self.entries {
-            entry.restore_before_unchecked();
+            entry.apply_restore_before();
         }
         Ok(())
     }
@@ -1097,7 +1093,7 @@ impl CommittedValueStateDelta {
             entry.preflight_restore_after()?;
         }
         for entry in &self.entries {
-            entry.restore_after_unchecked();
+            entry.apply_restore_after();
         }
         Ok(())
     }
@@ -1111,7 +1107,6 @@ impl CommittedValueStateDelta {
 pub struct ValueStateBorrowConflict {
     pub phase: &'static str,
     pub type_name: &'static str,
-    pub address: usize,
 }
 
 impl MechErrorKind for ValueStateBorrowConflict {
@@ -1120,10 +1115,7 @@ impl MechErrorKind for ValueStateBorrowConflict {
     }
 
     fn message(&self) -> String {
-        format!(
-            "Cannot borrow {} cell at 0x{:x} during {}.",
-            self.type_name, self.address, self.phase
-        )
+        format!("Cannot borrow {} cell during {}.", self.type_name, self.phase)
     }
 }
 
@@ -1151,7 +1143,6 @@ impl MechErrorKind for ValueStateCollectionCollision {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValueStateEntryTypeMismatch {
     pub type_name: &'static str,
-    pub address: usize,
 }
 
 impl MechErrorKind for ValueStateEntryTypeMismatch {
@@ -1161,8 +1152,8 @@ impl MechErrorKind for ValueStateEntryTypeMismatch {
 
     fn message(&self) -> String {
         format!(
-            "Journal entry for {} cell at 0x{:x} has an incompatible erased type.",
-            self.type_name, self.address
+            "Journal entry for {} cell has an incompatible erased type.",
+            self.type_name
         )
     }
 }
@@ -2211,7 +2202,6 @@ mod tests {
 
         let conflict = error.kind_as::<ValueStateBorrowConflict>().unwrap();
         assert_eq!(conflict.phase, "capture-before");
-        assert_eq!(conflict.address, cell.addr());
         assert_eq!(conflict.type_name, type_name::<f64>());
         assert!(journal.is_empty());
         assert!(journal.roots.is_empty());
@@ -2235,7 +2225,6 @@ mod tests {
 
         let conflict = error.kind_as::<ValueStateBorrowConflict>().unwrap();
         assert_eq!(conflict.phase, "capture-before");
-        assert_eq!(conflict.address, second.addr());
         assert!(journal.entries.is_empty());
         assert!(journal.entry_indices.is_empty());
         assert!(journal.roots.is_empty());
@@ -2259,7 +2248,6 @@ mod tests {
         let error = journal.restore_before().unwrap_err();
         let conflict = error.kind_as::<ValueStateBorrowConflict>().unwrap();
         assert_eq!(conflict.phase, "restore-before");
-        assert_eq!(conflict.address, second.addr());
         assert_eq!(*first.borrow(), 10.0);
         assert_eq!(*held, 20.0);
         drop(held);
@@ -2315,7 +2303,6 @@ mod tests {
         let error = delta.replay().unwrap_err();
         let conflict = error.kind_as::<ValueStateBorrowConflict>().unwrap();
         assert_eq!(conflict.phase, "restore-after");
-        assert_eq!(conflict.address, second.addr());
         assert_eq!(*first.borrow(), 1.0);
         assert_eq!(*held, 2.0);
         drop(held);
@@ -2385,6 +2372,5 @@ mod tests {
         let error = journal.capture_value(&scalar_value(&float)).unwrap_err();
         let mismatch = error.kind_as::<ValueStateEntryTypeMismatch>().unwrap();
         assert_eq!(mismatch.type_name, type_name::<f64>());
-        assert_eq!(mismatch.address, float.addr());
     }
 }

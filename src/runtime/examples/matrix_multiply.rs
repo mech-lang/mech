@@ -12,8 +12,9 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
   RuntimeBuilder,
+  TaskRecord,
 };
 
 fn short_text(text: &str) -> String {
@@ -60,40 +61,42 @@ fn main() -> MResult<()> {
     .map(|(a, b)| a * b)
     .sum::<f64>();
 
+  let v1_host = v1.clone();
+  let v2_host = v2.clone();
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
+    .host_function(DeterministicHostFunction::new(
+      "demo/matrix/v1",
+      |_context, args| {
+        host_call0("demo/matrix/v1", &args, || {
+          matrix_f64(vec![0.0; 3], 1, 3)
+        })
+      },
+      move |_context, args| {
+        host_call0("demo/matrix/v1", &args, || {
+          matrix_f64((*v1_host).clone(), 1, 3)
+        })
+      },
+    ))?
+    .host_function(DeterministicHostFunction::new(
+      "demo/matrix/v2",
+      |_context, args| {
+        host_call0("demo/matrix/v2", &args, || {
+          matrix_f64(vec![0.0; 3], 1, 3)
+        })
+      },
+      move |_context, args| {
+        host_call0("demo/matrix/v2", &args, || {
+          matrix_f64((*v2_host).clone(), 1, 3)
+        })
+      },
+    ))?
     .build()?;
 
   println!("runtime: {}", short(runtime.id()));
   println!("rust v1: {:?}", v1);
   println!("rust v2: {:?}", v2);
   println!("expected v1 ** v2': {}", expected);
-
-  {
-    let v1 = v1.clone();
-
-    runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-      "demo/matrix/v1",
-      move |_services, _context, args| {
-        host_call0("demo/matrix/v1", &args, || {
-          matrix_f64((*v1).clone(), 1, 3)
-        })
-      },
-    ))?;
-  }
-
-  {
-    let v2 = v2.clone();
-
-    runtime.register_mech_host_function(ClosureHostFunction::new_pure(
-      "demo/matrix/v2",
-      move |_services, _context, args| {
-        host_call0("demo/matrix/v2", &args, || {
-          matrix_f64((*v2).clone(), 1, 3)
-        })
-      },
-    ))?;
-  }
 
   let subject = BasicSubject::new("program:matrix-multiply");
 
@@ -120,9 +123,12 @@ fn main() -> MResult<()> {
   println!("mech source:");
   println!("{}", source.trim());
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:matrix-multiply");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:matrix-multiply",
+  )
+    .with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
+  let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(
     &mut context,
@@ -132,9 +138,10 @@ fn main() -> MResult<()> {
   println!();
   println!("program result: {:?}", value);
 
+  let result_value = value.into_value();
   let result = host_arg_matrix_f64(
     "matrix-multiply result",
-    &[value],
+    &[result_value],
     0,
   )?;
   let stored = matrix_scalar_f64(&result)

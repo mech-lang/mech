@@ -20,6 +20,7 @@ use super::*;
 use crate::{
   AccessSet, CapabilityKernelCheckpoint, RuntimeCommitOutcome,
   RuntimeEffectFailure, RuntimeEffectFailurePhase,
+  RuntimeStoreCommitIndeterminate,
 };
 
 pub(super) enum RuntimeCommitResolution {
@@ -320,6 +321,31 @@ impl MechRuntime {
     self.validate_context_for_runtime(context)?;
 
     let transaction_id = Self::context_transaction_id(context)?;
+    let (transaction_mode, has_program_baseline) = {
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      (transaction.mode, transaction.program.is_some())
+    };
+    if has_program_baseline
+      && self.program_transaction_owner != Some(transaction_id)
+    {
+      return self.coordinator_invariant_failure(
+        "commit_runtime_transaction",
+        Some(transaction_id),
+        format!(
+          "transaction {} contains a retained-program baseline but program ownership is {:?}",
+          transaction_id,
+          self.program_transaction_owner,
+        ),
+      );
+    }
+    #[cfg(feature = "invariant_define")]
+    if transaction_mode
+      == super::program_transaction::RuntimeExecutionTransactionMode::Explicit
+      && self.program_transaction_owner == Some(transaction_id)
+    {
+      self.program.validate_integrity_constraints()?;
+    }
     let access = self
       .active_execution_transaction(transaction_id)?
       .context_baseline
@@ -388,6 +414,15 @@ impl MechRuntime {
       let id = match self.store.commit_runtime(commit) {
         Ok(id) => id,
         Err(error) => {
+          if let Some(resolution) =
+            self.resolve_indeterminate_store_commit(
+              context,
+              transaction_id,
+              &error,
+            )
+          {
+            return Ok(resolution);
+          }
           envelope.state = RuntimeExecutionTransactionState::Active;
           self.active_transactions.insert(transaction_id, envelope);
           return Err(error);
@@ -405,16 +440,22 @@ impl MechRuntime {
       }));
     }
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Preparing);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Preparing,
+    );
     let prepare_result = envelope.effects.prepare_transactional();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     if let Err(step) = prepare_result {
       let original_error_text = format!("{:?}", step.error);
       let prepared_ids =
         envelope.effects.prepared_transactional_ids();
-      self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+      let phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
       let cleanup = envelope.effects.abort_prepared_reverse();
-      self.active_effect_phase = None;
+      drop(phase_guard);
       let failed_ids: HashSet<RuntimeEffectId> = cleanup
         .iter()
         .map(|failure| failure.effect_id)
@@ -459,10 +500,12 @@ impl MechRuntime {
           let original_error_text = format!("{:?}", error);
           let prepared_ids =
             envelope.effects.prepared_transactional_ids();
-          self.active_effect_phase =
-            Some(ActiveRuntimeEffectPhase::Aborting);
+          let phase_guard = ScopedRuntimeState::enter(
+            &self.active_effect_phase,
+            ActiveRuntimeEffectPhase::Aborting,
+          );
           let aborted = envelope.effects.abort_prepared_reverse();
-          self.active_effect_phase = None;
+          drop(phase_guard);
           let failed_ids: HashSet<RuntimeEffectId> = aborted
             .iter()
             .map(|failure| failure.effect_id)
@@ -512,9 +555,12 @@ impl MechRuntime {
       ));
     }
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Applying);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Applying,
+    );
     let apply_result = envelope.effects.apply_compensatable();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     if let Err(step) = apply_result {
       let original_error_text = format!("{:?}", step.error);
       let cleanup = self.cleanup_before_store_retry(
@@ -568,6 +614,15 @@ impl MechRuntime {
     let id = match self.store.commit_runtime(commit) {
       Ok(id) => id,
       Err(error) => {
+        if let Some(resolution) =
+          self.resolve_indeterminate_store_commit(
+            context,
+            transaction_id,
+            &error,
+          )
+        {
+          return Ok(resolution);
+        }
         let original_error_text = format!("{:?}", error);
         let cleanup = self.cleanup_before_store_retry(
           &mut envelope,
@@ -588,9 +643,12 @@ impl MechRuntime {
       }
     };
 
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Committing);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Committing,
+    );
     let commit_report = envelope.effects.commit_transactional();
-    self.active_effect_phase = None;
+    drop(phase_guard);
 
     context.transaction = None;
     if self.program_transaction_owner == Some(transaction_id) {
@@ -658,9 +716,12 @@ impl MechRuntime {
     }
 
     let after_commit_ids = envelope.effects.after_commit_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Delivering);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Delivering,
+    );
     let delivery_failures = envelope.effects.deliver_after_commit();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     for effect_id in after_commit_ids {
       let kind = match delivery_failures
         .iter()
@@ -688,6 +749,30 @@ impl MechRuntime {
     }))
   }
 
+  fn resolve_indeterminate_store_commit(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction_id: TransactionId,
+    error: &MechError,
+  ) -> Option<RuntimeCommitResolution> {
+    error
+      .kind_as::<RuntimeStoreCommitIndeterminate>()?;
+    context.transaction = None;
+    if self.program_transaction_owner == Some(transaction_id) {
+      self.program_transaction_owner = None;
+    }
+    self.health = RuntimeHealth::Poisoned(RuntimePoisonRecord {
+      operation: "commit_runtime_transaction".to_string(),
+      transaction_id: Some(transaction_id),
+      original_error: format!("{error:?}"),
+      rollback_failures: Vec::new(),
+    });
+    Some(RuntimeCommitResolution::CommittedWithError {
+      transaction_id,
+      error: error.clone(),
+    })
+  }
+
   fn cleanup_before_store_retry(
     &mut self,
     envelope: &mut RuntimeExecutionTransaction,
@@ -696,16 +781,25 @@ impl MechRuntime {
   ) -> Vec<String> {
     let compensated_ids =
       envelope.effects.applied_compensatable_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Compensating);
-    let compensated = envelope.effects.compensate_applied_reverse();
+    let compensated = {
+      let _phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Compensating,
+      );
+      envelope.effects.compensate_applied_reverse()
+    };
     let capability_restore = capability_checkpoint
       .map(|checkpoint| {
         self.capability_kernel.restore(checkpoint)
       });
     let aborted_ids = envelope.effects.prepared_transactional_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
-    let aborted = envelope.effects.abort_prepared_reverse();
-    self.active_effect_phase = None;
+    let aborted = {
+      let _phase_guard = ScopedRuntimeState::enter(
+        &self.active_effect_phase,
+        ActiveRuntimeEffectPhase::Aborting,
+      );
+      envelope.effects.abort_prepared_reverse()
+    };
 
     let failed_compensations: HashSet<RuntimeEffectId> = compensated
       .iter()
@@ -850,7 +944,7 @@ impl MechRuntime {
     transaction_snapshot.record_event(commit_event.id)?;
     let transaction_record = transaction_snapshot
       .into_record()?
-      .with_effects(envelope.effects.records());
+      .with_effects(envelope.effects.records()?);
 
     Ok(RuntimeStoreCommit {
       transaction: transaction_record,
@@ -963,9 +1057,12 @@ impl MechRuntime {
     }
 
     let abortable_effects = envelope.effects.abortable_ids();
-    self.active_effect_phase = Some(ActiveRuntimeEffectPhase::Aborting);
+    let phase_guard = ScopedRuntimeState::enter(
+      &self.active_effect_phase,
+      ActiveRuntimeEffectPhase::Aborting,
+    );
     let effect_abort_failures = envelope.effects.abort_all();
-    self.active_effect_phase = None;
+    drop(phase_guard);
     let failed_effect_aborts: HashSet<RuntimeEffectId> =
       effect_abort_failures
         .iter()
@@ -1552,6 +1649,59 @@ mod tests {
       transaction_id,
     );
     assert!(runtime.get_object(ObjectId(906)).unwrap().is_some());
+  }
+
+  #[test]
+  fn store_read_panic_is_converted_and_runtime_recovers() {
+    let mut store = InMemoryStore::new();
+    store.panic_on_get_object_for_test();
+    let mut runtime = MechRuntime::builder()
+      .store(store)
+      .build()
+      .unwrap();
+
+    let error = runtime.get_object(ObjectId(1)).unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate store read panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("store-read-recovery := 1.0").unwrap();
+  }
+
+  #[test]
+  fn store_commit_panic_is_indeterminate_and_never_rolled_back() {
+    let mut store = InMemoryStore::new();
+    store.panic_on_commit_runtime_for_test();
+    let mut runtime = MechRuntime::builder()
+      .store(store)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .run_string_with_context(
+        &mut context,
+        "store-commit-panic-state := 42.0",
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeStoreCommitIndeterminate");
+    assert!(format!("{error:?}").contains("deliberate store commit panic"));
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    let retained = runtime
+      .root_symbol_value("store-commit-panic-state")
+      .unwrap();
+    match retained.as_value() {
+      Value::F64(value) => assert_eq!(*value.borrow(), 42.0),
+      other => panic!("expected retained f64 value, got {other:?}"),
+    }
   }
 
 }

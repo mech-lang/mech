@@ -1839,7 +1839,7 @@ config := {
       Ok(())
     }
 
-    fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<mech_runtime::PreparedRuntimeEffect> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<mech_runtime::PreparedRuntimeEffect> {
       self.preflight_write(RuntimeResourceWritePreflightRequest {
         base_uri: request.base_uri.clone(),
         path: request.path.clone(),
@@ -1976,7 +1976,7 @@ config := {
 "#);
     assert!(result.is_err());
     let error = format!("{:?}", result.err().unwrap());
-    assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+    assert!(error.contains("CapabilityDenied"), "got {error}");
   }
 
   #[cfg(feature = "serde")]

@@ -7,7 +7,7 @@ fn main() {
   let options = ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]);
   let version = runtime.resolve_and_store_module_source("main.mec", options).unwrap().expect("module version");
   println!("main module version: {}", version);
-  let main = runtime.store().get_module_version(version).unwrap().unwrap();
+  let main = runtime.get_module_version(version).unwrap().unwrap();
   println!("dependency versions: {:?}", main.dependencies);
   println!("import edges:");
   for edge in &main.import_edges {
@@ -46,7 +46,7 @@ fn main() {
   let result = runtime.run_module(version).expect("module smoke run_module should succeed");
   println!("run result: {:?}", result);
   println!("event list:");
-  for event in runtime.store().list_events(None).unwrap() {
+  for event in runtime.list_events(None).unwrap() {
     println!("  - seq={} {} {:?}", event.sequence, event.name(), event.kind);
   }
   println!("module smoke passed");

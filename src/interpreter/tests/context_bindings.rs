@@ -4,7 +4,11 @@ use mech_syntax::parser;
 fn run(src: &str) -> mech_core::MResult<Interpreter> {
   let program = parser::parse(src).unwrap();
   let p = Interpreter::new_with_full_stdlib(0);
-  mech_interpreter::program(&program, &p)?;
+  let mut services = NoMechExecutionServices;
+  {
+    let execution = InterpreterExecution::new(&p, &mut services);
+    mech_interpreter::program(&program, &execution)?;
+  }
   Ok(p)
 }
 
@@ -38,4 +42,3 @@ fn browser_dom_value_alias_errors() {
   };
   assert!(format!("{}", err.kind_message()).contains("Module export `browser/dom` is a context export; import it with `+> @name := browser/dom`"));
 }
-

@@ -92,6 +92,10 @@ macro_rules! impl_op_assign_range_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
@@ -176,6 +180,10 @@ macro_rules! impl_op_assign_range_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
@@ -301,6 +309,10 @@ macro_rules! impl_assign_scalar_scalar {
         fn out(&self) -> Value { self.sink.to_value() }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> 
@@ -398,6 +410,10 @@ macro_rules! impl_assign_vector_vector {
         fn out(&self) -> Value {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String {format!("{:#?}", self)}
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> 
@@ -480,6 +496,10 @@ macro_rules! impl_assign_vector_scalar {
         fn out(&self) -> Value {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String {format!("{:#?}", self)}
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T, MatA> MechFunctionCompiler for [<$op_name AssignVS>]<T, MatA> 

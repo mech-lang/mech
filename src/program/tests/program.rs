@@ -1,6 +1,9 @@
-use mech_core::nodes::*;
+use mech_core::{
+  GenericError, MechError, NoMechExecutionServices,
+  nodes::*,
+};
 use mech_program::{
-  MechProgram, MechProgramConfig, ProgramReactiveTurnJournal,
+  MechProgram, MechProgramConfig, ProgramTurnFinalization,
 };
 
 fn statements(src: &str) -> Vec<Statement> {
@@ -69,16 +72,25 @@ fn program_browser_resource_define_syntax_is_rejected() {
 }
 
 #[test]
-fn compact_reactive_turn_journal_is_public_and_single_use() {
+fn coordinated_turn_rollback_is_safe_and_returns_the_finalizer_error() {
   let mut program = MechProgram::new(MechProgramConfig::default());
-  let mut journal = ProgramReactiveTurnJournal::new();
+  let mut services = NoMechExecutionServices;
 
-  program
-    .update_inputs_and_advance_turn_with_journal(&[], &mut journal)
-    .unwrap();
   let error = program
-    .update_inputs_and_advance_turn_with_journal(&[], &mut journal)
+    .update_inputs_and_advance_turn_coordinated(
+      &[],
+      &mut services,
+      |_| ProgramTurnFinalization::Rollback(
+        MechError::new(
+          GenericError {
+            msg: "deliberate finalizer rollback".into(),
+          },
+          None,
+        ),
+      ),
+    )
     .unwrap_err();
 
-  assert_eq!(error.kind_name(), "ProgramReactiveTurnJournalAlreadyUsed");
+  assert_eq!(error.kind_name(), "GenericError");
+  assert!(error.kind_message().contains("deliberate finalizer rollback"));
 }

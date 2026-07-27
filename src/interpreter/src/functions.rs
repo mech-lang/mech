@@ -58,7 +58,7 @@ pub struct Stack {
 
 // Registers a user-written function so it can be called by name later.
 // Hashes the name to a u64 id used as the lookup key throughout the runtime.
-pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<FunctionDefinition> {
+pub fn function_define(fxn_def: &FunctionDefine, p: &InterpreterExecution<'_>) -> MResult<FunctionDefinition> {
   let fxn_name_id = fxn_def.name.hash();
   let mut new_fxn = FunctionDefinition::new(fxn_name_id, fxn_def.name.to_string(), fxn_def.clone());
 
@@ -102,7 +102,7 @@ pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<Fun
 // Dispatches a function call to whichever implementation is available:
 // user-defined functions first, then built-in functions, then native compiled
 // functions. Returns an error if the name is not found in any registry.
-pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let functions = p.functions();
   let fxn_name_id = fxn_call.name.hash();
 
@@ -176,7 +176,7 @@ pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &Int
 pub fn execute_native_function_compiler(
   fxn_compiler: Arc<dyn NativeFunctionCompiler>,
   input_arg_values: &Vec<Value>,
-  p: &Interpreter,
+  p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
   let plan = p.plan();
   match fxn_compiler.compile(input_arg_values) {
@@ -197,7 +197,11 @@ pub fn execute_native_function_compiler(
           ),
         )
       );
-      if !plan.activation_registration_active() { new_fxn.solve_result()?; }
+      if !plan.activation_registration_active() {
+        p.with_services(
+          |services| new_fxn.solve_result_with(services),
+        )?;
+      }
       let result = new_fxn.out();
       trace_println!(
         p,
@@ -215,25 +219,32 @@ pub fn execute_native_function_compiler(
 }
 
 pub fn execute_initialized_indexed_compiler_with_registration_arguments(
+  p: &InterpreterExecution<'_>,
   plan: &Plan,
   compiler: &dyn NativeFunctionCompiler,
   compile_arguments: Vec<Value>,
   registration_arguments: Vec<Value>,
 ) -> MResult<Value> {
   let function = compiler.compile(&compile_arguments)?;
-  if !plan.activation_registration_active() { function.solve_result()?; }
+  if !plan.activation_registration_active() {
+    p.with_services(
+      |services| function.solve_result_with(services),
+    )?;
+  }
   let output = function.out();
   plan.register_function(function, &registration_arguments)?;
   Ok(output)
 }
 
 pub(crate) fn execute_initialized_indexed_compiler(
+  p: &InterpreterExecution<'_>,
   plan: &Plan,
   compiler: &dyn NativeFunctionCompiler,
   arguments: Vec<Value>,
 ) -> MResult<Value> {
   let registration_arguments = arguments.clone();
   execute_initialized_indexed_compiler_with_registration_arguments(
+    p,
     plan,
     compiler,
     arguments,
@@ -247,7 +258,7 @@ pub(crate) fn execute_initialized_indexed_compiler(
 fn execute_user_function(
   fxn_def: &FunctionDefinition,
   input_arg_values: &Vec<Value>,
-  p: &Interpreter,
+  p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
   // Reject calls with the wrong number of arguments before doing anything else.
   if input_arg_values.len() != fxn_def.input.len() {
@@ -353,7 +364,7 @@ enum FunctionCallStep {
 fn try_broadcast_user_function(
   fxn_def: &FunctionDefinition,
   input_arg_values: &Vec<Value>,
-  p: &Interpreter,
+  p: &InterpreterExecution<'_>,
 ) -> MResult<Option<Value>> {
   if input_arg_values.len() != 1
     || fxn_def.code.output.len() != 1
@@ -445,7 +456,7 @@ fn build_typed_matrix_from_values(
 fn execute_function_match_arms(
   fxn_def: &FunctionDefinition,
   input_arg_values: &Vec<Value>,
-  p: &Interpreter,
+  p: &InterpreterExecution<'_>,
 ) -> MResult<FunctionCallStep> {
 
   // Exhaustiveness check: when the single input is an enum type and there is
@@ -598,7 +609,7 @@ fn execute_function_match_arms(
 fn coerce_function_output_kind(
   value: Value,
   fxn_def: &FunctionDefinition,
-  p: &Interpreter,
+  p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
   if fxn_def.output.is_empty() {
     return Ok(value);
@@ -622,7 +633,7 @@ struct FunctionScope {
 }
 
 impl FunctionScope {
-  fn enter(p: &Interpreter) -> Self {
+  fn enter(p: &InterpreterExecution<'_>) -> Self {
     let state = p.state.clone();
     let mut state_brrw = state.borrow_mut();
     // A new symbol table that shares the global name dictionary so that
@@ -689,7 +700,7 @@ impl Drop for PersistentUserFunctionPlanScope {
 fn bind_function_inputs(
   fxn_def: &FunctionDefinition,
   input_arg_values: &Vec<Value>,
-  p: &Interpreter,
+  p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
   let scoped_state = p.state.borrow();
   for ((arg_id, input_kind_annotation), input_value) in
@@ -895,7 +906,7 @@ fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool 
 // Reads each declared output variable out of the local symbol table and
 // returns them as a single Value. Multiple outputs are wrapped in a Tuple;
 // a single output is returned directly; zero outputs return Empty.
-fn collect_function_output(p: &Interpreter, fxn_def: &FunctionDefinition) -> MResult<Value> {
+fn collect_function_output(p: &InterpreterExecution<'_>, fxn_def: &FunctionDefinition) -> MResult<Value> {
   let symbols = p.symbols();
   let symbols_brrw = symbols.borrow();
   let mut outputs = vec![];
@@ -1040,6 +1051,10 @@ mod native_dependency_tests {
     fn to_string(&self) -> String {
       "native-dependency-test".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -1050,7 +1065,7 @@ mod native_dependency_tests {
   }
 
   struct IndexedInitializedCompiler {
-    output: Value,
+    output: f64,
     solve_calls: Arc<AtomicUsize>,
   }
 
@@ -1062,7 +1077,7 @@ mod native_dependency_tests {
   impl NativeFunctionCompiler for IndexedInitializedCompiler {
     fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
       Ok(Box::new(IndexedInitializedFunction {
-        output: self.output.clone(),
+        output: Value::F64(Ref::new(self.output)),
         solve_calls: self.solve_calls.clone(),
       }))
     }
@@ -1080,6 +1095,10 @@ mod native_dependency_tests {
     fn to_string(&self) -> String {
       "indexed-initialized-test".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -1091,23 +1110,33 @@ mod native_dependency_tests {
 
   #[test]
   fn initialized_indexed_compiler_records_dependencies() {
-    let plan = Plan::new();
+    let interpreter = Interpreter::new(0, 100);
+    let plan = interpreter.plan();
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
-    let output = Ref::new(2.0);
-    let output_cell = ReactiveCellId::new(output.id());
     let solve_calls = Arc::new(AtomicUsize::new(0));
 
     let result = execute_initialized_indexed_compiler(
+      &execution,
       &plan,
       &IndexedInitializedCompiler {
-        output: Value::F64(output),
+        output: 2.0,
         solve_calls: solve_calls.clone(),
       },
       vec![Value::F64(input)],
     )
     .unwrap();
 
+    let output_cell = result
+      .reactive_cell_ids()
+      .into_iter()
+      .next()
+      .expect("initialized compiler result should expose an output cell");
     assert!(result.reactive_cell_ids().contains(&output_cell));
     assert_eq!(solve_calls.load(Ordering::SeqCst), 1);
     let plan_borrow = plan.borrow();
@@ -1144,6 +1173,10 @@ mod native_dependency_tests {
     fn solve_result(&self) -> MResult<()> { Err(MechError::new(DeferredNativeSolveError, None)) }
     fn out(&self) -> Value { self.output.clone() }
     fn to_string(&self) -> String { "deferred-native-solve".to_string() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for DeferredNativeSolveFunction {
@@ -1153,6 +1186,11 @@ mod native_dependency_tests {
   #[test]
   fn native_registration_defers_solve_result_errors() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
     let arguments = vec![Value::F64(input)];
@@ -1164,7 +1202,7 @@ mod native_dependency_tests {
         solve_calls: solve_calls.clone(),
       }),
       &arguments,
-      &interpreter,
+      &execution,
     );
     plan.pop_activation_registration_scope();
 
@@ -1179,6 +1217,11 @@ mod native_dependency_tests {
   #[test]
   fn native_function_registration_records_operand_cells() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
     let arguments = vec![Value::F64(input)];
@@ -1186,7 +1229,7 @@ mod native_dependency_tests {
     let result = execute_native_function_compiler(
       Arc::new(NativeDependencyTestCompiler),
       &arguments,
-      &interpreter,
+      &execution,
     )
     .unwrap();
 
@@ -1268,6 +1311,10 @@ mod native_initialization_failure_tests {
     fn to_string(&self) -> String {
       "failing-initialization-test".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -1290,6 +1337,11 @@ mod native_initialization_failure_tests {
   #[test]
   fn eager_initialization_uses_solve_result() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let arguments = vec![Value::F64(Ref::new(1.0))];
     let solve_calls = Arc::new(AtomicUsize::new(0));
     let solve_result_calls = Arc::new(AtomicUsize::new(0));
@@ -1298,7 +1350,7 @@ mod native_initialization_failure_tests {
     let error = execute_native_function_compiler(
       failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
       &arguments,
-      &interpreter,
+      &execution,
     )
     .expect_err("eager initialization must return the native solve error");
 
@@ -1311,6 +1363,11 @@ mod native_initialization_failure_tests {
   #[test]
   fn activation_registration_defers_initialization_solving() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let arguments = vec![Value::F64(input.clone())];
     let solve_calls = Arc::new(AtomicUsize::new(0));
@@ -1322,7 +1379,7 @@ mod native_initialization_failure_tests {
     let result = execute_native_function_compiler(
       failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
       &arguments,
-      &interpreter,
+      &execution,
     );
     plan.pop_activation_registration_scope();
 

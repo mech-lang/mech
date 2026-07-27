@@ -1,0 +1,14 @@
+error[E0599]: no method named `advance_reactive_turn_with_journal` found for struct `Interpreter` in the current scope
+ --> tests/ui/sealed/interpreter_advance_journal.rs:5:23
+  |
+5 |   let _ = interpreter.advance_reactive_turn_with_journal();
+  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+help: there is a method `advance_reactive_turn` with a similar name, but with different arguments
+ --> $WORKSPACE/src/interpreter/src/interpreter.rs
+  |
+  | /   pub fn advance_reactive_turn(
+  | |     &mut self,
+  | |     dirty_cells: &[ReactiveCellId],
+  | |   ) -> MResult<ReactiveTurnOutcome> {
+  | |___________________________________^

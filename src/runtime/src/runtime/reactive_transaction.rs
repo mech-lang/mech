@@ -1,9 +1,103 @@
 //! Runtime coordination for compact reactive program turns.
 
 use super::*;
+use std::cell::RefCell;
+use mech_core::MechExecutionServices;
 use mech_program::{
-  ProgramInputUpdate, ProgramReactiveTurnJournal,
+  ExecutionServicesBorrowConflict, ProgramInputUpdate,
+  ProgramTurnFinalization,
 };
+
+#[cfg(test)]
+thread_local! {
+  static COORDINATED_SERVICE_REENTRY:
+    RefCell<Option<&'static str>> = const { RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn arm_coordinated_service_reentry(name: &'static str) {
+  COORDINATED_SERVICE_REENTRY.with(|armed| {
+    assert!(
+      armed.replace(Some(name)).is_none(),
+      "coordinated service reentry was already armed",
+    );
+  });
+}
+
+#[cfg(test)]
+fn take_coordinated_service_reentry(name: &str) -> bool {
+  COORDINATED_SERVICE_REENTRY.with(|armed| {
+    if *armed.borrow() != Some(name) {
+      return false;
+    }
+    armed.replace(None);
+    true
+  })
+}
+
+fn execution_services_borrow_conflict(
+  operation: &'static str,
+) -> MechError {
+  MechError::new(
+    ExecutionServicesBorrowConflict { operation },
+    None,
+  )
+  .with_compiler_loc()
+}
+
+struct RuntimeCoordinatedTurn<'a> {
+  runtime: &'a mut MechRuntime,
+  context: &'a mut RuntimeContext,
+  finalization: RuntimeReactiveFinalization,
+}
+
+struct RuntimeCoordinatedExecutionServices<'a, 'turn> {
+  turn: &'a RefCell<RuntimeCoordinatedTurn<'turn>>,
+}
+
+impl MechExecutionServices
+  for RuntimeCoordinatedExecutionServices<'_, '_>
+{
+  fn invoke_native(
+    &mut self,
+    name: &str,
+    arguments: &[Value],
+  ) -> MResult<Value> {
+    let mut turn = self
+      .turn
+      .try_borrow_mut()
+      .map_err(|_| {
+        execution_services_borrow_conflict(
+          "runtime_invoke_native",
+        )
+      })?;
+    #[cfg(test)]
+    if take_coordinated_service_reentry(name) {
+      let mut nested = RuntimeCoordinatedExecutionServices {
+        turn: self.turn,
+      };
+      return nested.invoke_native(name, arguments);
+    }
+    let RuntimeCoordinatedTurn {
+      runtime,
+      context,
+      ..
+    } = &mut *turn;
+    runtime.with_runtime_execution_session(
+      context,
+      |session| session.invoke_native(name, arguments),
+    )
+  }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RuntimeReactiveFinalization {
+  Pending,
+  ExplicitCommit,
+  ImplicitCommitted,
+  ImplicitCommittedWithError,
+  RollbackRequired,
+}
 
 pub(super) struct PreparedRuntimeHostInput {
   pub(super) update_count: usize,
@@ -102,32 +196,24 @@ impl MechRuntime {
       ));
     }
 
-    let mut expected_capabilities = template.capabilities.clone();
+    let mut expected_authority = template.authority.clone();
     if let Some(transaction_id) = context.transaction {
       let transaction =
         self.active_execution_transaction(transaction_id)?;
-      expected_capabilities.extend(
-        transaction
-          .capabilities
-          .grants()
-          .map(|(capability, _)| capability),
-      );
+      for (capability, _) in transaction.capabilities.grants() {
+        expected_authority.add(capability);
+      }
       let revocations = transaction.capabilities.revocation_ids();
-      expected_capabilities
-        .retain(|capability| !revocations.contains(capability));
+      for capability in revocations {
+        expected_authority.remove(capability);
+      }
     }
-    expected_capabilities.sort_unstable();
-    expected_capabilities.dedup();
-
-    let mut supplied_capabilities = context.capabilities.clone();
-    supplied_capabilities.sort_unstable();
-    supplied_capabilities.dedup();
-    if supplied_capabilities != expected_capabilities {
+    if context.authority != expected_authority {
       return Err(MechError::new(
         RuntimeInvalidOperationError {
           operation: "RuntimeLiveContextMismatch",
           reason:
-            "host input context capabilities do not match the live program and active transaction"
+            "host input context authority does not match the live program and active transaction"
               .to_string(),
         },
         None,
@@ -142,10 +228,15 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     operation: &'static str,
     execute: impl FnOnce(
+      &mut MechProgram,
+      &mut dyn MechExecutionServices,
+      &mut dyn FnMut(&T) -> ProgramTurnFinalization,
+    ) -> MResult<T>,
+    after_program: impl FnOnce(
       &mut MechRuntime,
       &mut RuntimeContext,
-      &mut ProgramReactiveTurnJournal,
-    ) -> MResult<T>,
+      &T,
+    ) -> MResult<()>,
   ) -> MResult<T> {
     self.preflight_atomic_program_operation(context, operation)?;
 
@@ -220,95 +311,188 @@ impl MechRuntime {
         }
       };
 
-    let mut program_journal = ProgramReactiveTurnJournal::new();
-    self.active_program_operation = Some(ActiveRuntimeProgramOperation {
-      transaction_id,
-      operation,
-    });
-    let execution_result =
-      execute(self, context, &mut program_journal);
-    self.active_program_operation = None;
-
-    match execution_result {
-      Ok(value) if implicit => {
-        match self.commit_runtime_transaction_internal(context) {
-          Ok(super::transaction::RuntimeCommitResolution::Committed(_)) => {
-            Ok(value)
-          }
-          Ok(
-            super::transaction::RuntimeCommitResolution::CommittedWithError {
-              error,
-              ..
-            },
-          ) => Err(error),
-          Err(error) => self.finish_failed_reactive_turn(
-            context,
-            operation,
-            transaction_id,
-            program_journal,
-            &runtime_savepoint,
-            error,
-            true,
-            false,
-          ),
-        }
-      }
-      Ok(value) => Ok(value),
-      Err(error) => self.finish_failed_reactive_turn(
+    if let Err(error) = context.charge_step() {
+      return self.finish_failed_reactive_runtime_turn(
         context,
         operation,
         transaction_id,
-        program_journal,
         &runtime_savepoint,
         error,
         implicit,
         newly_acquired_ownership,
-      ),
+      );
     }
-  }
 
-  fn rollback_reactive_turn_operation(
-    &mut self,
-    context: &mut RuntimeContext,
-    transaction_id: TransactionId,
-    program_journal: ProgramReactiveTurnJournal,
-    runtime_savepoint: &RuntimeOperationSavepoint,
-  ) -> Vec<String> {
-    let mut failures = Vec::new();
-    if let Err(error) =
-      self.program.rollback_reactive_turn(program_journal)
-    {
-      failures.push(format!(
-        "compact program reactive-turn rollback failed: {:?}",
-        error,
-      ));
-    }
-    failures.extend(self.rollback_runtime_operation(
+    let _operation_guard = ScopedRuntimeState::enter(
+      &self.active_program_operation,
+      ActiveRuntimeProgramOperation {
+        transaction_id,
+        operation,
+      },
+    );
+
+    let replacement =
+      MechProgram::new(self.program.config.clone());
+    let mut program =
+      std::mem::replace(&mut self.program, replacement);
+    let turn = RefCell::new(RuntimeCoordinatedTurn {
+      runtime: self,
       context,
-      transaction_id,
-      runtime_savepoint,
-    ));
-    failures
+      finalization: RuntimeReactiveFinalization::Pending,
+    });
+    let mut services =
+      RuntimeCoordinatedExecutionServices { turn: &turn };
+    let mut after_program = Some(after_program);
+    let execution_result = std::panic::catch_unwind(
+      std::panic::AssertUnwindSafe(|| {
+        let mut finalize = |value: &T| {
+          let mut turn = match turn.try_borrow_mut() {
+            Ok(turn) => turn,
+            Err(_) => {
+              return ProgramTurnFinalization::Rollback(
+                execution_services_borrow_conflict(
+                  "runtime_finalize_reactive_turn",
+                ),
+              );
+            }
+          };
+          let RuntimeCoordinatedTurn {
+            runtime,
+            context,
+            finalization,
+          } = &mut *turn;
+          let after_result = after_program
+            .take()
+            .expect("program finalizer runs exactly once")(
+              runtime,
+              context,
+              value,
+            );
+          if let Err(error) = after_result {
+            *finalization =
+              RuntimeReactiveFinalization::RollbackRequired;
+            return ProgramTurnFinalization::Rollback(error);
+          }
+          if !implicit {
+            *finalization =
+              RuntimeReactiveFinalization::ExplicitCommit;
+            return ProgramTurnFinalization::Commit;
+          }
+          match runtime
+            .commit_runtime_transaction_internal(context)
+          {
+            Ok(
+              super::transaction::RuntimeCommitResolution::Committed(
+                _,
+              ),
+            ) => {
+              *finalization =
+                RuntimeReactiveFinalization::ImplicitCommitted;
+              ProgramTurnFinalization::Commit
+            }
+            Ok(
+              super::transaction::RuntimeCommitResolution::CommittedWithError {
+                error,
+                ..
+              },
+            ) => {
+              *finalization =
+                RuntimeReactiveFinalization::ImplicitCommittedWithError;
+              ProgramTurnFinalization::CommitWithError(error)
+            }
+            Err(error) => {
+              *finalization =
+                RuntimeReactiveFinalization::RollbackRequired;
+              ProgramTurnFinalization::Rollback(error)
+            }
+          }
+        };
+        execute(
+          &mut program,
+          &mut services,
+          &mut finalize,
+        )
+      }),
+    );
+    {
+      // The execution callback has returned, so every adapter and finalizer
+      // borrow is out of scope. This local RefCell never escapes this method.
+      let mut turn = turn.borrow_mut();
+      turn.runtime.program = program;
+    }
+    drop(_operation_guard);
+
+    let execution_result = match execution_result {
+      Ok(result) => result,
+      Err(panic) => {
+        std::panic::resume_unwind(panic);
+      }
+    };
+    let finalization = {
+      turn.borrow().finalization
+    };
+    drop(services);
+    drop(turn);
+
+    match finalization {
+      RuntimeReactiveFinalization::ExplicitCommit
+      | RuntimeReactiveFinalization::ImplicitCommitted
+      | RuntimeReactiveFinalization::ImplicitCommittedWithError => {
+        execution_result
+      }
+      RuntimeReactiveFinalization::Pending
+      | RuntimeReactiveFinalization::RollbackRequired => {
+        let error = match execution_result {
+          Ok(_) => {
+            return self.coordinator_invariant_failure(
+              operation,
+              Some(transaction_id),
+              "program returned success without finalizing its reactive turn",
+            );
+          }
+          Err(error) => error,
+        };
+        // Integrity validation runs inside the program journal before this
+        // runtime finalizer. A rejected candidate therefore intentionally
+        // leaves finalization pending so the runtime savepoint can discard
+        // provisional effects and context changes.
+        self.finish_failed_reactive_runtime_turn(
+          context,
+          operation,
+          transaction_id,
+          &runtime_savepoint,
+          error,
+          implicit,
+          newly_acquired_ownership,
+        )
+      }
+    }
   }
 
-  fn finish_failed_reactive_turn<T>(
+  fn finish_failed_reactive_runtime_turn<T>(
     &mut self,
     context: &mut RuntimeContext,
     operation: &'static str,
     transaction_id: TransactionId,
-    program_journal: ProgramReactiveTurnJournal,
     runtime_savepoint: &RuntimeOperationSavepoint,
     original_error: MechError,
     implicit: bool,
     newly_acquired_ownership: bool,
   ) -> MResult<T> {
     let original_error_text = format!("{:?}", original_error);
-    let mut rollback_failures = self.rollback_reactive_turn_operation(
-      context,
-      transaction_id,
-      program_journal,
-      runtime_savepoint,
-    );
+    #[cfg(feature = "invariant_define")]
+    let integrity_audit =
+      super::program_transaction::integrity_failure_audit(
+        &original_error,
+        transaction_id,
+        context.task,
+      );
+    let mut rollback_failures =
+      self.rollback_runtime_operation(
+        context,
+        transaction_id,
+        runtime_savepoint,
+      );
 
     if implicit {
       rollback_failures.extend(self.cleanup_failed_implicit_operation(
@@ -331,6 +515,11 @@ impl MechRuntime {
     }
 
     if rollback_failures.is_empty() {
+      #[cfg(feature = "invariant_define")]
+      self.emit_integrity_failure_audit(
+        context,
+        integrity_audit,
+      );
       return Err(original_error);
     }
 
@@ -340,6 +529,30 @@ impl MechRuntime {
       original_error_text,
       rollback_failures,
     ))
+  }
+
+  #[cfg(test)]
+  fn with_atomic_reactive_turn_for_test(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &'static str,
+    execute: impl FnOnce(
+      &mut MechRuntime,
+      &mut RuntimeContext,
+    ) -> MResult<()>,
+  ) -> MResult<()> {
+    self.with_atomic_reactive_turn(
+      context,
+      operation,
+      |program, services, finalize| {
+        program.step_coordinated(
+          0,
+          services,
+          || finalize(&()),
+        )
+      },
+      |runtime, context, _| execute(runtime, context),
+    )
   }
 }
 
@@ -354,11 +567,12 @@ mod tests {
     BasicCapability, BasicConstraints, BasicOperation, BasicResource,
     BasicSubject, SharedCapabilityKernel,
   };
-  use crate::ClosureHostFunction;
   use crate::{
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect,
+    PlannedPureHostFunction, PlannedRuntimeManagedHostFunction,
+    PlannedStagedHostFunction, PreparedRuntimeEffect,
+    RuntimeAfterCommitEffect,
     RuntimeEffectMetadata, RuntimeEffectSource,
-    RuntimeTransactionalEffect,
+    RuntimePreparedHostCall, RuntimeTransactionalEffect,
   };
   use super::super::program_transaction::{
     reset_runtime_program_checkpoint_count,
@@ -372,6 +586,65 @@ mod tests {
     output: Ref<usize>,
     calls: Rc<RefCell<usize>>,
     fail_on_call: Option<usize>,
+  }
+
+  struct ReentrantRuntimeServiceFunction {
+    output: Ref<usize>,
+    staged_host: &'static str,
+    reentrant_host: &'static str,
+  }
+
+  impl ReentrantRuntimeServiceFunction {
+    fn execute(
+      &self,
+      services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+      *self.output.borrow_mut() += 1;
+      services.invoke_native(self.staged_host, &[])?;
+      services.invoke_native(self.reentrant_host, &[])?;
+      Ok(())
+    }
+  }
+
+  impl MechFunctionImpl for ReentrantRuntimeServiceFunction {
+    fn solve(&self) {}
+
+    fn solve_result_with(
+      &self,
+      services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+      self.execute(services)
+    }
+
+    fn solve_reactive_with(
+      &self,
+      services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+      self.execute(services)?;
+      Ok(ReactiveSolveStatus::Changed)
+    }
+
+    fn out(&self) -> Value {
+      Value::Index(self.output.clone())
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(vec![Value::Index(self.output.clone())])
+    }
+
+    fn to_string(&self) -> String {
+      "ReentrantRuntimeServiceFunction".to_string()
+    }
+  }
+
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for ReentrantRuntimeServiceFunction {
+    fn compile(
+      &self,
+      _context: &mut CompileCtx,
+    ) -> MResult<Register> {
+      Ok(0)
+    }
   }
 
   #[derive(Debug)]
@@ -518,14 +791,109 @@ mod tests {
     (output, calls)
   }
 
-  fn initialize_program_journal(
-    runtime: &mut MechRuntime,
-    journal: &mut ProgramReactiveTurnJournal,
-  ) -> MResult<()> {
+  #[test]
+  fn reentrant_runtime_service_borrow_returns_structured_error_and_recovers() {
+    const STAGED_HOST: &str = "test/reentrant-staged";
+    const REENTRANT_HOST: &str = "test/reentrant-service";
+
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let effect_log = log.clone();
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
+        STAGED_HOST,
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |_context, _arguments| {
+          Ok(RuntimePreparedHostCall {
+            value: Value::F64(Ref::new(1.0)).into(),
+            effect: PreparedRuntimeEffect::Transactional(Box::new(
+              ReactiveTransactionalProbe {
+                log: effect_log.clone(),
+                fail_prepare: false,
+                fail_commit: false,
+                fail_abort: false,
+              },
+            )),
+          })
+        },
+      ))
+      .unwrap()
+      .host_function(PlannedPureHostFunction::new(
+        REENTRANT_HOST,
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, name) in [
+      (CapabilityId(940), STAGED_HOST),
+      (CapabilityId(941), REENTRANT_HOST),
+    ] {
+      runtime
+        .grant_capability(Arc::new(BasicCapability::new(
+          id,
+          &BasicSubject::new(&subject),
+          &BasicResource::new(format!("host:{name}")),
+          [BasicOperation::new("call")],
+        )))
+        .unwrap();
+    }
+    let output = Ref::new(0usize);
     runtime
       .program
-      .step_with_reactive_turn_journal(0, journal)
+      .interpreter()
+      .plan()
+      .add_function(Box::new(ReentrantRuntimeServiceFunction {
+        output: output.clone(),
+        staged_host: STAGED_HOST,
+        reentrant_host: REENTRANT_HOST,
+      }));
+    let mut context = runtime.runtime_context().unwrap();
+    arm_coordinated_service_reentry(REENTRANT_HOST);
+
+    let result = std::panic::catch_unwind(
+      std::panic::AssertUnwindSafe(|| {
+        runtime.step_with_context(&mut context, 0)
+      }),
+    );
+
+    let error = result
+      .expect("reentrant runtime service access must not panic")
+      .unwrap_err();
+    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
+    assert_eq!(
+      error
+        .kind_as::<ExecutionServicesBorrowConflict>()
+        .unwrap()
+        .operation,
+      "runtime_invoke_native",
+    );
+    assert_eq!(*output.borrow(), 0);
+    assert_eq!(*log.lock().unwrap(), vec!["abort"]);
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+
+    runtime.step_with_context(&mut context, 0).unwrap();
+
+    assert_eq!(*output.borrow(), 1);
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["abort", "prepare", "commit"],
+    );
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(context.transaction, None);
   }
+
 
   #[test]
   fn implicit_reactive_turns_use_no_full_program_checkpoints() {
@@ -721,11 +1089,10 @@ mod tests {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     let error: MechError = runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "incomplete_first_explicit_turn_rollback",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.stage_runtime_effect_with_context(
             context,
             PreparedRuntimeEffect::Transactional(Box::new(
@@ -813,11 +1180,10 @@ mod tests {
     let request = reactive_capability_request(&subject);
 
     let mut failed_context = runtime.runtime_context().unwrap();
-    let failed: MResult<()> = runtime.with_atomic_reactive_turn(
+    let failed: MResult<()> = runtime.with_atomic_reactive_turn_for_test(
       &mut failed_context,
       "failed_capability_turn",
-      |runtime, context, journal| {
-        initialize_program_journal(runtime, journal)?;
+      |runtime, context| {
         runtime.check_capability_with_context(context, &request)?;
         Err(MechError::new(
           GenericError {
@@ -832,11 +1198,10 @@ mod tests {
 
     let mut successful_context = runtime.runtime_context().unwrap();
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut successful_context,
         "successful_capability_turn",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.check_capability_with_context(context, &request)?;
           Ok(())
         },
@@ -868,11 +1233,10 @@ mod tests {
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "explicit_capability_turn",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.check_capability_with_context(context, &request)?;
           Ok(())
         },
@@ -889,11 +1253,10 @@ mod tests {
       vec![(id, 1)],
     );
 
-    let failed: MResult<()> = runtime.with_atomic_reactive_turn(
+    let failed: MResult<()> = runtime.with_atomic_reactive_turn_for_test(
       &mut context,
       "failed_later_capability_turn",
-      |runtime, context, journal| {
-        initialize_program_journal(runtime, journal)?;
+      |runtime, context| {
         runtime.check_capability_with_context(context, &request)?;
         Err(MechError::new(
           GenericError {
@@ -921,11 +1284,10 @@ mod tests {
     let mut abort_context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut abort_context).unwrap();
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut abort_context,
         "aborted_capability_turn",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.check_capability_with_context(context, &request)?;
           Ok(())
         },
@@ -965,11 +1327,10 @@ mod tests {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "retryable_capability_turn",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.check_capability_with_context(context, &request)?;
           Ok(())
         },
@@ -1041,11 +1402,10 @@ mod tests {
     runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "provisional_grant_and_use",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.grant_capability_with_context(
             context,
             limited_live_capability(
@@ -1094,11 +1454,10 @@ mod tests {
     runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "live_use_then_revoke",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.check_capability_with_context(context, &request)?;
           runtime.revoke_capability_with_context(
             context,
@@ -1123,11 +1482,10 @@ mod tests {
     let mut context = runtime.runtime_context().unwrap();
     let object_id = ObjectId(800);
 
-    let result: MResult<()> = runtime.with_atomic_reactive_turn(
+    let result: MResult<()> = runtime.with_atomic_reactive_turn_for_test(
       &mut context,
       "failed_object_turn",
-      |runtime, context, journal| {
-        initialize_program_journal(runtime, journal)?;
+      |runtime, context| {
         runtime.put_object_with_context(
           context,
           ObjectRecord::text(object_id, "note", "provisional"),
@@ -1148,8 +1506,30 @@ mod tests {
   }
 
   #[test]
-  fn reactive_host_callback_rejects_nested_lifecycle_but_allows_staging() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+  fn reactive_host_callback_uses_scoped_transaction_services() {
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedRuntimeManagedHostFunction::new(
+        "demo/reactive-reenter",
+        |_context, _args| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        move |services, _context, _args| {
+          let object = ObjectRecord::text(
+            ObjectId(922),
+            "note",
+            "reactive staging",
+          );
+          if services.get_object(object.id)?.is_some() {
+            services.update_object(object)?;
+          } else {
+            services.put_object(object)?;
+          }
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
     runtime
       .grant_capability(Arc::new(BasicCapability::new(
@@ -1159,153 +1539,6 @@ mod tests {
         [BasicOperation::new("call")],
       )))
       .unwrap();
-    runtime
-      .grant_capability(Arc::new(BasicCapability::new(
-        CapabilityId(921),
-        &BasicSubject::new(&subject),
-        &BasicResource::new("db://reactive-staging"),
-        [BasicOperation::read()],
-      )))
-      .unwrap();
-    let observed = Arc::new(Mutex::new(Vec::new()));
-    let observed_for_host = observed.clone();
-    runtime
-      .register_mech_host_function(
-        ClosureHostFunction::new_runtime_managed(
-          "demo/reactive-reenter",
-          move |_services, _context, _args| {
-            ACTIVE_RUNTIME_PROGRAM_HOST.with(|slot| {
-              let target = slot
-                .borrow()
-                .expect("runtime program host target should be active");
-              let runtime = unsafe { &mut *target.runtime };
-              let context = unsafe { &mut *target.context };
-              if runtime
-                .active_program_operation
-                .as_ref()
-                .is_some_and(|active| {
-                  active.operation == "step_with_context"
-                })
-              {
-                let tree =
-                  mech_syntax::parser::parse("nested-tree := 1")
-                    .unwrap();
-                let source = MechSourceCode::String(
-                  "nested-source := 1".to_string(),
-                );
-                let interpreter_id = runtime.program.interpreter().id;
-                let probes = vec![
-                  (
-                    "step",
-                    runtime.step_with_context(context, 0).unwrap_err(),
-                  ),
-                  (
-                    "host_input",
-                    runtime
-                      .apply_host_input_with_context(
-                        context,
-                        crate::RuntimeHostInput::single(
-                          crate::RuntimeHostInputSource::new(
-                            "test://reentrant/input",
-                            "value",
-                          )
-                          .unwrap(),
-                          crate::RuntimeHostInputValue::F64(1.0),
-                        ),
-                      )
-                      .unwrap_err(),
-                  ),
-                  (
-                    "run_string",
-                    runtime
-                      .run_string_with_context(
-                        context,
-                        "nested-string := 1",
-                      )
-                      .unwrap_err(),
-                  ),
-                  (
-                    "run_tree",
-                    runtime
-                      .run_tree_with_context(context, &tree)
-                      .unwrap_err(),
-                  ),
-                  (
-                    "run_source",
-                    runtime
-                      .run_source_with_context(context, &source)
-                      .unwrap_err(),
-                  ),
-                  (
-                    "begin",
-                    runtime.begin_transaction(context).unwrap_err(),
-                  ),
-                  (
-                    "commit",
-                    runtime
-                      .commit_runtime_transaction(context)
-                      .unwrap_err(),
-                  ),
-                  (
-                    "abort",
-                    runtime
-                      .abort_runtime_transaction(
-                        context,
-                        "nested abort",
-                      )
-                      .unwrap_err(),
-                  ),
-                  (
-                    "bind_ans",
-                    runtime
-                      .bind_ans_for_interpreter(
-                        interpreter_id,
-                        &Value::Empty,
-                      )
-                      .unwrap_err(),
-                  ),
-                ];
-                observed_for_host.lock().unwrap().extend(
-                  probes.into_iter().map(|(name, error)| {
-                    (name, error.kind_name())
-                  }),
-                );
-
-                runtime
-                  .put_object_with_context(
-                    context,
-                    ObjectRecord::text(
-                      ObjectId(922),
-                      "note",
-                      "reactive staging",
-                    ),
-                  )
-                  .unwrap();
-                runtime
-                  .check_capability_with_context(
-                    context,
-                    &CapabilityRequest::new(
-                      &BasicSubject::new(&context.subject),
-                      &BasicOperation::read(),
-                      &BasicResource::new(
-                        "db://reactive-staging",
-                      ),
-                    ),
-                  )
-                  .unwrap();
-                runtime
-                  .emit_event_to_context(
-                    context,
-                    RuntimeEventKind::RuntimeTickStarted,
-                  )
-                  .unwrap();
-              }
-            });
-            Ok(Value::F64(Ref::new(1.0)))
-          },
-        ),
-      )
-      .unwrap();
     let mut context = runtime.runtime_context().unwrap();
     runtime
       .run_string_with_context(
@@ -1313,23 +1546,10 @@ mod tests {
         "reactive-result := demo/reactive-reenter()",
       )
       .unwrap();
-    observed.lock().unwrap().clear();
 
     runtime.step_with_context(&mut context, 0).unwrap();
 
-    let observed = observed.lock().unwrap();
-    assert_eq!(observed.len(), 9);
-    for (name, kind) in observed.iter() {
-      if *name == "bind_ans" {
-        assert_eq!(*kind, "RuntimeProgramBusy");
-      } else {
-        assert_eq!(*kind, "RuntimeProgramOperationReentrant");
-      }
-    }
     assert!(runtime.get_object(ObjectId(922)).unwrap().is_some());
-    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
-      matches!(event.kind, RuntimeEventKind::RuntimeTickStarted)
-    }));
   }
 
   #[test]
@@ -1341,11 +1561,10 @@ mod tests {
     let object_id = ObjectId(930);
 
     let error = runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "reactive_prepare_failure",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.put_object_with_context(
             context,
             ObjectRecord::text(
@@ -1389,11 +1608,10 @@ mod tests {
     let object_id = ObjectId(931);
 
     let error = runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "reactive_commit_failure",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.put_object_with_context(
             context,
             ObjectRecord::text(
@@ -1434,11 +1652,10 @@ mod tests {
     let mut context = runtime.runtime_context().unwrap();
 
     runtime
-      .with_atomic_reactive_turn(
+      .with_atomic_reactive_turn_for_test(
         &mut context,
         "reactive_delivery_failure",
-        |runtime, context, journal| {
-          initialize_program_journal(runtime, journal)?;
+        |runtime, context| {
           runtime.stage_runtime_effect_with_context(
             context,
             PreparedRuntimeEffect::AfterCommit(Box::new(

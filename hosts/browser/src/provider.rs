@@ -93,17 +93,6 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
     bases
   }
 
-  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
-    if self.instance != "browser" {
-      return Vec::new();
-    }
-    vec![vec![
-      self.dom_base(),
-      BROWSER_DOM_PROVIDER_URI.to_string(),
-      "browser://dom/".to_string(),
-    ]]
-  }
-
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     if !self.matches_dom_base(&request.base_uri) { return Err(browser_resource_provider_error(&request.base_uri, "unsupported browser DOM base URI")); }
     let path = Self::dom_path(request.path)?;
@@ -153,7 +142,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
       .map_err(browser_capability_error)
   }
 
-  fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),

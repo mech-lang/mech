@@ -60,7 +60,7 @@ fn execute_write(
     provider: &mut CliResourceProvider<FakeCliBackend>,
     request: RuntimeResourceWriteRequest,
 ) -> MResult<()> {
-    match provider.stage_write(request)? {
+    match provider.prepare_write(request)? {
         PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver(),
         effect => panic!("expected CLI after-commit effect, got {effect:?}"),
     }
@@ -134,7 +134,7 @@ fn env_write_and_send_error() {
     ] {
         assert!(
             provider
-                .stage_write(RuntimeResourceWriteRequest {
+                .prepare_write(RuntimeResourceWriteRequest {
                     base_uri: "cli://env".to_string(),
                     path: "HOME".to_string(),
                     context_name: "env".to_string(),
@@ -191,10 +191,10 @@ fn stdout_and_stderr_send_text_and_line() {
 }
 
 #[test]
-fn stdout_stage_write_buffers_until_delivery() {
+fn stdout_prepare_write_buffers_until_delivery() {
     let mut provider = CliResourceProvider::new(FakeCliBackend::default());
     let effect = provider
-        .stage_write(RuntimeResourceWriteRequest {
+        .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "cli://stdout".to_string(),
             path: "line".to_string(),
             context_name: "out".to_string(),
@@ -219,7 +219,7 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
     let mut provider = CliResourceProvider::new(FakeCliBackend::default());
     assert!(
         provider
-            .stage_write(RuntimeResourceWriteRequest {
+            .prepare_write(RuntimeResourceWriteRequest {
                 base_uri: "cli://stdout".to_string(),
                 path: "line".to_string(),
                 context_name: "out".to_string(),
@@ -240,7 +240,7 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
     );
     assert!(
         provider
-            .stage_write(RuntimeResourceWriteRequest {
+            .prepare_write(RuntimeResourceWriteRequest {
                 base_uri: "cli://stderr".to_string(),
                 path: "foo".to_string(),
                 context_name: "err".to_string(),

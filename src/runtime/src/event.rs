@@ -21,6 +21,28 @@ use crate::effect::{
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimeIntegrityConstraintFailureReason {
+  EvaluatedFalse,
+  ExpectedBool,
+  BorrowConflict,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeIntegrityConstraintViolation {
+  pub interpreter_id: u64,
+  pub constraint_id: u64,
+  pub name: String,
+  pub expression: String,
+  pub reason: RuntimeIntegrityConstraintFailureReason,
+  pub evaluated_kind: Option<String>,
+  pub actual: Option<String>,
+  pub operator: Option<String>,
+  pub expected: Option<String>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeEventKind {
   RuntimeCreated { runtime_id: RuntimeId },
   RuntimeShutdown { runtime_id: RuntimeId },
@@ -57,6 +79,11 @@ pub enum RuntimeEventKind {
   ProgramStarted { task_id: Option<TaskId> },
   ProgramCompleted { task_id: Option<TaskId> },
   ProgramFailed { task_id: Option<TaskId>, message: String },
+  IntegrityConstraintViolated {
+    transaction_id: TransactionId,
+    task_id: Option<TaskId>,
+    violations: Vec<RuntimeIntegrityConstraintViolation>,
+  },
   ProgramProfiled {
     task_id: Option<TaskId>,
     duration_ns: u128,
@@ -143,6 +170,9 @@ impl RuntimeEventKind {
       RuntimeEventKind::ProgramStarted { .. } => ":program/started",
       RuntimeEventKind::ProgramCompleted { .. } => ":program/completed",
       RuntimeEventKind::ProgramFailed { .. } => ":program/failed",
+      RuntimeEventKind::IntegrityConstraintViolated { .. } => {
+        ":program/integrity-constraint/violated"
+      }
       RuntimeEventKind::ProgramProfiled { .. } => ":program/profiled",
       RuntimeEventKind::TaskCreated { .. } => ":task/created",
       RuntimeEventKind::TaskStarted { .. } => ":task/started",

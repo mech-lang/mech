@@ -1,4 +1,6 @@
 use crate::*;
+use std::cell::RefCell as StdRefCell;
+use std::ops::Deref;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Write};
@@ -92,7 +94,6 @@ pub struct InterpreterCheckpointBorrowConflict {
   pub phase: &'static str,
   pub interpreter_id: u64,
   pub type_name: &'static str,
-  pub address: usize,
 }
 
 impl MechErrorKind for InterpreterCheckpointBorrowConflict {
@@ -102,9 +103,8 @@ impl MechErrorKind for InterpreterCheckpointBorrowConflict {
 
   fn message(&self) -> String {
     format!(
-      "Cannot borrow {} checkpoint target at 0x{:x} for interpreter {} during {}.",
+      "Cannot borrow {} checkpoint target for interpreter {} during {}.",
       self.type_name,
-      self.address,
       self.interpreter_id,
       self.phase,
     )
@@ -114,7 +114,7 @@ impl MechErrorKind for InterpreterCheckpointBorrowConflict {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterCheckpointHierarchyAlias {
   pub interpreter_id: u64,
-  pub address: usize,
+  pub child_id: u64,
 }
 
 impl MechErrorKind for InterpreterCheckpointHierarchyAlias {
@@ -124,9 +124,9 @@ impl MechErrorKind for InterpreterCheckpointHierarchyAlias {
 
   fn message(&self) -> String {
     format!(
-      "Interpreter {} contains a repeated or cyclic child handle at 0x{:x}.",
+      "Interpreter {} contains a repeated or cyclic handle for child {}.",
       self.interpreter_id,
-      self.address,
+      self.child_id,
     )
   }
 }
@@ -174,14 +174,13 @@ impl MechErrorKind for InterpreterCheckpointOwnerMismatch {
 fn checkpoint_borrow_error<T: 'static>(
   phase: &'static str,
   interpreter_id: u64,
-  target: &Ref<T>,
+  _target: &Ref<T>,
 ) -> MechError {
   MechError::new(
     InterpreterCheckpointBorrowConflict {
       phase,
       interpreter_id,
       type_name: core::any::type_name::<T>(),
-      address: target.addr(),
     },
     None,
   )
@@ -369,14 +368,8 @@ struct ProgramStateCheckpoint {
   enums: EnumTable,
   #[cfg(feature = "enum")]
   enum_dictionaries: Vec<RefPayloadCheckpoint<Dictionary>>,
-  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-  invariants: InvariantTable,
   #[cfg(feature = "invariant_define")]
-  invariant_violations: Vec<InvariantViolation>,
-  #[cfg(feature = "invariant_define")]
-  invariant_expressions: InvariantExpressionTable,
-  #[cfg(feature = "invariant_define")]
-  invariant_evaluations: InvariantEvaluationTable,
+  integrity_constraints: IntegrityConstraintTable,
   dictionary: RefPayloadCheckpoint<Dictionary>,
 }
 
@@ -443,9 +436,15 @@ impl ProgramStateCheckpoint {
       }
     }
 
-    #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-    for (_, value) in state.invariants.values() {
-      journal.capture_val_ref(value)?;
+    #[cfg(feature = "invariant_define")]
+    for constraint in state.integrity_constraints.values() {
+      journal.capture_val_ref(&constraint.result)?;
+      if let Some(lhs) = &constraint.lhs {
+        journal.capture_val_ref(lhs)?;
+      }
+      if let Some(rhs) = &constraint.rhs {
+        journal.capture_val_ref(rhs)?;
+      }
     }
 
     Ok(Self {
@@ -467,14 +466,8 @@ impl ProgramStateCheckpoint {
       enums,
       #[cfg(feature = "enum")]
       enum_dictionaries,
-      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-      invariants: state.invariants.clone(),
       #[cfg(feature = "invariant_define")]
-      invariant_violations: state.invariant_violations.clone(),
-      #[cfg(feature = "invariant_define")]
-      invariant_expressions: state.invariant_expressions.clone(),
-      #[cfg(feature = "invariant_define")]
-      invariant_evaluations: state.invariant_evaluations.clone(),
+      integrity_constraints: state.integrity_constraints.clone(),
       dictionary: RefPayloadCheckpoint::capture(&state.dictionary, interpreter_id)?,
     })
   }
@@ -519,15 +512,9 @@ impl ProgramStateCheckpoint {
       {
         state.enums = self.enums.clone();
       }
-      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-      {
-        state.invariants = self.invariants.clone();
-      }
       #[cfg(feature = "invariant_define")]
       {
-        state.invariant_violations = self.invariant_violations.clone();
-        state.invariant_expressions = self.invariant_expressions.clone();
-        state.invariant_evaluations = self.invariant_evaluations.clone();
+        state.integrity_constraints = self.integrity_constraints.clone();
       }
       state.dictionary = self.dictionary.target.clone();
     }
@@ -680,7 +667,7 @@ impl InterpreterStructureCheckpoint {
         return Err(MechError::new(
           InterpreterCheckpointHierarchyAlias {
             interpreter_id: interpreter.id,
-            address: child.addr(),
+            child_id: *child_id,
           },
           None,
         )
@@ -944,8 +931,8 @@ pub struct InterpreterCheckpoint {
 
 /// An opaque checkpoint of scheduler metadata for one reactive operation.
 ///
-/// Function values are intentionally excluded and are captured lazily by a
-/// [`ReactiveTurnJournal`] only when their functions execute.
+/// Function values are intentionally excluded and are captured lazily through
+/// a reactive journal participant only when their functions execute.
 #[cfg(feature = "functions")]
 pub struct InterpreterReactiveTurnCheckpoint {
   owner: Rc<()>,
@@ -1008,7 +995,6 @@ pub struct InterpreterReactiveTurnBorrowConflict {
   pub phase: &'static str,
   pub interpreter_id: u64,
   pub component: &'static str,
-  pub address: usize,
 }
 
 #[cfg(feature = "functions")]
@@ -1019,9 +1005,8 @@ impl MechErrorKind for InterpreterReactiveTurnBorrowConflict {
 
   fn message(&self) -> String {
     format!(
-      "Cannot borrow {} at 0x{:x} for interpreter {} during reactive-turn {}.",
+      "Cannot borrow {} for interpreter {} during reactive-turn {}.",
       self.component,
-      self.address,
       self.interpreter_id,
       self.phase,
     )
@@ -1115,14 +1100,12 @@ impl Interpreter {
     &self,
     phase: &'static str,
     component: &'static str,
-    address: usize,
   ) -> MechError {
     MechError::new(
       InterpreterReactiveTurnBorrowConflict {
         phase,
         interpreter_id: self.id,
         component,
-        address,
       },
       None,
     )
@@ -1141,7 +1124,6 @@ impl Interpreter {
       .map_err(|_| self.reactive_turn_borrow_conflict(
         "checkpoint",
         "trace events",
-        self.trace_events.addr(),
       ))?
       .len();
     Ok(InterpreterReactiveTurnCheckpoint {
@@ -1215,7 +1197,6 @@ impl Interpreter {
         .map_err(|_| self.reactive_turn_borrow_conflict(
           "restore",
           "trace events",
-          self.trace_events.addr(),
         ))?;
       if events.len() < checkpoint.trace_event_len {
         return Err(self.reactive_turn_invariant(format!(
@@ -1242,11 +1223,11 @@ impl Interpreter {
   fn finish_failed_reactive_operation<T>(
     &mut self,
     checkpoint: &InterpreterReactiveTurnCheckpoint,
-    journal: &ReactiveTurnJournal,
+    participant: ReactiveJournalParticipant<'_>,
     original_error: MechError,
   ) -> MResult<T> {
     let rollback_result = self.preflight_restore_reactive_turn(checkpoint)
-      .and_then(|_| journal.preflight_restore_before());
+      .and_then(|_| participant.preflight_restore_before());
     if let Err(rollback_error) = rollback_result {
       return Err(MechError::new(
         InterpreterReactiveTurnRollbackFailed {
@@ -1257,7 +1238,7 @@ impl Interpreter {
         None,
       ).with_compiler_loc());
     }
-    journal.apply_restore_before();
+    participant.apply_restore_before();
     self.apply_restore_reactive_turn(checkpoint);
     Err(original_error)
   }
@@ -1523,29 +1504,58 @@ impl Interpreter {
     &mut self,
     dirty_cells: &[ReactiveCellId],
   ) -> MResult<ReactiveTurnOutcome> {
-    let checkpoint = self.reactive_turn_checkpoint()?;
-    let mut journal = ReactiveTurnJournal::new();
-    match self.advance_reactive_turn_with_journal(dirty_cells, &mut journal) {
-      Ok(outcome) => Ok(outcome),
-      Err(error) => self.finish_failed_reactive_operation(
-        &checkpoint,
-        &journal,
-        error,
-      ),
-    }
+    let mut services = NoMechExecutionServices;
+    self.advance_reactive_turn_with_services(
+      dirty_cells,
+      &mut services,
+    )
   }
 
   #[cfg(feature = "functions")]
-  pub fn advance_reactive_turn_with_journal(
+  pub fn advance_reactive_turn_with_services(
     &mut self,
     dirty_cells: &[ReactiveCellId],
-    journal: &mut ReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ReactiveTurnOutcome> {
+    let checkpoint = self.reactive_turn_checkpoint()?;
+    with_reactive_journal_participant(|mut participant| {
+      let execution = self.advance_reactive_turn_participating(
+        dirty_cells,
+        &mut participant,
+        services,
+      );
+      match execution {
+        Ok(outcome) => {
+          participant.commit();
+          Ok(outcome)
+        }
+        Err(error) => self.finish_failed_reactive_operation(
+          &checkpoint,
+          participant,
+          error,
+        ),
+      }
+    })
+  }
+
+  /// Participates in one coordinator-backed reactive operation.
+  ///
+  /// The capability can only be received by value inside the auto-finalizing
+  /// journal callback. Callers cannot construct, escape, clone, or reuse it
+  /// after its owner commits or rolls back.
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_participating(
+    &mut self,
+    dirty_cells: &[ReactiveCellId],
+    participant: &mut ReactiveJournalParticipant<'_>,
+    services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
     let plan = self.plan();
-    plan.advance_reactive_turn_with_journal(
+    plan.advance_reactive_turn_participating(
       &mut self.reactive_turn_state,
       dirty_cells,
-      journal,
+      participant,
+      services,
     )
   }
 
@@ -1581,32 +1591,77 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn solve_plan(&mut self) -> MResult<Value> {
-    self.step(0, 1)
+    let mut services = NoMechExecutionServices;
+    self.solve_plan_with_services(&mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn solve_plan_with_services(
+    &mut self,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
+    self.step_with_services(0, 1, services)
   }
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
-    let checkpoint = self.reactive_turn_checkpoint()?;
-    let mut journal = ReactiveTurnJournal::new();
-    match self.step_with_reactive_turn_journal(step_id, step_count, &mut journal) {
-      Ok(value) => Ok(value),
-      Err(error) => self.finish_failed_reactive_operation(
-        &checkpoint,
-        &journal,
-        error,
-      ),
-    }
+    let mut services = NoMechExecutionServices;
+    self.step_with_services(step_id, step_count, &mut services)
   }
 
   #[cfg(feature = "functions")]
-  pub fn step_with_reactive_turn_journal(
+  pub fn step_with_services(
     &mut self,
     step_id: usize,
     step_count: u64,
-    journal: &mut ReactiveTurnJournal,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
+    let checkpoint = self.reactive_turn_checkpoint()?;
+    with_reactive_journal_participant(|mut participant| {
+      let execution = self.step_reactive_turn_participating(
+        step_id,
+        step_count,
+        &mut participant,
+        services,
+      );
+      match execution {
+        Ok(value) => {
+          participant.commit();
+          Ok(value)
+        }
+        Err(error) => self.finish_failed_reactive_operation(
+          &checkpoint,
+          participant,
+          error,
+        ),
+      }
+    })
+  }
+
+  /// Participates in one coordinator-backed stepping operation.
+  ///
+  /// The capability can only be received by value inside the auto-finalizing
+  /// journal callback. Callers cannot construct, escape, clone, or reuse it
+  /// after its owner commits or rolls back.
+  #[cfg(feature = "functions")]
+  pub fn step_reactive_turn_participating(
+    &mut self,
+    step_id: usize,
+    step_count: u64,
+    participant: &mut ReactiveJournalParticipant<'_>,
+    services: &mut dyn MechExecutionServices,
   ) -> MResult<Value> {
     let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut(); // RefMut<Vec<Box<dyn MechFunction>>>
+    let mut plan_brrw = state_brrw
+      .plan
+      .0
+      .try_borrow_mut()
+      .map_err(|_| {
+        self.reactive_turn_borrow_conflict(
+          "execute",
+          "plan",
+        )
+      })?; // RefMut<Vec<Box<dyn MechFunction>>>
 
     if plan_brrw.is_empty() {
       return Err(MechError::new(NoStepsInPlanError, None).with_compiler_loc());
@@ -1622,8 +1677,8 @@ impl Interpreter {
         for _ in 0..step_count {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
-            journal.capture_function_state(fxn.as_ref())?;
-            fxn.solve_result()?;
+            participant.capture_function_state(fxn.as_ref())?;
+            fxn.solve_result_with(services)?;
             total_durations[idx] += start.elapsed();
           }
         }
@@ -1645,8 +1700,8 @@ impl Interpreter {
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
-            journal.capture_function_state(fxn.as_ref())?;
-            fxn.solve_result()?;
+            participant.capture_function_state(fxn.as_ref())?;
+            fxn.solve_result_with(services)?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
               let output = if output.chars().count() > 96 {
@@ -1693,8 +1748,8 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
-      journal.capture_function_state(fxn.as_ref())?;
-      fxn.solve_result()?;
+      participant.capture_function_state(fxn.as_ref())?;
+      fxn.solve_result_with(services)?;
     }
 
     Ok(fxn.out().clone())
@@ -1702,14 +1757,23 @@ impl Interpreter {
 
   #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
+    let mut services = NoMechExecutionServices;
+    self.interpret_with_services(tree, &mut services)
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn interpret_with_services(
+    &mut self,
+    tree: &Program,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<Value> {
     self.code.push(MechSourceCode::Tree(tree.clone()));
-    catch_unwind(AssertUnwindSafe(|| {
-      let result = program(tree, &self);
-      match self.state.borrow().plan.borrow().last() {
-        Some(last_step) => self.out = last_step.out().clone(),
-        None => self.out = Value::Empty,
-      }
-      result
+    let result = catch_unwind(AssertUnwindSafe(|| {
+      let execution = InterpreterExecution::new(
+        self,
+        services,
+      );
+      program(tree, &execution)
     }))
     .map_err(|err| {
       match err.downcast_ref::<&'static str>() {
@@ -1727,7 +1791,7 @@ impl Interpreter {
             )
             .with_compiler_loc()
           }
-        } 
+        }
         None => {
           MechError::new(
             UnknownPanicError {
@@ -1738,9 +1802,14 @@ impl Interpreter {
           .with_compiler_loc()
         }
       }
-    })?
+    })??;
+    match self.state.borrow().plan.borrow().last() {
+      Some(last_step) => self.out = last_step.out().clone(),
+      None => self.out = Value::Empty,
+    }
+    Ok(result)
   }
-    
+
 
   #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
@@ -2007,11 +2076,6 @@ mod checkpoint_tests {
     (cell, backing)
   }
 
-  fn child_box_address(child: &InterpreterRef) -> usize {
-    let child = child.borrow();
-    child.as_ref() as *const Interpreter as usize
-  }
-
   #[test]
   fn interpreter_checkpoint_restores_private_state_and_recursive_child_identity() {
     let mut root = Interpreter::new(1, 100);
@@ -2069,34 +2133,28 @@ mod checkpoint_tests {
       );
     }
     #[cfg(feature = "invariant_define")]
+    let invariant_result = Ref::new(Value::Bool(Ref::new(true)));
+    #[cfg(feature = "invariant_define")]
+    let invariant_rhs = Ref::new(Value::F64(Ref::new(2.0)));
+    #[cfg(feature = "invariant_define")]
     {
       let invariant_id = hash_str("checkpoint-invariant");
-      let invariant_value = Ref::new(Value::Bool(Ref::new(true)));
       let mut state = root.state.borrow_mut();
-      state
-        .invariants
-        .insert(invariant_id, ("checkpoint invariant".to_string(), invariant_value));
-      state
-        .invariant_expressions
-        .insert(invariant_id, "value == true".to_string());
-      state.invariant_evaluations.insert(
+      state.integrity_constraints.insert(
         invariant_id,
-        InvariantEvaluation {
-          reason: "checkpoint reason".to_string(),
-          evaluated_kind: "bool".to_string(),
-          actual: "true".to_string(),
-          expected: "true".to_string(),
+        IntegrityConstraint {
+          id: invariant_id,
+          name: "checkpoint invariant".to_string(),
+          expression: "kept <= 2.0".to_string(),
+          result: invariant_result.clone(),
+          lhs: Some(symbol_cell.clone()),
+          operator: Some(FormulaOperator::Comparison(
+            ComparisonOp::LessThanEqual,
+          )),
+          rhs: Some(invariant_rhs.clone()),
+          tokens: Vec::new(),
         },
       );
-      state.invariant_violations.push(InvariantViolation {
-        id: invariant_id,
-        error: MechError::new(
-          GenericError {
-            msg: "checkpoint violation".to_string(),
-          },
-          None,
-        ),
-      });
     }
 
     let state_address = root.state.addr();
@@ -2125,14 +2183,12 @@ mod checkpoint_tests {
       install_scalar(&grandchild, "grandchild", 30.0);
     let grandchild_ref = Ref::new(Box::new(grandchild));
     let grandchild_handle_address = grandchild_ref.addr();
-    let expected_grandchild_box_address = child_box_address(&grandchild_ref);
     child
       .sub_interpreters
       .borrow_mut()
       .insert(grandchild_id, grandchild_ref);
     let child_ref = Ref::new(Box::new(child));
     let child_handle_address = child_ref.addr();
-    let expected_child_box_address = child_box_address(&child_ref);
     root
       .sub_interpreters
       .borrow_mut()
@@ -2169,6 +2225,15 @@ mod checkpoint_tests {
     *symbol_backing.borrow_mut() = 11.0;
     *child_backing.borrow_mut() = 21.0;
     *grandchild_backing.borrow_mut() = 31.0;
+    #[cfg(feature = "invariant_define")]
+    {
+      if let Value::Bool(value) = &*invariant_result.borrow() {
+        *value.borrow_mut() = false;
+      }
+      if let Value::F64(value) = &*invariant_rhs.borrow() {
+        *value.borrow_mut() = 99.0;
+      }
+    }
 
     let removed_child = root
       .sub_interpreters
@@ -2257,21 +2322,28 @@ mod checkpoint_tests {
     {
       let state = root.state.borrow();
       let invariant_id = hash_str("checkpoint-invariant");
-      assert!(state.invariants.contains_key(&invariant_id));
+      let constraint = state.integrity_constraints.get(&invariant_id).unwrap();
+      assert_eq!(constraint.id, invariant_id);
+      assert_eq!(constraint.name, "checkpoint invariant");
+      assert_eq!(constraint.expression, "kept <= 2.0");
       assert_eq!(
-        state.invariant_expressions.get(&invariant_id).unwrap(),
-        "value == true",
+        constraint.operator,
+        Some(FormulaOperator::Comparison(
+          ComparisonOp::LessThanEqual,
+        )),
       );
-      assert_eq!(
-        state
-          .invariant_evaluations
-          .get(&invariant_id)
-          .unwrap()
-          .reason,
-        "checkpoint reason",
-      );
-      assert_eq!(state.invariant_violations.len(), 1);
-      assert_eq!(state.invariant_violations[0].id, invariant_id);
+      assert_eq!(constraint.result.addr(), invariant_result.addr());
+      assert_eq!(constraint.rhs.as_ref().unwrap().addr(), invariant_rhs.addr());
+      if let Value::Bool(value) = &*constraint.result.borrow() {
+        assert!(*value.borrow());
+      } else {
+        panic!("restored constraint result must remain bool");
+      }
+      if let Value::F64(value) = &*constraint.rhs.as_ref().unwrap().borrow() {
+        assert_eq!(*value.borrow(), 2.0);
+      } else {
+        panic!("restored constraint rhs must remain f64");
+      }
     }
     assert_eq!(root.sub_interpreters.addr(), sub_interpreters_address);
     assert_eq!(root.registers.len(), 1);
@@ -2296,10 +2368,6 @@ mod checkpoint_tests {
       .cloned()
       .unwrap();
     assert_eq!(restored_child.addr(), child_handle_address);
-    assert_eq!(
-      child_box_address(&restored_child),
-      expected_child_box_address
-    );
     let restored_grandchild = {
       let child = restored_child.borrow();
       assert_eq!(child.id, child_id);
@@ -2313,10 +2381,6 @@ mod checkpoint_tests {
         .unwrap()
     };
     assert_eq!(restored_grandchild.addr(), grandchild_handle_address);
-    assert_eq!(
-      child_box_address(&restored_grandchild),
-      expected_grandchild_box_address
-    );
     let grandchild = restored_grandchild.borrow();
     assert_eq!(grandchild.id, grandchild_id);
     assert_eq!(grandchild.ip, 9);
@@ -2356,6 +2420,10 @@ mod bytecode_dependency_tests {
 
     fn to_string(&self) -> String {
       "bytecode-dependency-test".to_string()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
     }
   }
 
@@ -2940,22 +3008,28 @@ mod compact_reactive_turn_checkpoint_tests {
   }
 
   #[test]
-  fn journal_aware_interpreter_turn_leaves_rollback_to_caller() {
+  fn participating_interpreter_turn_leaves_rollback_to_coordinator() {
     let mut interpreter = Interpreter::new(19, 100);
     let input = Ref::new(1usize);
     let output = Ref::new(4usize);
     let (mut function, _, _) = function("failure", output.clone());
     function.fail_on_solve = Some(1);
     add_reactive(&interpreter, function, &input);
-    let mut journal = ReactiveTurnJournal::new();
-
-    interpreter.advance_reactive_turn_with_journal(
-      &Value::Index(input).reactive_root_cell_ids(),
-      &mut journal,
-    ).unwrap_err();
-
-    assert_eq!(*output.borrow(), 5);
-    journal.restore_before().unwrap();
+    with_reactive_journal_participant(|mut participant| {
+      let mut services = NoMechExecutionServices;
+      interpreter
+        .advance_reactive_turn_participating(
+          &Value::Index(input).reactive_root_cell_ids(),
+          &mut participant,
+          &mut services,
+        )
+        .unwrap_err();
+      assert_eq!(*output.borrow(), 5);
+      participant.preflight_restore_before()?;
+      participant.apply_restore_before();
+      Ok(())
+    })
+    .unwrap();
     assert_eq!(*output.borrow(), 4);
   }
 
@@ -3011,11 +3085,22 @@ mod compact_reactive_turn_checkpoint_tests {
     let (second, second_captures, _) = function("second", Ref::new(2));
     interpreter.plan().add_function(Box::new(first));
     interpreter.plan().add_function(Box::new(second));
-    let mut journal = ReactiveTurnJournal::new();
-
-    interpreter.step_with_reactive_turn_journal(2, 1, &mut journal).unwrap();
-
-    assert_eq!((*first_captures.borrow(), *second_captures.borrow()), (0, 1));
+    with_reactive_journal_participant(|mut participant| {
+      let mut services = NoMechExecutionServices;
+      interpreter.step_reactive_turn_participating(
+        2,
+        1,
+        &mut participant,
+        &mut services,
+      )?;
+      assert_eq!(
+        (*first_captures.borrow(), *second_captures.borrow()),
+        (0, 1),
+      );
+      participant.commit();
+      Ok(())
+    })
+    .unwrap();
   }
 
   #[test]
@@ -3029,9 +3114,21 @@ mod compact_reactive_turn_checkpoint_tests {
 
     let error = interpreter.step(0, 1).unwrap_err();
 
-    assert_eq!(error.kind_name(), "InterpreterReactiveTurnRollbackFailed");
-    let rollback = error.kind_as::<InterpreterReactiveTurnRollbackFailed>().unwrap();
-    assert!(rollback.original_error.contains("deliberate borrow-leak execution failure"));
+    assert_eq!(
+      error.kind_name(),
+      "ReactiveJournalAutomaticRollbackFailed",
+    );
+    let rollback = error
+      .kind_as::<ReactiveJournalAutomaticRollbackFailed>()
+      .unwrap();
+    let original_error = rollback.original_error.as_ref().unwrap();
+    assert!(
+      original_error.contains("InterpreterReactiveTurnRollbackFailed"),
+    );
+    assert!(
+      original_error.contains("deliberate borrow-leak execution failure"),
+    );
+    assert!(original_error.contains("ValueStateBorrowConflict"));
     assert!(rollback.rollback_error.contains("ValueStateBorrowConflict"));
   }
 
@@ -3078,5 +3175,138 @@ mod decoded_variable_definition_symbol_metadata_tests {
     let state = decoded.state.borrow();
     assert!(state.get_mutable_symbol(input_id).is_none());
     assert!(state.get_mutable_symbol(state_id).is_some());
+  }
+}
+pub struct InterpreterExecution<'a> {
+  interpreter: &'a Interpreter,
+  services: StdRefCell<&'a mut dyn MechExecutionServices>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExecutionServicesBorrowConflict {
+  pub operation: &'static str,
+}
+
+impl MechErrorKind for ExecutionServicesBorrowConflict {
+  fn name(&self) -> &str {
+    "ExecutionServicesBorrowConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Execution services are already borrowed while attempting `{}`.",
+      self.operation,
+    )
+  }
+}
+
+impl<'a> InterpreterExecution<'a> {
+  pub fn new(
+    interpreter: &'a Interpreter,
+    services: &'a mut dyn MechExecutionServices,
+  ) -> Self {
+    Self {
+      interpreter,
+      services: StdRefCell::new(services),
+    }
+  }
+
+  pub fn with_services<T>(
+    &self,
+    operation: impl FnOnce(
+      &mut dyn MechExecutionServices,
+    ) -> MResult<T>,
+  ) -> MResult<T> {
+    let mut services = self.services.try_borrow_mut().map_err(|_| {
+      MechError::new(
+        ExecutionServicesBorrowConflict {
+          operation: "with_services",
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+    operation(&mut **services)
+  }
+
+  pub fn with_interpreter<T>(
+    &self,
+    interpreter: &Interpreter,
+    operation: impl FnOnce(&InterpreterExecution<'_>) -> MResult<T>,
+  ) -> MResult<T> {
+    let mut services = self.services.try_borrow_mut().map_err(|_| {
+      MechError::new(
+        ExecutionServicesBorrowConflict {
+          operation: "with_interpreter",
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+    let execution = InterpreterExecution::new(
+      interpreter,
+      &mut **services,
+    );
+    operation(&execution)
+  }
+}
+
+impl Deref for InterpreterExecution<'_> {
+  type Target = Interpreter;
+
+  fn deref(&self) -> &Self::Target {
+    self.interpreter
+  }
+}
+
+#[cfg(test)]
+mod execution_services_borrow_tests {
+  use super::*;
+
+  #[test]
+  fn nested_execution_service_access_returns_a_structured_error() {
+    let interpreter = Interpreter::new(7001, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
+
+    let error = execution
+      .with_services(|_| {
+        execution.with_services(|_| Ok(()))
+      })
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
+    assert!(error.kind_message().contains("with_services"));
+  }
+
+  #[test]
+  fn reentrant_interpreter_execution_returns_an_error_without_panicking() {
+    let interpreter = Interpreter::new(7002, 100);
+    let nested = Interpreter::new(7003, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+      || {
+        execution.with_services(|_| {
+          execution.with_interpreter(
+            &nested,
+            |_| Ok(()),
+          )
+        })
+      },
+    ));
+
+    let error = result
+      .expect("reentrant service access must not panic")
+      .unwrap_err();
+    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
+    assert!(error.kind_message().contains("with_interpreter"));
   }
 }

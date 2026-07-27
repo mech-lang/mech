@@ -355,7 +355,7 @@ impl MechFunction for CopyTIV
     let ocols = out_brrw.cols;
     out_brrw.resize(new_rows,ocols);
     for ix_col_ix in 0..arows {
-      let ix = self.ix.get_unchecked(ix_col_ix);
+      let ix = self.ix.get_at(ix_col_ix);
       let value = arg_brrw.get_linear_raw(ix.into()).unwrap();
       out_brrw.set_raw(orows+ix_col_ix,0,value);
     }

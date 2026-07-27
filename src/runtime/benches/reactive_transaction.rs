@@ -2,24 +2,25 @@ use criterion::{
   BatchSize, Criterion, criterion_group, criterion_main,
 };
 use mech_core::{
-  CompileCtx, GenericError, MResult, MechError, MechFunctionCompiler,
-  MechFunctionImpl, ReactiveSolveStatus, Ref, Register, Value, hash_str,
+  GenericError, MResult, MechError, Ref, Value, hash_str,
 };
 use mech_interpreter::Interpreter;
 use mech_program::{
   MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate,
-  ProgramReactiveTurnJournal,
 };
 use mech_runtime::{
   BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
-  ClosureHostFunction, MechRuntime, ObjectRecord,
+  DeterministicHostFunction, HostArgumentValue,
+  MechRuntime, ObjectRecord,
+  PlannedRuntimeManagedHostFunction,
+  PlannedStagedHostFunction,
   PreparedRuntimeEffect,
-  RuntimeAfterCommitEffect, RuntimeCapabilityGrant,
-  RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectMetadata,
+  ResourcePathCapability, RuntimeAfterCommitEffect,
+  RuntimeContext, RuntimeEffectMetadata,
   RuntimeEffectSource, RuntimeHostInput, RuntimeHostInputSource,
   RuntimeHostInputValue, RuntimePreparedHostCall,
   RuntimeResourceProvider, RuntimeResourceReadRequest,
-  SequentialIdGenerator, StagedClosureHostFunction,
+  SequentialIdGenerator,
 };
 use std::hint::black_box;
 use std::sync::{
@@ -44,50 +45,6 @@ struct HostInputFixture {
 struct TwoInterpreterFixture {
   program: MechProgram,
   updates: Vec<ProgramInputUpdate>,
-}
-
-struct BenchStepFunction {
-  output: Ref<usize>,
-  fail: bool,
-}
-
-impl MechFunctionImpl for BenchStepFunction {
-  fn solve(&self) {}
-
-  fn solve_result(&self) -> MResult<()> {
-    self.solve_reactive().map(|_| ())
-  }
-
-  fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-    *self.output.borrow_mut() += 1;
-    if self.fail {
-      return Err(MechError::new(
-        GenericError {
-          msg: "benchmark tail failure".to_string(),
-        },
-        None,
-      ));
-    }
-    Ok(ReactiveSolveStatus::Changed)
-  }
-
-  fn out(&self) -> Value {
-    Value::Index(self.output.clone())
-  }
-
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(vec![Value::Index(self.output.clone())])
-  }
-
-  fn to_string(&self) -> String {
-    "ReactiveTransactionBenchmarkStep".to_string()
-  }
-}
-
-impl MechFunctionCompiler for BenchStepFunction {
-  fn compile(&self, _context: &mut CompileCtx) -> MResult<Register> {
-    Ok(0)
-  }
 }
 
 #[derive(Debug)]
@@ -143,42 +100,32 @@ impl RuntimeAfterCommitEffect for BenchAfterCommitEffect {
   }
 }
 
-fn add_step_functions(
-  runtime: &mut MechRuntime,
-  count: usize,
-  fail_tail: bool,
-) {
-  for index in 0..count {
-    runtime
-      .program_mut()
-      .interpreter()
-      .plan()
-      .add_function(Box::new(BenchStepFunction {
-        output: Ref::new(index),
-        fail: fail_tail && index + 1 == count,
-      }));
-  }
-}
-
-fn step_fixture(count: usize, fail_tail: bool) -> StepFixture {
+fn step_fixture(count: usize, _fail_tail: bool) -> StepFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .build()
     .unwrap();
-  add_step_functions(&mut runtime, count, fail_tail);
+  let source = (0..count)
+    .map(|index| format!("step-{index} := {index}.0 + 1.0"))
+    .collect::<Vec<_>>()
+    .join("\n");
+  runtime.run_string(&source).unwrap();
   let context = runtime.runtime_context().unwrap();
   StepFixture { runtime, context }
 }
 
 fn grant_input_read(runtime: &mut MechRuntime) {
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  let capability = ResourcePathCapability::exact(
+    runtime.next_capability_id(),
+    subject,
+    INPUT_BASE_URI,
+    ["read"],
+    INPUT_PATH,
+  )
+  .unwrap();
   runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: INPUT_BASE_URI.to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec![INPUT_PATH.to_string()],
-    })
+    .grant_capability(Arc::new(capability))
     .unwrap();
 }
 
@@ -187,7 +134,7 @@ fn grant_host_call(
   capability: u64,
   name: &str,
 ) {
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime
     .grant_capability(Arc::new(BasicCapability::new(
       CapabilityId(capability.into()),
@@ -271,8 +218,13 @@ fn register_source(count: usize) -> String {
   source
 }
 
-fn copied_host_f64(arguments: &[Value]) -> Value {
-  let value = match arguments.first() {
+fn copied_host_f64(
+  arguments: &[impl HostArgumentValue],
+) -> Value {
+  let value = match arguments
+    .first()
+    .map(HostArgumentValue::host_argument_value)
+  {
     Some(Value::F64(value)) => *value.borrow(),
     Some(Value::MutableReference(value)) => {
       match &*value.borrow() {
@@ -295,14 +247,12 @@ fn failing_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
-    .build()
-    .unwrap();
-  grant_input_read(&mut runtime);
-  grant_host_call(&mut runtime, 9_001, "bench/fail-tail");
-  runtime
-    .register_mech_host_function(ClosureHostFunction::new_pure(
+    .host_function(DeterministicHostFunction::new(
       "bench/fail-tail",
-      move |_services, _context, arguments| {
+      |_context, arguments| {
+        Ok(copied_host_f64(&arguments))
+      },
+      move |_context, arguments| {
         if fail_for_host.load(Ordering::SeqCst) {
           return Err(MechError::new(
             GenericError {
@@ -314,7 +264,11 @@ fn failing_host_input_fixture() -> HostInputFixture {
         Ok(copied_host_f64(&arguments))
       },
     ))
+    .unwrap()
+    .build()
     .unwrap();
+  grant_input_read(&mut runtime);
+  grant_host_call(&mut runtime, 9_001, "bench/fail-tail");
   let mut context = runtime.runtime_context().unwrap();
   runtime
     .run_string_with_context(
@@ -341,18 +295,20 @@ fn capability_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
+    .host_function(DeterministicHostFunction::new(
+      "bench/capability",
+      |_context, arguments| {
+        Ok(copied_host_f64(&arguments))
+      },
+      |_context, arguments| {
+        Ok(copied_host_f64(&arguments))
+      },
+    ))
+    .unwrap()
     .build()
     .unwrap();
   grant_input_read(&mut runtime);
   grant_host_call(&mut runtime, 9_002, "bench/capability");
-  runtime
-    .register_mech_host_function(ClosureHostFunction::new_pure(
-      "bench/capability",
-      |_services, _context, arguments| {
-        Ok(copied_host_f64(&arguments))
-      },
-    ))
-    .unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime
     .run_string_with_context(
@@ -378,23 +334,25 @@ fn effect_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
-    .build()
-    .unwrap();
-  grant_input_read(&mut runtime);
-  grant_host_call(&mut runtime, 9_003, "bench/after-commit");
-  runtime
-    .register_mech_host_function(StagedClosureHostFunction::new(
+    .host_function(PlannedStagedHostFunction::new(
       "bench/after-commit",
-      |_services, _context, arguments| {
+      |_context, arguments| {
+        Ok(copied_host_f64(arguments).into())
+      },
+      |_context, arguments| {
         Ok(RuntimePreparedHostCall {
-          value: copied_host_f64(&arguments),
+          value: copied_host_f64(&arguments).into(),
           effect: PreparedRuntimeEffect::AfterCommit(Box::new(
             BenchAfterCommitEffect,
           )),
         })
       },
     ))
+    .unwrap()
+    .build()
     .unwrap();
+  grant_input_read(&mut runtime);
+  grant_host_call(&mut runtime, 9_003, "bench/after-commit");
   let mut context = runtime.runtime_context().unwrap();
   runtime
     .run_string_with_context(
@@ -420,23 +378,24 @@ fn object_host_input_fixture() -> HostInputFixture {
   let mut runtime = MechRuntime::builder()
     .id_generator(SequentialIdGenerator::starting_at(1))
     .resource_provider(Box::new(BenchInputProvider))
+    .host_function(PlannedRuntimeManagedHostFunction::new(
+      "bench/object",
+      |_context, arguments| {
+        Ok(copied_host_f64(arguments).into())
+      },
+      |services, _context, arguments| {
+        let id = services.allocate_object_id()?;
+        services.put_object(
+          ObjectRecord::text(id, "benchmark", "reactive turn"),
+        )?;
+        Ok(copied_host_f64(&arguments).into())
+      },
+    ))
+    .unwrap()
     .build()
     .unwrap();
   grant_input_read(&mut runtime);
   grant_host_call(&mut runtime, 9_004, "bench/object");
-  runtime
-    .register_mech_host_function(ClosureHostFunction::new_pure(
-      "bench/object",
-      |services, context, arguments| {
-        let id = services.next_object_id();
-        services.put_object_with_context(
-          context,
-          ObjectRecord::text(id, "benchmark", "reactive turn"),
-        )?;
-        Ok(copied_host_f64(&arguments))
-      },
-    ))
-    .unwrap();
   let mut context = runtime.runtime_context().unwrap();
   runtime
     .run_string_with_context(
@@ -589,13 +548,9 @@ fn reactive_transaction_benchmarks(c: &mut Criterion) {
     b.iter_batched(
       two_interpreter_fixture,
       |mut fixture| {
-        let mut journal = ProgramReactiveTurnJournal::new();
         let outcome = fixture
           .program
-          .update_inputs_and_advance_turn_with_journal(
-            &fixture.updates,
-            &mut journal,
-          )
+          .update_inputs_and_advance_turn(&fixture.updates)
           .unwrap();
         assert!(
           outcome.interpreter_turns.len() == 2,
@@ -703,6 +658,21 @@ fn reactive_transaction_benchmarks(c: &mut Criterion) {
           )
           .unwrap();
         black_box(outcome);
+        black_box(fixture)
+      },
+      BatchSize::SmallInput,
+    )
+  });
+
+  group.bench_function("valid_turn_with_one_integrity_constraint", |b| {
+    b.iter_batched(
+      || {
+        host_input_fixture(
+          "output := @pulse/value + 1.0\noutput-safe! := output <= 100.0",
+        )
+      },
+      |mut fixture| {
+        black_box(apply_host_input(&mut fixture).unwrap());
         black_box(fixture)
       },
       BatchSize::SmallInput,

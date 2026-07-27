@@ -91,7 +91,7 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
         )
     }
 
-    fn stage_write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
@@ -288,7 +288,7 @@ mod tests {
         provider: &mut RobotArmResourceProvider,
         request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
-        let mut effect = provider.stage_write(request)?;
+        let mut effect = provider.prepare_write(request)?;
         match &mut effect {
             PreparedRuntimeEffect::Compensatable(effect) => effect.apply()?,
             effect => panic!("expected robot compensatable effect, got {effect:?}"),
@@ -352,7 +352,7 @@ mod tests {
     fn robot_provider_rejects_command_subpaths() {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "move/typo"), ("grip", "grip/closed"), ("home", "home/reset")] {
-            let error = provider.stage_write(send_request(operation, path)).expect_err("subpath should be rejected");
+            let error = provider.prepare_write(send_request(operation, path)).expect_err("subpath should be rejected");
             let message = error.display_message();
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
@@ -363,7 +363,7 @@ mod tests {
     fn robot_provider_rejects_mismatched_operation_and_path() {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "grip"), ("grip", "move")] {
-            let error = provider.stage_write(send_request(operation, path)).expect_err("mismatch should be rejected");
+            let error = provider.prepare_write(send_request(operation, path)).expect_err("mismatch should be rejected");
             let message = error.display_message();
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
@@ -375,7 +375,7 @@ mod tests {
         let mut provider = RobotArmResourceProvider::new("arm");
         assert!(
             provider
-                .stage_write(RuntimeResourceWriteRequest {
+                .prepare_write(RuntimeResourceWriteRequest {
                     base_uri: "robot://arm/commands".to_string(),
                     path: "move".to_string(),
                     context_name: "commands".to_string(),
@@ -387,7 +387,7 @@ mod tests {
         );
         assert!(
             provider
-                .stage_write(RuntimeResourceWriteRequest {
+                .prepare_write(RuntimeResourceWriteRequest {
                     base_uri: "robot://arm/commands".to_string(),
                     path: "dance".to_string(),
                     context_name: "commands".to_string(),

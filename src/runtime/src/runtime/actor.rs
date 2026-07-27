@@ -424,6 +424,12 @@ impl MechRuntime {
     }
 
     context.bind_actor_turn(turn);
+    if let Some(transaction_id) = context.transaction {
+      self
+        .active_execution_transaction_mut(transaction_id)?
+        .context_identity
+        .bind_actor_turn(turn);
+    }
 
     self.emit_event_to_context(
       context,
@@ -441,7 +447,11 @@ impl MechRuntime {
       Box::new(NoActorBehaviorDriver::new()),
     );
 
-    let driver_result = driver.run_actor_turn(self, context, turn);
+    let driver_result = extension::invoke_extension(
+      "actor behavior driver",
+      "run_actor_turn",
+      || driver.run_actor_turn(self, context, turn),
+    );
 
     self.actor_behavior_driver = driver;
 
@@ -465,7 +475,7 @@ impl ActorBehaviorRuntime for MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
-    MechRuntime::call_host_with_context(self, context, call)
+    MechRuntime::call_host_value_with_context(self, context, call)
   }
 }
 
@@ -474,6 +484,10 @@ mod tests {
   use super::*;
   use crate::actor_behavior::{ActorBehaviorDriver, ActorBehaviorRuntime};
   use crate::id::SequentialIdGenerator;
+  use crate::{
+    BasicCapability, BasicOperation, BasicResource, BasicSubject,
+  };
+  use mech_core::Ref;
 
   fn runtime_with_actor_and_messages(
     payloads: &[&[u8]],
@@ -504,6 +518,20 @@ mod tests {
     ) -> MResult<()> {
       std::thread::sleep(std::time::Duration::from_millis(30));
       Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct PanickingActorBehaviorDriver;
+
+  impl ActorBehaviorDriver for PanickingActorBehaviorDriver {
+    fn run_actor_turn(
+      &mut self,
+      _runtime: &mut dyn ActorBehaviorRuntime,
+      _context: &mut RuntimeContext,
+      _turn: &ActorTurn,
+    ) -> MResult<()> {
+      panic!("deliberate actor behavior panic");
     }
   }
 
@@ -551,6 +579,111 @@ mod tests {
     assert!(budget.requested > 5);
     assert_eq!(budget.max, Some(5));
     assert!(!context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ActorTurnCompleted { .. })));
+  }
+
+  #[test]
+  fn actor_driver_panic_is_converted_and_driver_is_restored() {
+    let mut runtime = MechRuntime::builder()
+      .actor_behavior_driver(PanickingActorBehaviorDriver)
+      .build()
+      .unwrap();
+    let actor = ActorRecord::new(ActorId(1), "actor:1");
+    let message =
+      MessageRecord::new(MessageId(1), ActorId(1), "tick", Vec::new());
+    let turn = ActorTurn::new(actor, message).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let error = runtime
+      .run_actor_turn_envelope(&mut context, &turn)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate actor behavior panic"));
+    assert_eq!(context.subject, "actor:1");
+    assert_eq!(context.actor, Some(ActorId(1)));
+    assert_eq!(
+      runtime
+        .run_actor_turn_envelope(&mut context, &turn)
+        .unwrap_err()
+        .kind_name(),
+      "RuntimeExtensionPanicked",
+    );
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("actor-panic-recovery := 1.0").unwrap();
+  }
+
+  #[test]
+  fn runtime_managed_actor_identity_transitions_commit() {
+    let mut host_registry = InMemoryHostRegistry::new();
+    crate::register_actor_context_host_functions(&mut host_registry).unwrap();
+    let subject = "actor:managed-identity";
+    let capability_id = CapabilityId(99);
+    let mut runtime = MechRuntime::builder()
+      .host_registry(host_registry)
+      .capability_kernel(BasicCapabilityKernel::new())
+      .build()
+      .unwrap();
+    runtime
+      .grant_capability(Arc::new(BasicCapability::new(
+        capability_id,
+        &BasicSubject::new(subject),
+        &BasicResource::new("host:actor/state/put"),
+        [BasicOperation::new("call")],
+      )))
+      .unwrap();
+    let initial_state = runtime.next_object_id();
+    runtime
+      .put_object(ObjectRecord::text(
+        initial_state,
+        "actor-state",
+        "before",
+      ))
+      .unwrap();
+    let actor = runtime
+      .create_actor(
+        subject,
+        None,
+        Some(initial_state),
+        vec![capability_id],
+      )
+      .unwrap();
+    runtime
+      .send_message(actor, "update", Vec::new())
+      .unwrap();
+    let actor_record = runtime.get_actor(actor).unwrap().unwrap();
+    let mut context = runtime.context_for_actor(&actor_record).unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let turn = runtime
+      .next_actor_turn_with_context(&mut context, actor)
+      .unwrap()
+      .unwrap();
+    runtime
+      .run_actor_turn_envelope(&mut context, &turn)
+      .unwrap();
+    runtime
+      .call_host_with_context(
+        &mut context,
+        HostCall::new(
+          "actor/state/put",
+          vec![Value::String(Ref::new("after".to_string()))],
+        ),
+      )
+      .unwrap();
+    let updated_state = context.actor_state().unwrap();
+    assert_ne!(updated_state, initial_state);
+
+    runtime
+      .commit_runtime_transaction(&mut context)
+      .unwrap();
+
+    assert_eq!(
+      runtime.get_actor(actor).unwrap().unwrap().state,
+      Some(updated_state),
+    );
+    assert_eq!(
+      runtime.get_object(updated_state).unwrap().unwrap().data,
+      b"after",
+    );
+    assert!(runtime.peek_message(actor).unwrap().is_none());
   }
 
   #[test]

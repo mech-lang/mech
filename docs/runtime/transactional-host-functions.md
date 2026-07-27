@@ -1,83 +1,76 @@
 # Transactional host functions
 
-Every host function declares how it participates in runtime transactions through
-`HostFunctionTransactionMode`. The default is intentionally conservative:
-unclassified callbacks are `ImmediateOnly`.
+Mech-callable hosts separate compilation-time planning from runtime
+invocation. Registration supplies a planner; the planner returns exactly one
+planned invocation class.
 
-## Modes
+## Planning
 
-### `Pure`
+`HostFunctionPlanner::plan` receives detached argument snapshots. It may
+validate types, choose an implementation, and construct immutable planned
+state. It must not call the runtime host operation, consume a capability use,
+allocate a runtime ID, emit an event, stage store state, or prepare an effect.
 
-Pure functions compute a value and may read immutable process state. They do not
-mutate runtime state or anything outside the runtime.
+Compilation calls planning once for each host node it builds. Only execution
+invokes the returned plan.
 
-Use `ClosureHostFunction::new_pure` for closure-backed pure functions. The
-runtime may call a pure function while constructing the native execution plan
-and again while executing it, so the callback must be safe to evaluate more
-than once.
+## Invocation classes
 
-### `RuntimeManaged`
+### Pure
 
-Runtime-managed functions may mutate only through `RuntimeServices` operations
-that already stage their work in the active runtime transaction. They must not
-write files, print output, send network traffic, mutate shared application
-state, or retain a runtime pointer.
+A `PlannedPureHostFunction` computes only from detached snapshots and immutable
+process state. It cannot access runtime services. Its result is deep-snapshotted
+before it enters the program.
 
-This is an unsafe-style contract: the runtime cannot prove that an implementation
-uses only mediated services. During native-plan construction, the runtime runs
-the callback against a private preview savepoint and removes its staged store,
-context, and effect changes afterward. Monotonic IDs and consumed budget are not
-rewound.
+### Runtime-managed
 
-Use `ClosureHostFunction::new_runtime_managed` when a closure satisfies this
-contract. The built-in actor state functions use this mode.
+A `PlannedRuntimeManagedHostFunction` receives the explicit execution session.
+It may mutate only through runtime services that participate in the current
+transaction. It must not retain the session or a runtime pointer and must not
+perform an uncoordinated external effect.
 
-### `Staged`
+### Staged
 
-Staged functions return a provisional value and one `PreparedRuntimeEffect`
-through `RuntimePreparedHostCall`. The runtime makes the value available to the
-Mech program immediately and owns the effect lifecycle.
+A `PlannedStagedHostFunction` returns a provisional detached result and a
+`PreparedRuntimeEffect`. Preparation constructs inert state only; it performs
+no external mutation. The runtime stages the effect and owns its lifecycle.
 
-Use `StagedClosureHostFunction::new`. Its callback must only construct the value
-and prepared effect; it must not perform the external mutation itself. Native
-plan construction may invoke the callback to preview the value, but the preview
-effect is inert and is simply dropped. Preview does not call \`prepare\`,
-\`commit\`, \`abort\`, \`apply\`, \`compensate\`, or \`deliver\`. The effect is
-staged and enters its lifecycle only when the program call executes.
-
-Choose the effect protocol honestly:
+Choose the protocol according to the external system:
 
 - `Transactional` for a real prepare/commit/abort participant.
 - `Compensatable` only when compensation reliably restores the immediately
   preceding state.
-- `AfterCommit` for stdout, notifications, DOM writes, physical commands, and
+- `AfterCommit` for output, notifications, DOM writes, physical commands, and
   other irreversible delivery.
 
-The provisional return value must not depend on successful after-commit
-delivery.
+The provisional result cannot depend on successful after-commit delivery.
+There is no immediate or unclassified Mech-callable host class.
 
-### `ImmediateOnly`
+## Authority and snapshots
 
-`ClosureHostFunction::new` creates an immediate-only callback. It is allowed
-through explicitly nontransactional host calls and ordinary reactive execution.
-The runtime rejects it before invocation whenever a transaction is active,
-including implicit retained-program transactions.
+Host authorization uses the same capability kernel and context authority scope
+as resources, persistent sends, and module requirements. Planning performs no
+authorization. Invocation checks authority through the active execution
+session and transaction overlay.
 
-Use this mode for commands whose result cannot be known until an irreversible
-operation has already happened and which cannot implement a real transactional
-preparation protocol.
+Arguments and results are detached `RuntimeValueSnapshot` values. A host may
+retain a snapshot, but it cannot use that snapshot to mutate a program cell.
 
-## Failure behavior
+## Failure and panic behavior
 
-- Operation rollback removes staged host effects created after its savepoint.
-- Outer abort discards all staged host effects.
-- Failed retained execution does not invoke immediate-only callbacks.
-- After-commit delivery failure does not roll back an internally committed
-  transaction and does not poison the runtime.
-- Incomplete effect abort or compensation poisons the runtime.
-- A transactional participant commit failure after the runtime store commits is
-  reported as an indeterminate external commit and poisons the runtime.
+- A planning or pre-store invocation panic is converted to
+  `RuntimeExtensionPanicked` and follows ordinary operation rollback.
+- Operation rollback removes effects staged after its savepoint.
+- Outer abort discards all staged effects.
+- Transactional preparation and compensatable apply failures roll back when
+  cleanup succeeds.
+- After store commit, a transactional participant failure is external commit
+  indeterminacy: committed program and store state remain and the runtime is
+  poisoned.
+- After-commit delivery failure is reported without rolling back durable state
+  or poisoning an otherwise healthy runtime.
+- Abort or compensation failure poisons only after all cleanup callbacks are
+  attempted.
 
-Reactive turns remain outside retained-program checkpoints and journals. A
-staged function invoked by an ordinary reactive turn uses the one-effect
-immediate coordinator.
+Runtime-owned reactive turns use the same coordinated effect journal and store
+boundary while retaining compact program-local rollback.

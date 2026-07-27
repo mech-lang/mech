@@ -18,7 +18,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use mech_core::{MResult, MechError, MechErrorKind};
 
@@ -359,24 +359,138 @@ impl MechErrorKind for RuntimeContextDerivedBaseUnsupported {
 // Runtime Context
 // -----------------------------------------------------------------------------
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimeAuthorityScope {
+  AllForSubject,
+  AllowList(BTreeSet<CapabilityId>),
+}
+
+impl RuntimeAuthorityScope {
+  pub fn all_for_subject() -> Self {
+    Self::AllForSubject
+  }
+
+  pub fn allow_list(
+    capabilities: impl IntoIterator<Item = CapabilityId>,
+  ) -> Self {
+    Self::AllowList(capabilities.into_iter().collect())
+  }
+
+  pub fn is_all_for_subject(&self) -> bool {
+    matches!(self, Self::AllForSubject)
+  }
+
+  pub fn contains(&self, capability: CapabilityId) -> bool {
+    match self {
+      Self::AllForSubject => true,
+      Self::AllowList(capabilities) => {
+        capabilities.contains(&capability)
+      }
+    }
+  }
+
+  pub fn capability_ids(&self) -> Option<&BTreeSet<CapabilityId>> {
+    match self {
+      Self::AllForSubject => None,
+      Self::AllowList(capabilities) => Some(capabilities),
+    }
+  }
+
+  pub(crate) fn add(&mut self, capability: CapabilityId) {
+    if let Self::AllowList(capabilities) = self {
+      capabilities.insert(capability);
+    }
+  }
+
+  pub(crate) fn remove(&mut self, capability: CapabilityId) {
+    if let Self::AllowList(capabilities) = self {
+      capabilities.remove(&capability);
+    }
+  }
+}
+
 #[derive(Clone, Debug)]
 pub struct RuntimeContext {
-  pub runtime: RuntimeId,
-  pub subject: String,
-  pub task: Option<TaskId>,
-  pub actor: Option<ActorId>,
-  pub access: AccessSet,
-  pub module_version: Option<ModuleVersionId>,
-  pub transaction: Option<TransactionId>,
-  pub capabilities: Vec<CapabilityId>,
-  pub budget: ResourceBudget,
-  pub events: Vec<RuntimeEvent>,
-  pub actor_message: Option<MessageRecord>,
-  pub actor_state: Option<ObjectId>,
+  pub(crate) runtime: RuntimeId,
+  pub(crate) subject: String,
+  pub(crate) task: Option<TaskId>,
+  pub(crate) actor: Option<ActorId>,
+  pub(crate) access: AccessSet,
+  pub(crate) module_version: Option<ModuleVersionId>,
+  pub(crate) transaction: Option<TransactionId>,
+  pub(crate) authority: RuntimeAuthorityScope,
+  pub(crate) budget: ResourceBudget,
+  pub(crate) events: Vec<RuntimeEvent>,
+  pub(crate) actor_message: Option<MessageRecord>,
+  pub(crate) actor_state: Option<ObjectId>,
+}
+
+#[derive(Clone, Debug)]
+pub struct RuntimeCallContext {
+  runtime: RuntimeId,
+  subject: String,
+  task: Option<TaskId>,
+  actor: Option<ActorId>,
+  module_version: Option<ModuleVersionId>,
+  transaction: Option<TransactionId>,
+  actor_message: Option<MessageRecord>,
+  actor_state: Option<ObjectId>,
+  remaining_steps: Option<u64>,
+  remaining_bytes: Option<u64>,
+  remaining_items: Option<u64>,
+  remaining_messages: Option<u64>,
+}
+
+impl RuntimeCallContext {
+  pub(crate) fn capture(context: &RuntimeContext) -> Self {
+    Self {
+      runtime: context.runtime,
+      subject: context.subject.clone(),
+      task: context.task,
+      actor: context.actor,
+      module_version: context.module_version,
+      transaction: context.transaction,
+      actor_message: context.actor_message.clone(),
+      actor_state: context.actor_state,
+      remaining_steps: context.budget.remaining_steps(),
+      remaining_bytes: context.budget.remaining_bytes(),
+      remaining_items: context.budget.remaining_items(),
+      remaining_messages: context.budget.remaining_messages(),
+    }
+  }
+
+  pub fn runtime(&self) -> RuntimeId { self.runtime }
+  pub fn subject(&self) -> &str { &self.subject }
+  pub fn task(&self) -> Option<TaskId> { self.task }
+  pub fn actor(&self) -> Option<ActorId> { self.actor }
+  pub fn module_version(&self) -> Option<ModuleVersionId> {
+    self.module_version
+  }
+  pub fn transaction(&self) -> Option<TransactionId> {
+    self.transaction
+  }
+  pub fn actor_message(&self) -> Option<&MessageRecord> {
+    self.actor_message.as_ref()
+  }
+  pub fn actor_state(&self) -> Option<ObjectId> {
+    self.actor_state
+  }
+  pub fn remaining_steps(&self) -> Option<u64> {
+    self.remaining_steps
+  }
+  pub fn remaining_bytes(&self) -> Option<u64> {
+    self.remaining_bytes
+  }
+  pub fn remaining_items(&self) -> Option<u64> {
+    self.remaining_items
+  }
+  pub fn remaining_messages(&self) -> Option<u64> {
+    self.remaining_messages
+  }
 }
 
 impl RuntimeContext {
-  pub fn new(runtime: RuntimeId, subject: impl Into<String>) -> Self {
+  pub(crate) fn new(runtime: RuntimeId, subject: impl Into<String>) -> Self {
     Self {
       runtime,
       subject: subject.into(),
@@ -385,7 +499,7 @@ impl RuntimeContext {
       access: AccessSet::new(),
       module_version: None,
       transaction: None,
-      capabilities: Vec::new(),
+      authority: RuntimeAuthorityScope::AllForSubject,
       budget: ResourceBudget::default(),
       events: Vec::new(),
       actor_message: None,
@@ -393,41 +507,41 @@ impl RuntimeContext {
     }
   }
 
-  pub fn runtime(runtime: RuntimeId) -> Self {
+  pub(crate) fn runtime(runtime: RuntimeId) -> Self {
     Self::new(runtime, format!("runtime:{}", runtime))
   }
 
-  pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
+  pub(crate) fn with_subject(mut self, subject: impl Into<String>) -> Self {
     self.subject = subject.into();
     self
   }
 
-  pub fn with_task(mut self, task: TaskId) -> Self {
+  pub(crate) fn with_task(mut self, task: TaskId) -> Self {
     self.task = Some(task);
     self
   }
 
-  pub fn with_actor(mut self, actor: ActorId) -> Self {
+  pub(crate) fn with_actor(mut self, actor: ActorId) -> Self {
     self.actor = Some(actor);
     self
   }
 
-  pub fn with_module_version(mut self, module_version: ModuleVersionId) -> Self {
+  pub(crate) fn with_module_version(mut self, module_version: ModuleVersionId) -> Self {
     self.module_version = Some(module_version);
     self
   }
 
-  pub fn with_transaction(mut self, transaction: TransactionId) -> Self {
+  pub(crate) fn with_transaction(mut self, transaction: TransactionId) -> Self {
     self.transaction = Some(transaction);
     self
   }
 
-  pub fn with_capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
-    self.capabilities = capabilities;
+  pub(crate) fn with_capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
+    self.authority = RuntimeAuthorityScope::allow_list(capabilities);
     self
   }
 
-  pub fn with_budget(mut self, budget: ResourceBudget) -> Self {
+  pub(crate) fn with_budget(mut self, budget: ResourceBudget) -> Self {
     self.budget = budget;
     self
   }
@@ -482,53 +596,47 @@ impl RuntimeContext {
     }
   }
 
-  pub fn push_event(&mut self, event: RuntimeEvent) {
+  pub(crate) fn push_event(&mut self, event: RuntimeEvent) {
     self.events.push(event);
   }
 
-  pub fn drain_events(&mut self) -> Vec<RuntimeEvent> {
+  pub(crate) fn drain_events(&mut self) -> Vec<RuntimeEvent> {
     std::mem::take(&mut self.events)
   }
 
-  pub fn has_capability(&self, capability: CapabilityId) -> bool {
-    self.capabilities.contains(&capability)
+  pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
+    self.authority.add(capability);
   }
 
-  pub fn add_capability(&mut self, capability: CapabilityId) {
-    if !self.capabilities.contains(&capability) {
-      self.capabilities.push(capability);
-    }
+  pub(crate) fn remove_capability(&mut self, capability: CapabilityId) {
+    self.authority.remove(capability);
   }
 
-  pub fn remove_capability(&mut self, capability: CapabilityId) {
-    self.capabilities.retain(|id| *id != capability);
-  }
-
-  pub fn charge_step(&mut self) -> MResult<()> {
+  pub(crate) fn charge_step(&mut self) -> MResult<()> {
     self.budget.charge_steps(1)
   }
 
-  pub fn charge_steps(&mut self, steps: u64) -> MResult<()> {
+  pub(crate) fn charge_steps(&mut self, steps: u64) -> MResult<()> {
     self.budget.charge_steps(steps)
   }
 
-  pub fn charge_bytes(&mut self, bytes: u64) -> MResult<()> {
+  pub(crate) fn charge_bytes(&mut self, bytes: u64) -> MResult<()> {
     self.budget.charge_bytes(bytes)
   }
 
-  pub fn charge_items(&mut self, items: u64) -> MResult<()> {
+  pub(crate) fn charge_items(&mut self, items: u64) -> MResult<()> {
     self.budget.charge_items(items)
   }
 
-  pub fn charge_messages(&mut self, messages: u64) -> MResult<()> {
+  pub(crate) fn charge_messages(&mut self, messages: u64) -> MResult<()> {
     self.budget.charge_messages(messages)
   }
 
-  pub fn record_read(&mut self, object: ObjectId) {
+  pub(crate) fn record_read(&mut self, object: ObjectId) {
     self.access.read(object);
   }
 
-  pub fn record_write(&mut self, object: ObjectId) {
+  pub(crate) fn record_write(&mut self, object: ObjectId) {
     self.access.write(object);
   }
 
@@ -536,7 +644,7 @@ impl RuntimeContext {
     self.events.iter().map(|event| event.id).collect()
   }
 
-  pub fn bind_actor_turn(&mut self, turn: &ActorTurn) {
+  pub(crate) fn bind_actor_turn(&mut self, turn: &ActorTurn) {
     self.actor = Some(turn.actor);
     self.subject = turn.subject.clone();
     self.actor_message = Some(turn.message.clone());
@@ -559,6 +667,42 @@ impl RuntimeContext {
     self.actor_state
   }
 
+  pub fn runtime_id(&self) -> RuntimeId {
+    self.runtime
+  }
+
+  pub fn subject(&self) -> &str {
+    &self.subject
+  }
+
+  pub fn task_id(&self) -> Option<TaskId> {
+    self.task
+  }
+
+  pub fn actor_id(&self) -> Option<ActorId> {
+    self.actor
+  }
+
+  pub fn module_version(&self) -> Option<ModuleVersionId> {
+    self.module_version
+  }
+
+  pub fn transaction_id(&self) -> Option<TransactionId> {
+    self.transaction
+  }
+
+  pub fn budget(&self) -> &ResourceBudget {
+    &self.budget
+  }
+
+  pub fn events(&self) -> &[RuntimeEvent] {
+    &self.events
+  }
+
+  pub fn authority_scope(&self) -> &RuntimeAuthorityScope {
+    &self.authority
+  }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -566,14 +710,14 @@ impl RuntimeContext {
 // -----------------------------------------------------------------------------
 
 #[derive(Clone, Debug)]
-pub struct RuntimeContextBuilder {
+pub(crate) struct RuntimeContextBuilder {
   runtime: RuntimeId,
   subject: Option<String>,
   task: Option<TaskId>,
   actor: Option<ActorId>,
   module_version: Option<ModuleVersionId>,
   transaction: Option<TransactionId>,
-  capabilities: Vec<CapabilityId>,
+  authority: Option<RuntimeAuthorityScope>,
   budget: ResourceBudget,
   access: AccessSet,
   actor_message: Option<MessageRecord>,
@@ -581,7 +725,7 @@ pub struct RuntimeContextBuilder {
 }
 
 impl RuntimeContextBuilder {
-  pub fn new(runtime: RuntimeId) -> Self {
+  pub(crate) fn new(runtime: RuntimeId) -> Self {
     Self {
       runtime,
       subject: None,
@@ -589,7 +733,7 @@ impl RuntimeContextBuilder {
       actor: None,
       module_version: None,
       transaction: None,
-      capabilities: Vec::new(),
+      authority: None,
       budget: ResourceBudget::default(),
       access: AccessSet::new(),
       actor_message: None,
@@ -597,57 +741,57 @@ impl RuntimeContextBuilder {
     }
   }
 
-  pub fn actor_message(mut self, message: MessageRecord) -> Self {
+  pub(crate) fn actor_message(mut self, message: MessageRecord) -> Self {
     self.actor_message = Some(message);
     self
   }
 
-  pub fn actor_state(mut self, state: ObjectId) -> Self {
+  pub(crate) fn actor_state(mut self, state: ObjectId) -> Self {
     self.actor_state = Some(state);
     self
   }
 
-  pub fn subject(mut self, subject: impl Into<String>) -> Self {
+  pub(crate) fn subject(mut self, subject: impl Into<String>) -> Self {
     self.subject = Some(subject.into());
     self
   }
 
-  pub fn task(mut self, task: TaskId) -> Self {
+  pub(crate) fn task(mut self, task: TaskId) -> Self {
     self.task = Some(task);
     self
   }
 
-  pub fn actor(mut self, actor: ActorId) -> Self {
+  pub(crate) fn actor(mut self, actor: ActorId) -> Self {
     self.actor = Some(actor);
     self
   }
 
-  pub fn module_version(mut self, module_version: ModuleVersionId) -> Self {
+  pub(crate) fn module_version(mut self, module_version: ModuleVersionId) -> Self {
     self.module_version = Some(module_version);
     self
   }
 
-  pub fn transaction(mut self, transaction: TransactionId) -> Self {
+  pub(crate) fn transaction(mut self, transaction: TransactionId) -> Self {
     self.transaction = Some(transaction);
     self
   }
 
-  pub fn capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
-    self.capabilities = capabilities;
+  pub(crate) fn capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
+    self.authority = Some(RuntimeAuthorityScope::allow_list(capabilities));
     self
   }
 
-  pub fn budget(mut self, budget: ResourceBudget) -> Self {
+  pub(crate) fn budget(mut self, budget: ResourceBudget) -> Self {
     self.budget = budget;
     self
   }
 
-  pub fn access(mut self, access: AccessSet) -> Self {
+  pub(crate) fn access(mut self, access: AccessSet) -> Self {
     self.access = access;
     self
   }
 
-  pub fn build(self) -> MResult<RuntimeContext> {
+  pub(crate) fn build(self) -> MResult<RuntimeContext> {
     let subject = self.subject.unwrap_or_else(|| {
       if let Some(actor) = self.actor {
         format!("actor:{}", actor)
@@ -665,7 +809,13 @@ impl RuntimeContextBuilder {
       actor: self.actor,
       module_version: self.module_version,
       transaction: self.transaction,
-      capabilities: self.capabilities,
+      authority: self.authority.unwrap_or_else(|| {
+        if self.task.is_some() || self.actor.is_some() {
+          RuntimeAuthorityScope::allow_list([])
+        } else {
+          RuntimeAuthorityScope::AllForSubject
+        }
+      }),
       budget: self.budget,
       access: self.access,
       events: Vec::new(),
@@ -1008,6 +1158,10 @@ mod tests {
       .unwrap();
 
     assert_eq!(context.subject, "runtime:00000000000000000000000000000001");
+    assert_eq!(
+      context.authority,
+      RuntimeAuthorityScope::AllForSubject,
+    );
   }
 
   #[test]
@@ -1018,6 +1172,10 @@ mod tests {
       .unwrap();
 
     assert_eq!(context.subject, "actor:00000000000000000000000000000002");
+    assert_eq!(
+      context.authority,
+      RuntimeAuthorityScope::allow_list([]),
+    );
   }
 
   #[test]
@@ -1028,21 +1186,26 @@ mod tests {
       .unwrap();
 
     assert_eq!(context.subject, "task:00000000000000000000000000000002");
+    assert_eq!(
+      context.authority,
+      RuntimeAuthorityScope::allow_list([]),
+    );
   }
 
   #[test]
-  fn context_tracks_capabilities() {
-    let mut context = RuntimeContext::new(RuntimeId(1), "task:1");
+  fn allowlist_authority_tracks_provisional_capabilities() {
+    let mut context = RuntimeContext::new(RuntimeId(1), "task:1")
+      .with_capabilities(Vec::new());
 
-    assert!(!context.has_capability(CapabilityId(7)));
+    assert!(!context.authority.contains(CapabilityId(7)));
 
     context.add_capability(CapabilityId(7));
 
-    assert!(context.has_capability(CapabilityId(7)));
+    assert!(context.authority.contains(CapabilityId(7)));
 
     context.remove_capability(CapabilityId(7));
 
-    assert!(!context.has_capability(CapabilityId(7)));
+    assert!(!context.authority.contains(CapabilityId(7)));
   }
 
   #[test]

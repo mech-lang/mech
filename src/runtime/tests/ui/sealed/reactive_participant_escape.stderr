@@ -1,0 +1,8 @@
+error: lifetime may not live long enough
+ --> tests/ui/sealed/reactive_participant_escape.rs:5:19
+  |
+5 |     |participant| Ok(participant),
+  |      ------------ ^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'2`
+  |      |          |
+  |      |          return type of closure is Result<ReactiveJournalParticipant<'2>, MechError>
+  |      has type `ReactiveJournalParticipant<'1>`
