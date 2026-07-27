@@ -230,13 +230,13 @@ impl<T: Clone + Debug> ColumnV<T> {
     col_brrw.append(&mut other_brrw.clone());
   }
 
-  pub fn get_unchecked(&self, row: usize) -> T {
+  pub fn get_at(&self, row: usize) -> T {
     let ColumnV(col) = self;
     let mut c_brrw = col.borrow();
     c_brrw[row].clone()
   }
 
-  pub fn set_unchecked(&mut self, row: usize, value: T) {
+  pub fn set_at(&mut self, row: usize, value: T) {
     let ColumnV(col) = self;
     let mut c_brrw = col.borrow_mut();
     c_brrw[row] = value;

@@ -65,4 +65,6 @@ fail_if_found \
   src/core/src \
   --glob '*.rs'
 
+"$repository_root/scripts/check-unsafe-boundaries.sh"
+
 echo "runtime boundary audit passed"
