@@ -841,23 +841,33 @@ impl MechProgram {
         services,
       );
       match execution {
-        Ok(()) => match finalize() {
-          ProgramTurnFinalization::Commit => {
-            journal.commit();
-            Ok(())
-          }
-          ProgramTurnFinalization::Rollback(error) => {
-            self.finish_failed_reactive_operation(
+        Ok(()) => {
+          #[cfg(feature = "invariant_define")]
+          if let Err(error) = self.validate_integrity_constraints() {
+            return self.finish_failed_reactive_operation(
               "step",
               journal,
               error,
-            )
+            );
           }
-          ProgramTurnFinalization::CommitWithError(error) => {
-            journal.commit();
-            Err(error)
+          match finalize() {
+            ProgramTurnFinalization::Commit => {
+              journal.commit();
+              Ok(())
+            }
+            ProgramTurnFinalization::Rollback(error) => {
+              self.finish_failed_reactive_operation(
+                "step",
+                journal,
+                error,
+              )
+            }
+            ProgramTurnFinalization::CommitWithError(error) => {
+              journal.commit();
+              Err(error)
+            }
           }
-        },
+        }
         Err(error) => self.finish_failed_reactive_operation(
           "step",
           journal,
@@ -1014,6 +1024,22 @@ impl MechProgram {
     dirty_cells: &[ReactiveCellId],
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
+    self.advance_reactive_turn_coordinated(
+      interpreter_id,
+      dirty_cells,
+      services,
+      |_| ProgramTurnFinalization::Commit,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_coordinated(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+    services: &mut dyn MechExecutionServices,
+    finalize: impl FnOnce(&ReactiveTurnOutcome) -> ProgramTurnFinalization,
+  ) -> MResult<ReactiveTurnOutcome> {
     with_reactive_journal_participant(|participant| {
       let mut journal = ProgramReactiveTurnJournal::new(participant);
       let execution = self.advance_reactive_turn_with_journal(
@@ -1024,8 +1050,31 @@ impl MechProgram {
       );
       match execution {
         Ok(outcome) => {
-          journal.commit();
-          Ok(outcome)
+          #[cfg(feature = "invariant_define")]
+          if let Err(error) = self.validate_integrity_constraints() {
+            return self.finish_failed_reactive_operation(
+              "advance_reactive_turn",
+              journal,
+              error,
+            );
+          }
+          match finalize(&outcome) {
+            ProgramTurnFinalization::Commit => {
+              journal.commit();
+              Ok(outcome)
+            }
+            ProgramTurnFinalization::Rollback(error) => {
+              self.finish_failed_reactive_operation(
+                "advance_reactive_turn",
+                journal,
+                error,
+              )
+            }
+            ProgramTurnFinalization::CommitWithError(error) => {
+              journal.commit();
+              Err(error)
+            }
+          }
         }
         Err(error) => self.finish_failed_reactive_operation(
           "advance_reactive_turn",
@@ -1105,23 +1154,33 @@ impl MechProgram {
         services,
       );
       match execution {
-        Ok(outcome) => match finalize(&outcome) {
-          ProgramTurnFinalization::Commit => {
-            journal.commit();
-            Ok(outcome)
-          }
-          ProgramTurnFinalization::Rollback(error) => {
-            self.finish_failed_reactive_operation(
+        Ok(outcome) => {
+          #[cfg(feature = "invariant_define")]
+          if let Err(error) = self.validate_integrity_constraints() {
+            return self.finish_failed_reactive_operation(
               "update_inputs_and_advance_turn",
               journal,
               error,
-            )
+            );
           }
-          ProgramTurnFinalization::CommitWithError(error) => {
-            journal.commit();
-            Err(error)
+          match finalize(&outcome) {
+            ProgramTurnFinalization::Commit => {
+              journal.commit();
+              Ok(outcome)
+            }
+            ProgramTurnFinalization::Rollback(error) => {
+              self.finish_failed_reactive_operation(
+                "update_inputs_and_advance_turn",
+                journal,
+                error,
+              )
+            }
+            ProgramTurnFinalization::CommitWithError(error) => {
+              journal.commit();
+              Err(error)
+            }
           }
-        },
+        }
         Err(error) => self.finish_failed_reactive_operation(
           "update_inputs_and_advance_turn",
           journal,

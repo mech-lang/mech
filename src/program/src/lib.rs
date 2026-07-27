@@ -13,6 +13,8 @@ pub use mech_interpreter::ExecutionServicesBorrowConflict;
 
 #[cfg(feature = "program")]
 pub mod program;
+#[cfg(feature = "invariant_define")]
+pub mod integrity;
 #[cfg(feature = "native")]
 pub mod native;
 //#[cfg(feature = "runloop")]
@@ -22,6 +24,8 @@ pub mod native;
 
 #[cfg(feature = "program")]
 pub use crate::program::*;
+#[cfg(feature = "invariant_define")]
+pub use crate::integrity::*;
 #[cfg(feature = "native")]
 pub use crate::native::*;
 //#[cfg(feature = "runloop")]
