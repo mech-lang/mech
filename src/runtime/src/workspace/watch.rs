@@ -1,5 +1,6 @@
 use std::{
   collections::BTreeSet,
+  ffi::OsStr,
   path::{Path, PathBuf},
   sync::mpsc::{self, Receiver},
 };
@@ -37,7 +38,7 @@ struct RuntimeWorkspaceWatchKey {
 
 fn watch_key(watch: &RuntimeWorkspaceWatchedPath) -> RuntimeWorkspaceWatchKey {
   RuntimeWorkspaceWatchKey {
-    path: watch.watch_path.clone(),
+    path: normalize_workspace_watch_path(&watch.watch_path),
     recursive: watch.recursive,
   }
 }
@@ -237,8 +238,13 @@ fn local_workspace_target_watches(
     return Vec::new();
   }
   let path = PathBuf::from(specifier);
-  let joined = if path.is_absolute() { path.clone() } else { root.join(&path) };
-  if joined.exists() && joined.is_dir() {
+  let joined = if path.is_absolute() { path } else { root.join(path) };
+  let target_exists = joined.exists();
+  let is_symlink = std::fs::symlink_metadata(&joined)
+    .map(|metadata| metadata.file_type().is_symlink())
+    .unwrap_or(false);
+
+  if target_exists && joined.is_dir() {
     let Some(path) = joined.canonicalize().ok() else { return Vec::new(); };
     return vec![RuntimeWorkspaceWatchedPath {
       watch_path: path.clone(),
@@ -247,27 +253,32 @@ fn local_workspace_target_watches(
       recursive: false,
     }];
   }
-  let filter_path = if joined.is_absolute() {
-    joined.clone()
-  } else {
-    root.join(&path)
-  };
-  let authorized_path = if joined.exists() {
-    let Some(canonical) = joined.canonicalize().ok() else { return Vec::new(); };
-    canonical
+
+  let filter_path = joined;
+  let normalized_filter_path = normalize_workspace_watch_path(&filter_path);
+  let authorized_path = if target_exists {
+    normalized_filter_path.clone()
   } else {
     filter_path.clone()
   };
+
   let Some(parent) = filter_path.parent().and_then(|parent| parent.canonicalize().ok()) else {
     return Vec::new();
   };
-  let mut filter_paths = vec![filter_path.clone()];
-  let canonical_target = filter_path.canonicalize().ok();
-  if let Some(canonical) = &canonical_target {
-    if canonical != &filter_path {
-      filter_paths.push(canonical.clone());
-    }
+
+  if !is_symlink {
+    return vec![RuntimeWorkspaceWatchedPath {
+      watch_path: parent,
+      authorized_path,
+      filter_paths: vec![normalized_filter_path],
+      recursive: false,
+    }];
   }
+
+  let mut filter_paths = Vec::new();
+  push_unique_path(&mut filter_paths, filter_path);
+  push_unique_path(&mut filter_paths, normalized_filter_path.clone());
+
   let mut watches = vec![RuntimeWorkspaceWatchedPath {
     watch_path: parent,
     authorized_path: authorized_path.clone(),
@@ -275,13 +286,14 @@ fn local_workspace_target_watches(
     recursive: false,
   }];
 
-  if let Some(canonical) = canonical_target {
-    if let Some(canonical_parent) = canonical.parent().and_then(|parent| parent.canonicalize().ok()) {
+  if target_exists {
+    let canonical_target = normalized_filter_path;
+    if let Some(canonical_parent) = canonical_target.parent().and_then(|parent| parent.canonicalize().ok()) {
       if canonical_parent != watches[0].watch_path {
         watches.push(RuntimeWorkspaceWatchedPath {
           watch_path: canonical_parent,
           authorized_path,
-          filter_paths: vec![canonical],
+          filter_paths: vec![canonical_target],
           recursive: false,
         });
       }
@@ -291,11 +303,31 @@ fn local_workspace_target_watches(
   watches
 }
 
-fn normalize_watch_event_path(path: &Path) -> PathBuf {
-  if path.exists() {
-    path.canonicalize().unwrap_or_else(|_| path.to_path_buf())
-  } else {
-    path.to_path_buf()
+fn normalize_workspace_watch_path(path: &Path) -> PathBuf {
+  for ancestor in path.ancestors() {
+    let Ok(mut canonical) = ancestor.canonicalize() else {
+      continue;
+    };
+    let Ok(suffix) = path.strip_prefix(ancestor) else {
+      return path.to_path_buf();
+    };
+    if suffix.as_os_str() != OsStr::new("") {
+      canonical.push(suffix);
+    }
+    return canonical;
+  }
+
+  path.to_path_buf()
+}
+
+fn workspace_watch_paths_equivalent(left: &Path, right: &Path) -> bool {
+  left == right
+    || normalize_workspace_watch_path(left) == normalize_workspace_watch_path(right)
+}
+
+fn push_unique_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
+  if !paths.contains(&path) {
+    paths.push(path);
   }
 }
 
@@ -303,14 +335,14 @@ fn event_allowed_by_watches(
   watches: &BTreeSet<RuntimeWorkspaceWatchedPath>,
   path: &Path,
 ) -> bool {
-  let normalized = normalize_watch_event_path(path);
+  let normalized = normalize_workspace_watch_path(path);
   watches.iter().any(|watch| {
     if !watch.filter_paths.is_empty() {
       return watch.filter_paths.iter().any(|target| {
-        path == target || normalized == normalize_watch_event_path(target)
+        workspace_watch_paths_equivalent(path, target)
       });
     }
-    let watch_path = normalize_watch_event_path(&watch.watch_path);
+    let watch_path = normalize_workspace_watch_path(&watch.watch_path);
     if watch.recursive {
       normalized.starts_with(&watch_path)
     } else {
@@ -323,11 +355,10 @@ fn watch_filter_matches(existing: &RuntimeWorkspaceWatchedPath, desired: &Runtim
   if existing.filter_paths.is_empty() || desired.filter_paths.is_empty() {
     return false;
   }
-  existing.watch_path == desired.watch_path
+  workspace_watch_paths_equivalent(&existing.watch_path, &desired.watch_path)
     && desired.filter_paths.iter().any(|desired_path| {
       existing.filter_paths.iter().any(|existing_path| {
-        desired_path == existing_path
-          || normalize_watch_event_path(desired_path) == normalize_watch_event_path(existing_path)
+        workspace_watch_paths_equivalent(desired_path, existing_path)
       })
     })
 }
@@ -341,9 +372,10 @@ fn can_preserve_watch_authorization(
   }
 
   if desired.authorized_path.exists() {
-    let desired_authorized = normalize_watch_event_path(&desired.authorized_path);
-    let existing_authorized = normalize_watch_event_path(&existing.authorized_path);
-    return desired_authorized == existing_authorized;
+    return workspace_watch_paths_equivalent(
+      &desired.authorized_path,
+      &existing.authorized_path,
+    );
   }
 
   true
@@ -359,12 +391,8 @@ fn preserve_existing_watch_authorizations(
       if can_preserve_watch_authorization(existing, &watch) {
         watch.authorized_path = existing.authorized_path.clone();
         for path in &existing.filter_paths {
-          if !watch.filter_paths.contains(path) {
-            watch.filter_paths.push(path.clone());
-          }
+          push_unique_path(&mut watch.filter_paths, path.clone());
         }
-        watch.filter_paths.sort();
-        watch.filter_paths.dedup();
       }
     }
     result.insert(watch);
@@ -386,8 +414,11 @@ fn should_preserve_missing_external_target_watch(
     && !desired.iter().any(|watch| watch_filter_matches(existing, watch))
     && desired.iter().any(|watch| {
       !watch.filter_paths.is_empty()
-        && watch.authorized_path == existing.authorized_path
-        && watch.watch_path != existing.watch_path
+        && workspace_watch_paths_equivalent(
+          &watch.authorized_path,
+          &existing.authorized_path,
+        )
+        && !workspace_watch_paths_equivalent(&watch.watch_path, &existing.watch_path)
     })
 }
 
@@ -462,12 +493,19 @@ mod tests {
     let watch = single_target_watch(&root, "main.mec");
     assert_eq!(watch.watch_path, root.canonicalize().unwrap());
     assert_eq!(watch.authorized_path, target.canonicalize().unwrap());
-    assert_eq!(watch.filter_paths, vec![target.clone()]);
+    assert_eq!(
+      watch.filter_paths,
+      vec![normalize_workspace_watch_path(&target)],
+    );
     std::fs::remove_file(&target).unwrap();
     let watch = single_target_watch(&root, "main.mec");
     assert_eq!(watch.watch_path, root.canonicalize().unwrap());
     assert_eq!(watch.authorized_path, target);
-    assert_eq!(watch.filter_paths, vec![watch.authorized_path.clone()]);
+    assert_eq!(
+      watch.filter_paths,
+      vec![normalize_workspace_watch_path(&watch.authorized_path)],
+    );
+    assert_eq!(watch.filter_paths.len(), 1);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -766,6 +804,150 @@ mod tests {
     std::fs::remove_dir_all(root).unwrap();
   }
 
+  #[cfg(unix)]
+  #[test]
+  fn missing_watch_path_normalizes_through_existing_symlink_ancestor() {
+    use std::os::unix::fs::symlink;
+
+    let root = std::env::temp_dir().join(format!("mech-watch-alias-normalize-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let physical = root.join("physical");
+    let docs = physical.join("docs");
+    let alias = root.join("alias");
+    std::fs::create_dir_all(&docs).unwrap();
+    symlink(&physical, &alias).unwrap();
+
+    let missing = alias.join("docs/main.mec");
+    let expected = docs.canonicalize().unwrap().join("main.mec");
+    assert!(!missing.exists());
+    assert_eq!(normalize_workspace_watch_path(&missing), expected);
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn nonrecursive_watch_accepts_missing_child_through_aliased_parent() {
+    use std::os::unix::fs::symlink;
+
+    let root = std::env::temp_dir().join(format!("mech-watch-alias-nonrecursive-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let physical = root.join("physical");
+    let docs = physical.join("docs");
+    let nested = docs.join("nested");
+    let alias = root.join("alias");
+    std::fs::create_dir_all(&nested).unwrap();
+    symlink(&physical, &alias).unwrap();
+
+    let canonical_docs = docs.canonicalize().unwrap();
+    let direct_child = alias.join("docs/main.mec");
+    let grandchild = alias.join("docs/nested/main.mec");
+    let watch = RuntimeWorkspaceWatchedPath {
+      watch_path: canonical_docs.clone(),
+      authorized_path: canonical_docs,
+      filter_paths: Vec::new(),
+      recursive: false,
+    };
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+
+    assert!(!direct_child.exists());
+    assert!(!grandchild.exists());
+    assert!(event_allowed_by_watches(&watches, &alias.join("docs")));
+    assert!(event_allowed_by_watches(&watches, &direct_child));
+    assert!(!event_allowed_by_watches(&watches, &grandchild));
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn recursive_watch_accepts_missing_descendant_through_aliased_parent() {
+    use std::os::unix::fs::symlink;
+
+    let root = std::env::temp_dir().join(format!("mech-watch-alias-recursive-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let physical = root.join("physical");
+    let docs = physical.join("docs");
+    let nested = docs.join("nested");
+    let alias = root.join("alias");
+    std::fs::create_dir_all(&nested).unwrap();
+    symlink(&physical, &alias).unwrap();
+
+    let canonical_docs = docs.canonicalize().unwrap();
+    let missing = alias.join("docs/nested/main.mec");
+    let watch = RuntimeWorkspaceWatchedPath {
+      watch_path: canonical_docs.clone(),
+      authorized_path: canonical_docs,
+      filter_paths: Vec::new(),
+      recursive: true,
+    };
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+
+    assert!(!missing.exists());
+    assert!(event_allowed_by_watches(&watches, &missing));
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn aliased_directory_paths_share_one_watch_key() {
+    use std::os::unix::fs::symlink;
+
+    let root = std::env::temp_dir().join(format!("mech-watch-alias-key-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let physical = root.join("physical");
+    let docs = physical.join("docs");
+    let alias = root.join("alias");
+    std::fs::create_dir_all(&docs).unwrap();
+    symlink(&physical, &alias).unwrap();
+
+    let physical_watch = RuntimeWorkspaceWatchedPath {
+      watch_path: docs.clone(),
+      authorized_path: docs.clone(),
+      filter_paths: Vec::new(),
+      recursive: false,
+    };
+    let alias_docs = alias.join("docs");
+    let alias_watch = RuntimeWorkspaceWatchedPath {
+      watch_path: alias_docs.clone(),
+      authorized_path: alias_docs,
+      filter_paths: Vec::new(),
+      recursive: false,
+    };
+    let recursive_alias_watch = RuntimeWorkspaceWatchedPath {
+      recursive: true,
+      ..alias_watch.clone()
+    };
+
+    assert_eq!(watch_key(&physical_watch), watch_key(&alias_watch));
+    assert_ne!(watch_key(&physical_watch), watch_key(&recursive_alias_watch));
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(target_os = "macos")]
+  #[test]
+  fn macos_temp_directory_alias_handles_missing_watch_paths() {
+    let root = std::env::temp_dir().join(format!("mech-watch-macos-temp-alias-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let docs = root.join("docs");
+    std::fs::create_dir_all(&docs).unwrap();
+
+    let missing_child = docs.join("main.mec");
+    let canonical_docs = docs.canonicalize().unwrap();
+    let watch = RuntimeWorkspaceWatchedPath {
+      watch_path: canonical_docs.clone(),
+      authorized_path: canonical_docs.clone(),
+      filter_paths: Vec::new(),
+      recursive: false,
+    };
+    let watches = [watch].into_iter().collect::<BTreeSet<_>>();
+
+    assert_eq!(
+      normalize_workspace_watch_path(&missing_child),
+      canonical_docs.join("main.mec"),
+    );
+    assert!(event_allowed_by_watches(&watches, &missing_child));
+
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
   #[test]
   fn nonrecursive_directory_watch_allows_directory_and_direct_children_only() {
     let root = std::env::temp_dir().join(format!("mech-watch-directory-event-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
@@ -823,7 +1005,10 @@ mod tests {
     let missing = root.join("missing.mec");
     let watch = single_target_watch(&root, "missing.mec");
     assert_eq!(watch.authorized_path, missing);
-    assert_eq!(watch.filter_paths, vec![watch.authorized_path.clone()]);
+    assert_eq!(
+      watch.filter_paths,
+      vec![normalize_workspace_watch_path(&watch.authorized_path)],
+    );
     std::fs::remove_dir_all(root).unwrap();
   }
 

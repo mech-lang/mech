@@ -144,6 +144,32 @@ jobs:
         if: always()
         run: bash scripts/ci-disk-report.sh
 
+  macos-runtime:
+    name: macOS runtime tests
+    runs-on: macos-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Run workspace watch regressions
+        run: |
+          cargo test -p mech-runtime \
+            workspace::watch::tests \
+            -- --nocapture
+
+      - name: Run complete runtime library suite
+        run: cargo test -p mech-runtime --lib
+
   project-native:
     name: Project native
     runs-on: ubuntu-latest
