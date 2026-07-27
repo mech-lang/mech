@@ -788,6 +788,10 @@ impl MechFunctionImpl for ScopePulse {
     fn to_string(&self) -> String {
         "ActivationPatternScopePulse".into()
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 struct Matcher {
     pattern: CompiledPattern,
@@ -881,6 +885,10 @@ impl MechFunctionImpl for MatchGate {
     fn to_string(&self) -> String {
         "ActivationPatternGuardMatchGate".into()
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 struct UnmatchedFinalize {
     matched: Ref<bool>,
@@ -994,6 +1002,10 @@ impl MechFunctionImpl for Gate {
     fn to_string(&self) -> String {
         "ActivationPatternArmGate".into()
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(feature = "compiler")]
@@ -2251,6 +2263,10 @@ mod tests {
         fn to_string(&self) -> String {
             "FailingPatternRegister".to_string()
         }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for FailingPatternRegister {

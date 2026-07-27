@@ -28,6 +28,10 @@ macro_rules! impl_col_set_fxn {
       }
       fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $fxn_name 
@@ -208,6 +212,10 @@ impl MechFunctionImpl for TableAppendRecord {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
@@ -232,6 +240,10 @@ impl MechFunctionImpl for TableAppendTable {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendTable {

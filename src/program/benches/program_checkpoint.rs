@@ -1,6 +1,6 @@
 use criterion::{BatchSize, Criterion, Throughput, criterion_group, criterion_main};
 use mech_core::{
-  MechFunctionImpl, MechMap, MechRecord, MechSet, MechTuple, Ref, ToMatrix, Value,
+  MResult, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTuple, Ref, ToMatrix, Value,
   hash_str,
 };
 use mech_interpreter::Interpreter;
@@ -18,6 +18,10 @@ impl MechFunctionImpl for BenchNode {
   fn solve(&self) {}
   fn out(&self) -> Value { Value::F64(self.out.clone()) }
   fn to_string(&self) -> String { "ProgramCheckpointBenchNode".to_string() }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(feature = "compiler")]

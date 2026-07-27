@@ -234,6 +234,10 @@ impl MechFunctionImpl for ValueSetComprehension {
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
@@ -521,6 +525,10 @@ mod indexed_expression_registration_tests {
     fn solve(&self) { self.solve_calls.fetch_add(1, Ordering::SeqCst); }
     fn out(&self) -> Value { self.output.clone() }
     fn to_string(&self) -> String { "indexed-expression-test".to_string() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for IndexedExpressionTestFunction {

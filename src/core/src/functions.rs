@@ -179,7 +179,7 @@ pub trait MechFunctionImpl {
   /// owned by this function.
   ///
   /// Reactive outputs cover the common case. Functions with hidden retained
-  /// cells must override this method, while functions whose retained state
+  /// cells must return those cells, while functions whose retained state
   /// cannot be represented by `Value` must return
   /// [`TransactionStateUnsupportedError`].
   ///
@@ -188,9 +188,7 @@ pub trait MechFunctionImpl {
   /// [`Debug`] output, type names, module names, or other display metadata. A
   /// function that requires participation from a higher-level transaction
   /// coordinator must return [`TransactionStateUnsupportedError`] directly.
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>>;
   fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
     let mut cells = Vec::new();
 
@@ -212,7 +210,13 @@ pub trait MechFunctionImpl {
 
 /// An already validated register write. Implementations must not fail or run
 /// arbitrary reactive work when they are committed.
-pub trait ReactiveRegisterCommit {
+pub(crate) mod reactive_register_sealed {
+  pub trait Sealed {}
+}
+
+pub trait ReactiveRegisterCommit:
+  reactive_register_sealed::Sealed
+{
   fn output_cells(&self) -> &[ReactiveCellId];
   fn commit(self: Box<Self>);
 }
@@ -229,6 +233,11 @@ impl<T> ReactiveRegisterWrite<T> {
   }
 }
 
+impl<T> reactive_register_sealed::Sealed
+  for ReactiveRegisterWrite<T>
+{
+}
+
 impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
   fn output_cells(&self) -> &[ReactiveCellId] { self.output_cells.as_slice() }
   fn commit(self: Box<Self>) {
@@ -240,6 +249,10 @@ impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
 pub struct ReactiveRegisterNoopCommit { output_cells: Vec<ReactiveCellId> }
 impl ReactiveRegisterNoopCommit {
   pub fn new(output_cells: Vec<ReactiveCellId>) -> Self { Self { output_cells } }
+}
+impl reactive_register_sealed::Sealed
+  for ReactiveRegisterNoopCommit
+{
 }
 impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
   fn output_cells(&self) -> &[ReactiveCellId] { self.output_cells.as_slice() }
@@ -2546,6 +2559,10 @@ mod reactive_plan_tests {
     fn to_string(&self) -> String {
       self.name.to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -2561,6 +2578,10 @@ mod reactive_plan_tests {
     fn solve(&self) {}
     fn out(&self) -> Value { Value::Empty }
     fn to_string(&self) -> String { "retained-zst".into() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -3134,6 +3155,10 @@ mod reactive_plan_tests {
     fn out(&self) -> Value { self.output.clone() }
     fn reactive_node_kind(&self) -> ReactiveNodeKind { self.kind }
     fn to_string(&self) -> String { self.label.into() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(all(feature = "f64", feature = "compiler"))]
   impl MechFunctionCompiler for SchedulerFunction { fn compile(&self, _: &mut CompileCtx) -> MResult<Register> { Ok(0) } }
@@ -3522,6 +3547,10 @@ mod reactive_plan_tests {
     fn to_string(&self) -> String {
       "RuntimeHostNativeFunction::misleading-name".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for MisleadingRuntimeHostNameFunction {
@@ -3560,6 +3589,10 @@ mod reactive_plan_tests {
     fn to_string(&self) -> String {
       "unschedulable-output".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for UnschedulableOutputFunction {
@@ -3590,6 +3623,7 @@ mod reactive_turn_tests {
   use super::*;
 
   struct Commit { sink: Ref<f64>, next: f64, cells: Vec<ReactiveCellId>, count: Rc<RefCell<usize>> }
+  impl reactive_register_sealed::Sealed for Commit {}
   impl ReactiveRegisterCommit for Commit {
     fn output_cells(&self) -> &[ReactiveCellId] { &self.cells }
     fn commit(self: Box<Self>) { *self.sink.borrow_mut() = self.next; *self.count.borrow_mut() += 1; }
@@ -3605,6 +3639,10 @@ mod reactive_turn_tests {
       Ok(Box::new(Commit { sink: self.sink.clone(), next: *self.source.borrow(), cells: self.reactive_output_cell_ids(), count: self.commit.clone() }))
     }
     fn to_string(&self) -> String { "test register".into() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")] impl MechFunctionCompiler for TestRegister { fn compile(&self, _: &mut CompileCtx) -> MResult<Register> { Ok(0) } }
   struct Comb { source: Ref<f64>, sink: Ref<f64>, add: f64, count: Rc<RefCell<usize>>, fail: bool }
@@ -3613,6 +3651,10 @@ mod reactive_turn_tests {
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> { *self.count.borrow_mut() += 1; if self.fail { return Err(MechError::new(GenericError { msg: "solve failure".into() }, None)); } *self.sink.borrow_mut() = *self.source.borrow() + self.add; Ok(ReactiveSolveStatus::Changed) }
     fn out(&self) -> Value { self.sink.to_value() }
     fn to_string(&self) -> String { "test combinational".into() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")] impl MechFunctionCompiler for Comb { fn compile(&self, _: &mut CompileCtx) -> MResult<Register> { Ok(0) } }
   fn counters() -> (Rc<RefCell<usize>>, Rc<RefCell<usize>>, Rc<RefCell<usize>>) { (Rc::new(RefCell::new(0)), Rc::new(RefCell::new(0)), Rc::new(RefCell::new(0))) }
@@ -3802,6 +3844,7 @@ mod reactive_register_commit_tests {
   use super::*;
 
   struct RegisterStageTestCommit { label: &'static str, sink: Ref<f64>, next: f64, output_cells: Vec<ReactiveCellId>, commit_count: Rc<RefCell<usize>>, commit_log: Rc<RefCell<Vec<&'static str>>>, total_commit_count: Rc<RefCell<usize>> }
+  impl reactive_register_sealed::Sealed for RegisterStageTestCommit {}
   impl ReactiveRegisterCommit for RegisterStageTestCommit {
     fn output_cells(&self) -> &[ReactiveCellId] { &self.output_cells }
     fn commit(self: Box<Self>) { *self.sink.borrow_mut() = self.next; *self.commit_count.borrow_mut() += 1; *self.total_commit_count.borrow_mut() += 1; self.commit_log.borrow_mut().push(self.label); }
@@ -3819,6 +3862,10 @@ mod reactive_register_commit_tests {
       Ok(Box::new(RegisterStageTestCommit { label: self.label, sink: self.sink.clone(), next, output_cells, commit_count: self.commit_count.clone(), commit_log: self.commit_log.clone(), total_commit_count: self.total_commit_count.clone() }))
     }
     fn to_string(&self) -> String { self.label.to_string() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for RegisterStageTestFunction { fn compile(&self, _: &mut CompileCtx) -> MResult<Register> { Ok(0) } }
@@ -3832,14 +3879,26 @@ mod reactive_register_commit_tests {
   #[test] fn reactive_register_commit_deduplicates_and_orders_pending_nodes() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(0.),vec![],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",Ref::new(0.),vec![],l.clone(),c.clone(),t.clone(),false,None);let d=add(&mut p,"C",Ref::new(0.),vec![],l.clone(),c.clone(),t,false,None);let o=p.commit_pending_registers(&[d.node,a.node,b.node,a.node,d.node,b.node]).unwrap();assert_eq!(o.staged_nodes,vec![a.node,b.node,d.node]);assert_eq!(*l.borrow(),vec!["A","B","C"]);assert_eq!(*c.borrow(),vec!["A","B","C"]);for f in [&a,&b,&d] {assert_eq!((*f.stage.borrow(),*f.commit.borrow(),*f.solve.borrow()),(1,1,0));} }
   #[test] fn reactive_register_commit_is_atomic_on_stage_error() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![Ref::new(4.)],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",Ref::new(2.),vec![],l,c,t.clone(),true,None);let e=p.commit_pending_registers(&[a.node,b.node]).unwrap_err();assert!(e.kind_message().contains("B"));assert_eq!((*a.sink.borrow(),*b.sink.borrow(),*a.commit.borrow(),*b.commit.borrow(),*t.borrow()),(1.,2.,0,0,0)); }
   #[test] fn reactive_register_commit_rejects_missing_node_without_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);let missing=p.nodes.len()+100;let e=p.commit_pending_registers(&[a.node,missing]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterNodeNotFound");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow(),*a.sink.borrow()),(0,0,0,1.)); }
-  #[test] fn reactive_register_commit_rejects_combinational_node_without_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);struct Combinational; impl MechFunctionImpl for Combinational { fn solve(&self) {} fn out(&self) -> Value { Value::Empty } fn to_string(&self)->String { "C".into() } } #[cfg(feature="compiler")] impl MechFunctionCompiler for Combinational { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)} } let combinational=p.push(Box::new(Combinational));let e=p.commit_pending_registers(&[a.node,combinational]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterNodeKind");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow()),(0,0,0)); }
+  #[test] fn reactive_register_commit_rejects_combinational_node_without_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);struct Combinational; impl MechFunctionImpl for Combinational { fn solve(&self) {} fn out(&self) -> Value { Value::Empty } fn to_string(&self)->String { "C".into() }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
+  } #[cfg(feature="compiler")] impl MechFunctionCompiler for Combinational { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)} } let combinational=p.push(Box::new(Combinational));let e=p.commit_pending_registers(&[a.node,combinational]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterNodeKind");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow()),(0,0,0)); }
   #[test] fn reactive_register_commit_rejects_overlapping_outputs_before_staging() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let sink=Ref::new(1.);let a=add(&mut p,"A",sink.clone(),vec![],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",sink.clone(),vec![],l,c,t,false,None);let e=p.commit_pending_registers(&[a.node,b.node]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterOutputConflict");assert_eq!((*a.stage.borrow(),*b.stage.borrow(),*a.commit.borrow(),*b.commit.borrow(),*sink.borrow()),(0,0,0,0,1.)); }
   #[test] fn reactive_register_commit_rejects_staged_output_mismatch_without_commit() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let sink=Ref::new(1.);let other=Ref::new(2.).to_value().reactive_root_cell_ids();let a=add(&mut p,"A",sink.clone(),vec![],l,c,t,false,Some(other));let e=p.commit_pending_registers(&[a.node]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterStagedOutputMismatch");assert_eq!((*a.stage.borrow(),*a.commit.borrow(),*a.solve.borrow(),*sink.borrow()),(1,0,0,1.)); }
   #[test] fn reactive_register_commit_returns_ordered_unique_dirty_cells() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l.clone(),c.clone(),t.clone(),false,None);let b=add(&mut p,"B",Ref::new(2.),vec![],l,c,t,false,None);let cells=vec![p.nodes[a.node].outputs[0],p.nodes[b.node].outputs[0]];let o=p.commit_pending_registers(&[b.node,a.node,b.node]).unwrap();assert_eq!(o.dirty_cells,cells);assert_eq!(o.committed_nodes,vec![a.node,b.node]); }
   struct RegisterWithoutStaging { sink: Ref<f64>, solves: Rc<RefCell<usize>> }
-  impl MechFunctionImpl for RegisterWithoutStaging { fn solve(&self) {*self.solves.borrow_mut()+=1;} fn out(&self)->Value {self.sink.to_value()} fn reactive_node_kind(&self)->ReactiveNodeKind {ReactiveNodeKind::Register} fn to_string(&self)->String {"unsupported".into()} }
+  impl MechFunctionImpl for RegisterWithoutStaging { fn solve(&self) {*self.solves.borrow_mut()+=1;} fn out(&self)->Value {self.sink.to_value()} fn reactive_node_kind(&self)->ReactiveNodeKind {ReactiveNodeKind::Register} fn to_string(&self)->String {"unsupported".into()}
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
+  }
   #[cfg(feature="compiler")] impl MechFunctionCompiler for RegisterWithoutStaging { fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)} }
-  #[test] fn reactive_register_commit_does_not_execute_downstream_nodes() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![Ref::new(2.)],l,c,t,false,None);let downstream=Rc::new(RefCell::new(0)); struct C(Rc<RefCell<usize>>);impl MechFunctionImpl for C {fn solve(&self){*self.0.borrow_mut()+=1;}fn out(&self)->Value{Value::Empty}fn to_string(&self)->String{"C".into()}} #[cfg(feature="compiler")] impl MechFunctionCompiler for C {fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)}} p.push(Box::new(C(downstream.clone())));let o=p.commit_pending_registers(&[a.node]).unwrap();assert_eq!(*a.commit.borrow(),1);assert!(o.dirty_cells.contains(&p.nodes[a.node].outputs[0]));assert_eq!(*downstream.borrow(),0); }
+  #[test] fn reactive_register_commit_does_not_execute_downstream_nodes() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![Ref::new(2.)],l,c,t,false,None);let downstream=Rc::new(RefCell::new(0)); struct C(Rc<RefCell<usize>>);impl MechFunctionImpl for C {fn solve(&self){*self.0.borrow_mut()+=1;}fn out(&self)->Value{Value::Empty}fn to_string(&self)->String{"C".into()}
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
+  } #[cfg(feature="compiler")] impl MechFunctionCompiler for C {fn compile(&self,_:&mut CompileCtx)->MResult<Register>{Ok(0)}} p.push(Box::new(C(downstream.clone())));let o=p.commit_pending_registers(&[a.node]).unwrap();assert_eq!(*a.commit.borrow(),1);assert!(o.dirty_cells.contains(&p.nodes[a.node].outputs[0]));assert_eq!(*downstream.borrow(),0); }
   #[test] fn reactive_register_commit_rejects_unsupported_register_staging() { let mut p=ReactivePlan::new();let sink=Ref::new(1.);let solves=Rc::new(RefCell::new(0));let n=p.register(Box::new(RegisterWithoutStaging{sink:sink.clone(),solves:solves.clone()}),&[]).unwrap();let e=p.commit_pending_registers(&[n]).unwrap_err();assert_eq!(e.kind_name(),"ReactiveRegisterStagingUnsupported");assert_eq!((*solves.borrow(),*sink.borrow()),(0,1.)); }
   #[test] fn reactive_register_commit_empty_pending_set_is_noop() { let mut p=ReactivePlan::new();let(l,c,t)=shared();let a=add(&mut p,"A",Ref::new(1.),vec![],l,c,t,false,None);assert_eq!(p.commit_pending_registers(&[]).unwrap(),ReactiveRegisterCommitOutcome::default());assert_eq!((*a.stage.borrow(),*a.solve.borrow(),*a.commit.borrow()),(0,0,0)); }
 }

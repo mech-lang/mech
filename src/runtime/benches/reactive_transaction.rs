@@ -7,7 +7,6 @@ use mech_core::{
 use mech_interpreter::Interpreter;
 use mech_program::{
   MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate,
-  ProgramReactiveTurnJournal,
 };
 use mech_runtime::{
   BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
@@ -543,13 +542,9 @@ fn reactive_transaction_benchmarks(c: &mut Criterion) {
     b.iter_batched(
       two_interpreter_fixture,
       |mut fixture| {
-        let mut journal = ProgramReactiveTurnJournal::new();
         let outcome = fixture
           .program
-          .update_inputs_and_advance_turn_with_journal(
-            &fixture.updates,
-            &mut journal,
-          )
+          .update_inputs_and_advance_turn(&fixture.updates)
           .unwrap();
         assert!(
           outcome.interpreter_turns.len() == 2,

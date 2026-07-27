@@ -64,6 +64,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>> 

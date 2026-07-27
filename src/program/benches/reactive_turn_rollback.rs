@@ -1,13 +1,14 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use mech_core::{
   CompileCtx, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
-  ReactiveCellId, ReactiveNodeKind, ReactiveRegisterCommit, ReactiveSolveStatus,
-  Ref, Register, Value, hash_str,
+  GenericError, NoMechExecutionServices,
+  ReactiveCellId, ReactiveNodeKind, ReactiveRegisterCommit,
+  ReactiveRegisterWrite, ReactiveSolveStatus, Ref, Register, Value, hash_str,
 };
 use mech_interpreter::Interpreter;
 use mech_program::{
   MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate,
-  ProgramReactiveTurnJournal,
+  ProgramTurnFinalization,
 };
 use std::hint::black_box;
 
@@ -33,21 +34,14 @@ impl MechFunctionImpl for BenchCombinational {
   }
   fn out(&self) -> Value { Value::F64(self.output.clone()) }
   fn to_string(&self) -> String { "ReactiveTurnRollbackBenchCombinational".into() }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 impl MechFunctionCompiler for BenchCombinational {
   fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
-}
-
-struct BenchRegisterCommit {
-  sink: Ref<f64>,
-  next: f64,
-  outputs: Vec<ReactiveCellId>,
-}
-
-impl ReactiveRegisterCommit for BenchRegisterCommit {
-  fn output_cells(&self) -> &[ReactiveCellId] { &self.outputs }
-  fn commit(self: Box<Self>) { *self.sink.borrow_mut() = self.next; }
 }
 
 struct BenchRegister {
@@ -60,13 +54,17 @@ impl MechFunctionImpl for BenchRegister {
   fn out(&self) -> Value { Value::F64(self.sink.clone()) }
   fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
   fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-    Ok(Box::new(BenchRegisterCommit {
-      sink: self.sink.clone(),
-      next: *self.source.borrow(),
-      outputs: vec![ReactiveCellId::new(self.sink.id())],
-    }))
+    Ok(Box::new(ReactiveRegisterWrite::new(
+      self.sink.clone(),
+      *self.source.borrow(),
+      vec![ReactiveCellId::new(self.sink.id())],
+    )))
   }
   fn to_string(&self) -> String { "ReactiveTurnRollbackBenchRegister".into() }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 impl MechFunctionCompiler for BenchRegister {
@@ -286,16 +284,23 @@ fn reactive_turn_rollback_benchmarks(c: &mut Criterion) {
       BatchSize::LargeInput,
     )
   });
-  c.bench_function("reactive_turn_rollback/journal_success_then_rollback", |b| {
+  c.bench_function("reactive_turn_rollback/coordinated_success_then_rollback", |b| {
     b.iter_batched(
       || chain_fixture(100, false),
       |(mut program, input)| {
-        let mut journal = ProgramReactiveTurnJournal::new();
-        program.update_inputs_and_advance_turn_with_journal(
+        let mut services = NoMechExecutionServices;
+        program.update_inputs_and_advance_turn_coordinated(
           &[update(input, 2.0)],
-          &mut journal,
-        ).unwrap();
-        program.rollback_reactive_turn(journal).unwrap();
+          &mut services,
+          |_| ProgramTurnFinalization::Rollback(
+            MechError::new(
+              GenericError {
+                msg: "benchmark rollback".into(),
+              },
+              None,
+            ),
+          ),
+        ).unwrap_err();
         black_box(program)
       },
       BatchSize::LargeInput,

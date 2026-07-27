@@ -25,6 +25,10 @@ impl<T> MechFunctionImpl for RecordAssign<T>
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for RecordAssign<T> 

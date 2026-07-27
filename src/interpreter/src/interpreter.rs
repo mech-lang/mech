@@ -1540,11 +1540,14 @@ impl Interpreter {
   ) -> MResult<ReactiveTurnOutcome> {
     let checkpoint = self.reactive_turn_checkpoint()?;
     let mut journal = ReactiveTurnJournal::new();
-    match self.advance_reactive_turn_with_journal_and_services(
-      dirty_cells,
-      &mut journal,
-      services,
-    ) {
+    let execution = unsafe {
+      self.advance_reactive_turn_with_journal_and_services_unchecked(
+        dirty_cells,
+        &mut journal,
+        services,
+      )
+    };
+    match execution {
       Ok(outcome) => Ok(outcome),
       Err(error) => self.finish_failed_reactive_operation(
         &checkpoint,
@@ -1555,21 +1558,31 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
-  pub fn advance_reactive_turn_with_journal(
+  /// # Safety
+  ///
+  /// The caller must guarantee complete rollback coordination for every error
+  /// after the first mutation.
+  pub unsafe fn advance_reactive_turn_with_journal_unchecked(
     &mut self,
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
   ) -> MResult<ReactiveTurnOutcome> {
     let mut services = NoMechExecutionServices;
-    self.advance_reactive_turn_with_journal_and_services(
-      dirty_cells,
-      journal,
-      &mut services,
-    )
+    unsafe {
+      self.advance_reactive_turn_with_journal_and_services_unchecked(
+        dirty_cells,
+        journal,
+        &mut services,
+      )
+    }
   }
 
   #[cfg(feature = "functions")]
-  pub fn advance_reactive_turn_with_journal_and_services(
+  /// # Safety
+  ///
+  /// The caller must guarantee complete rollback coordination for every error
+  /// after the first mutation.
+  pub unsafe fn advance_reactive_turn_with_journal_and_services_unchecked(
     &mut self,
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
@@ -1643,12 +1656,15 @@ impl Interpreter {
   ) -> MResult<Value> {
     let checkpoint = self.reactive_turn_checkpoint()?;
     let mut journal = ReactiveTurnJournal::new();
-    match self.step_with_reactive_turn_journal_and_services(
-      step_id,
-      step_count,
-      &mut journal,
-      services,
-    ) {
+    let execution = unsafe {
+      self.step_with_reactive_turn_journal_and_services_unchecked(
+        step_id,
+        step_count,
+        &mut journal,
+        services,
+      )
+    };
+    match execution {
       Ok(value) => Ok(value),
       Err(error) => self.finish_failed_reactive_operation(
         &checkpoint,
@@ -1659,23 +1675,33 @@ impl Interpreter {
   }
 
   #[cfg(feature = "functions")]
-  pub fn step_with_reactive_turn_journal(
+  /// # Safety
+  ///
+  /// The caller must guarantee complete rollback coordination for every error
+  /// after the first mutation.
+  pub unsafe fn step_with_reactive_turn_journal_unchecked(
     &mut self,
     step_id: usize,
     step_count: u64,
     journal: &mut ReactiveTurnJournal,
   ) -> MResult<Value> {
     let mut services = NoMechExecutionServices;
-    self.step_with_reactive_turn_journal_and_services(
-      step_id,
-      step_count,
-      journal,
-      &mut services,
-    )
+    unsafe {
+      self.step_with_reactive_turn_journal_and_services_unchecked(
+        step_id,
+        step_count,
+        journal,
+        &mut services,
+      )
+    }
   }
 
   #[cfg(feature = "functions")]
-  pub fn step_with_reactive_turn_journal_and_services(
+  /// # Safety
+  ///
+  /// The caller must guarantee complete rollback coordination for every error
+  /// after the first mutation.
+  pub unsafe fn step_with_reactive_turn_journal_and_services_unchecked(
     &mut self,
     step_id: usize,
     step_count: u64,
@@ -2448,6 +2474,10 @@ mod bytecode_dependency_tests {
     fn to_string(&self) -> String {
       "bytecode-dependency-test".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -3040,10 +3070,14 @@ mod compact_reactive_turn_checkpoint_tests {
     add_reactive(&interpreter, function, &input);
     let mut journal = ReactiveTurnJournal::new();
 
-    interpreter.advance_reactive_turn_with_journal(
-      &Value::Index(input).reactive_root_cell_ids(),
-      &mut journal,
-    ).unwrap_err();
+    unsafe {
+      interpreter
+        .advance_reactive_turn_with_journal_unchecked(
+          &Value::Index(input).reactive_root_cell_ids(),
+          &mut journal,
+        )
+        .unwrap_err();
+    }
 
     assert_eq!(*output.borrow(), 5);
     journal.restore_before().unwrap();
@@ -3104,7 +3138,15 @@ mod compact_reactive_turn_checkpoint_tests {
     interpreter.plan().add_function(Box::new(second));
     let mut journal = ReactiveTurnJournal::new();
 
-    interpreter.step_with_reactive_turn_journal(2, 1, &mut journal).unwrap();
+    unsafe {
+      interpreter
+        .step_with_reactive_turn_journal_unchecked(
+          2,
+          1,
+          &mut journal,
+        )
+        .unwrap();
+    }
 
     assert_eq!((*first_captures.borrow(), *second_captures.borrow()), (0, 1));
   }

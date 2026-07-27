@@ -247,6 +247,10 @@ impl MechFunctionImpl for ValueSet {
     Some(vec![ReactiveDependencyScope::None; argument_count])
   }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]

@@ -261,6 +261,10 @@ impl MechFunctionImpl for ActivationEffectBarrier {
   fn out(&self) -> Value { Value::Empty }
   fn reactive_output_values(&self) -> Vec<Value> { Vec::new() }
   fn to_string(&self) -> String { ACTIVATION_EFFECT_BARRIER_NAME.to_string() }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 impl MechFunctionCompiler for ActivationEffectBarrier {
   fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
@@ -307,6 +311,10 @@ impl MechFunctionImpl for ActivationEffectPayloadCapture {
   }
   fn reactive_output_values(&self) -> Vec<Value> { Vec::new() }
   fn to_string(&self) -> String { ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME.to_string() }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 impl MechFunctionCompiler for ActivationEffectPayloadCapture {
@@ -3773,26 +3781,18 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     step_id: u64,
   ) -> MResult<()> {
+    let turn_started = Instant::now();
     self.with_atomic_reactive_turn(
       context,
       "step_with_context",
-      |runtime, context, program_journal| {
-        context.charge_step()?;
-        let turn_started = Instant::now();
-        let result = runtime
-          .with_retained_program_execution_session(
-            context,
-            |program, services| {
-              program
-                .step_with_reactive_turn_journal_and_services(
-                  step_id,
-                  program_journal,
-                  services,
-                )
-            },
-          );
-
-        result?;
+      |program, services, finalize| {
+        program.step_coordinated(
+          step_id,
+          services,
+          || finalize(&()),
+        )
+      },
+      move |runtime, _context, _| {
         runtime.enforce_turn_duration(turn_started)
       },
     )
@@ -4641,6 +4641,10 @@ mod tests {
     fn to_string(&self) -> String {
       "RuntimeStepProbe".into()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(all(feature = "functions", feature = "compiler"))]
@@ -5044,37 +5048,29 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     prepared: PreparedRuntimeHostInput,
   ) -> MResult<crate::RuntimeHostInputOutcome> {
-    self.with_atomic_reactive_turn(
+    let turn_started = Instant::now();
+    let turn = self.with_atomic_reactive_turn(
       context,
       "apply_host_input_with_context",
-      move |runtime, context, program_journal| {
-        context.charge_step()?;
-        let turn_started = Instant::now();
-        let result = runtime
-          .with_retained_program_execution_session(
-            context,
-            |program, services| {
-              program
-                .update_inputs_and_advance_turn_with_journal_and_services(
-                  &prepared.updates,
-                  program_journal,
-                  services,
-                )
-            },
-          );
-
-        let turn = result?;
-        runtime.enforce_turn_duration(turn_started)?;
-        runtime.execute_persistent_sends(context, &turn)?;
-
-        Ok(crate::RuntimeHostInputOutcome {
-          update_count: prepared.update_count,
-          ignored_update_count: prepared.ignored_update_count,
-          binding_count: prepared.binding_count,
-          turn: Some(turn),
-        })
+      |program, services, finalize| {
+        program.update_inputs_and_advance_turn_coordinated(
+          &prepared.updates,
+          services,
+          |turn| finalize(turn),
+        )
       },
-    )
+      move |runtime, context, turn| {
+        runtime.enforce_turn_duration(turn_started)?;
+        runtime.execute_persistent_sends(context, turn)?;
+        Ok(())
+      },
+    )?;
+    Ok(crate::RuntimeHostInputOutcome {
+      update_count: prepared.update_count,
+      ignored_update_count: prepared.ignored_update_count,
+      binding_count: prepared.binding_count,
+      turn: Some(turn),
+    })
   }
 
   fn execute_persistent_sends(&mut self, context: &mut RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {

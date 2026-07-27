@@ -1051,6 +1051,10 @@ mod native_dependency_tests {
     fn to_string(&self) -> String {
       "native-dependency-test".to_string()
     }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
 
   #[cfg(feature = "compiler")]
@@ -1090,6 +1094,10 @@ mod native_dependency_tests {
 
     fn to_string(&self) -> String {
       "indexed-initialized-test".to_string()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
     }
   }
 
@@ -1155,6 +1163,10 @@ mod native_dependency_tests {
     fn solve_result(&self) -> MResult<()> { Err(MechError::new(DeferredNativeSolveError, None)) }
     fn out(&self) -> Value { self.output.clone() }
     fn to_string(&self) -> String { "deferred-native-solve".to_string() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for DeferredNativeSolveFunction {
@@ -1278,6 +1290,10 @@ mod native_initialization_failure_tests {
 
     fn to_string(&self) -> String {
       "failing-initialization-test".to_string()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
     }
   }
 
