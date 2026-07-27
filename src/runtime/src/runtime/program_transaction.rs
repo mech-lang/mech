@@ -6,6 +6,67 @@
 
 use super::*;
 use crate::{AccessSet, RuntimeAuthorityScope};
+#[cfg(feature = "invariant_define")]
+use mech_program::{
+  IntegrityConstraintFailureReason, IntegrityConstraintViolationSet,
+};
+#[cfg(feature = "invariant_define")]
+use crate::{
+  RuntimeIntegrityConstraintFailureReason,
+  RuntimeIntegrityConstraintViolation,
+};
+
+#[cfg(feature = "invariant_define")]
+pub(super) struct IntegrityFailureAudit {
+  transaction_id: TransactionId,
+  task_id: Option<TaskId>,
+  violations: Vec<RuntimeIntegrityConstraintViolation>,
+}
+
+#[cfg(feature = "invariant_define")]
+pub(super) fn integrity_failure_audit(
+  error: &MechError,
+  transaction_id: TransactionId,
+  task_id: Option<TaskId>,
+) -> Option<IntegrityFailureAudit> {
+  let failures =
+    error.kind_as::<IntegrityConstraintViolationSet>()?;
+  let violations = failures
+    .violations
+    .iter()
+    .map(|violation| RuntimeIntegrityConstraintViolation {
+      interpreter_id: violation.interpreter_id,
+      constraint_id: violation.constraint_id,
+      name: violation.name.clone(),
+      expression: violation.expression.clone(),
+      reason: match violation.reason {
+        IntegrityConstraintFailureReason::EvaluatedFalse => {
+          RuntimeIntegrityConstraintFailureReason::EvaluatedFalse
+        }
+        IntegrityConstraintFailureReason::ExpectedBool => {
+          RuntimeIntegrityConstraintFailureReason::ExpectedBool
+        }
+        IntegrityConstraintFailureReason::BorrowConflict => {
+          RuntimeIntegrityConstraintFailureReason::BorrowConflict
+        }
+      },
+      evaluated_kind: violation
+        .evaluated_kind
+        .as_ref()
+        .map(ToString::to_string),
+      actual: violation.actual.clone(),
+      operator: violation.operator.as_ref().map(|operator| {
+        format!("{:?}", operator)
+      }),
+      expected: violation.expected.clone(),
+    })
+    .collect();
+  Some(IntegrityFailureAudit {
+    transaction_id,
+    task_id,
+    violations,
+  })
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeExecutionTransactionMode {
@@ -306,6 +367,25 @@ pub struct RuntimePoisonRecord {
 }
 
 impl MechRuntime {
+  #[cfg(feature = "invariant_define")]
+  pub(super) fn emit_integrity_failure_audit(
+    &mut self,
+    context: &mut RuntimeContext,
+    audit: Option<IntegrityFailureAudit>,
+  ) {
+    let Some(audit) = audit else {
+      return;
+    };
+    let _ = self.emit_event_immediate_to_context(
+      context,
+      RuntimeEventKind::IntegrityConstraintViolated {
+        transaction_id: audit.transaction_id,
+        task_id: audit.task_id,
+        violations: audit.violations,
+      },
+    );
+  }
+
   fn capture_runtime_program_checkpoint(
     &self,
   ) -> MResult<MechProgramCheckpoint> {
@@ -933,6 +1013,12 @@ impl MechRuntime {
     };
 
     let original_error_text = format!("{:?}", original_error);
+    #[cfg(feature = "invariant_define")]
+    let integrity_audit = integrity_failure_audit(
+      &original_error,
+      transaction_id,
+      context.task,
+    );
     let rollback_failures = self.rollback_program_operation(
       context,
       transaction_id,
@@ -948,6 +1034,11 @@ impl MechRuntime {
           &format!("retained program operation `{}` failed", operation),
         );
         if cleanup_failures.is_empty() {
+          #[cfg(feature = "invariant_define")]
+          self.emit_integrity_failure_audit(
+            context,
+            integrity_audit,
+          );
           return Err(original_error);
         }
         return Err(self.poison_program_operation(
@@ -971,6 +1062,11 @@ impl MechRuntime {
           ));
         }
       }
+      #[cfg(feature = "invariant_define")]
+      self.emit_integrity_failure_audit(
+        context,
+        integrity_audit,
+      );
       return Err(original_error);
     }
 
@@ -1364,7 +1460,7 @@ mod tests {
     let error = runtime
       .run_string_with_context(
         &mut context,
-        "integrity-discarded := 2.0\nintegrity-invalid! := false",
+        "integrity-discarded := 2.0\nintegrity-limit := 1.0\nintegrity-invalid! := integrity-discarded <= integrity-limit",
       )
       .unwrap_err();
 
@@ -1392,6 +1488,39 @@ mod tests {
     assert!(!new_events.iter().any(|event| {
       matches!(event.kind, RuntimeEventKind::ProgramCompleted { .. })
     }));
+    let audit_event = new_events
+      .iter()
+      .find(|event| {
+        matches!(
+          event.kind,
+          RuntimeEventKind::IntegrityConstraintViolated { .. }
+        )
+      })
+      .expect("integrity rollback audit must be durable");
+    let RuntimeEventKind::IntegrityConstraintViolated {
+      violations: audit,
+      ..
+    } = &audit_event.kind
+    else {
+      unreachable!();
+    };
+    assert_eq!(audit.len(), 1);
+    assert_eq!(audit[0].name, "integrity-invalid!");
+    assert_eq!(
+      audit[0].reason,
+      RuntimeIntegrityConstraintFailureReason::EvaluatedFalse,
+    );
+    assert_eq!(audit[0].actual.as_deref(), Some("2"));
+    assert_eq!(audit[0].expected.as_deref(), Some("1"));
+    assert!(!format!("{audit:?}").contains("@0x"));
+    #[cfg(feature = "serde")]
+    {
+      let serialized =
+        serde_json::to_string(&audit_event.kind).unwrap();
+      assert!(!serialized.contains("@0x"));
+      assert!(!serialized.contains("RefCell"));
+      assert!(!serialized.contains("tokens"));
+    }
   }
 
   #[test]
@@ -1433,15 +1562,36 @@ mod tests {
     assert_eq!(context.transaction, Some(transaction_id));
     assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
     assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::IntegrityConstraintViolated {
+          transaction_id: id,
+          ..
+        } if id == transaction_id
+      )
+    }));
 
     runtime
-      .commit_runtime_transaction(&mut context)
+      .abort_runtime_transaction(
+        &mut context,
+        "discard explicit integrity test",
+      )
       .unwrap();
     assert_eq!(context.transaction, None);
     assert!(runtime
       .program
       .root_symbol_value("integrity-kept")
-      .is_ok());
+      .is_err());
+    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
+      matches!(
+        event.kind,
+        RuntimeEventKind::IntegrityConstraintViolated {
+          transaction_id: id,
+          ..
+        } if id == transaction_id
+      )
+    }));
   }
 
   #[test]
@@ -1468,6 +1618,17 @@ mod tests {
       panic!("constraint result must be bool");
     }
 
+    let audit_count_before = runtime
+      .list_events(None)
+      .unwrap()
+      .iter()
+      .filter(|event| {
+        matches!(
+          event.kind,
+          RuntimeEventKind::IntegrityConstraintViolated { .. }
+        )
+      })
+      .count();
     let error = runtime
       .commit_runtime_transaction(&mut context)
       .unwrap_err();
@@ -1476,6 +1637,20 @@ mod tests {
     assert_eq!(context.transaction, Some(transaction_id));
     assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
     assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(
+      runtime
+        .list_events(None)
+        .unwrap()
+        .iter()
+        .filter(|event| {
+          matches!(
+            event.kind,
+            RuntimeEventKind::IntegrityConstraintViolated { .. }
+          )
+        })
+        .count(),
+      audit_count_before,
+    );
     if let Value::Bool(value) = &*result.borrow() {
       *value.borrow_mut() = true;
     } else {
