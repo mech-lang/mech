@@ -11,7 +11,7 @@ pub struct SymbolTableSnapshot {
   mutable_variables: HashMap<u64, ValRef>,
   dictionary: Ref<Dictionary>,
   dictionary_contents: Dictionary,
-  reverse_lookup: HashMap<*const Ref<Value>, u64>,
+  reverse_lookup: HashMap<u64, u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -19,7 +19,7 @@ pub struct SymbolTable {
   pub symbols: HashMap<u64,ValRef>,
   pub mutable_variables: HashMap<u64,ValRef>,
   pub dictionary: Ref<Dictionary>,
-  pub reverse_lookup: HashMap<*const Ref<Value>, u64>,
+  pub reverse_lookup: HashMap<u64, u64>,
 }
 
 impl SymbolTable {
@@ -43,7 +43,6 @@ impl SymbolTable {
           ValueStateBorrowConflict {
             phase: "restore-before",
             type_name: core::any::type_name::<Dictionary>(),
-            address: snapshot.dictionary.addr(),
           },
           None,
         )
@@ -91,7 +90,7 @@ impl SymbolTable {
 
   pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
     let cell = Ref::new(value);
-    self.reverse_lookup.insert(&cell, key);
+    self.reverse_lookup.insert(cell.id(), key);
     let old = self.symbols.insert(key,cell.clone());
     if mutable {
       self.mutable_variables.insert(key,cell.clone());

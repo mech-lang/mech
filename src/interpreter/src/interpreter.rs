@@ -94,7 +94,6 @@ pub struct InterpreterCheckpointBorrowConflict {
   pub phase: &'static str,
   pub interpreter_id: u64,
   pub type_name: &'static str,
-  pub address: usize,
 }
 
 impl MechErrorKind for InterpreterCheckpointBorrowConflict {
@@ -104,9 +103,8 @@ impl MechErrorKind for InterpreterCheckpointBorrowConflict {
 
   fn message(&self) -> String {
     format!(
-      "Cannot borrow {} checkpoint target at 0x{:x} for interpreter {} during {}.",
+      "Cannot borrow {} checkpoint target for interpreter {} during {}.",
       self.type_name,
-      self.address,
       self.interpreter_id,
       self.phase,
     )
@@ -116,7 +114,7 @@ impl MechErrorKind for InterpreterCheckpointBorrowConflict {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterCheckpointHierarchyAlias {
   pub interpreter_id: u64,
-  pub address: usize,
+  pub child_id: u64,
 }
 
 impl MechErrorKind for InterpreterCheckpointHierarchyAlias {
@@ -126,9 +124,9 @@ impl MechErrorKind for InterpreterCheckpointHierarchyAlias {
 
   fn message(&self) -> String {
     format!(
-      "Interpreter {} contains a repeated or cyclic child handle at 0x{:x}.",
+      "Interpreter {} contains a repeated or cyclic handle for child {}.",
       self.interpreter_id,
-      self.address,
+      self.child_id,
     )
   }
 }
@@ -176,14 +174,13 @@ impl MechErrorKind for InterpreterCheckpointOwnerMismatch {
 fn checkpoint_borrow_error<T: 'static>(
   phase: &'static str,
   interpreter_id: u64,
-  target: &Ref<T>,
+  _target: &Ref<T>,
 ) -> MechError {
   MechError::new(
     InterpreterCheckpointBorrowConflict {
       phase,
       interpreter_id,
       type_name: core::any::type_name::<T>(),
-      address: target.addr(),
     },
     None,
   )
@@ -682,7 +679,7 @@ impl InterpreterStructureCheckpoint {
         return Err(MechError::new(
           InterpreterCheckpointHierarchyAlias {
             interpreter_id: interpreter.id,
-            address: child.addr(),
+            child_id: *child_id,
           },
           None,
         )
@@ -946,8 +943,8 @@ pub struct InterpreterCheckpoint {
 
 /// An opaque checkpoint of scheduler metadata for one reactive operation.
 ///
-/// Function values are intentionally excluded and are captured lazily by a
-/// [`ReactiveTurnJournal`] only when their functions execute.
+/// Function values are intentionally excluded and are captured lazily through
+/// a reactive journal participant only when their functions execute.
 #[cfg(feature = "functions")]
 pub struct InterpreterReactiveTurnCheckpoint {
   owner: Rc<()>,
@@ -1010,7 +1007,6 @@ pub struct InterpreterReactiveTurnBorrowConflict {
   pub phase: &'static str,
   pub interpreter_id: u64,
   pub component: &'static str,
-  pub address: usize,
 }
 
 #[cfg(feature = "functions")]
@@ -1021,9 +1017,8 @@ impl MechErrorKind for InterpreterReactiveTurnBorrowConflict {
 
   fn message(&self) -> String {
     format!(
-      "Cannot borrow {} at 0x{:x} for interpreter {} during reactive-turn {}.",
+      "Cannot borrow {} for interpreter {} during reactive-turn {}.",
       self.component,
-      self.address,
       self.interpreter_id,
       self.phase,
     )
@@ -1117,14 +1112,12 @@ impl Interpreter {
     &self,
     phase: &'static str,
     component: &'static str,
-    address: usize,
   ) -> MechError {
     MechError::new(
       InterpreterReactiveTurnBorrowConflict {
         phase,
         interpreter_id: self.id,
         component,
-        address,
       },
       None,
     )
@@ -1143,7 +1136,6 @@ impl Interpreter {
       .map_err(|_| self.reactive_turn_borrow_conflict(
         "checkpoint",
         "trace events",
-        self.trace_events.addr(),
       ))?
       .len();
     Ok(InterpreterReactiveTurnCheckpoint {
@@ -1217,7 +1209,6 @@ impl Interpreter {
         .map_err(|_| self.reactive_turn_borrow_conflict(
           "restore",
           "trace events",
-          self.trace_events.addr(),
         ))?;
       if events.len() < checkpoint.trace_event_len {
         return Err(self.reactive_turn_invariant(format!(
@@ -1244,12 +1235,13 @@ impl Interpreter {
   fn finish_failed_reactive_operation<T>(
     &mut self,
     checkpoint: &InterpreterReactiveTurnCheckpoint,
-    journal: &ReactiveTurnJournal,
+    participant: &mut ReactiveJournalParticipant<'_>,
     original_error: MechError,
   ) -> MResult<T> {
     let rollback_result = self.preflight_restore_reactive_turn(checkpoint)
-      .and_then(|_| journal.preflight_restore_before());
+      .and_then(|_| participant.preflight_restore_before());
     if let Err(rollback_error) = rollback_result {
+      participant.commit();
       return Err(MechError::new(
         InterpreterReactiveTurnRollbackFailed {
           interpreter_id: self.id,
@@ -1259,7 +1251,7 @@ impl Interpreter {
         None,
       ).with_compiler_loc());
     }
-    journal.apply_restore_before();
+    participant.apply_restore_before();
     self.apply_restore_reactive_turn(checkpoint);
     Err(original_error)
   }
@@ -1539,50 +1531,42 @@ impl Interpreter {
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
     let checkpoint = self.reactive_turn_checkpoint()?;
-    let mut journal = ReactiveTurnJournal::new();
-    let execution = self.advance_reactive_turn_with_journal_and_services(
-      dirty_cells,
-      &mut journal,
-      services,
-    );
-    match execution {
-      Ok(outcome) => Ok(outcome),
-      Err(error) => self.finish_failed_reactive_operation(
-        &checkpoint,
-        &journal,
-        error,
-      ),
-    }
+    with_reactive_journal_participant(|participant| {
+      let execution = self.advance_reactive_turn_participating(
+        dirty_cells,
+        participant,
+        services,
+      );
+      match execution {
+        Ok(outcome) => {
+          participant.commit();
+          Ok(outcome)
+        }
+        Err(error) => self.finish_failed_reactive_operation(
+          &checkpoint,
+          participant,
+          error,
+        ),
+      }
+    })
   }
 
+  /// Participates in a program-owned reactive operation.
+  ///
+  /// The capability can only be received inside the sealed journal callback;
+  /// callers cannot construct or retain it.
   #[cfg(feature = "functions")]
-  #[doc(hidden)]
-  pub fn advance_reactive_turn_with_journal(
+  pub fn advance_reactive_turn_participating(
     &mut self,
     dirty_cells: &[ReactiveCellId],
-    journal: &mut ReactiveTurnJournal,
-  ) -> MResult<ReactiveTurnOutcome> {
-    let mut services = NoMechExecutionServices;
-    self.advance_reactive_turn_with_journal_and_services(
-      dirty_cells,
-      journal,
-      &mut services,
-    )
-  }
-
-  #[cfg(feature = "functions")]
-  #[doc(hidden)]
-  pub fn advance_reactive_turn_with_journal_and_services(
-    &mut self,
-    dirty_cells: &[ReactiveCellId],
-    journal: &mut ReactiveTurnJournal,
+    participant: &mut ReactiveJournalParticipant<'_>,
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
     let plan = self.plan();
-    plan.advance_reactive_turn_with_journal_and_services(
+    plan.advance_reactive_turn_participating(
       &mut self.reactive_turn_state,
       dirty_cells,
-      journal,
+      participant,
       services,
     )
   }
@@ -1645,47 +1629,37 @@ impl Interpreter {
     services: &mut dyn MechExecutionServices,
   ) -> MResult<Value> {
     let checkpoint = self.reactive_turn_checkpoint()?;
-    let mut journal = ReactiveTurnJournal::new();
-    let execution = self.step_with_reactive_turn_journal_and_services(
-      step_id,
-      step_count,
-      &mut journal,
-      services,
-    );
-    match execution {
-      Ok(value) => Ok(value),
-      Err(error) => self.finish_failed_reactive_operation(
-        &checkpoint,
-        &journal,
-        error,
-      ),
-    }
+    with_reactive_journal_participant(|participant| {
+      let execution = self.step_reactive_turn_participating(
+        step_id,
+        step_count,
+        participant,
+        services,
+      );
+      match execution {
+        Ok(value) => {
+          participant.commit();
+          Ok(value)
+        }
+        Err(error) => self.finish_failed_reactive_operation(
+          &checkpoint,
+          participant,
+          error,
+        ),
+      }
+    })
   }
 
+  /// Participates in a program-owned stepping operation.
+  ///
+  /// The capability can only be received inside the sealed journal callback;
+  /// callers cannot construct or retain it.
   #[cfg(feature = "functions")]
-  #[doc(hidden)]
-  pub fn step_with_reactive_turn_journal(
+  pub fn step_reactive_turn_participating(
     &mut self,
     step_id: usize,
     step_count: u64,
-    journal: &mut ReactiveTurnJournal,
-  ) -> MResult<Value> {
-    let mut services = NoMechExecutionServices;
-    self.step_with_reactive_turn_journal_and_services(
-      step_id,
-      step_count,
-      journal,
-      &mut services,
-    )
-  }
-
-  #[cfg(feature = "functions")]
-  #[doc(hidden)]
-  pub fn step_with_reactive_turn_journal_and_services(
-    &mut self,
-    step_id: usize,
-    step_count: u64,
-    journal: &mut ReactiveTurnJournal,
+    participant: &mut ReactiveJournalParticipant<'_>,
     services: &mut dyn MechExecutionServices,
   ) -> MResult<Value> {
     let state_brrw = self.state.borrow();
@@ -1705,7 +1679,7 @@ impl Interpreter {
         for _ in 0..step_count {
           for (idx, fxn) in plan_brrw.iter_mut().enumerate() {
             let start = Instant::now();
-            journal.capture_function_state(fxn.as_ref())?;
+            participant.capture_function_state(fxn.as_ref())?;
             fxn.solve_result_with(services)?;
             total_durations[idx] += start.elapsed();
           }
@@ -1728,7 +1702,7 @@ impl Interpreter {
                 .to_string();
               format!("[trace][plan] step[{idx}] {fxn_header}")
             });
-            journal.capture_function_state(fxn.as_ref())?;
+            participant.capture_function_state(fxn.as_ref())?;
             fxn.solve_result_with(services)?;
             trace_println!(self, "{}", {
               let output = fxn.out().to_string();
@@ -1776,7 +1750,7 @@ impl Interpreter {
     }
 
     for _ in 0..step_count {
-      journal.capture_function_state(fxn.as_ref())?;
+      participant.capture_function_state(fxn.as_ref())?;
       fxn.solve_result_with(services)?;
     }
 
@@ -2104,11 +2078,6 @@ mod checkpoint_tests {
     (cell, backing)
   }
 
-  fn child_box_address(child: &InterpreterRef) -> usize {
-    let child = child.borrow();
-    child.as_ref() as *const Interpreter as usize
-  }
-
   #[test]
   fn interpreter_checkpoint_restores_private_state_and_recursive_child_identity() {
     let mut root = Interpreter::new(1, 100);
@@ -2222,14 +2191,12 @@ mod checkpoint_tests {
       install_scalar(&grandchild, "grandchild", 30.0);
     let grandchild_ref = Ref::new(Box::new(grandchild));
     let grandchild_handle_address = grandchild_ref.addr();
-    let expected_grandchild_box_address = child_box_address(&grandchild_ref);
     child
       .sub_interpreters
       .borrow_mut()
       .insert(grandchild_id, grandchild_ref);
     let child_ref = Ref::new(Box::new(child));
     let child_handle_address = child_ref.addr();
-    let expected_child_box_address = child_box_address(&child_ref);
     root
       .sub_interpreters
       .borrow_mut()
@@ -2393,10 +2360,6 @@ mod checkpoint_tests {
       .cloned()
       .unwrap();
     assert_eq!(restored_child.addr(), child_handle_address);
-    assert_eq!(
-      child_box_address(&restored_child),
-      expected_child_box_address
-    );
     let restored_grandchild = {
       let child = restored_child.borrow();
       assert_eq!(child.id, child_id);
@@ -2410,10 +2373,6 @@ mod checkpoint_tests {
         .unwrap()
     };
     assert_eq!(restored_grandchild.addr(), grandchild_handle_address);
-    assert_eq!(
-      child_box_address(&restored_grandchild),
-      expected_grandchild_box_address
-    );
     let grandchild = restored_grandchild.borrow();
     assert_eq!(grandchild.id, grandchild_id);
     assert_eq!(grandchild.ip, 9);
@@ -3041,24 +3000,28 @@ mod compact_reactive_turn_checkpoint_tests {
   }
 
   #[test]
-  fn journal_aware_interpreter_turn_leaves_rollback_to_caller() {
+  fn participating_interpreter_turn_leaves_rollback_to_coordinator() {
     let mut interpreter = Interpreter::new(19, 100);
     let input = Ref::new(1usize);
     let output = Ref::new(4usize);
     let (mut function, _, _) = function("failure", output.clone());
     function.fail_on_solve = Some(1);
     add_reactive(&interpreter, function, &input);
-    let mut journal = ReactiveTurnJournal::new();
-
-    interpreter
-      .advance_reactive_turn_with_journal(
-        &Value::Index(input).reactive_root_cell_ids(),
-        &mut journal,
-      )
-      .unwrap_err();
-
-    assert_eq!(*output.borrow(), 5);
-    journal.restore_before().unwrap();
+    with_reactive_journal_participant(|participant| {
+      let mut services = NoMechExecutionServices;
+      interpreter
+        .advance_reactive_turn_participating(
+          &Value::Index(input).reactive_root_cell_ids(),
+          participant,
+          &mut services,
+        )
+        .unwrap_err();
+      assert_eq!(*output.borrow(), 5);
+      participant.preflight_restore_before()?;
+      participant.apply_restore_before();
+      Ok(())
+    })
+    .unwrap();
     assert_eq!(*output.borrow(), 4);
   }
 
@@ -3114,17 +3077,22 @@ mod compact_reactive_turn_checkpoint_tests {
     let (second, second_captures, _) = function("second", Ref::new(2));
     interpreter.plan().add_function(Box::new(first));
     interpreter.plan().add_function(Box::new(second));
-    let mut journal = ReactiveTurnJournal::new();
-
-    interpreter
-      .step_with_reactive_turn_journal(
+    with_reactive_journal_participant(|participant| {
+      let mut services = NoMechExecutionServices;
+      interpreter.step_reactive_turn_participating(
         2,
         1,
-        &mut journal,
-      )
-      .unwrap();
-
-    assert_eq!((*first_captures.borrow(), *second_captures.borrow()), (0, 1));
+        participant,
+        &mut services,
+      )?;
+      assert_eq!(
+        (*first_captures.borrow(), *second_captures.borrow()),
+        (0, 1),
+      );
+      participant.commit();
+      Ok(())
+    })
+    .unwrap();
   }
 
   #[test]

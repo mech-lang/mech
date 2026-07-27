@@ -38,4 +38,31 @@ fail_if_found \
   src/runtime/src \
   --glob '*.rs'
 
+fail_if_found \
+  "production code declares a public journal-aware operation" \
+  'pub[[:space:]]+fn[[:space:]]+[[:alnum:]_]*(with_journal|reactive_turn_journal)[[:alnum:]_]*[[:space:]]*[(]' \
+  src \
+  --glob 'src/*/src/**/*.rs'
+
+fail_if_found \
+  "a documentation-hidden public journal API remains" \
+  '#\[doc\(hidden\)\]' \
+  src/core/src/reactive_transaction.rs \
+  src/core/src/functions.rs \
+  src/interpreter/src/interpreter.rs \
+  src/program/src/program.rs \
+  --glob '*.rs'
+
+fail_if_found \
+  "runtime imports a lower-level reactive journal participant" \
+  'ReactiveTurnJournal|ProgramReactiveTurnJournal|ReactiveJournalParticipant' \
+  src/runtime/src \
+  --glob '*.rs'
+
+fail_if_found \
+  "the physical reactive journal is publicly declared" \
+  'pub[[:space:]]+struct[[:space:]]+ReactiveTurnJournal' \
+  src/core/src \
+  --glob '*.rs'
+
 echo "runtime boundary audit passed"

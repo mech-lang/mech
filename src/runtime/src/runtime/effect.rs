@@ -1863,6 +1863,10 @@ mod tests {
     let observed_kernel = kernel.clone();
     let mut runtime = MechRuntime::builder()
       .capability_kernel(kernel)
+      .source_resolver(
+        InMemorySourceResolver::new()
+          .with_string("retained-source", "x := 1"),
+      )
       .resource_provider(Box::new(InMemoryDocsProvider::new()))
       .host_function(PlannedPureHostFunction::new(
         "demo/poison-gate",
@@ -1976,17 +1980,26 @@ mod tests {
         .collect::<Vec<_>>(),
       overlay_uses_before,
     );
-    let resolver_before =
-      runtime.source_resolver() as *const dyn SourceResolver;
+    assert!(
+      runtime
+        .source_resolver()
+        .resolve(&SourceRequest::new("retained-source"))
+        .unwrap()
+        .is_some()
+    );
     poison_kinds.push(
       runtime
         .set_source_resolver(InMemorySourceResolver::new())
         .unwrap_err()
         .kind_name(),
     );
-    let resolver_after =
-      runtime.source_resolver() as *const dyn SourceResolver;
-    assert!(std::ptr::eq(resolver_before, resolver_after));
+    assert!(
+      runtime
+        .source_resolver()
+        .resolve(&SourceRequest::new("retained-source"))
+        .unwrap()
+        .is_some()
+    );
     poison_kinds.push(
       runtime
         .grant_capability(Arc::new(BasicCapability::from_keys(
@@ -2365,9 +2378,13 @@ mod tests {
 
   #[test]
   fn source_resolver_replacement_is_rejected_while_an_effect_phase_is_active() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    let resolver_before =
-      runtime.source_resolver() as *const dyn SourceResolver;
+    let mut runtime = MechRuntime::builder()
+      .source_resolver(
+        InMemorySourceResolver::new()
+          .with_string("retained-source", "x := 1"),
+      )
+      .build()
+      .unwrap();
     runtime
       .active_effect_phase
       .set(Some(ActiveRuntimeEffectPhase::Preparing));
@@ -2377,9 +2394,13 @@ mod tests {
       .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeEffectOperationReentrant");
-    let resolver_after =
-      runtime.source_resolver() as *const dyn SourceResolver;
-    assert!(std::ptr::eq(resolver_before, resolver_after));
+    assert!(
+      runtime
+        .source_resolver()
+        .resolve(&SourceRequest::new("retained-source"))
+        .unwrap()
+        .is_some()
+    );
   }
 
   #[test]

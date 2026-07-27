@@ -3,9 +3,3 @@ error[E0432]: unresolved import `mech_program::ProgramReactiveTurnJournal`
   |
 1 | use mech_program::ProgramReactiveTurnJournal;
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `ProgramReactiveTurnJournal` in the root
-  |
-help: a similar name exists in the module
-  |
-1 - use mech_program::ProgramReactiveTurnJournal;
-1 + use mech_program::ReactiveTurnJournal;
-  |

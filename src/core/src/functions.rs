@@ -358,17 +358,15 @@ impl MechErrorKind for TransactionStateUnsupportedError {
 pub struct TransactionStateBorrowConflictError {
   pub function: String,
   pub component: &'static str,
-  pub address: usize,
 }
 
 impl MechErrorKind for TransactionStateBorrowConflictError {
   fn name(&self) -> &str { "TransactionStateBorrowConflict" }
   fn message(&self) -> String {
     format!(
-      "Cannot inspect retained transaction state for function '{}' because {} at 0x{:x} is already borrowed.",
+      "Cannot inspect retained transaction state for function '{}' because {} is already borrowed.",
       self.function,
       self.component,
-      self.address,
     )
   }
 }
@@ -377,16 +375,14 @@ impl MechErrorKind for TransactionStateBorrowConflictError {
 pub struct FunctionsSnapshotBorrowConflictError {
   pub phase: &'static str,
   pub component: &'static str,
-  pub address: usize,
 }
 
 impl MechErrorKind for FunctionsSnapshotBorrowConflictError {
   fn name(&self) -> &str { "FunctionsSnapshotBorrowConflict" }
   fn message(&self) -> String {
     format!(
-      "Cannot borrow functions {} at 0x{:x} during {}.",
+      "Cannot borrow functions {} during {}.",
       self.component,
-      self.address,
       self.phase,
     )
   }
@@ -396,13 +392,11 @@ impl FunctionsSnapshot {
   fn borrow_conflict(
     phase: &'static str,
     component: &'static str,
-    address: usize,
   ) -> MechError {
     MechError::new(
       FunctionsSnapshotBorrowConflictError {
         phase,
         component,
-        address,
       },
       None,
     ).with_compiler_loc()
@@ -413,11 +407,11 @@ impl FunctionsSnapshot {
   /// target so restoration never substitutes the outer container.
   pub fn capture(target: &FunctionsRef) -> MResult<Self> {
     let functions = target.try_borrow().map_err(|_| {
-      Self::borrow_conflict("capture", "table", target.addr())
+      Self::borrow_conflict("capture", "table")
     })?;
     let dictionary_target = functions.dictionary.clone();
     let dictionary = dictionary_target.try_borrow().map_err(|_| {
-      Self::borrow_conflict("capture", "dictionary", dictionary_target.addr())
+      Self::borrow_conflict("capture", "dictionary")
     })?.clone();
     let mut user_function_snapshots = Vec::with_capacity(functions.user_functions.len());
     for definition in functions.user_functions.values() {
@@ -425,7 +419,6 @@ impl FunctionsSnapshot {
         Self::borrow_conflict(
           "capture",
           "user symbol table",
-          definition.symbols.addr(),
         )
       })?;
       let symbol_dictionary_target = symbols.dictionary.clone();
@@ -434,7 +427,6 @@ impl FunctionsSnapshot {
           Self::borrow_conflict(
             "capture",
             "user symbol dictionary",
-            symbol_dictionary_target.addr(),
           )
         })?;
       let symbol_snapshot = symbols.snapshot();
@@ -445,14 +437,12 @@ impl FunctionsSnapshot {
         Self::borrow_conflict(
           "capture",
           "user reactive plan",
-          definition.plan.0.addr(),
         )
       })?;
       let scopes = definition.plan.1.try_borrow().map_err(|_| {
         Self::borrow_conflict(
           "capture",
           "user activation scopes",
-          definition.plan.1.addr(),
         )
       })?;
       reactive.validate_checkpoint_invariants(scopes.len())?;
@@ -489,13 +479,12 @@ impl FunctionsSnapshot {
   pub fn preflight_restore(&self) -> MResult<()> {
     {
       let _functions = self.target.try_borrow_mut().map_err(|_| {
-        Self::borrow_conflict("restore", "table", self.target.addr())
+        Self::borrow_conflict("restore", "table")
       })?;
       let _dictionary = self.dictionary_target.try_borrow_mut().map_err(|_| {
         Self::borrow_conflict(
           "restore",
           "dictionary",
-          self.dictionary_target.addr(),
         )
       })?;
     }
@@ -505,7 +494,6 @@ impl FunctionsSnapshot {
           Self::borrow_conflict(
             "restore",
             "user symbol table",
-            definition.symbols_target.addr(),
           )
         })?;
         let _dictionary =
@@ -513,7 +501,6 @@ impl FunctionsSnapshot {
             Self::borrow_conflict(
               "restore",
               "user symbol dictionary",
-              definition.symbol_dictionary_target.addr(),
             )
           })?;
       }
@@ -583,7 +570,6 @@ impl FunctionsSnapshot {
         Self::borrow_conflict(
           "transaction-state",
           "user symbol table",
-          definition.symbols_target.addr(),
         )
       })?;
       for value in symbols.symbols.values().chain(symbols.mutable_variables.values()) {
@@ -750,7 +736,6 @@ impl MechFunctionImpl for UserFunction {
         TransactionStateBorrowConflictError {
           function: self.to_string(),
           component: "user symbol table",
-          address: self.fxn.symbols.addr(),
         },
         None,
       ).with_compiler_loc()
@@ -1091,18 +1076,14 @@ impl MechErrorKind for ReactivePlanRollbackInvariantError {
 #[derive(Debug, Clone)]
 pub struct ReactivePlanFunctionIdentityError {
   pub node_id: ReactiveNodeId,
-  pub checkpoint_identity: usize,
-  pub current_identity: usize,
 }
 
 impl MechErrorKind for ReactivePlanFunctionIdentityError {
   fn name(&self) -> &str { "ReactivePlanFunctionIdentity" }
   fn message(&self) -> String {
     format!(
-      "Cannot restore reactive node {} because its function identity changed (checkpoint address 0x{:x}, current address 0x{:x}).",
+      "Cannot restore reactive node {} because its function identity changed.",
       self.node_id,
-      self.checkpoint_identity,
-      self.current_identity,
     )
   }
 }
@@ -1131,16 +1112,14 @@ impl MechErrorKind for ActivationRegistrationRollbackInvariantError {
 pub struct PlanCheckpointBorrowConflictError {
   pub phase: &'static str,
   pub component: &'static str,
-  pub address: usize,
 }
 
 impl MechErrorKind for PlanCheckpointBorrowConflictError {
   fn name(&self) -> &str { "PlanCheckpointBorrowConflict" }
   fn message(&self) -> String {
     format!(
-      "Cannot borrow plan {} at 0x{:x} during {}.",
+      "Cannot borrow plan {} during {}.",
       self.component,
-      self.address,
       self.phase,
     )
   }
@@ -1186,17 +1165,10 @@ struct ReactiveFunctionIdentity {
   owner: Rc<()>,
 }
 
-impl ReactiveFunctionIdentity {
-  fn owner_address(&self) -> usize {
-    Rc::as_ptr(&self.owner) as usize
-  }
-}
-
 impl Debug for ReactiveFunctionIdentity {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("ReactiveFunctionIdentity")
-      .field("owner_address", &self.owner_address())
-      .finish()
+      .finish_non_exhaustive()
   }
 }
 
@@ -1359,8 +1331,6 @@ impl ReactivePlan {
         return Err(MechError::new(
           ReactivePlanFunctionIdentityError {
             node_id: saved.id,
-            checkpoint_identity: saved.function_identity.owner_address(),
-            current_identity: current_identity.owner_address(),
           },
           None,
         ));
@@ -1727,7 +1697,7 @@ impl ReactivePlan {
     Ok(outcome)
   }
 
-  pub fn solve_dirty_cells_with_journal(
+  pub(crate) fn solve_dirty_cells_with_journal(
     &mut self,
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
@@ -1740,7 +1710,7 @@ impl ReactivePlan {
     )
   }
 
-  pub fn solve_dirty_cells_with_journal_and_services(
+  pub(crate) fn solve_dirty_cells_with_journal_and_services(
     &mut self,
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
@@ -1856,7 +1826,7 @@ impl ReactivePlan {
     self.commit_pending_registers_impl(pending_nodes, None)
   }
 
-  pub fn commit_pending_registers_with_journal(
+  pub(crate) fn commit_pending_registers_with_journal(
     &mut self,
     pending_nodes: &[ReactiveNodeId],
     journal: &mut ReactiveTurnJournal,
@@ -1976,7 +1946,7 @@ impl ReactivePlan {
     })
   }
 
-  pub fn advance_reactive_turn_with_journal(
+  pub(crate) fn advance_reactive_turn_with_journal(
     &mut self,
     state: &mut ReactiveTurnState,
     dirty_cells: &[ReactiveCellId],
@@ -1991,7 +1961,7 @@ impl ReactivePlan {
     )
   }
 
-  pub fn advance_reactive_turn_with_journal_and_services(
+  pub(crate) fn advance_reactive_turn_with_journal_and_services(
     &mut self,
     state: &mut ReactiveTurnState,
     dirty_cells: &[ReactiveCellId],
@@ -2069,13 +2039,11 @@ impl Plan {
   fn checkpoint_borrow_conflict(
     phase: &'static str,
     component: &'static str,
-    address: usize,
   ) -> MechError {
     MechError::new(
       PlanCheckpointBorrowConflictError {
         phase,
         component,
-        address,
       },
       None,
     ).with_compiler_loc()
@@ -2093,14 +2061,12 @@ impl Plan {
       Self::checkpoint_borrow_conflict(
         "checkpoint-validation",
         "reactive graph",
-        self.0.addr(),
       )
     })?;
     let scopes = self.1.try_borrow().map_err(|_| {
       Self::checkpoint_borrow_conflict(
         "checkpoint-validation",
         "activation scopes",
-        self.1.addr(),
       )
     })?;
     reactive.validate_checkpoint_invariants(scopes.len())
@@ -2114,7 +2080,6 @@ impl Plan {
       Self::checkpoint_borrow_conflict(
         "checkpoint-validation",
         "reactive graph",
-        self.0.addr(),
       )
     })?;
     for node_id in &state.pending_register_nodes {
@@ -2147,14 +2112,12 @@ impl Plan {
       Self::checkpoint_borrow_conflict(
         "restore",
         "reactive graph",
-        self.0.addr(),
       )
     })?;
     let _scopes = self.1.try_borrow_mut().map_err(|_| {
       Self::checkpoint_borrow_conflict(
         "restore",
         "activation scopes",
-        self.1.addr(),
       )
     })?;
     reactive.preflight_rollback(&checkpoint.reactive)
@@ -2187,7 +2150,6 @@ impl Plan {
       Self::checkpoint_borrow_conflict(
         "transaction-state",
         "reactive graph",
-        self.0.addr(),
       )
     })?;
     reactive.transaction_state_values()
@@ -2276,7 +2238,7 @@ impl Plan {
       .solve_dirty_cells_with_services(dirty_cells, services)
   }
 
-  pub fn solve_dirty_cells_with_journal(
+  pub(crate) fn solve_dirty_cells_with_journal(
     &self,
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
@@ -2286,7 +2248,7 @@ impl Plan {
       .borrow_mut()
       .solve_dirty_cells_with_journal(dirty_cells, journal)
   }
-  pub fn solve_dirty_cells_with_journal_and_services(
+  pub(crate) fn solve_dirty_cells_with_journal_and_services(
     &self,
     dirty_cells: &[ReactiveCellId],
     journal: &mut ReactiveTurnJournal,
@@ -2305,7 +2267,7 @@ impl Plan {
   pub fn commit_pending_registers(&self, pending_nodes: &[ReactiveNodeId]) -> MResult<ReactiveRegisterCommitOutcome> {
     self.0.borrow_mut().commit_pending_registers(pending_nodes)
   }
-  pub fn commit_pending_registers_with_journal(
+  pub(crate) fn commit_pending_registers_with_journal(
     &self,
     pending_nodes: &[ReactiveNodeId],
     journal: &mut ReactiveTurnJournal,
@@ -2339,7 +2301,7 @@ impl Plan {
         services,
       )
   }
-  pub fn advance_reactive_turn_with_journal(
+  pub(crate) fn advance_reactive_turn_with_journal(
     &self,
     state: &mut ReactiveTurnState,
     dirty_cells: &[ReactiveCellId],
@@ -2350,7 +2312,7 @@ impl Plan {
       .borrow_mut()
       .advance_reactive_turn_with_journal(state, dirty_cells, journal)
   }
-  pub fn advance_reactive_turn_with_journal_and_services(
+  pub(crate) fn advance_reactive_turn_with_journal_and_services(
     &self,
     state: &mut ReactiveTurnState,
     dirty_cells: &[ReactiveCellId],
@@ -2364,6 +2326,24 @@ impl Plan {
         state,
         dirty_cells,
         journal,
+        services,
+      )
+  }
+
+  pub fn advance_reactive_turn_participating(
+    &self,
+    state: &mut ReactiveTurnState,
+    dirty_cells: &[ReactiveCellId],
+    participant: &mut ReactiveJournalParticipant<'_>,
+    services: &mut dyn MechExecutionServices,
+  ) -> MResult<ReactiveTurnOutcome> {
+    self
+      .0
+      .borrow_mut()
+      .advance_reactive_turn_with_journal_and_services(
+        state,
+        dirty_cells,
+        participant.journal_mut(),
         services,
       )
   }
