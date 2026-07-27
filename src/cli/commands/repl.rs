@@ -11,8 +11,6 @@ use crossterm::{ExecutableCommand, cursor, style::Print};
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use mech_core::*;
 use mech_program::*;
-#[cfg(feature = "run")]
-use mech_runtime::RuntimeConfig;
 #[cfg(feature = "mika")]
 use mech_syntax::MICROMIKA_WAVE;
 use mech_syntax::{ReplCommand, parse_repl_command};
@@ -88,9 +86,7 @@ mod tests {
 
 pub(crate) struct ReplStartup {
     #[cfg(feature = "run")]
-    pub runtime_config: Option<RuntimeConfig>,
-    #[cfg(all(feature = "run", feature = "repl"))]
-    pub seed_bytecode: Option<Vec<u8>>,
+    pub runtime: Option<mech_runtime::MechRuntime>,
 }
 
 pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
@@ -164,25 +160,12 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     })?;
 
     #[cfg(all(feature = "repl", feature = "run"))]
-    let mut repl = {
-        let config = startup
-            .runtime_config
-            .unwrap_or_else(RuntimeConfig::default);
-        config.validate()?;
-        let mut repl_program = MechProgram::new(MechProgramConfig {
-            name: config.name.clone(),
+    let mut repl = match startup.runtime {
+        Some(runtime) => MechRepl::from_runtime(runtime),
+        None => MechRepl::from(MechProgram::new(MechProgramConfig {
+            name: format!("repl-{}", generate_uuid()),
             environment: MechProgramEnvironment::default(),
-        });
-        repl_program.configure(
-            config.diagnostics.debug_enabled,
-            config.diagnostics.trace_enabled,
-            config.diagnostics.profile_enabled,
-            config.limits.max_steps_per_turn_as_usize()?,
-        );
-        if let Some(bytecode) = startup.seed_bytecode {
-            repl_program.run_bytecode(&bytecode)?;
-        }
-        MechRepl::from(repl_program)
+        })),
     };
 
     #[cfg(all(feature = "repl", not(feature = "run")))]

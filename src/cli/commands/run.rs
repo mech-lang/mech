@@ -36,7 +36,7 @@ impl MechErrorKind for CliRunError {
 }
 
 pub(crate) fn command() -> Command {
-    Command::new("run")
+    let command = Command::new("run")
     .about("Run Mech source files, project inputs, or inline Mech code.")
     .arg(Arg::new("mech_run_paths")
       .help("Source .mec files, project folders, or inline Mech code.")
@@ -61,7 +61,16 @@ pub(crate) fn command() -> Command {
     .arg(Arg::new("trace")
       .long("trace")
       .help("Print trace output for state-machine arms and function calls")
-      .action(ArgAction::SetTrue))
+      .action(ArgAction::SetTrue));
+    #[cfg(feature = "repl")]
+    let command = command.arg(
+      Arg::new("repl")
+        .short('r')
+        .long("repl")
+        .help("Enter a runtime-backed REPL after running the selected inputs")
+        .action(ArgAction::SetTrue),
+    );
+    command
 }
 
 pub(crate) fn add_cli_host_capability_args(command: Command) -> Command {
@@ -219,8 +228,6 @@ fn print_run_runtime_events(events: &[RuntimeEvent]) {
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
-    #[cfg(feature = "repl")]
-    let repl_runtime_config = Some(plan.runtime_config.clone());
     let mut runtime = new_cli_runtime_with_source_resolver(
         plan.runtime_config,
         &plan.cli_grants,
@@ -286,10 +293,10 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         Ok(value) if repl_flag => {
             #[cfg(all(feature = "run", feature = "repl"))]
             {
+                let _ = value;
                 return Ok(CliOutcome::EnterRepl(
                     crate::cli::commands::repl::ReplStartup {
-                        runtime_config: repl_runtime_config,
-                        seed_bytecode: Some(runtime.compile_program_bytecode()?),
+                        runtime: Some(runtime),
                     },
                 ));
             }

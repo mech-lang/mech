@@ -1,6 +1,8 @@
 use crate::*;
 use mech_core::*;
 use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+#[cfg(feature = "run")]
+use mech_runtime::MechRuntime;
 use std::collections::HashMap;
 use nom::{
   IResult,
@@ -31,6 +33,8 @@ pub struct MechRepl {
   pub examples: Dir<'static>,
   pub active: u64,
   pub programs: HashMap<u64,MechProgram>,
+  #[cfg(feature = "run")]
+  runtime: Option<MechRuntime>,
 }
 
 
@@ -53,6 +57,8 @@ impl MechRepl {
       programs,
       docs: DOCS_DIR.clone(),
       examples: EXAMPLES_DIR.clone(),
+      #[cfg(feature = "run")]
+      runtime: None,
     }
   }
 
@@ -65,6 +71,19 @@ impl MechRepl {
       examples: EXAMPLES_DIR.clone(),
       active: intrp_id,
       programs,
+      #[cfg(feature = "run")]
+      runtime: None,
+    }
+  }
+
+  #[cfg(feature = "run")]
+  pub fn from_runtime(runtime: MechRuntime) -> MechRepl {
+    MechRepl {
+      docs: DOCS_DIR.clone(),
+      examples: EXAMPLES_DIR.clone(),
+      active: 0,
+      programs: HashMap::new(),
+      runtime: Some(runtime),
     }
   }
 
@@ -76,6 +95,10 @@ impl MechRepl {
   }
 
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
+    #[cfg(feature = "run")]
+    if self.runtime.is_some() {
+      return self.execute_runtime_repl_command(repl_cmd);
+    }
 
     let prgrm = self
       .programs
@@ -238,6 +261,128 @@ impl MechRepl {
       x => {
         return Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc());
       }
+    }
+  }
+
+  #[cfg(feature = "run")]
+  fn execute_runtime_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
+    match repl_cmd {
+      ReplCommand::Help => Ok(help()),
+      ReplCommand::Quit => Ok(String::new()),
+      ReplCommand::Docs(name) => {
+        if let Some(name) = name {
+          let glob = format!("*{}*", name);
+          let entries = self
+            .docs
+            .find(&glob)
+            .map_err(|error| repl_error(format!("failed to search documentation: {error}")))?;
+          for entry in entries {
+            if let Some(file) = entry.as_file() {
+              if let Some(doc_content) = file.contents_utf8() {
+                return Ok(doc_content.to_string());
+              }
+            }
+          }
+          Ok(format!("No documentation found for {}", name))
+        } else {
+          Ok("Enter a doc to search for.".to_string())
+        }
+      }
+      ReplCommand::Symbols(_name) => {
+        let runtime = self
+          .runtime
+          .as_ref()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let mut output = String::new();
+        for (name, value) in runtime.root_symbol_values_all() {
+          output.push_str(&format!("{} = {}\n", name, value));
+        }
+        Ok(output)
+      }
+      ReplCommand::Plan => {
+        Ok("The :plan command is unavailable through the sealed runtime API.".to_string())
+      }
+      ReplCommand::Whos(names) => {
+        let runtime = self
+          .runtime
+          .as_ref()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let rows = if names.is_empty() {
+          runtime.root_symbol_values_all()
+        } else {
+          let name_refs = names.iter().map(String::as_str).collect::<Vec<_>>();
+          runtime.root_symbol_values(&name_refs)?
+        };
+        let mut output = String::new();
+        for (name, value) in rows {
+          output.push_str(&format!("{} = {}\n", name, value));
+        }
+        Ok(output)
+      }
+      ReplCommand::Clear(_name) => {
+        Err(repl_error(
+          "clearing a runtime-backed REPL is not supported; start a new REPL session",
+        ))
+      }
+      ReplCommand::Ls => Ok(ls()),
+      ReplCommand::Cd(path) => {
+        let path = PathBuf::from(path);
+        env::set_current_dir(&path).map_err(|_| {
+          MechError::new(
+            PathNotFound {
+              file_path: path.display().to_string(),
+            },
+            None,
+          )
+          .with_compiler_loc()
+        })?;
+        env::current_dir()
+          .map(|current_path| current_path.display().to_string())
+          .map_err(Into::into)
+      }
+      #[cfg(feature = "serde")]
+      ReplCommand::Save(_path) => {
+        Err(repl_error(
+          "saving a runtime-backed REPL is not supported by the sealed runtime API",
+        ))
+      }
+      ReplCommand::Clc => {
+        clc();
+        Ok(String::new())
+      }
+      ReplCommand::Load(paths) => {
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let mut result = mech_runtime::RuntimeValueSnapshot::capture(&Value::Empty);
+        for source_path in paths {
+          let source = std::fs::read_to_string(&source_path)?;
+          result = runtime.run_string(&source)?;
+        }
+        Ok(format!("\n{}\n{}\n", result.kind(), result))
+      }
+      ReplCommand::Code(code) => {
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let mut result = mech_runtime::RuntimeValueSnapshot::capture(&Value::Empty);
+        for (_, source) in code {
+          result = runtime.run_string(&source.to_string())?;
+        }
+        let kind_formatted = format!("{}", result.kind()).ansi_color(218);
+        Ok(format!("\n{}\n{}\n", kind_formatted, result))
+      }
+      ReplCommand::Profile(on) => {
+        let _ = on;
+        Ok("Profiling is configured by the retained runtime.".to_string())
+      }
+      ReplCommand::Step(step_id, step_count) => {
+        let _ = (step_id, step_count);
+        Ok("Stepping is not currently exposed by the sealed runtime API.".to_string())
+      }
+      _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
     }
   }
 

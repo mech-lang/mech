@@ -3741,6 +3741,19 @@ impl MechRuntime {
       })
   }
 
+  pub fn root_symbol_values_all(
+    &self,
+  ) -> Vec<(String, RuntimeValueSnapshot)> {
+    self
+      .program
+      .root_symbol_values_all()
+      .into_iter()
+      .map(|(name, value)| {
+        (name, RuntimeValueSnapshot::capture(&value))
+      })
+      .collect()
+  }
+
   pub fn bind_ans_for_interpreter(
     &mut self,
     interpreter_id: u64,

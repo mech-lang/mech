@@ -788,6 +788,14 @@ impl MechProgram {
     Ok(values)
   }
 
+  pub fn root_symbol_values_all(&self) -> Vec<(String, Value)> {
+    let symbols = self.interpreter.symbols();
+    let symbols_brrw = symbols.borrow();
+    let mut values = symbol_rows(&symbols_brrw, &[]);
+    values.sort_by(|left, right| left.0.cmp(&right.0));
+    values
+  }
+
   pub fn bind_ans_for_interpreter(
     &mut self,
     interpreter_id: u64,
@@ -2056,6 +2064,15 @@ mod root_symbol_snapshot_tests {
     let rows = program.root_symbol_values(&["a", "b"]).unwrap();
     assert_eq!(f64_value(&rows[0].1), 1.0);
     assert_eq!(f64_value(&rows[1].1), 2.0);
+  }
+
+  #[test]
+  fn root_symbol_values_all_are_sorted_by_name() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("c := 3.0\na := 1.0\nb := 2.0").unwrap();
+    let rows = program.root_symbol_values_all();
+    let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
+    assert_eq!(names, vec!["a", "ans", "b", "c"]);
   }
 
   #[test]

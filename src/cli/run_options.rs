@@ -33,13 +33,16 @@ impl RunCliArgs {
         } else {
             vec![]
         };
+        let repl = root.repl;
+        #[cfg(feature = "repl")]
+        let repl = repl || run_matches.map(|m| m.get_flag("repl")).unwrap_or(false);
         Ok(Self {
             input_mode: classify_run_inputs(inputs),
             explicit_run_command: run_matches.is_some(),
             debug: root.debug || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false),
             trace: root.trace || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false),
             time: root.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false),
-            repl: root.repl,
+            repl,
             rounds_per_step: run_matches
                 .and_then(|matches| matches.get_one::<usize>("rounds-per-step").copied())
                 .or(root.rounds_per_step),
