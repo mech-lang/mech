@@ -2160,16 +2160,16 @@ mod tests {
   }
 
   #[test]
-  fn server_load_workspace_directory_input_does_not_load_sibling_mec_files() {
+  fn server_workspace_discovery_does_not_load_parent_sibling_mec_files() {
     let root = temp_root("serve-dir-no-siblings");
     let dir = root.join("examples").join("working");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("fizzbuzz.mec"), "x := 1\n").unwrap();
     std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
-    let guard = CurrentDirGuard::enter(&root);
+    let guard = CurrentDirGuard::enter(&dir);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    server.load_workspace(&Vec::new()).unwrap();
     let registry = server.registry.read().unwrap();
     assert!(registry.get_route("fizzbuzz.mec").is_some());
     assert!(registry.get_route("source/fizzbuzz.mec").is_some());
@@ -2228,15 +2228,15 @@ mod tests {
   }
 
   #[test]
-  fn server_load_workspace_directory_index_serves_generated_html_at_root() {
+  fn server_workspace_directory_index_serves_generated_html_at_root() {
     let root = temp_root("serve-dir-index");
     let dir = root.join("examples").join("working");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("index.mec"), "x := 1\n").unwrap();
-    let guard = CurrentDirGuard::enter(&root);
+    let guard = CurrentDirGuard::enter(&dir);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    server.load_workspace(&Vec::new()).unwrap();
     let registry = server.registry.read().unwrap();
     let (_, trace) = registry.get_route_with_trace("/").unwrap();
     assert!(trace.contains("index.mec"));
@@ -2246,15 +2246,18 @@ mod tests {
   }
 
   #[test]
-  fn server_load_workspace_directory_loads_static_assets_relative_to_directory() {
+  fn server_mixed_workspace_directory_loads_static_assets_relative_to_directory() {
     let root = temp_root("serve-dir-static");
     let dir = root.join("examples").join("working");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("style.css"), "body {}\n").unwrap();
-    let guard = CurrentDirGuard::enter(&root);
+    let guard = CurrentDirGuard::enter(&dir);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["examples/working".to_string()]).unwrap();
+    server.load_workspace(&vec![
+      ".".to_string(),
+      "style.css".to_string(),
+    ]).unwrap();
     assert!(server.registry.read().unwrap().get_route("style.css").is_some());
     drop(guard);
     std::fs::remove_dir_all(root).unwrap();
