@@ -19,6 +19,8 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
@@ -896,6 +898,8 @@ pub struct InMemoryStore {
   panic_on_get_object: bool,
   #[cfg(test)]
   panic_on_commit_runtime: bool,
+  #[cfg(test)]
+  commit_runtime_calls: Option<Arc<AtomicUsize>>,
 }
 
 impl InMemoryStore {
@@ -911,6 +915,15 @@ impl InMemoryStore {
   #[cfg(test)]
   pub(crate) fn panic_on_commit_runtime_for_test(&mut self) {
     self.panic_on_commit_runtime = true;
+  }
+
+  #[cfg(test)]
+  pub(crate) fn with_commit_runtime_counter_for_test(
+    mut self,
+    counter: Arc<AtomicUsize>,
+  ) -> Self {
+    self.commit_runtime_calls = Some(counter);
+    self
   }
 
   fn prune_events(&mut self) {
@@ -1522,6 +1535,10 @@ impl MechStore for InMemoryStore {
     &mut self,
     commit: RuntimeStoreCommit,
   ) -> MResult<TransactionId> {
+    #[cfg(test)]
+    if let Some(counter) = &self.commit_runtime_calls {
+      counter.fetch_add(1, Ordering::SeqCst);
+    }
     #[cfg(test)]
     if self.panic_on_commit_runtime {
       panic!("deliberate store commit panic");

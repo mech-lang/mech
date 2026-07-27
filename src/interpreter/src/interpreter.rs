@@ -368,14 +368,8 @@ struct ProgramStateCheckpoint {
   enums: EnumTable,
   #[cfg(feature = "enum")]
   enum_dictionaries: Vec<RefPayloadCheckpoint<Dictionary>>,
-  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-  invariants: InvariantTable,
   #[cfg(feature = "invariant_define")]
-  invariant_violations: Vec<InvariantViolation>,
-  #[cfg(feature = "invariant_define")]
-  invariant_expressions: InvariantExpressionTable,
-  #[cfg(feature = "invariant_define")]
-  invariant_evaluations: InvariantEvaluationTable,
+  integrity_constraints: IntegrityConstraintTable,
   dictionary: RefPayloadCheckpoint<Dictionary>,
 }
 
@@ -442,9 +436,15 @@ impl ProgramStateCheckpoint {
       }
     }
 
-    #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-    for (_, value) in state.invariants.values() {
-      journal.capture_val_ref(value)?;
+    #[cfg(feature = "invariant_define")]
+    for constraint in state.integrity_constraints.values() {
+      journal.capture_val_ref(&constraint.result)?;
+      if let Some(lhs) = &constraint.lhs {
+        journal.capture_val_ref(lhs)?;
+      }
+      if let Some(rhs) = &constraint.rhs {
+        journal.capture_val_ref(rhs)?;
+      }
     }
 
     Ok(Self {
@@ -466,14 +466,8 @@ impl ProgramStateCheckpoint {
       enums,
       #[cfg(feature = "enum")]
       enum_dictionaries,
-      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-      invariants: state.invariants.clone(),
       #[cfg(feature = "invariant_define")]
-      invariant_violations: state.invariant_violations.clone(),
-      #[cfg(feature = "invariant_define")]
-      invariant_expressions: state.invariant_expressions.clone(),
-      #[cfg(feature = "invariant_define")]
-      invariant_evaluations: state.invariant_evaluations.clone(),
+      integrity_constraints: state.integrity_constraints.clone(),
       dictionary: RefPayloadCheckpoint::capture(&state.dictionary, interpreter_id)?,
     })
   }
@@ -518,15 +512,9 @@ impl ProgramStateCheckpoint {
       {
         state.enums = self.enums.clone();
       }
-      #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-      {
-        state.invariants = self.invariants.clone();
-      }
       #[cfg(feature = "invariant_define")]
       {
-        state.invariant_violations = self.invariant_violations.clone();
-        state.invariant_expressions = self.invariant_expressions.clone();
-        state.invariant_evaluations = self.invariant_evaluations.clone();
+        state.integrity_constraints = self.integrity_constraints.clone();
       }
       state.dictionary = self.dictionary.target.clone();
     }
@@ -2145,34 +2133,28 @@ mod checkpoint_tests {
       );
     }
     #[cfg(feature = "invariant_define")]
+    let invariant_result = Ref::new(Value::Bool(Ref::new(true)));
+    #[cfg(feature = "invariant_define")]
+    let invariant_rhs = Ref::new(Value::F64(Ref::new(2.0)));
+    #[cfg(feature = "invariant_define")]
     {
       let invariant_id = hash_str("checkpoint-invariant");
-      let invariant_value = Ref::new(Value::Bool(Ref::new(true)));
       let mut state = root.state.borrow_mut();
-      state
-        .invariants
-        .insert(invariant_id, ("checkpoint invariant".to_string(), invariant_value));
-      state
-        .invariant_expressions
-        .insert(invariant_id, "value == true".to_string());
-      state.invariant_evaluations.insert(
+      state.integrity_constraints.insert(
         invariant_id,
-        InvariantEvaluation {
-          reason: "checkpoint reason".to_string(),
-          evaluated_kind: "bool".to_string(),
-          actual: "true".to_string(),
-          expected: "true".to_string(),
+        IntegrityConstraint {
+          id: invariant_id,
+          name: "checkpoint invariant".to_string(),
+          expression: "kept <= 2.0".to_string(),
+          result: invariant_result.clone(),
+          lhs: Some(symbol_cell.clone()),
+          operator: Some(FormulaOperator::Comparison(
+            ComparisonOp::LessThanEqual,
+          )),
+          rhs: Some(invariant_rhs.clone()),
+          tokens: Vec::new(),
         },
       );
-      state.invariant_violations.push(InvariantViolation {
-        id: invariant_id,
-        error: MechError::new(
-          GenericError {
-            msg: "checkpoint violation".to_string(),
-          },
-          None,
-        ),
-      });
     }
 
     let state_address = root.state.addr();
@@ -2243,6 +2225,15 @@ mod checkpoint_tests {
     *symbol_backing.borrow_mut() = 11.0;
     *child_backing.borrow_mut() = 21.0;
     *grandchild_backing.borrow_mut() = 31.0;
+    #[cfg(feature = "invariant_define")]
+    {
+      if let Value::Bool(value) = &*invariant_result.borrow() {
+        *value.borrow_mut() = false;
+      }
+      if let Value::F64(value) = &*invariant_rhs.borrow() {
+        *value.borrow_mut() = 99.0;
+      }
+    }
 
     let removed_child = root
       .sub_interpreters
@@ -2331,21 +2322,28 @@ mod checkpoint_tests {
     {
       let state = root.state.borrow();
       let invariant_id = hash_str("checkpoint-invariant");
-      assert!(state.invariants.contains_key(&invariant_id));
+      let constraint = state.integrity_constraints.get(&invariant_id).unwrap();
+      assert_eq!(constraint.id, invariant_id);
+      assert_eq!(constraint.name, "checkpoint invariant");
+      assert_eq!(constraint.expression, "kept <= 2.0");
       assert_eq!(
-        state.invariant_expressions.get(&invariant_id).unwrap(),
-        "value == true",
+        constraint.operator,
+        Some(FormulaOperator::Comparison(
+          ComparisonOp::LessThanEqual,
+        )),
       );
-      assert_eq!(
-        state
-          .invariant_evaluations
-          .get(&invariant_id)
-          .unwrap()
-          .reason,
-        "checkpoint reason",
-      );
-      assert_eq!(state.invariant_violations.len(), 1);
-      assert_eq!(state.invariant_violations[0].id, invariant_id);
+      assert_eq!(constraint.result.addr(), invariant_result.addr());
+      assert_eq!(constraint.rhs.as_ref().unwrap().addr(), invariant_rhs.addr());
+      if let Value::Bool(value) = &*constraint.result.borrow() {
+        assert!(*value.borrow());
+      } else {
+        panic!("restored constraint result must remain bool");
+      }
+      if let Value::F64(value) = &*constraint.rhs.as_ref().unwrap().borrow() {
+        assert_eq!(*value.borrow(), 2.0);
+      } else {
+        panic!("restored constraint rhs must remain f64");
+      }
     }
     assert_eq!(root.sub_interpreters.addr(), sub_interpreters_address);
     assert_eq!(root.registers.len(), 1);

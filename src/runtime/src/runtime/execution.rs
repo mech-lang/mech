@@ -3600,68 +3600,11 @@ impl MechRuntime {
     self.program.compile_bytecode()
   }
 
-  #[cfg(all(feature = "invariant_define", feature = "bool"))]
-  pub fn invariant_snapshots(
+  #[cfg(feature = "invariant_define")]
+  pub fn integrity_constraint_report(
     &self,
-  ) -> Vec<crate::RuntimeInvariantSnapshot> {
-    let state = self.program.interpreter().state.borrow();
-    let violations = state
-      .invariant_violations
-      .iter()
-      .filter_map(|violation| {
-        violation
-          .error
-          .kind_as::<mech_core::InvariantViolationError>()
-          .map(|error| (violation.id, error))
-      })
-      .collect::<HashMap<_, _>>();
-    let mut ids = state.invariants.keys().copied().collect::<Vec<_>>();
-    ids.sort_unstable();
-    ids
-      .into_iter()
-      .filter_map(|id| {
-        let (name, value) = state.invariants.get(&id)?;
-        let passed = matches!(
-          &*value.borrow(),
-          Value::Bool(value) if *value.borrow()
-        );
-        let evaluation = state.invariant_evaluations.get(&id);
-        let violation = violations.get(&id);
-        Some(crate::RuntimeInvariantSnapshot {
-          id,
-          name: name.clone(),
-          passed,
-          expression: violation
-            .map(|error| error.expression.clone())
-            .or_else(|| state.invariant_expressions.get(&id).cloned())
-            .unwrap_or_else(|| name.clone()),
-          reason: violation
-            .map(|error| error.reason.clone())
-            .or_else(|| evaluation.map(|value| value.reason.clone()))
-            .unwrap_or_else(|| {
-              if passed {
-                "evaluated to true".to_string()
-              } else {
-                "Invariant evaluated to false or non-bool value".to_string()
-              }
-            }),
-          evaluated_kind: violation
-            .map(|error| error.evaluated_kind.clone())
-            .or_else(|| evaluation.map(|value| value.evaluated_kind.clone()))
-            .unwrap_or_else(|| "bool".to_string()),
-          actual: violation
-            .and_then(|error| error.lhs_value.clone())
-            .or_else(|| evaluation.map(|value| value.actual.clone()))
-            .unwrap_or_else(|| {
-              if passed { "true" } else { "?" }.to_string()
-            }),
-          expected: violation
-            .and_then(|error| error.rhs_value.clone())
-            .or_else(|| evaluation.map(|value| value.expected.clone()))
-            .unwrap_or_else(|| "true".to_string()),
-        })
-      })
-      .collect()
+  ) -> MResult<mech_program::IntegrityConstraintReport> {
+    self.program.integrity_constraint_report()
   }
 
   pub fn out_string(&self) -> String {
@@ -4124,6 +4067,17 @@ impl MechRuntime {
         return Err(error);
       }
     };
+    #[cfg(feature = "invariant_define")]
+    if let Err(error) = module_program.validate_integrity_constraints() {
+      self.emit_event_to_context(
+        context,
+        RuntimeEventKind::ModuleExecutionFailed {
+          module_version: version,
+          message: format!("{:?}", error),
+        },
+      )?;
+      return Err(error);
+    }
     let mut exports = HashMap::new();
     {
       let symbols = module_program.interpreter_mut().symbols();

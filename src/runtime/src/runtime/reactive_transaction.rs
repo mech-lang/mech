@@ -452,6 +452,10 @@ impl MechRuntime {
           }
           Err(error) => error,
         };
+        // Integrity validation runs inside the program journal before this
+        // runtime finalizer. A rejected candidate therefore intentionally
+        // leaves finalization pending so the runtime savepoint can discard
+        // provisional effects and context changes.
         self.finish_failed_reactive_runtime_turn(
           context,
           operation,
@@ -476,6 +480,13 @@ impl MechRuntime {
     newly_acquired_ownership: bool,
   ) -> MResult<T> {
     let original_error_text = format!("{:?}", original_error);
+    #[cfg(feature = "invariant_define")]
+    let integrity_audit =
+      super::program_transaction::integrity_failure_audit(
+        &original_error,
+        transaction_id,
+        context.task,
+      );
     let mut rollback_failures =
       self.rollback_runtime_operation(
         context,
@@ -504,6 +515,11 @@ impl MechRuntime {
     }
 
     if rollback_failures.is_empty() {
+      #[cfg(feature = "invariant_define")]
+      self.emit_integrity_failure_audit(
+        context,
+        integrity_audit,
+      );
       return Err(original_error);
     }
 

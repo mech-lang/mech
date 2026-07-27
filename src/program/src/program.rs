@@ -841,23 +841,33 @@ impl MechProgram {
         services,
       );
       match execution {
-        Ok(()) => match finalize() {
-          ProgramTurnFinalization::Commit => {
-            journal.commit();
-            Ok(())
-          }
-          ProgramTurnFinalization::Rollback(error) => {
-            self.finish_failed_reactive_operation(
+        Ok(()) => {
+          #[cfg(feature = "invariant_define")]
+          if let Err(error) = self.validate_integrity_constraints() {
+            return self.finish_failed_reactive_operation(
               "step",
               journal,
               error,
-            )
+            );
           }
-          ProgramTurnFinalization::CommitWithError(error) => {
-            journal.commit();
-            Err(error)
+          match finalize() {
+            ProgramTurnFinalization::Commit => {
+              journal.commit();
+              Ok(())
+            }
+            ProgramTurnFinalization::Rollback(error) => {
+              self.finish_failed_reactive_operation(
+                "step",
+                journal,
+                error,
+              )
+            }
+            ProgramTurnFinalization::CommitWithError(error) => {
+              journal.commit();
+              Err(error)
+            }
           }
-        },
+        }
         Err(error) => self.finish_failed_reactive_operation(
           "step",
           journal,
@@ -1014,6 +1024,22 @@ impl MechProgram {
     dirty_cells: &[ReactiveCellId],
     services: &mut dyn MechExecutionServices,
   ) -> MResult<ReactiveTurnOutcome> {
+    self.advance_reactive_turn_coordinated(
+      interpreter_id,
+      dirty_cells,
+      services,
+      |_| ProgramTurnFinalization::Commit,
+    )
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn advance_reactive_turn_coordinated(
+    &mut self,
+    interpreter_id: u64,
+    dirty_cells: &[ReactiveCellId],
+    services: &mut dyn MechExecutionServices,
+    finalize: impl FnOnce(&ReactiveTurnOutcome) -> ProgramTurnFinalization,
+  ) -> MResult<ReactiveTurnOutcome> {
     with_reactive_journal_participant(|participant| {
       let mut journal = ProgramReactiveTurnJournal::new(participant);
       let execution = self.advance_reactive_turn_with_journal(
@@ -1024,8 +1050,31 @@ impl MechProgram {
       );
       match execution {
         Ok(outcome) => {
-          journal.commit();
-          Ok(outcome)
+          #[cfg(feature = "invariant_define")]
+          if let Err(error) = self.validate_integrity_constraints() {
+            return self.finish_failed_reactive_operation(
+              "advance_reactive_turn",
+              journal,
+              error,
+            );
+          }
+          match finalize(&outcome) {
+            ProgramTurnFinalization::Commit => {
+              journal.commit();
+              Ok(outcome)
+            }
+            ProgramTurnFinalization::Rollback(error) => {
+              self.finish_failed_reactive_operation(
+                "advance_reactive_turn",
+                journal,
+                error,
+              )
+            }
+            ProgramTurnFinalization::CommitWithError(error) => {
+              journal.commit();
+              Err(error)
+            }
+          }
         }
         Err(error) => self.finish_failed_reactive_operation(
           "advance_reactive_turn",
@@ -1105,23 +1154,33 @@ impl MechProgram {
         services,
       );
       match execution {
-        Ok(outcome) => match finalize(&outcome) {
-          ProgramTurnFinalization::Commit => {
-            journal.commit();
-            Ok(outcome)
-          }
-          ProgramTurnFinalization::Rollback(error) => {
-            self.finish_failed_reactive_operation(
+        Ok(outcome) => {
+          #[cfg(feature = "invariant_define")]
+          if let Err(error) = self.validate_integrity_constraints() {
+            return self.finish_failed_reactive_operation(
               "update_inputs_and_advance_turn",
               journal,
               error,
-            )
+            );
           }
-          ProgramTurnFinalization::CommitWithError(error) => {
-            journal.commit();
-            Err(error)
+          match finalize(&outcome) {
+            ProgramTurnFinalization::Commit => {
+              journal.commit();
+              Ok(outcome)
+            }
+            ProgramTurnFinalization::Rollback(error) => {
+              self.finish_failed_reactive_operation(
+                "update_inputs_and_advance_turn",
+                journal,
+                error,
+              )
+            }
+            ProgramTurnFinalization::CommitWithError(error) => {
+              journal.commit();
+              Err(error)
+            }
           }
-        },
+        }
         Err(error) => self.finish_failed_reactive_operation(
           "update_inputs_and_advance_turn",
           journal,
@@ -1478,6 +1537,102 @@ impl MechErrorKind for UnsupportedProgramSourceError {
 mod tests {
   use super::*;
   use mech_core::Ref;
+
+  #[cfg(feature = "invariant_define")]
+  fn constraint<'a>(
+    program: &'a MechProgram,
+    name: &str,
+  ) -> mech_core::IntegrityConstraint {
+    program
+      .interpreter()
+      .state
+      .borrow()
+      .integrity_constraints
+      .get(&hash_str(name))
+      .unwrap()
+      .clone()
+  }
+
+  #[cfg(feature = "invariant_define")]
+  #[test]
+  fn integrity_constraint_declarations_create_live_descriptors_without_enforcement() {
+    for (name, expression) in [
+      ("true!", "1.0 <= 2.0"),
+      ("false!", "2.0 <= 1.0"),
+      ("number!", "42.0"),
+    ] {
+      let mut program = MechProgram::new(MechProgramConfig::default());
+      program
+        .run_string(&format!("{name} := {expression}"))
+        .unwrap();
+      let descriptor = constraint(&program, name);
+      assert_eq!(descriptor.id, hash_str(name));
+      assert_eq!(descriptor.name, name);
+      assert!(!descriptor.expression.is_empty());
+      assert!(!descriptor.tokens.is_empty());
+      assert_eq!(
+        program
+          .interpreter()
+          .state
+          .borrow()
+          .integrity_constraints
+          .len(),
+        1,
+      );
+    }
+  }
+
+  #[cfg(feature = "invariant_define")]
+  #[test]
+  fn integrity_constraint_direct_operands_remain_live() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program
+      .run_string("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum")
+      .unwrap();
+
+    let descriptor = constraint(&program, "safe!");
+    let target = program
+      .interpreter()
+      .symbols()
+      .borrow()
+      .get(hash_str("target"))
+      .unwrap();
+    assert_eq!(descriptor.lhs.as_ref().unwrap().addr(), target.addr());
+    assert!(descriptor.rhs.is_some());
+    if let Value::F64(value) = &*target.borrow() {
+      *value.borrow_mut() = 3.0;
+    } else {
+      panic!("target must be f64");
+    }
+    if let Value::F64(value) = &*descriptor.lhs.unwrap().borrow() {
+      assert_eq!(*value.borrow(), 3.0);
+    } else {
+      panic!("captured lhs must remain the target cell");
+    }
+  }
+
+  #[cfg(feature = "invariant_define")]
+  #[test]
+  fn integrity_constraint_diagnostics_do_not_recompile_complex_operands() {
+    let source = "target := 1.0\nmaximum := 3.0";
+    let expression = "target + 1.0 <= maximum";
+    let mut ordinary = MechProgram::new(MechProgramConfig::default());
+    ordinary
+      .run_string(&format!("{source}\ncandidate := {expression}"))
+      .unwrap();
+    let ordinary_plan_len = ordinary.interpreter().plan_len();
+
+    let mut constrained = MechProgram::new(MechProgramConfig::default());
+    constrained
+      .run_string(&format!("{source}\nsafe! := {expression}"))
+      .unwrap();
+    let descriptor = constraint(&constrained, "safe!");
+
+    assert_eq!(constrained.interpreter().plan_len(), ordinary_plan_len);
+    assert!(descriptor.lhs.is_none());
+    assert!(descriptor.operator.is_some());
+    assert!(descriptor.rhs.is_some());
+  }
 
   fn program_with_nested_interpreter(nested_id: u64, child_id: u64) -> MechProgram {
     let mut program = MechProgram::new(MechProgramConfig::default());
