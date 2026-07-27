@@ -1,4 +1,5 @@
 use super::*;
+use super::capability::check_transactional_capability;
 
 use mech_core::MechExecutionServices;
 use crate::{
@@ -121,27 +122,12 @@ impl RuntimeSessionServices<'_> {
   ) -> MResult<CapabilityId> {
     self.validate_context()?;
     self.context.charge_step()?;
-    if let Some(capability) =
-      self.transaction.capabilities.check(request)?
-    {
-      return Ok(capability);
-    }
-    let revocations =
-      self.transaction.capabilities.revocation_ids();
-    let pending_uses =
-      self.transaction.capabilities.pending_uses().clone();
-    let capability = self
-      .capability_kernel
-      .preview_check_excluding_with_pending_uses(
-        request,
-        &revocations,
-        &pending_uses,
-      )?;
-    self
-      .transaction
-      .capabilities
-      .stage_use(capability)?;
-    Ok(capability)
+    check_transactional_capability(
+      self.capability_kernel,
+      &mut self.transaction.capabilities,
+      &self.context.authority,
+      request,
+    )
   }
 
   fn stage_effect(

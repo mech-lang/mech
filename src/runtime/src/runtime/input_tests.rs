@@ -11,8 +11,9 @@ use super::*;
 use crate::{
   BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
   ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig,
-  RuntimeCapabilityGrant, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
+  ResourcePathCapability, ResourcePathScope, RuntimeHostFactory, RuntimeHostInstallation, RuntimeHostInput,
   RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInputOutcome, RuntimeIngress,
+  RuntimeAuthorityScope,
   RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeResourceWriteIntent, DeterministicHostFunction, HostArgumentValue, PlannedPureHostFunction, RegisteredHostFunction, RuntimeCallContext, RuntimeValueSnapshot, materialize_host_manifest,
   PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
 };
@@ -195,17 +196,18 @@ fn test_provider_with(base_uri: &str, path: &str, value: f64) -> TestResourcePro
 
 fn grant_read(runtime: &mut MechRuntime, resource: &str, path: &str) {
   let subject = runtime.runtime_context().unwrap().subject;
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: resource.to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec![path.to_string()],
-  }).unwrap();
+  grant_resource(
+    runtime,
+    &subject,
+    resource,
+    RuntimeCapabilityOperation::Read,
+    &[path],
+  );
 }
 
 fn grant_write(runtime: &mut MechRuntime, resource: &str, path: &str) {
   let subject = runtime.runtime_context().unwrap().subject;
-  runtime.grant_capability(RuntimeCapabilityGrant { subject, resource: resource.to_string(), operations: vec![RuntimeCapabilityOperation::Write], paths: vec![path.to_string()] }).unwrap();
+  grant_resource(runtime, &subject, resource, RuntimeCapabilityOperation::Write, &[path]);
 }
 
 fn grant_read_to(
@@ -213,19 +215,41 @@ fn grant_read_to(
   subject: &str,
   resource: &str,
   path: &str,
-) {
-  runtime
-    .grant_capability(
-      RuntimeCapabilityGrant {
-        subject: subject.to_string(),
-        resource: resource.to_string(),
-        operations: vec![
-          RuntimeCapabilityOperation::Read,
-        ],
-        paths: vec![path.to_string()],
-      },
-    )
-    .unwrap();
+) -> CapabilityId {
+  grant_resource(
+    runtime,
+    subject,
+    resource,
+    RuntimeCapabilityOperation::Read,
+    &[path],
+  )
+}
+
+fn grant_resource(
+  runtime: &mut MechRuntime,
+  subject: &str,
+  resource: &str,
+  operation: RuntimeCapabilityOperation,
+  paths: &[&str],
+) -> CapabilityId {
+  let scopes = paths.iter().map(|path| {
+    if *path == "*" {
+      ResourcePathScope::Wildcard
+    } else if let Some(prefix) = path.strip_suffix("/*") {
+      ResourcePathScope::Prefix(prefix.to_string())
+    } else {
+      ResourcePathScope::Exact((*path).to_string())
+    }
+  });
+  let capability = ResourcePathCapability::new(
+    runtime.next_capability_id(),
+    subject,
+    resource,
+    [operation.name()],
+    scopes,
+  )
+  .unwrap();
+  runtime.grant_capability(Arc::new(capability)).unwrap()
 }
 
 fn grant_host_call(
@@ -786,14 +810,13 @@ fn failed_source_does_not_leave_live_state_armed() {
   );
   let mut context_a = runtime.runtime_context().unwrap().with_subject("subject-a");
   grant_read_to(&mut runtime, "subject-a", "test://clock/ticks", "value");
-  runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject: "subject-a".to_string(),
-      resource: TEST_OUTPUT_BASE_URI.to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["line".to_string()],
-    })
-    .unwrap();
+  grant_resource(
+    &mut runtime,
+    "subject-a",
+    TEST_OUTPUT_BASE_URI,
+    RuntimeCapabilityOperation::Write,
+    &["line"],
+  );
   let error = runtime.run_string_with_context(
     &mut context_a,
     "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\n@out/line <- output\nmissing := missing-live-value + 1",
@@ -893,9 +916,22 @@ fn changed_actor_message_rejects_live_context_reuse() {
 #[test]
 fn live_context_capability_order_does_not_cause_mismatch() {
   let mut runtime = test_runtime(test_provider_with("test://clock/ticks", "value", 1.0));
-  let mut context_a = runtime.runtime_context().unwrap().with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
-  let mut context_b = runtime.runtime_context().unwrap().with_capabilities(vec![CapabilityId(2), CapabilityId(1)]);
-  grant_read_to(&mut runtime, &context_a.subject, "test://clock/ticks", "value");
+  let subject = runtime.runtime_context().unwrap().subject;
+  let read = grant_read_to(
+    &mut runtime,
+    &subject,
+    "test://clock/ticks",
+    "value",
+  );
+  let unused = CapabilityId(2);
+  let mut context_a = runtime
+    .runtime_context()
+    .unwrap()
+    .with_capabilities(vec![read, unused]);
+  let mut context_b = runtime
+    .runtime_context()
+    .unwrap()
+    .with_capabilities(vec![unused, read]);
   runtime.run_string_with_context(&mut context_a, "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value").unwrap();
   runtime.run_string_with_context(&mut context_b, "@pulse := test://clock/ticks{:read(value)}\nother := @pulse/value").unwrap();
 }
@@ -1132,7 +1168,8 @@ fn host_input_context_accepts_transaction_capabilities_but_rejects_drift() {
     .unwrap();
 
   let mut drift = runtime.live_turn_context().unwrap();
-  drift.add_capability(CapabilityId(999));
+  drift.authority =
+    RuntimeAuthorityScope::allow_list([CapabilityId(999)]);
   let error = runtime
     .apply_host_input_with_context(
       &mut drift,
@@ -1591,14 +1628,13 @@ mod persistent_send_tests {
   const TIME_PATHS: &[&str] = &["unix-ms", "hour", "minute", "second", "millisecond"];
 
     fn grant_write_to(runtime: &mut MechRuntime, subject: &str, resource: &str, path: &str) {
-        runtime
-            .grant_capability(RuntimeCapabilityGrant {
-                subject: subject.to_string(),
-                resource: resource.to_string(),
-                operations: vec![RuntimeCapabilityOperation::Write],
-                paths: vec![path.to_string()],
-            })
-            .unwrap();
+        grant_resource(
+            runtime,
+            subject,
+            resource,
+            RuntimeCapabilityOperation::Write,
+            &[path],
+        );
     }
 
     #[derive(Clone, Debug, Default)]
@@ -1710,12 +1746,7 @@ mod persistent_send_tests {
 
   fn grant(runtime: &mut MechRuntime, resource: &str, operation: RuntimeCapabilityOperation, paths: &[&str]) {
     let subject = runtime.runtime_context().unwrap().subject;
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: resource.to_string(),
-      operations: vec![operation],
-      paths: paths.iter().map(|path| path.to_string()).collect(),
-    }).unwrap();
+    grant_resource(runtime, &subject, resource, operation, paths);
   }
 
   fn runtime_with_console(initial: TimeSnapshot, fail_next: bool) -> (MechRuntime, ManualTimeInputDriver, RecordingConsoleBackend) {
@@ -1783,19 +1814,20 @@ clock-output := (hour, minute, second)
       .build()
       .unwrap();
     let subject = "task:live-custom";
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.to_string(),
-      resource: "time://clock/clock".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: TIME_PATHS.iter().map(|path| path.to_string()).collect(),
-    }).unwrap();
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.to_string(),
-      resource: "console://console/output".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["line".to_string()],
-    }).unwrap();
-    assert!(!runtime.has_capability_grant(&runtime.runtime_context().unwrap().subject, "console://console/output", &RuntimeCapabilityOperation::Write, "line"));
+    grant_resource(
+      &mut runtime,
+      subject,
+      "time://clock/clock",
+      RuntimeCapabilityOperation::Read,
+      TIME_PATHS,
+    );
+    grant_resource(
+      &mut runtime,
+      subject,
+      "console://console/output",
+      RuntimeCapabilityOperation::Write,
+      &["line"],
+    );
 
     let mut context = runtime.runtime_context().unwrap().with_subject(subject);
     runtime.run_string_with_context(&mut context, r#"@out := console://console/output{:write(line)}
@@ -2282,7 +2314,7 @@ render-tick := @tick/tick
   #[test]
   fn patterned_activation_send_preserves_custom_live_authority() {
     let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0)));let(mut runtime,output)=test_runtime_with_output(provider);let default_subject=runtime.runtime_context().unwrap().subject;let custom_subject="task:patterned-activation-send-custom";grant_read_to(&mut runtime,custom_subject,"test://render/timer","tick");grant_write_to(&mut runtime,custom_subject,TEST_OUTPUT_BASE_URI,"line");
-    assert!(!runtime.has_capability_grant(&default_subject,"test://render/timer",&RuntimeCapabilityOperation::Read,"tick"));assert!(!runtime.has_capability_grant(&default_subject,TEST_OUTPUT_BASE_URI,&RuntimeCapabilityOperation::Write,"line"));
+    assert!(runtime.check_capability(&CapabilityRequest::from_keys(&default_subject,"read","test://render/timer/tick")).is_err());assert!(runtime.check_capability(&CapabilityRequest::from_keys(&default_subject,"write",format!("{TEST_OUTPUT_BASE_URI}/line"))).is_err());
     let mut context=runtime.runtime_context().unwrap().with_subject(custom_subject);
     runtime.run_string_with_context(&mut context,r#"@tick := test://render/timer{:read(tick)}
 @out := test://effects/output{:write(line)}
@@ -2668,18 +2700,16 @@ latest := render-tick + 1.0
         let custom_subject = "task:activation-send-custom";
         grant_read_to(&mut runtime, custom_subject, "test://render/timer", "tick");
         grant_write_to(&mut runtime, custom_subject, TEST_OUTPUT_BASE_URI, "line");
-        assert!(!runtime.has_capability_grant(
+        assert!(runtime.check_capability(&CapabilityRequest::from_keys(
             &default_subject,
-            "test://render/timer",
-            &RuntimeCapabilityOperation::Read,
-            "tick"
-        ));
-        assert!(!runtime.has_capability_grant(
+            "read",
+            "test://render/timer/tick",
+        )).is_err());
+        assert!(runtime.check_capability(&CapabilityRequest::from_keys(
             &default_subject,
-            TEST_OUTPUT_BASE_URI,
-            &RuntimeCapabilityOperation::Write,
-            "line"
-        ));
+            "write",
+            format!("{TEST_OUTPUT_BASE_URI}/line"),
+        )).is_err());
         let mut context = runtime
             .runtime_context()
             .unwrap()

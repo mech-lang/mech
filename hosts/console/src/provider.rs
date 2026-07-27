@@ -74,14 +74,6 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
     bases
   }
 
-  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
-    if self.instance == "console" {
-      vec![vec![self.base(), "console://output".to_string()]]
-    } else {
-      Vec::new()
-    }
-  }
-
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
     Err(console_error(request.base_uri, "console output is send-only and cannot be read"))
   }

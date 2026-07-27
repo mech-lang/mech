@@ -18,7 +18,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use mech_core::{MResult, MechError, MechErrorKind};
 
@@ -359,6 +359,56 @@ impl MechErrorKind for RuntimeContextDerivedBaseUnsupported {
 // Runtime Context
 // -----------------------------------------------------------------------------
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimeAuthorityScope {
+  AllForSubject,
+  AllowList(BTreeSet<CapabilityId>),
+}
+
+impl RuntimeAuthorityScope {
+  pub fn all_for_subject() -> Self {
+    Self::AllForSubject
+  }
+
+  pub fn allow_list(
+    capabilities: impl IntoIterator<Item = CapabilityId>,
+  ) -> Self {
+    Self::AllowList(capabilities.into_iter().collect())
+  }
+
+  pub fn is_all_for_subject(&self) -> bool {
+    matches!(self, Self::AllForSubject)
+  }
+
+  pub fn contains(&self, capability: CapabilityId) -> bool {
+    match self {
+      Self::AllForSubject => true,
+      Self::AllowList(capabilities) => {
+        capabilities.contains(&capability)
+      }
+    }
+  }
+
+  pub fn capability_ids(&self) -> Option<&BTreeSet<CapabilityId>> {
+    match self {
+      Self::AllForSubject => None,
+      Self::AllowList(capabilities) => Some(capabilities),
+    }
+  }
+
+  pub(crate) fn add(&mut self, capability: CapabilityId) {
+    if let Self::AllowList(capabilities) = self {
+      capabilities.insert(capability);
+    }
+  }
+
+  pub(crate) fn remove(&mut self, capability: CapabilityId) {
+    if let Self::AllowList(capabilities) = self {
+      capabilities.remove(&capability);
+    }
+  }
+}
+
 #[derive(Clone, Debug)]
 pub struct RuntimeContext {
   pub(crate) runtime: RuntimeId,
@@ -368,7 +418,7 @@ pub struct RuntimeContext {
   pub(crate) access: AccessSet,
   pub(crate) module_version: Option<ModuleVersionId>,
   pub(crate) transaction: Option<TransactionId>,
-  pub(crate) capabilities: Vec<CapabilityId>,
+  pub(crate) authority: RuntimeAuthorityScope,
   pub(crate) budget: ResourceBudget,
   pub(crate) events: Vec<RuntimeEvent>,
   pub(crate) actor_message: Option<MessageRecord>,
@@ -449,7 +499,7 @@ impl RuntimeContext {
       access: AccessSet::new(),
       module_version: None,
       transaction: None,
-      capabilities: Vec::new(),
+      authority: RuntimeAuthorityScope::AllForSubject,
       budget: ResourceBudget::default(),
       events: Vec::new(),
       actor_message: None,
@@ -487,7 +537,7 @@ impl RuntimeContext {
   }
 
   pub(crate) fn with_capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
-    self.capabilities = capabilities;
+    self.authority = RuntimeAuthorityScope::allow_list(capabilities);
     self
   }
 
@@ -554,18 +604,12 @@ impl RuntimeContext {
     std::mem::take(&mut self.events)
   }
 
-  pub fn has_capability(&self, capability: CapabilityId) -> bool {
-    self.capabilities.contains(&capability)
-  }
-
   pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
-    if !self.capabilities.contains(&capability) {
-      self.capabilities.push(capability);
-    }
+    self.authority.add(capability);
   }
 
   pub(crate) fn remove_capability(&mut self, capability: CapabilityId) {
-    self.capabilities.retain(|id| *id != capability);
+    self.authority.remove(capability);
   }
 
   pub(crate) fn charge_step(&mut self) -> MResult<()> {
@@ -655,6 +699,10 @@ impl RuntimeContext {
     &self.events
   }
 
+  pub fn authority_scope(&self) -> &RuntimeAuthorityScope {
+    &self.authority
+  }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -669,7 +717,7 @@ pub(crate) struct RuntimeContextBuilder {
   actor: Option<ActorId>,
   module_version: Option<ModuleVersionId>,
   transaction: Option<TransactionId>,
-  capabilities: Vec<CapabilityId>,
+  authority: Option<RuntimeAuthorityScope>,
   budget: ResourceBudget,
   access: AccessSet,
   actor_message: Option<MessageRecord>,
@@ -685,7 +733,7 @@ impl RuntimeContextBuilder {
       actor: None,
       module_version: None,
       transaction: None,
-      capabilities: Vec::new(),
+      authority: None,
       budget: ResourceBudget::default(),
       access: AccessSet::new(),
       actor_message: None,
@@ -729,7 +777,7 @@ impl RuntimeContextBuilder {
   }
 
   pub(crate) fn capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
-    self.capabilities = capabilities;
+    self.authority = Some(RuntimeAuthorityScope::allow_list(capabilities));
     self
   }
 
@@ -761,7 +809,13 @@ impl RuntimeContextBuilder {
       actor: self.actor,
       module_version: self.module_version,
       transaction: self.transaction,
-      capabilities: self.capabilities,
+      authority: self.authority.unwrap_or_else(|| {
+        if self.task.is_some() || self.actor.is_some() {
+          RuntimeAuthorityScope::allow_list([])
+        } else {
+          RuntimeAuthorityScope::AllForSubject
+        }
+      }),
       budget: self.budget,
       access: self.access,
       events: Vec::new(),
@@ -1104,6 +1158,10 @@ mod tests {
       .unwrap();
 
     assert_eq!(context.subject, "runtime:00000000000000000000000000000001");
+    assert_eq!(
+      context.authority,
+      RuntimeAuthorityScope::AllForSubject,
+    );
   }
 
   #[test]
@@ -1114,6 +1172,10 @@ mod tests {
       .unwrap();
 
     assert_eq!(context.subject, "actor:00000000000000000000000000000002");
+    assert_eq!(
+      context.authority,
+      RuntimeAuthorityScope::allow_list([]),
+    );
   }
 
   #[test]
@@ -1124,21 +1186,26 @@ mod tests {
       .unwrap();
 
     assert_eq!(context.subject, "task:00000000000000000000000000000002");
+    assert_eq!(
+      context.authority,
+      RuntimeAuthorityScope::allow_list([]),
+    );
   }
 
   #[test]
-  fn context_tracks_capabilities() {
-    let mut context = RuntimeContext::new(RuntimeId(1), "task:1");
+  fn allowlist_authority_tracks_provisional_capabilities() {
+    let mut context = RuntimeContext::new(RuntimeId(1), "task:1")
+      .with_capabilities(Vec::new());
 
-    assert!(!context.has_capability(CapabilityId(7)));
+    assert!(!context.authority.contains(CapabilityId(7)));
 
     context.add_capability(CapabilityId(7));
 
-    assert!(context.has_capability(CapabilityId(7)));
+    assert!(context.authority.contains(CapabilityId(7)));
 
     context.remove_capability(CapabilityId(7));
 
-    assert!(!context.has_capability(CapabilityId(7)));
+    assert!(!context.authority.contains(CapabilityId(7)));
   }
 
   #[test]

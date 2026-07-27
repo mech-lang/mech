@@ -1,5 +1,6 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, PreparedRuntimeEffect, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceScope};
+use mech_runtime::{CapabilityId, FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, PreparedRuntimeEffect, ResourcePathCapability, RuntimeBuilder, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceScope};
+use std::sync::Arc;
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -28,12 +29,15 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
   }
   let mut runtime = builder.build().unwrap();
   if grant_read {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: "task://main".to_string(),
-      resource: "docs://manual".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec!["intro/title".to_string()],
-    }).unwrap();
+    runtime.grant_capability(Arc::new(
+      ResourcePathCapability::exact(
+        CapabilityId(1),
+        "task://main",
+        "docs://manual",
+        ["read"],
+        "intro/title",
+      ).unwrap(),
+    )).unwrap();
   }
   let options = ModuleBuildOptions::new("diagnostics", "v0.3", "native", &[], &[]);
 
@@ -119,7 +123,7 @@ fn main() {
   );
   run_case(
     &root,
-    "docs read without host grant fails RuntimeCapabilityGrantDenied",
+    "docs read without capability fails CapabilityDenied",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,

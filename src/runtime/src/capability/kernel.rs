@@ -72,6 +72,27 @@ pub trait CapabilityKernel: std::fmt::Debug + Send {
 
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId>;
 
+  fn check_scoped(
+    &mut self,
+    request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
+  ) -> MResult<CapabilityId> {
+    match scope {
+      RuntimeAuthorityScope::AllForSubject => self.check(request),
+      RuntimeAuthorityScope::AllowList(_) => {
+        Err(MechError::new(
+          TransactionStateUnsupportedError {
+            function: "capability kernel scoped check".to_string(),
+            reason:
+              "custom kernel cannot enforce an authority allowlist"
+                .to_string(),
+          },
+          None,
+        ))
+      }
+    }
+  }
+
   fn preview_check(
     &self,
     _request: &CapabilityRequest,
@@ -139,6 +160,37 @@ pub trait CapabilityKernel: std::fmt::Debug + Send {
     }
 
     self.preview_check_excluding(request, excluded)
+  }
+
+  fn preview_scoped_with_transaction(
+    &self,
+    request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
+    excluded: &HashSet<CapabilityId>,
+    pending_uses: &HashMap<CapabilityId, u64>,
+  ) -> MResult<CapabilityId> {
+    match scope {
+      RuntimeAuthorityScope::AllForSubject => {
+        self.preview_check_excluding_with_pending_uses(
+          request,
+          excluded,
+          pending_uses,
+        )
+      }
+      RuntimeAuthorityScope::AllowList(_) => {
+        Err(MechError::new(
+          TransactionStateUnsupportedError {
+            function:
+              "capability kernel transactional scoped preview"
+                .to_string(),
+            reason:
+              "custom kernel cannot enforce an authority allowlist"
+                .to_string(),
+          },
+          None,
+        ))
+      }
+    }
   }
 
   fn apply_usage_delta(
@@ -282,6 +334,7 @@ impl BasicCapabilityKernel {
   fn check_with_exclusions(
     &mut self,
     request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
     excluded: &HashSet<CapabilityId>,
   ) -> MResult<CapabilityId> {
     let Some(ids) = self.by_subject.get(&request.subject) else {
@@ -300,6 +353,13 @@ impl BasicCapabilityKernel {
     let mut last_reason = None;
 
     for id in ids {
+      if !scope.contains(id) {
+        last_reason = Some(
+          "capability is outside the execution authority scope"
+            .to_string(),
+        );
+        continue;
+      }
       if excluded.contains(&id) {
         last_reason =
           Some("capability is revoked by the active transaction".to_string());
@@ -350,6 +410,7 @@ impl BasicCapabilityKernel {
   fn preview_check_with_exclusions_and_pending_uses(
     &self,
     request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
     excluded: &HashSet<CapabilityId>,
     pending_uses: &HashMap<CapabilityId, u64>,
   ) -> MResult<CapabilityId> {
@@ -367,6 +428,13 @@ impl BasicCapabilityKernel {
 
     let mut last_reason = None;
     for id in ids {
+      if !scope.contains(*id) {
+        last_reason = Some(
+          "capability is outside the execution authority scope"
+            .to_string(),
+        );
+        continue;
+      }
       if excluded.contains(id) {
         last_reason =
           Some("capability is revoked by the active transaction".to_string());
@@ -509,7 +577,19 @@ impl CapabilityKernel for BasicCapabilityKernel {
   }
 
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> {
-    self.check_with_exclusions(request, &HashSet::new())
+    self.check_with_exclusions(
+      request,
+      &RuntimeAuthorityScope::AllForSubject,
+      &HashSet::new(),
+    )
+  }
+
+  fn check_scoped(
+    &mut self,
+    request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
+  ) -> MResult<CapabilityId> {
+    self.check_with_exclusions(request, scope, &HashSet::new())
   }
 
   fn check_excluding(
@@ -517,7 +597,11 @@ impl CapabilityKernel for BasicCapabilityKernel {
     request: &CapabilityRequest,
     excluded: &HashSet<CapabilityId>,
   ) -> MResult<CapabilityId> {
-    self.check_with_exclusions(request, excluded)
+    self.check_with_exclusions(
+      request,
+      &RuntimeAuthorityScope::AllForSubject,
+      excluded,
+    )
   }
 
   fn preview_check(
@@ -526,6 +610,7 @@ impl CapabilityKernel for BasicCapabilityKernel {
   ) -> MResult<CapabilityId> {
     self.preview_check_with_exclusions_and_pending_uses(
       request,
+      &RuntimeAuthorityScope::AllForSubject,
       &HashSet::new(),
       &HashMap::new(),
     )
@@ -538,6 +623,7 @@ impl CapabilityKernel for BasicCapabilityKernel {
   ) -> MResult<CapabilityId> {
     self.preview_check_with_exclusions_and_pending_uses(
       request,
+      &RuntimeAuthorityScope::AllForSubject,
       excluded,
       &HashMap::new(),
     )
@@ -551,6 +637,22 @@ impl CapabilityKernel for BasicCapabilityKernel {
   ) -> MResult<CapabilityId> {
     self.preview_check_with_exclusions_and_pending_uses(
       request,
+      &RuntimeAuthorityScope::AllForSubject,
+      excluded,
+      pending_uses,
+    )
+  }
+
+  fn preview_scoped_with_transaction(
+    &self,
+    request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
+    excluded: &HashSet<CapabilityId>,
+    pending_uses: &HashMap<CapabilityId, u64>,
+  ) -> MResult<CapabilityId> {
+    self.preview_check_with_exclusions_and_pending_uses(
+      request,
+      scope,
       excluded,
       pending_uses,
     )
@@ -739,10 +841,12 @@ impl CapabilityKernel for SharedCapabilityKernel {
   fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> { self.inner.lock().unwrap().rollback_grant(capability) }
   fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> { self.inner.lock().unwrap().revoke(revocation) }
   fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().check(request) }
+  fn check_scoped(&mut self, request: &CapabilityRequest, scope: &RuntimeAuthorityScope) -> MResult<CapabilityId> { self.inner.lock().unwrap().check_scoped(request, scope) }
   fn check_excluding(&mut self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().check_excluding(request, excluded) }
   fn preview_check(&self, request: &CapabilityRequest) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check(request) }
   fn preview_check_excluding(&self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check_excluding(request, excluded) }
   fn preview_check_excluding_with_pending_uses(&self, request: &CapabilityRequest, excluded: &HashSet<CapabilityId>, pending_uses: &HashMap<CapabilityId, u64>) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_check_excluding_with_pending_uses(request, excluded, pending_uses) }
+  fn preview_scoped_with_transaction(&self, request: &CapabilityRequest, scope: &RuntimeAuthorityScope, excluded: &HashSet<CapabilityId>, pending_uses: &HashMap<CapabilityId, u64>) -> MResult<CapabilityId> { self.inner.lock().unwrap().preview_scoped_with_transaction(request, scope, excluded, pending_uses) }
   fn apply_usage_delta(&mut self, capability: CapabilityId, uses: u64) -> MResult<()> { self.inner.lock().unwrap().apply_usage_delta(capability, uses) }
   fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> { self.inner.lock().unwrap().get(id) }
   fn list_for_subject(&self, subject: &dyn Subject) -> MResult<Vec<CapabilityId>> { self.inner.lock().unwrap().list_for_subject(subject) }

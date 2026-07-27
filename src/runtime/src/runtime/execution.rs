@@ -14,7 +14,7 @@
 use super::*;
 use super::reactive_transaction::PreparedRuntimeHostInput;
 use crate::{
-  RuntimeModuleResult, RuntimeValueSnapshot, SourceDeclaration,
+  RuntimeModuleResult, RuntimeResourceKey, RuntimeValueSnapshot, SourceDeclaration,
   SourceImportDeclaration, SourceIndex,
 };
 use crate::RuntimeResourceWritePreflightRequest;
@@ -659,7 +659,7 @@ impl MechRuntime {
   }
 
   fn read_context_resource(
-    &self,
+    &mut self,
     context: &RuntimeContext,
     binding: &RuntimeContextBinding,
     path: &str,
@@ -672,19 +672,16 @@ impl MechRuntime {
         path: resolved.context_path,
       }, None));
     }
-    if !self.has_capability_grant(
-      &context.subject,
+    let key = RuntimeResourceKey::new(
       &resolved.provider_base_uri,
-      &RuntimeCapabilityOperation::Read,
       &resolved.provider_path,
-    ) {
-      return Err(MechError::new(RuntimeCapabilityGrantDenied {
-        subject: context.subject.clone(),
-        resource: resolved.provider_base_uri,
-        operation: RuntimeCapabilityOperation::Read,
-        path: resolved.provider_path,
-      }, None));
-    }
+    )?;
+    let request = CapabilityRequest::from_keys(
+      &context.subject,
+      RuntimeCapabilityOperation::Read.name(),
+      key.capability_resource(),
+    );
+    self.check_capability_for_execution(context, &request)?;
     if let Some(transaction_id) = context.transaction {
       if let Some(value) = self
         .active_execution_transaction(transaction_id)?
@@ -719,19 +716,6 @@ impl MechRuntime {
         context_name: binding.name.clone(),
         operation: operation.name().to_string(),
         path: resolved.context_path,
-      }, None));
-    }
-    if !self.has_capability_grant(
-      &context.subject,
-      &resolved.provider_base_uri,
-      &operation,
-      &resolved.provider_path,
-    ) {
-      return Err(MechError::new(RuntimeCapabilityGrantDenied {
-        subject: context.subject.clone(),
-        resource: resolved.provider_base_uri,
-        operation: operation.clone(),
-        path: resolved.provider_path,
       }, None));
     }
     self.write_resource_with_context(context, RuntimeResourceWriteRequest {
@@ -3040,22 +3024,16 @@ impl MechRuntime {
         path: resolved.context_path,
       }, None));
     }
-    if !self.has_capability_grant(
-      &context.subject,
+    let key = RuntimeResourceKey::new(
       &resolved.provider_base_uri,
-      &operation,
       &resolved.provider_path,
-    ) {
-      return Err(MechError::new(
-        RuntimeCapabilityGrantDenied {
-          subject: context.subject.clone(),
-          resource: resolved.provider_base_uri,
-          operation,
-          path: resolved.provider_path,
-        },
-        None,
-      ));
-    }
+    )?;
+    let request = CapabilityRequest::from_keys(
+      &context.subject,
+      operation.name(),
+      key.capability_resource(),
+    );
+    self.preview_capability_for_execution(context, &request)?;
 
     if let Some(intent) = write_intent {
       self.resources.preflight_write(RuntimeResourceWritePreflightRequest {
@@ -3855,28 +3833,39 @@ impl MechRuntime {
     version: ModuleVersionId,
     scope: SourceScope,
   ) -> MResult<RuntimeModuleResult> {
-    let turn_started = Instant::now();
-    let mut preflight_seen = HashSet::new();
-    self.preflight_module_graph_for_scope(context, version, &scope, &mut preflight_seen)?;
-
-    let mut seen = HashSet::new();
-    let mut module_instances = HashMap::new();
-
-    let instance = self.execute_module_isolated_for_scope(
+    self.with_atomic_program_operation(
       context,
-      version,
-      &scope,
-      &mut seen,
-      &mut module_instances,
-    )?;
+      "run_module_scope_with_context",
+      |runtime, context| {
+        let turn_started = Instant::now();
+        let mut preflight_seen = HashSet::new();
+        runtime.preflight_module_graph_for_scope(
+          context,
+          version,
+          &scope,
+          &mut preflight_seen,
+        )?;
 
-    self.enforce_turn_duration(turn_started)?;
-    Ok(instance.detached_result())
+        let mut seen = HashSet::new();
+        let mut module_instances = HashMap::new();
+
+        let instance = runtime.execute_module_isolated_for_scope(
+          context,
+          version,
+          &scope,
+          &mut seen,
+          &mut module_instances,
+        )?;
+
+        runtime.enforce_turn_duration(turn_started)?;
+        Ok(instance.detached_result())
+      },
+    )
   }
 
   pub(super) fn preflight_module_graph_for_scope(
-    &self,
-    context: &RuntimeContext,
+    &mut self,
+    context: &mut RuntimeContext,
     version: ModuleVersionId,
     scope: &SourceScope,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
@@ -3893,6 +3882,14 @@ impl MechRuntime {
       return Err(MechError::new(RuntimeRecordNotFoundError { record_type: "module_version", id: version.to_string() }, None));
     };
     validate_module_import_edges(&record)?;
+    for requirement in &record.capability_requirements {
+      let mut requirement = requirement.clone();
+      requirement.subject = context.subject.clone();
+      self.check_capability_with_context(
+        context,
+        &requirement,
+      )?;
+    }
     let Some(source) = record.source.clone() else {
       return Err(MechError::new(RuntimeInvalidOperationError { operation: "run_module", reason: "module version has no source".to_string() }, None));
     };

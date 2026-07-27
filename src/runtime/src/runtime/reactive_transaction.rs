@@ -102,32 +102,24 @@ impl MechRuntime {
       ));
     }
 
-    let mut expected_capabilities = template.capabilities.clone();
+    let mut expected_authority = template.authority.clone();
     if let Some(transaction_id) = context.transaction {
       let transaction =
         self.active_execution_transaction(transaction_id)?;
-      expected_capabilities.extend(
-        transaction
-          .capabilities
-          .grants()
-          .map(|(capability, _)| capability),
-      );
+      for (capability, _) in transaction.capabilities.grants() {
+        expected_authority.add(capability);
+      }
       let revocations = transaction.capabilities.revocation_ids();
-      expected_capabilities
-        .retain(|capability| !revocations.contains(capability));
+      for capability in revocations {
+        expected_authority.remove(capability);
+      }
     }
-    expected_capabilities.sort_unstable();
-    expected_capabilities.dedup();
-
-    let mut supplied_capabilities = context.capabilities.clone();
-    supplied_capabilities.sort_unstable();
-    supplied_capabilities.dedup();
-    if supplied_capabilities != expected_capabilities {
+    if context.authority != expected_authority {
       return Err(MechError::new(
         RuntimeInvalidOperationError {
           operation: "RuntimeLiveContextMismatch",
           reason:
-            "host input context capabilities do not match the live program and active transaction"
+            "host input context authority does not match the live program and active transaction"
               .to_string(),
         },
         None,

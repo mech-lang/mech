@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use mech_core::{
   BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
@@ -8,8 +9,8 @@ use mech_core::{
 };
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_runtime::{
-  MechRuntime, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation,
-  RuntimeValueSnapshot,
+  MechRuntime, ResourcePathCapability, RuntimeBuilder,
+  RuntimeCapabilityOperation, RuntimeValueSnapshot,
 };
 
 #[derive(Debug, Default)]
@@ -143,13 +144,16 @@ fn read_write_authority(path: &str, selector: &str) -> BrowserAuthority {
 
 fn grant_runtime_context(runtime: &mut MechRuntime, operation: RuntimeCapabilityOperation, path: &str) {
   let subject = runtime.runtime_context().unwrap().subject().to_string();
+  let capability = ResourcePathCapability::exact(
+    runtime.next_capability_id(),
+    subject,
+    "browser://dom",
+    [operation.name()],
+    path,
+  )
+  .unwrap();
   runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "browser://dom".to_string(),
-      operations: vec![operation],
-      paths: vec![path.to_string()],
-    })
+    .grant_capability(Arc::new(capability))
     .unwrap();
 }
 

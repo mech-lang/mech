@@ -5,7 +5,7 @@
 //! live-runtime, and context state.
 
 use super::*;
-use crate::AccessSet;
+use crate::{AccessSet, RuntimeAuthorityScope};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeExecutionTransactionMode {
@@ -96,7 +96,7 @@ pub(super) struct RuntimeContextCheckpoint {
   access: AccessSet,
   module_version: Option<ModuleVersionId>,
   transaction: Option<TransactionId>,
-  capabilities: Vec<CapabilityId>,
+  authority: RuntimeAuthorityScope,
   budget: ResourceBudget,
   events: Vec<RuntimeEvent>,
   actor_message: Option<MessageRecord>,
@@ -113,7 +113,7 @@ impl RuntimeContextCheckpoint {
       access: context.access.clone(),
       module_version: context.module_version,
       transaction: context.transaction,
-      capabilities: context.capabilities.clone(),
+      authority: context.authority.clone(),
       budget: context.budget.clone(),
       events: context.events.clone(),
       actor_message: context.actor_message.clone(),
@@ -134,7 +134,7 @@ impl RuntimeContextCheckpoint {
     context.access = self.access.clone();
     context.module_version = self.module_version;
     context.transaction = self.transaction;
-    context.capabilities = self.capabilities.clone();
+    context.authority = self.authority.clone();
     context.budget = ResourceBudget {
       max_steps: self.budget.max_steps,
       used_steps,
@@ -1842,7 +1842,8 @@ mod tests {
   fn failed_operation_restores_context_and_staging_but_keeps_budget_usage() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
-    context.capabilities = vec![CapabilityId(10)];
+    context.authority =
+      RuntimeAuthorityScope::allow_list([CapabilityId(10)]);
     context.budget = ResourceBudget::default()
       .with_max_steps(100)
       .with_max_bytes(100)
@@ -1888,7 +1889,8 @@ mod tests {
         context.actor = Some(ActorId(21));
         context.module_version = Some(ModuleVersionId(22));
         context.transaction = None;
-        context.capabilities = vec![CapabilityId(23)];
+        context.authority =
+          RuntimeAuthorityScope::allow_list([CapabilityId(23)]);
         context.budget.max_steps = Some(4);
         context.budget.max_bytes = Some(5);
         context.budget.max_items = Some(6);
@@ -1918,7 +1920,7 @@ mod tests {
     assert_eq!(context.actor, baseline.actor);
     assert_eq!(context.module_version, baseline.module_version);
     assert_eq!(context.transaction, Some(transaction_id));
-    assert_eq!(context.capabilities, baseline.capabilities);
+    assert_eq!(context.authority, baseline.authority);
     assert_eq!(context.access, baseline.access);
     assert_eq!(context.events, operation_events);
     assert_eq!(context.actor_message, baseline.actor_message);

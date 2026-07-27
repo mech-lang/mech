@@ -16,8 +16,8 @@ use mech_runtime::{
   PlannedRuntimeManagedHostFunction,
   PlannedStagedHostFunction,
   PreparedRuntimeEffect,
-  RuntimeAfterCommitEffect, RuntimeCapabilityGrant,
-  RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectMetadata,
+  ResourcePathCapability, RuntimeAfterCommitEffect,
+  RuntimeContext, RuntimeEffectMetadata,
   RuntimeEffectSource, RuntimeHostInput, RuntimeHostInputSource,
   RuntimeHostInputValue, RuntimePreparedHostCall,
   RuntimeResourceProvider, RuntimeResourceReadRequest,
@@ -117,13 +117,16 @@ fn step_fixture(count: usize, _fail_tail: bool) -> StepFixture {
 
 fn grant_input_read(runtime: &mut MechRuntime) {
   let subject = runtime.runtime_context().unwrap().subject().to_string();
+  let capability = ResourcePathCapability::exact(
+    runtime.next_capability_id(),
+    subject,
+    INPUT_BASE_URI,
+    ["read"],
+    INPUT_PATH,
+  )
+  .unwrap();
   runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: INPUT_BASE_URI.to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec![INPUT_PATH.to_string()],
-    })
+    .grant_capability(Arc::new(capability))
     .unwrap();
 }
 

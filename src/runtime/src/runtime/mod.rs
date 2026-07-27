@@ -92,7 +92,7 @@ struct RuntimeLiveContextTemplate {
   task: Option<TaskId>,
   actor: Option<ActorId>,
   module_version: Option<ModuleVersionId>,
-  capabilities: Vec<CapabilityId>,
+  authority: RuntimeAuthorityScope,
   budget_limits: ResourceBudget,
   actor_message: Option<MessageRecord>,
   actor_state: Option<ObjectId>,
@@ -100,16 +100,13 @@ struct RuntimeLiveContextTemplate {
 
 impl RuntimeLiveContextTemplate {
   fn from_context(context: &RuntimeContext) -> Self {
-    let mut capabilities = context.capabilities.clone();
-    capabilities.sort_unstable();
-    capabilities.dedup();
     Self {
       runtime: context.runtime,
       subject: context.subject.clone(),
       task: context.task,
       actor: context.actor,
       module_version: context.module_version,
-      capabilities,
+      authority: context.authority.clone(),
       budget_limits: ResourceBudget {
         max_steps: context.budget.max_steps,
         used_steps: 0,
@@ -134,7 +131,7 @@ impl RuntimeLiveContextTemplate {
       access: Default::default(),
       module_version: self.module_version,
       transaction: None,
-      capabilities: self.capabilities.clone(),
+      authority: self.authority.clone(),
       budget: self.budget_limits.clone(),
       events: Vec::new(),
       actor_message: self.actor_message.clone(),
@@ -143,9 +140,6 @@ impl RuntimeLiveContextTemplate {
   }
 
   fn matches_context(&self, context: &RuntimeContext) -> bool {
-    let mut capabilities = context.capabilities.clone();
-    capabilities.sort_unstable();
-    capabilities.dedup();
     self.runtime == context.runtime
       && self.subject == context.subject
       && self.task == context.task
@@ -153,7 +147,7 @@ impl RuntimeLiveContextTemplate {
       && self.module_version == context.module_version
       && self.actor_message == context.actor_message
       && self.actor_state == context.actor_state
-      && self.capabilities == capabilities
+      && self.authority == context.authority
       && self.budget_limits.max_steps == context.budget.max_steps
       && self.budget_limits.max_bytes == context.budget.max_bytes
       && self.budget_limits.max_items == context.budget.max_items
@@ -199,7 +193,7 @@ use crate::config::RuntimeConfig;
 use crate::context::{
   ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
   RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope,
-  ResourceBudgetExceededError,
+  ResourceBudgetExceededError, RuntimeAuthorityScope,
 };
 
 use crate::event::{
@@ -248,7 +242,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RegisteredHostFunction, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{materialize_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RegisteredHostFunction, ResourcePathCapability, RunResourceGrantConfig, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeResourceKey, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -561,7 +555,6 @@ impl RuntimeBuilder {
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
       resources: RuntimeResourceRegistry::new(),
-      grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
       live_registration_mode: LiveRegistrationMode::RetainedRoot,
       live_input_bindings: HashMap::new(),
@@ -577,7 +570,13 @@ impl RuntimeBuilder {
 
     for spec in &self.config_specs {
       register_config_spec_resources(&mut runtime.resources, spec)?;
-      register_config_spec_grants(&mut runtime.grants, spec)?;
+      let capabilities = materialize_config_spec_grants(
+        runtime.id_generator.as_mut(),
+        spec,
+      )?;
+      for capability in capabilities {
+        runtime.grant_capability(capability)?;
+      }
     }
 
     for provider in self.resource_providers {
@@ -673,7 +672,6 @@ pub struct MechRuntime {
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
   resources: RuntimeResourceRegistry,
-  grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
   live_registration_mode: LiveRegistrationMode,
   live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
@@ -710,7 +708,6 @@ impl std::fmt::Debug for MechRuntime {
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
-      .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
       .field("live_input_bindings", &self.live_input_bindings)
       .field("input_drivers", &self.input_drivers.len())
@@ -966,43 +963,6 @@ impl MechRuntime {
     })
   }
 
-  pub fn grant_capability<G>(&mut self, grant: G) -> MResult<G::Output>
-  where
-    G: RuntimeCapabilityGrantInput,
-  {
-    self.ensure_runtime_mutation_allowed("grant_capability")?;
-    grant.apply(self)
-  }
-
-  pub(crate) fn add_resource_capability_grant(
-    &mut self,
-    grant: RuntimeCapabilityGrant,
-  ) -> MResult<()> {
-    self.ensure_runtime_mutation_allowed(
-      "add_resource_capability_grant",
-    )?;
-    self.grants.add_grant(grant)
-  }
-
-  pub fn has_capability_grant(
-    &self,
-    subject: &str,
-    resource: &str,
-    operation: &RuntimeCapabilityOperation,
-    path: &str,
-  ) -> bool {
-    self.grants.allows_with_resource_match(
-      subject,
-      resource,
-      operation,
-      path,
-      |grant_resource, requested_resource| {
-        grant_resource == requested_resource
-          || self.resources.base_uris_equivalent(grant_resource, requested_resource)
-      },
-    )
-  }
-
   pub fn install_run_resource_grant(
     &mut self,
     grant: &RunResourceGrantConfig,
@@ -1010,22 +970,33 @@ impl MechRuntime {
     self.ensure_runtime_mutation_allowed(
       "install_run_resource_grant",
     )?;
-    let context = self.host_interfaces.resolve(&grant.target)?;
+    let interface = self.host_interfaces.resolve(&grant.target)?;
     for operation in &grant.operations {
-      if !context.operations.iter().any(|allowed| allowed == operation) {
+      if !interface.operations.iter().any(|allowed| allowed == operation) {
         return Err(MechError::new(RuntimeInvalidOperationError {
           operation: "install_run_resource_grant",
           reason: format!("host context `{}` does not expose operation `{operation}`", grant.target),
         }, None));
       }
     }
-    let operations = grant.operations.iter().map(|operation| RuntimeCapabilityOperation::from_name(operation.clone())).collect::<MResult<Vec<_>>>()?;
-    self.grants.add_grant(RuntimeCapabilityGrant {
+    let operations = grant
+      .operations
+      .iter()
+      .map(|operation| {
+        RuntimeCapabilityOperation::from_name(operation.clone())
+      })
+      .collect::<MResult<Vec<_>>>()?;
+    let spec = RuntimeCapabilityGrantSpec {
       subject: format!("runtime:{}", self.id),
-      resource: context.base_uri.clone(),
+      resource: interface.base_uri.clone(),
       operations,
       paths: grant.paths.clone(),
-    })
+    };
+    let capability = Arc::new(ResourcePathCapability::from_spec(
+      self.next_capability_id(),
+      &spec,
+    )?);
+    self.grant_capability(capability).map(|_| ())
   }
 
   pub(crate) fn register_resource_provider(
@@ -1061,20 +1032,12 @@ impl MechRuntime {
       "write_resource_with_context",
     )?;
     self.validate_context_for_runtime(context)?;
-
-    if !self.has_capability_grant(
-      &context.subject,
+    let key = RuntimeResourceKey::new(
       &request.base_uri,
-      &request.operation,
       &request.path,
-    ) {
-      return Err(MechError::new(RuntimeCapabilityGrantDenied {
-        subject: context.subject.clone(),
-        resource: request.base_uri,
-        operation: request.operation,
-        path: request.path,
-      }, None));
-    }
+    )?;
+    request.base_uri = key.base_uri.clone();
+    request.path = key.path.clone();
 
     if context.transaction.is_none() {
       let transaction_id = self.begin_runtime_transaction_internal(
@@ -1087,6 +1050,7 @@ impl MechRuntime {
           return Err(self.cleanup_failed_implicit_resource_operation(
             context,
             transaction_id,
+            "write_resource_with_context",
             error,
           ));
         }
@@ -1097,11 +1061,17 @@ impl MechRuntime {
         Err(error) => Err(self.cleanup_failed_implicit_resource_operation(
           context,
           transaction_id,
+          "write_resource_with_context",
           error,
         )),
       };
     }
 
+    self.authorize_resource_with_context(
+      context,
+      &request.operation,
+      &key,
+    )?;
     request.value = request.value.deep_snapshot();
     let staged_resource = if request.intent
       == RuntimeResourceWriteIntent::Assign
@@ -1133,6 +1103,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     transaction_id: TransactionId,
+    operation: &'static str,
     original_error: MechError,
   ) -> MechError {
     if context.transaction != Some(transaction_id) {
@@ -1156,7 +1127,7 @@ impl MechRuntime {
           original_error
         } else {
           self.poison_program_operation(
-            "write_resource_with_context",
+            operation,
             Some(transaction_id),
             original_error_text,
             failures,
@@ -1164,7 +1135,7 @@ impl MechRuntime {
         }
       }
       Err(cleanup_error) => self.poison_program_operation(
-        "write_resource_with_context",
+        operation,
         Some(transaction_id),
         original_error_text,
         vec![format!(
@@ -1184,7 +1155,7 @@ impl MechRuntime {
   }
 
   pub fn read_resource_with_context(
-    &self,
+    &mut self,
     context: &mut RuntimeContext,
     request: RuntimeResourceReadRequest,
   ) -> MResult<RuntimeValueSnapshot> {
@@ -1194,24 +1165,55 @@ impl MechRuntime {
   }
 
   pub(crate) fn read_resource_value_with_context(
-    &self,
-    context: &RuntimeContext,
-    request: RuntimeResourceReadRequest,
+    &mut self,
+    context: &mut RuntimeContext,
+    mut request: RuntimeResourceReadRequest,
   ) -> MResult<Value> {
     self.validate_context_for_runtime(context)?;
-    if !self.has_capability_grant(
-      &context.subject,
+    let key = RuntimeResourceKey::new(
       &request.base_uri,
-      &RuntimeCapabilityOperation::Read,
       &request.path,
-    ) {
-      return Err(MechError::new(RuntimeCapabilityGrantDenied {
-        subject: context.subject.clone(),
-        resource: request.base_uri,
-        operation: RuntimeCapabilityOperation::Read,
-        path: request.path,
-      }, None));
+    )?;
+    request.base_uri = key.base_uri.clone();
+    request.path = key.path.clone();
+    if context.transaction.is_none() {
+      let transaction_id = self.begin_runtime_transaction_internal(
+        context,
+        RuntimeExecutionTransactionMode::ImplicitResourceOperation,
+      )?;
+      let value = match self
+        .read_resource_value_with_context(context, request)
+      {
+        Ok(value) => value,
+        Err(error) => {
+          return Err(self.cleanup_failed_implicit_resource_operation(
+            context,
+            transaction_id,
+            "read_resource_with_context",
+            error,
+          ));
+        }
+      };
+      return match self.commit_runtime_transaction_internal(context) {
+        Ok(RuntimeCommitResolution::Committed(_)) => Ok(value),
+        Ok(RuntimeCommitResolution::CommittedWithError { error, .. }) => {
+          Err(error)
+        }
+        Err(error) => Err(
+          self.cleanup_failed_implicit_resource_operation(
+            context,
+            transaction_id,
+            "read_resource_with_context",
+            error,
+          ),
+        ),
+      };
     }
+    self.authorize_resource_with_context(
+      context,
+      &RuntimeCapabilityOperation::Read,
+      &key,
+    )?;
     if context.transaction.is_some() {
       let transaction_id = context.transaction.unwrap();
       if let Some(value) = self
@@ -1223,6 +1225,20 @@ impl MechRuntime {
       }
     }
     self.resources.read(request)
+  }
+
+  pub(crate) fn authorize_resource_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &RuntimeCapabilityOperation,
+    key: &RuntimeResourceKey,
+  ) -> MResult<CapabilityId> {
+    let request = CapabilityRequest::from_keys(
+      &context.subject,
+      operation.name(),
+      key.capability_resource(),
+    );
+    self.check_capability_with_context(context, &request)
   }
 
   pub(crate) fn store(&self) -> &dyn MechStore {

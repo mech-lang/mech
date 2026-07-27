@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use mech_core::{hash_str, MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value};
 use mech_program::{MechProgram, MechProgramConfig};
@@ -87,30 +88,67 @@ fn read_grant(resource: &str, path: &str) -> RuntimeCapabilityGrantSpec {
     .with_path(path)
 }
 
-fn runtime_write_grant_for(subject: &str, resource: &str, path: &str) -> RuntimeCapabilityGrant {
-  RuntimeCapabilityGrant {
-    subject: subject.to_string(),
-    resource: resource.to_string(),
-    operations: vec![RuntimeCapabilityOperation::Write],
-    paths: vec![path.to_string()],
-  }
+fn test_capability_id() -> CapabilityId {
+  static NEXT: AtomicU64 = AtomicU64::new(1_000_000);
+  CapabilityId(NEXT.fetch_add(1, Ordering::Relaxed).into())
 }
 
-fn runtime_read_grant_for(subject: &str, resource: &str, path: &str) -> RuntimeCapabilityGrant {
-  RuntimeCapabilityGrant {
-    subject: subject.to_string(),
-    resource: resource.to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec![path.to_string()],
-  }
+fn runtime_resource_grant_for(
+  subject: &str,
+  resource: &str,
+  operation: &str,
+  path: &str,
+) -> Arc<dyn Capability> {
+  let resource = match resource {
+    "cli://env" => "cli://cli/env",
+    "cli://stdout" => "cli://cli/stdout",
+    "cli://stderr" => "cli://cli/stderr",
+    resource => resource,
+  };
+  runtime_exact_resource_grant_for(
+    subject,
+    resource,
+    operation,
+    path,
+  )
 }
 
-fn runtime_context_read_grant(runtime: &MechRuntime, resource: &str, path: &str) -> RuntimeCapabilityGrant {
+fn runtime_exact_resource_grant_for(
+  subject: &str,
+  resource: &str,
+  operation: &str,
+  path: &str,
+) -> Arc<dyn Capability> {
+  let scope = if path == "*" {
+    ResourcePathScope::Wildcard
+  } else if let Some(prefix) = path.strip_suffix("/*") {
+    ResourcePathScope::Prefix(prefix.to_string())
+  } else {
+    ResourcePathScope::Exact(path.to_string())
+  };
+  Arc::new(ResourcePathCapability::new(
+    test_capability_id(),
+    subject,
+    resource,
+    [operation],
+    [scope],
+  ).unwrap())
+}
+
+fn runtime_write_grant_for(subject: &str, resource: &str, path: &str) -> Arc<dyn Capability> {
+  runtime_resource_grant_for(subject, resource, "write", path)
+}
+
+fn runtime_read_grant_for(subject: &str, resource: &str, path: &str) -> Arc<dyn Capability> {
+  runtime_resource_grant_for(subject, resource, "read", path)
+}
+
+fn runtime_context_read_grant(runtime: &MechRuntime, resource: &str, path: &str) -> Arc<dyn Capability> {
   let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime_read_grant_for(&subject, resource, path)
 }
 
-fn runtime_context_write_grant(runtime: &MechRuntime, resource: &str, path: &str) -> RuntimeCapabilityGrant {
+fn runtime_context_write_grant(runtime: &MechRuntime, resource: &str, path: &str) -> Arc<dyn Capability> {
   let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime_write_grant_for(&subject, resource, path)
 }
@@ -174,21 +212,45 @@ fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) 
 
 fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
   let subject = runtime.runtime_context().unwrap().subject().to_string();
-  for resource in ["cli://cli/stdout", "cli://stdout"] {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: subject.clone(),
-      resource: resource.to_string(),
-      operations: vec![RuntimeCapabilityOperation::Write],
-      paths: vec!["line".to_string()],
-    }).unwrap();
-  }
+  runtime.grant_capability(runtime_write_grant_for(
+    &subject,
+    "cli://cli/stdout",
+    "line",
+  )).unwrap();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://stdout",
+    "write",
+    "line",
+  )).unwrap();
 }
 
 fn context_for_subject(
   runtime: &mut MechRuntime,
   subject: &str,
 ) -> mech_core::MResult<RuntimeContext> {
-  let task = TaskRecord::new(runtime.next_task_id(), subject);
+  let mut capabilities = runtime
+    .list_events(None)?
+    .into_iter()
+    .filter_map(|event| match event.kind {
+      RuntimeEventKind::CapabilityGranted { capability_id } => {
+        Some(capability_id)
+      }
+      _ => None,
+    })
+    .filter_map(|id| {
+      runtime
+        .get_capability_snapshot(id)
+        .ok()
+        .flatten()
+        .filter(|capability| capability.subject == subject)
+        .map(|_| id)
+    })
+    .collect::<Vec<_>>();
+  capabilities.sort_unstable();
+  capabilities.dedup();
+  let task = TaskRecord::new(runtime.next_task_id(), subject)
+    .with_capabilities(capabilities);
   runtime.context_for_task(&task)
 }
 
@@ -2029,7 +2091,7 @@ fn config_spec_docs_read_requires_host_grant() {
   let result = run_docs_config_read(docs_config("intro/title", bool_value(true)));
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(error.contains("CapabilityDenied"));
   assert!(error.contains("task://main"));
   assert!(error.contains("docs://manual"));
   assert!(error.contains("intro/title"));
@@ -2054,7 +2116,7 @@ fn host_grant_path_prefix_does_not_match_sibling() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://manual", "introduction/*"));
   let error = format!("{:?}", run_docs_config_read(spec).err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(error.contains("CapabilityDenied"));
 }
 
 #[test]
@@ -2065,7 +2127,7 @@ fn host_grant_wrong_operation_denies_read() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(grant);
   let error = format!("{:?}", run_docs_config_read(spec).err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(error.contains("CapabilityDenied"));
 }
 
 #[test]
@@ -2073,7 +2135,7 @@ fn host_grant_wrong_resource_denies_read() {
   let spec = docs_config("intro/title", bool_value(true))
     .with_capability_grant(read_grant("docs://other", "intro/title"));
   let error = format!("{:?}", run_docs_config_read(spec).err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(error.contains("CapabilityDenied"));
 }
 
 #[test]
@@ -2110,7 +2172,11 @@ fn direct_provider_read_with_runtime_grant_still_works() {
     .unwrap();
   let subject = runtime.runtime_context().unwrap().subject().to_string();
   runtime.grant_capability(runtime_read_grant_for(&subject, "docs://manual", "intro/title")).unwrap();
-  assert!(runtime.has_capability_grant(&subject, "docs://manual", &RuntimeCapabilityOperation::Read, "intro/title"));
+  assert!(runtime.check_capability(&CapabilityRequest::from_keys(
+    &subject,
+    "read",
+    "docs://manual/intro/title",
+  )).is_ok());
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   assert_bool_true(runtime.run_module(version).unwrap().result.into_value(), "runtime grant");
 }
@@ -3087,7 +3153,7 @@ fn fenced_context_alias_can_match_unrelated_interpreter_name_without_resolving_a
   let error = format!("{:?}", result.err().unwrap());
   assert!(
     error.contains("RuntimeResourceProviderNotFound")
-      || error.contains("RuntimeCapabilityGrantDenied")
+      || error.contains("CapabilityDenied")
       || error.contains("RuntimeResourceCapabilityDenied"),
     "expected @foo in bar to resolve as context, not interpreter, got {error}"
   );
@@ -3585,7 +3651,7 @@ fn narrow_env_grant_permits_path_but_denies_home() {
   runtime.run_string("+> @env := cli/env\npath := @env/PATH\n").unwrap().into_value();
   let result = runtime.run_string("+> @env := cli/env\nhome := @env/HOME\n");
   assert!(result.is_err());
-  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert!(format!("{:?}", result.err().unwrap()).contains("CapabilityDenied"));
 }
 
 #[test]
@@ -3597,7 +3663,7 @@ fn narrow_stdout_grant_permits_line_but_denies_text() {
   runtime.run_string("+> @out := cli/stdout\n@out/line <- \"hello\"\n").unwrap().into_value();
   let result = runtime.run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n");
   assert!(result.is_err());
-  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert!(format!("{:?}", result.err().unwrap()).contains("CapabilityDenied"));
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
 
@@ -3661,7 +3727,7 @@ xs[@env/HOME] = 1
 
   assert!(result.is_err(), "assignment target subscript context read should be preflighted");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(error.contains("CapabilityDenied"), "got {error}");
   assert!(state.lock().unwrap().stdout.is_empty());
 }
 
@@ -3682,7 +3748,7 @@ xs[@env/HOME] += 1
   assert!(result.is_err(), "op-assignment target subscript context read should be preflighted");
   let error = format!("{:?}", result.err().unwrap());
   assert!(
-    error.contains("RuntimeCapabilityGrantDenied") || error.contains("parse") || error.contains("Parse"),
+    error.contains("CapabilityDenied") || error.contains("parse") || error.contains("Parse"),
     "got {error}",
   );
   assert!(state.lock().unwrap().stdout.is_empty());
@@ -3696,7 +3762,7 @@ fn nested_env_read_denial_preflights_before_stdout_write() {
   runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
   let result = runtime.run_string("+> @env := cli/env\n+> @out := cli/stdout\n@out/line <- \"must-not-write\"\nx := [@env/HOME]\n");
   assert!(result.is_err());
-  assert!(format!("{:?}", result.err().unwrap()).contains("RuntimeCapabilityGrantDenied"));
+  assert!(format!("{:?}", result.err().unwrap()).contains("CapabilityDenied"));
   assert!(stdout.lock().unwrap().is_empty());
 }
 
@@ -3736,7 +3802,7 @@ result := \"x\"?
   assert!(result.is_err(), "match arm context read should fail in preflight");
   let error = format!("{:?}", result.err().unwrap());
   assert!(
-    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    error.contains("CapabilityDenied") || error.contains("context_read"),
     "expected context read preflight error, got {error}",
   );
   assert!(
@@ -3769,7 +3835,7 @@ event := \"x\"
   assert!(result.is_err(), "activation arm context read should fail in preflight");
   let error = format!("{:?}", result.err().unwrap());
   assert!(
-    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    error.contains("CapabilityDenied") || error.contains("context_read"),
     "expected context read preflight error, got {error}",
   );
   assert!(
@@ -3786,32 +3852,44 @@ fn activation_arm_context_read_pattern_is_lowered_when_allowed() {
     "MECH_ACTIVATION_PATTERN".to_string(),
     "expected".to_string(),
   );
+  state.lock().unwrap().env.insert(
+    "MECH_ACTIVATION_EVENT".to_string(),
+    "expected".to_string(),
+  );
   let subject = runtime.runtime_context().unwrap().subject().to_string();
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: "cli://cli/env".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec!["MECH_ACTIVATION_PATTERN".to_string()],
-  }).unwrap();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://env",
+    "read",
+    "MECH_ACTIVATION_PATTERN",
+  )).unwrap();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://env",
+    "read",
+    "MECH_ACTIVATION_EVENT",
+  )).unwrap();
+  grant_runtime_stdout_line(&mut runtime);
 
   let result = runtime.run_string(
-    "@env := cli://env{:read(MECH_ACTIVATION_PATTERN)}
-event := \"expected\"
+    "@env := cli://env{:read(*)}
+@out := cli://stdout{:write(line)}
+event := @env/MECH_ACTIVATION_EVENT
 ~> event
   | (@env/MECH_ACTIVATION_PATTERN) => {
-      selected := true
+      @out/line <- \"matched\"
     }
   | * => {
-      selected := false
+      @out/line <- \"fallback\"
     }
 ",
   );
 
   assert!(result.is_ok(), "allowed activation context pattern failed: {result:?}");
-  assert_eq!(runtime.live_input_binding_count(), 1);
-  assert_bool_true(
-    runtime.root_symbol_value("selected").unwrap(),
-    "the initial activation should match the host pattern",
+  assert_eq!(runtime.live_input_binding_count(), 2);
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "registration must not execute an activation arm",
   );
 
   let update = runtime.apply_host_input(RuntimeHostInput::single(
@@ -3820,10 +3898,29 @@ event := \"expected\"
   )).unwrap();
   assert_eq!(update.binding_count, 1);
   assert_eq!(update.ignored_update_count, 0);
-  runtime.run_string("event = \"next\"\n").unwrap();
-  assert_bool_true(
-    runtime.root_symbol_value("selected").unwrap(),
-    "the supported reactive turn should sample the updated host pattern",
+  assert!(
+    state.lock().unwrap().stdout.is_empty(),
+    "updating a pattern input must not pulse the activation trigger",
+  );
+  let update = runtime.apply_host_input(RuntimeHostInput::single(
+    RuntimeHostInputSource::new("cli://env", "MECH_ACTIVATION_EVENT").unwrap(),
+    RuntimeHostInputValue::String("other".to_string()),
+  )).unwrap();
+  assert_eq!(update.binding_count, 1);
+  assert_eq!(update.ignored_update_count, 0);
+  assert_eq!(
+    state.lock().unwrap().stdout,
+    vec!["fallback\n".to_string()],
+    "the trigger should sample the updated, non-matching host pattern",
+  );
+  runtime.apply_host_input(RuntimeHostInput::single(
+    RuntimeHostInputSource::new("cli://env", "MECH_ACTIVATION_EVENT").unwrap(),
+    RuntimeHostInputValue::String("next".to_string()),
+  )).unwrap();
+  assert_eq!(
+    state.lock().unwrap().stdout,
+    vec!["fallback\n".to_string(), "matched\n".to_string()],
+    "the trigger should select the matching arm",
   );
 }
 
@@ -3843,7 +3940,7 @@ machine := #Machine() -> @env/HOME
   assert!(result.is_err(), "FSM pipe transition context read should fail in preflight");
   let error = format!("{:?}", result.err().unwrap());
   assert!(
-    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    error.contains("CapabilityDenied") || error.contains("context_read"),
     "expected context read preflight error, got {error}",
   );
   assert!(
@@ -3869,7 +3966,7 @@ fn fsm_declare_context_read_fails_preflight_before_stdout_write() {
   assert!(result.is_err(), "FSM declaration context read should fail in preflight");
   let error = format!("{:?}", result.err().unwrap());
   assert!(
-    error.contains("RuntimeCapabilityGrantDenied") || error.contains("context_read"),
+    error.contains("CapabilityDenied") || error.contains("context_read"),
     "expected context read preflight error, got {error}",
   );
   assert!(
@@ -3888,12 +3985,12 @@ fn match_arm_context_read_pattern_compares_value_when_allowed() {
   );
 
   let subject = runtime.runtime_context().unwrap().subject().to_string();
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject,
-    resource: "cli://cli/env".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec!["MECH_MATCH_PATTERN".to_string()],
-  }).unwrap();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://env",
+    "read",
+    "MECH_MATCH_PATTERN",
+  )).unwrap();
 
   let matching = runtime.run_string(
     "@env := cli://env{:read(MECH_MATCH_PATTERN)}
@@ -4060,7 +4157,7 @@ fn module_preflight_denial_emits_program_failed_event() {
 
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+  assert!(error.contains("CapabilityDenied"), "got {error}");
   assert!(
     stdout.lock().unwrap().is_empty(),
     "stdout should not be written before denied env read is reported"
@@ -4078,7 +4175,13 @@ fn module_preflight_denial_emits_program_failed_event() {
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_read_grant(&runtime, "cli://env", "HOME")).unwrap();
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://env",
+    "read",
+    "HOME",
+  )).unwrap();
   runtime.run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\n").unwrap();
   let value = runtime.root_symbol_value("home").unwrap();
   assert_string_value(value, "/tmp/direct-home");
@@ -4089,7 +4192,13 @@ fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stdout = backend.stdout.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stdout", "line")).unwrap();
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://stdout",
+    "write",
+    "line",
+  )).unwrap();
   runtime.run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"hello\"\n").unwrap().into_value();
   assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
 }
@@ -4099,7 +4208,13 @@ fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
   let backend = FakeCliBackend::default();
   let stderr = backend.stderr.clone();
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
-  runtime.grant_capability(runtime_context_write_grant(&runtime, "cli://stderr", "text")).unwrap();
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  runtime.grant_capability(runtime_exact_resource_grant_for(
+    &subject,
+    "cli://stderr",
+    "write",
+    "text",
+  )).unwrap();
   runtime.run_string("@err := cli://stderr{:write(text)}\n@err/text <- \"warning\"\n").unwrap().into_value();
   assert_eq!(stderr.lock().unwrap().as_slice(), &["warning".to_string()]);
 }
@@ -4308,7 +4423,7 @@ fn docs_context_write_requires_runtime_grant_before_provider_write() {
   let result = runtime.run_string("@manual := docs://manual{:write(intro/title)}\n@manual/intro/title = \"hello\"\n");
   assert!(result.is_err(), "write without host grant should fail");
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected host grant denial, got {error}");
+  assert!(error.contains("CapabilityDenied"), "expected host grant denial, got {error}");
   assert!(writes.lock().unwrap().is_empty(), "provider write should not be called without grant");
 }
 
@@ -4354,9 +4469,8 @@ fn context_write_uses_active_runtime_context_subject() {
   let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
   let writes = provider.writes.clone();
   let mut runtime = RuntimeBuilder::new().resource_provider(Box::new(provider)).build().unwrap();
-  let mut context = context_for_subject(&mut runtime, "task://custom").unwrap();
-
   runtime.grant_capability(runtime_write_grant_for("task://custom", "docs://manual", "intro/title")).unwrap();
+  let mut context = context_for_subject(&mut runtime, "task://custom").unwrap();
 
   runtime.run_string_with_context(
     &mut context,
@@ -4381,7 +4495,7 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 
   assert!(result.is_err());
   let error = format!("{:?}", result.err().unwrap());
-  assert!(error.contains("RuntimeCapabilityGrantDenied"));
+  assert!(error.contains("CapabilityDenied"));
   assert!(writes.lock().unwrap().is_empty());
 }
 
@@ -4389,13 +4503,12 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 fn unqualified_fenced_context_import_is_available_to_program_execution() {
   let backend = FakeCliBackend::default().with_env("HOME", "/tmp/fenced-home");
   let mut runtime = with_test_cli(RuntimeBuilder::new(), backend).build().unwrap();
+  runtime.grant_capability(runtime_read_grant_for(
+    "task://fenced",
+    "cli://cli/env",
+    "HOME",
+  )).unwrap();
   let mut context = context_for_subject(&mut runtime, "task://fenced").unwrap();
-  runtime.grant_capability(RuntimeCapabilityGrant {
-    subject: "task://fenced".to_string(),
-    resource: "cli://cli/env".to_string(),
-    operations: vec![RuntimeCapabilityOperation::Read],
-    paths: vec!["HOME".to_string()],
-  }).unwrap();
 
   runtime.run_string_with_context(
     &mut context,
@@ -4577,7 +4690,7 @@ fn module_graph_preflight_blocks_dependency_stdout_before_main_env_denial() {
   let result = runtime.run_module_with_context(&mut context, version);
 
   let error = format!("{:?}", result.err().expect("main env grant denial should fail"));
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(error.contains("CapabilityDenied"), "expected runtime grant denial, got {error}");
   assert!(stdout.lock().unwrap().is_empty(), "dependency stdout write should be preflight-blocked");
 }
 
@@ -4601,7 +4714,7 @@ fn module_graph_preflight_blocks_current_stdout_before_dependency_denial() {
   let result = runtime.run_module_with_context(&mut context, version);
 
   let error = format!("{:?}", result.err().expect("dependency env grant denial should fail"));
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(error.contains("CapabilityDenied"), "expected runtime grant denial, got {error}");
   assert!(stdout.lock().unwrap().is_empty(), "current module stdout write should be preflight-blocked");
 }
 
@@ -4639,7 +4752,7 @@ value := @foo/home
   let result = runtime.run_module_with_context(&mut context, version);
 
   let error = format!("{:?}", result.err().expect("addressed interpreter env grant denial should fail"));
-  assert!(error.contains("RuntimeCapabilityGrantDenied"), "expected runtime grant denial, got {error}");
+  assert!(error.contains("CapabilityDenied"), "expected runtime grant denial, got {error}");
   assert!(stdout.lock().unwrap().is_empty(), "addressed interpreter dependency write should be preflight-blocked");
 }
 

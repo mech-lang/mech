@@ -366,6 +366,48 @@ mod tests {
   }
 
   #[test]
+  fn basic_kernel_enforces_authority_allowlists() {
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
+    let mut kernel = BasicCapabilityKernel::new();
+    for id in [CapabilityId(1), CapabilityId(2)] {
+      kernel
+        .grant(CapabilityGrant::new(Arc::new(
+          BasicCapability::new(
+            id,
+            &subject,
+            &resource,
+            [BasicOperation::read()],
+          ),
+        )))
+        .unwrap();
+    }
+    let request = CapabilityRequest::new(
+      &subject,
+      &BasicOperation::read(),
+      &resource,
+    );
+
+    assert_eq!(
+      kernel
+        .check_scoped(
+          &request,
+          &RuntimeAuthorityScope::allow_list([CapabilityId(2)]),
+        )
+        .unwrap(),
+      CapabilityId(2),
+    );
+    assert!(
+      kernel
+        .check_scoped(
+          &request,
+          &RuntimeAuthorityScope::allow_list([]),
+        )
+        .is_err(),
+    );
+  }
+
+  #[test]
   fn rollback_grant_removes_descendants_and_graph_indexes() {
     let mut kernel = BasicCapabilityKernel::new();
     let parent_subject = BasicSubject::new("task://1");
@@ -748,6 +790,33 @@ mod tests {
       )
       .unwrap_err();
     assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+  }
+
+  #[test]
+  fn custom_kernel_fails_closed_for_authority_allowlists() {
+    let (_, request, id) = pending_use_fixture(1);
+    let mut kernel = LegacyPreviewKernel { selected: id };
+    let scope = RuntimeAuthorityScope::allow_list([id]);
+
+    assert_eq!(
+      kernel
+        .check_scoped(&request, &scope)
+        .unwrap_err()
+        .kind_name(),
+      "TransactionStateUnsupported",
+    );
+    assert_eq!(
+      kernel
+        .preview_scoped_with_transaction(
+          &request,
+          &scope,
+          &HashSet::new(),
+          &HashMap::new(),
+        )
+        .unwrap_err()
+        .kind_name(),
+      "TransactionStateUnsupported",
+    );
   }
 
 }
