@@ -75,15 +75,3 @@ pub struct RuntimeCapabilitySnapshot {
   pub attenuable: bool,
   pub max_uses: Option<u64>,
 }
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeInvariantSnapshot {
-  pub id: u64,
-  pub name: String,
-  pub passed: bool,
-  pub expression: String,
-  pub reason: String,
-  pub evaluated_kind: String,
-  pub actual: String,
-  pub expected: String,
-}

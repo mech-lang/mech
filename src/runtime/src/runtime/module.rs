@@ -1601,6 +1601,101 @@ mod tests {
   }
 
   #[test]
+  fn retained_root_integrity_failure_exposes_no_graph_or_completion() {
+    let mut runtime = runtime_with_sources(&[(
+      "root.mec",
+      "integrity-root-value := 2.0\nintegrity-root-limit := 1.0\nintegrity-root-safe! := integrity-root-value <= integrity-root-limit\nintegrity-root-value\n",
+    )]);
+    runtime.run_string("integrity-baseline := 7").unwrap();
+    let events_before = runtime.list_events(None).unwrap().len();
+
+    let error = runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert!(runtime.program.root_symbol_value("integrity-baseline").is_ok());
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-root-value")
+      .is_err());
+    assert!(runtime
+      .store
+      .find_module_by_name("memory:root.mec")
+      .unwrap()
+      .is_none());
+    let events = runtime.list_events(None).unwrap();
+    let operation_events = &events[events_before..];
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ProgramFailed { .. }
+    )));
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::IntegrityConstraintViolated { .. }
+    )));
+    assert!(operation_events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::ProgramCompleted { .. }
+        | RuntimeEventKind::ModuleExecutionCompleted { .. }
+    )));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
+  fn isolated_dependency_integrity_failure_prevents_root_materialization() {
+    let mut runtime = runtime_with_sources(&[
+      (
+        "root.mec",
+        "+> ./dep.mec\nintegrity-root-ran := dep/value\nintegrity-root-ran\n",
+      ),
+      (
+        "dep.mec",
+        "value := 2.0\nlimit := 1.0\ndep-safe! := value <= limit\n<+ value\n",
+      ),
+    ]);
+    let events_before = runtime.list_events(None).unwrap().len();
+
+    let error = runtime
+      .resolve_and_run_root_module(
+        "root.mec",
+        test_module_options(),
+      )
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert!(runtime
+      .program
+      .root_symbol_value("integrity-root-ran")
+      .is_err());
+    for uri in ["memory:root.mec", "memory:dep.mec"] {
+      assert!(
+        runtime.store.find_module_by_name(uri).unwrap().is_none(),
+        "invalid dependency exposed {uri}",
+      );
+    }
+    let events = runtime.list_events(None).unwrap();
+    let operation_events = &events[events_before..];
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::ProgramFailed { .. }
+    )));
+    assert!(operation_events.iter().any(|event| matches!(
+      event.kind,
+      RuntimeEventKind::IntegrityConstraintViolated { .. }
+    )));
+    assert!(operation_events.iter().all(|event| !matches!(
+      event.kind,
+      RuntimeEventKind::ProgramCompleted { .. }
+        | RuntimeEventKind::ModuleExecutionCompleted { .. }
+    )));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
   fn retained_root_missing_later_dependency_has_no_partial_graph_or_version_audit() {
     let mut runtime = runtime_with_sources(&[
       (

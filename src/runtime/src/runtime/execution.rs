@@ -3600,65 +3600,11 @@ impl MechRuntime {
     self.program.compile_bytecode()
   }
 
-  #[cfg(all(feature = "invariant_define", feature = "bool"))]
-  pub fn invariant_snapshots(
+  #[cfg(feature = "invariant_define")]
+  pub fn integrity_constraint_report(
     &self,
-  ) -> Vec<crate::RuntimeInvariantSnapshot> {
-    let state = self.program.interpreter().state.borrow();
-    state
-      .integrity_constraints
-      .values()
-      .map(|constraint| {
-        let borrowed = constraint.result.try_borrow();
-        let (passed, reason, evaluated_kind, actual) = match borrowed.as_deref() {
-          Ok(Value::Bool(value)) => match value.try_borrow() {
-            Ok(value) if *value => (
-              true,
-              "evaluated to true".to_string(),
-              "bool".to_string(),
-              "true".to_string(),
-            ),
-            Ok(_) => (
-              false,
-              "evaluated to false".to_string(),
-              "bool".to_string(),
-              "false".to_string(),
-            ),
-            Err(_) => (
-              false,
-              "could not read settled result".to_string(),
-              "unknown".to_string(),
-              "<unavailable>".to_string(),
-            ),
-          },
-          Ok(value) => {
-            let kind = value.kind().to_string();
-            (
-              false,
-              "expected a scalar bool".to_string(),
-              kind.clone(),
-              format!("<{}>", kind),
-            )
-          }
-          Err(_) => (
-            false,
-            "could not read settled result".to_string(),
-            "unknown".to_string(),
-            "<unavailable>".to_string(),
-          ),
-        };
-        crate::RuntimeInvariantSnapshot {
-          id: constraint.id,
-          name: constraint.name.clone(),
-          passed,
-          expression: constraint.expression.clone(),
-          reason,
-          evaluated_kind,
-          actual,
-          expected: "true".to_string(),
-        }
-      })
-      .collect()
+  ) -> MResult<mech_program::IntegrityConstraintReport> {
+    self.program.integrity_constraint_report()
   }
 
   pub fn out_string(&self) -> String {

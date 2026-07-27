@@ -12,6 +12,10 @@ use crate::source_discovery::{
   DiscoveryOptions,
   MissingPathPolicy,
 };
+use mech_program::{
+  IntegrityConstraintEvaluation, IntegrityConstraintFailureReason,
+  IntegrityConstraintViolation, IntegrityConstraintViolationSet,
+};
 
 const TEST_EXPLICIT_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
 const TEST_RECURSIVE_EXTENSIONS: &[&str] = &["mec", "🤖"];
@@ -110,6 +114,57 @@ struct CaseDetail {
   evaluated_kind: String,
   actual: String,
   expected: String,
+}
+
+fn integrity_reason(
+  reason: Option<&IntegrityConstraintFailureReason>,
+) -> String {
+  match reason {
+    None => "evaluated to true".to_string(),
+    Some(IntegrityConstraintFailureReason::EvaluatedFalse) => {
+      "evaluated to false".to_string()
+    }
+    Some(IntegrityConstraintFailureReason::ExpectedBool) => {
+      "expected a scalar bool".to_string()
+    }
+    Some(IntegrityConstraintFailureReason::BorrowConflict) => {
+      "could not read the settled constraint result".to_string()
+    }
+  }
+}
+
+fn integrity_evaluation_case(
+  evaluation: &IntegrityConstraintEvaluation,
+) -> CaseDetail {
+  CaseDetail {
+    name: evaluation.name.clone(),
+    expression: evaluation.expression.clone(),
+    reason: integrity_reason(evaluation.reason.as_ref()),
+    evaluated_kind: evaluation
+      .evaluated_kind
+      .as_ref()
+      .map(ToString::to_string)
+      .unwrap_or_else(|| "unknown".to_string()),
+    actual: evaluation.actual.clone().unwrap_or_default(),
+    expected: evaluation.expected.clone().unwrap_or_default(),
+  }
+}
+
+fn integrity_violation_case(
+  violation: &IntegrityConstraintViolation,
+) -> CaseDetail {
+  CaseDetail {
+    name: violation.name.clone(),
+    expression: violation.expression.clone(),
+    reason: integrity_reason(Some(&violation.reason)),
+    evaluated_kind: violation
+      .evaluated_kind
+      .as_ref()
+      .map(ToString::to_string)
+      .unwrap_or_else(|| "unknown".to_string()),
+    actual: violation.actual.clone().unwrap_or_default(),
+    expected: violation.expected.clone().unwrap_or_default(),
+  }
 }
 
 #[derive(Debug, Serialize)]
@@ -317,36 +372,60 @@ pub(crate) fn run_mech_tests_without_tree(
       time_flag,
       10_000,
     )?;
-    let mut runtime = match execute_source_module_roots(config, &[PathBuf::from(path)]) {
+    let runtime = match execute_source_module_roots(config, &[PathBuf::from(path)]) {
       Ok(runtime) => runtime,
       Err(err) => {
+        if let Some(failures) =
+          err.kind_as::<IntegrityConstraintViolationSet>()
+        {
+          let failed_cases = failures
+            .violations
+            .iter()
+            .map(integrity_violation_case)
+            .collect::<Vec<_>>();
+          let failed = failed_cases.len();
+          println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
+          for detail in &failed_cases {
+            println!("{}   ✗", detail.name);
+          }
+          file_reports.push(FileReport {
+            path: path.clone(),
+            result: FileResult {
+              total: failed,
+              passed: 0,
+              failed,
+            },
+            failed: failed_cases,
+            passed: Vec::new(),
+            run_error: None,
+          });
+          continue;
+        }
         eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
         file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
         continue;
       }
     };
-    let invariants = runtime.invariant_snapshots();
+    let report = runtime.integrity_constraint_report()?;
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
     let mut passed_cases = Vec::new();
     let mut failed_cases = Vec::new();
-    let width = invariants.iter().map(|case| case.name.len()).max().unwrap_or(0);
-    for invariant in invariants {
+    let width = report
+      .evaluations
+      .iter()
+      .map(|case| case.name.len())
+      .max()
+      .unwrap_or(0);
+    for evaluation in report.evaluations {
       println!(
         "{:<width$}   {}",
-        invariant.name,
-        if invariant.passed { "✓" } else { "✗" },
+        evaluation.name,
+        if evaluation.passed { "✓" } else { "✗" },
         width=width,
       );
-      let detail = CaseDetail {
-        name: invariant.name,
-        expression: invariant.expression,
-        reason: invariant.reason,
-        evaluated_kind: invariant.evaluated_kind,
-        actual: invariant.actual,
-        expected: invariant.expected,
-      };
-      if invariant.passed {
+      let detail = integrity_evaluation_case(&evaluation);
+      if evaluation.passed {
         passed_cases.push(detail);
       } else {
         failed_cases.push(detail);
@@ -517,6 +596,40 @@ mod tests {
     assert_eq!(exit_code, 0);
     assert!(report.contains("\"files-passed\": 1"));
     assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_classify_each_integrity_violation_as_a_failed_case() {
+    let root = temp_test_root("integrity-aggregate");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "first! := false\nsecond! := 42.0\nthird! := 2.0 < 1.0\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      true,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 1);
+    assert!(report.contains("\"tests-total\": 3"));
+    assert!(report.contains("\"tests-failed\": 3"));
+    assert!(report.contains("\"run-error\": null"));
+    assert!(report.contains("\"first!\""));
+    assert!(report.contains("\"second!\""));
+    assert!(report.contains("\"third!\""));
+    assert!(!report.contains("@0x"));
     std::fs::remove_dir_all(root).unwrap();
   }
 

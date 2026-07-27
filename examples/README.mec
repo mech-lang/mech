@@ -25,6 +25,12 @@ examples/analog-clock/
 examples/browser-dom-demo/
 ```
 
+Integrity-constraint declaration examples include:
+
+```text
+examples/transactional-integrity/
+```
+
 Robot arm examples live with the host crate:
 
 ```text

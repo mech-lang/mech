@@ -664,6 +664,21 @@ fn reactive_transaction_benchmarks(c: &mut Criterion) {
     )
   });
 
+  group.bench_function("valid_turn_with_one_integrity_constraint", |b| {
+    b.iter_batched(
+      || {
+        host_input_fixture(
+          "output := @pulse/value + 1.0\noutput-safe! := output <= 100.0",
+        )
+      },
+      |mut fixture| {
+        black_box(apply_host_input(&mut fixture).unwrap());
+        black_box(fixture)
+      },
+      BatchSize::SmallInput,
+    )
+  });
+
   group.finish();
 }
 
