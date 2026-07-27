@@ -3194,6 +3194,24 @@ pub struct InterpreterExecution<'a> {
   services: StdRefCell<&'a mut dyn MechExecutionServices>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExecutionServicesBorrowConflict {
+  pub operation: &'static str,
+}
+
+impl MechErrorKind for ExecutionServicesBorrowConflict {
+  fn name(&self) -> &str {
+    "ExecutionServicesBorrowConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Execution services are already borrowed while attempting `{}`.",
+      self.operation,
+    )
+  }
+}
+
 impl<'a> InterpreterExecution<'a> {
   pub fn new(
     interpreter: &'a Interpreter,
@@ -3211,7 +3229,15 @@ impl<'a> InterpreterExecution<'a> {
       &mut dyn MechExecutionServices,
     ) -> MResult<T>,
   ) -> MResult<T> {
-    let mut services = self.services.borrow_mut();
+    let mut services = self.services.try_borrow_mut().map_err(|_| {
+      MechError::new(
+        ExecutionServicesBorrowConflict {
+          operation: "with_services",
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
     operation(&mut **services)
   }
 
@@ -3220,7 +3246,15 @@ impl<'a> InterpreterExecution<'a> {
     interpreter: &Interpreter,
     operation: impl FnOnce(&InterpreterExecution<'_>) -> MResult<T>,
   ) -> MResult<T> {
-    let mut services = self.services.borrow_mut();
+    let mut services = self.services.try_borrow_mut().map_err(|_| {
+      MechError::new(
+        ExecutionServicesBorrowConflict {
+          operation: "with_interpreter",
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
     let execution = InterpreterExecution::new(
       interpreter,
       &mut **services,
@@ -3234,5 +3268,57 @@ impl Deref for InterpreterExecution<'_> {
 
   fn deref(&self) -> &Self::Target {
     self.interpreter
+  }
+}
+
+#[cfg(test)]
+mod execution_services_borrow_tests {
+  use super::*;
+
+  #[test]
+  fn nested_execution_service_access_returns_a_structured_error() {
+    let interpreter = Interpreter::new(7001, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
+
+    let error = execution
+      .with_services(|_| {
+        execution.with_services(|_| Ok(()))
+      })
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
+    assert!(error.kind_message().contains("with_services"));
+  }
+
+  #[test]
+  fn reentrant_interpreter_execution_returns_an_error_without_panicking() {
+    let interpreter = Interpreter::new(7002, 100);
+    let nested = Interpreter::new(7003, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+      || {
+        execution.with_services(|_| {
+          execution.with_interpreter(
+            &nested,
+            |_| Ok(()),
+          )
+        })
+      },
+    ));
+
+    let error = result
+      .expect("reentrant service access must not panic")
+      .unwrap_err();
+    assert_eq!(error.kind_name(), "ExecutionServicesBorrowConflict");
+    assert!(error.kind_message().contains("with_interpreter"));
   }
 }

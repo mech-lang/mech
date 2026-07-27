@@ -2276,14 +2276,24 @@ mod tests {
     }
 
     struct FailingPatternRegisterCompiler {
-        sink: Ref<f64>,
         solve_calls: Arc<AtomicUsize>,
         stage_calls: Arc<AtomicUsize>,
     }
     impl NativeFunctionCompiler for FailingPatternRegisterCompiler {
-        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+            let argument = arguments
+                .first()
+                .ok_or_else(|| {
+                    MechError::new(
+                        GenericError {
+                            msg: "failing pattern register expects one f64 sink".to_string(),
+                        },
+                        None,
+                    )
+                })?;
+            let sink = argument.as_f64()?;
             Ok(Box::new(FailingPatternRegister {
-                sink: self.sink.clone(),
+                sink,
                 solve_calls: self.solve_calls.clone(),
                 stage_calls: self.stage_calls.clone(),
             }))
@@ -3332,7 +3342,6 @@ event := 0.0
 ~second := 2.0
 "#,
         );
-        let second_sink = symbol(&interpreter, "second").as_f64().unwrap().clone();
         let solve_calls = Arc::new(AtomicUsize::new(0));
         let stage_calls = Arc::new(AtomicUsize::new(0));
         interpreter
@@ -3341,7 +3350,6 @@ event := 0.0
             .insert_function_compiler(
                 "test/failing-pattern-register",
                 Arc::new(FailingPatternRegisterCompiler {
-                    sink: second_sink,
                     solve_calls: solve_calls.clone(),
                     stage_calls: stage_calls.clone(),
                 }),
@@ -3352,7 +3360,7 @@ event := 0.0
 ~> event
   | value => {
       first = value
-      test/failing-pattern-register()
+      test/failing-pattern-register(second)
     }
   | * => {
       fallback := 0.0

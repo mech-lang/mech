@@ -1065,7 +1065,7 @@ mod native_dependency_tests {
   }
 
   struct IndexedInitializedCompiler {
-    output: Value,
+    output: f64,
     solve_calls: Arc<AtomicUsize>,
   }
 
@@ -1077,7 +1077,7 @@ mod native_dependency_tests {
   impl NativeFunctionCompiler for IndexedInitializedCompiler {
     fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
       Ok(Box::new(IndexedInitializedFunction {
-        output: self.output.clone(),
+        output: Value::F64(Ref::new(self.output)),
         solve_calls: self.solve_calls.clone(),
       }))
     }
@@ -1119,21 +1119,24 @@ mod native_dependency_tests {
     );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
-    let output = Ref::new(2.0);
-    let output_cell = ReactiveCellId::new(output.id());
     let solve_calls = Arc::new(AtomicUsize::new(0));
 
     let result = execute_initialized_indexed_compiler(
       &execution,
       &plan,
       &IndexedInitializedCompiler {
-        output: Value::F64(output),
+        output: 2.0,
         solve_calls: solve_calls.clone(),
       },
       vec![Value::F64(input)],
     )
     .unwrap();
 
+    let output_cell = result
+      .reactive_cell_ids()
+      .into_iter()
+      .next()
+      .expect("initialized compiler result should expose an output cell");
     assert!(result.reactive_cell_ids().contains(&output_cell));
     assert_eq!(solve_calls.load(Ordering::SeqCst), 1);
     let plan_borrow = plan.borrow();
