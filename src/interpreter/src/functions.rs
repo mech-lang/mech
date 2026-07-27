@@ -1110,7 +1110,13 @@ mod native_dependency_tests {
 
   #[test]
   fn initialized_indexed_compiler_records_dependencies() {
-    let plan = Plan::new();
+    let interpreter = Interpreter::new(0, 100);
+    let plan = interpreter.plan();
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
     let output = Ref::new(2.0);
@@ -1118,6 +1124,7 @@ mod native_dependency_tests {
     let solve_calls = Arc::new(AtomicUsize::new(0));
 
     let result = execute_initialized_indexed_compiler(
+      &execution,
       &plan,
       &IndexedInitializedCompiler {
         output: Value::F64(output),
@@ -1176,6 +1183,11 @@ mod native_dependency_tests {
   #[test]
   fn native_registration_defers_solve_result_errors() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
     let arguments = vec![Value::F64(input)];
@@ -1187,7 +1199,7 @@ mod native_dependency_tests {
         solve_calls: solve_calls.clone(),
       }),
       &arguments,
-      &interpreter,
+      &execution,
     );
     plan.pop_activation_registration_scope();
 
@@ -1202,6 +1214,11 @@ mod native_dependency_tests {
   #[test]
   fn native_function_registration_records_operand_cells() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let input_cell = ReactiveCellId::new(input.id());
     let arguments = vec![Value::F64(input)];
@@ -1209,7 +1226,7 @@ mod native_dependency_tests {
     let result = execute_native_function_compiler(
       Arc::new(NativeDependencyTestCompiler),
       &arguments,
-      &interpreter,
+      &execution,
     )
     .unwrap();
 
@@ -1317,6 +1334,11 @@ mod native_initialization_failure_tests {
   #[test]
   fn eager_initialization_uses_solve_result() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let arguments = vec![Value::F64(Ref::new(1.0))];
     let solve_calls = Arc::new(AtomicUsize::new(0));
     let solve_result_calls = Arc::new(AtomicUsize::new(0));
@@ -1325,7 +1347,7 @@ mod native_initialization_failure_tests {
     let error = execute_native_function_compiler(
       failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
       &arguments,
-      &interpreter,
+      &execution,
     )
     .expect_err("eager initialization must return the native solve error");
 
@@ -1338,6 +1360,11 @@ mod native_initialization_failure_tests {
   #[test]
   fn activation_registration_defers_initialization_solving() {
     let interpreter = Interpreter::new(0, 100);
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let input = Ref::new(1.0);
     let arguments = vec![Value::F64(input.clone())];
     let solve_calls = Arc::new(AtomicUsize::new(0));
@@ -1349,7 +1376,7 @@ mod native_initialization_failure_tests {
     let result = execute_native_function_compiler(
       failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
       &arguments,
-      &interpreter,
+      &execution,
     );
     plan.pop_activation_registration_scope();
 

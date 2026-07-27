@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind};
 use crate::{ConfigValue, RuntimeHostInputDriver, RuntimeResourceProvider};
-use crate::runtime::extension::{
+use crate::extension::{
   invoke_extension,
   invoke_extension_value,
 };

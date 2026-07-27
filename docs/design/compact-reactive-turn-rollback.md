@@ -8,9 +8,10 @@ the program restores input cells, executed function state, committed register
 state, and the scheduler state of every affected interpreter. Original
 `Ref<T>` and `ValRef` handles remain in place.
 
-This boundary covers in-memory program execution only. It does not include
-runtime store commit, runtime transaction envelopes, effects, providers,
-capability overlays, host compensation, or module publication.
+At the program layer this boundary covers in-memory execution only. When the
+runtime owns the turn, it coordinates the compact rollback state with its
+transaction envelope, effects, providers, capability overlay, and store
+commit without moving whole-program checkpoint work into the reactive loop.
 
 ## ReactiveTurnJournal
 
@@ -62,7 +63,8 @@ identity so rollback returns to the state before the first repetition.
 
 ## Multi-interpreter batching
 
-`ProgramReactiveTurnJournal` contains one shared `ReactiveTurnJournal` and one
+The crate-private program turn journal contains one shared
+`ReactiveTurnJournal` and one
 compact scheduler checkpoint per affected interpreter. Input preparation
 finishes first. Every input target and every affected interpreter checkpoint
 is captured before the first assignment is staged or committed. Interpreters
@@ -82,9 +84,9 @@ preflight. A failure in a later interpreter therefore restores earlier
 interpreter turns and prevents subsequent interpreters from executing.
 
 Each program journal represents exactly one operation. Reuse is rejected
-before a second operation can mutate state. Journal-aware APIs intentionally
-leave rollback to their caller; direct program APIs construct a journal and
-coordinate rollback locally.
+before a second operation can mutate state. Safe callers use coordinated
+program entry points; only the program crate may invoke the unsafe
+interpreter journal integration boundary.
 
 ## Performance model
 
@@ -101,19 +103,15 @@ an arena rewrite by itself.
 
 ## Lifetime and exclusions
 
-A `ProgramReactiveTurnJournal` is ephemeral rollback state.
+The program reactive-turn journal is ephemeral rollback state.
 
 It is not a committed delta.
 
 It is not serializable history.
 
-It is dropped on success unless a higher-level coordinator temporarily retains
-it while completing its own transaction.
+It is dropped on success unless the runtime coordinator retains it through
+store finalization. The runtime receives only a sealed commit participant, not
+the journal itself.
 
-PR7 will provide that higher-level runtime coordinator.
-
-PR6 does not join runtime-owned step or host-input work to
-`RuntimeExecutionTransaction`, the runtime effect journal, capability
-overlays, provider transactions, or runtime store commit. External effects
-remain outside the program-local guarantee. PR6 also introduces no rewind,
-replay, durable history, or stable historical cell IDs.
+This design introduces no rewind, replay, durable history, or stable
+historical cell IDs.

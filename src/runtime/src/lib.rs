@@ -9,6 +9,7 @@ pub mod host_delegation;
 pub mod host_delegation_crypto;
 pub mod operation;
 pub mod effect;
+mod extension;
 mod resource;
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod input;
@@ -52,6 +53,10 @@ pub use self::config::*;
 pub use self::config_profile::*;
 pub use self::operation::*;
 pub use self::effect::*;
+pub use self::extension::{
+  RuntimeExtensionPanicked,
+  RuntimeStoreCommitIndeterminate,
+};
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::input::*;
 #[cfg(feature = "host_delegation")]

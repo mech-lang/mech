@@ -85,6 +85,17 @@ impl RuntimeTransactionContextIdentity {
     }
     None
   }
+
+  pub(super) fn set_actor_state(&mut self, state: ObjectId) {
+    self.actor_state = Some(state);
+  }
+
+  pub(super) fn bind_actor_turn(&mut self, turn: &ActorTurn) {
+    self.subject = turn.subject.clone();
+    self.actor = Some(turn.actor);
+    self.actor_message = Some(turn.message.clone());
+    self.actor_state = turn.state;
+  }
 }
 
 #[derive(Clone)]

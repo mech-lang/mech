@@ -3600,6 +3600,7 @@ impl MechRuntime {
     self.program.compile_bytecode()
   }
 
+  #[cfg(all(feature = "invariant_define", feature = "bool"))]
   pub fn invariant_snapshots(
     &self,
   ) -> Vec<crate::RuntimeInvariantSnapshot> {

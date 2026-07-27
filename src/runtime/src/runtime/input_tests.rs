@@ -370,6 +370,7 @@ fn canonical_host_input_updates_live_context_read() {
 
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
   let canonical = RuntimeHostInputSource::new("test://clock/ticks", "value").unwrap();
+  let source_identity = source_cell(&runtime, &canonical);
   assert!(runtime.live_input_bindings.contains_key(&canonical));
   assert!(runtime.live_input_bindings.keys().all(|source| !source.base_uri().contains("pulse") && !source.path().contains("pulse")));
 
@@ -383,10 +384,11 @@ fn canonical_host_input_updates_live_context_read() {
   assert!(outcome.turn.is_none());
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
 
-  runtime.ingress().submit(RuntimeHostInput::single(canonical, RuntimeHostInputValue::F64(5.0))).unwrap();
+  runtime.ingress().submit(RuntimeHostInput::single(canonical.clone(), RuntimeHostInputValue::F64(5.0))).unwrap();
   let outcomes = runtime.drain_host_inputs(1).unwrap();
   assert_eq!(outcomes.len(), 1);
   assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+  assert_eq!(source_cell(&runtime, &canonical), source_identity);
 }
 
 #[test]
@@ -731,9 +733,9 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
   ); grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value"); grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
   let subject = runtime.runtime_context().unwrap().subject; grant_host_call(&mut runtime, &subject, 47, "host:demo/fails-after-first");
   let mut context = runtime.runtime_context().unwrap(); runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result + 0\n@out/line <- output").unwrap();
-  let calls_before = calls.load(Ordering::SeqCst); let input_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap(); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); let host_result_pointer = match &*host_result.borrow() { Value::F64(value) => value.as_ptr(), other => panic!("expected f64 host result, got {other:?}") }; let plan_before = plan_snapshot(&runtime); let lines_before = output.lines();
+  let calls_before = calls.load(Ordering::SeqCst); let input_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap(); let input_identity = source_cell(&runtime, &input_source); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); let host_result_pointer = match &*host_result.borrow() { Value::F64(value) => value.as_ptr(), other => panic!("expected f64 host result, got {other:?}") }; let plan_before = plan_snapshot(&runtime); let lines_before = output.lines();
   assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(output.lines().len(), 1); assert_eq!(runtime.persistent_send_count(), 1);
-  fail_host.store(true, Ordering::SeqCst); let error = runtime.apply_host_input(RuntimeHostInput::single(input_source.clone(), RuntimeHostInputValue::F64(9.0))).unwrap_err(); assert!(format!("{error:?}").contains("DeliberateHostCallError")); assert!(calls.load(Ordering::SeqCst) > calls_before); assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); match &*host_result.borrow() { Value::F64(value) => assert_eq!(value.as_ptr(), host_result_pointer), other => panic!("expected f64 host result, got {other:?}") }; assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(plan_snapshot(&runtime), plan_before); assert_eq!(output.lines(), lines_before); assert_eq!(runtime.persistent_send_count(), 1); runtime.run_string("recovery := 1").unwrap(); assert_eq!(f64_value(&symbol_value(&runtime, "recovery")), 1.0);
+  fail_host.store(true, Ordering::SeqCst); let error = runtime.apply_host_input(RuntimeHostInput::single(input_source.clone(), RuntimeHostInputValue::F64(9.0))).unwrap_err(); assert!(format!("{error:?}").contains("DeliberateHostCallError")); assert!(calls.load(Ordering::SeqCst) > calls_before); assert_eq!(f64_value(&source_value(&runtime, &input_source)), 1.0); assert_eq!(source_cell(&runtime, &input_source), input_identity); let host_result = runtime.program.interpreter().symbols().borrow().get(hash_str("host-result")).unwrap(); match &*host_result.borrow() { Value::F64(value) => assert_eq!(value.as_ptr(), host_result_pointer), other => panic!("expected f64 host result, got {other:?}") }; assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0); assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0); assert_eq!(plan_snapshot(&runtime), plan_before); assert_eq!(output.lines(), lines_before); assert_eq!(runtime.persistent_send_count(), 1); runtime.run_string("recovery := 1").unwrap(); assert_eq!(f64_value(&symbol_value(&runtime, "recovery")), 1.0);
 }
 
 #[test]
@@ -1255,6 +1257,7 @@ struct MockDriverState {
   fail_attach: bool,
   fail_start: bool,
   fail_stop: bool,
+  panic_start: bool,
   attached_ingress: Option<RuntimeIngress>,
   stop_observed_closed_ingress: bool,
   log: Vec<String>,
@@ -1296,6 +1299,9 @@ impl RuntimeHostInputDriver for MockDriver {
     let event = format!("start:{}", self.name);
     state.log.push(event.clone());
     self.events.borrow_mut().push(event);
+    if state.panic_start {
+      panic!("deliberate input driver start panic");
+    }
     if state.fail_start { return Err(mock_error("MockStartError", format!("start failed for {}", self.name))); }
     state.live = true;
     Ok(())
@@ -1424,6 +1430,32 @@ fn start_failure_stops_only_drivers_started_by_the_call() {
   assert_eq!((b.borrow().start_count, b.borrow().stop_count), (1, 0));
   assert_eq!((c.borrow().start_count, c.borrow().stop_count), (0, 0));
   assert!(!a.borrow().live && !b.borrow().live && !c.borrow().live);
+}
+
+#[test]
+fn input_driver_panic_is_converted_and_started_drivers_are_stopped() {
+  let a = Rc::new(RefCell::new(MockDriverState::default()));
+  let b = Rc::new(RefCell::new(MockDriverState {
+    panic_start: true,
+    ..Default::default()
+  }));
+  let (drivers, events) =
+    drivers_with_events(&[("a", a.clone()), ("b", b.clone())]);
+  let mut runtime = runtime_with_drivers(drivers).unwrap();
+  bind_single_mock_input(&mut runtime);
+
+  let error = runtime.start_input_drivers().unwrap_err();
+
+  assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+  assert!(format!("{error:?}").contains("deliberate input driver start panic"));
+  assert_eq!(
+    events.borrow().as_slice(),
+    ["attach:a", "attach:b", "start:a", "start:b", "stop:a"],
+  );
+  assert_eq!((a.borrow().start_count, a.borrow().stop_count), (1, 1));
+  assert_eq!((b.borrow().start_count, b.borrow().stop_count), (1, 0));
+  assert!(!runtime.is_poisoned());
+  runtime.run_string("input-driver-panic-recovery := 1.0").unwrap();
 }
 
 #[test]
@@ -2084,7 +2116,10 @@ render-tick := @tick/tick
       "tick",
       Value::F64(Ref::new(0.0)),
     );
-    let (mut runtime, output) = test_runtime_with_output(provider);
+    let (mut runtime, output) = test_runtime_with_output_host(
+      provider,
+      sleep_host("demo/activation-duration-sleep"),
+    );
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
     let subject = runtime.runtime_context().unwrap().subject;
@@ -2412,7 +2447,7 @@ other-value := other-tick + 1.0
   #[test]
   fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
     let provider=TestResourceProvider::new().with_value("test://render/timer","tick",Value::F64(Ref::new(0.0))).with_value("test://other/timer","tick",Value::F64(Ref::new(0.0)));let calls=Arc::new(AtomicUsize::new(0));let host_calls=calls.clone();
-    let host = PlannedPureHostFunction::new("demo/patterned-body-fail-second", |_context: &RuntimeCallContext,args: &[RuntimeValueSnapshot]| Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into()), move |_context: &RuntimeCallContext,args: Vec<RuntimeValueSnapshot>|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==2{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())});
+    let host = PlannedPureHostFunction::new("demo/patterned-body-fail-second", |_context: &RuntimeCallContext,args: &[RuntimeValueSnapshot]| Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into()), move |_context: &RuntimeCallContext,args: Vec<RuntimeValueSnapshot>|{let call=host_calls.fetch_add(1,Ordering::SeqCst)+1;if call==1{return Err(MechError::new(DeliberateHostCallError,None));}Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())});
     let(mut runtime,output)=test_runtime_with_output_host(provider, host);grant_read(&mut runtime,"test://render/timer","tick");grant_read(&mut runtime,"test://other/timer","tick");grant_write(&mut runtime,TEST_OUTPUT_BASE_URI,"line");
     let subject=runtime.runtime_context().unwrap().subject;grant_host_call(&mut runtime,&subject,194,"host:demo/patterned-body-fail-second");
     runtime.run_string(r#"@tick := test://render/timer{:read(tick)}
@@ -2431,10 +2466,10 @@ other-value := other-tick + 1.0
       fallback := 0.0
     }
 "#).unwrap();
-    let plan=activation_plan_snapshot(&runtime);assert_eq!(calls.load(Ordering::SeqCst),1);assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
-    let error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://render/timer","tick").unwrap(),RuntimeHostInputValue::F64(1.0))).unwrap_err();assert!(error.kind_as::<DeliberateHostCallError>().is_some());assert_eq!(calls.load(Ordering::SeqCst),2);assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
+    let plan=activation_plan_snapshot(&runtime);assert_eq!(calls.load(Ordering::SeqCst),0);assert!(output.lines().is_empty());assert_eq!(activation_send_count(&runtime),1);
+    let error=runtime.apply_host_input(RuntimeHostInput::single(RuntimeHostInputSource::new("test://render/timer","tick").unwrap(),RuntimeHostInputValue::F64(1.0))).unwrap_err();assert!(error.kind_as::<DeliberateHostCallError>().is_some());assert_eq!(calls.load(Ordering::SeqCst),1);assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
     let unrelated=apply_f64_input(&mut runtime,"test://other/timer","tick",7.0);assert!(unrelated.turn.is_some());assert_eq!(f64_value(&symbol_value(&runtime,"state")),0.0);assert!(output.lines().is_empty());assert_eq!(activation_plan_snapshot(&runtime),plan);
-    let retry=apply_f64_input(&mut runtime,"test://render/timer","tick",1.0);assert!(retry.turn.is_some());assert_eq!(calls.load(Ordering::SeqCst),3);assert_eq!(f64_value(&symbol_value(&runtime,"state")),1.0);assert_eq!(output.lines(),vec!["0"]);assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),1);
+    let retry=apply_f64_input(&mut runtime,"test://render/timer","tick",1.0);assert!(retry.turn.is_some());assert_eq!(calls.load(Ordering::SeqCst),2);assert_eq!(f64_value(&symbol_value(&runtime,"state")),1.0);assert_eq!(output.lines(),vec!["0"]);assert_eq!(activation_plan_snapshot(&runtime),plan);assert_eq!(activation_send_count(&runtime),1);
   }
 
   #[test]
@@ -2529,7 +2564,7 @@ render-tick := @tick/tick
                 },
                 move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                     let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
-                    if call_number == 2 {
+                    if call_number == 1 {
                         return Err(MechError::new(DeliberateHostCallError, None));
                     }
                     Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
@@ -2562,8 +2597,8 @@ render-tick := @tick/tick
         let plan_before = activation_plan_snapshot(&runtime);
         assert_eq!(
             calls.load(Ordering::SeqCst),
-            1,
-            "host function must compile once during load"
+            0,
+            "host invocation must not run during planning"
         );
         assert!(output.lines().is_empty());
         assert_eq!(activation_send_count(&runtime), 1);
@@ -2577,13 +2612,13 @@ render-tick := @tick/tick
             error.kind_as::<DeliberateHostCallError>().is_some(),
             "unexpected error: {error:?}"
         );
-        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
         assert!(output.lines().is_empty());
         assert_eq!(activation_send_count(&runtime), 1);
         assert_eq!(activation_plan_snapshot(&runtime), plan_before);
         let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
         assert!(retry.turn.is_some());
-        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
         assert_eq!(output.lines().len(), 1);
         assert_eq!(recorded_f64(&output, 0), 1.0);
         assert_eq!(activation_send_count(&runtime), 1);

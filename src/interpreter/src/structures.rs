@@ -686,11 +686,18 @@ mod matrix_dependency_tests {
 
   #[test]
   fn indexed_matrix_horzcat_records_dependencies() {
-    let plan = Plan::new();
+    let interpreter = Interpreter::new(0, 100);
+    let plan = interpreter.plan();
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let (first, first_cell) = scalar(1.0);
     let (second, second_cell) = scalar(2.0);
 
     let output = execute_initialized_indexed_compiler(
+      &execution,
       &plan,
       &MatrixHorzCat {},
       vec![first, second],
@@ -710,15 +717,22 @@ mod matrix_dependency_tests {
 
   #[test]
   fn indexed_matrix_vertcat_records_dependencies() {
-    let plan = Plan::new();
+    let interpreter = Interpreter::new(0, 100);
+    let plan = interpreter.plan();
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let (first, _) = scalar(1.0);
     let (second, _) = scalar(2.0);
-    let first_row = execute_initialized_indexed_compiler(&plan, &MatrixHorzCat {}, vec![first]).unwrap();
-    let second_row = execute_initialized_indexed_compiler(&plan, &MatrixHorzCat {}, vec![second]).unwrap();
+    let first_row = execute_initialized_indexed_compiler(&execution, &plan, &MatrixHorzCat {}, vec![first]).unwrap();
+    let second_row = execute_initialized_indexed_compiler(&execution, &plan, &MatrixHorzCat {}, vec![second]).unwrap();
     let first_cell = first_row.reactive_cell_ids()[0];
     let second_cell = second_row.reactive_cell_ids()[0];
 
     let output = execute_initialized_indexed_compiler(
+      &execution,
       &plan,
       &MatrixVertCat {},
       vec![first_row, second_row],
@@ -796,10 +810,16 @@ mod set_dependency_tests {
 
   #[test]
   fn set_define_registration_ignores_element_dependencies() {
-    let plan = Plan::new();
+    let interpreter = Interpreter::new(0, 100);
+    let plan = interpreter.plan();
+    let mut services = NoMechExecutionServices;
+    let execution = InterpreterExecution::new(
+      &interpreter,
+      &mut services,
+    );
     let (first, first_cell) = scalar(1.0);
     let (second, second_cell) = scalar(2.0);
-    let output = execute_initialized_indexed_compiler(&plan, &SetDefine { kind: ValueKind::F64 }, vec![first, second]).unwrap();
+    let output = execute_initialized_indexed_compiler(&execution, &plan, &SetDefine { kind: ValueKind::F64 }, vec![first, second]).unwrap();
     let output_cell = output.reactive_root_cell_ids()[0];
     let plan = plan.borrow();
     let node = plan.node(0).unwrap();

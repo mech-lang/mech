@@ -1,0 +1,48 @@
+error[E0432]: unresolved import `mech_program::ProgramReactiveTurnJournal`
+ --> tests/ui/sealed/reactive_journal.rs:2:35
+  |
+2 |   MechProgram, MechProgramConfig, ProgramReactiveTurnJournal,
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `ProgramReactiveTurnJournal` in the root
+  |
+help: a similar name exists in the module
+  |
+2 -   MechProgram, MechProgramConfig, ProgramReactiveTurnJournal,
+2 +   MechProgram, MechProgramConfig, ReactiveTurnJournal,
+  |
+
+error[E0599]: no method named `step_with_reactive_turn_journal` found for struct `MechProgram` in the current scope
+ --> tests/ui/sealed/reactive_journal.rs:8:19
+  |
+8 |   let _ = program.step_with_reactive_turn_journal(&mut journal);
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `MechProgram`
+
+error[E0599]: no method named `advance_reactive_turn_with_journal` found for struct `MechProgram` in the current scope
+ --> tests/ui/sealed/reactive_journal.rs:9:19
+  |
+9 |   let _ = program.advance_reactive_turn_with_journal(&mut journal);
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+help: there is a method `advance_reactive_turn` with a similar name, but with different arguments
+ --> $WORKSPACE/src/program/src/program.rs
+  |
+  | /   pub fn advance_reactive_turn(
+  | |     &mut self,
+  | |     interpreter_id: u64,
+  | |     dirty_cells: &[ReactiveCellId],
+  | |   ) -> MResult<ReactiveTurnOutcome> {
+  | |___________________________________^
+
+error[E0599]: no method named `update_inputs_and_advance_turn_with_journal` found for struct `MechProgram` in the current scope
+  --> tests/ui/sealed/reactive_journal.rs:10:19
+   |
+10 |   let _ = program.update_inputs_and_advance_turn_with_journal(
+   |           --------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: there is a method `update_inputs_and_advance_turn` with a similar name, but with different arguments
+  --> $WORKSPACE/src/program/src/program.rs
+   |
+   | /   pub fn update_inputs_and_advance_turn(
+   | |     &mut self,
+   | |     updates: &[ProgramInputUpdate],
+   | |   ) -> MResult<ProgramInputTurnOutcome> {
+   | |_______________________________________^

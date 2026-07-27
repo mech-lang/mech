@@ -1367,6 +1367,11 @@ mod tests {
             ],
         };
         let interpreter = Interpreter::new_with_full_stdlib(0);
+        let mut services = NoMechExecutionServices;
+        let execution = InterpreterExecution::new(
+            &interpreter,
+            &mut services,
+        );
         let mut env = Environment::from([(x_id, Value::U64(Ref::new(1)))]);
 
         let mismatch = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
@@ -1377,7 +1382,7 @@ mod tests {
             &pattern,
             &mismatch,
             &env,
-            &interpreter,
+            &execution,
         )
         .unwrap();
         assert!(!pattern_match.matched);
@@ -1395,7 +1400,7 @@ mod tests {
             &pattern,
             &match_value,
             &env,
-            &interpreter,
+            &execution,
         )
         .unwrap();
         assert!(pattern_match.matched);

@@ -2414,4 +2414,337 @@ mod tests {
     assert!(log.lock().unwrap().is_empty());
     assert_eq!(context.transaction, Some(transaction_id));
   }
+
+  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+  enum PanicEffectPhase {
+    Prepare,
+    Commit,
+    Abort,
+    Apply,
+    Compensate,
+    Deliver,
+  }
+
+  #[derive(Debug)]
+  struct PanickingTransactionalEffect {
+    name: &'static str,
+    panic_at: Option<PanicEffectPhase>,
+    log: Arc<Mutex<Vec<String>>>,
+  }
+
+  impl RuntimeTransactionalEffect for PanickingTransactionalEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata(self.name)
+    }
+
+    fn prepare(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:prepare", self.name));
+      if self.panic_at == Some(PanicEffectPhase::Prepare) {
+        panic!("deliberate transactional prepare panic");
+      }
+      Ok(())
+    }
+
+    fn commit(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:commit", self.name));
+      if self.panic_at == Some(PanicEffectPhase::Commit) {
+        panic!("deliberate transactional commit panic");
+      }
+      Ok(())
+    }
+
+    fn abort(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:abort", self.name));
+      if self.panic_at == Some(PanicEffectPhase::Abort) {
+        panic!("deliberate transactional abort panic");
+      }
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct PanickingCompensatableEffect {
+    name: &'static str,
+    panic_at: Option<PanicEffectPhase>,
+    log: Arc<Mutex<Vec<String>>>,
+  }
+
+  impl RuntimeCompensatableEffect for PanickingCompensatableEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata(self.name)
+    }
+
+    fn apply(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:apply", self.name));
+      if self.panic_at == Some(PanicEffectPhase::Apply) {
+        panic!("deliberate compensatable apply panic");
+      }
+      Ok(())
+    }
+
+    fn compensate(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:compensate", self.name));
+      if self.panic_at == Some(PanicEffectPhase::Compensate) {
+        panic!("deliberate compensatable compensate panic");
+      }
+      Ok(())
+    }
+  }
+
+  #[derive(Debug)]
+  struct PanickingAfterCommitEffect {
+    name: &'static str,
+    panic_at: Option<PanicEffectPhase>,
+    log: Arc<Mutex<Vec<String>>>,
+  }
+
+  impl RuntimeAfterCommitEffect for PanickingAfterCommitEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+      synthetic_metadata(self.name)
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      record(&self.log, format!("{}:deliver", self.name));
+      if self.panic_at == Some(PanicEffectPhase::Deliver) {
+        panic!("deliberate after-commit delivery panic");
+      }
+      Ok(())
+    }
+  }
+
+  #[test]
+  fn transactional_prepare_panic_aborts_prior_participants_and_resets_phase() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    for (name, panic_at) in [
+      ("first", None),
+      ("second", Some(PanicEffectPhase::Prepare)),
+    ] {
+      runtime
+        .stage_runtime_effect_with_context(
+          &mut context,
+          PreparedRuntimeEffect::Transactional(Box::new(
+            PanickingTransactionalEffect {
+              name,
+              panic_at,
+              log: log.clone(),
+            },
+          )),
+        )
+        .unwrap();
+    }
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["first:prepare", "second:prepare", "first:abort"],
+    );
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
+  fn transactional_commit_panic_notifies_remaining_participants_and_poisons() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    for (name, panic_at) in [
+      ("first", Some(PanicEffectPhase::Commit)),
+      ("second", None),
+    ] {
+      runtime
+        .stage_runtime_effect_with_context(
+          &mut context,
+          PreparedRuntimeEffect::Transactional(Box::new(
+            PanickingTransactionalEffect {
+              name,
+              panic_at,
+              log: log.clone(),
+            },
+          )),
+        )
+        .unwrap();
+    }
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::AfterCommit(Box::new(
+          PanickingAfterCommitEffect {
+            name: "suppressed",
+            panic_at: None,
+            log: log.clone(),
+          },
+        )),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExternalCommitIndeterminate");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec![
+        "first:prepare",
+        "second:prepare",
+        "first:commit",
+        "second:commit",
+      ],
+    );
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+  }
+
+  #[test]
+  fn transactional_abort_panic_continues_cleanup_and_poisons_afterward() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    for (name, panic_at) in [
+      ("first", None),
+      ("second", Some(PanicEffectPhase::Abort)),
+    ] {
+      runtime
+        .stage_runtime_effect_with_context(
+          &mut context,
+          PreparedRuntimeEffect::Transactional(Box::new(
+            PanickingTransactionalEffect {
+              name,
+              panic_at,
+              log: log.clone(),
+            },
+          )),
+        )
+        .unwrap();
+    }
+
+    let error = runtime
+      .abort_runtime_transaction(&mut context, "panic cleanup")
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["second:abort", "first:abort"],
+    );
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(runtime.is_poisoned());
+    assert_eq!(context.transaction, None);
+  }
+
+  #[test]
+  fn compensatable_apply_panic_is_retryable_after_successful_cleanup() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(
+          PanickingCompensatableEffect {
+            name: "apply",
+            panic_at: Some(PanicEffectPhase::Apply),
+            log: log.clone(),
+          },
+        )),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert_eq!(*log.lock().unwrap(), vec!["apply:apply"]);
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert!(!runtime.is_poisoned());
+  }
+
+  #[test]
+  fn compensatable_cleanup_panic_poisons_after_store_failure() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .stage_runtime_effect_with_context(
+        &mut context,
+        PreparedRuntimeEffect::Compensatable(Box::new(
+          PanickingCompensatableEffect {
+            name: "compensate",
+            panic_at: Some(PanicEffectPhase::Compensate),
+            log: log.clone(),
+          },
+        )),
+      )
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(777), "missing", "update"),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectCleanupFailed");
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["compensate:apply", "compensate:compensate"],
+    );
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(runtime.is_poisoned());
+  }
+
+  #[test]
+  fn after_commit_delivery_panic_continues_and_keeps_runtime_healthy() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    for (name, panic_at) in [
+      ("first", Some(PanicEffectPhase::Deliver)),
+      ("second", None),
+    ] {
+      runtime
+        .stage_runtime_effect_with_context(
+          &mut context,
+          PreparedRuntimeEffect::AfterCommit(Box::new(
+            PanickingAfterCommitEffect {
+              name,
+              panic_at,
+              log: log.clone(),
+            },
+          )),
+        )
+        .unwrap();
+    }
+
+    let outcome = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap();
+
+    assert_eq!(outcome.delivery_failures.len(), 1);
+    assert_eq!(
+      *log.lock().unwrap(),
+      vec!["first:deliver", "second:deliver"],
+    );
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(!runtime.is_poisoned());
+  }
 }

@@ -2151,7 +2151,6 @@ fn context_denial_still_uses_context_capability_error() {
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let error = format!("{:?}", runtime.run_module(version).err().unwrap());
   assert!(error.contains("RuntimeResourceCapabilityDenied"));
-  assert!(!error.contains("RuntimeCapabilityGrantDenied"));
 }
 
 #[test]

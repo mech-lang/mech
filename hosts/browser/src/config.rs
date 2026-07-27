@@ -1976,7 +1976,7 @@ config := {
 "#);
     assert!(result.is_err());
     let error = format!("{:?}", result.err().unwrap());
-    assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+    assert!(error.contains("CapabilityDenied"), "got {error}");
   }
 
   #[cfg(feature = "serde")]

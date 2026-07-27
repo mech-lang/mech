@@ -268,6 +268,7 @@ impl RuntimeManagedServices for RuntimeSessionServices<'_> {
   ) -> MResult<()> {
     self.validate_context()?;
     self.context.actor_state = Some(state);
+    self.transaction.context_identity.set_actor_state(state);
     Ok(())
   }
 }

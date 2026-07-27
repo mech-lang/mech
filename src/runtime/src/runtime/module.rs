@@ -940,6 +940,18 @@ mod tests {
   }
 
   #[derive(Debug)]
+  struct PanickingSourceResolver;
+
+  impl SourceResolver for PanickingSourceResolver {
+    fn resolve(
+      &self,
+      _request: &SourceRequest,
+    ) -> MResult<Option<ResolvedSource>> {
+      panic!("deliberate source resolver panic");
+    }
+  }
+
+  #[derive(Debug)]
   struct CountingAfterCommitEffect {
     deliveries: Arc<AtomicUsize>,
     fail: bool,
@@ -2527,6 +2539,21 @@ mod tests {
     );
     assert_eq!(aborts.load(Ordering::SeqCst), 0);
     assert!(runtime.root_symbol_value("answer").is_ok());
+  }
+
+  #[test]
+  fn source_resolver_panic_is_converted_without_poisoning() {
+    let mut runtime = MechRuntime::builder()
+      .source_resolver(PanickingSourceResolver)
+      .build()
+      .unwrap();
+
+    let error = runtime.resolve_source("panic.mec").unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate source resolver panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("resolver-panic-recovery := 1.0").unwrap();
   }
 
   #[test]

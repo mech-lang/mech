@@ -42,7 +42,8 @@ fn run_example(
   let task = TaskRecord::new(
     runtime.next_task_id(),
     "program:host-args-showcase",
-  );
+  )
+    .with_capabilities((1..=8).map(CapabilityId).collect());
   let mut context = runtime.context_for_task(&task)?;
   runtime.run_string_with_context(&mut context, source)
 }

@@ -8,7 +8,7 @@ use crate::{
   RuntimeCompensatableEffect, RuntimeEffectCost, RuntimeEffectMetadata,
   RuntimeEffectSource,
 };
-use crate::runtime::extension::{
+use crate::extension::{
   catch_extension, invoke_extension,
 };
 
@@ -628,6 +628,7 @@ impl MechErrorKind for RuntimeResourceCapabilityDenied {
 mod tests {
   use super::*;
   use mech_core::Ref;
+  use std::sync::Arc;
 
   fn bool_value(value: bool) -> Value {
     Value::Bool(Ref::new(value))
@@ -652,6 +653,62 @@ mod tests {
     }
   }
 
+  fn grant_docs_write(runtime: &mut crate::MechRuntime) {
+    let subject = runtime.runtime_context().unwrap().subject().to_string();
+    let capability = crate::ResourcePathCapability::wildcard(
+      runtime.next_capability_id(),
+      subject,
+      "docs://manual",
+      ["write"],
+    )
+    .unwrap();
+    runtime.grant_capability(Arc::new(capability)).unwrap();
+  }
+
+  #[derive(Debug)]
+  struct PanickingProvider;
+
+  impl RuntimeResourceProvider for PanickingProvider {
+    fn scheme(&self) -> &str { "panic" }
+
+    fn base_uris(&self) -> Vec<String> {
+      vec!["panic://provider".to_string()]
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+      panic!("deliberate provider read panic");
+    }
+
+    fn preflight_write(
+      &self,
+      _request: RuntimeResourceWritePreflightRequest,
+    ) -> MResult<()> {
+      Ok(())
+    }
+
+    fn prepare_write(
+      &self,
+      _request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+      panic!("deliberate provider prepare panic");
+    }
+  }
+
+  fn grant_panic_resource(
+    runtime: &mut crate::MechRuntime,
+    operation: &str,
+  ) {
+    let subject = runtime.runtime_context().unwrap().subject().to_string();
+    let capability = crate::ResourcePathCapability::wildcard(
+      runtime.next_capability_id(),
+      subject,
+      "panic://provider",
+      [operation],
+    )
+    .unwrap();
+    runtime.grant_capability(Arc::new(capability)).unwrap();
+  }
+
   #[test]
   fn docs_write_is_invisible_until_explicit_commit() {
     let provider = InMemoryDocsProvider::new();
@@ -660,6 +717,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
 
@@ -693,6 +751,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
     runtime
@@ -723,6 +782,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
     runtime
@@ -771,6 +831,7 @@ mod tests {
       .resource_provider(Box::new(provider))
       .build()
       .unwrap();
+    grant_docs_write(&mut runtime);
 
     runtime
       .write_resource(write_request("intro/enabled", true))
@@ -780,5 +841,42 @@ mod tests {
       observed.read(read_request("intro/enabled")).unwrap(),
       bool_value(true),
     );
+  }
+
+  #[test]
+  fn provider_panics_are_converted_before_external_effects_exist() {
+    let mut runtime = crate::MechRuntime::builder()
+      .resource_provider(Box::new(PanickingProvider))
+      .build()
+      .unwrap();
+    grant_panic_resource(&mut runtime, "read");
+    grant_panic_resource(&mut runtime, "write");
+
+    let read_error = runtime
+      .read_resource(RuntimeResourceReadRequest {
+        base_uri: "panic://provider".to_string(),
+        path: "value".to_string(),
+        context_name: "panic".to_string(),
+      })
+      .unwrap_err();
+    assert_eq!(read_error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{read_error:?}")
+      .contains("deliberate provider read panic"));
+
+    let write_error = runtime
+      .write_resource(RuntimeResourceWriteRequest {
+        base_uri: "panic://provider".to_string(),
+        path: "value".to_string(),
+        context_name: "panic".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value: bool_value(true),
+        intent: RuntimeResourceWriteIntent::Assign,
+      })
+      .unwrap_err();
+    assert_eq!(write_error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{write_error:?}")
+      .contains("deliberate provider prepare panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("provider-panic-recovery := 1.0").unwrap();
   }
 }

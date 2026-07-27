@@ -891,11 +891,26 @@ pub struct InMemoryStore {
 
   transactions: HashMap<TransactionId, TransactionRecord>,
   transaction_order: Vec<TransactionId>,
+
+  #[cfg(test)]
+  panic_on_get_object: bool,
+  #[cfg(test)]
+  panic_on_commit_runtime: bool,
 }
 
 impl InMemoryStore {
   pub fn new() -> Self {
     Self::default()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn panic_on_get_object_for_test(&mut self) {
+    self.panic_on_get_object = true;
+  }
+
+  #[cfg(test)]
+  pub(crate) fn panic_on_commit_runtime_for_test(&mut self) {
+    self.panic_on_commit_runtime = true;
   }
 
   fn prune_events(&mut self) {
@@ -1153,6 +1168,10 @@ impl MechStore for InMemoryStore {
   }
 
   fn get_object(&self, id: ObjectId) -> MResult<Option<ObjectRecord>> {
+    #[cfg(test)]
+    if self.panic_on_get_object {
+      panic!("deliberate store read panic");
+    }
     Ok(self.objects.get(&id).cloned())
   }
 
@@ -1503,6 +1522,10 @@ impl MechStore for InMemoryStore {
     &mut self,
     commit: RuntimeStoreCommit,
   ) -> MResult<TransactionId> {
+    #[cfg(test)]
+    if self.panic_on_commit_runtime {
+      panic!("deliberate store commit panic");
+    }
     let id = commit.transaction.id;
     let mut temporary = self.clone();
 

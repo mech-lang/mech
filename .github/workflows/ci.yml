@@ -99,6 +99,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Audit sealed runtime boundaries
+        run: scripts/check-runtime-boundaries.sh
+
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
 

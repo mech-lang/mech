@@ -89,7 +89,8 @@ fn main() -> MResult<()> {
   let task = TaskRecord::new(
     runtime.next_task_id(),
     "task:host-example",
-  );
+  )
+    .with_capabilities(vec![CapabilityId(1)]);
   let mut host_context = runtime.context_for_task(&task)?;
 
   let host_result = runtime.call_host_with_context(

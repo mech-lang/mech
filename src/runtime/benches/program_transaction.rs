@@ -1,15 +1,18 @@
 use criterion::{
   BatchSize, Criterion, criterion_group, criterion_main,
 };
-use mech_core::{MResult, MechSourceCode, Value};
+use mech_core::{MResult, MechSourceCode, MechTuple, Ref, Value};
 use mech_runtime::{
   BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
-  CapabilityRequest, MechRuntime, ObjectId, ObjectRecord,
-  InMemorySourceResolver, ModuleBuildOptions,
+  CapabilityRequest, HostCall, InMemoryDocsProvider, MechRuntime, ObjectId,
+  ObjectRecord, InMemorySourceResolver, ModuleBuildOptions,
   PreparedRuntimeEffect, RuntimeAfterCommitEffect,
   RuntimeCompensatableEffect, RuntimeContext, RuntimeEffectMetadata,
-  RuntimeEffectSource, RuntimePreparedHostCall, SequentialIdGenerator,
-  PlannedStagedHostFunction,
+  RuntimeEffectSource, RuntimePreparedHostCall,
+  RuntimeResourceProvider, RuntimeResourceWriteIntent,
+  RuntimeResourceWriteRequest, RuntimeCapabilityOperation,
+  RuntimeValueSnapshot, SequentialIdGenerator,
+  PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction,
 };
 use std::hint::black_box;
 use std::sync::Arc;
@@ -169,6 +172,51 @@ fn explicit_graph_fixture() -> ExplicitFixture {
   ExplicitFixture { runtime, context }
 }
 
+fn execution_session_host_fixture() -> MechRuntime {
+  let mut runtime = MechRuntime::builder()
+    .host_function(PlannedRuntimeManagedHostFunction::new(
+      "bench/execution-session",
+      |_context, _arguments| Ok(Value::Bool(Ref::new(true)).into()),
+      |_services, _context, _arguments| {
+        Ok(Value::Bool(Ref::new(true)).into())
+      },
+    ))
+    .unwrap()
+    .build()
+    .unwrap();
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  runtime
+    .grant_capability(Arc::new(BasicCapability::new(
+      CapabilityId(9_000),
+      &BasicSubject::new(subject),
+      &BasicResource::new("host:bench/execution-session"),
+      [BasicOperation::new("call")],
+    )))
+    .unwrap();
+  runtime
+}
+
+fn provider_preparation_fixture() -> InMemoryDocsProvider {
+  let mut provider = InMemoryDocsProvider::new();
+  provider
+    .insert(
+      "docs://benchmark",
+      "value",
+      Value::F64(Ref::new(1.0)),
+    )
+    .unwrap();
+  provider
+}
+
+fn extension_wrapper_fixture() -> MechRuntime {
+  let resolver = InMemorySourceResolver::new()
+    .with_string("bench.mec", "answer := 42");
+  MechRuntime::builder()
+    .source_resolver(resolver)
+    .build()
+    .unwrap()
+}
+
 fn subsequent_explicit_fixture() -> ExplicitFixture {
   let mut fixture = explicit_fixture();
   fixture
@@ -257,6 +305,96 @@ fn staged_effect_rollback_fixture(
 
 fn program_transaction_benchmarks(c: &mut Criterion) {
   let mut group = c.benchmark_group("runtime_program_transaction");
+
+  group.bench_function("detached_scalar_snapshot", |b| {
+    let value = Value::F64(Ref::new(42.0));
+    b.iter(|| black_box(RuntimeValueSnapshot::capture(black_box(&value))))
+  });
+
+  group.bench_function("detached_nested_value_snapshot", |b| {
+    let value = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+      Value::F64(Ref::new(1.0)),
+      Value::Tuple(Ref::new(MechTuple::from_vec(vec![
+        Value::F64(Ref::new(2.0)),
+        Value::Bool(Ref::new(true)),
+      ]))),
+    ])));
+    b.iter(|| black_box(RuntimeValueSnapshot::capture(black_box(&value))))
+  });
+
+  group.bench_function("explicit_execution_session_host_dispatch", |b| {
+    b.iter_batched(
+      execution_session_host_fixture,
+      |mut runtime| {
+        black_box(
+          runtime
+            .call_host(HostCall::new("bench/execution-session", Vec::new()))
+            .unwrap(),
+        );
+        black_box(runtime)
+      },
+      BatchSize::SmallInput,
+    )
+  });
+
+  group.bench_function("provider_preparation", |b| {
+    b.iter_batched(
+      provider_preparation_fixture,
+      |provider| {
+        black_box(
+          provider
+            .prepare_write(RuntimeResourceWriteRequest {
+              base_uri: "docs://benchmark".to_string(),
+              path: "value".to_string(),
+              context_name: "benchmark".to_string(),
+              operation: RuntimeCapabilityOperation::Write,
+              value: Value::F64(Ref::new(2.0)),
+              intent: RuntimeResourceWriteIntent::Assign,
+            })
+            .unwrap(),
+        );
+        black_box(provider)
+      },
+      BatchSize::SmallInput,
+    )
+  });
+
+  group.bench_function("panic_free_extension_wrapper_overhead", |b| {
+    b.iter_batched(
+      extension_wrapper_fixture,
+      |runtime| {
+        black_box(runtime.resolve_source("bench.mec").unwrap());
+        black_box(runtime)
+      },
+      BatchSize::SmallInput,
+    )
+  });
+
+  group.bench_function("coordinated_program_finalization", |b| {
+    b.iter_batched(
+      || {
+        let mut fixture = explicit_fixture();
+        fixture
+          .runtime
+          .run_string_with_context(
+            &mut fixture.context,
+            "bench-finalization := bench-anchor + 1",
+          )
+          .unwrap();
+        fixture
+      },
+      |mut fixture| {
+        black_box(
+          fixture
+            .runtime
+            .commit_runtime_transaction_detailed(&mut fixture.context)
+            .unwrap(),
+        );
+        black_box(fixture)
+      },
+      BatchSize::SmallInput,
+    )
+  });
 
   group.bench_function("implicit_successful_retained_operation", |b| {
     b.iter_batched(
@@ -483,7 +621,7 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
     )
   });
 
-  group.bench_function("capability_overlay_lookup", |b| {
+  group.bench_function("capability_scoped_selection", |b| {
     b.iter_batched(
       || {
         let mut fixture = explicit_fixture();

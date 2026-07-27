@@ -921,6 +921,132 @@ mod transaction_tests {
     assert_eq!(ids.len(), 1);
     assert!(runtime.store().get_object(ids[0]).unwrap().is_some());
   }
+
+  #[test]
+  fn host_planning_panics_are_converted_without_invocation() {
+    let plan_calls = Arc::new(AtomicUsize::new(0));
+    let invoke_calls = Arc::new(AtomicUsize::new(0));
+    let plan_count = plan_calls.clone();
+    let invoke_count = invoke_calls.clone();
+    let runtime = MechRuntime::builder().build().unwrap();
+    let context = RuntimeCallContext::capture(
+      &runtime.runtime_context().unwrap(),
+    );
+    let compiler = RuntimeHostNativeFunctionCompiler::new(
+      "sealed/plan-panic",
+      "sealed/plan-panic",
+      context,
+      PlannedPureHostFunction::new(
+        "sealed/plan-panic",
+        move |_context, _arguments| {
+          plan_count.fetch_add(1, Ordering::SeqCst);
+          panic!("deliberate host plan panic");
+        },
+        move |_context, _arguments| {
+          invoke_count.fetch_add(1, Ordering::SeqCst);
+          Ok(Value::Empty.into())
+        },
+      )
+      .into(),
+    );
+
+    let error = match compiler.compile(&Vec::new()) {
+      Ok(_) => panic!("planning panic should be converted to an error"),
+      Err(error) => error,
+    };
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate host plan panic"));
+    assert_eq!(plan_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(invoke_calls.load(Ordering::SeqCst), 0);
+  }
+
+  #[test]
+  fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedPureHostFunction::new(
+        "sealed/pure-panic",
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        |_context, _arguments| {
+          panic!("deliberate pure host panic");
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
+    grant_host_call(&mut runtime, "sealed/pure-panic");
+    runtime.run_string("panic-anchor := 1.0").unwrap();
+
+    let error = runtime
+      .run_string("discarded := sealed/pure-panic()")
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate pure host panic"));
+    assert!(runtime.program.root_symbol_value("panic-anchor").is_ok());
+    assert!(runtime.program.root_symbol_value("discarded").is_err());
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+  }
+
+  #[test]
+  fn runtime_managed_host_panic_is_an_ordinary_rollback_failure() {
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedRuntimeManagedHostFunction::new(
+        "sealed/managed-panic",
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        |_services, _context, _arguments| {
+          panic!("deliberate runtime-managed host panic");
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
+    grant_host_call(&mut runtime, "sealed/managed-panic");
+
+    let error = runtime
+      .run_string("discarded := sealed/managed-panic()")
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}")
+      .contains("deliberate runtime-managed host panic"));
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+  }
+
+  #[test]
+  fn staged_host_prepare_panic_stages_no_effect() {
+    let mut runtime = MechRuntime::builder()
+      .host_function(PlannedStagedHostFunction::new(
+        "sealed/staged-panic",
+        |_context, _arguments| {
+          Ok(Value::F64(Ref::new(1.0)).into())
+        },
+        |_context, _arguments| {
+          panic!("deliberate staged host prepare panic");
+        },
+      ))
+      .unwrap()
+      .build()
+      .unwrap();
+    grant_host_call(&mut runtime, "sealed/staged-panic");
+
+    let error = runtime
+      .run_string("discarded := sealed/staged-panic()")
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}")
+      .contains("deliberate staged host prepare panic"));
+    assert!(runtime.active_transactions.is_empty());
+    assert!(runtime.active_effect_phase.get().is_none());
+    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+  }
 }
 
 #[cfg(test)]

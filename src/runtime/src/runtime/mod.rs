@@ -38,10 +38,6 @@ mod transaction;
 mod input_tests;
 
 pub use self::errors::*;
-pub use self::extension::{
-  RuntimeExtensionPanicked,
-  RuntimeStoreCommitIndeterminate,
-};
 pub use self::program_transaction::{
   RuntimeHealth,
   RuntimePoisonRecord,

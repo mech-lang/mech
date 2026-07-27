@@ -911,6 +911,132 @@ mod tests {
     }
   }
 
+  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+  enum CapabilityPanicPhase {
+    Preview,
+    Check,
+    Apply,
+    Restore,
+  }
+
+  #[derive(Debug)]
+  struct PanickingCapabilityKernel {
+    inner: BasicCapabilityKernel,
+    panic_at: CapabilityPanicPhase,
+  }
+
+  impl PanickingCapabilityKernel {
+    fn with_grant(
+      panic_at: CapabilityPanicPhase,
+      capability: Arc<dyn Capability>,
+    ) -> Self {
+      let mut inner = BasicCapabilityKernel::new();
+      inner
+        .grant(CapabilityGrant::new(capability))
+        .unwrap();
+      Self { inner, panic_at }
+    }
+  }
+
+  impl CapabilityKernel for PanickingCapabilityKernel {
+    fn checkpoint(
+      &self,
+    ) -> MResult<Box<dyn CapabilityKernelCheckpoint>> {
+      self.inner.checkpoint()
+    }
+
+    fn restore(
+      &mut self,
+      checkpoint: Box<dyn CapabilityKernelCheckpoint>,
+    ) -> MResult<()> {
+      if self.panic_at == CapabilityPanicPhase::Restore {
+        panic!("deliberate capability restore panic");
+      }
+      self.inner.restore(checkpoint)
+    }
+
+    fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> {
+      self.inner.grant(grant)
+    }
+
+    fn rollback_grant(&mut self, capability: CapabilityId) -> MResult<()> {
+      self.inner.rollback_grant(capability)
+    }
+
+    fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> {
+      self.inner.revoke(revocation)
+    }
+
+    fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> {
+      if self.panic_at == CapabilityPanicPhase::Check {
+        panic!("deliberate capability check panic");
+      }
+      self.inner.check(request)
+    }
+
+    fn check_scoped(
+      &mut self,
+      request: &CapabilityRequest,
+      scope: &RuntimeAuthorityScope,
+    ) -> MResult<CapabilityId> {
+      if self.panic_at == CapabilityPanicPhase::Check {
+        panic!("deliberate capability check panic");
+      }
+      self.inner.check_scoped(request, scope)
+    }
+
+    fn preview_scoped_with_transaction(
+      &self,
+      request: &CapabilityRequest,
+      scope: &RuntimeAuthorityScope,
+      excluded: &HashSet<CapabilityId>,
+      pending_uses: &HashMap<CapabilityId, u64>,
+    ) -> MResult<CapabilityId> {
+      if self.panic_at == CapabilityPanicPhase::Preview {
+        panic!("deliberate capability preview panic");
+      }
+      self.inner.preview_scoped_with_transaction(
+        request,
+        scope,
+        excluded,
+        pending_uses,
+      )
+    }
+
+    fn apply_usage_delta(
+      &mut self,
+      capability: CapabilityId,
+      uses: u64,
+    ) -> MResult<()> {
+      if self.panic_at == CapabilityPanicPhase::Apply {
+        panic!("deliberate capability apply panic");
+      }
+      self.inner.apply_usage_delta(capability, uses)
+    }
+
+    fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
+      self.inner.get(id)
+    }
+
+    fn list_for_subject(
+      &self,
+      subject: &dyn Subject,
+    ) -> MResult<Vec<CapabilityId>> {
+      self.inner.list_for_subject(subject)
+    }
+
+    fn derive_capability(
+      &mut self,
+      derivation: CapabilityDerivation,
+    ) -> MResult<CapabilityId> {
+      self.inner.derive_capability(derivation)
+    }
+
+    fn is_revoked(&self, id: CapabilityId) -> MResult<bool> {
+      self.inner.is_revoked(id)
+    }
+  }
+
   #[test]
   fn capability_grant_store_failure_never_grants_kernel_authority() {
     let mut store = InMemoryStore::new();
@@ -1744,6 +1870,122 @@ mod tests {
     };
     assert!(poison.rollback_failures.iter().any(|failure| {
       failure.contains("deliberate capability checkpoint restore failure")
+    }));
+  }
+
+  #[test]
+  fn capability_preview_panic_is_an_ordinary_transaction_failure() {
+    let id = CapabilityId(100);
+    let kernel = PanickingCapabilityKernel::with_grant(
+      CapabilityPanicPhase::Preview,
+      limited_capability(id, 2),
+    );
+    let mut runtime = MechRuntime::builder()
+      .capability_kernel(kernel)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+
+    let error = runtime
+      .check_capability_with_context(&mut context, &request("task:1"))
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate capability preview panic"));
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(!runtime.is_poisoned());
+    runtime
+      .abort_runtime_transaction(&mut context, "preview panic cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn capability_check_panic_is_converted_without_poisoning() {
+    let id = CapabilityId(100);
+    let kernel = PanickingCapabilityKernel::with_grant(
+      CapabilityPanicPhase::Check,
+      limited_capability(id, 2),
+    );
+    let mut runtime = MechRuntime::builder()
+      .capability_kernel(kernel)
+      .build()
+      .unwrap();
+
+    let error = runtime
+      .check_capability(&request("task:1"))
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate capability check panic"));
+    assert!(!runtime.is_poisoned());
+    runtime.run_string("capability-check-recovery := 1.0").unwrap();
+  }
+
+  #[test]
+  fn capability_apply_panic_rolls_back_before_store_commit() {
+    let id = CapabilityId(100);
+    let kernel = PanickingCapabilityKernel::with_grant(
+      CapabilityPanicPhase::Apply,
+      limited_capability(id, 2),
+    );
+    let mut runtime = MechRuntime::builder()
+      .capability_kernel(kernel)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .check_capability_with_context(&mut context, &request("task:1"))
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
+    assert!(format!("{error:?}").contains("deliberate capability apply panic"));
+    assert_eq!(context.transaction, Some(transaction_id));
+    assert!(!runtime.is_poisoned());
+    runtime
+      .abort_runtime_transaction(&mut context, "apply panic cleanup")
+      .unwrap();
+  }
+
+  #[test]
+  fn capability_restore_panic_poisons_after_store_failure() {
+    let id = CapabilityId(100);
+    let kernel = PanickingCapabilityKernel::with_grant(
+      CapabilityPanicPhase::Restore,
+      limited_capability(id, 2),
+    );
+    let mut runtime = MechRuntime::builder()
+      .capability_kernel(kernel)
+      .build()
+      .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    runtime
+      .check_capability_with_context(&mut context, &request("task:1"))
+      .unwrap();
+    runtime
+      .update_object_with_context(
+        &mut context,
+        ObjectRecord::text(ObjectId(500), "note", "missing"),
+      )
+      .unwrap();
+
+    let error = runtime
+      .commit_runtime_transaction_detailed(&mut context)
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeEffectCleanupFailed");
+    assert!(runtime.is_poisoned());
+    let RuntimeHealth::Poisoned(poison) = &runtime.health else {
+      panic!("runtime must retain capability restore panic");
+    };
+    assert!(poison.rollback_failures.iter().any(|failure| {
+      failure.contains("deliberate capability restore panic")
     }));
   }
 

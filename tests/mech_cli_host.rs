@@ -624,7 +624,7 @@ x := @env/HOME
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  let combined = assert_failure_contains(output, "CapabilityDenied");
   assert!(
     !combined.contains("must-not-write"),
     "provider wrote denied string: {combined}"
@@ -688,7 +688,7 @@ fn mech_run_config_can_deny_stdout() {
     .output()
     .unwrap();
 
-  assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  assert_failure_contains(output, "CapabilityDenied");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -727,7 +727,7 @@ fn mech_run_config_can_narrow_stdout_to_line() {
     .current_dir(&root)
     .output()
     .unwrap();
-  assert_failure_contains(bad, "RuntimeCapabilityGrantDenied");
+  assert_failure_contains(bad, "CapabilityDenied");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -770,7 +770,7 @@ fn mech_run_config_can_narrow_env_to_path() {
     .current_dir(&root)
     .output()
     .unwrap();
-  assert_failure_contains(bad, "RuntimeCapabilityGrantDenied");
+  assert_failure_contains(bad, "CapabilityDenied");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -846,7 +846,7 @@ fn mech_run_configured_cli_alias_grant_does_not_imply_default_cli_stdout() {
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  let combined = assert_failure_contains(output, "CapabilityDenied");
   assert!(
     !combined.contains("should-fail"),
     "provider wrote denied string: {combined}"
@@ -957,7 +957,7 @@ ys := { "hit" | @env/HOME <- ["anything"] }
     .output()
     .unwrap();
 
-  let combined = assert_failure_contains(output, "RuntimeCapabilityGrantDenied");
+  let combined = assert_failure_contains(output, "CapabilityDenied");
   assert!(
     !combined.contains("must-not-write"),
     "provider wrote before generator-pattern preflight failed:\n{combined}"

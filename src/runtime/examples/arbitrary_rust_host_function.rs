@@ -84,7 +84,8 @@ fn main() -> MResult<()> {
   let task = TaskRecord::new(
     runtime.next_task_id(),
     "program:arbitrary-rust-host",
-  );
+  )
+    .with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
   let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(
@@ -108,7 +109,8 @@ fn main() -> MResult<()> {
   let task = TaskRecord::new(
     runtime.next_task_id(),
     "program:arbitrary-rust-host",
-  );
+  )
+    .with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
   let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(

@@ -64,10 +64,9 @@ Public `ensure_module` and module activation APIs retain their prior direct
 store behavior and signatures. Activation is not staged and no activation
 compare-and-set protocol is introduced.
 
-Reactive `step_with_context` and host-input turns remain rejected while a
-transaction is active. Compact reactive-turn transaction work remains Round
-6, and no module journal or whole-program checkpoint work enters the reactive
-inner loop.
+Runtime-owned reactive steps and host-input turns use compact turn rollback
+inside the execution transaction. They do not put module-journal or
+whole-program checkpoint work in the reactive inner loop.
 
 ## Module-version identity
 
@@ -77,5 +76,6 @@ different canonical module identities therefore produces different valid
 version IDs, while equal canonical identity and build inputs reuse one
 version.
 
-Round 5 does not add module history or rewind records, a complete-graph build
-session, activation transactions, or source snapshot transactions.
+This design does not add module history, rewind records, or source snapshot
+transactions. Resolver reads remain observations rather than isolated source
+snapshots.

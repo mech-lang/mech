@@ -1,0 +1,13 @@
+error[E0432]: unresolved imports `mech_runtime::ClosureHostFunction`, `mech_runtime::HostFunctionTransactionMode`
+ --> tests/ui/sealed/removed_host_api.rs:2:3
+  |
+2 |   ClosureHostFunction, HostFunctionTransactionMode,
+  |   ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HostFunctionTransactionMode` in the root
+  |   |
+  |   no `ClosureHostFunction` in the root
+  |
+help: a similar name exists in the module
+  |
+2 -   ClosureHostFunction, HostFunctionTransactionMode,
+2 +   PureHostFunction, HostFunctionTransactionMode,
+  |
