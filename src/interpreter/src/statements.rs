@@ -671,69 +671,39 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>)
   }
   let plan = p.plan();
   let result = expression(&inv_def.expression, None, p)?;
-  let rhs_ref = value_to_ref(result.clone());
   let detached_result = detach_variable_value(&result);
-  {
-    let mut state_brrw = p.state.borrow_mut();
-    state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
-    let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))];
-    let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
-    plan.register_function(var_def_fxn, &[])?;
-  }
-  p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
-  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-  {
-    let invariant_value = {
-      let state_brrw = p.state.borrow();
-      state_brrw.get_symbol(invariant_id)
-    };
-    if let Some(invariant_value) = invariant_value {
-      p.state.borrow_mut().invariants.insert(invariant_id, (invariant_name.clone(), invariant_value));
-    }
-  }
-  let violation_error = match &result {
-    Value::Bool(b) => if *b.borrow() { None } else { Some("evaluated to false".to_string()) },
-    other => Some(format!("must evaluate to bool, got {}", other.kind())),
+  let result_ref = {
+    let state = p.state.borrow();
+    state.save_symbol(
+      invariant_id,
+      invariant_name.clone(),
+      detached_result.clone(),
+      false,
+    )
   };
-  let operand_detail = invariant_operand_refs(inv_def, p);
-  let (lhs_addr, lhs_value, operator, rhs_addr, rhs_value) = match operand_detail {
-    Some((lhs, op, rhs)) => {
-      let lhs_addr = lhs.as_ref().map(|v| v.addr() as u64);
-      let lhs_value = lhs.as_ref().map(|v| format!("{:?}", v.borrow()));
-      let rhs_addr = rhs.as_ref().map(|v| v.addr() as u64);
-      let rhs_value = rhs.as_ref().map(|v| format!("{:?}", v.borrow()));
-      (lhs_addr, lhs_value, op, rhs_addr, rhs_value)
-    }
-    None => (None, None, None, Some(rhs_ref.addr() as u64), Some(format!("{:?}", rhs_ref.borrow()))),
-  };
-  {
-    let reason = violation_error.clone().unwrap_or_else(|| "evaluated to true".to_string());
-    let actual = lhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
-    let expected = rhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
-    p.state.borrow_mut().invariant_evaluations.insert(invariant_id, InvariantEvaluation {
-      reason,
-      evaluated_kind: result.kind().to_string(),
-      actual,
-      expected,
-    });
-  }
-  if let Some(error) = violation_error {
-    let err = MechError::new(
-      InvariantViolationError{
-        invariant_name: invariant_name.clone(),
-        expression: invariant_expression,
-        lhs_addr,
-        lhs_value,
-        operator,
-        rhs_addr,
-        rhs_value,
-        reason: error,
-        evaluated_kind: result.kind().to_string(),
-      },
-      None
-    ).with_compiler_loc().with_tokens(inv_def.expression.tokens());
-    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error: err });
-  }
+
+  let var_define_arguments = vec![
+    detached_result,
+    Value::String(Ref::new(invariant_name.clone())),
+    Value::Bool(Ref::new(false)),
+  ];
+  let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+  plan.register_function(var_def_fxn, &[])?;
+
+  let (lhs, operator, rhs) = integrity_constraint_operands(inv_def, p);
+  p.state.borrow_mut().integrity_constraints.insert(
+    invariant_id,
+    IntegrityConstraint {
+      id: invariant_id,
+      name: invariant_name,
+      expression: invariant_expression,
+      result: result_ref,
+      lhs,
+      operator,
+      rhs,
+      tokens: inv_def.expression.tokens(),
+    },
+  );
   Ok(result)
 }
 
@@ -751,19 +721,74 @@ fn value_to_ref(value: Value) -> ValRef {
 }
 
 #[cfg(feature = "invariant_define")]
-fn invariant_operand_refs(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>) -> Option<(Option<ValRef>, Option<FormulaOperator>, Option<ValRef>)> {
+fn integrity_constraint_operands(
+  inv_def: &InvariantDefine,
+  p: &InterpreterExecution<'_>,
+) -> (Option<ValRef>, Option<FormulaOperator>, Option<ValRef>) {
   let factor = match &inv_def.expression {
-    Expression::Formula(f) => f,
+    Expression::Formula(factor) => factor,
+    _ => return (None, None, None),
+  };
+  let term = match transparent_factor(factor) {
+    Factor::Term(term) => term,
+    _ => return (None, None, None),
+  };
+  if term.rhs.len() != 1 {
+    return (None, None, None);
+  }
+  let (operator, rhs_factor) = &term.rhs[0];
+  if !matches!(
+    operator,
+    FormulaOperator::Comparison(
+      ComparisonOp::Equal
+        | ComparisonOp::NotEqual
+        | ComparisonOp::LessThan
+        | ComparisonOp::LessThanEqual
+        | ComparisonOp::GreaterThan
+        | ComparisonOp::GreaterThanEqual
+    )
+  ) {
+    return (None, None, None);
+  }
+  (
+    integrity_constraint_operand(&term.lhs, p),
+    Some(operator.clone()),
+    integrity_constraint_operand(rhs_factor, p),
+  )
+}
+
+#[cfg(feature = "invariant_define")]
+fn transparent_factor(factor: &Factor) -> &Factor {
+  match factor {
+    Factor::Parenthetical(inner) => transparent_factor(inner),
+    Factor::Term(term) if term.rhs.is_empty() => transparent_factor(&term.lhs),
+    other => other,
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn integrity_constraint_operand(
+  factor: &Factor,
+  p: &InterpreterExecution<'_>,
+) -> Option<ValRef> {
+  let expression = match transparent_factor(factor) {
+    Factor::Expression(expression) => expression.as_ref(),
     _ => return None,
   };
-  let term = match factor {
-    Factor::Term(t) => t,
-    _ => return None,
-  };
-  let (op, rhs_factor) = term.rhs.first()?;
-  let lhs_value = expression(&Expression::Formula(term.lhs.clone()), None, p).ok().map(value_to_ref);
-  let rhs_value = expression(&Expression::Formula(rhs_factor.clone()), None, p).ok().map(value_to_ref);
-  Some((lhs_value, Some(op.clone()), rhs_value))
+  match expression {
+    Expression::Var(var) if var.context.is_none() && var.kind.is_none() => {
+      p.state.borrow().get_symbol(var.name.hash())
+    }
+    Expression::Literal(
+      literal_node @ (
+        Literal::Atom(_)
+        | Literal::Boolean(_)
+        | Literal::Number(_)
+        | Literal::String(_)
+      ),
+    ) => literal(literal_node, p).ok().map(value_to_ref),
+    _ => None,
+  }
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]

@@ -3605,61 +3605,58 @@ impl MechRuntime {
     &self,
   ) -> Vec<crate::RuntimeInvariantSnapshot> {
     let state = self.program.interpreter().state.borrow();
-    let violations = state
-      .invariant_violations
-      .iter()
-      .filter_map(|violation| {
-        violation
-          .error
-          .kind_as::<mech_core::InvariantViolationError>()
-          .map(|error| (violation.id, error))
-      })
-      .collect::<HashMap<_, _>>();
-    let mut ids = state.invariants.keys().copied().collect::<Vec<_>>();
-    ids.sort_unstable();
-    ids
-      .into_iter()
-      .filter_map(|id| {
-        let (name, value) = state.invariants.get(&id)?;
-        let passed = matches!(
-          &*value.borrow(),
-          Value::Bool(value) if *value.borrow()
-        );
-        let evaluation = state.invariant_evaluations.get(&id);
-        let violation = violations.get(&id);
-        Some(crate::RuntimeInvariantSnapshot {
-          id,
-          name: name.clone(),
+    state
+      .integrity_constraints
+      .values()
+      .map(|constraint| {
+        let borrowed = constraint.result.try_borrow();
+        let (passed, reason, evaluated_kind, actual) = match borrowed.as_deref() {
+          Ok(Value::Bool(value)) => match value.try_borrow() {
+            Ok(value) if *value => (
+              true,
+              "evaluated to true".to_string(),
+              "bool".to_string(),
+              "true".to_string(),
+            ),
+            Ok(_) => (
+              false,
+              "evaluated to false".to_string(),
+              "bool".to_string(),
+              "false".to_string(),
+            ),
+            Err(_) => (
+              false,
+              "could not read settled result".to_string(),
+              "unknown".to_string(),
+              "<unavailable>".to_string(),
+            ),
+          },
+          Ok(value) => {
+            let kind = value.kind().to_string();
+            (
+              false,
+              "expected a scalar bool".to_string(),
+              kind.clone(),
+              format!("<{}>", kind),
+            )
+          }
+          Err(_) => (
+            false,
+            "could not read settled result".to_string(),
+            "unknown".to_string(),
+            "<unavailable>".to_string(),
+          ),
+        };
+        crate::RuntimeInvariantSnapshot {
+          id: constraint.id,
+          name: constraint.name.clone(),
           passed,
-          expression: violation
-            .map(|error| error.expression.clone())
-            .or_else(|| state.invariant_expressions.get(&id).cloned())
-            .unwrap_or_else(|| name.clone()),
-          reason: violation
-            .map(|error| error.reason.clone())
-            .or_else(|| evaluation.map(|value| value.reason.clone()))
-            .unwrap_or_else(|| {
-              if passed {
-                "evaluated to true".to_string()
-              } else {
-                "Invariant evaluated to false or non-bool value".to_string()
-              }
-            }),
-          evaluated_kind: violation
-            .map(|error| error.evaluated_kind.clone())
-            .or_else(|| evaluation.map(|value| value.evaluated_kind.clone()))
-            .unwrap_or_else(|| "bool".to_string()),
-          actual: violation
-            .and_then(|error| error.lhs_value.clone())
-            .or_else(|| evaluation.map(|value| value.actual.clone()))
-            .unwrap_or_else(|| {
-              if passed { "true" } else { "?" }.to_string()
-            }),
-          expected: violation
-            .and_then(|error| error.rhs_value.clone())
-            .or_else(|| evaluation.map(|value| value.expected.clone()))
-            .unwrap_or_else(|| "true".to_string()),
-        })
+          expression: constraint.expression.clone(),
+          reason,
+          evaluated_kind,
+          actual,
+          expected: "true".to_string(),
+        }
       })
       .collect()
   }
