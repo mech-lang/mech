@@ -2051,14 +2051,17 @@ mod tests {
   }
 
   #[test]
-  fn server_index_route_prefers_explicit_target() {
+  fn server_index_route_prefers_first_explicit_workspace_target() {
     let root = temp_root("explicit-index");
     std::fs::write(root.join("test2.mec"), "x := 1\n").unwrap();
     std::fs::write(root.join("ROADMAP.mec"), "roadmap := true\n").unwrap();
     let guard = CurrentDirGuard::enter(&root);
     let mut server = test_server();
     tokio::runtime::Runtime::new().unwrap().block_on(server.init()).unwrap();
-    server.load_workspace(&vec!["test2.mec".to_string()]).unwrap();
+    server.load_workspace(&vec![
+      "test2.mec".to_string(),
+      "ROADMAP.mec".to_string(),
+    ]).unwrap();
     let registry = server.registry.read().unwrap();
     let (_, trace) = registry.get_route_with_trace("/").unwrap();
     assert!(trace.contains("test2.mec"));
