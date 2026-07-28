@@ -396,6 +396,10 @@ impl MechRuntime {
       },
     });
 
+    self.register_runtime_program_host_functions(
+      context,
+      &mut module_program,
+    )?;
     materialize_function_imports_for_scope(&mut module_program, &prepared.record, scope)?;
 
     {
@@ -516,6 +520,7 @@ impl MechRuntime {
     )?;
 
     let result = (|| -> MResult<Value> {
+      self.register_retained_program_host_functions(context)?;
       materialize_function_imports_for_scope(
         &mut self.program,
         &prepared.record,
@@ -572,17 +577,9 @@ impl MechRuntime {
     scope: &SourceScope,
     registration_mode: crate::runtime::live_state::LiveRegistrationMode,
   ) -> MResult<Value> {
-    match target {
-      RuntimeProgramTarget::Retained => {
-        self.register_retained_program_host_functions(context)?;
-      }
-      RuntimeProgramTarget::Isolated(program) => {
-        self.register_runtime_program_host_functions(
-          context,
-          program,
-        )?;
-      }
-    }
+    // Host compilers and explicit module imports are installed once by the
+    // module-scope caller. Recursive MechSourceCode::Program execution must not
+    // re-register hosts and overwrite import precedence.
 
     self.emit_event_to_context(
       context,
