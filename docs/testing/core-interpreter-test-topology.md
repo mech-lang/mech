@@ -67,6 +67,25 @@ Interpreter test construction remains local to its owning suite. Add an
 interpreter test support module only after the same helper is genuinely reused
 by more than one sibling suite.
 
+### Expression evaluation
+
+Expression unit tests live under `src/interpreter/src/expressions/tests/`,
+grouped by the expression behavior whose private wiring they inspect:
+
+- `registration.rs` owns initialized function registration, dependency edges,
+  alias deduplication, and batch order.
+- `comprehensions.rs` owns comprehension output transaction-state roots.
+- `structural_access.rs` owns record and tuple alias nodes, member-cell
+  dependencies, and source/bytecode parity.
+- `variables.rs` owns variable lookup and kind-cast dependency registration.
+
+`tests/mod.rs` carries the original feature gates for each group. Add
+`subscripts.rs`, `string_access.rs`, `formulas.rs`, or `matches.rs` only when
+the production root contains tests for that behavior; empty category modules
+do not document ownership. Keep a helper local to its owning file until at
+least two sibling suites genuinely share it, then place only that shared
+fixture in `support.rs`.
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,
