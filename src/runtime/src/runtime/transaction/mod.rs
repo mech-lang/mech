@@ -2,6 +2,27 @@
 //!
 //! Public transaction protocols and models remain in `crate::transaction`.
 
+mod context;
+mod envelope;
+mod health;
+mod savepoint;
+
+pub(super) use context::{
+  RuntimeContextCheckpoint,
+  RuntimeTransactionContextIdentity,
+};
+pub(super) use envelope::{
+  RuntimeExecutionTransaction,
+  RuntimeExecutionTransactionMode,
+  RuntimeExecutionTransactionState,
+  RuntimeProgramBaseline,
+};
+pub use health::{RuntimeHealth, RuntimePoisonRecord};
+pub(super) use savepoint::{
+  RuntimeOperationSavepoint,
+  RuntimeProgramOperationSavepoint,
+};
+
 // ---------------------------------------------------------------------------
 // Transaction methods
 // ---------------------------------------------------------------------------
@@ -345,7 +366,7 @@ impl MechRuntime {
     }
     #[cfg(feature = "invariant_define")]
     if transaction_mode
-      == super::program_transaction::RuntimeExecutionTransactionMode::Explicit
+      == RuntimeExecutionTransactionMode::Explicit
       && self.program_transaction_owner == Some(transaction_id)
     {
       self.program.validate_integrity_constraints()?;

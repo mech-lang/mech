@@ -41,18 +41,21 @@ mod input_tests;
 pub(crate) mod test_support;
 
 pub use self::errors::*;
-pub use self::program_transaction::{
+pub use self::transaction::{
   RuntimeHealth,
   RuntimePoisonRecord,
 };
 use self::program_transaction::{
   ActiveRuntimeProgramOperation,
-  RuntimeContextCheckpoint,
+  RuntimeProgramOwnershipAcquisition,
+};
+use self::transaction::{
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
   RuntimeExecutionTransactionState,
   RuntimeOperationSavepoint,
-  RuntimeProgramOwnershipAcquisition,
+  RuntimeProgramBaseline,
+  RuntimeProgramOperationSavepoint,
   RuntimeTransactionContextIdentity,
 };
 use self::transaction::RuntimeCommitResolution;
