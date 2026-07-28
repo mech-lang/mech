@@ -81,8 +81,10 @@ use std::time::Instant;
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value, ValRef,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
-  hash_str, ModuleManifestCatalog, ModuleManifestConfig,
+  ModuleManifestCatalog, ModuleManifestConfig,
 };
+#[cfg(test)]
+use mech_core::hash_str;
 
 use mech_program::{
   MechProgram, MechProgramCheckpoint, MechProgramConfig, MechProgramEnvironment, ProgramInputId
@@ -195,8 +197,8 @@ use crate::capability::{
 use crate::config::RuntimeConfig;
 
 use crate::context::{
-  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
-  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope,
+  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome,
+  RuntimeContextBinding,
   ResourceBudgetExceededError, RuntimeAuthorityScope,
 };
 
@@ -217,8 +219,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceExportDeclaration, SourceImportAlias,
-  SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceImportAlias, SourceScope,
 };
 
 use crate::scheduler::{
@@ -246,7 +247,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{materialize_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RegisteredHostFunction, ResourcePathCapability, RunResourceGrantConfig, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeResourceKey, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
+use crate::{materialize_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RegisteredHostFunction, ResourcePathCapability, RunResourceGrantConfig, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeResourceKey, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 // -----------------------------------------------------------------------------
 // Runtime Builder

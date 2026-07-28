@@ -1,4 +1,10 @@
-use super::*;
+use crate::runtime::MechRuntime;
+use crate::RuntimeContext;
+use mech_core::MResult;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 impl MechRuntime {
   #[cfg(feature = "functions")]

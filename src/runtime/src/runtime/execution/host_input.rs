@@ -1,4 +1,13 @@
-use super::*;
+use crate::runtime::{
+  reactive_transaction::PreparedRuntimeHostInput,
+  MechRuntime,
+};
+use crate::RuntimeContext;
+use mech_core::MResult;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 impl MechRuntime {
   pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {

@@ -1,4 +1,10 @@
-use super::*;
+use crate::resolver::SourceScope;
+use crate::runtime::RuntimeInvalidOperationError;
+use mech_core::{
+  MResult,
+  MechError,
+  MechSourceCode,
+};
 
 pub(super) fn module_source_for_scope(
   source: &MechSourceCode,

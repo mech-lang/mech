@@ -1,4 +1,61 @@
-use super::*;
+use super::{
+  context_registry_for_scope,
+  execution_scope_for_extracted_module_source,
+  exports_for_scope,
+  materialize_function_imports_for_scope,
+  merge_module_environment,
+  module_source_for_scope,
+  resolve_runtime_address_target,
+  AddressedReadPreflight,
+  PreparedModuleScopeExecution,
+  ProgramEnvironmentOverlay,
+  RuntimeAddressTarget,
+  RuntimeProgramTarget,
+};
+use crate::context::RuntimeContextRegistry;
+use crate::event::RuntimeEventKind;
+use crate::id::ModuleVersionId;
+use crate::resolver::{
+  module_namespace_for_import,
+  SourceAddressReference,
+  SourceImportKind,
+  SourceScope,
+};
+use crate::runtime::{
+  MechRuntime,
+  ModuleInstance,
+  RuntimeInvalidOperationError,
+  RuntimeModuleExportNotFound,
+  RuntimeModuleImportConflict,
+  RuntimeRecordNotFoundError,
+  UnknownAddressTarget,
+  validate_module_import_edges,
+};
+use crate::store::ModuleVersionRecord;
+use crate::{
+  RuntimeContext,
+  RuntimeModuleResult,
+};
+use mech_core::{
+  hash_str,
+  MResult,
+  MechError,
+  MechSourceCode,
+  Value,
+};
+use mech_program::{
+  MechProgram,
+  MechProgramConfig,
+  MechProgramEnvironment,
+};
+use std::collections::{
+  HashMap,
+  HashSet,
+};
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 impl MechRuntime {
   pub fn run_module(

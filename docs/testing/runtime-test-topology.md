@@ -114,3 +114,5 @@ Do not rename an externally filtered test merely to improve its wording.
 For journal, reactive-plan, checkpoint, bytecode, and cross-layer reactive
 transaction ownership, see the companion
 [core and interpreter test topology](core-interpreter-test-topology.md) guide.
+For the production files exercised by execution scenarios, see the
+[runtime execution topology](../runtime/execution-topology.md).

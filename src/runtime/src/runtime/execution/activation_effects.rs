@@ -1,4 +1,9 @@
-use super::*;
+use super::snapshot_runtime_value;
+use crate::runtime::RuntimeActivationEffectBarrierInvariantError;
+use mech_core::{
+  CompileCtx, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
+  NativeFunctionCompiler, Register, Value,
+};
 
 // This name deliberately starts with a NUL byte.  It is an identifier we can
 // construct in the lowered tree, but it cannot be produced by the Mech lexer.

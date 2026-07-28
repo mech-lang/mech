@@ -1,9 +1,17 @@
-use super::*;
+use crate::runtime::{
+  LiveRegistrationMode,
+  MechRuntime,
+};
+#[cfg(test)]
+use crate::RuntimeContext;
+use mech_core::MResult;
+#[cfg(test)]
+use mech_core::Value;
 
 impl MechRuntime {
   pub(super) fn with_live_registration_mode<T>(
     &mut self,
-    mode: crate::runtime::LiveRegistrationMode,
+    mode: LiveRegistrationMode,
     f: impl FnOnce(&mut Self) -> MResult<T>,
   ) -> MResult<T> {
     let previous = std::mem::replace(&mut self.live_registration_mode, mode);
@@ -13,13 +21,13 @@ impl MechRuntime {
   }
 
   #[cfg(test)]
-  pub(super) fn run_string_with_isolated_registration_for_test(
+  pub(in crate::runtime) fn run_string_with_isolated_registration_for_test(
     &mut self,
     context: &mut RuntimeContext,
     source: &str,
   ) -> MResult<Value> {
     self.with_live_registration_mode(
-      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      LiveRegistrationMode::IsolatedSnapshot,
       |runtime| {
         runtime.run_string_value_with_context(context, source)
       },

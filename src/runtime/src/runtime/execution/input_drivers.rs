@@ -1,4 +1,8 @@
-use super::*;
+use crate::runtime::{
+  extension,
+  MechRuntime,
+};
+use mech_core::MResult;
 
 impl MechRuntime {
   pub fn ingress(&self) -> crate::RuntimeIngress {
