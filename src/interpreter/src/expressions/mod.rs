@@ -2,32 +2,23 @@
 
 use crate::*;
 
-pub(crate) struct DeferredExpressionSolveScope {
-  depth: Ref<usize>,
-}
-
-impl DeferredExpressionSolveScope {
-  pub(crate) fn enter(interpreter: &Interpreter) -> Self {
-    let depth = interpreter.deferred_expression_solve_depth.clone();
-    *depth.borrow_mut() += 1;
-    Self { depth }
-  }
-}
-
-impl Drop for DeferredExpressionSolveScope {
-  fn drop(&mut self) {
-    let mut depth = self.depth.borrow_mut();
-    debug_assert!(*depth > 0);
-    *depth -= 1;
-  }
-}
-
-fn expression_solves_deferred(interpreter: &Interpreter) -> bool {
-  *interpreter.deferred_expression_solve_depth.borrow() > 0
-}
 use std::collections::HashMap;
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
+
+mod environment;
+mod ranges;
+mod registration;
+mod variables;
+
+pub(crate) use environment::DeferredExpressionSolveScope;
+use environment::expression_solves_deferred;
+pub use ranges::range;
+use registration::{
+  register_expression_function_batch, register_initialized_expression_function,
+};
+use variables::{addressed_identifier_hash, addressed_identifier_name};
+pub use variables::var;
 
 #[cfg(test)]
 mod tests;
@@ -474,77 +465,6 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &InterpreterEx
             None,
         )
         .with_compiler_loc()),
-    }
-}
-
-#[cfg(feature = "functions")]
-fn register_initialized_expression_function(
-  plan: &Plan,
-  function: Box<dyn MechFunction>,
-  arguments: &[Value],
-) -> MResult<Value> {
-  let node_id = plan.register_function(function, arguments)?;
-  let plan_borrow = plan.borrow();
-  let function = &plan_borrow[node_id];
-  if !plan.activation_registration_active() { function.solve(); }
-  Ok(function.out())
-}
-
-#[cfg(feature = "functions")]
-fn register_expression_function_batch(
-  plan: &Plan,
-  functions: Vec<(Box<dyn MechFunction>, Vec<Value>)>,
-) -> MResult<()> {
-  for (function, arguments) in functions {
-    plan.register_function(function, &arguments)?;
-  }
-  Ok(())
-}
-
-#[cfg(feature = "range")]
-pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
-  let plan = p.plan();
-  let start = factor(&rng.start, env, p)?;
-  let terminal = factor(&rng.terminal, env, p)?;
-  let (function, arguments) = match &rng.increment {
-    Some((_, increment)) => {
-      let step = factor(increment, env, p)?;
-      let arguments = vec![start, step, terminal];
-      let function = match &rng.operator {
-        #[cfg(feature = "range_exclusive")]
-        RangeOp::Exclusive => RangeIncrementExclusive {}.compile(&arguments)?,
-        #[cfg(feature = "range_inclusive")]
-        RangeOp::Inclusive => RangeIncrementInclusive {}.compile(&arguments)?,
-        _ => unreachable!(),
-      };
-      (function, arguments)
-    }
-    None => {
-      let arguments = vec![start, terminal];
-      let function = match &rng.operator {
-        #[cfg(feature = "range_exclusive")]
-        RangeOp::Exclusive => RangeExclusive {}.compile(&arguments)?,
-        #[cfg(feature = "range_inclusive")]
-        RangeOp::Inclusive => RangeInclusive {}.compile(&arguments)?,
-        _ => unreachable!(),
-      };
-      (function, arguments)
-    }
-  };
-  register_initialized_expression_function(&plan, function, &arguments)
-}
-
-fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
-    match context {
-        Some(context) => format!("@{}/{}", context.to_string(), name.to_string()),
-        None => name.to_string(),
-    }
-}
-
-fn addressed_identifier_hash(name: &Identifier, context: &Option<Identifier>) -> u64 {
-    match context {
-        Some(_) => hash_str(&addressed_identifier_name(name, context)),
-        None => name.hash(),
     }
 }
 
@@ -1107,82 +1027,6 @@ pub fn subscript(
             return Ok(res);
         }
         _ => unreachable!(),
-    }
-}
-
-#[cfg(feature = "symbol_table")]
-pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
-    let plan = p.plan();
-    let maybe_cast_to_kind = |value: Value| -> MResult<Value> {
-        match &v.kind {
-            Some(kind_anntn) => {
-                let target_kind = {
-                    let state_brrw = p.state.borrow();
-                    kind_annotation(&kind_anntn.kind, p)?.to_value_kind(&state_brrw.kinds)?
-                };
-                execute_initialized_indexed_compiler(
-                    p,
-                    &plan,
-                    &ConvertKind {},
-                    vec![value, Value::Kind(target_kind)],
-                )
-            }
-            None => Ok(value),
-        }
-    };
-
-    let id = addressed_identifier_hash(&v.name, &v.context);
-    let name = addressed_identifier_name(&v.name, &v.context);
-    let mark_if_live_symbol = |value: &MutableReference| {
-        #[cfg(feature = "subscript_formula")]
-        {
-            let state_brrw = p.state.borrow();
-            let symbols_brrw = state_brrw.symbol_table.borrow();
-            if symbols_brrw.get_mutable(id).is_some() || string_access_value_is_marked_live(p, &value.borrow()) {
-                mark_current_string_access_expression_live(p);
-            }
-        }
-        #[cfg(not(feature = "subscript_formula"))]
-        {
-            let _ = value;
-        }
-    };
-    match env {
-        Some(env) => match env.get(&id) {
-            Some(value) => maybe_cast_to_kind(value.clone()),
-            None => {
-                let state_brrw = p.state.borrow();
-                let symbols_brrw = state_brrw.symbol_table.borrow();
-                let symbol_value = symbols_brrw.get(id);
-                drop(symbols_brrw);
-                drop(state_brrw);
-                match symbol_value {
-                    Some(value) => {
-                        mark_if_live_symbol(&value);
-                        maybe_cast_to_kind(Value::MutableReference(value))
-                    },
-                    None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
-                        .with_compiler_loc()
-                        .with_tokens(v.tokens())),
-                }
-            }
-        },
-        None => {
-            let state_brrw = p.state.borrow();
-            let symbols_brrw = state_brrw.symbol_table.borrow();
-            let symbol_value = symbols_brrw.get(id);
-            drop(symbols_brrw);
-            drop(state_brrw);
-            match symbol_value {
-                Some(value) => {
-                    mark_if_live_symbol(&value);
-                    maybe_cast_to_kind(Value::MutableReference(value))
-                },
-                None => Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
-                    .with_compiler_loc()
-                    .with_tokens(v.tokens())),
-            }
-        }
     }
 }
 
