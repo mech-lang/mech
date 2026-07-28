@@ -1,10 +1,16 @@
 #![forbid(unsafe_code)]
 
 use crate::*;
-use paste::paste;
 
-#[cfg(feature = "variable_define")]
-use crate::stdlib::define::*;
+mod context;
+mod destructure;
+mod integrity;
+
+pub use context::context_declaration;
+#[cfg(feature = "tuple")]
+pub use destructure::tuple_destructure;
+#[cfg(feature = "invariant_define")]
+pub use integrity::invariant_define;
 
 mod op_assign;
 mod variable_assign;
@@ -67,72 +73,6 @@ pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &InterpreterExe
 #[cfg(test)]
 mod tests;
 
-// Interpreter-local context bindings are for direct interpreter execution.
-// Host runtime resource bindings are owned by MechRuntime.resource_bindings.
-pub fn context_declaration(ctx: &ContextDeclaration, p: &InterpreterExecution<'_>) -> MResult<Value> {
-  match &ctx.base {
-    ContextBase::ResourceUri(uri) => {
-      p.bind_context(&ctx.name, uri.chars.iter().collect::<String>());
-      Ok(Value::Empty)
-    }
-    ContextBase::Context(base) => {
-      match p.context_binding(base) {
-        Some(binding) => {
-          p.bind_context(&ctx.name, binding.base_uri);
-          Ok(Value::Empty)
-        }
-        None => Err(MechError::new(
-          GenericError { msg: format!("Context `@{}` is not defined", base.to_string()) },
-          None,
-        ).with_compiler_loc().with_tokens(base.tokens())),
-      }
-    }
-  }
-}
-
-#[cfg(feature = "tuple")]
-pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &InterpreterExecution<'_>) -> MResult<Value> {
-  let source = expression(&tpl_dstrct.expression, None, p)?;
-  let tpl = match &source {
-    Value::Tuple(tpl) => tpl,
-    Value::MutableReference(r) => {
-      let r_brrw = r.borrow();
-      &match &*r_brrw {
-        Value::Tuple(tpl) => tpl.clone(),
-        _ => return Err(MechError::new(
-          DestructureExpectedTupleError{ value: source.kind() },
-          None
-        ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
-      }
-    },
-    _ => return Err(MechError::new(
-      DestructureExpectedTupleError{ value: source.kind() },
-      None
-    ).with_compiler_loc().with_tokens(tpl_dstrct.expression.tokens())),
-  };
-  let symbols = p.symbols();
-  let mut symbols_brrw = symbols.borrow_mut();
-  for (i, var) in tpl_dstrct.vars.iter().enumerate() {
-    let id = var.hash();
-    if symbols_brrw.contains(id) {
-      return Err(MechError::new(
-        VariableAlreadyDefinedError { id },
-        None
-      ).with_compiler_loc().with_tokens(var.tokens()));
-    }
-    if let Some(element) = tpl.borrow().get(i) {
-      symbols_brrw.insert(id, element.clone(), true);
-      symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
-    } else {
-      return Err(MechError::new(
-        TupleDestructureTooManyVarsError{ value: source.kind() },
-        None
-      ).with_compiler_loc().with_tokens(var.tokens()));
-    }
-  }
-  Ok(source)
-}
-
 #[cfg(feature = "enum")]
 pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResult<()> {
   let id = enm_def.name.hash();
@@ -177,142 +117,6 @@ pub fn kind_define(knd_def: &KindDefine, p: &InterpreterExecution<'_>) -> MResul
   let mut kinds = &mut p.state.borrow_mut().kinds;
   kinds.insert(id, value_kind.clone());
   Ok(Value::Kind(value_kind))
-}
-
-#[cfg(feature = "invariant_define")]
-pub fn invariant_define(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>) -> MResult<Value> {
-  let invariant_id = inv_def.name.hash();
-  let invariant_name = inv_def.name.to_string();
-  let invariant_expression = tokens_to_string(&inv_def.expression.tokens());
-  {
-    let symbols = p.symbols();
-    if symbols.borrow().contains(invariant_id) {
-      return Err(MechError::new(
-        VariableAlreadyDefinedError { id: invariant_id },
-        None
-      ).with_compiler_loc().with_tokens(inv_def.name.tokens()));
-    }
-  }
-  let plan = p.plan();
-  let result = expression(&inv_def.expression, None, p)?;
-  let detached_result = detach_variable_value(&result);
-  let result_ref = {
-    let state = p.state.borrow();
-    state.save_symbol(
-      invariant_id,
-      invariant_name.clone(),
-      detached_result.clone(),
-      false,
-    )
-  };
-
-  let var_define_arguments = vec![
-    detached_result,
-    Value::String(Ref::new(invariant_name.clone())),
-    Value::Bool(Ref::new(false)),
-  ];
-  let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
-  plan.register_function(var_def_fxn, &[])?;
-
-  let (lhs, operator, rhs) = integrity_constraint_operands(inv_def, p);
-  p.state.borrow_mut().integrity_constraints.insert(
-    invariant_id,
-    IntegrityConstraint {
-      id: invariant_id,
-      name: invariant_name,
-      expression: invariant_expression,
-      result: result_ref,
-      lhs,
-      operator,
-      rhs,
-      tokens: inv_def.expression.tokens(),
-    },
-  );
-  Ok(result)
-}
-
-#[cfg(feature = "invariant_define")]
-fn tokens_to_string(tokens: &[Token]) -> String {
-  tokens.iter().flat_map(|t| t.chars.clone()).collect::<String>()
-}
-
-#[cfg(feature = "invariant_define")]
-fn value_to_ref(value: Value) -> ValRef {
-  match value {
-    Value::MutableReference(r) => r.clone(),
-    other => Ref::new(other),
-  }
-}
-
-#[cfg(feature = "invariant_define")]
-fn integrity_constraint_operands(
-  inv_def: &InvariantDefine,
-  p: &InterpreterExecution<'_>,
-) -> (Option<ValRef>, Option<FormulaOperator>, Option<ValRef>) {
-  let factor = match &inv_def.expression {
-    Expression::Formula(factor) => factor,
-    _ => return (None, None, None),
-  };
-  let term = match transparent_factor(factor) {
-    Factor::Term(term) => term,
-    _ => return (None, None, None),
-  };
-  if term.rhs.len() != 1 {
-    return (None, None, None);
-  }
-  let (operator, rhs_factor) = &term.rhs[0];
-  if !matches!(
-    operator,
-    FormulaOperator::Comparison(
-      ComparisonOp::Equal
-        | ComparisonOp::NotEqual
-        | ComparisonOp::LessThan
-        | ComparisonOp::LessThanEqual
-        | ComparisonOp::GreaterThan
-        | ComparisonOp::GreaterThanEqual
-    )
-  ) {
-    return (None, None, None);
-  }
-  (
-    integrity_constraint_operand(&term.lhs, p),
-    Some(operator.clone()),
-    integrity_constraint_operand(rhs_factor, p),
-  )
-}
-
-#[cfg(feature = "invariant_define")]
-fn transparent_factor(factor: &Factor) -> &Factor {
-  match factor {
-    Factor::Parenthetical(inner) => transparent_factor(inner),
-    Factor::Term(term) if term.rhs.is_empty() => transparent_factor(&term.lhs),
-    other => other,
-  }
-}
-
-#[cfg(feature = "invariant_define")]
-fn integrity_constraint_operand(
-  factor: &Factor,
-  p: &InterpreterExecution<'_>,
-) -> Option<ValRef> {
-  let expression = match transparent_factor(factor) {
-    Factor::Expression(expression) => expression.as_ref(),
-    _ => return None,
-  };
-  match expression {
-    Expression::Var(var) if var.context.is_none() && var.kind.is_none() => {
-      p.state.borrow().get_symbol(var.name.hash())
-    }
-    Expression::Literal(
-      literal_node @ (
-        Literal::Atom(_)
-        | Literal::Boolean(_)
-        | Literal::Number(_)
-        | Literal::String(_)
-      ),
-    ) => literal(literal_node, p).ok().map(value_to_ref),
-    _ => None,
-  }
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]

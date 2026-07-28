@@ -1,5 +1,5 @@
-use super::super::VarDefine;
 use crate::{NativeFunctionCompiler, Plan, ReactiveCellId, Ref, Value};
+use crate::stdlib::define::VarDefine;
 
 #[test]
 fn var_define_registration_has_no_reactive_inputs() {
