@@ -1,4 +1,4 @@
-use super::super::{
+use crate::{
     InMemoryStore, MechRuntime, ObjectId, ObjectRecord, RuntimeEventKind, TransactionId,
 };
 use super::{event_count, new_runtime};

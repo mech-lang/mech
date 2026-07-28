@@ -1,10 +1,10 @@
-use super::super::{
-    ActorId, CapabilityId, MResult, MechError, MechRuntime, MechSourceCode, MessageId,
-    MessageRecord, ModuleVersionId, ObjectId, ObjectRecord, ResourceBudget, RuntimeEventKind,
-    RuntimeId, RuntimeInvalidOperationError, TaskId,
-};
 use super::support::savepoint_effect;
-use crate::RuntimeAuthorityScope;
+use crate::{
+    ActorId, CapabilityId, MechRuntime, MessageId, MessageRecord, ModuleVersionId, ObjectId,
+    ObjectRecord, ResourceBudget, RuntimeAuthorityScope, RuntimeEventKind, RuntimeId,
+    RuntimeInvalidOperationError, TaskId,
+};
+use mech_core::{MResult, MechError, MechSourceCode};
 
 #[test]
 fn program_operation_savepoint_truncates_effects_without_reusing_ids() {

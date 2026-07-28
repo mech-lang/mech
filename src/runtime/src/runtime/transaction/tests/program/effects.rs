@@ -1,11 +1,12 @@
-use super::super::{CapabilityId, MechRuntime, RuntimeEventKind, Value};
 use super::support::CommitDecisionEffect;
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
+    CapabilityId, MechRuntime, RuntimeEventKind,
     InMemoryDocsProvider, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCapabilityOperation, RuntimePreparedHostCall, RuntimeResourceWriteIntent,
     RuntimeResourceWriteRequest,
 };
+use mech_core::Value;
 use std::sync::{Arc, Mutex};
 
 #[test]

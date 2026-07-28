@@ -1,4 +1,5 @@
-use super::super::{InMemoryStore, MechRuntime, Value};
+use crate::{InMemoryStore, MechRuntime};
+use mech_core::Value;
 
 #[test]
 fn store_commit_panic_is_indeterminate_and_never_rolled_back() {

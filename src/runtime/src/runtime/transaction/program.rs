@@ -740,5 +740,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "../program_transaction/tests/mod.rs"]
+#[path = "tests/program/mod.rs"]
 mod tests;

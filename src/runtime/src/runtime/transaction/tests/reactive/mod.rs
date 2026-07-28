@@ -1,9 +1,10 @@
-use super::super::{
-    CompileCtx, MResult, MechError, MechFunctionCompiler, MechFunctionImpl, MechRuntime, Register,
-    Value,
+use crate::{
+    MechRuntime, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect,
 };
-use crate::{RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect};
-use mech_core::{GenericError, ReactiveSolveStatus, Ref};
+use mech_core::{
+    CompileCtx, GenericError, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
+    ReactiveSolveStatus, Ref, Register, Value,
+};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};

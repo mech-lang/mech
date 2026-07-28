@@ -1,15 +1,17 @@
 use super::super::{
-    CapabilityId, CompileCtx, ExecutionServicesBorrowConflict, MResult, MechExecutionServices,
-    MechFunctionCompiler, MechFunctionImpl, MechRuntime, Register, RuntimeHealth, Value,
     arm_coordinated_service_reentry,
 };
 use super::ReactiveTransactionalProbe;
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 use crate::{
-    PlannedPureHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
-    RuntimePreparedHostCall,
+    CapabilityId, MechRuntime, PlannedPureHostFunction, PlannedStagedHostFunction,
+    PreparedRuntimeEffect, RuntimeHealth, RuntimePreparedHostCall,
 };
-use mech_core::{ReactiveSolveStatus, Ref};
+use mech_core::{
+    CompileCtx, MResult, MechExecutionServices, MechFunctionCompiler, MechFunctionImpl,
+    ReactiveSolveStatus, Ref, Register, Value,
+};
+use mech_program::ExecutionServicesBorrowConflict;
 use std::sync::{Arc, Mutex};
 
 struct ReentrantRuntimeServiceFunction {

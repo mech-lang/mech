@@ -1,4 +1,4 @@
-use super::super::{
+use crate::{
     ModuleVersionId, ModuleVersionRecord, RuntimeHealth, RuntimeModuleJournalConflict, module_id,
 };
 use super::new_runtime;

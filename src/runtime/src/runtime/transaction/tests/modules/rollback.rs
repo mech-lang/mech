@@ -1,7 +1,7 @@
-use super::super::{
-    MechError, MechRuntime, RuntimeConfig, RuntimeInvalidOperationError, RuntimeModuleJournal,
-};
+use super::super::RuntimeModuleJournal;
 use super::module;
+use crate::{MechRuntime, RuntimeConfig, RuntimeInvalidOperationError};
+use mech_core::MechError;
 
 #[test]
 fn rollback_retains_prefix_and_removes_suffix() {

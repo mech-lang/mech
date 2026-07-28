@@ -1,4 +1,4 @@
-use super::super::{ObjectId, ObjectRecord};
+use crate::{ObjectId, ObjectRecord};
 use super::new_runtime;
 
 #[test]

@@ -43,8 +43,5 @@ pub(super) use savepoint::{
 };
 
 #[cfg(test)]
-use super::*;
-
-#[cfg(test)]
 #[path = "tests/mod.rs"]
 mod tests;

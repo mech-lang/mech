@@ -1,4 +1,4 @@
-use super::super::{
+use crate::{
     ActorId, MechRuntime, MessageId, MessageRecord, ObjectId, ObjectRecord, RuntimeContext, TaskId,
 };
 

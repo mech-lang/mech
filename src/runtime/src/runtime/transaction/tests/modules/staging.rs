@@ -1,8 +1,8 @@
-use super::super::{
-    ModuleRecord, ModuleVersionId, ModuleVersionRecord, RuntimeModuleJournal,
-    RuntimeModuleJournalConflict, module_id,
-};
+use super::super::RuntimeModuleJournal;
 use super::module;
+use crate::{
+    ModuleRecord, ModuleVersionId, ModuleVersionRecord, RuntimeModuleJournalConflict, module_id,
+};
 
 #[test]
 fn module_staging_ignores_description_differences() {

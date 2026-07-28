@@ -1,4 +1,4 @@
-use super::super::{MechRuntime, RuntimeEventKind};
+use crate::{MechRuntime, RuntimeEventKind};
 
 #[test]
 fn program_transaction_implicit_success_commits_program_store_and_events() {

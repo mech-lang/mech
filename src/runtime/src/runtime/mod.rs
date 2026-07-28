@@ -71,9 +71,6 @@ use mech_core::{
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
   ModuleManifestCatalog, ModuleManifestConfig,
 };
-#[cfg(test)]
-use mech_core::hash_str;
-
 use mech_program::{
   MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };

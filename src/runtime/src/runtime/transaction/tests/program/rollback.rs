@@ -1,5 +1,6 @@
-use super::super::{EventId, MechRuntime, MechSourceCode, RuntimeEventKind, hash_str};
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
+use crate::{EventId, MechRuntime, RuntimeEventKind};
+use mech_core::{MechSourceCode, hash_str};
 
 #[test]
 fn program_transaction_outer_abort_restores_program_baseline() {

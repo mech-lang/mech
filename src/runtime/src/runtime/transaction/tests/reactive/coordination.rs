@@ -1,11 +1,10 @@
 use super::super::super::program::{
     reset_runtime_program_checkpoint_count, runtime_program_checkpoint_count,
 };
-use super::super::{CapabilityId, MechRuntime, ObjectId, ObjectRecord, Value};
 use super::add_test_function;
-use crate::PlannedRuntimeManagedHostFunction;
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
-use mech_core::Ref;
+use crate::{CapabilityId, MechRuntime, ObjectId, ObjectRecord, PlannedRuntimeManagedHostFunction};
+use mech_core::{Ref, Value};
 use std::sync::Arc;
 
 #[test]

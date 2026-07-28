@@ -1,12 +1,9 @@
 use super::super::super::program::{
     reset_runtime_program_checkpoint_count, runtime_program_checkpoint_count,
 };
-use super::super::{
-    MResult, MechError, MechRuntime, ObjectId, ObjectRecord, ResourceBudget, RuntimeHealth,
-};
 use super::{ReactiveTransactionalProbe, add_test_function};
-use crate::PreparedRuntimeEffect;
-use mech_core::GenericError;
+use crate::{MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, ResourceBudget, RuntimeHealth};
+use mech_core::{GenericError, MResult, MechError};
 use std::sync::{Arc, Mutex};
 
 #[test]

@@ -1,4 +1,4 @@
-use super::super::{
+use crate::{
     ActorId, ActorRecord, CapabilityRequest, HostCall, ObjectId, ObjectRecord, TransactionId,
 };
 use super::new_runtime;

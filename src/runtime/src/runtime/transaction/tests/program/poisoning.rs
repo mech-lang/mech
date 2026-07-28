@@ -1,7 +1,8 @@
 use super::super::{
-    MResult, MechError, MechRuntime, ProgramTransactionTestFault, RuntimeHealth,
-    RuntimeInvalidOperationError, set_program_transaction_test_fault,
+    ProgramTransactionTestFault, set_program_transaction_test_fault,
 };
+use crate::{MechRuntime, RuntimeHealth, RuntimeInvalidOperationError};
+use mech_core::{MResult, MechError};
 
 #[test]
 fn implicit_cleanup_failure_returns_rollback_error_and_poisons_runtime() {

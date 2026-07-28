@@ -1,4 +1,4 @@
-use super::super::{EventId, ObjectId, ObjectRecord, RuntimeEventKind};
+use crate::{EventId, ObjectId, ObjectRecord, RuntimeEventKind};
 use super::{event_count, new_runtime};
 
 #[test]
