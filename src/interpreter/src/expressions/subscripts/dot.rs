@@ -1,5 +1,16 @@
-use super::*;
-use crate::*;
+use super::super::registration::register_initialized_expression_function;
+use super::super::environment::expression_solves_deferred;
+#[cfg(feature = "table")]
+use crate::AccessColumn;
+#[cfg(feature = "swizzle")]
+use crate::AccessSwizzle;
+#[cfg(feature = "matrix")]
+use crate::MatrixAccessScalar;
+#[cfg(feature = "tuple")]
+use crate::TupleAccess;
+use crate::{
+  InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind, real,
+};
 
 pub(super) fn access(
   sbscrpt: &Subscript,

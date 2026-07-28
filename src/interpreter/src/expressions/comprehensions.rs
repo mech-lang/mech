@@ -1,5 +1,23 @@
-use super::*;
-use crate::*;
+use super::{
+  ComprehensionGeneratorError, Environment, SetComprehensionOutputKindMismatchError, expression,
+};
+#[cfg(feature = "compiler")]
+use crate::{
+  CompileConst, CompileCtx, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
+};
+#[cfg(feature = "matrix_comprehensions")]
+use crate::{Matrix, MatrixComprehension, MatrixHorzCat};
+#[cfg(feature = "set_comprehensions")]
+use crate::{MechSet, SetComprehension};
+use crate::{
+  ComprehensionQualifier, FunctionArgs, IncorrectNumberOfArguments, Interpreter,
+  InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
+  MissingFunctionError, NativeFunctionCompiler, Ref, ToValue, Value,
+  execute_native_function_compiler, hash_str,
+};
+use crate::{FunctionCompilerDescriptor, FunctionDescriptor};
+use crate::patterns::PatternBindingSink;
+use std::collections::HashMap;
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn comprehension_environments(
@@ -413,4 +431,3 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &InterpreterEx
         .with_compiler_loc()),
     }
 }
-

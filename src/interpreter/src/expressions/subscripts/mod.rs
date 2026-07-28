@@ -1,9 +1,18 @@
-use super::*;
-use crate::*;
+use super::{Environment, InvalidIndexKindError, factor, range};
+use super::variables::{addressed_identifier_hash, addressed_identifier_name};
+use crate::{InterpreterExecution, MResult, MechError, Slice, Subscript, ToValue, Value};
 
+#[cfg(all(feature = "subscript", feature = "access"))]
 mod brace;
+#[cfg(all(
+  feature = "subscript",
+  feature = "access",
+  feature = "subscript_slice"
+))]
 mod bracket;
+#[cfg(all(feature = "subscript", feature = "access"))]
 mod dot;
+#[cfg(feature = "subscript_formula")]
 mod string;
 
 #[cfg(feature = "subscript_formula")]
@@ -36,7 +45,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &InterpreterExecution<'_
                         None => val.borrow().clone(),
                     },
                     None => {
-                        return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
+                        return Err(MechError::new(super::UndefinedVariableError { id, name: name.clone() }, None)
                             .with_compiler_loc()
                             .with_tokens(slc.tokens()));
                     }
@@ -52,7 +61,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &InterpreterExecution<'_
                 None => val.borrow().clone(),
             },
             None => {
-                return Err(MechError::new(UndefinedVariableError { id, name: name.clone() }, None)
+                return Err(MechError::new(super::UndefinedVariableError { id, name: name.clone() }, None)
                     .with_compiler_loc()
                     .with_tokens(slc.tokens()));
             }

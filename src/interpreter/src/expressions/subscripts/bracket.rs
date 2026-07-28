@@ -1,5 +1,22 @@
-use super::*;
-use crate::*;
+use super::super::environment::expression_solves_deferred;
+use super::{Environment, subscript_formula, subscript_formula_ix, subscript_range};
+#[cfg(feature = "subscript_formula")]
+use super::string::{
+  current_string_access_expression_live, string_access_argument_is_live,
+  string_access_index_argument, string_access_source_argument,
+};
+use crate::{AccessRange, AccessScalar};
+#[cfg(feature = "matrix")]
+use crate::{
+  MatrixAccessAll, MatrixAccessAllRange, MatrixAccessAllScalar, MatrixAccessRangeAll,
+  MatrixAccessRangeRange, MatrixAccessRangeScalar, MatrixAccessScalarAll,
+  MatrixAccessScalarRange, MatrixAccessScalarScalar,
+};
+#[cfg(feature = "subscript_formula")]
+use crate::{StringAccessCompileMode, set_next_string_access_compile_mode};
+use crate::{
+  InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind,
+};
 
 pub(super) fn access(
   sbscrpt: &Subscript,

@@ -1,5 +1,9 @@
-use super::*;
-use crate::*;
+use super::super::environment::expression_solves_deferred;
+use super::{Environment, subscript_formula, subscript_range};
+use crate::{
+  AccessRange, AccessScalar, InterpreterExecution, MResult, NativeFunctionCompiler, Subscript,
+  Value,
+};
 
 pub(super) fn access(
   sbscrpt: &Subscript,

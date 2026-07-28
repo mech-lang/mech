@@ -11,6 +11,8 @@ use std::collections::HashSet;
 use crate::*;
 use std::sync::Arc;
 
+pub use crate::expressions::function_call;
+
 // Functions
 // ============================================================================
 
@@ -99,77 +101,6 @@ pub fn function_define(fxn_def: &FunctionDefine, p: &InterpreterExecution<'_>) -
 // Calls
 // ----------------------------------------------------------------------------
 
-// Dispatches a function call to whichever implementation is available:
-// user-defined functions first, then built-in functions, then native compiled
-// functions. Returns an error if the name is not found in any registry.
-pub fn function_call(fxn_call: &FunctionCall, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
-  let functions = p.functions();
-  let fxn_name_id = fxn_call.name.hash();
-
-  // User-defined function: evaluate arguments then run the interpreted body.
-  if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
-    let mut input_arg_values = vec![];
-    for (_, arg_expr) in fxn_call.args.iter() {
-      input_arg_values.push(expression(arg_expr, env, p)?);
-    }
-    #[cfg(feature = "subscript_formula")]
-    let output_is_live = current_string_access_expression_live(p)
-      || input_arg_values.iter().any(|value| string_access_input_is_live(value, p));
-    let output = execute_user_function(&user_fxn, &input_arg_values, p)?;
-    #[cfg(feature = "subscript_formula")]
-    if output_is_live {
-      mark_current_string_access_expression_live(p);
-      mark_string_access_value_live(p, &output);
-    }
-    return Ok(output);
-  }
-
-  // Pre-compiled built-in functions.
-  if { functions.borrow().functions.contains_key(&fxn_name_id) } {
-    todo!();
-  }
-
-  // Native function compiler: the compiler picks a concrete implementation
-  // based on the runtime argument types, then we execute it immediately.
-  let fxn_compiler = {
-    functions
-      .borrow()
-      .function_compilers
-      .get(&fxn_name_id)
-      .cloned()
-  };
-  match fxn_compiler {
-    Some(fxn_compiler) => {
-      let mut input_arg_values = vec![];
-      for (_, arg_expr) in fxn_call.args.iter() {
-        input_arg_values.push(expression(arg_expr, env, p)?);
-      }
-      trace_println!(
-        p,
-        "{}",
-        format_trace(
-          "fn",
-          format!(
-            "native {}({})",
-            fxn_call.name.to_string(),
-            format_trace_args(&input_arg_values)
-          ),
-        )
-      );
-      execute_native_function_compiler(fxn_compiler, &input_arg_values, p)
-    }
-    // No implementation found under this name at all.
-    None => Err(MechError::new(
-      MissingFunctionError {
-        function_id: fxn_name_id,
-      },
-      None,
-    )
-    .with_compiler_loc()
-    .with_tokens(fxn_call.name.tokens())),
-  }
-}
-
 // Asks a native function compiler to select the right concrete implementation
 // for the given argument types, runs it once to produce an initial value, then
 // pushes it onto the reactive plan so it re-runs when its inputs change.
@@ -255,7 +186,7 @@ pub(crate) fn execute_initialized_indexed_compiler(
 // Executes a user-defined function. Handles argument count validation,
 // optional matrix broadcasting, match-arm dispatch, and plain statement bodies.
 // Logs entry/exit (or failure) via the trace machinery.
-fn execute_user_function(
+pub(crate) fn execute_user_function(
   fxn_def: &FunctionDefinition,
   input_arg_values: &Vec<Value>,
   p: &InterpreterExecution<'_>,
