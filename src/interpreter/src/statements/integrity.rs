@@ -1,5 +1,7 @@
 #[cfg(feature = "invariant_define")]
-use super::{VariableAlreadyDefinedError, detach_variable_value};
+use super::VariableAlreadyDefinedError;
+#[cfg(feature = "invariant_define")]
+use super::variable_define::detach_variable_value;
 #[cfg(feature = "invariant_define")]
 use crate::{
   ComparisonOp, Expression, Factor, FormulaOperator, IntegrityConstraint, InterpreterExecution,
@@ -149,4 +151,3 @@ fn integrity_constraint_operand(
     _ => None,
   }
 }
-

@@ -1,6 +1,7 @@
+use crate::Value;
 #[cfg(feature = "variable_define")]
 use super::{
-  AddressedAssignmentUnsupported, VariableAlreadyDefinedError, detach_variable_value,
+  AddressedAssignmentUnsupported, VariableAlreadyDefinedError,
 };
 #[cfg(all(
   feature = "variable_define",
@@ -16,7 +17,15 @@ use super::UnableToConvertAtomError;
   feature = "atom",
   feature = "enum"
 ))]
-use super::{UnableToConvertAtomToEnumVariantError, value_matches_enum_variant};
+use super::UnableToConvertAtomToEnumVariantError;
+#[cfg(all(
+  feature = "variable_define",
+  feature = "kind_annotation",
+  feature = "convert",
+  feature = "atom",
+  feature = "enum"
+))]
+use super::enums::value_matches_enum_variant;
 #[cfg(all(
   feature = "variable_define",
   feature = "kind_annotation",
@@ -26,7 +35,7 @@ use super::{UnableToConvertAtomToEnumVariantError, value_matches_enum_variant};
 use super::UnableToConvertRecordError;
 #[cfg(feature = "variable_define")]
 use crate::{
-  InterpreterExecution, MResult, MechError, NativeFunctionCompiler, Ref, Value, VariableDefine,
+  InterpreterExecution, MResult, MechError, NativeFunctionCompiler, Ref, VariableDefine,
   execute_initialized_indexed_compiler, expression,
 };
 #[cfg(all(
@@ -179,3 +188,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
   return Ok(detached_result);
 }
 
+
+pub(super) fn detach_variable_value(value: &Value) -> Value {
+  match value {
+    Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
+    _ => value.clone(),
+  }
+}
