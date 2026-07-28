@@ -114,6 +114,9 @@ destructuring, integrity declarations, kinds, enums, state machines, or
 decoding should be added only when statement-owned tests for those behaviors
 exist; do not create empty ownership placeholders.
 
+For the production modules exercised by these suites, see the
+[statement evaluation topology](../interpreter/statement-topology.md).
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,
