@@ -1,0 +1,75 @@
+{
+  "ast": {
+    "Map": {
+      "elements": [
+        {
+          "key": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "1"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          },
+          "value": {
+            "Literal": {
+              "String": {
+                "text": {
+                  "chars": [
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "String"
+                }
+              }
+            }
+          }
+        },
+        {
+          "key": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "2"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          },
+          "value": {
+            "Literal": {
+              "String": {
+                "text": {
+                  "chars": [
+                    "t",
+                    "w",
+                    "o"
+                  ],
+                  "kind": "String"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 20,
+    "remaining_source": "",
+    "source_graphemes": 20
+  },
+  "entry_point": "structure",
+  "rule": "structure"
+}

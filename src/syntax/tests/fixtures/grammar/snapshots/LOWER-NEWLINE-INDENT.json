@@ -1,0 +1,10 @@
+{
+  "ast": null,
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": "",
+    "source_graphemes": 1
+  },
+  "entry_point": "newline-indent",
+  "rule": "newline-indent"
+}

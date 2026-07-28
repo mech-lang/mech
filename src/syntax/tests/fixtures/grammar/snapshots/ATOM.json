@@ -1,0 +1,25 @@
+{
+  "ast": {
+    "Atom": {
+      "name": {
+        "name": {
+          "chars": [
+            "r",
+            "e",
+            "a",
+            "d",
+            "y"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "literal",
+  "rule": "atom"
+}

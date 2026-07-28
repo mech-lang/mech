@@ -1,0 +1,46 @@
+{
+  "ast": {
+    "alignment": [
+      "Center"
+    ],
+    "header": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "A",
+                " "
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ],
+    "rows": [
+      [
+        {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "x",
+                  " "
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 21,
+    "remaining_source": "",
+    "source_graphemes": 21
+  },
+  "entry_point": "mechdown-table",
+  "rule": "center-alignment"
+}

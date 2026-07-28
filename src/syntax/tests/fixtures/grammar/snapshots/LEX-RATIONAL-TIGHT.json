@@ -1,0 +1,27 @@
+{
+  "ast": {
+    "Real": {
+      "Rational": [
+        {
+          "chars": [
+            "1"
+          ],
+          "kind": "Number"
+        },
+        {
+          "chars": [
+            "2"
+          ],
+          "kind": "Number"
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

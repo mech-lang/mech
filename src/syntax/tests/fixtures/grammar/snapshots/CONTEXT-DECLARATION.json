@@ -1,0 +1,44 @@
+{
+  "ast": {
+    "ContextDeclaration": {
+      "base": {
+        "ResourceUri": {
+          "chars": [
+            "f",
+            "s",
+            ":",
+            "/",
+            "/",
+            "w",
+            "o",
+            "r",
+            "k",
+            "s",
+            "p",
+            "a",
+            "c",
+            "e"
+          ],
+          "kind": "Any"
+        }
+      },
+      "capabilities": [],
+      "name": {
+        "name": {
+          "chars": [
+            "u",
+            "i"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 21,
+    "remaining_source": "",
+    "source_graphemes": 21
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

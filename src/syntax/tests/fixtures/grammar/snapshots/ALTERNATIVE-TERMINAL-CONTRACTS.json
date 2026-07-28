@@ -1,0 +1,2589 @@
+{
+  "ast": {
+    "checked_markers": [
+      {
+        "branch": "tag:x",
+        "input": "-[x]done\n",
+        "output": [
+          true,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "branch": "tag:✓",
+        "input": "-[✓]done\n",
+        "output": [
+          true,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "branch": "tag:✗",
+        "input": "-[✗]done\n",
+        "output": [
+          true,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "branch": "whitespace0:empty",
+        "input": "-[]done\n",
+        "output": [
+          false,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "branch": "whitespace0:space",
+        "input": "-[ ]done\n",
+        "output": [
+          false,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "branch": "whitespace0:tab",
+        "input": "-[\t]done\n",
+        "output": [
+          false,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "codeblock_sigils": [
+      {
+        "branch": "grave_codeblock_sigil",
+        "literal": "```",
+        "selected_closing_parser": "grave_codeblock_sigil"
+      },
+      {
+        "branch": "tilde_codeblock_sigil",
+        "literal": "~~~",
+        "selected_closing_parser": "tilde_codeblock_sigil"
+      }
+    ],
+    "float_sigils": [
+      {
+        "branch": "float_left",
+        "literal": "<<:",
+        "output": "Left"
+      },
+      {
+        "branch": "float_right",
+        "literal": ":>>",
+        "output": "Right"
+      }
+    ],
+    "generator_arrows": [
+      {
+        "ast": {
+          "Generator": [
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "x"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "x",
+                      "s"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "branch": "generator_arrow",
+        "literal": "<-"
+      },
+      {
+        "ast": {
+          "Generator": [
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "x"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "x",
+                      "s"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "branch": "generator_arrow_u",
+        "literal": "←"
+      }
+    ],
+    "identifier_alternatives": [
+      {
+        "ast": {
+          "name": {
+            "chars": [
+              "a",
+              "l",
+              "p",
+              "h",
+              "a",
+              "&",
+              "$",
+              "%",
+              "/",
+              "#",
+              "\\",
+              "~",
+              "+",
+              "-",
+              "*",
+              "^",
+              "9",
+              "🤖"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "branch": "alpha-start-with-every-symbol-rest",
+        "input": "alpha&$%/#\\~+-*^9🤖"
+      },
+      {
+        "ast": {
+          "name": {
+            "chars": [
+              "🤖",
+              "a",
+              "7"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "branch": "emoji-start",
+        "input": "🤖a7"
+      }
+    ],
+    "op_assign_operators": [
+      {
+        "branch": "add_assign_operator",
+        "input": " += ",
+        "literal": "+=",
+        "output": "Add"
+      },
+      {
+        "branch": "sub_assign_operator",
+        "input": " -= ",
+        "literal": "-=",
+        "output": "Sub"
+      },
+      {
+        "branch": "mul_assign_operator",
+        "input": " *= ",
+        "literal": "*=",
+        "output": "Mul"
+      },
+      {
+        "branch": "div_assign_operator",
+        "input": " /= ",
+        "literal": "/=",
+        "output": "Div"
+      },
+      {
+        "branch": "exp_assign_operator",
+        "input": " ^= ",
+        "literal": "^=",
+        "output": "Exp"
+      }
+    ],
+    "spread_alternatives": [
+      {
+        "ast": {
+          "prefix": [
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "h",
+                        "e",
+                        "a",
+                        "d"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "spread": {
+            "binding": null,
+            "kind": "Spread"
+          },
+          "suffix": [
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "t",
+                        "a",
+                        "i",
+                        "l"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "direct_branch": "spread_operator_a",
+        "literal": "..."
+      },
+      {
+        "ast": {
+          "prefix": [
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "h",
+                        "e",
+                        "a",
+                        "d"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "spread": {
+            "binding": null,
+            "kind": "Spread"
+          },
+          "suffix": [
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "t",
+                        "a",
+                        "i",
+                        "l"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "direct_branch": "spread_operator_u",
+        "literal": "…"
+      }
+    ],
+    "success_error_sigils": [
+      {
+        "branch": "success_sigil",
+        "input": "(+)> ok\n",
+        "output": {
+          "SuccessBlock": [
+            {
+              "elements": [
+                {
+                  "Text": {
+                    "chars": [
+                      "o",
+                      "k"
+                    ],
+                    "kind": "Text"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "branch": "success_check_sigil",
+        "input": "(✓)> ok\n",
+        "output": {
+          "SuccessBlock": [
+            {
+              "elements": [
+                {
+                  "Text": {
+                    "chars": [
+                      "o",
+                      "k"
+                    ],
+                    "kind": "Text"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "branch": "error_sigil",
+        "input": "(x)> error\n",
+        "output": {
+          "ErrorBlock": [
+            {
+              "elements": [
+                {
+                  "Text": {
+                    "chars": [
+                      "e",
+                      "r",
+                      "r",
+                      "o",
+                      "r"
+                    ],
+                    "kind": "Text"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "branch": "error_alt_sigil",
+        "input": "(✗)> error\n",
+        "output": {
+          "ErrorBlock": [
+            {
+              "elements": [
+                {
+                  "Text": {
+                    "chars": [
+                      "e",
+                      "r",
+                      "r",
+                      "o",
+                      "r"
+                    ],
+                    "kind": "Text"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "token_alternatives": [
+      {
+        "direct_branch": "transition_operator_a",
+        "input": " -> ",
+        "leaf_branch": "transition_operator_a",
+        "literal": "->",
+        "token": {
+          "chars": [
+            "-",
+            ">"
+          ],
+          "kind": "TransitionOperator"
+        },
+        "wrapper": "transition_operator"
+      },
+      {
+        "direct_branch": "transition_operator_u",
+        "input": " → ",
+        "leaf_branch": "transition_operator_u",
+        "literal": "→",
+        "token": {
+          "chars": [
+            "→"
+          ],
+          "kind": "TransitionOperator"
+        },
+        "wrapper": "transition_operator"
+      },
+      {
+        "direct_branch": "output_operator_a",
+        "input": " => ",
+        "leaf_branch": "output_operator_a",
+        "literal": "=>",
+        "token": {
+          "chars": [
+            "=",
+            ">"
+          ],
+          "kind": "OutputOperator"
+        },
+        "wrapper": "output_operator"
+      },
+      {
+        "direct_branch": "output_operator_u",
+        "input": " ⇒ ",
+        "leaf_branch": "output_operator_u",
+        "literal": "⇒",
+        "token": {
+          "chars": [
+            "⇒"
+          ],
+          "kind": "OutputOperator"
+        },
+        "wrapper": "output_operator"
+      },
+      {
+        "direct_branch": "left_parenthesis",
+        "input": "(",
+        "leaf_branch": "left_parenthesis",
+        "literal": "(",
+        "token": {
+          "chars": [
+            "("
+          ],
+          "kind": "LeftParenthesis"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "right_parenthesis",
+        "input": ")",
+        "leaf_branch": "right_parenthesis",
+        "literal": ")",
+        "token": {
+          "chars": [
+            ")"
+          ],
+          "kind": "RightParenthesis"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "left_angle",
+        "input": "<",
+        "leaf_branch": "left_angle1",
+        "literal": "<",
+        "token": {
+          "chars": [
+            "<"
+          ],
+          "kind": "LeftAngle"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "left_angle",
+        "input": "⟨",
+        "leaf_branch": "left_angle2",
+        "literal": "⟨",
+        "token": {
+          "chars": [
+            "⟨"
+          ],
+          "kind": "LeftAngle"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "right_angle",
+        "input": ">",
+        "leaf_branch": "right_angle1",
+        "literal": ">",
+        "token": {
+          "chars": [
+            ">"
+          ],
+          "kind": "RightAngle"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "left_angle1",
+        "input": "<",
+        "leaf_branch": "left_angle1",
+        "literal": "<",
+        "token": {
+          "chars": [
+            "<"
+          ],
+          "kind": "LeftAngle"
+        },
+        "wrapper": "left_angle"
+      },
+      {
+        "direct_branch": "left_angle2",
+        "input": "⟨",
+        "leaf_branch": "left_angle2",
+        "literal": "⟨",
+        "token": {
+          "chars": [
+            "⟨"
+          ],
+          "kind": "LeftAngle"
+        },
+        "wrapper": "left_angle"
+      },
+      {
+        "direct_branch": "right_angle1",
+        "input": ">",
+        "leaf_branch": "right_angle1",
+        "literal": ">",
+        "token": {
+          "chars": [
+            ">"
+          ],
+          "kind": "RightAngle"
+        },
+        "wrapper": "right_angle"
+      },
+      {
+        "direct_branch": "right_angle2",
+        "input": "⟩",
+        "leaf_branch": "right_angle2",
+        "literal": "⟩",
+        "token": {
+          "chars": [
+            "⟩"
+          ],
+          "kind": "RightAngle"
+        },
+        "wrapper": "right_angle"
+      },
+      {
+        "direct_branch": "right_angle",
+        "input": "⟩",
+        "leaf_branch": "right_angle2",
+        "literal": "⟩",
+        "token": {
+          "chars": [
+            "⟩"
+          ],
+          "kind": "RightAngle"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "left_brace",
+        "input": "{",
+        "leaf_branch": "left_brace",
+        "literal": "{",
+        "token": {
+          "chars": [
+            "{"
+          ],
+          "kind": "LeftBrace"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "right_brace",
+        "input": "}",
+        "leaf_branch": "right_brace",
+        "literal": "}",
+        "token": {
+          "chars": [
+            "}"
+          ],
+          "kind": "RightBrace"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "left_bracket",
+        "input": "[",
+        "leaf_branch": "left_bracket",
+        "literal": "[",
+        "token": {
+          "chars": [
+            "["
+          ],
+          "kind": "LeftBracket"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "right_bracket",
+        "input": "]",
+        "leaf_branch": "right_bracket",
+        "literal": "]",
+        "token": {
+          "chars": [
+            "]"
+          ],
+          "kind": "RightBracket"
+        },
+        "wrapper": "grouping_symbol"
+      },
+      {
+        "direct_branch": "period",
+        "input": ".",
+        "leaf_branch": "period",
+        "literal": ".",
+        "token": {
+          "chars": [
+            "."
+          ],
+          "kind": "Period"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "exclamation",
+        "input": "!",
+        "leaf_branch": "exclamation",
+        "literal": "!",
+        "token": {
+          "chars": [
+            "!"
+          ],
+          "kind": "Exclamation"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "question",
+        "input": "?",
+        "leaf_branch": "question",
+        "literal": "?",
+        "token": {
+          "chars": [
+            "?"
+          ],
+          "kind": "Question"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "comma",
+        "input": ",",
+        "leaf_branch": "comma",
+        "literal": ",",
+        "token": {
+          "chars": [
+            ","
+          ],
+          "kind": "Comma"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "colon",
+        "input": ":",
+        "leaf_branch": "colon",
+        "literal": ":",
+        "token": {
+          "chars": [
+            ":"
+          ],
+          "kind": "Colon"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "semicolon",
+        "input": ";",
+        "leaf_branch": "semicolon",
+        "literal": ";",
+        "token": {
+          "chars": [
+            ";"
+          ],
+          "kind": "Semicolon"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "quote",
+        "input": "\"",
+        "leaf_branch": "quote",
+        "literal": "\"",
+        "token": {
+          "chars": [
+            "\""
+          ],
+          "kind": "Quote"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "apostrophe",
+        "input": "'",
+        "leaf_branch": "apostrophe",
+        "literal": "'",
+        "token": {
+          "chars": [
+            "'"
+          ],
+          "kind": "Apostrophe"
+        },
+        "wrapper": "punctuation"
+      },
+      {
+        "direct_branch": "ampersand",
+        "input": "&",
+        "leaf_branch": "ampersand",
+        "literal": "&",
+        "token": {
+          "chars": [
+            "&"
+          ],
+          "kind": "Ampersand"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "grave",
+        "input": "`",
+        "leaf_branch": "grave",
+        "literal": "`",
+        "token": {
+          "chars": [
+            "`"
+          ],
+          "kind": "Grave"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "dollar",
+        "input": "$",
+        "leaf_branch": "dollar",
+        "literal": "$",
+        "token": {
+          "chars": [
+            "$"
+          ],
+          "kind": "Dollar"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "bar",
+        "input": "|",
+        "leaf_branch": "bar",
+        "literal": "|",
+        "token": {
+          "chars": [
+            "|"
+          ],
+          "kind": "Bar"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "percent",
+        "input": "%",
+        "leaf_branch": "percent",
+        "literal": "%",
+        "token": {
+          "chars": [
+            "%"
+          ],
+          "kind": "Percent"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "at",
+        "input": "@",
+        "leaf_branch": "at",
+        "literal": "@",
+        "token": {
+          "chars": [
+            "@"
+          ],
+          "kind": "At"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "slash",
+        "input": "/",
+        "leaf_branch": "slash",
+        "literal": "/",
+        "token": {
+          "chars": [
+            "/"
+          ],
+          "kind": "Slash"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "hashtag",
+        "input": "#",
+        "leaf_branch": "hashtag",
+        "literal": "#",
+        "token": {
+          "chars": [
+            "#"
+          ],
+          "kind": "HashTag"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "equal",
+        "input": "=",
+        "leaf_branch": "equal",
+        "literal": "=",
+        "token": {
+          "chars": [
+            "="
+          ],
+          "kind": "Equal"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "backslash",
+        "input": "\\",
+        "leaf_branch": "backslash",
+        "literal": "\\",
+        "token": {
+          "chars": [
+            "\\"
+          ],
+          "kind": "Backslash"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "tilde",
+        "input": "~",
+        "leaf_branch": "tilde",
+        "literal": "~",
+        "token": {
+          "chars": [
+            "~"
+          ],
+          "kind": "Tilde"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "plus",
+        "input": "+",
+        "leaf_branch": "plus",
+        "literal": "+",
+        "token": {
+          "chars": [
+            "+"
+          ],
+          "kind": "Plus"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "dash",
+        "input": "-",
+        "leaf_branch": "dash",
+        "literal": "-",
+        "token": {
+          "chars": [
+            "-"
+          ],
+          "kind": "Dash"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "asterisk",
+        "input": "*",
+        "leaf_branch": "asterisk",
+        "literal": "*",
+        "token": {
+          "chars": [
+            "*"
+          ],
+          "kind": "Asterisk"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "caret",
+        "input": "^",
+        "leaf_branch": "caret",
+        "literal": "^",
+        "token": {
+          "chars": [
+            "^"
+          ],
+          "kind": "Caret"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "underscore",
+        "input": "_",
+        "leaf_branch": "underscore",
+        "literal": "_",
+        "token": {
+          "chars": [
+            "_"
+          ],
+          "kind": "Underscore"
+        },
+        "wrapper": "symbol"
+      },
+      {
+        "direct_branch": "carriage_return_new_line",
+        "input": "\r\n",
+        "leaf_branch": "carriage_return_new_line",
+        "literal": "\r\n",
+        "token": {
+          "chars": [
+            "\r",
+            "\n"
+          ],
+          "kind": "CarriageReturn"
+        },
+        "wrapper": "new_line"
+      },
+      {
+        "direct_branch": "new_line_char",
+        "input": "\n",
+        "leaf_branch": "new_line_char",
+        "literal": "\n",
+        "token": {
+          "chars": [
+            "\n"
+          ],
+          "kind": "Newline"
+        },
+        "wrapper": "new_line"
+      },
+      {
+        "direct_branch": "carriage_return",
+        "input": "\r",
+        "leaf_branch": "carriage_return",
+        "literal": "\r",
+        "token": {
+          "chars": [
+            "\r"
+          ],
+          "kind": "CarriageReturn"
+        },
+        "wrapper": "new_line"
+      },
+      {
+        "direct_branch": "space",
+        "input": " ",
+        "leaf_branch": "space",
+        "literal": " ",
+        "token": {
+          "chars": [
+            " "
+          ],
+          "kind": "Space"
+        },
+        "wrapper": "space_tab"
+      },
+      {
+        "direct_branch": "tab",
+        "input": "\t",
+        "leaf_branch": "tab",
+        "literal": "\t",
+        "token": {
+          "chars": [
+            "\t"
+          ],
+          "kind": "Tab"
+        },
+        "wrapper": "space_tab"
+      },
+      {
+        "direct_branch": "nbsp",
+        "input": " ",
+        "leaf_branch": "nbsp",
+        "literal": " ",
+        "token": {
+          "chars": [
+            " "
+          ],
+          "kind": "Space"
+        },
+        "wrapper": "space_tab"
+      },
+      {
+        "direct_branch": "thin_space",
+        "input": " ",
+        "leaf_branch": "thin_space",
+        "literal": " ",
+        "token": {
+          "chars": [
+            " "
+          ],
+          "kind": "Space"
+        },
+        "wrapper": "space_tab"
+      },
+      {
+        "direct_branch": "alpha_token",
+        "input": "\\n",
+        "leaf_branch": "alpha:n",
+        "literal": "\\n",
+        "token": {
+          "chars": [
+            "\n"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "alpha_token",
+        "input": "\\t",
+        "leaf_branch": "alpha:t",
+        "literal": "\\t",
+        "token": {
+          "chars": [
+            "\t"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "alpha_token",
+        "input": "\\r",
+        "leaf_branch": "alpha:r",
+        "literal": "\\r",
+        "token": {
+          "chars": [
+            "\r"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "alpha_token",
+        "input": "\\x",
+        "leaf_branch": "alpha:x",
+        "literal": "\\x",
+        "token": {
+          "chars": [
+            "x"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\&",
+        "leaf_branch": "ampersand",
+        "literal": "\\&",
+        "token": {
+          "chars": [
+            "&"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\`",
+        "leaf_branch": "grave",
+        "literal": "\\`",
+        "token": {
+          "chars": [
+            "`"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\$",
+        "leaf_branch": "dollar",
+        "literal": "\\$",
+        "token": {
+          "chars": [
+            "$"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\|",
+        "leaf_branch": "bar",
+        "literal": "\\|",
+        "token": {
+          "chars": [
+            "|"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\%",
+        "leaf_branch": "percent",
+        "literal": "\\%",
+        "token": {
+          "chars": [
+            "%"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\@",
+        "leaf_branch": "at",
+        "literal": "\\@",
+        "token": {
+          "chars": [
+            "@"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\/",
+        "leaf_branch": "slash",
+        "literal": "\\/",
+        "token": {
+          "chars": [
+            "/"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\#",
+        "leaf_branch": "hashtag",
+        "literal": "\\#",
+        "token": {
+          "chars": [
+            "#"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\=",
+        "leaf_branch": "equal",
+        "literal": "\\=",
+        "token": {
+          "chars": [
+            "="
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\\\",
+        "leaf_branch": "backslash",
+        "literal": "\\\\",
+        "token": {
+          "chars": [
+            "\\"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\~",
+        "leaf_branch": "tilde",
+        "literal": "\\~",
+        "token": {
+          "chars": [
+            "~"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\+",
+        "leaf_branch": "plus",
+        "literal": "\\+",
+        "token": {
+          "chars": [
+            "+"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\-",
+        "leaf_branch": "dash",
+        "literal": "\\-",
+        "token": {
+          "chars": [
+            "-"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\*",
+        "leaf_branch": "asterisk",
+        "literal": "\\*",
+        "token": {
+          "chars": [
+            "*"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\^",
+        "leaf_branch": "caret",
+        "literal": "\\^",
+        "token": {
+          "chars": [
+            "^"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "\\_",
+        "leaf_branch": "underscore",
+        "literal": "\\_",
+        "token": {
+          "chars": [
+            "_"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\.",
+        "leaf_branch": "period",
+        "literal": "\\.",
+        "token": {
+          "chars": [
+            "."
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\!",
+        "leaf_branch": "exclamation",
+        "literal": "\\!",
+        "token": {
+          "chars": [
+            "!"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\?",
+        "leaf_branch": "question",
+        "literal": "\\?",
+        "token": {
+          "chars": [
+            "?"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\,",
+        "leaf_branch": "comma",
+        "literal": "\\,",
+        "token": {
+          "chars": [
+            ","
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\:",
+        "leaf_branch": "colon",
+        "literal": "\\:",
+        "token": {
+          "chars": [
+            ":"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\;",
+        "leaf_branch": "semicolon",
+        "literal": "\\;",
+        "token": {
+          "chars": [
+            ";"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\\"",
+        "leaf_branch": "quote",
+        "literal": "\\\"",
+        "token": {
+          "chars": [
+            "\""
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "\\'",
+        "leaf_branch": "apostrophe",
+        "literal": "\\'",
+        "token": {
+          "chars": [
+            "'"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "escaped_char"
+      },
+      {
+        "direct_branch": "alpha_token",
+        "input": "A",
+        "leaf_branch": "alpha:A",
+        "literal": "A",
+        "token": {
+          "chars": [
+            "A"
+          ],
+          "kind": "Alpha"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "digit_token",
+        "input": "7",
+        "leaf_branch": "digit:7",
+        "literal": "7",
+        "token": {
+          "chars": [
+            "7"
+          ],
+          "kind": "Digit"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "emoji",
+        "input": "🤖",
+        "leaf_branch": "emoji:robot",
+        "literal": "🤖",
+        "token": {
+          "chars": [
+            "🤖"
+          ],
+          "kind": "Emoji"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "forbidden_emoji",
+        "input": "┃",
+        "leaf_branch": "box_vert_bold",
+        "literal": "┃",
+        "token": {
+          "chars": [
+            "┃"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "space",
+        "input": " ",
+        "leaf_branch": "space",
+        "literal": " ",
+        "token": {
+          "chars": [
+            " "
+          ],
+          "kind": "Space"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "tab",
+        "input": "\t",
+        "leaf_branch": "tab",
+        "literal": "\t",
+        "token": {
+          "chars": [
+            "\t"
+          ],
+          "kind": "Tab"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "escaped_char",
+        "input": "\\n",
+        "leaf_branch": "alpha:n",
+        "literal": "\\n",
+        "token": {
+          "chars": [
+            "\n"
+          ],
+          "kind": "EscapedChar"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "?",
+        "leaf_branch": "question",
+        "literal": "?",
+        "token": {
+          "chars": [
+            "?"
+          ],
+          "kind": "Question"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "grouping_symbol",
+        "input": "⟨",
+        "leaf_branch": "left_angle2",
+        "literal": "⟨",
+        "token": {
+          "chars": [
+            "⟨"
+          ],
+          "kind": "LeftAngle"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "%",
+        "leaf_branch": "percent",
+        "literal": "%",
+        "token": {
+          "chars": [
+            "%"
+          ],
+          "kind": "Percent"
+        },
+        "wrapper": "text"
+      },
+      {
+        "direct_branch": "alpha_token",
+        "input": "A",
+        "leaf_branch": "alpha:A",
+        "literal": "A",
+        "token": {
+          "chars": [
+            "A"
+          ],
+          "kind": "Alpha"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "digit_token",
+        "input": "7",
+        "leaf_branch": "digit:7",
+        "literal": "7",
+        "token": {
+          "chars": [
+            "7"
+          ],
+          "kind": "Digit"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "emoji",
+        "input": "🤖",
+        "leaf_branch": "emoji:robot",
+        "literal": "🤖",
+        "token": {
+          "chars": [
+            "🤖"
+          ],
+          "kind": "Emoji"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "forbidden_emoji",
+        "input": "┃",
+        "leaf_branch": "box_vert_bold",
+        "literal": "┃",
+        "token": {
+          "chars": [
+            "┃"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "space",
+        "input": " ",
+        "leaf_branch": "space",
+        "literal": " ",
+        "token": {
+          "chars": [
+            " "
+          ],
+          "kind": "Space"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "tab",
+        "input": "\t",
+        "leaf_branch": "tab",
+        "literal": "\t",
+        "token": {
+          "chars": [
+            "\t"
+          ],
+          "kind": "Tab"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "punctuation",
+        "input": "?",
+        "leaf_branch": "question",
+        "literal": "?",
+        "token": {
+          "chars": [
+            "?"
+          ],
+          "kind": "Question"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "grouping_symbol",
+        "input": "⟨",
+        "leaf_branch": "left_angle2",
+        "literal": "⟨",
+        "token": {
+          "chars": [
+            "⟨"
+          ],
+          "kind": "LeftAngle"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "symbol",
+        "input": "%",
+        "leaf_branch": "percent",
+        "literal": "%",
+        "token": {
+          "chars": [
+            "%"
+          ],
+          "kind": "Percent"
+        },
+        "wrapper": "raw_text"
+      },
+      {
+        "direct_branch": "box_tl_round",
+        "input": "╭",
+        "leaf_branch": "box_tl_round",
+        "literal": "╭",
+        "token": {
+          "chars": [
+            "╭"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "matrix_start"
+      },
+      {
+        "direct_branch": "box_tl",
+        "input": "┌",
+        "leaf_branch": "box_tl",
+        "literal": "┌",
+        "token": {
+          "chars": [
+            "┌"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "matrix_start"
+      },
+      {
+        "direct_branch": "box_tl_bold",
+        "input": "┏",
+        "leaf_branch": "box_tl_bold",
+        "literal": "┏",
+        "token": {
+          "chars": [
+            "┏"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "matrix_start"
+      },
+      {
+        "direct_branch": "left_bracket",
+        "input": "[",
+        "leaf_branch": "left_bracket",
+        "literal": "[",
+        "token": {
+          "chars": [
+            "["
+          ],
+          "kind": "LeftBracket"
+        },
+        "wrapper": "matrix_start"
+      },
+      {
+        "direct_branch": "box_br_round",
+        "input": "╯",
+        "leaf_branch": "box_br_round",
+        "literal": "╯",
+        "token": {
+          "chars": [
+            "╯"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "matrix_end"
+      },
+      {
+        "direct_branch": "box_br",
+        "input": "┘",
+        "leaf_branch": "box_br",
+        "literal": "┘",
+        "token": {
+          "chars": [
+            "┘"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "matrix_end"
+      },
+      {
+        "direct_branch": "box_br_bold",
+        "input": "┛",
+        "leaf_branch": "box_br_bold",
+        "literal": "┛",
+        "token": {
+          "chars": [
+            "┛"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "matrix_end"
+      },
+      {
+        "direct_branch": "right_bracket",
+        "input": "]",
+        "leaf_branch": "right_bracket",
+        "literal": "]",
+        "token": {
+          "chars": [
+            "]"
+          ],
+          "kind": "RightBracket"
+        },
+        "wrapper": "matrix_end"
+      },
+      {
+        "direct_branch": "box_tl",
+        "input": "┌",
+        "leaf_branch": "box_tl",
+        "literal": "┌",
+        "token": {
+          "chars": [
+            "┌"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_bl",
+        "input": "└",
+        "leaf_branch": "box_bl",
+        "literal": "└",
+        "token": {
+          "chars": [
+            "└"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_tr",
+        "input": "┐",
+        "leaf_branch": "box_tr",
+        "literal": "┐",
+        "token": {
+          "chars": [
+            "┐"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_tl_bold",
+        "input": "┏",
+        "leaf_branch": "box_tl_bold",
+        "literal": "┏",
+        "token": {
+          "chars": [
+            "┏"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_bl_bold",
+        "input": "┗",
+        "leaf_branch": "box_bl_bold",
+        "literal": "┗",
+        "token": {
+          "chars": [
+            "┗"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_tr_bold",
+        "input": "┓",
+        "leaf_branch": "box_tr_bold",
+        "literal": "┓",
+        "token": {
+          "chars": [
+            "┓"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_tr_round",
+        "input": "╮",
+        "leaf_branch": "box_tr_round",
+        "literal": "╮",
+        "token": {
+          "chars": [
+            "╮"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_bl_round",
+        "input": "╰",
+        "leaf_branch": "box_bl_round",
+        "literal": "╰",
+        "token": {
+          "chars": [
+            "╰"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_vert",
+        "input": "│",
+        "leaf_branch": "box_vert",
+        "literal": "│",
+        "token": {
+          "chars": [
+            "│"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_cross",
+        "input": "┼",
+        "leaf_branch": "box_cross",
+        "literal": "┼",
+        "token": {
+          "chars": [
+            "┼"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_horz",
+        "input": "─",
+        "leaf_branch": "box_horz",
+        "literal": "─",
+        "token": {
+          "chars": [
+            "─"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_t_left",
+        "input": "├",
+        "leaf_branch": "box_t_left",
+        "literal": "├",
+        "token": {
+          "chars": [
+            "├"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_t_right",
+        "input": "┤",
+        "leaf_branch": "box_t_right",
+        "literal": "┤",
+        "token": {
+          "chars": [
+            "┤"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_t_top",
+        "input": "┬",
+        "leaf_branch": "box_t_top",
+        "literal": "┬",
+        "token": {
+          "chars": [
+            "┬"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_t_bottom",
+        "input": "┴",
+        "leaf_branch": "box_t_bottom",
+        "literal": "┴",
+        "token": {
+          "chars": [
+            "┴"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_char"
+      },
+      {
+        "direct_branch": "box_vert_bold",
+        "input": "┃",
+        "leaf_branch": "box_vert_bold",
+        "literal": "┃",
+        "token": {
+          "chars": [
+            "┃"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tl",
+        "input": "┌",
+        "leaf_branch": "box_tl",
+        "literal": "┌",
+        "token": {
+          "chars": [
+            "┌"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_bl",
+        "input": "└",
+        "leaf_branch": "box_bl",
+        "literal": "└",
+        "token": {
+          "chars": [
+            "└"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tr",
+        "input": "┐",
+        "leaf_branch": "box_tr",
+        "literal": "┐",
+        "token": {
+          "chars": [
+            "┐"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tl_bold",
+        "input": "┏",
+        "leaf_branch": "box_tl_bold",
+        "literal": "┏",
+        "token": {
+          "chars": [
+            "┏"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_bl_bold",
+        "input": "┗",
+        "leaf_branch": "box_bl_bold",
+        "literal": "┗",
+        "token": {
+          "chars": [
+            "┗"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tr_bold",
+        "input": "┓",
+        "leaf_branch": "box_tr_bold",
+        "literal": "┓",
+        "token": {
+          "chars": [
+            "┓"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tl_round",
+        "input": "╭",
+        "leaf_branch": "box_tl_round",
+        "literal": "╭",
+        "token": {
+          "chars": [
+            "╭"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_br_round",
+        "input": "╯",
+        "leaf_branch": "box_br_round",
+        "literal": "╯",
+        "token": {
+          "chars": [
+            "╯"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tr_round",
+        "input": "╮",
+        "leaf_branch": "box_tr_round",
+        "literal": "╮",
+        "token": {
+          "chars": [
+            "╮"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_bl_round",
+        "input": "╰",
+        "leaf_branch": "box_bl_round",
+        "literal": "╰",
+        "token": {
+          "chars": [
+            "╰"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_vert",
+        "input": "│",
+        "leaf_branch": "box_vert",
+        "literal": "│",
+        "token": {
+          "chars": [
+            "│"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_cross",
+        "input": "┼",
+        "leaf_branch": "box_cross",
+        "literal": "┼",
+        "token": {
+          "chars": [
+            "┼"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_horz",
+        "input": "─",
+        "leaf_branch": "box_horz",
+        "literal": "─",
+        "token": {
+          "chars": [
+            "─"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_t_left",
+        "input": "├",
+        "leaf_branch": "box_t_left",
+        "literal": "├",
+        "token": {
+          "chars": [
+            "├"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_t_right",
+        "input": "┤",
+        "leaf_branch": "box_t_right",
+        "literal": "┤",
+        "token": {
+          "chars": [
+            "┤"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_t_top",
+        "input": "┬",
+        "leaf_branch": "box_t_top",
+        "literal": "┬",
+        "token": {
+          "chars": [
+            "┬"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_t_bottom",
+        "input": "┴",
+        "leaf_branch": "box_t_bottom",
+        "literal": "┴",
+        "token": {
+          "chars": [
+            "┴"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "box_drawing_emoji"
+      },
+      {
+        "direct_branch": "box_tl_round",
+        "input": "╭",
+        "leaf_branch": "box_tl_round",
+        "literal": "╭",
+        "token": {
+          "chars": [
+            "╭"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "box_tl",
+        "input": "┌",
+        "leaf_branch": "box_tl",
+        "literal": "┌",
+        "token": {
+          "chars": [
+            "┌"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "box_tl_bold",
+        "input": "┏",
+        "leaf_branch": "box_tl_bold",
+        "literal": "┏",
+        "token": {
+          "chars": [
+            "┏"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "left_brace",
+        "input": "{",
+        "leaf_branch": "left_brace",
+        "literal": "{",
+        "token": {
+          "chars": [
+            "{"
+          ],
+          "kind": "LeftBrace"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "table_separator",
+        "input": "│",
+        "leaf_branch": "box_vert",
+        "literal": "│",
+        "token": {
+          "chars": [
+            "│"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "table_separator",
+        "input": "┃",
+        "leaf_branch": "box_vert_bold",
+        "literal": "┃",
+        "token": {
+          "chars": [
+            "┃"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "table_separator",
+        "input": "|",
+        "leaf_branch": "bar",
+        "literal": "|",
+        "token": {
+          "chars": [
+            "|"
+          ],
+          "kind": "Bar"
+        },
+        "wrapper": "table_start"
+      },
+      {
+        "direct_branch": "box_br_round",
+        "input": "╯",
+        "leaf_branch": "box_br_round",
+        "literal": "╯",
+        "token": {
+          "chars": [
+            "╯"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "box_br",
+        "input": "┘",
+        "leaf_branch": "box_br",
+        "literal": "┘",
+        "token": {
+          "chars": [
+            "┘"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "box_br_bold",
+        "input": "┛",
+        "leaf_branch": "box_br_bold",
+        "literal": "┛",
+        "token": {
+          "chars": [
+            "┛"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "right_brace",
+        "input": "}",
+        "leaf_branch": "right_brace",
+        "literal": "}",
+        "token": {
+          "chars": [
+            "}"
+          ],
+          "kind": "RightBrace"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "table_separator",
+        "input": "│",
+        "leaf_branch": "box_vert",
+        "literal": "│",
+        "token": {
+          "chars": [
+            "│"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "table_separator",
+        "input": "┃",
+        "leaf_branch": "box_vert_bold",
+        "literal": "┃",
+        "token": {
+          "chars": [
+            "┃"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "table_separator",
+        "input": "|",
+        "leaf_branch": "bar",
+        "literal": "|",
+        "token": {
+          "chars": [
+            "|"
+          ],
+          "kind": "Bar"
+        },
+        "wrapper": "table_end"
+      },
+      {
+        "direct_branch": "box_vert",
+        "input": " │ ",
+        "leaf_branch": "box_vert",
+        "literal": "│",
+        "token": {
+          "chars": [
+            "│"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_separator"
+      },
+      {
+        "direct_branch": "box_vert_bold",
+        "input": " ┃ ",
+        "leaf_branch": "box_vert_bold",
+        "literal": "┃",
+        "token": {
+          "chars": [
+            "┃"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_separator"
+      },
+      {
+        "direct_branch": "bar",
+        "input": " | ",
+        "leaf_branch": "bar",
+        "literal": "|",
+        "token": {
+          "chars": [
+            "|"
+          ],
+          "kind": "Bar"
+        },
+        "wrapper": "table_separator"
+      },
+      {
+        "direct_branch": "dash",
+        "input": "-",
+        "leaf_branch": "dash",
+        "literal": "-",
+        "token": {
+          "chars": [
+            "-"
+          ],
+          "kind": "Dash"
+        },
+        "wrapper": "table_horz"
+      },
+      {
+        "direct_branch": "box_horz",
+        "input": "─",
+        "leaf_branch": "box_horz",
+        "literal": "─",
+        "token": {
+          "chars": [
+            "─"
+          ],
+          "kind": "BoxDrawing"
+        },
+        "wrapper": "table_horz"
+      }
+    ],
+    "unit_alternatives": [
+      {
+        "direct_branch": "tag:|",
+        "input": " | ",
+        "output": null,
+        "wrapper": "guard_operator"
+      },
+      {
+        "direct_branch": "tag:│",
+        "input": " │ ",
+        "output": null,
+        "wrapper": "guard_operator"
+      },
+      {
+        "direct_branch": "tag:├",
+        "input": " ├ ",
+        "output": null,
+        "wrapper": "guard_operator"
+      },
+      {
+        "direct_branch": "tag:└",
+        "input": " └ ",
+        "output": null,
+        "wrapper": "guard_operator"
+      },
+      {
+        "direct_branch": "many1:space_tab",
+        "input": " \t  ",
+        "output": null,
+        "wrapper": "space_tab1"
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 33,
+    "remaining_source": "",
+    "source_graphemes": 33
+  },
+  "entry_point": "alternative-terminal-contracts",
+  "rule": "alternative-terminals"
+}

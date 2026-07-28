@@ -1,0 +1,28 @@
+{
+  "ast": {
+    "Formula": {
+      "Not": {
+        "Expression": {
+          "Literal": {
+            "Boolean": {
+              "chars": [
+                "t",
+                "r",
+                "u",
+                "e"
+              ],
+              "kind": "True"
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "expression",
+  "rule": "factor"
+}

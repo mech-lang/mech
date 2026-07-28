@@ -1,0 +1,20 @@
+{
+  "ast": {
+    "Boolean": {
+      "chars": [
+        "t",
+        "r",
+        "u",
+        "e"
+      ],
+      "kind": "True"
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 4,
+    "remaining_source": "",
+    "source_graphemes": 4
+  },
+  "entry_point": "literal",
+  "rule": "literal-boolean"
+}

@@ -1,0 +1,91 @@
+{
+  "ast": {
+    "ContextDeclaration": {
+      "base": {
+        "Context": {
+          "name": {
+            "chars": [
+              "m",
+              "a",
+              "i",
+              "n"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      },
+      "capabilities": [
+        {
+          "operation": {
+            "name": {
+              "chars": [
+                "r",
+                "e",
+                "a",
+                "d"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          "scope": {
+            "Path": {
+              "name": {
+                "chars": [
+                  "u",
+                  "s",
+                  "e",
+                  "r",
+                  "s",
+                  "/",
+                  "*"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        {
+          "operation": {
+            "name": {
+              "chars": [
+                "w",
+                "r",
+                "i",
+                "t",
+                "e"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          "scope": {
+            "Wildcard": {
+              "chars": [
+                "*"
+              ],
+              "kind": "Asterisk"
+            }
+          }
+        }
+      ],
+      "name": {
+        "name": {
+          "chars": [
+            "u",
+            "s",
+            "e",
+            "r",
+            "s"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 42,
+    "remaining_source": "",
+    "source_graphemes": 42
+  },
+  "entry_point": "statement",
+  "rule": "context-declaration"
+}

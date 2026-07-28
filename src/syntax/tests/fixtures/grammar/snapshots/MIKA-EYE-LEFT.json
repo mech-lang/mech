@@ -1,0 +1,10 @@
+{
+  "ast": "Normal",
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": "",
+    "source_graphemes": 1
+  },
+  "entry_point": "mika-eye-left",
+  "rule": "mika-eye-left"
+}

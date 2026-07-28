@@ -1,0 +1,56 @@
+{
+  "ast": {
+    "EvalInlineMechCode": {
+      "Formula": {
+        "Term": {
+          "lhs": {
+            "Expression": {
+              "Var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "x"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          },
+          "rhs": [
+            [
+              {
+                "AddSub": "Add"
+              },
+              {
+                "Expression": {
+                  "Literal": {
+                    "Number": {
+                      "Real": {
+                        "Integer": {
+                          "chars": [
+                            "1"
+                          ],
+                          "kind": "Number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "",
+    "source_graphemes": 7
+  },
+  "entry_point": "eval-inline-mech-code",
+  "rule": "inline-mech-code"
+}

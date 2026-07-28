@@ -1,0 +1,10 @@
+{
+  "ast": "ThematicBreak",
+  "consumption": {
+    "consumed_source_graphemes": 4,
+    "remaining_source": "",
+    "source_graphemes": 4
+  },
+  "entry_point": "thematic-break",
+  "rule": "thematic-break"
+}

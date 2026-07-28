@@ -1,0 +1,79 @@
+{
+  "ast": {
+    "elements": [
+      {
+        "Hyperlink": [
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "h",
+                    "t",
+                    "t",
+                    "p",
+                    ":",
+                    "/",
+                    "/",
+                    "e",
+                    "x",
+                    "a",
+                    "m",
+                    "p",
+                    "l",
+                    "e",
+                    ".",
+                    "c",
+                    "o",
+                    "m",
+                    "/",
+                    "p",
+                    "a",
+                    "t",
+                    "h"
+                  ],
+                  "kind": "Alpha"
+                }
+              }
+            ]
+          },
+          {
+            "chars": [
+              "h",
+              "t",
+              "t",
+              "p",
+              ":",
+              "/",
+              "/",
+              "e",
+              "x",
+              "a",
+              "m",
+              "p",
+              "l",
+              "e",
+              ".",
+              "c",
+              "o",
+              "m",
+              "/",
+              "p",
+              "a",
+              "t",
+              "h"
+            ],
+            "kind": "Alpha"
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 24,
+    "remaining_source": "",
+    "source_graphemes": 24
+  },
+  "entry_point": "normalized-paragraph-newline",
+  "rule": "paragraph"
+}

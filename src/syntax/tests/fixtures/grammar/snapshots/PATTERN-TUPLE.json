@@ -1,0 +1,45 @@
+{
+  "ast": {
+    "Tuple": [
+      {
+        "Expression": {
+          "Var": {
+            "context": null,
+            "kind": null,
+            "name": {
+              "name": {
+                "chars": [
+                  "x"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      },
+      {
+        "Expression": {
+          "Var": {
+            "context": null,
+            "kind": null,
+            "name": {
+              "name": {
+                "chars": [
+                  "y"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "pattern",
+  "rule": "pattern"
+}

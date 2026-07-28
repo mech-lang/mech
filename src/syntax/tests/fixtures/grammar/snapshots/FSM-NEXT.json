@@ -1,0 +1,44 @@
+{
+  "ast": {
+    "Next": {
+      "TupleStruct": {
+        "name": {
+          "name": {
+            "chars": [
+              "D",
+              "o",
+              "n",
+              "e"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "patterns": [
+          {
+            "Expression": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 11,
+    "remaining_source": "",
+    "source_graphemes": 11
+  },
+  "entry_point": "fsm-state-transition",
+  "rule": "fsm-state-transition"
+}

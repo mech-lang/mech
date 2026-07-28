@@ -1,0 +1,40 @@
+{
+  "ast": {
+    "level": 3,
+    "text": {
+      "elements": [
+        {
+          "Text": {
+            "chars": [
+              "I",
+              "s",
+              "o",
+              "l",
+              "a",
+              "t",
+              "e",
+              "d",
+              " ",
+              "s",
+              "u",
+              "b",
+              "t",
+              "i",
+              "t",
+              "l",
+              "e"
+            ],
+            "kind": "Text"
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 24,
+    "remaining_source": "",
+    "source_graphemes": 24
+  },
+  "entry_point": "subtitle",
+  "rule": "subtitle"
+}

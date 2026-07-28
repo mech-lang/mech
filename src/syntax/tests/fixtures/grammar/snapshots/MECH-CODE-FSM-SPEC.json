@@ -1,0 +1,134 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "FsmSpecification": {
+            "input": [
+              {
+                "context": null,
+                "kind": {
+                  "kind": {
+                    "Scalar": {
+                      "name": {
+                        "chars": [
+                          "u",
+                          "6",
+                          "4"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                },
+                "name": {
+                  "name": {
+                    "chars": [
+                      "n"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            ],
+            "name": {
+              "name": {
+                "chars": [
+                  "C",
+                  "o",
+                  "u",
+                  "n",
+                  "t",
+                  "e",
+                  "r"
+                ],
+                "kind": "Identifier"
+              }
+            },
+            "output": {
+              "kind": {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "u",
+                      "6",
+                      "4"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            },
+            "states": [
+              {
+                "name": {
+                  "name": {
+                    "chars": [
+                      "C",
+                      "o",
+                      "u",
+                      "n",
+                      "t"
+                    ],
+                    "kind": "Identifier"
+                  }
+                },
+                "state_variables": [
+                  {
+                    "context": null,
+                    "kind": null,
+                    "name": {
+                      "name": {
+                        "chars": [
+                          "n"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "name": {
+                  "name": {
+                    "chars": [
+                      "D",
+                      "o",
+                      "n",
+                      "e"
+                    ],
+                    "kind": "Identifier"
+                  }
+                },
+                "state_variables": [
+                  {
+                    "context": null,
+                    "kind": null,
+                    "name": {
+                      "name": {
+                        "chars": [
+                          "n"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 52,
+    "remaining_source": "",
+    "source_graphemes": 52
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code-fsm-specification"
+}

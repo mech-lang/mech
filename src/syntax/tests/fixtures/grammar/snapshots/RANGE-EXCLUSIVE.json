@@ -1,0 +1,48 @@
+{
+  "ast": {
+    "Range": {
+      "increment": null,
+      "operator": "Exclusive",
+      "start": {
+        "Expression": {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "1"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "terminal": {
+        "Expression": {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "1",
+                    "0"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "expression",
+  "rule": "range-expression"
+}

@@ -1,0 +1,59 @@
+{
+  "ast": {
+    "header": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "rows": [
+      {
+        "columns": [
+          {
+            "element": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "\n-- parser boundary sentinel",
+    "source_graphemes": 40
+  },
+  "entry_point": "regular-table",
+  "rule": "regular-table"
+}

@@ -1,0 +1,72 @@
+{
+  "ast": {
+    "caption": {
+      "elements": [
+        {
+          "Text": {
+            "chars": [
+              "A",
+              " ",
+              "r",
+              "o",
+              "b",
+              "o",
+              "t"
+            ],
+            "kind": "Text"
+          }
+        }
+      ]
+    },
+    "src": {
+      "chars": [
+        "r",
+        "o",
+        "b",
+        "o",
+        "t",
+        ".",
+        "p",
+        "n",
+        "g"
+      ],
+      "kind": "Alpha"
+    },
+    "style": {
+      "elements": [
+        [
+          {
+            "name": {
+              "chars": [
+                "w",
+                "i",
+                "d",
+                "t",
+                "h"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          {
+            "text": {
+              "chars": [
+                "w",
+                "i",
+                "d",
+                "e"
+              ],
+              "kind": "String"
+            }
+          }
+        ]
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 36,
+    "remaining_source": "",
+    "source_graphemes": 36
+  },
+  "entry_point": "image",
+  "rule": "image"
+}

@@ -1,0 +1,198 @@
+{
+  "ast": {
+    "kind": {
+      "Record": [
+        [
+          {
+            "name": {
+              "chars": [
+                "m",
+                "a",
+                "t",
+                "r",
+                "i",
+                "x"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          {
+            "Matrix": [
+              {
+                "Option": {
+                  "Scalar": {
+                    "name": {
+                      "chars": [
+                        "f",
+                        "6",
+                        "4"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              },
+              [
+                {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "2"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                },
+                {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "3"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        [
+          {
+            "name": {
+              "chars": [
+                "p",
+                "a",
+                "i",
+                "r"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          {
+            "Tuple": [
+              {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "u",
+                      "6",
+                      "4"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              },
+              {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "s",
+                      "t",
+                      "r",
+                      "i",
+                      "n",
+                      "g"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "name": {
+              "chars": [
+                "l",
+                "o",
+                "o",
+                "k",
+                "u",
+                "p"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          {
+            "Map": [
+              {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "s",
+                      "t",
+                      "r",
+                      "i",
+                      "n",
+                      "g"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              },
+              {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "u",
+                      "6",
+                      "4"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "name": {
+              "chars": [
+                "v",
+                "a",
+                "l",
+                "u",
+                "e",
+                "s"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          {
+            "Set": [
+              {
+                "Atom": {
+                  "name": {
+                    "chars": [
+                      "r",
+                      "e",
+                      "a",
+                      "d",
+                      "y"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              },
+              null
+            ]
+          }
+        ]
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 82,
+    "remaining_source": "",
+    "source_graphemes": 82
+  },
+  "entry_point": "kind-annotation",
+  "rule": "kind-annotation"
+}

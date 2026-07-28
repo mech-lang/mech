@@ -1,0 +1,56 @@
+{
+  "ast": {
+    "Tuple": {
+      "elements": [
+        {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "1"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "Literal": {
+            "String": {
+              "text": {
+                "chars": [
+                  "x"
+                ],
+                "kind": "String"
+              }
+            }
+          }
+        },
+        {
+          "Literal": {
+            "Atom": {
+              "name": {
+                "name": {
+                  "chars": [
+                    "o",
+                    "k"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 13,
+    "remaining_source": "",
+    "source_graphemes": 13
+  },
+  "entry_point": "structure",
+  "rule": "structure"
+}

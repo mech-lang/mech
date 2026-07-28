@@ -1,0 +1,50 @@
+{
+  "ast": [
+    {
+      "Image": {
+        "caption": {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "f",
+                  "l",
+                  "o",
+                  "a",
+                  "t",
+                  "i",
+                  "n",
+                  "g"
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        },
+        "src": {
+          "chars": [
+            "f",
+            "l",
+            "o",
+            "a",
+            "t",
+            ".",
+            "p",
+            "n",
+            "g"
+          ],
+          "kind": "Alpha"
+        },
+        "style": null
+      }
+    },
+    "Left"
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 26,
+    "remaining_source": "",
+    "source_graphemes": 26
+  },
+  "entry_point": "float",
+  "rule": "float"
+}

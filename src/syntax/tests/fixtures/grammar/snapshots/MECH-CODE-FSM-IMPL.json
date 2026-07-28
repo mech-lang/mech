@@ -1,0 +1,391 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "FsmImplementation": {
+            "arms": [
+              {
+                "Guard": [
+                  {
+                    "TupleStruct": {
+                      "name": {
+                        "name": {
+                          "chars": [
+                            "C",
+                            "o",
+                            "u",
+                            "n",
+                            "t"
+                          ],
+                          "kind": "Identifier"
+                        }
+                      },
+                      "patterns": [
+                        {
+                          "Expression": {
+                            "Var": {
+                              "context": null,
+                              "kind": null,
+                              "name": {
+                                "name": {
+                                  "chars": [
+                                    "n"
+                                  ],
+                                  "kind": "Identifier"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  [
+                    {
+                      "condition": {
+                        "Expression": {
+                          "Formula": {
+                            "Term": {
+                              "lhs": {
+                                "Expression": {
+                                  "Var": {
+                                    "context": null,
+                                    "kind": null,
+                                    "name": {
+                                      "name": {
+                                        "chars": [
+                                          "n"
+                                        ],
+                                        "kind": "Identifier"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "rhs": [
+                                [
+                                  {
+                                    "Comparison": "GreaterThan"
+                                  },
+                                  {
+                                    "Expression": {
+                                      "Literal": {
+                                        "Number": {
+                                          "Real": {
+                                            "TypedInteger": [
+                                              {
+                                                "chars": [
+                                                  "0"
+                                                ],
+                                                "kind": "Number"
+                                              },
+                                              {
+                                                "kind": {
+                                                  "Scalar": {
+                                                    "name": {
+                                                      "chars": [
+                                                        "u",
+                                                        "6",
+                                                        "4"
+                                                      ],
+                                                      "kind": "Identifier"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "transitions": [
+                        {
+                          "Next": {
+                            "TupleStruct": {
+                              "name": {
+                                "name": {
+                                  "chars": [
+                                    "C",
+                                    "o",
+                                    "u",
+                                    "n",
+                                    "t"
+                                  ],
+                                  "kind": "Identifier"
+                                }
+                              },
+                              "patterns": [
+                                {
+                                  "Expression": {
+                                    "Formula": {
+                                      "Term": {
+                                        "lhs": {
+                                          "Expression": {
+                                            "Var": {
+                                              "context": null,
+                                              "kind": null,
+                                              "name": {
+                                                "name": {
+                                                  "chars": [
+                                                    "n"
+                                                  ],
+                                                  "kind": "Identifier"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "rhs": [
+                                          [
+                                            {
+                                              "AddSub": "Sub"
+                                            },
+                                            {
+                                              "Expression": {
+                                                "Literal": {
+                                                  "Number": {
+                                                    "Real": {
+                                                      "TypedInteger": [
+                                                        {
+                                                          "chars": [
+                                                            "1"
+                                                          ],
+                                                          "kind": "Number"
+                                                        },
+                                                        {
+                                                          "kind": {
+                                                            "Scalar": {
+                                                              "name": {
+                                                                "chars": [
+                                                                  "u",
+                                                                  "6",
+                                                                  "4"
+                                                                ],
+                                                                "kind": "Identifier"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "condition": {
+                        "Expression": {
+                          "Formula": {
+                            "Term": {
+                              "lhs": {
+                                "Expression": {
+                                  "Var": {
+                                    "context": null,
+                                    "kind": null,
+                                    "name": {
+                                      "name": {
+                                        "chars": [
+                                          "n"
+                                        ],
+                                        "kind": "Identifier"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "rhs": [
+                                [
+                                  {
+                                    "Comparison": "Equal"
+                                  },
+                                  {
+                                    "Expression": {
+                                      "Literal": {
+                                        "Number": {
+                                          "Real": {
+                                            "TypedInteger": [
+                                              {
+                                                "chars": [
+                                                  "0"
+                                                ],
+                                                "kind": "Number"
+                                              },
+                                              {
+                                                "kind": {
+                                                  "Scalar": {
+                                                    "name": {
+                                                      "chars": [
+                                                        "u",
+                                                        "6",
+                                                        "4"
+                                                      ],
+                                                      "kind": "Identifier"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "transitions": [
+                        {
+                          "Next": {
+                            "TupleStruct": {
+                              "name": {
+                                "name": {
+                                  "chars": [
+                                    "D",
+                                    "o",
+                                    "n",
+                                    "e"
+                                  ],
+                                  "kind": "Identifier"
+                                }
+                              },
+                              "patterns": [
+                                {
+                                  "Expression": {
+                                    "Var": {
+                                      "context": null,
+                                      "kind": null,
+                                      "name": {
+                                        "name": {
+                                          "chars": [
+                                            "n"
+                                          ],
+                                          "kind": "Identifier"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "input": [
+              {
+                "context": null,
+                "kind": {
+                  "kind": {
+                    "Scalar": {
+                      "name": {
+                        "chars": [
+                          "u",
+                          "6",
+                          "4"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                },
+                "name": {
+                  "name": {
+                    "chars": [
+                      "n"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            ],
+            "name": {
+              "name": {
+                "chars": [
+                  "C",
+                  "o",
+                  "u",
+                  "n",
+                  "t",
+                  "e",
+                  "r"
+                ],
+                "kind": "Identifier"
+              }
+            },
+            "start": {
+              "TupleStruct": {
+                "name": {
+                  "name": {
+                    "chars": [
+                      "C",
+                      "o",
+                      "u",
+                      "n",
+                      "t"
+                    ],
+                    "kind": "Identifier"
+                  }
+                },
+                "patterns": [
+                  {
+                    "Expression": {
+                      "Var": {
+                        "context": null,
+                        "kind": null,
+                        "name": {
+                          "name": {
+                            "chars": [
+                              "n"
+                            ],
+                            "kind": "Identifier"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 95,
+    "remaining_source": "",
+    "source_graphemes": 95
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code-fsm-implementation"
+}
