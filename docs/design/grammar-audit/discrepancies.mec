@@ -7,7 +7,7 @@ PR 680.
 Authority for every entry in this Phase 0 ledger: current parser behavior is
 canonical for this phase. The ledger records behavior; it does not fix it.
 
-Known discrepancies and required investigations at this baseline: 30.
+Known discrepancies and required investigations at this baseline: 32.
 
 IDs are stable and append-only. Do not renumber or reuse an ID. When a later
 design change resolves an entry, retain the entry, add the resolution commit
@@ -1157,3 +1157,81 @@ emoji-like non-ASCII graphemes, and complete consumption.
 Future design question:
 Which symbols are intended identifier characters, and should the spec use an
 explicit positive set rather than exclusion from `symbol`?
+
+GRAM-0031 — Unmatched Mika close prevents public-root progress
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+With feature `mika`, `section` checks `mika_section_close` before parsing an
+element and returns a successful empty `Section` without consuming the close
+delimiter. At the top level, `body` treats that success as progress, pushes
+the empty section, and invokes `section` again at the same cursor forever.
+The public `parse` root therefore does not terminate on a top-level unmatched
+`⸥`. Inside a Mika section the same stop behavior is required so the enclosing
+`mika_section` parser can consume its delimiter.
+
+Inline EBNF/comment:
+`src/syntax/src/mechdown.rs:1048-1051` implements the zero-consumption stop,
+while the `body` comment and loop at lines 1104-1121 do not state or guard the
+progress invariant.
+
+Specification text:
+`docs/design/specification.mec` describes the Mika close delimiter only as
+the end of a Mika section and does not define unmatched-close behavior or
+top-level nontermination.
+
+Documentation/example evidence:
+Mika examples use balanced `⸢ ... ⸥` sections. No example contains a
+top-level unmatched close delimiter, so the hang is not visible in the
+documentation corpus.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. Do not add a
+progress guard or change delimiter handling in Phase 0.
+
+Conformance case:
+`grammar-conformance::gram_0031_unmatched_mika_close` calls the lower-level
+`section` parser and records its successful zero-consumption result. It must
+not call `body` or `parse` on this source in-process.
+
+Future design question:
+Should an unmatched Mika close be rejected at the document root, and where
+should parser loops enforce mandatory cursor progress?
+
+GRAM-0032 — Private table-bottom parser has no caller
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`structures.rs::table_bottom` can parse a run of box-drawing characters and a
+table-end token, but it is private and no parser calls it. In particular,
+`fancy_table` returns after its row list. A bottom border that is accepted by
+that path is consumed by `row_separator`, whose alternatives include
+`table_end`.
+
+Inline EBNF/comment:
+The inline comment above `table_bottom` presents it as `table-bottom`, and the
+comment above `fancy_table` says that a fancy table ends with
+`table-bottom`. The implementation of `fancy_table` does not contain that
+call.
+
+Specification text:
+The prior specification describes fancy-table border syntax but does not
+identify this private implementation function as dead.
+
+Documentation/example evidence:
+Fancy-table examples can contain bottom-border glyphs, but their accepted
+parse path is `row_separator`; they provide no call path to `table_bottom`.
+
+Phase 0 ruling:
+The parser call graph is canonical for this phase. The private uncalled
+function is inventoried as `helper/not-grammar`; no `table-bottom` formal rule
+is published and no production visibility is widened.
+
+Conformance case:
+Not applicable to accepted-language conformance. Inventory and rule-graph
+tests assert that the function remains inventoried without a canonical rule,
+while `TABLE-FANCY` snapshots the actual accepted bottom-border path.
+
+Future design question:
+Should a future parser delete the dead helper, call it explicitly, or continue
+to treat a bottom border as a row separator?
