@@ -28,6 +28,36 @@ pub(crate) fn grant_write(runtime: &mut MechRuntime, resource: &str, path: &str)
     );
 }
 
+pub(crate) fn grant_read_to(
+    runtime: &mut MechRuntime,
+    subject: &str,
+    resource: &str,
+    path: &str,
+) -> CapabilityId {
+    grant_resource(
+        runtime,
+        subject,
+        resource,
+        RuntimeCapabilityOperation::Read,
+        &[path],
+    )
+}
+
+pub(crate) fn grant_write_to(
+    runtime: &mut MechRuntime,
+    subject: &str,
+    resource: &str,
+    path: &str,
+) -> CapabilityId {
+    grant_resource(
+        runtime,
+        subject,
+        resource,
+        RuntimeCapabilityOperation::Write,
+        &[path],
+    )
+}
+
 pub(crate) fn grant_resource(
     runtime: &mut MechRuntime,
     subject: &str,

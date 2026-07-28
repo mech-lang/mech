@@ -1,13 +1,17 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+use std::thread;
+use std::time::Duration;
 
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 
+use super::super::{MechRuntime, RuntimeBuilder};
 use crate::{
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
+    PlannedPureHostFunction, PreparedRuntimeEffect, RegisteredHostFunction,
+    RuntimeAfterCommitEffect, RuntimeCallContext, RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeValueSnapshot,
 };
 
 pub(crate) const TEST_OUTPUT_BASE_URI: &str = "test://effects/output";
@@ -196,4 +200,90 @@ impl RuntimeResourceProvider for TestOutputProvider {
             }),
         )))
     }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct DeliberateHostCallError;
+
+impl MechErrorKind for DeliberateHostCallError {
+    fn name(&self) -> &str {
+        "DeliberateHostCallError"
+    }
+
+    fn message(&self) -> String {
+        "deliberate host call failure".to_string()
+    }
+}
+
+pub(crate) fn test_provider_with(base_uri: &str, path: &str, value: f64) -> TestResourceProvider {
+    TestResourceProvider::new().with_value(base_uri, path, Value::F64(Ref::new(value)))
+}
+
+pub(crate) fn test_runtime(provider: TestResourceProvider) -> MechRuntime {
+    RuntimeBuilder::new()
+        .resource_provider(Box::new(provider))
+        .build()
+        .unwrap()
+}
+
+pub(crate) fn test_runtime_with_host(
+    provider: TestResourceProvider,
+    function: impl Into<RegisteredHostFunction>,
+) -> MechRuntime {
+    RuntimeBuilder::new()
+        .resource_provider(Box::new(provider))
+        .host_function(function)
+        .unwrap()
+        .build()
+        .unwrap()
+}
+
+pub(crate) fn test_runtime_with_output(
+    provider: TestResourceProvider,
+) -> (MechRuntime, RecordingTestOutput) {
+    let output = RecordingTestOutput::default();
+    let runtime = RuntimeBuilder::new()
+        .resource_provider(Box::new(provider))
+        .resource_provider(Box::new(TestOutputProvider::new(output.clone())))
+        .build()
+        .unwrap();
+    (runtime, output)
+}
+
+pub(crate) fn test_runtime_with_output_host(
+    provider: TestResourceProvider,
+    function: impl Into<RegisteredHostFunction>,
+) -> (MechRuntime, RecordingTestOutput) {
+    let output = RecordingTestOutput::default();
+    let runtime = RuntimeBuilder::new()
+        .resource_provider(Box::new(provider))
+        .resource_provider(Box::new(TestOutputProvider::new(output.clone())))
+        .host_function(function)
+        .unwrap()
+        .build()
+        .unwrap();
+    (runtime, output)
+}
+
+pub(crate) fn sleep_host(name: &str) -> RegisteredHostFunction {
+    PlannedPureHostFunction::new(
+        name,
+        |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+            Ok(args.first().cloned().unwrap_or_else(|| Value::Empty.into()))
+        },
+        move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
+            thread::sleep(Duration::from_millis(5));
+
+            let value = match args.first().map(RuntimeValueSnapshot::as_value) {
+                Some(Value::F64(value)) => Value::F64(Ref::new(*value.borrow())),
+                Some(Value::MutableReference(value)) => match &*value.borrow() {
+                    Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
+                    other => panic!("expected f64 mutable reference, got {other:?}"),
+                },
+                other => panic!("expected f64 argument, got {other:?}"),
+            };
+            Ok(value.into())
+        },
+    )
+    .into()
 }
