@@ -1,0 +1,5 @@
+error[E0599]: no method named `step_with_reactive_turn_journal` found for struct `Interpreter` in the current scope
+ --> tests/ui/sealed/interpreter_step_journal.rs:5:23
+  |
+5 |   let _ = interpreter.step_with_reactive_turn_journal();
+  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `Interpreter`

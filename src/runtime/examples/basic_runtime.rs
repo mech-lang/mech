@@ -8,15 +8,15 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
   HostCall,
   InMemoryHostRegistry,
   InMemorySourceResolver,
   RuntimeBuilder,
   ModuleBuildOptions,
   RuntimeConfig,
-  RuntimeContextBuilder,
   SourceRequest,
+  TaskRecord,
 };
 
 fn main() -> MResult<()> {
@@ -24,9 +24,10 @@ fn main() -> MResult<()> {
   source_resolver.insert_string("main", "x := 1")?;
 
   let mut host_registry = InMemoryHostRegistry::new();
-  host_registry.insert(ClosureHostFunction::new(
+  host_registry.insert(DeterministicHostFunction::new(
     "host.empty",
-    |_services, _ctx, _args| Ok(Value::Empty),
+    |_context, _args| Ok(Value::Empty),
+    |_context, _args| Ok(Value::Empty),
   ))?;
 
   let mut runtime = RuntimeBuilder::new()
@@ -86,9 +87,12 @@ fn main() -> MResult<()> {
 
   runtime.grant_capability(Arc::new(capability))?;
 
-  let mut host_context = RuntimeContextBuilder::new(runtime.id())
-    .subject("task:host-example")
-    .build()?;
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "task:host-example",
+  )
+    .with_capabilities(vec![CapabilityId(1)]);
+  let mut host_context = runtime.context_for_task(&task)?;
 
   let host_result = runtime.call_host_with_context(
     &mut host_context,

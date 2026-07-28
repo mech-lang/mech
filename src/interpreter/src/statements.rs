@@ -7,7 +7,7 @@ use crate::stdlib::define::*;
 // Statements
 // ----------------------------------------------------------------------------
 
-pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn statement(stmt: &Statement, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   match stmt {
     Statement::ImportDeclaration(_) => Ok(Value::Empty),
     Statement::ExportDeclaration(_) => Ok(Value::Empty),
@@ -410,7 +410,7 @@ mod activation_scope_tests {
 
 // Interpreter-local context bindings are for direct interpreter execution.
 // Host runtime resource bindings are owned by MechRuntime.resource_bindings.
-pub fn context_declaration(ctx: &ContextDeclaration, p: &Interpreter) -> MResult<Value> {
+pub fn context_declaration(ctx: &ContextDeclaration, p: &InterpreterExecution<'_>) -> MResult<Value> {
   match &ctx.base {
     ContextBase::ResourceUri(uri) => {
       p.bind_context(&ctx.name, uri.chars.iter().collect::<String>());
@@ -432,7 +432,7 @@ pub fn context_declaration(ctx: &ContextDeclaration, p: &Interpreter) -> MResult
 }
 
 #[cfg(feature = "tuple")]
-pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MResult<Value> {
+pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let source = expression(&tpl_dstrct.expression, None, p)?;
   let tpl = match &source {
     Value::Tuple(tpl) => tpl,
@@ -485,7 +485,7 @@ fn assignment_registration_operand(value: &Value) -> Value {
 }
 
 #[cfg(feature = "math")]
-pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, env, p)?;
   let slc = &op_assgn.target;
   if slc.context.is_some() {
@@ -494,7 +494,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       .with_tokens(slc.tokens()));
   }
   let id = slc.name.hash();
-  let sink = { 
+  let sink = {
     let mut state_brrw = p.state.borrow_mut();
     match state_brrw.get_mutable_symbol(id) {
       Some(val) => val.borrow().clone(),
@@ -537,13 +537,13 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
       let registration_arguments = vec![registration_source];
       return match op_assgn.op {
         #[cfg(feature = "math_add_assign")]
-        OpAssignOp::Add => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &AddAssignValue{}, compile_arguments, registration_arguments),
+        OpAssignOp::Add => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &AddAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_sub_assign")]
-        OpAssignOp::Sub => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &SubAssignValue{}, compile_arguments, registration_arguments),
+        OpAssignOp::Sub => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &SubAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_div_assign")]
-        OpAssignOp::Div => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &DivAssignValue{}, compile_arguments, registration_arguments),
+        OpAssignOp::Div => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &DivAssignValue{}, compile_arguments, registration_arguments),
         #[cfg(feature = "math_mul_assign")]
-        OpAssignOp::Mul => execute_initialized_indexed_compiler_with_registration_arguments(&plan, &MulAssignValue{}, compile_arguments, registration_arguments),
+        OpAssignOp::Mul => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &MulAssignValue{}, compile_arguments, registration_arguments),
         _ => todo!(),
       };
     }
@@ -552,7 +552,7 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
 }
 
 #[cfg(feature = "variable_assign")]
-pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let mut source = expression(&var_assgn.expression, env, p)?;
   let slc = &var_assgn.target;
   if slc.context.is_some() {
@@ -572,7 +572,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
             UndefinedVariableError { id, name: slc.name.to_string() },
             Some("(!)> Variables are defined with the `:=` operator. *e.g.*: {{x := 123}}".to_string()),
           ).with_compiler_loc().with_tokens(slc.name.tokens()));
-        } else { 
+        } else {
           return Err(MechError::new(
             NotMutableError { id },
             Some("(!)> Mutable variables are defined with the `~` operator. *e.g.*: {{~x := 123}}".to_string()),
@@ -594,6 +594,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
       let plan = p.plan();
       let registration_source = assignment_registration_operand(&source);
       return execute_initialized_indexed_compiler_with_registration_arguments(
+        p,
         &plan,
         &AssignValue{},
         vec![sink, source],
@@ -609,7 +610,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, env: Option<&Environment>, p:
 }
 
 #[cfg(feature = "enum")]
-pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<()> {
+pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResult<()> {
   let id = enm_def.name.hash();
   let mut variants: Vec<(u64, Option<Value>)> = Vec::new();
   {
@@ -644,7 +645,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<()> {
 }
 
 #[cfg(feature = "kind_define")]
-pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
+pub fn kind_define(knd_def: &KindDefine, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let id = knd_def.name.hash();
   let kind = kind_annotation(&knd_def.kind.kind, p)?;
   let value_kind = kind.to_value_kind(&p.state.borrow().kinds)?;
@@ -655,7 +656,7 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
 }
 
 #[cfg(feature = "invariant_define")]
-pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<Value> {
+pub fn invariant_define(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let invariant_id = inv_def.name.hash();
   let invariant_name = inv_def.name.to_string();
   let invariant_expression = tokens_to_string(&inv_def.expression.tokens());
@@ -670,69 +671,39 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &Interpreter) -> MResult<V
   }
   let plan = p.plan();
   let result = expression(&inv_def.expression, None, p)?;
-  let rhs_ref = value_to_ref(result.clone());
   let detached_result = detach_variable_value(&result);
-  {
-    let mut state_brrw = p.state.borrow_mut();
-    state_brrw.save_symbol(invariant_id, invariant_name.clone(), detached_result.clone(), false);
-    let var_define_arguments = vec![detached_result.clone(), Value::String(Ref::new(invariant_name.clone())), Value::Bool(Ref::new(false))];
-    let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
-    plan.register_function(var_def_fxn, &[])?;
-  }
-  p.state.borrow_mut().invariant_expressions.insert(invariant_id, invariant_expression.clone());
-  #[cfg(all(feature = "invariant_define", feature = "symbol_table"))]
-  {
-    let invariant_value = {
-      let state_brrw = p.state.borrow();
-      state_brrw.get_symbol(invariant_id)
-    };
-    if let Some(invariant_value) = invariant_value {
-      p.state.borrow_mut().invariants.insert(invariant_id, (invariant_name.clone(), invariant_value));
-    }
-  }
-  let violation_error = match &result {
-    Value::Bool(b) => if *b.borrow() { None } else { Some("evaluated to false".to_string()) },
-    other => Some(format!("must evaluate to bool, got {}", other.kind())),
+  let result_ref = {
+    let state = p.state.borrow();
+    state.save_symbol(
+      invariant_id,
+      invariant_name.clone(),
+      detached_result.clone(),
+      false,
+    )
   };
-  let operand_detail = invariant_operand_refs(inv_def, p);
-  let (lhs_addr, lhs_value, operator, rhs_addr, rhs_value) = match operand_detail {
-    Some((lhs, op, rhs)) => {
-      let lhs_addr = lhs.as_ref().map(|v| v.addr() as u64);
-      let lhs_value = lhs.as_ref().map(|v| format!("{:?}", v.borrow()));
-      let rhs_addr = rhs.as_ref().map(|v| v.addr() as u64);
-      let rhs_value = rhs.as_ref().map(|v| format!("{:?}", v.borrow()));
-      (lhs_addr, lhs_value, op, rhs_addr, rhs_value)
-    }
-    None => (None, None, None, Some(rhs_ref.addr() as u64), Some(format!("{:?}", rhs_ref.borrow()))),
-  };
-  {
-    let reason = violation_error.clone().unwrap_or_else(|| "evaluated to true".to_string());
-    let actual = lhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
-    let expected = rhs_value.clone().unwrap_or_else(|| format!("{:?}", rhs_ref.borrow()));
-    p.state.borrow_mut().invariant_evaluations.insert(invariant_id, InvariantEvaluation {
-      reason,
-      evaluated_kind: result.kind().to_string(),
-      actual,
-      expected,
-    });
-  }
-  if let Some(error) = violation_error {
-    let err = MechError::new(
-      InvariantViolationError{
-        invariant_name: invariant_name.clone(),
-        expression: invariant_expression,
-        lhs_addr,
-        lhs_value,
-        operator,
-        rhs_addr,
-        rhs_value,
-        reason: error,
-        evaluated_kind: result.kind().to_string(),
-      },
-      None
-    ).with_compiler_loc().with_tokens(inv_def.expression.tokens());
-    p.state.borrow_mut().invariant_violations.push(InvariantViolation { id: invariant_id, error: err });
-  }
+
+  let var_define_arguments = vec![
+    detached_result,
+    Value::String(Ref::new(invariant_name.clone())),
+    Value::Bool(Ref::new(false)),
+  ];
+  let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
+  plan.register_function(var_def_fxn, &[])?;
+
+  let (lhs, operator, rhs) = integrity_constraint_operands(inv_def, p);
+  p.state.borrow_mut().integrity_constraints.insert(
+    invariant_id,
+    IntegrityConstraint {
+      id: invariant_id,
+      name: invariant_name,
+      expression: invariant_expression,
+      result: result_ref,
+      lhs,
+      operator,
+      rhs,
+      tokens: inv_def.expression.tokens(),
+    },
+  );
   Ok(result)
 }
 
@@ -750,19 +721,74 @@ fn value_to_ref(value: Value) -> ValRef {
 }
 
 #[cfg(feature = "invariant_define")]
-fn invariant_operand_refs(inv_def: &InvariantDefine, p: &Interpreter) -> Option<(Option<ValRef>, Option<FormulaOperator>, Option<ValRef>)> {
+fn integrity_constraint_operands(
+  inv_def: &InvariantDefine,
+  p: &InterpreterExecution<'_>,
+) -> (Option<ValRef>, Option<FormulaOperator>, Option<ValRef>) {
   let factor = match &inv_def.expression {
-    Expression::Formula(f) => f,
+    Expression::Formula(factor) => factor,
+    _ => return (None, None, None),
+  };
+  let term = match transparent_factor(factor) {
+    Factor::Term(term) => term,
+    _ => return (None, None, None),
+  };
+  if term.rhs.len() != 1 {
+    return (None, None, None);
+  }
+  let (operator, rhs_factor) = &term.rhs[0];
+  if !matches!(
+    operator,
+    FormulaOperator::Comparison(
+      ComparisonOp::Equal
+        | ComparisonOp::NotEqual
+        | ComparisonOp::LessThan
+        | ComparisonOp::LessThanEqual
+        | ComparisonOp::GreaterThan
+        | ComparisonOp::GreaterThanEqual
+    )
+  ) {
+    return (None, None, None);
+  }
+  (
+    integrity_constraint_operand(&term.lhs, p),
+    Some(operator.clone()),
+    integrity_constraint_operand(rhs_factor, p),
+  )
+}
+
+#[cfg(feature = "invariant_define")]
+fn transparent_factor(factor: &Factor) -> &Factor {
+  match factor {
+    Factor::Parenthetical(inner) => transparent_factor(inner),
+    Factor::Term(term) if term.rhs.is_empty() => transparent_factor(&term.lhs),
+    other => other,
+  }
+}
+
+#[cfg(feature = "invariant_define")]
+fn integrity_constraint_operand(
+  factor: &Factor,
+  p: &InterpreterExecution<'_>,
+) -> Option<ValRef> {
+  let expression = match transparent_factor(factor) {
+    Factor::Expression(expression) => expression.as_ref(),
     _ => return None,
   };
-  let term = match factor {
-    Factor::Term(t) => t,
-    _ => return None,
-  };
-  let (op, rhs_factor) = term.rhs.first()?;
-  let lhs_value = expression(&Expression::Formula(term.lhs.clone()), None, p).ok().map(value_to_ref);
-  let rhs_value = expression(&Expression::Formula(rhs_factor.clone()), None, p).ok().map(value_to_ref);
-  Some((lhs_value, Some(op.clone()), rhs_value))
+  match expression {
+    Expression::Var(var) if var.context.is_none() && var.kind.is_none() => {
+      p.state.borrow().get_symbol(var.name.hash())
+    }
+    Expression::Literal(
+      literal_node @ (
+        Literal::Atom(_)
+        | Literal::Boolean(_)
+        | Literal::Number(_)
+        | Literal::String(_)
+      ),
+    ) => literal(literal_node, p).ok().map(value_to_ref),
+    _ => None,
+  }
 }
 
 #[cfg(all(feature = "enum", feature = "atom"))]
@@ -855,7 +881,7 @@ fn value_matches_enum_variant(value: &Value, enum_id: u64, state: &ProgramState)
 }
 
 #[cfg(feature = "variable_define")]
-pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
+pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -> MResult<Value> {
   if var_def.var.context.is_some() {
     return Err(MechError::new(AddressedAssignmentUnsupported, None)
       .with_compiler_loc()
@@ -929,30 +955,30 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
-          result = execute_initialized_indexed_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(p, &plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
+            result = execute_initialized_indexed_compiler(p, &plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          result = execute_initialized_indexed_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(p, &plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(target_matrix_knd,_)) => {
         if value.is_matrix() {
-          result = execute_initialized_indexed_compiler(&plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(p, &plan, &ConvertMatToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         } else {
           let value_kind = value.kind();
           if value_kind.deref_kind() != target_matrix_knd.as_ref().clone() && value_kind != *target_matrix_knd.clone() {
-            result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
+            result = execute_initialized_indexed_compiler(p, &plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_matrix_knd.as_ref().clone())])?;
           };
-          result = execute_initialized_indexed_compiler(&plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
+          result = execute_initialized_indexed_compiler(p, &plan, &ConvertScalarToMat{}, vec![result.clone(), Value::Kind(target_knd.clone())])?;
         }
       }
       // Kind isn't checked
       x => {
-        result = execute_initialized_indexed_compiler(&plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_knd)])?;
+        result = execute_initialized_indexed_compiler(p, &plan, &ConvertKind{}, vec![result.clone(), Value::Kind(target_knd)])?;
       },
     };
     let detached_result = detach_variable_value(&result);
@@ -967,7 +993,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     let var_def_fxn = VarDefine{}.compile(&var_define_arguments)?;
     plan.register_function(var_def_fxn, &[])?;
     return Ok(detached_result);
-  } 
+  }
   let mut state_brrw = p.state.borrow_mut();
   let detached_result = detach_variable_value(&result);
   #[cfg(feature = "subscript_formula")]
@@ -984,7 +1010,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
 }
 
 #[cfg(feature = "state_machines")]
-pub fn fsm_declare(fsm_decl: &FsmDeclare, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn fsm_declare(fsm_decl: &FsmDeclare, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let result = crate::state_machines::execute_fsm_pipe(&fsm_decl.pipe, env, p)?;
   let id = fsm_decl.fsm.name.hash();
   let name = fsm_decl.fsm.name.to_string();
@@ -1008,7 +1034,7 @@ fn detach_variable_value(value: &Value) -> Value {
 macro_rules! op_assign {
   ($fxn_name:ident, $op:tt) => {
     paste!{
-      pub fn $fxn_name(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+      pub fn $fxn_name(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
         let plan = p.plan();
         match sbscrpt {
           Subscript::Dot(x) => {
@@ -1089,7 +1115,7 @@ op_assign!(div_assign, Div);
 //op_assign!(pow_assign, Pow);
 
 #[cfg(all(feature = "subscript", feature = "assign"))]
-pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let symbols = p.symbols();
   let functions = p.functions();
@@ -1168,7 +1194,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
             ((n,1),(m,1)) => { plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?); }
             _ => unreachable!(),
-          }          
+          }
         },
         #[cfg(all(feature = "matrix", feature = "subscript_range"))]
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
@@ -1313,7 +1339,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Opt
       let mut new_fxn = &plan_brrw.last().unwrap();
       new_fxn.solve();
       let res = new_fxn.out();
-      return Ok(res);      
+      return Ok(res);
     }
     _ => unreachable!(),
   }

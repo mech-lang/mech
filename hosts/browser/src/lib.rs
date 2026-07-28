@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 pub mod config;
 #[cfg(feature = "provider")]
 pub mod provider;

@@ -5,9 +5,11 @@ use mech_runtime::{
     ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
     RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
+    PreparedRuntimeEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
+    RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct RobotArmState {
     pub position: Option<Value>,
     pub gripper: Option<Value>,
@@ -89,7 +91,7 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
         )
     }
 
-    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
@@ -97,31 +99,88 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
             operation: request.operation.clone(),
             intent: request.intent,
         })?;
+        Ok(PreparedRuntimeEffect::Compensatable(Box::new(
+            RobotCommandEffect {
+                state: self.state.clone(),
+                base_uri: request.base_uri,
+                operation: request.operation.name().to_string(),
+                path: request.path,
+                value: request.value,
+                previous: None,
+                applied: false,
+            },
+        )))
+    }
+}
+
+#[derive(Debug)]
+struct RobotCommandEffect {
+    state: Arc<Mutex<RobotArmState>>,
+    base_uri: String,
+    operation: String,
+    path: String,
+    value: Value,
+    previous: Option<RobotArmState>,
+    applied: bool,
+}
+
+impl RuntimeCompensatableEffect for RobotCommandEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+        RuntimeEffectMetadata::new(
+            RuntimeEffectSource::ResourceProvider {
+                scheme: "robot".to_string(),
+            },
+            self.operation.clone(),
+        )
+        .with_resource(format!("{}/{}", self.base_uri, self.path))
+        .with_cost(RuntimeEffectCost {
+            bytes: 0,
+            items: 1,
+        })
+    }
+
+    fn apply(&mut self) -> MResult<()> {
         let mut state = self
             .state
             .lock()
-            .map_err(|_| robot_error(request.base_uri.clone(), "robot state lock poisoned"))?;
-        match (request.operation.name(), request.path.as_str()) {
+            .map_err(|_| robot_error(self.base_uri.clone(), "robot state lock poisoned"))?;
+        let previous = state.clone();
+        match (self.operation.as_str(), self.path.as_str()) {
             ("move", "move") => {
-                state.position = Some(request.value);
+                state.position = Some(self.value.clone());
                 state.last_command = Some("move".to_string());
-                Ok(())
             }
             ("grip", "grip") => {
-                state.gripper = Some(request.value);
+                state.gripper = Some(self.value.clone());
                 state.last_command = Some("grip".to_string());
-                Ok(())
             }
             ("home", "home") => {
                 state.position = Some(Value::Empty);
                 state.last_command = Some("home".to_string());
-                Ok(())
             }
             (operation, path) => Err(robot_error(
-                request.base_uri,
+                self.base_uri.clone(),
                 format!("unsupported robot command `{operation}` at path `{path}`"),
-            )),
+            ))?,
         }
+        self.previous = Some(previous);
+        self.applied = true;
+        Ok(())
+    }
+
+    fn compensate(&mut self) -> MResult<()> {
+        if !self.applied {
+            return Ok(());
+        }
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| robot_error(self.base_uri.clone(), "robot state lock poisoned"))?;
+        if let Some(previous) = self.previous.take() {
+            *state = previous;
+        }
+        self.applied = false;
+        Ok(())
     }
 }
 
@@ -225,29 +284,45 @@ mod tests {
         Value::Bool(Ref::new(value))
     }
 
+    fn apply_write(
+        provider: &mut RobotArmResourceProvider,
+        request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+        let mut effect = provider.prepare_write(request)?;
+        match &mut effect {
+            PreparedRuntimeEffect::Compensatable(effect) => effect.apply()?,
+            effect => panic!("expected robot compensatable effect, got {effect:?}"),
+        }
+        Ok(effect)
+    }
+
     #[test]
     fn robot_provider_receives_move_and_grip_operations() {
         let mut provider = RobotArmResourceProvider::new("arm");
-        provider
-            .write(RuntimeResourceWriteRequest {
+        apply_write(
+            &mut provider,
+            RuntimeResourceWriteRequest {
                 base_uri: "robot://arm/commands".to_string(),
                 path: "move".to_string(),
                 context_name: "commands".to_string(),
                 operation: RuntimeCapabilityOperation::Custom("move".to_string()),
                 value: bool_value(true),
                 intent: RuntimeResourceWriteIntent::Send,
-            })
-            .unwrap();
-        provider
-            .write(RuntimeResourceWriteRequest {
+            },
+        )
+        .unwrap();
+        apply_write(
+            &mut provider,
+            RuntimeResourceWriteRequest {
                 base_uri: "robot://arm/commands".to_string(),
                 path: "grip".to_string(),
                 context_name: "commands".to_string(),
                 operation: RuntimeCapabilityOperation::Custom("grip".to_string()),
                 value: bool_value(false),
                 intent: RuntimeResourceWriteIntent::Send,
-            })
-            .unwrap();
+            },
+        )
+        .unwrap();
         let state = provider.state.lock().unwrap();
         assert_eq!(state.last_command.as_deref(), Some("grip"));
         assert!(state.position.is_some());
@@ -269,7 +344,7 @@ mod tests {
     fn robot_provider_accepts_exact_command_paths() {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "move"), ("grip", "grip"), ("home", "home")] {
-            provider.write(send_request(operation, path)).unwrap();
+            apply_write(&mut provider, send_request(operation, path)).unwrap();
         }
     }
 
@@ -277,7 +352,7 @@ mod tests {
     fn robot_provider_rejects_command_subpaths() {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "move/typo"), ("grip", "grip/closed"), ("home", "home/reset")] {
-            let error = provider.write(send_request(operation, path)).expect_err("subpath should be rejected");
+            let error = provider.prepare_write(send_request(operation, path)).expect_err("subpath should be rejected");
             let message = error.display_message();
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
@@ -288,7 +363,7 @@ mod tests {
     fn robot_provider_rejects_mismatched_operation_and_path() {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "grip"), ("grip", "move")] {
-            let error = provider.write(send_request(operation, path)).expect_err("mismatch should be rejected");
+            let error = provider.prepare_write(send_request(operation, path)).expect_err("mismatch should be rejected");
             let message = error.display_message();
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
@@ -300,7 +375,7 @@ mod tests {
         let mut provider = RobotArmResourceProvider::new("arm");
         assert!(
             provider
-                .write(RuntimeResourceWriteRequest {
+                .prepare_write(RuntimeResourceWriteRequest {
                     base_uri: "robot://arm/commands".to_string(),
                     path: "move".to_string(),
                     context_name: "commands".to_string(),
@@ -312,7 +387,7 @@ mod tests {
         );
         assert!(
             provider
-                .write(RuntimeResourceWriteRequest {
+                .prepare_write(RuntimeResourceWriteRequest {
                     base_uri: "robot://arm/commands".to_string(),
                     path: "dance".to_string(),
                     context_name: "commands".to_string(),
@@ -322,5 +397,27 @@ mod tests {
                 })
                 .is_err()
         );
+    }
+
+    #[test]
+    fn robot_effect_compensation_restores_mock_state() {
+        let mut provider = RobotArmResourceProvider::new("arm");
+        let mut effect =
+            apply_write(&mut provider, send_request("move", "move")).unwrap();
+        assert_eq!(
+            provider.state.lock().unwrap().last_command.as_deref(),
+            Some("move"),
+        );
+
+        match &mut effect {
+            PreparedRuntimeEffect::Compensatable(effect) => {
+                effect.compensate().unwrap();
+            }
+            effect => panic!("expected robot compensatable effect, got {effect:?}"),
+        }
+
+        let state = provider.state.lock().unwrap();
+        assert!(state.position.is_none());
+        assert!(state.last_command.is_none());
     }
 }

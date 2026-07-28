@@ -4,7 +4,7 @@ use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::{
     RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest,
+    RuntimeResourceWriteRequest, PreparedRuntimeEffect,
 };
 
 #[derive(Debug, Default)]
@@ -54,6 +54,16 @@ impl MechErrorKind for FakeCliBackendError {
 
 fn str_value(text: &str) -> Value {
     Value::String(Ref::new(text.to_string()))
+}
+
+fn execute_write(
+    provider: &mut CliResourceProvider<FakeCliBackend>,
+    request: RuntimeResourceWriteRequest,
+) -> MResult<()> {
+    match provider.prepare_write(request)? {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver(),
+        effect => panic!("expected CLI after-commit effect, got {effect:?}"),
+    }
 }
 
 #[test]
@@ -124,7 +134,7 @@ fn env_write_and_send_error() {
     ] {
         assert!(
             provider
-                .write(RuntimeResourceWriteRequest {
+                .prepare_write(RuntimeResourceWriteRequest {
                     base_uri: "cli://env".to_string(),
                     path: "HOME".to_string(),
                     context_name: "env".to_string(),
@@ -140,8 +150,7 @@ fn env_write_and_send_error() {
 #[test]
 fn stdout_and_stderr_send_text_and_line() {
     let mut provider = CliResourceProvider::new(FakeCliBackend::default());
-    provider
-        .write(RuntimeResourceWriteRequest {
+    execute_write(&mut provider, RuntimeResourceWriteRequest {
             base_uri: "cli://stdout".to_string(),
             path: "text".to_string(),
             context_name: "out".to_string(),
@@ -150,8 +159,7 @@ fn stdout_and_stderr_send_text_and_line() {
             intent: RuntimeResourceWriteIntent::Send,
         })
         .unwrap();
-    provider
-        .write(RuntimeResourceWriteRequest {
+    execute_write(&mut provider, RuntimeResourceWriteRequest {
             base_uri: "cli://stdout".to_string(),
             path: "line".to_string(),
             context_name: "out".to_string(),
@@ -160,8 +168,7 @@ fn stdout_and_stderr_send_text_and_line() {
             intent: RuntimeResourceWriteIntent::Send,
         })
         .unwrap();
-    provider
-        .write(RuntimeResourceWriteRequest {
+    execute_write(&mut provider, RuntimeResourceWriteRequest {
             base_uri: "cli://stderr".to_string(),
             path: "text".to_string(),
             context_name: "err".to_string(),
@@ -170,8 +177,7 @@ fn stdout_and_stderr_send_text_and_line() {
             intent: RuntimeResourceWriteIntent::Send,
         })
         .unwrap();
-    provider
-        .write(RuntimeResourceWriteRequest {
+    execute_write(&mut provider, RuntimeResourceWriteRequest {
             base_uri: "cli://stderr".to_string(),
             path: "line".to_string(),
             context_name: "err".to_string(),
@@ -185,11 +191,35 @@ fn stdout_and_stderr_send_text_and_line() {
 }
 
 #[test]
+fn stdout_prepare_write_buffers_until_delivery() {
+    let mut provider = CliResourceProvider::new(FakeCliBackend::default());
+    let effect = provider
+        .prepare_write(RuntimeResourceWriteRequest {
+            base_uri: "cli://stdout".to_string(),
+            path: "line".to_string(),
+            context_name: "out".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: str_value("buffered"),
+            intent: RuntimeResourceWriteIntent::Send,
+        })
+        .unwrap();
+
+    assert!(provider.backend().stdout.is_empty());
+    match effect {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => {
+            effect.deliver().unwrap();
+        }
+        effect => panic!("expected CLI after-commit effect, got {effect:?}"),
+    }
+    assert_eq!(provider.backend().stdout, vec!["buffered\n"]);
+}
+
+#[test]
 fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
     let mut provider = CliResourceProvider::new(FakeCliBackend::default());
     assert!(
         provider
-            .write(RuntimeResourceWriteRequest {
+            .prepare_write(RuntimeResourceWriteRequest {
                 base_uri: "cli://stdout".to_string(),
                 path: "line".to_string(),
                 context_name: "out".to_string(),
@@ -210,7 +240,7 @@ fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
     );
     assert!(
         provider
-            .write(RuntimeResourceWriteRequest {
+            .prepare_write(RuntimeResourceWriteRequest {
                 base_uri: "cli://stderr".to_string(),
                 path: "foo".to_string(),
                 context_name: "err".to_string(),

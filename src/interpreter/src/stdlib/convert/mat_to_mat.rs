@@ -16,8 +16,28 @@ impl MechFunctionImpl for ConvertMatPassthrough {
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(vec![Value::MutableReference(self.out.clone())])
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
+    }
+}
+
+#[cfg(test)]
+mod passthrough_transaction_state_tests {
+    use super::*;
+
+    #[test]
+    fn matrix_passthrough_exposes_original_outer_value_cell() {
+        let out = Ref::new(Value::Empty);
+        let function = ConvertMatPassthrough { out: out.clone() };
+        let values = function.transaction_state_values().unwrap();
+        assert_eq!(values.len(), 1);
+        match &values[0] {
+            Value::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
+            value => panic!("expected mutable-reference transaction state, got {value:?}"),
+        }
     }
 }
 #[cfg(feature = "compiler")]
@@ -67,6 +87,10 @@ where
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler

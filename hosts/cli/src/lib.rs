@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 pub mod module;
 pub use module::*;
 

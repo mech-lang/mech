@@ -49,6 +49,10 @@ where
   }
   fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T,Mat> MechFunctionCompiler for IoPrintMatrix<T,Mat> 
@@ -141,6 +145,10 @@ impl<T> MechFunctionImpl for IoPrintScalar<T>
   }
   fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for IoPrintScalar<T> 

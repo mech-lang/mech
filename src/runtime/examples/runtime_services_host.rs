@@ -17,8 +17,8 @@ use mech_runtime::{
   ObjectRecord,
   RuntimeBuilder,
   ModuleBuildOptions,
-  RuntimeContextBuilder,
   SourceRequest,
+  ActorTurn,
 };
 
 fn short(id: impl Display) -> String {
@@ -72,24 +72,8 @@ fn main() -> MResult<()> {
     "count=0",
   ))?;
 
-  let actor = runtime.create_actor(
-    "actor:services-host",
-    Some(actor_version),
-    Some(initial_state),
-    Vec::new(),
-  )?;
-
-  let message = runtime.send_message(
-    actor,
-    "increment",
-    b"count by 1".to_vec(),
-  )?;
-
-  println!("actor: {}", short(actor));
-  println!("initial state: {}", short(initial_state));
-  println!("message: {}", short(message));
-
   let subject = BasicSubject::new("actor:services-host");
+  let capability_ids = (1..=5).map(CapabilityId).collect::<Vec<_>>();
 
   for (id, name) in [
     (1, "actor/message/kind"),
@@ -106,18 +90,38 @@ fn main() -> MResult<()> {
     )))?;
   }
 
-  let mut context = RuntimeContextBuilder::new(runtime.id())
-    .subject("actor:services-host")
-    .actor(actor)
-    .build()?;
+  let actor = runtime.create_actor(
+    "actor:services-host",
+    Some(actor_version),
+    Some(initial_state),
+    capability_ids,
+  )?;
+
+  let message = runtime.send_message(
+    actor,
+    "increment",
+    b"count by 1".to_vec(),
+  )?;
+
+  println!("actor: {}", short(actor));
+  println!("initial state: {}", short(initial_state));
+  println!("message: {}", short(message));
+
+  let actor_record = runtime
+    .get_actor(actor)?
+    .expect("actor should exist");
+  let queued_message = runtime
+    .peek_message(actor)?
+    .expect("expected actor message");
+  let expected_turn = ActorTurn::new(actor_record, queued_message)?;
+  let mut context = runtime.context_for_actor_turn(&expected_turn)?;
 
   runtime.begin_transaction(&mut context)?;
 
   let turn = runtime
     .next_actor_turn_with_context(&mut context, actor)?
     .expect("expected actor turn");
-
-  context.bind_actor_turn(&turn);
+  assert_eq!(turn, expected_turn);
 
   let kind = runtime.call_host_with_context(
     &mut context,

@@ -7,6 +7,204 @@
 // See /src/core/src/error.rs for the base error types and traits used by these runtime errors.
 
 use super::*;
+use crate::RuntimeEffectFailure;
+
+#[derive(Debug, Clone)]
+pub struct RuntimeEffectOperationReentrant {
+  pub active_phase: ActiveRuntimeEffectPhase,
+  pub requested_operation: &'static str,
+}
+
+impl MechErrorKind for RuntimeEffectOperationReentrant {
+  fn name(&self) -> &str {
+    "RuntimeEffectOperationReentrant"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime operation `{}` cannot run during effect phase {:?}",
+      self.requested_operation,
+      self.active_phase,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeEffectCleanupFailed {
+  pub operation: &'static str,
+  pub transaction_id: TransactionId,
+  pub original_error: String,
+  pub cleanup_failures: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeEffectCleanupFailed {
+  fn name(&self) -> &str {
+    "RuntimeEffectCleanupFailed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime effect operation `{}` failed ({}) and cleanup was incomplete for transaction {}: {}",
+      self.operation,
+      self.original_error,
+      self.transaction_id,
+      self.cleanup_failures.join("; "),
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeExternalCommitIndeterminate {
+  pub transaction_id: TransactionId,
+  pub failures: Vec<RuntimeEffectFailure>,
+  pub participant_outcomes: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeExternalCommitIndeterminate {
+  fn name(&self) -> &str {
+    "RuntimeExternalCommitIndeterminate"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime store transaction {} committed, but {} external participants have indeterminate commit outcomes: {}",
+      self.transaction_id,
+      self.failures.len(),
+      self.participant_outcomes.join("; "),
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeTransactionContextMismatch {
+  pub transaction_id: TransactionId,
+  pub reason: String,
+}
+
+impl MechErrorKind for RuntimeTransactionContextMismatch {
+  fn name(&self) -> &str {
+    "RuntimeTransactionContextMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime transaction {} context identity mismatch: {}",
+      self.transaction_id,
+      self.reason,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeProgramBusy {
+  pub operation: &'static str,
+  pub owner: TransactionId,
+  pub requester: Option<TransactionId>,
+}
+
+impl MechErrorKind for RuntimeProgramBusy {
+  fn name(&self) -> &str {
+    "RuntimeProgramBusy"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "retained program operation `{}` is owned by transaction {}; requester is {:?}",
+      self.operation,
+      self.owner,
+      self.requester,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeProgramOperationReentrant {
+  pub active_operation: &'static str,
+  pub requested_operation: &'static str,
+  pub transaction_id: TransactionId,
+}
+
+impl MechErrorKind for RuntimeProgramOperationReentrant {
+  fn name(&self) -> &str {
+    "RuntimeProgramOperationReentrant"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "retained program operation `{}` cannot enter `{}` recursively in transaction {}",
+      self.active_operation,
+      self.requested_operation,
+      self.transaction_id,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeTransactionalLiveRegistrationUnsupported {
+  pub transaction_id: TransactionId,
+  pub owner: Option<TransactionId>,
+  pub active_operation: Option<&'static str>,
+}
+
+impl MechErrorKind for RuntimeTransactionalLiveRegistrationUnsupported {
+  fn name(&self) -> &str {
+    "RuntimeTransactionalLiveRegistrationUnsupported"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "transaction {} may register retained live state only inside its coordinated program operation (owner {:?}, active operation {:?})",
+      self.transaction_id,
+      self.owner,
+      self.active_operation,
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimePoisoned {
+  pub operation: &'static str,
+  pub poison: RuntimePoisonRecord,
+}
+
+impl MechErrorKind for RuntimePoisoned {
+  fn name(&self) -> &str {
+    "RuntimePoisoned"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "runtime operation `{}` rejected because `{}` rollback poisoned the runtime: {}",
+      self.operation,
+      self.poison.operation,
+      self.poison.rollback_failures.join("; "),
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeProgramRollbackFailed {
+  pub operation: &'static str,
+  pub transaction_id: Option<TransactionId>,
+  pub original_error: String,
+  pub rollback_failures: Vec<String>,
+}
+
+impl MechErrorKind for RuntimeProgramRollbackFailed {
+  fn name(&self) -> &str {
+    "RuntimeProgramRollbackFailed"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "retained program operation `{}` failed ({}) and rollback was incomplete for transaction {:?}: {}",
+      self.operation,
+      self.original_error,
+      self.transaction_id,
+      self.rollback_failures.join("; "),
+    )
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct RuntimeCapabilityGrantRollbackFailed {
@@ -125,6 +323,28 @@ impl MechErrorKind for RuntimeModuleImportConflict {
     format!(
       "import binding conflict for `{}` between `{}` and `{}`",
       self.binding, self.first_import, self.second_import
+    )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeModuleJournalConflict {
+  pub record_type: &'static str,
+  pub identity: String,
+  pub reason: String,
+}
+
+impl MechErrorKind for RuntimeModuleJournalConflict {
+  fn name(&self) -> &str {
+    "RuntimeModuleJournalConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "{} `{}` conflicts with the transaction module journal: {}",
+      self.record_type,
+      self.identity,
+      self.reason,
     )
   }
 }

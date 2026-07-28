@@ -205,44 +205,11 @@ impl BasicCapability {
         .iter()
         .any(|prefix| resource.starts_with(prefix))
   }
-}
 
-impl Capability for BasicCapability {
-  fn id(&self) -> CapabilityId {
-    self.id
-  }
-
-  fn subject_key(&self) -> &str {
-    &self.subject
-  }
-
-  fn validate(&self) -> MResult<()> {
-    if self.id.is_zero() {
-      return invalid_capability("id", "must not be zero");
-    }
-
-    if self.subject.trim().is_empty() {
-      return invalid_capability("subject", "must not be empty");
-    }
-
-    if self.resource.trim().is_empty() {
-      return invalid_capability("resource", "must not be empty");
-    }
-
-    if self.operations.is_empty() {
-      return invalid_capability("operations", "must contain at least one operation");
-    }
-
-    for operation in &self.operations {
-      if operation.trim().is_empty() {
-        return invalid_capability("operations", "must not contain empty operation names");
-      }
-    }
-
-    self.constraints.validate()
-  }
-
-  fn check(&self, request: &CapabilityRequest) -> MResult<CapabilityDecision> {
+  fn check_request(
+    &self,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityDecision> {
     self.validate()?;
 
     if self.subject != request.subject {
@@ -304,6 +271,53 @@ impl Capability for BasicCapability {
     }
 
     Ok(CapabilityDecision::allow())
+  }
+}
+
+impl Capability for BasicCapability {
+  fn id(&self) -> CapabilityId {
+    self.id
+  }
+
+  fn subject_key(&self) -> &str {
+    &self.subject
+  }
+
+  fn validate(&self) -> MResult<()> {
+    if self.id.is_zero() {
+      return invalid_capability("id", "must not be zero");
+    }
+
+    if self.subject.trim().is_empty() {
+      return invalid_capability("subject", "must not be empty");
+    }
+
+    if self.resource.trim().is_empty() {
+      return invalid_capability("resource", "must not be empty");
+    }
+
+    if self.operations.is_empty() {
+      return invalid_capability("operations", "must contain at least one operation");
+    }
+
+    for operation in &self.operations {
+      if operation.trim().is_empty() {
+        return invalid_capability("operations", "must not contain empty operation names");
+      }
+    }
+
+    self.constraints.validate()
+  }
+
+  fn check(&self, request: &CapabilityRequest) -> MResult<CapabilityDecision> {
+    self.check_request(request)
+  }
+
+  fn preview_check(
+    &self,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityDecision> {
+    self.check_request(request)
   }
 
   fn is_revocable(&self) -> bool {

@@ -5,6 +5,8 @@ use mech_runtime::{
     ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
     RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
+    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost,
+    RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
 use crate::{
@@ -49,15 +51,15 @@ impl SceneBackend for RecordingSceneBackend {
 #[derive(Debug)]
 pub struct SceneResourceProvider<B: SceneBackend> {
     instance: String,
-    backend: B,
-    last_accepted: Option<SceneSnapshot>,
+    backend: Arc<Mutex<B>>,
+    last_accepted: Arc<Mutex<Option<SceneSnapshot>>>,
 }
 impl<B: SceneBackend> SceneResourceProvider<B> {
     pub fn new(instance: impl Into<String>, backend: B) -> Self {
         Self {
             instance: instance.into(),
-            backend,
-            last_accepted: None,
+            backend: Arc::new(Mutex::new(backend)),
+            last_accepted: Arc::new(Mutex::new(None)),
         }
     }
     fn base(&self) -> String {
@@ -98,7 +100,7 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
         }
         Ok(())
     }
-    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
@@ -107,11 +109,60 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
             intent: request.intent,
         })?;
         let scene = SceneSnapshot::from_value(&request.value)?;
-        if self.last_accepted.as_ref() == Some(&scene) {
+        Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+            SceneReplaceEffect {
+                backend: self.backend.clone(),
+                last_accepted: self.last_accepted.clone(),
+                scene,
+                resource: request.base_uri,
+            },
+        )))
+    }
+}
+
+#[derive(Debug)]
+struct SceneReplaceEffect<B: SceneBackend> {
+    backend: Arc<Mutex<B>>,
+    last_accepted: Arc<Mutex<Option<SceneSnapshot>>>,
+    scene: SceneSnapshot,
+    resource: String,
+}
+
+impl<B: SceneBackend> RuntimeAfterCommitEffect for SceneReplaceEffect<B> {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+        RuntimeEffectMetadata::new(
+            RuntimeEffectSource::ResourceProvider {
+                scheme: "scene".to_string(),
+            },
+            "replace",
+        )
+        .with_resource(self.resource.clone())
+        .with_cost(RuntimeEffectCost {
+            bytes: 0,
+            items: 1,
+        })
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+        let mut last_accepted = self
+            .last_accepted
+            .lock()
+            .map_err(|_| scene_error(
+                "SceneResourceProvider",
+                "scene acceptance lock is poisoned",
+            ))?;
+        if last_accepted.as_ref() == Some(&self.scene) {
             return Ok(());
         }
-        self.backend.replace_scene(scene.clone())?;
-        self.last_accepted = Some(scene);
+        self
+            .backend
+            .lock()
+            .map_err(|_| scene_error(
+                "SceneResourceProvider",
+                "scene backend lock is poisoned",
+            ))?
+            .replace_scene(self.scene.clone())?;
+        *last_accepted = Some(self.scene.clone());
         Ok(())
     }
 }

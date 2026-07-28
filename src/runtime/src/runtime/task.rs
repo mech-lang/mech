@@ -22,6 +22,7 @@ use super::*;
 impl MechRuntime {
 
   pub fn put_task(&mut self, task: TaskRecord) -> MResult<TaskId> {
+    self.ensure_runtime_mutation_allowed("put_task")?;
     let mut context = self.context_for_task(&task)?;
     self.put_task_with_context(&mut context, task)
   }
@@ -31,6 +32,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     task: TaskRecord,
   ) -> MResult<TaskId> {
+    self.ensure_runtime_mutation_allowed("put_task_with_context")?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -80,6 +82,7 @@ impl MechRuntime {
     module_version: Option<ModuleVersionId>,
     capabilities: Vec<CapabilityId>,
   ) -> MResult<TaskId> {
+    self.ensure_runtime_mutation_allowed("start_task")?;
     let id = self.next_task_id();
 
     let mut task = TaskRecord::new(id, subject)
@@ -116,7 +119,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        if let Some(task) = transaction.get_staged_task(id) {
+        if let Some(task) = transaction.store.get_staged_task(id) {
           return Ok(Some(task));
         }
       }
@@ -126,6 +129,7 @@ impl MechRuntime {
   }    
 
   pub fn update_task(&mut self, task: TaskRecord) -> MResult<TaskId> {
+    self.ensure_runtime_mutation_allowed("update_task")?;
     self.store.update_task(task)
   }
 
@@ -134,6 +138,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     task: TaskRecord,
   ) -> MResult<TaskId> {
+    self.ensure_runtime_mutation_allowed(
+      "update_task_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
@@ -150,6 +157,7 @@ impl MechRuntime {
   }
 
   pub fn complete_task(&mut self, id: TaskId) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("complete_task")?;
     let Some(task) = self.store.get_task(id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -169,6 +177,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     id: TaskId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "complete_task_with_context",
+    )?;
     let Some(mut task) = self.get_task_with_context(context, id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -194,6 +205,7 @@ impl MechRuntime {
   }
 
   pub fn fail_task(&mut self, id: TaskId, reason: impl Into<String>) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("fail_task")?;
     let reason = reason.into();
 
     let Some(task) = self.store.get_task(id)? else {
@@ -216,6 +228,7 @@ impl MechRuntime {
     id: TaskId,
     reason: impl Into<String>,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("fail_task_with_context")?;
     let reason = reason.into();
 
     let Some(mut task) = self.get_task_with_context(context, id)? else {
@@ -246,31 +259,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn max_tasks_is_enforced() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_tasks = Some(1);
-    let mut runtime = MechRuntime::new(config).unwrap();
-
-    runtime
-      .put_task(TaskRecord::new(TaskId(1), "task:1"))
-      .unwrap();
-
-    let error = runtime
-      .put_task(TaskRecord::new(TaskId(2), "task:2"))
-      .unwrap_err();
-    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
-    assert_eq!(budget.resource, "tasks");
-    assert_eq!(budget.used, 1);
-    assert_eq!(budget.requested, 1);
-    assert_eq!(budget.max, Some(1));
-
-    let duplicate = runtime
-      .put_task(TaskRecord::new(TaskId(1), "task:1"))
-      .unwrap_err();
-    assert_eq!(duplicate.kind_name(), "StoreRecordAlreadyExists");
-  }
-}
+#[path = "task/tests/mod.rs"]
+mod tests;

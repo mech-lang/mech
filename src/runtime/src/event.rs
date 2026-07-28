@@ -15,6 +15,31 @@ use crate::id::{
   ActorId, CapabilityId, EventId, ModuleVersionId, ObjectId, RuntimeId, TaskId,
   TransactionId, MessageId
 };
+use crate::effect::{
+  RuntimeEffectId, RuntimeEffectProtocol, RuntimeEffectSource,
+};
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimeIntegrityConstraintFailureReason {
+  EvaluatedFalse,
+  ExpectedBool,
+  BorrowConflict,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeIntegrityConstraintViolation {
+  pub interpreter_id: u64,
+  pub constraint_id: u64,
+  pub name: String,
+  pub expression: String,
+  pub reason: RuntimeIntegrityConstraintFailureReason,
+  pub evaluated_kind: Option<String>,
+  pub actual: Option<String>,
+  pub operator: Option<String>,
+  pub expected: Option<String>,
+}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -54,6 +79,11 @@ pub enum RuntimeEventKind {
   ProgramStarted { task_id: Option<TaskId> },
   ProgramCompleted { task_id: Option<TaskId> },
   ProgramFailed { task_id: Option<TaskId>, message: String },
+  IntegrityConstraintViolated {
+    transaction_id: TransactionId,
+    task_id: Option<TaskId>,
+    violations: Vec<RuntimeIntegrityConstraintViolation>,
+  },
   ProgramProfiled {
     task_id: Option<TaskId>,
     duration_ns: u128,
@@ -76,6 +106,34 @@ pub enum RuntimeEventKind {
   TransactionStarted { transaction_id: TransactionId },
   TransactionCommitted { transaction_id: TransactionId },
   TransactionAborted { transaction_id: TransactionId, message: String },
+
+  EffectStaged {
+    effect_id: RuntimeEffectId,
+    source: RuntimeEffectSource,
+    operation: String,
+    resource: Option<String>,
+    protocol: RuntimeEffectProtocol,
+  },
+  EffectPreparationFailed {
+    effect_id: RuntimeEffectId,
+    message: String,
+  },
+  EffectCompensated { effect_id: RuntimeEffectId },
+  EffectCompensationFailed {
+    effect_id: RuntimeEffectId,
+    message: String,
+  },
+  EffectAborted { effect_id: RuntimeEffectId },
+  TransactionalEffectCommitted { effect_id: RuntimeEffectId },
+  EffectDelivered { effect_id: RuntimeEffectId },
+  EffectDeliveryFailed {
+    effect_id: RuntimeEffectId,
+    message: String,
+  },
+  ExternalCommitIndeterminate {
+    transaction_id: TransactionId,
+    effect_id: RuntimeEffectId,
+  },
 
   SchedulerWorkQueued { work: String },
   SchedulerWorkStarted { work: String },
@@ -112,6 +170,9 @@ impl RuntimeEventKind {
       RuntimeEventKind::ProgramStarted { .. } => ":program/started",
       RuntimeEventKind::ProgramCompleted { .. } => ":program/completed",
       RuntimeEventKind::ProgramFailed { .. } => ":program/failed",
+      RuntimeEventKind::IntegrityConstraintViolated { .. } => {
+        ":program/integrity-constraint/violated"
+      }
       RuntimeEventKind::ProgramProfiled { .. } => ":program/profiled",
       RuntimeEventKind::TaskCreated { .. } => ":task/created",
       RuntimeEventKind::TaskStarted { .. } => ":task/started",
@@ -127,6 +188,25 @@ impl RuntimeEventKind {
       RuntimeEventKind::TransactionStarted { .. } => ":transaction/started",
       RuntimeEventKind::TransactionCommitted { .. } => ":transaction/committed",
       RuntimeEventKind::TransactionAborted { .. } => ":transaction/aborted",
+      RuntimeEventKind::EffectStaged { .. } => ":effect/staged",
+      RuntimeEventKind::EffectPreparationFailed { .. } => {
+        ":effect/preparation/failed"
+      }
+      RuntimeEventKind::EffectCompensated { .. } => ":effect/compensated",
+      RuntimeEventKind::EffectCompensationFailed { .. } => {
+        ":effect/compensation/failed"
+      }
+      RuntimeEventKind::EffectAborted { .. } => ":effect/aborted",
+      RuntimeEventKind::TransactionalEffectCommitted { .. } => {
+        ":effect/transactional/committed"
+      }
+      RuntimeEventKind::EffectDelivered { .. } => ":effect/delivered",
+      RuntimeEventKind::EffectDeliveryFailed { .. } => {
+        ":effect/delivery/failed"
+      }
+      RuntimeEventKind::ExternalCommitIndeterminate { .. } => {
+        ":effect/commit/indeterminate"
+      }
       RuntimeEventKind::SchedulerWorkQueued { .. } => ":scheduler/work/queued",
       RuntimeEventKind::SchedulerWorkStarted { .. } => ":scheduler/work/started",
       RuntimeEventKind::SchedulerWorkCompleted { .. } => ":scheduler/work/completed",

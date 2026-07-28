@@ -123,13 +123,12 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             rounds_per_step,
         )?;
         let mut runtime = execute_source_module_roots(config, &source_paths)?;
-        let mut program = runtime.take_program();
-        let bytecode = program.interpreter_mut().compile()?;
+        let bytecode = runtime.compile_program_bytecode()?;
         if debug_flag {
             println!(
                 "{} Bytecode Size: {:#?} bytes",
                 "[Debug]".truecolor(246, 192, 78),
-                &program.interpreter().context
+                bytecode.len()
             );
         }
         bytecode

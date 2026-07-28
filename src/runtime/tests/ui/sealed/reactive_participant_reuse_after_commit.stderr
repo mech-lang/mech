@@ -1,0 +1,15 @@
+error[E0382]: borrow of moved value: `participant`
+ --> tests/ui/sealed/reactive_participant_reuse_after_commit.rs:9:7
+  |
+7 |     |mut participant| {
+  |      --------------- move occurs because `participant` has type `ReactiveJournalParticipant<'_>`, which does not implement the `Copy` trait
+8 |       participant.commit();
+  |                   -------- `participant` moved due to this method call
+9 |       participant.capture_value(&Value::Empty)?;
+  |       ^^^^^^^^^^^ value borrowed here after move
+  |
+note: `ReactiveJournalParticipant::<'_>::commit` takes ownership of the receiver `self`, which moves `participant`
+ --> $WORKSPACE/src/core/src/reactive_transaction.rs
+  |
+  |   pub fn commit(self) {
+  |                 ^^^^

@@ -195,9 +195,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
         return Ok(CliOutcome::EnterRepl(
             crate::cli::commands::repl::ReplStartup {
                 #[cfg(feature = "run")]
-                runtime_config: None,
-                #[cfg(all(feature = "run", feature = "repl"))]
-                seed_program: None,
+                runtime: None,
             },
         ));
     }

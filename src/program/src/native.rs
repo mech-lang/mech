@@ -58,6 +58,10 @@ impl MechFunctionImpl for ClosureNativeFunction {
   fn to_string(&self) -> String {
     format!("ClosureNativeFunction::{}", self.name)
   }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 impl MechFunctionCompiler for ClosureNativeFunction {

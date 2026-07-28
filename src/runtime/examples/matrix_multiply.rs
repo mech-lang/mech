@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use mech_core::{MResult, MechMatrix as Matrix, ToMatrix, Value};
 
@@ -12,8 +12,9 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
   RuntimeBuilder,
+  TaskRecord,
 };
 
 fn short_text(text: &str) -> String {
@@ -60,10 +61,36 @@ fn main() -> MResult<()> {
     .map(|(a, b)| a * b)
     .sum::<f64>();
 
-  let result_store = Arc::new(Mutex::new(None::<f64>));
-
+  let v1_host = v1.clone();
+  let v2_host = v2.clone();
   let mut runtime = RuntimeBuilder::new()
     .capability_kernel(BasicCapabilityKernel::new())
+    .host_function(DeterministicHostFunction::new(
+      "demo/matrix/v1",
+      |_context, args| {
+        host_call0("demo/matrix/v1", &args, || {
+          matrix_f64(vec![0.0; 3], 1, 3)
+        })
+      },
+      move |_context, args| {
+        host_call0("demo/matrix/v1", &args, || {
+          matrix_f64((*v1_host).clone(), 1, 3)
+        })
+      },
+    ))?
+    .host_function(DeterministicHostFunction::new(
+      "demo/matrix/v2",
+      |_context, args| {
+        host_call0("demo/matrix/v2", &args, || {
+          matrix_f64(vec![0.0; 3], 1, 3)
+        })
+      },
+      move |_context, args| {
+        host_call0("demo/matrix/v2", &args, || {
+          matrix_f64((*v2_host).clone(), 1, 3)
+        })
+      },
+    ))?
     .build()?;
 
   println!("runtime: {}", short(runtime.id()));
@@ -71,72 +98,11 @@ fn main() -> MResult<()> {
   println!("rust v2: {:?}", v2);
   println!("expected v1 ** v2': {}", expected);
 
-  {
-    let v1 = v1.clone();
-
-    runtime.register_mech_host_function(ClosureHostFunction::new(
-      "demo/matrix/v1",
-      move |_services, _context, args| {
-        host_call0("demo/matrix/v1", &args, || {
-          matrix_f64((*v1).clone(), 1, 3)
-        })
-      },
-    ))?;
-  }
-
-  {
-    let v2 = v2.clone();
-
-    runtime.register_mech_host_function(ClosureHostFunction::new(
-      "demo/matrix/v2",
-      move |_services, _context, args| {
-        host_call0("demo/matrix/v2", &args, || {
-          matrix_f64((*v2).clone(), 1, 3)
-        })
-      },
-    ))?;
-  }
-
-  {
-    let result_store = result_store.clone();
-
-    runtime.register_mech_host_function(ClosureHostFunction::new(
-      "demo/matrix/store-result",
-      move |_services, _context, args| {
-        let result = host_arg_matrix_f64(
-          "demo/matrix/store-result",
-          &args,
-          0,
-        )?;
-
-        let shape = result.shape();
-
-        println!("rust received matrix result:");
-        println!("  shape: {:?}", shape);
-        println!("  matrix: {:?}", result);
-
-        let Some(actual) = matrix_scalar_f64(&result) else {
-          panic!(
-            "expected a 1x1 matrix result, got shape {:?}",
-            shape,
-          );
-        };
-
-        println!("  scalar: {}", actual);
-
-        *result_store.lock().unwrap() = Some(actual);
-
-        Ok(Value::MatrixF64(result))
-      },
-    ))?;
-  }
-
   let subject = BasicSubject::new("program:matrix-multiply");
 
   for (id, name) in [
     (1, "demo/matrix/v1"),
     (2, "demo/matrix/v2"),
-    (3, "demo/matrix/store-result"),
   ] {
     runtime.grant_capability(Arc::new(BasicCapability::new(
       CapabilityId(id),
@@ -150,16 +116,19 @@ fn main() -> MResult<()> {
     v1 := demo/matrix/v1()
     v2 := demo/matrix/v2()
     result := v1 ** v2'
-    demo/matrix/store-result(result)
+    result
   "#;
 
   println!();
   println!("mech source:");
   println!("{}", source.trim());
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:matrix-multiply");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:matrix-multiply",
+  )
+    .with_capabilities(vec![CapabilityId(1), CapabilityId(2)]);
+  let mut context = runtime.context_for_task(&task)?;
 
   let value = runtime.run_string_with_context(
     &mut context,
@@ -169,10 +138,14 @@ fn main() -> MResult<()> {
   println!();
   println!("program result: {:?}", value);
 
-  let stored = result_store
-    .lock()
-    .unwrap()
-    .expect("Rust host did not receive matrix result");
+  let result_value = value.into_value();
+  let result = host_arg_matrix_f64(
+    "matrix-multiply result",
+    &[result_value],
+    0,
+  )?;
+  let stored = matrix_scalar_f64(&result)
+    .expect("Mech program did not return a 1x1 matrix");
 
   assert!(
     (stored - expected).abs() < f64::EPSILON,

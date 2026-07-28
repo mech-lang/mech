@@ -59,6 +59,10 @@ where
   fn solve(&self) {}
   fn out(&self) -> Value {self.var.to_value()}
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA> 
@@ -109,6 +113,10 @@ macro_rules! impl_variable_define_fxn {
         fn solve(&self) {}
         fn out(&self) -> Value { self.var.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
@@ -188,6 +196,9 @@ pub struct VariableDefineEmpty {
 impl MechFunctionImpl for VariableDefineEmpty {
   fn solve(&self) {}
   fn out(&self) -> Value { self.var.borrow().clone() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(vec![Value::MutableReference(self.var.clone())])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
@@ -219,6 +230,28 @@ register_descriptor! {
         ).with_compiler_loc()),
       }
     },
+  }
+}
+
+#[cfg(test)]
+mod empty_transaction_state_tests {
+  use super::*;
+
+  #[test]
+  fn variable_define_empty_exposes_original_outer_value_cell() {
+    let var = Ref::new(Value::Empty);
+    let function = VariableDefineEmpty {
+      id: 1,
+      name: Ref::new("value".to_string()),
+      mutable: Ref::new(true),
+      var: var.clone(),
+    };
+    let values = function.transaction_state_values().unwrap();
+    assert_eq!(values.len(), 1);
+    match &values[0] {
+      Value::MutableReference(value) => assert_eq!(value.addr(), var.addr()),
+      value => panic!("expected mutable-reference transaction state, got {value:?}"),
+    }
   }
 }
 

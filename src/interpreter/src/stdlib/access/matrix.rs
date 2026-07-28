@@ -459,6 +459,10 @@ macro_rules! impl_access_all_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
@@ -514,6 +518,10 @@ macro_rules! impl_access_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
@@ -568,6 +576,10 @@ macro_rules! impl_access_fxn2 {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
@@ -836,7 +848,33 @@ impl MechFunctionImpl for MatrixAccessScalarValueF {
     };
   }
   fn out(&self) -> Value { self.out.borrow().clone() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(vec![Value::MutableReference(self.out.clone())])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(all(test, feature = "functions", feature = "matrixd"))]
+mod matrix_access_scalar_value_transaction_tests {
+  use super::*;
+
+  #[test]
+  fn transaction_state_retains_scalar_value_access_outer_output_ref() {
+    let out = Ref::new(Value::Empty);
+    let function = MatrixAccessScalarValueF {
+      source: Matrix::from_vec(vec![Value::Empty], 1, 1),
+      ix: Ref::new(1),
+      out: out.clone(),
+      element_kind: ValueKind::Any,
+    };
+
+    let values = function.transaction_state_values().unwrap();
+    assert_eq!(values.len(), 1);
+    match &values[0] {
+      Value::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
+      other => panic!("expected mutable-reference transaction root, got {other:?}"),
+    }
+  }
 }
 
 #[cfg(feature = "compiler")]

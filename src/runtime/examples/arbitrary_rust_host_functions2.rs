@@ -10,8 +10,11 @@ use mech_runtime::{
   BasicResource,
   BasicSubject,
   CapabilityId,
-  ClosureHostFunction,
+  DeterministicHostFunction,
+  MechRuntime,
   RuntimeBuilder,
+  RuntimeValueSnapshot,
+  TaskRecord,
 };
 
 use mech_runtime::host::*;
@@ -28,8 +31,21 @@ fn short(id: impl Display) -> String {
   short_text(&id.to_string())
 }
 
-fn print_value(label: &str, value: &Value) {
+fn print_value(label: &str, value: &RuntimeValueSnapshot) {
   println!("{}: {:?}", label, value);
+}
+
+fn run_example(
+  runtime: &mut MechRuntime,
+  source: &str,
+) -> MResult<RuntimeValueSnapshot> {
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:host-args-showcase",
+  )
+    .with_capabilities((1..=8).map(CapabilityId).collect());
+  let mut context = runtime.context_for_task(&task)?;
+  runtime.run_string_with_context(&mut context, source)
 }
 
 fn assert_string(value: Value, expected: &str) {
@@ -69,42 +85,43 @@ fn assert_bool(value: Value, expected: bool) {
 }
 
 fn main() -> MResult<()> {
-  let mut runtime = RuntimeBuilder::new()
-    .capability_kernel(BasicCapabilityKernel::new())
-    .build()?;
+  let mut builder = RuntimeBuilder::new()
+    .capability_kernel(BasicCapabilityKernel::new());
 
-  println!("runtime: {}", short(runtime.id()));
-
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/text/shout",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_string(String::new())),
+    |_context, args| {
       host_call1("demo/text/shout", &args, |text: String| {
         text.to_uppercase()
       })
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/text/join",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_string(String::new())),
+    |_context, args| {
       host_call2("demo/text/join", &args, |left: String, right: String| {
         format!("{} {}", left, right)
       })
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/math/add",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_f64(0.0)),
+    |_context, args| {
       host_call2("demo/math/add", &args, |left: f64, right: f64| {
         left + right
       })
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/math/affine",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_f64(0.0)),
+    |_context, args| {
       host_call3(
         "demo/math/affine",
         &args,
@@ -115,18 +132,20 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/bool/not",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_bool(false)),
+    |_context, args| {
       host_call1("demo/bool/not", &args, |value: bool| {
         !value
       })
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/optional/greet",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_string(String::new())),
+    |_context, args| {
       let name = host_arg_optional_string(
         "demo/optional/greet",
         &args,
@@ -138,16 +157,20 @@ fn main() -> MResult<()> {
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/value/echo",
-    |_services, _context, args| {
+    |_context, args| {
+      Ok(host_arg_cloned("demo/value/echo", &args, 0)?)
+    },
+    |_context, args| {
       Ok(host_arg_cloned("demo/value/echo", &args, 0)?)
     },
   ))?;
 
-  runtime.register_mech_host_function(ClosureHostFunction::new(
+  builder = builder.host_function(DeterministicHostFunction::new(
     "demo/result/checked-reciprocal",
-    |_services, _context, args| {
+    |_context, _args| Ok(value_f64(0.0)),
+    |_context, args| {
       host_call_result1(
         "demo/result/checked-reciprocal",
         &args,
@@ -164,6 +187,9 @@ fn main() -> MResult<()> {
       )
     },
   ))?;
+
+  let mut runtime = builder.build()?;
+  println!("runtime: {}", short(runtime.id()));
 
   let subject = BasicSubject::new("program:host-args-showcase");
 
@@ -185,113 +211,77 @@ fn main() -> MResult<()> {
     )))?;
   }
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/text/shout("hello runtime")"#,
   )?;
 
   print_value("shout", &value);
-  assert_string(value, "HELLO RUNTIME");
+  assert_string(value.into_value(), "HELLO RUNTIME");
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/text/join("hello", "mech")"#,
   )?;
 
   print_value("join", &value);
-  assert_string(value, "hello mech");
+  assert_string(value.into_value(), "hello mech");
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/math/add(20, 22)"#,
   )?;
 
   print_value("add", &value);
-  assert_f64(value, 42.0);
+  assert_f64(value.into_value(), 42.0);
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/math/affine(10, 4, 2)"#,
   )?;
 
   print_value("affine", &value);
-  assert_f64(value, 42.0);
+  assert_f64(value.into_value(), 42.0);
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/bool/not(false)"#,
   )?;
 
   print_value("not", &value);
-  assert_bool(value, true);
+  assert_bool(value.into_value(), true);
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/optional/greet()"#,
   )?;
 
   print_value("optional default", &value);
-  assert_string(value, "hello world");
+  assert_string(value.into_value(), "hello world");
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/optional/greet("mech")"#,
   )?;
 
   print_value("optional provided", &value);
-  assert_string(value, "hello mech");
+  assert_string(value.into_value(), "hello mech");
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/value/echo("raw value")"#,
   )?;
 
   print_value("raw echo", &value);
-  assert_string(value, "raw value");
+  assert_string(value.into_value(), "raw value");
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:host-args-showcase");
-
-  let value = runtime.run_string_with_context(
-    &mut context,
+  let value = run_example(
+    &mut runtime,
     r#"demo/result/checked-reciprocal(4)"#,
   )?;
 
   print_value("checked reciprocal", &value);
-  assert_f64(value, 0.25);
+  assert_f64(value.into_value(), 0.25);
 
   runtime.shutdown()?;
 

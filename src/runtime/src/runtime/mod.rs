@@ -19,24 +19,52 @@
 mod actor;
 mod capability;
 mod errors;
+mod effect;
 mod execution;
+mod execution_session;
+pub(crate) mod extension;
 mod host;
 mod id;
 mod module;
+mod module_transaction;
 mod object;
+mod program_transaction;
+mod reactive_transaction;
 mod schedule;
-mod service;
 mod task;
 mod transaction;
 
 #[cfg(test)]
 mod input_tests;
 
-pub use self::errors::*;
-use crate::runtime::host::*;
+#[cfg(test)]
+pub(crate) mod test_support;
 
+pub use self::errors::*;
+pub use self::program_transaction::{
+  RuntimeHealth,
+  RuntimePoisonRecord,
+};
+use self::program_transaction::{
+  ActiveRuntimeProgramOperation,
+  RuntimeContextCheckpoint,
+  RuntimeExecutionTransaction,
+  RuntimeExecutionTransactionMode,
+  RuntimeExecutionTransactionState,
+  RuntimeOperationSavepoint,
+  RuntimeProgramOwnershipAcquisition,
+  RuntimeTransactionContextIdentity,
+};
+use self::transaction::RuntimeCommitResolution;
+use self::capability::{
+  RuntimeCapabilityOverlay,
+};
+use self::effect::RuntimeEffectJournal;
+use self::module_transaction::RuntimeModuleJournal;
+use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use std::sync::Arc;
-use std::cell::RefCell;
+use std::cell::Cell;
+use std::rc::Rc;
 use std::collections::{HashMap, HashSet};
 #[cfg(all(
   target_arch = "wasm32",
@@ -53,11 +81,13 @@ use std::time::Instant;
 use mech_core::{
   MResult, MechError, MechErrorKind, MechSourceCode, Value, ValRef,
   NativeFunctionCompiler, MechFunctionImpl, Register, CompileCtx, MechFunctionCompiler,
-  hash_str, ModuleManifestCatalog, ModuleManifestConfig,
+  ModuleManifestCatalog, ModuleManifestConfig,
 };
+#[cfg(test)]
+use mech_core::hash_str;
 
 use mech_program::{
-  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
+  MechProgram, MechProgramCheckpoint, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
 
 
@@ -68,7 +98,7 @@ struct RuntimeLiveContextTemplate {
   task: Option<TaskId>,
   actor: Option<ActorId>,
   module_version: Option<ModuleVersionId>,
-  capabilities: Vec<CapabilityId>,
+  authority: RuntimeAuthorityScope,
   budget_limits: ResourceBudget,
   actor_message: Option<MessageRecord>,
   actor_state: Option<ObjectId>,
@@ -76,16 +106,13 @@ struct RuntimeLiveContextTemplate {
 
 impl RuntimeLiveContextTemplate {
   fn from_context(context: &RuntimeContext) -> Self {
-    let mut capabilities = context.capabilities.clone();
-    capabilities.sort_unstable();
-    capabilities.dedup();
     Self {
       runtime: context.runtime,
       subject: context.subject.clone(),
       task: context.task,
       actor: context.actor,
       module_version: context.module_version,
-      capabilities,
+      authority: context.authority.clone(),
       budget_limits: ResourceBudget {
         max_steps: context.budget.max_steps,
         used_steps: 0,
@@ -110,7 +137,7 @@ impl RuntimeLiveContextTemplate {
       access: Default::default(),
       module_version: self.module_version,
       transaction: None,
-      capabilities: self.capabilities.clone(),
+      authority: self.authority.clone(),
       budget: self.budget_limits.clone(),
       events: Vec::new(),
       actor_message: self.actor_message.clone(),
@@ -119,9 +146,6 @@ impl RuntimeLiveContextTemplate {
   }
 
   fn matches_context(&self, context: &RuntimeContext) -> bool {
-    let mut capabilities = context.capabilities.clone();
-    capabilities.sort_unstable();
-    capabilities.dedup();
     self.runtime == context.runtime
       && self.subject == context.subject
       && self.task == context.task
@@ -129,7 +153,7 @@ impl RuntimeLiveContextTemplate {
       && self.module_version == context.module_version
       && self.actor_message == context.actor_message
       && self.actor_state == context.actor_state
-      && self.capabilities == capabilities
+      && self.authority == context.authority
       && self.budget_limits.max_steps == context.budget.max_steps
       && self.budget_limits.max_bytes == context.budget.max_bytes
       && self.budget_limits.max_items == context.budget.max_items
@@ -142,6 +166,7 @@ struct RuntimeLiveStateSnapshot {
   context_template: Option<RuntimeLiveContextTemplate>,
   input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
   persistent_sends: Vec<RuntimePersistentSend>,
+  registration_mode: LiveRegistrationMode,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -172,9 +197,9 @@ use crate::capability::{
 use crate::config::RuntimeConfig;
 
 use crate::context::{
-  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome, RuntimeContextRegistry,
-  RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope,
-  ResourceBudgetExceededError,
+  ResourceBudget, RuntimeContext, RuntimeContextBuilder, RuntimeTurnOutcome,
+  RuntimeContextBinding,
+  ResourceBudgetExceededError, RuntimeAuthorityScope,
 };
 
 use crate::event::{
@@ -182,7 +207,7 @@ use crate::event::{
 };
 
 use crate::host::{
-  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy, HostFunction,
+  default_host_capability_request, DefaultHostCallPolicy, HostCall, HostCallPolicy,
   HostFunctionNotFoundError, HostRegistry, InMemoryHostRegistry,
 };
 
@@ -194,8 +219,7 @@ use crate::id::{
 
 use crate::resolver::{
   InMemorySourceResolver, ResolvedSource, SourceRequest, SourceResolver,
-  SourceAddressReference, SourceExportDeclaration, SourceImportAlias,
-  SourceImportKind, SourceScope, module_namespace_for_import,
+  SourceImportAlias, SourceScope,
 };
 
 use crate::scheduler::{
@@ -215,7 +239,6 @@ use crate::transaction::{
 
 use crate::actor::ActorTurn;
 
-use crate::{RuntimeServices};
 use crate::input::RuntimeHostInputQueueState;
 
 use crate::actor_behavior::{
@@ -224,13 +247,7 @@ use crate::actor_behavior::{
 
 use crate::module::{ModuleBuilder, ModuleBuildOptions, ModuleDependencyGraph};
 
-use crate::{register_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RunResourceGrantConfig, RuntimeCapabilityGrant, RuntimeCapabilityGrantInput, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceCapabilityDenied, RuntimeCapabilityGrantDenied, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
-
-thread_local! {
-  static ACTIVE_RUNTIME_PROGRAM_HOST: RefCell<Option<RuntimeProgramHostTarget>> =
-    RefCell::new(None);
-}
-
+use crate::{materialize_config_spec_grants, register_config_spec_resources, HostInstanceConfig, HostInterfaceCatalog, InMemoryDocsProvider, RegisteredHostFunction, ResourcePathCapability, RunResourceGrantConfig, RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeHostFactory, RuntimeHostFactoryRegistry, RuntimeModuleResult, RuntimeResourceKey, RuntimeValueSnapshot, DEFAULT_HOST_INPUT_CAPACITY, RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest};
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -256,6 +273,8 @@ pub struct RuntimeBuilder {
   host_instances: Vec<HostInstanceConfig>,
   run_grants: Vec<RunResourceGrantConfig>,
   module_manifests: ModuleManifestCatalog,
+  resource_bindings: Vec<(String, String)>,
+  context_export_bindings: Vec<(String, String, String)>,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -278,6 +297,11 @@ impl std::fmt::Debug for RuntimeBuilder {
       .field("host_instances", &self.host_instances)
       .field("run_grants", &self.run_grants)
       .field("module_manifests", &self.module_manifests)
+      .field("resource_bindings", &self.resource_bindings)
+      .field(
+        "context_export_bindings",
+        &self.context_export_bindings,
+      )
       .finish()
   }
 }
@@ -287,8 +311,16 @@ impl Default for RuntimeBuilder {
     Self {
       config: RuntimeConfig::default(),
       id_generator: Box::new(DefaultIdGenerator::new()),
-      store: Box::new(InMemoryStore::new()),
-      capability_kernel: Box::new(BasicCapabilityKernel::new()),
+      store: Box::new(
+        extension::RuntimeStoreBoundary::new(
+          Box::new(InMemoryStore::new()),
+        ),
+      ),
+      capability_kernel: Box::new(
+        extension::RuntimeCapabilityKernelBoundary::new(
+          Box::new(BasicCapabilityKernel::new()),
+        ),
+      ),
       source_resolver: Box::new(InMemorySourceResolver::new()),
       host_registry: Box::new(InMemoryHostRegistry::new()),
       host_policy: Box::new(DefaultHostCallPolicy),
@@ -304,6 +336,8 @@ impl Default for RuntimeBuilder {
       host_instances: Vec::new(),
       run_grants: Vec::new(),
       module_manifests: ModuleManifestCatalog::new(),
+      resource_bindings: Vec::new(),
+      context_export_bindings: Vec::new(),
     }
   }
 }
@@ -324,7 +358,9 @@ impl RuntimeBuilder {
   }
 
   pub fn store(mut self, store: impl MechStore + 'static) -> Self {
-    self.store = Box::new(store);
+    self.store = Box::new(
+      extension::RuntimeStoreBoundary::new(Box::new(store)),
+    );
     self
   }
 
@@ -332,7 +368,11 @@ impl RuntimeBuilder {
     mut self,
     capability_kernel: impl CapabilityKernel + 'static,
   ) -> Self {
-    self.capability_kernel = Box::new(capability_kernel);
+    self.capability_kernel = Box::new(
+      extension::RuntimeCapabilityKernelBoundary::new(
+        Box::new(capability_kernel),
+      ),
+    );
     self
   }
 
@@ -350,6 +390,19 @@ impl RuntimeBuilder {
   ) -> Self {
     self.host_registry = Box::new(host_registry);
     self
+  }
+
+  pub fn host_function(
+    mut self,
+    function: impl Into<RegisteredHostFunction>,
+  ) -> MResult<Self> {
+    let function = function.into();
+    extension::invoke_extension(
+      "host registry",
+      "register_function",
+      || self.host_registry.register_function(function),
+    )?;
+    Ok(self)
   }
 
   pub fn host_policy(
@@ -412,6 +465,43 @@ impl RuntimeBuilder {
   pub fn run_resource_grant(mut self, grant: RunResourceGrantConfig) -> Self {
     self.run_grants.push(grant);
     self
+  }
+
+  pub fn resource_binding(
+    mut self,
+    name: impl Into<String>,
+    uri: impl Into<String>,
+  ) -> MResult<Self> {
+    let name = name.into();
+    if !validate_resource_binding_name(&name) {
+      return Err(runtime_resource_binding_error(
+        name,
+        "resource binding names must be non-empty simple tokens",
+      ));
+    }
+    self.resource_bindings.push((name, uri.into()));
+    Ok(self)
+  }
+
+  pub fn context_export_binding(
+    mut self,
+    alias: impl Into<String>,
+    module: impl Into<String>,
+    item: impl Into<String>,
+  ) -> MResult<Self> {
+    let alias = alias.into();
+    if !validate_resource_binding_name(&alias) {
+      return Err(runtime_resource_binding_error(
+        alias,
+        "context export aliases must be non-empty simple tokens",
+      ));
+    }
+    self.context_export_bindings.push((
+      alias,
+      module.into(),
+      item.into(),
+    ));
+    Ok(self)
   }
 
   pub fn resource_provider(
@@ -480,10 +570,13 @@ impl RuntimeBuilder {
       scheduler: self.scheduler,
       scheduler_policy: self.scheduler_policy,
       active_transactions: HashMap::new(),
+      program_transaction_owner: None,
+      active_program_operation: Rc::new(Cell::new(None)),
+      active_effect_phase: Rc::new(Cell::new(None)),
+      health: RuntimeHealth::Healthy,
       actor_behavior_driver: self.actor_behavior_driver,
       module_builder: self.module_builder,
       resources: RuntimeResourceRegistry::new(),
-      grants: RuntimeCapabilityGrantRegistry::new(),
       resource_bindings: HashMap::new(),
       live_registration_mode: LiveRegistrationMode::RetainedRoot,
       live_input_bindings: HashMap::new(),
@@ -499,7 +592,13 @@ impl RuntimeBuilder {
 
     for spec in &self.config_specs {
       register_config_spec_resources(&mut runtime.resources, spec)?;
-      register_config_spec_grants(&mut runtime.grants, spec)?;
+      let capabilities = materialize_config_spec_grants(
+        runtime.id_generator.as_mut(),
+        spec,
+      )?;
+      for capability in capabilities {
+        runtime.grant_capability(capability)?;
+      }
     }
 
     for provider in self.resource_providers {
@@ -510,15 +609,46 @@ impl RuntimeBuilder {
       runtime.install_run_resource_grant(grant)?;
     }
 
+    for (name, uri) in self.resource_bindings {
+      runtime.bind_resource_root(name, uri)?;
+    }
+
+    for (alias, module, item) in self.context_export_bindings {
+      runtime.bind_context_export(&alias, &module, &item)?;
+    }
+
     let ingress = runtime.ingress();
     for index in 0..runtime.input_drivers.len() {
-      if let Err(error) = runtime.input_drivers[index].attach(ingress.clone()) {
+      if let Err(error) = extension::invoke_extension(
+        "host input driver",
+        "attach",
+        || runtime.input_drivers[index].attach(ingress.clone()),
+      ) {
         let _ = runtime.close_ingress();
+        let mut cleanup_failures = Vec::new();
         for rollback_index in (0..=index).rev() {
-          let _ = runtime.input_drivers[rollback_index].stop();
+          if let Err(cleanup_error) = extension::invoke_extension(
+            "host input driver",
+            "stop",
+            || runtime.input_drivers[rollback_index].stop(),
+          ) {
+            cleanup_failures.push(format!(
+              "input driver {} stop failed: {:?}",
+              rollback_index,
+              cleanup_error,
+            ));
+          }
         }
         runtime.attached_input_driver_count = 0;
         runtime.input_driver_cleanup_armed = false;
+        if !cleanup_failures.is_empty() {
+          return Err(runtime.poison_program_operation(
+            "build",
+            None,
+            format!("{:?}", error),
+            cleanup_failures,
+          ));
+        }
         return Err(error);
       }
       runtime.attached_input_driver_count += 1;
@@ -542,6 +672,28 @@ impl RuntimeBuilder {
 // MechRuntime
 // -----------------------------------------------------------------------------
 
+struct ScopedRuntimeState<T: Copy> {
+  state: Rc<Cell<Option<T>>>,
+  previous: Option<T>,
+}
+
+impl<T: Copy> ScopedRuntimeState<T> {
+  fn enter(
+    state: &Rc<Cell<Option<T>>>,
+    value: T,
+  ) -> Self {
+    let state = Rc::clone(state);
+    let previous = state.replace(Some(value));
+    Self { state, previous }
+  }
+}
+
+impl<T: Copy> Drop for ScopedRuntimeState<T> {
+  fn drop(&mut self) {
+    self.state.set(self.previous);
+  }
+}
+
 pub struct MechRuntime {
   id: RuntimeId,
   event_sequence: u64,
@@ -555,11 +707,16 @@ pub struct MechRuntime {
   host_policy: Box<dyn HostCallPolicy>,
   scheduler: Box<dyn Scheduler>,
   scheduler_policy: SchedulerPolicy,
-  active_transactions: HashMap<TransactionId, RuntimeTransaction>,
+  active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
+  program_transaction_owner: Option<TransactionId>,
+  active_program_operation:
+    Rc<Cell<Option<ActiveRuntimeProgramOperation>>>,
+  active_effect_phase:
+    Rc<Cell<Option<ActiveRuntimeEffectPhase>>>,
+  health: RuntimeHealth,
   actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
   module_builder: ModuleBuilder,
   resources: RuntimeResourceRegistry,
-  grants: RuntimeCapabilityGrantRegistry,
   resource_bindings: HashMap<String, RuntimeResourceBinding>,
   live_registration_mode: LiveRegistrationMode,
   live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
@@ -589,10 +746,13 @@ impl std::fmt::Debug for MechRuntime {
       .field("scheduler", &"<dyn Scheduler>")
       .field("scheduler_policy", &self.scheduler_policy)
       .field("active_transactions", &self.active_transactions.len())
+      .field(
+        "active_effect_phase",
+        &self.active_effect_phase.get(),
+      )
       .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
       .field("module_builder", &self.module_builder)
       .field("resources", &self.resources)
-      .field("grants", &self.grants)
       .field("resource_bindings", &self.resource_bindings)
       .field("live_input_bindings", &self.live_input_bindings)
       .field("input_drivers", &self.input_drivers.len())
@@ -648,10 +808,29 @@ fn validate_resource_binding_name(name: &str) -> bool {
 }
 
 #[derive(Clone, Debug)]
-pub struct ModuleInstance {
-  pub version: ModuleVersionId,
-  pub exports: HashMap<String, mech_core::ValRef>,
-  pub result: Value,
+struct ModuleInstance {
+  version: ModuleVersionId,
+  exports: HashMap<String, mech_core::ValRef>,
+  result: Value,
+}
+
+impl ModuleInstance {
+  fn detached_result(&self) -> RuntimeModuleResult {
+    RuntimeModuleResult {
+      version: self.version,
+      exports: self
+        .exports
+        .iter()
+        .map(|(name, value)| {
+          (
+            name.clone(),
+            RuntimeValueSnapshot::capture(&value.borrow()),
+          )
+        })
+        .collect(),
+      result: RuntimeValueSnapshot::capture(&self.result),
+    }
+  }
 }
 
 impl MechRuntime {
@@ -671,20 +850,37 @@ impl MechRuntime {
     &self.config
   }
 
-  pub fn program(&self) -> &MechProgram {
+  pub(crate) fn program(&self) -> &MechProgram {
     &self.program
   }
 
-  pub fn program_mut(&mut self) -> &mut MechProgram {
+  /// Low-level manual escape hatch outside runtime-owned atomic execution.
+  ///
+  /// Callers must not use it while a transaction owns the retained program.
+  /// Runtime internals must not use it to bypass the program coordinator.
+  pub(crate) fn program_mut(&mut self) -> &mut MechProgram {
     &mut self.program
   }
 
-  pub fn bind_context_export(
+  pub(crate) fn health(&self) -> &RuntimeHealth {
+    &self.health
+  }
+
+  pub fn runtime_health(&self) -> RuntimeHealth {
+    self.health.clone()
+  }
+
+  pub fn is_poisoned(&self) -> bool {
+    matches!(self.health, RuntimeHealth::Poisoned(_))
+  }
+
+  pub(crate) fn bind_context_export(
     &mut self,
     alias: &str,
     module: &str,
     item: &str,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("bind_context_export")?;
     let target = format!("{module}/{item}");
     let base_uri = match self.host_interfaces.resolve_optional(&target)? {
       Some(context) => context.base_uri.clone(),
@@ -697,11 +893,12 @@ impl MechRuntime {
     self.resource_bindings.get(name)
   }
 
-  pub fn bind_resource_root(
+  pub(crate) fn bind_resource_root(
     &mut self,
     name: impl Into<String>,
     uri: impl AsRef<str>,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("bind_resource_root")?;
     let name = name.into();
     if !validate_resource_binding_name(&name) {
       return Err(runtime_resource_binding_error(
@@ -782,10 +979,10 @@ impl MechRuntime {
   }
 
   pub fn read_bound_resource(
-    &self,
+    &mut self,
     binding: &str,
     child_path: &str,
-  ) -> MResult<Value> {
+  ) -> MResult<RuntimeValueSnapshot> {
     let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
     self.read_resource(RuntimeResourceReadRequest {
       base_uri,
@@ -811,74 +1008,49 @@ impl MechRuntime {
     })
   }
 
-  pub fn apply_config_spec(
-    &mut self,
-    spec: RuntimeConfigSpec,
-  ) -> MResult<()> {
-    register_config_spec_resources(&mut self.resources, &spec)?;
-    register_config_spec_grants(&mut self.grants, &spec)?;
-    Ok(())
-  }
-
-  pub fn grant_capability<G>(&mut self, grant: G) -> MResult<G::Output>
-  where
-    G: RuntimeCapabilityGrantInput,
-  {
-    grant.apply(self)
-  }
-
-  pub(crate) fn add_resource_capability_grant(
-    &mut self,
-    grant: RuntimeCapabilityGrant,
-  ) -> MResult<()> {
-    self.grants.add_grant(grant)
-  }
-
-  pub fn has_capability_grant(
-    &self,
-    subject: &str,
-    resource: &str,
-    operation: &RuntimeCapabilityOperation,
-    path: &str,
-  ) -> bool {
-    self.grants.allows_with_resource_match(
-      subject,
-      resource,
-      operation,
-      path,
-      |grant_resource, requested_resource| {
-        grant_resource == requested_resource
-          || self.resources.base_uris_equivalent(grant_resource, requested_resource)
-      },
-    )
-  }
-
   pub fn install_run_resource_grant(
     &mut self,
     grant: &RunResourceGrantConfig,
   ) -> MResult<()> {
-    let context = self.host_interfaces.resolve(&grant.target)?;
+    self.ensure_runtime_mutation_allowed(
+      "install_run_resource_grant",
+    )?;
+    let interface = self.host_interfaces.resolve(&grant.target)?;
     for operation in &grant.operations {
-      if !context.operations.iter().any(|allowed| allowed == operation) {
+      if !interface.operations.iter().any(|allowed| allowed == operation) {
         return Err(MechError::new(RuntimeInvalidOperationError {
           operation: "install_run_resource_grant",
           reason: format!("host context `{}` does not expose operation `{operation}`", grant.target),
         }, None));
       }
     }
-    let operations = grant.operations.iter().map(|operation| RuntimeCapabilityOperation::from_name(operation.clone())).collect::<MResult<Vec<_>>>()?;
-    self.grants.add_grant(RuntimeCapabilityGrant {
+    let operations = grant
+      .operations
+      .iter()
+      .map(|operation| {
+        RuntimeCapabilityOperation::from_name(operation.clone())
+      })
+      .collect::<MResult<Vec<_>>>()?;
+    let spec = RuntimeCapabilityGrantSpec {
       subject: format!("runtime:{}", self.id),
-      resource: context.base_uri.clone(),
+      resource: interface.base_uri.clone(),
       operations,
       paths: grant.paths.clone(),
-    })
+    };
+    let capability = Arc::new(ResourcePathCapability::from_spec(
+      self.next_capability_id(),
+      &spec,
+    )?);
+    self.grant_capability(capability).map(|_| ())
   }
 
-  pub fn register_resource_provider(
+  pub(crate) fn register_resource_provider(
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "register_resource_provider",
+    )?;
     self.resources.register_provider(provider)
   }
 
@@ -890,65 +1062,302 @@ impl MechRuntime {
     &mut self,
     request: RuntimeResourceWriteRequest,
   ) -> MResult<()> {
-    self.resources.write(request)
+    let mut context = self.runtime_context()?;
+    self
+      .write_resource_with_context(&mut context, request)
+      .map(|_| ())
+  }
+
+  pub fn write_resource_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    mut request: RuntimeResourceWriteRequest,
+  ) -> MResult<RuntimeEffectId> {
+    self.ensure_runtime_mutation_allowed(
+      "write_resource_with_context",
+    )?;
+    self.validate_context_for_runtime(context)?;
+    let key = RuntimeResourceKey::new(
+      &request.base_uri,
+      &request.path,
+    )?;
+    request.base_uri = key.base_uri.clone();
+    request.path = key.path.clone();
+
+    if context.transaction.is_none() {
+      let transaction_id = self.begin_runtime_transaction_internal(
+        context,
+        RuntimeExecutionTransactionMode::ImplicitResourceOperation,
+      )?;
+      let effect_id = match self.write_resource_with_context(context, request) {
+        Ok(effect_id) => effect_id,
+        Err(error) => {
+          return Err(self.cleanup_failed_implicit_resource_operation(
+            context,
+            transaction_id,
+            "write_resource_with_context",
+            error,
+          ));
+        }
+      };
+      return match self.commit_runtime_transaction_internal(context) {
+        Ok(RuntimeCommitResolution::Committed(_)) => Ok(effect_id),
+        Ok(RuntimeCommitResolution::CommittedWithError { error, .. }) => Err(error),
+        Err(error) => Err(self.cleanup_failed_implicit_resource_operation(
+          context,
+          transaction_id,
+          "write_resource_with_context",
+          error,
+        )),
+      };
+    }
+
+    self.authorize_resource_with_context(
+      context,
+      &request.operation,
+      &key,
+    )?;
+    request.value = request.value.deep_snapshot();
+    let staged_resource = if request.intent
+      == RuntimeResourceWriteIntent::Assign
+    {
+      Some((
+        request.base_uri.clone(),
+        request.path.clone(),
+        request.value.clone(),
+      ))
+    } else {
+      None
+    };
+    let effect = self.resources.prepare_write(request)?;
+    match staged_resource {
+      Some((base_uri, path, value)) => {
+        self.stage_runtime_resource_effect_with_context(
+          context,
+          effect,
+          base_uri,
+          path,
+          value,
+        )
+      }
+      None => self.stage_runtime_effect_with_context(context, effect),
+    }
+  }
+
+  fn cleanup_failed_implicit_resource_operation(
+    &mut self,
+    context: &mut RuntimeContext,
+    transaction_id: TransactionId,
+    operation: &'static str,
+    original_error: MechError,
+  ) -> MechError {
+    if context.transaction != Some(transaction_id) {
+      return original_error;
+    }
+    let original_error_text = format!("{:?}", original_error);
+    match self.abort_runtime_transaction_cleanup(
+      context,
+      "implicit resource operation failed",
+      false,
+    ) {
+      Ok((cleaned_transaction_id, mut failures)) => {
+        if cleaned_transaction_id != transaction_id {
+          failures.push(format!(
+            "implicit resource cleanup targeted transaction {}, expected {}",
+            cleaned_transaction_id,
+            transaction_id,
+          ));
+        }
+        if failures.is_empty() {
+          original_error
+        } else {
+          self.poison_program_operation(
+            operation,
+            Some(transaction_id),
+            original_error_text,
+            failures,
+          )
+        }
+      }
+      Err(cleanup_error) => self.poison_program_operation(
+        operation,
+        Some(transaction_id),
+        original_error_text,
+        vec![format!(
+          "implicit resource cleanup could not start: {:?}",
+          cleanup_error,
+        )],
+      ),
+    }
   }
 
   pub fn read_resource(
-    &self,
+    &mut self,
     request: RuntimeResourceReadRequest,
+  ) -> MResult<RuntimeValueSnapshot> {
+    let mut context = self.runtime_context()?;
+    self.read_resource_with_context(&mut context, request)
+  }
+
+  pub fn read_resource_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: RuntimeResourceReadRequest,
+  ) -> MResult<RuntimeValueSnapshot> {
+    self
+      .read_resource_value_with_context(context, request)
+      .map(|value| RuntimeValueSnapshot::capture(&value))
+  }
+
+  pub(crate) fn read_resource_value_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    mut request: RuntimeResourceReadRequest,
   ) -> MResult<Value> {
+    self.validate_context_for_runtime(context)?;
+    let key = RuntimeResourceKey::new(
+      &request.base_uri,
+      &request.path,
+    )?;
+    request.base_uri = key.base_uri.clone();
+    request.path = key.path.clone();
+    if context.transaction.is_none() {
+      let transaction_id = self.begin_runtime_transaction_internal(
+        context,
+        RuntimeExecutionTransactionMode::ImplicitResourceOperation,
+      )?;
+      let value = match self
+        .read_resource_value_with_context(context, request)
+      {
+        Ok(value) => value,
+        Err(error) => {
+          return Err(self.cleanup_failed_implicit_resource_operation(
+            context,
+            transaction_id,
+            "read_resource_with_context",
+            error,
+          ));
+        }
+      };
+      return match self.commit_runtime_transaction_internal(context) {
+        Ok(RuntimeCommitResolution::Committed(_)) => Ok(value),
+        Ok(RuntimeCommitResolution::CommittedWithError { error, .. }) => {
+          Err(error)
+        }
+        Err(error) => Err(
+          self.cleanup_failed_implicit_resource_operation(
+            context,
+            transaction_id,
+            "read_resource_with_context",
+            error,
+          ),
+        ),
+      };
+    }
+    self.authorize_resource_with_context(
+      context,
+      &RuntimeCapabilityOperation::Read,
+      &key,
+    )?;
+    if context.transaction.is_some() {
+      let transaction_id = context.transaction.unwrap();
+      if let Some(value) = self
+        .active_execution_transaction(transaction_id)?
+        .effects
+        .staged_resource_value(&request.base_uri, &request.path)
+      {
+        return Ok(value);
+      }
+    }
     self.resources.read(request)
   }
 
-  pub fn store(&self) -> &dyn MechStore {
+  pub(crate) fn authorize_resource_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &RuntimeCapabilityOperation,
+    key: &RuntimeResourceKey,
+  ) -> MResult<CapabilityId> {
+    let request = CapabilityRequest::from_keys(
+      &context.subject,
+      operation.name(),
+      key.capability_resource(),
+    );
+    self.check_capability_with_context(context, &request)
+  }
+
+  pub(crate) fn store(&self) -> &dyn MechStore {
     self.store.as_ref()
   }
 
-  pub fn store_mut(&mut self) -> &mut dyn MechStore {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn store_mut(&mut self) -> &mut dyn MechStore {
     self.store.as_mut()
   }
 
-  pub fn capability_kernel(&self) -> &dyn CapabilityKernel {
+  pub(crate) fn capability_kernel(&self) -> &dyn CapabilityKernel {
     self.capability_kernel.as_ref()
   }
 
-  pub fn capability_kernel_mut(&mut self) -> &mut dyn CapabilityKernel {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn capability_kernel_mut(&mut self) -> &mut dyn CapabilityKernel {
     self.capability_kernel.as_mut()
   }
 
-  pub fn source_resolver(&self) -> &dyn SourceResolver {
+  pub(crate) fn source_resolver(&self) -> &(dyn SourceResolver + 'static) {
     self.source_resolver.as_ref()
   }
 
-  pub fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
     self.source_resolver.as_mut()
   }
 
-  pub fn set_source_resolver(&mut self, source_resolver: impl SourceResolver + 'static) {
+  pub(crate) fn set_source_resolver(
+    &mut self,
+    source_resolver: impl SourceResolver + 'static,
+  ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("set_source_resolver")?;
     self.source_resolver = Box::new(source_resolver);
+    Ok(())
   }
 
-  pub fn host_registry(&self) -> &dyn HostRegistry {
+  pub(crate) fn host_registry(&self) -> &dyn HostRegistry {
     self.host_registry.as_ref()
   }
 
-  pub fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
     self.host_registry.as_mut()
   }
 
-  pub fn host_policy(&self) -> &dyn HostCallPolicy {
+  pub(crate) fn host_policy(&self) -> &dyn HostCallPolicy {
     self.host_policy.as_ref()
   }
 
-  pub fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
     self.host_policy.as_mut()
   }
 
-  pub fn scheduler(&self) -> &dyn Scheduler {
+  pub(crate) fn scheduler(&self) -> &dyn Scheduler {
     self.scheduler.as_ref()
   }
 
-  pub fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
     self.scheduler.as_mut()
   }
 
@@ -956,23 +1365,30 @@ impl MechRuntime {
     &self.scheduler_policy
   }
 
-  pub fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
     &mut self.scheduler_policy
   }
 
-  pub fn actor_behavior_driver(&self) -> &dyn ActorBehaviorDriver {
+  pub(crate) fn actor_behavior_driver(&self) -> &dyn ActorBehaviorDriver {
     self.actor_behavior_driver.as_ref()
   }
 
-  pub fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
+  /// Unchecked administrative escape hatch outside runtime-owned poison
+  /// enforcement. Runtime internals must not use it to bypass mutation
+  /// preflight.
+  pub(crate) fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
     self.actor_behavior_driver.as_mut()
   }
 
-  pub fn module_builder(&self) -> &ModuleBuilder {
+  pub(crate) fn module_builder(&self) -> &ModuleBuilder {
     &self.module_builder
   }
 
-  pub fn set_scheduler_policy(&mut self, scheduler_policy: SchedulerPolicy) -> MResult<()> {
+  pub(crate) fn set_scheduler_policy(&mut self, scheduler_policy: SchedulerPolicy) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("set_scheduler_policy")?;
     scheduler_policy.validate()?;
     self.scheduler_policy = scheduler_policy;
     Ok(())
@@ -1117,11 +1533,20 @@ impl MechRuntime {
   }
 
   fn validate_live_context_candidate(&self, context: &RuntimeContext) -> MResult<()> {
-    if context.transaction.is_some() {
-      return Err(MechError::new(RuntimeInvalidOperationError {
-        operation: "RuntimeTransactionalLiveProgramUnsupported",
-        reason: "live context reads and persistent sends cannot be armed under an active transaction".to_string(),
-      }, None));
+    if let Some(transaction_id) = context.transaction {
+      let active_operation = self.active_program_operation.get();
+      if self.program_transaction_owner != Some(transaction_id)
+        || active_operation.map(|active| active.transaction_id) != Some(transaction_id)
+      {
+        return Err(MechError::new(
+          RuntimeTransactionalLiveRegistrationUnsupported {
+            transaction_id,
+            owner: self.program_transaction_owner,
+            active_operation: active_operation.map(|active| active.operation),
+          },
+          None,
+        ));
+      }
     }
     match &self.live_context_template {
       Some(template) if template.matches_context(context) => Ok(()),
@@ -1144,6 +1569,7 @@ impl MechRuntime {
       context_template: self.live_context_template.clone(),
       input_bindings: self.live_input_bindings.clone(),
       persistent_sends: self.persistent_sends.clone(),
+      registration_mode: self.live_registration_mode,
     }
   }
 
@@ -1151,6 +1577,7 @@ impl MechRuntime {
     self.live_context_template = snapshot.context_template;
     self.live_input_bindings = snapshot.input_bindings;
     self.persistent_sends = snapshot.persistent_sends;
+    self.live_registration_mode = snapshot.registration_mode;
   }
 
   fn live_turn_context(&self) -> MResult<RuntimeContext> {
@@ -1191,6 +1618,55 @@ impl MechRuntime {
     builder.build()
   }
 
+  pub fn context_for_actor_turn(
+    &self,
+    turn: &ActorTurn,
+  ) -> MResult<RuntimeContext> {
+    turn.validate()?;
+    let actor = self
+      .store
+      .get_actor(turn.actor)?
+      .ok_or_else(|| MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "context_for_actor_turn",
+          reason: format!(
+            "actor record {} was not found",
+            turn.actor,
+          ),
+        },
+        None,
+      ))?;
+    if actor.subject != turn.subject
+      || actor.behavior != turn.behavior
+      || actor.state != turn.state
+    {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "context_for_actor_turn",
+          reason: format!(
+            "actor turn metadata does not match actor record {}",
+            turn.actor,
+          ),
+        },
+        None,
+      ));
+    }
+
+    let mut builder = RuntimeContextBuilder::new(self.id)
+      .subject(actor.subject)
+      .actor(actor.id)
+      .actor_message(turn.message.clone())
+      .capabilities(actor.capabilities)
+      .budget(self.default_budget());
+    if let Some(module_version) = actor.behavior {
+      builder = builder.module_version(module_version);
+    }
+    if let Some(state) = actor.state {
+      builder = builder.actor_state(state);
+    }
+    builder.build()
+  }
+
   /// Build a subject context from a persisted transaction record.
   ///
   /// Transaction records are historical metadata. This context does not reopen,
@@ -1226,24 +1702,13 @@ impl MechRuntime {
     }
 
     if let Some(transaction_id) = context.transaction {
-      let transaction = self
-        .active_transactions
-        .get(&transaction_id)
-        .ok_or_else(|| {
-          MechError::new(
-            RuntimeTransactionNotFoundError { transaction_id },
-            None,
-          )
-        })?;
+      let transaction = self.active_execution_transaction(transaction_id)?;
 
-      if transaction.subject != context.subject {
+      if let Some(reason) = transaction.context_identity.mismatch_reason(context) {
         return Err(MechError::new(
-          RuntimeInvalidOperationError {
-            operation: "validate_context_for_runtime",
-            reason: format!(
-              "transaction {} subject mismatch: transaction owner subject `{}`, supplied context subject `{}`",
-              transaction_id, transaction.subject, context.subject,
-            ),
+          RuntimeTransactionContextMismatch {
+            transaction_id,
+            reason,
           },
           None,
         ));
@@ -1278,6 +1743,7 @@ impl MechRuntime {
   ) -> MResult<EventId> {
     self.validate_context_for_runtime(context)?;
 
+    let context_events_before = context.events.clone();
     let event = self.make_event(kind);
     let id = event.id;
 
@@ -1285,12 +1751,18 @@ impl MechRuntime {
     self.trim_events_to_retention(&mut context.events);
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
-        transaction.stage_event(event)?;
+        if let Err(error) = transaction.store.stage_event(event) {
+          context.events = context_events_before;
+          return Err(error);
+        }
         return Ok(id);
       }
     }
 
-    self.append_event(event)?;
+    if let Err(error) = self.store.append_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
 
     Ok(id)
   }
@@ -1302,12 +1774,16 @@ impl MechRuntime {
   ) -> MResult<EventId> {
     self.validate_context_for_runtime(context)?;
 
+    let context_events_before = context.events.clone();
     let event = self.make_event(kind);
     let id = event.id;
 
     context.push_event(event.clone());
     self.trim_events_to_retention(&mut context.events);
-    self.append_event(event)?;
+    if let Err(error) = self.store.append_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
 
     Ok(id)
   }
@@ -1373,7 +1849,11 @@ impl Drop for MechRuntime {
     if self.input_driver_cleanup_armed {
       let _ = self.close_ingress();
       for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
-        let _ = driver.stop();
+        let _ = extension::catch_extension(
+          "host input driver",
+          "stop",
+          || driver.stop(),
+        );
       }
       self.input_driver_cleanup_armed = false;
     }

@@ -1,10 +1,16 @@
-use std::{env::VarError, io::Write};
+use std::{
+    env::VarError,
+    io::Write,
+    sync::{Arc, Mutex, MutexGuard},
+};
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
     materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory,
     RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost,
+    RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
 pub trait CliBackend: std::fmt::Debug {
@@ -48,7 +54,7 @@ impl CliBackend for StdCliBackend {
 #[derive(Debug)]
 pub struct CliResourceProvider<B: CliBackend> {
     instance: String,
-    backend: B,
+    backend: Arc<Mutex<B>>,
 }
 
 impl<B: CliBackend> CliResourceProvider<B> {
@@ -56,7 +62,10 @@ impl<B: CliBackend> CliResourceProvider<B> {
         Self::for_instance("cli", backend)
     }
     pub fn for_instance(instance: impl Into<String>, backend: B) -> Self {
-        Self { instance: instance.into(), backend }
+        Self {
+            instance: instance.into(),
+            backend: Arc::new(Mutex::new(backend)),
+        }
     }
     fn base(&self, context: &str) -> String {
         format!("cli://{}/{}", self.instance, context)
@@ -64,15 +73,15 @@ impl<B: CliBackend> CliResourceProvider<B> {
     fn matches_base(&self, base_uri: &str, context: &str) -> bool {
         base_uri == self.base(context) || (self.instance == "cli" && base_uri == format!("cli://{}", context))
     }
-    pub fn backend(&self) -> &B {
-        &self.backend
+    pub fn backend(&self) -> MutexGuard<'_, B> {
+        self.backend.lock().expect("CLI backend lock poisoned")
     }
-    pub fn backend_mut(&mut self) -> &mut B {
-        &mut self.backend
+    pub fn backend_mut(&mut self) -> MutexGuard<'_, B> {
+        self.backend.lock().expect("CLI backend lock poisoned")
     }
 }
 
-impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
+impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B> {
     fn scheme(&self) -> &str {
         "cli"
     }
@@ -85,21 +94,15 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
         bases
     }
 
-    fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
-        if self.instance != "cli" {
-            return Vec::new();
-        }
-        vec![
-            vec![self.base("env"), "cli://env".to_string()],
-            vec![self.base("stdout"), "cli://stdout".to_string()],
-            vec![self.base("stderr"), "cli://stderr".to_string()],
-        ]
-    }
-
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if self.matches_base(&request.base_uri, "env") {
                 validate_env_key(&request.path)?;
-                let value = self.backend.env_var(&request.path)?.ok_or_else(|| {
+                let value = self
+                    .backend
+                    .lock()
+                    .map_err(|_| cli_error(request.base_uri.clone(), "CLI backend lock poisoned"))?
+                    .env_var(&request.path)?
+                    .ok_or_else(|| {
                     MechError::new(
                         CliResourceProviderError {
                             resource: request.base_uri.clone(),
@@ -141,7 +144,7 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
         }
     }
 
-    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
@@ -156,10 +159,62 @@ impl<B: CliBackend> RuntimeResourceProvider for CliResourceProvider<B> {
             _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
         };
         let text = value_to_text(&request.value) + suffix;
-        if self.matches_base(&request.base_uri, "stdout") {
-            self.backend.write_stdout(&text)
+        let stream = if self.matches_base(&request.base_uri, "stdout") {
+            CliOutputStream::Stdout
         } else {
-            self.backend.write_stderr(&text)
+            CliOutputStream::Stderr
+        };
+        Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+            CliOutputEffect {
+                backend: self.backend.clone(),
+                stream,
+                text,
+                resource: request.base_uri,
+            },
+        )))
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum CliOutputStream {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug)]
+struct CliOutputEffect<B: CliBackend> {
+    backend: Arc<Mutex<B>>,
+    stream: CliOutputStream,
+    text: String,
+    resource: String,
+}
+
+impl<B: CliBackend> RuntimeAfterCommitEffect for CliOutputEffect<B> {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+        RuntimeEffectMetadata::new(
+            RuntimeEffectSource::ResourceProvider {
+                scheme: "cli".to_string(),
+            },
+            match self.stream {
+                CliOutputStream::Stdout => "stdout",
+                CliOutputStream::Stderr => "stderr",
+            },
+        )
+        .with_resource(self.resource.clone())
+        .with_cost(RuntimeEffectCost {
+            bytes: u64::try_from(self.text.len()).unwrap_or(u64::MAX),
+            items: 1,
+        })
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+        let mut backend = self
+            .backend
+            .lock()
+            .map_err(|_| cli_error(self.resource.clone(), "CLI backend lock poisoned"))?;
+        match self.stream {
+            CliOutputStream::Stdout => backend.write_stdout(&self.text),
+            CliOutputStream::Stderr => backend.write_stderr(&self.text),
         }
     }
 }

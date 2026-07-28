@@ -126,6 +126,10 @@ impl MechFunctionImpl for AtomEq {
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "atom")]
 #[cfg(feature = "compiler")]
@@ -172,6 +176,10 @@ impl MechFunctionImpl for TableEq {
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "table")]
 #[cfg(feature = "compiler")]

@@ -789,8 +789,8 @@ mod tests {
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
 
-    fn assert_f64(value: mech_core::Value, expected: f64) {
-        match value {
+    fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
+        match value.into_value() {
             mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
             mech_core::Value::MutableReference(value) => match &*value.borrow() {
                 mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
@@ -1003,12 +1003,14 @@ rows := |id<string> x<f64>|
         run_project_sources(&mut runtime, &document).unwrap();
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[derive(Debug)]
     struct TestManualTimerHostFactory {
         manifest: mech_runtime::HostManifestConfig,
         snapshot: mech_host_timer::SharedTimerSnapshot,
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl TestManualTimerHostFactory {
         fn new() -> Self {
             Self {
@@ -1018,6 +1020,7 @@ rows := |id<string> x<f64>|
         }
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl mech_runtime::RuntimeHostFactory for TestManualTimerHostFactory {
         fn provider_name(&self) -> &str { "timer" }
         fn manifest(&self) -> &mech_runtime::HostManifestConfig { &self.manifest }
@@ -1038,6 +1041,7 @@ rows := |id<string> x<f64>|
         }
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn generic_fixture_document() -> MechConfigDocument {
         parse_config_document(
             "generic-timer-table-scene/mech.mcfg",
@@ -1046,6 +1050,7 @@ rows := |id<string> x<f64>|
         ).unwrap()
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn generic_fixture_sources() -> HashMap<String, String> {
         let mut sources = HashMap::new();
         sources.insert(
@@ -1055,7 +1060,7 @@ rows := |id<string> x<f64>|
         sources
     }
 
-
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn fixture_timer_packet(tick: u64, delta_seconds: f64) -> mech_runtime::RuntimeHostInput {
         mech_runtime::RuntimeHostInput::new(vec![
             mech_runtime::RuntimeHostInputUpdate {
@@ -1069,6 +1074,7 @@ rows := |id<string> x<f64>|
         ]).unwrap()
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[test]
     fn generic_timer_table_scene_fixture_executes_with_timer_and_scene_hosts() {
         let document = generic_fixture_document();

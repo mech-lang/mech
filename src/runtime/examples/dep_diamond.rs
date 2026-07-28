@@ -11,6 +11,7 @@ use mech_runtime::{
   SourceKind,
   SourceRequest,
   SourceResolver,
+  TaskRecord,
 };
 
 #[derive(Debug, Clone)]
@@ -160,9 +161,11 @@ fn main() -> MResult<()> {
 
   println!("runtime: {}", short(runtime.id()));
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:runtime-dependency-diamond");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:runtime-dependency-diamond",
+  );
+  let mut context = runtime.context_for_task(&task)?;
 
   let target = runtime_target();
   let options = ModuleBuildOptions::new(
@@ -184,7 +187,6 @@ fn main() -> MResult<()> {
   println!("root version: {}", short(root_version));
 
   let root_record = runtime
-    .store()
     .get_module_version(root_version)?
     .expect("expected root module version to exist");
 
@@ -198,12 +200,10 @@ fn main() -> MResult<()> {
   let b_version = root_record.dependencies[1];
 
   let a_record = runtime
-    .store()
     .get_module_version(a_version)?
     .expect("expected a module version to exist");
 
   let b_record = runtime
-    .store()
     .get_module_version(b_version)?
     .expect("expected b module version to exist");
 
@@ -234,7 +234,6 @@ fn main() -> MResult<()> {
   );
 
   let shared_record = runtime
-    .store()
     .get_module_version(shared_from_a)?
     .expect("expected shared module version to exist");
 

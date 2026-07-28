@@ -41,7 +41,6 @@ fn main() -> MResult<()> {
     .expect("expected index.mec to resolve");
 
   let record = runtime
-    .store()
     .get_module_version(version)?
     .expect("expected module version");
 

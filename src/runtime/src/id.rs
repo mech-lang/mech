@@ -361,6 +361,7 @@ pub fn module_id(name: &str) -> ModuleId {
 
 /// Derive a stable ModuleVersionId from all inputs that affect module meaning.
 pub fn module_version_id(
+  module: ModuleId,
   source: &str,
   compiler_version: &str,
   language_edition: &str,
@@ -369,6 +370,7 @@ pub fn module_version_id(
   dependencies: &[ModuleVersionId],
   capability_requirements: &[&str],
 ) -> ModuleVersionId {
+  let module_bytes = module.as_u128().to_le_bytes();
   let mut flags = feature_flags.to_vec();
   flags.sort();
 
@@ -386,8 +388,9 @@ pub fn module_version_id(
     .collect();
 
   ModuleVersionId(blake3_u128(
-    b"mech.module.version.full.v1",
+    b"mech.module.version.full.v2",
     &[
+      &module_bytes,
       compiler_version.as_bytes(),
       language_edition.as_bytes(),
       target.as_bytes(),
@@ -507,21 +510,44 @@ mod tests {
 
   #[test]
   fn module_version_id_is_deterministic() {
-    let a = module_version_id("x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[ModuleVersionId(1)], &["cap1"]);
-    let b = module_version_id("x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[ModuleVersionId(1)], &["cap1"]);
-    let c = module_version_id("x := 2", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[ModuleVersionId(1)], &["cap1"]);
+    let module = module_id("memory://main.mec");
+    let a = module_version_id(module, "x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[ModuleVersionId(1)], &["cap1"]);
+    let b = module_version_id(module, "x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[ModuleVersionId(1)], &["cap1"]);
+    let c = module_version_id(module, "x := 2", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[ModuleVersionId(1)], &["cap1"]);
 
     assert_eq!(a, b);
     assert_ne!(a, c);
   }
 
   #[test]
+  fn module_version_id_includes_module_identity() {
+    let first = module_version_id(module_id("memory://first.mec"), "x := 1", "0.3.5", "2021", "native", &[], &[], &[]);
+    let second = module_version_id(module_id("memory://second.mec"), "x := 1", "0.3.5", "2021", "native", &[], &[], &[]);
+
+    assert_ne!(first, second);
+  }
+
+  #[test]
+  fn module_version_inputs_remain_identity_significant() {
+    let module = module_id("memory://main.mec");
+    let baseline = module_version_id(module, "x := 1", "0.3.5", "2021", "native", &[], &[], &[]);
+    let feature = module_version_id(module, "x := 1", "0.3.5", "2021", "native", &["feature"], &[], &[]);
+    let dependency = module_version_id(module, "x := 1", "0.3.5", "2021", "native", &[], &[ModuleVersionId(1)], &[]);
+    let capability = module_version_id(module, "x := 1", "0.3.5", "2021", "native", &[], &[], &["capability"]);
+
+    assert_ne!(baseline, feature);
+    assert_ne!(baseline, dependency);
+    assert_ne!(baseline, capability);
+  }
+
+  #[test]
   fn dependency_order_is_normalized() {
     let d1 = ModuleVersionId(1);
     let d2 = ModuleVersionId(2);
+    let module = module_id("memory://main.mec");
 
-    let a = module_version_id("x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[d1, d2], &["cap1"]);
-    let b = module_version_id("x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[d2, d1], &["cap1"]);
+    let a = module_version_id(module, "x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[d1, d2], &["cap1"]);
+    let b = module_version_id(module, "x := 1", "0.3.5", "2021", "x86_64-unknown-linux-gnu", &["flag1"], &[d2, d1], &["cap1"]);
 
     assert_eq!(a, b);
   }

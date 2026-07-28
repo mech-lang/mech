@@ -30,6 +30,10 @@ impl MechFunctionImpl for ConvertSEnum
   fn solve(&self) { }
   fn out(&self) -> Value { Value::Enum(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "compiler", feature = "enum"))]
 impl MechFunctionCompiler for ConvertSEnum {
@@ -54,6 +58,9 @@ struct ConvertSEmpty {
 impl MechFunctionImpl for ConvertSEmpty {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.borrow().clone() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(vec![Value::MutableReference(self.out.clone())])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
@@ -79,6 +86,23 @@ register_descriptor! {
         ),
       }
     },
+  }
+}
+
+#[cfg(test)]
+mod empty_transaction_state_tests {
+  use super::*;
+
+  #[test]
+  fn convert_scalar_empty_exposes_original_outer_value_cell() {
+    let out = Ref::new(Value::Empty);
+    let function = ConvertSEmpty { out: out.clone() };
+    let values = function.transaction_state_values().unwrap();
+    assert_eq!(values.len(), 1);
+    match &values[0] {
+      Value::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
+      value => panic!("expected mutable-reference transaction state, got {value:?}"),
+    }
   }
 }
 
@@ -108,6 +132,10 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
 impl<T> MechFunctionCompiler for ConvertMat2Table<T> 
@@ -219,6 +247,10 @@ impl MechFunctionImpl for ConvertMatToSet {
   }
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "compiler", feature = "matrix", feature = "set"))]
 impl MechFunctionCompiler for ConvertMatToSet {
@@ -244,6 +276,10 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
   }
   fn out(&self) -> Value { Value::F64(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
 impl MechFunctionCompiler for ConvertSRationalToF64 {
@@ -383,6 +419,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> 
@@ -419,6 +459,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> 

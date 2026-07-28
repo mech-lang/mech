@@ -30,7 +30,7 @@ fn fsm_argument_kind_matches(expected: &ValueKind, actual: &ValueKind) -> bool {
 }
 
 // Review: how does this fail?
-pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> MResult<()> {
+pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &InterpreterExecution<'_>) -> MResult<()> {
   let fsm_id = fsm.name.hash();
   p.user_state_machines
     .borrow_mut()
@@ -43,7 +43,7 @@ pub fn register_fsm_implementation(fsm: &FsmImplementation, p: &Interpreter) -> 
   Ok(())
 }
 
-pub fn register_fsm_specification(fsm: &FsmSpecification, p: &Interpreter) -> MResult<()> {
+pub fn register_fsm_specification(fsm: &FsmSpecification, p: &InterpreterExecution<'_>) -> MResult<()> {
   let fsm_id = fsm.name.hash();
   p.user_state_machine_specs
     .borrow_mut()
@@ -51,7 +51,7 @@ pub fn register_fsm_specification(fsm: &FsmSpecification, p: &Interpreter) -> MR
   Ok(())
 }
 
-pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let fsm_id = fsm_pipe.start.name.hash();
   let fsm = {
     let fsms = p.user_state_machines.borrow();
@@ -124,7 +124,7 @@ pub fn execute_fsm_pipe(fsm_pipe: &FsmPipe, env: Option<&Environment>, p: &Inter
   execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
 }
 
-fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &mut Environment, p: &Interpreter) -> MResult<Value> {
+fn execute_fsm_pipe_impl(fsm: &FsmImplementation, state: &mut Value, call_env: &mut Environment, p: &InterpreterExecution<'_>) -> MResult<Value> {
   trace_println!(
     p,
     "{}",
@@ -432,7 +432,7 @@ fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
   }
 }
 
-fn apply_transitions(transitions: &[Transition], state: &mut Value, env: &mut Environment, p: &Interpreter) -> MResult<Option<Value>> {
+fn apply_transitions(transitions: &[Transition], state: &mut Value, env: &mut Environment, p: &InterpreterExecution<'_>) -> MResult<Option<Value>> {
   for transition in transitions {
     match transition {
       Transition::Next(next_pattern) | Transition::Async(next_pattern) => {

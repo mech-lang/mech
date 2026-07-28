@@ -1,13 +1,17 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use mech_core::{
   BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
   BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, Value,
 };
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
-use mech_runtime::{MechRuntime, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfig};
+use mech_runtime::{
+  MechRuntime, ResourcePathCapability, RuntimeBuilder,
+  RuntimeCapabilityOperation, RuntimeValueSnapshot,
+};
 
 #[derive(Debug, Default)]
 struct FakeDomState {
@@ -68,18 +72,45 @@ impl BrowserDomBackend for FakeDomHost {
   }
 }
 
-fn runtime() -> MechRuntime {
-  MechRuntime::new(RuntimeConfig::default()).unwrap()
-}
-
-fn register_browser_provider(
-  runtime: &mut MechRuntime,
+fn runtime_with_browser_provider(
   authority: BrowserAuthority,
   host: FakeDomHost,
-) {
-  runtime
-    .register_resource_provider(Box::new(BrowserResourceProvider::new(authority, host)))
-    .unwrap();
+) -> MechRuntime {
+  RuntimeBuilder::new()
+    .resource_provider(Box::new(BrowserResourceProvider::new(authority, host)))
+    .build()
+    .unwrap()
+}
+
+fn runtime_with_browser_binding(
+  authority: BrowserAuthority,
+  host: FakeDomHost,
+  name: &str,
+  uri: &str,
+) -> MechRuntime {
+  RuntimeBuilder::new()
+    .resource_provider(Box::new(BrowserResourceProvider::new(authority, host)))
+    .resource_binding(name, uri)
+    .unwrap()
+    .build()
+    .unwrap()
+}
+
+fn runtime_with_binding(name: &str, uri: &str) -> MechRuntime {
+  RuntimeBuilder::new()
+    .resource_binding(name, uri)
+    .unwrap()
+    .build()
+    .unwrap()
+}
+
+fn snapshot_string(value: RuntimeValueSnapshot) -> String {
+  value
+    .as_value()
+    .as_string()
+    .unwrap()
+    .borrow()
+    .clone()
 }
 
 fn bind_authority_path(
@@ -112,14 +143,17 @@ fn read_write_authority(path: &str, selector: &str) -> BrowserAuthority {
 }
 
 fn grant_runtime_context(runtime: &mut MechRuntime, operation: RuntimeCapabilityOperation, path: &str) {
-  let subject = runtime.runtime_context().unwrap().subject;
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  let capability = ResourcePathCapability::exact(
+    runtime.next_capability_id(),
+    subject,
+    "browser://dom",
+    [operation.name()],
+    path,
+  )
+  .unwrap();
   runtime
-    .grant_capability(RuntimeCapabilityGrant {
-      subject,
-      resource: "browser://dom".to_string(),
-      operations: vec![operation],
-      paths: vec![path.to_string()],
-    })
+    .grant_capability(Arc::new(capability))
     .unwrap();
 }
 
@@ -133,8 +167,7 @@ fn grant_runtime_context_write(runtime: &mut MechRuntime, path: &str) {
 
 #[test]
 fn runtime_binds_browser_resource_root() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
+  let runtime = runtime_with_binding("browser", "browser://dom/");
   assert_eq!(
     runtime.resource_binding("browser").unwrap().root_path.as_str(),
     "",
@@ -143,8 +176,7 @@ fn runtime_binds_browser_resource_root() {
 
 #[test]
 fn runtime_resolves_child_path_under_browser_root() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
+  let runtime = runtime_with_binding("browser", "browser://dom/");
   assert_eq!(
     runtime.resource_binding("browser").unwrap().root_path.as_str(),
     "",
@@ -153,13 +185,12 @@ fn runtime_resolves_child_path_under_browser_root() {
 
 #[test]
 fn runtime_resolves_child_path_under_narrow_browser_root() {
-  let mut runtime = runtime();
-  register_browser_provider(
-    &mut runtime,
+  let runtime = runtime_with_browser_binding(
     read_write_authority("body/header/title", "#title"),
     FakeDomHost::default(),
+    "head",
+    "browser://dom/body/header/",
   );
-  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
   assert_eq!(
     runtime.resource_binding("head").unwrap().root_path.as_str(),
     "body/header",
@@ -167,63 +198,61 @@ fn runtime_resolves_child_path_under_narrow_browser_root() {
 }
 
 #[test]
-fn nested_browser_resource_binding_resolves_provider_after_late_registration() {
-  let mut runtime = runtime();
+fn nested_browser_resource_binding_resolves_provider_from_builder_configuration() {
   let host = FakeDomHost::default().with_value("body/header/title", "Hello");
-  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/header/title", "#title", &[BrowserOperation::Read]),
     host.clone(),
+    "head",
+    "browser://dom/body/header/",
   );
   grant_runtime_context_read(&mut runtime, "body/header/title");
 
   let value = runtime.read_bound_resource("head", "title").unwrap();
 
-  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(snapshot_string(value), "Hello");
   assert_eq!(host.reads(), vec!["body/header/title".to_string()]);
 }
 
 #[test]
 fn nested_browser_resource_binding_resolves_provider_when_registered_before_binding() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("body/header/title", "Hello");
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/header/title", "#title", &[BrowserOperation::Read]),
     host.clone(),
+    "head",
+    "browser://dom/body/header/",
   );
-  runtime.bind_resource_root("head", "browser://dom/body/header/").unwrap();
   grant_runtime_context_read(&mut runtime, "body/header/title");
 
   let value = runtime.read_bound_resource("head", "title").unwrap();
 
-  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(snapshot_string(value), "Hello");
   assert_eq!(host.reads(), vec!["body/header/title".to_string()]);
 }
 
 #[test]
 fn runtime_reads_configured_browser_dom_path() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/title", "#title", &[BrowserOperation::Read]),
     FakeDomHost::default().with_value("body/title", "Hello"),
+    "browser",
+    "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "body/title");
   let value = runtime.read_bound_resource("browser", "body/title").unwrap();
-  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(snapshot_string(value), "Hello");
 }
 
 #[test]
 fn runtime_writes_configured_browser_dom_path() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/title", "#title", &[BrowserOperation::Write]),
     FakeDomHost::default(),
+    "browser",
+    "browser://dom/",
   );
+  grant_runtime_context_write(&mut runtime, "body/title");
   runtime
     .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
     .unwrap();
@@ -231,24 +260,22 @@ fn runtime_writes_configured_browser_dom_path() {
 
 #[test]
 fn runtime_denies_browser_dom_read_without_read_grant() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/title", "#title", &[BrowserOperation::Write]),
     FakeDomHost::default(),
+    "browser",
+    "browser://dom/",
   );
   assert!(runtime.read_bound_resource("browser", "body/title").is_err());
 }
 
 #[test]
 fn runtime_denies_browser_dom_write_without_write_grant() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/title", "#title", &[BrowserOperation::Read]),
     FakeDomHost::default(),
+    "browser",
+    "browser://dom/",
   );
   assert!(runtime
     .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
@@ -257,46 +284,42 @@ fn runtime_denies_browser_dom_write_without_write_grant() {
 
 #[test]
 fn runtime_rejects_unknown_browser_dom_path() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/title", "#title", &[BrowserOperation::Read]),
     FakeDomHost::default(),
+    "browser",
+    "browser://dom/",
   );
   assert!(runtime.read_bound_resource("browser", "body/other").is_err());
 }
 
 #[test]
 fn runtime_wildcard_dom_path_accepts_children() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/content/*", "#content", &[BrowserOperation::Read]),
     FakeDomHost::default().with_value("body/content/title", "Hello"),
+    "browser",
+    "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "body/content/title");
   assert!(runtime.read_bound_resource("browser", "body/content/title").is_ok());
 }
 
 #[test]
 fn runtime_wildcard_dom_path_rejects_siblings() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/content/*", "#content", &[BrowserOperation::Read]),
     FakeDomHost::default(),
+    "browser",
+    "browser://dom/",
   );
   assert!(runtime.read_bound_resource("browser", "body/sidebar/title").is_err());
 }
 
 #[test]
 fn program_browser_resource_write_uses_runtime_host() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     read_write_authority("body/header/title", "#title"),
     host.clone(),
   );
@@ -311,10 +334,8 @@ fn program_browser_resource_write_uses_runtime_host() {
 
 #[test]
 fn program_browser_resource_read_uses_runtime_host() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     read_write_authority("body/search/_value", "#search"),
     host.clone(),
   );
@@ -324,16 +345,14 @@ fn program_browser_resource_read_uses_runtime_host() {
     .run_string("@browser := browser://dom/{:read(body/search/_value)}\nx := @browser/body/search/_value")
     .unwrap();
 
-  assert_eq!(value.as_string().unwrap().borrow().as_str(), "query");
+  assert_eq!(snapshot_string(value), "query");
   assert_eq!(host.read_count(), 1);
 }
 
 #[test]
 fn program_browser_resource_define_does_not_write() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     read_write_authority("title", "#title"),
     host.clone(),
   );
@@ -347,10 +366,8 @@ fn program_browser_resource_define_does_not_write() {
 
 #[test]
 fn runtime_browser_resource_binding_applies_before_following_write() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     read_write_authority("body/header/title", "#title"),
     host.clone(),
   );
@@ -365,10 +382,8 @@ fn runtime_browser_resource_binding_applies_before_following_write() {
 
 #[test]
 fn program_browser_resource_write_accepts_string_variable() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default();
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     read_write_authority("body/header/title", "#title"),
     host.clone(),
   );
@@ -385,10 +400,8 @@ fn program_browser_resource_write_accepts_string_variable() {
 
 #[test]
 fn program_browser_resource_read_inside_expression() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     read_write_authority("body/search/_value", "#search"),
     host.clone(),
   );
@@ -399,7 +412,7 @@ fn program_browser_resource_read_inside_expression() {
 message := "Search: " + @browser/body/search/_value"#)
     .unwrap();
 
-  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Search: query");
+  assert_eq!(snapshot_string(value), "Search: query");
   assert_eq!(host.read_count(), 1);
 }
 
@@ -408,9 +421,8 @@ fn program_browser_resource_write_rhs_reads_browser_resource() {
   let mut authority = BrowserAuthority::default();
   bind_authority_path(&mut authority, "body/search/_value", "#search", &[BrowserOperation::Read]);
   bind_authority_path(&mut authority, "body/header/title", "#title", &[BrowserOperation::Write]);
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  register_browser_provider(&mut runtime, authority, host.clone());
+  let mut runtime = runtime_with_browser_provider(authority, host.clone());
   grant_runtime_context_read(&mut runtime, "body/search/_value");
   grant_runtime_context_write(&mut runtime, "body/header/title");
 
@@ -429,9 +441,8 @@ fn program_browser_resource_write_rhs_combines_string_and_browser_resource() {
   let mut authority = BrowserAuthority::default();
   bind_authority_path(&mut authority, "body/search/_value", "#search", &[BrowserOperation::Read]);
   bind_authority_path(&mut authority, "body/header/title", "#title", &[BrowserOperation::Write]);
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  register_browser_provider(&mut runtime, authority, host.clone());
+  let mut runtime = runtime_with_browser_provider(authority, host.clone());
   grant_runtime_context_read(&mut runtime, "body/search/_value");
   grant_runtime_context_write(&mut runtime, "body/header/title");
 
@@ -449,10 +460,8 @@ fn program_browser_resource_write_rhs_combines_string_and_browser_resource() {
 
 #[test]
 fn program_browser_resource_read_inside_expression_denied_before_host_access() {
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("body/search/_value", "query");
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_provider(
     authority("body/search/_value", "#search", &[BrowserOperation::Write]),
     host.clone(),
   );
@@ -467,18 +476,18 @@ message := "Search: " + @browser/body/search/_value"#);
 
 #[test]
 fn runtime_browser_dom_uses_generic_resource_provider_dispatch() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
   let host = FakeDomHost::default().with_value("body/title", "Hello");
-  register_browser_provider(
-    &mut runtime,
+  let mut runtime = runtime_with_browser_binding(
     authority("body/title", "#title", &[BrowserOperation::Read]),
     host.clone(),
+    "browser",
+    "browser://dom/",
   );
+  grant_runtime_context_read(&mut runtime, "body/title");
 
   let value = runtime.read_bound_resource("browser", "body/title").unwrap();
 
-  assert_eq!(value.as_string().unwrap().borrow().as_str(), "Hello");
+  assert_eq!(snapshot_string(value), "Hello");
   assert_eq!(host.read_count(), 1);
 }
 
@@ -487,9 +496,8 @@ fn prefix_context_browser_roundtrip_works_and_read_only_input_write_is_denied() 
   let mut authority = BrowserAuthority::default();
   bind_authority_path(&mut authority, "form/name/_value", "#name", &[BrowserOperation::Read]);
   bind_authority_path(&mut authority, "form/output/_value", "#output", &[BrowserOperation::Write]);
-  let mut runtime = runtime();
   let host = FakeDomHost::default().with_value("form/name/_value", "Ada");
-  register_browser_provider(&mut runtime, authority, host.clone());
+  let mut runtime = runtime_with_browser_provider(authority, host.clone());
   grant_runtime_context_read(&mut runtime, "form/name/_value");
   grant_runtime_context_write(&mut runtime, "form/output/_value");
 
@@ -509,12 +517,19 @@ name := @browser/form/name/_value
 
 #[test]
 fn runtime_scopes_dom_operations_to_manifest_entry_path() {
-  let mut runtime = runtime();
-  runtime.bind_resource_root("browser", "browser://dom/").unwrap();
   let mut authority = BrowserAuthority::default();
   bind_authority_path(&mut authority, "panel/text", "#panel", &[BrowserOperation::Read]);
   bind_authority_path(&mut authority, "panel/value", "#panel", &[BrowserOperation::Write]);
-  register_browser_provider(&mut runtime, authority, FakeDomHost::default().with_value("panel/text", "readable"));
+  let mut runtime = runtime_with_browser_binding(
+    authority,
+    FakeDomHost::default().with_value("panel/text", "readable"),
+    "browser",
+    "browser://dom/",
+  );
+  grant_runtime_context_read(&mut runtime, "panel/text");
+  grant_runtime_context_write(&mut runtime, "panel/text");
+  grant_runtime_context_write(&mut runtime, "panel/value");
+  grant_runtime_context_read(&mut runtime, "panel/value");
   assert!(runtime.read_bound_resource("browser", "panel/text").is_ok());
   assert!(runtime.write_bound_resource("browser", "panel/text", &Value::from("blocked".to_string())).is_err());
   assert!(runtime.write_bound_resource("browser", "panel/value", &Value::from("writable".to_string())).is_ok());

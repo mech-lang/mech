@@ -12,6 +12,288 @@
 // Like with actors, there is a _with_context version of each method, allowing for transactional operations and proper event emission within the context of an active transaction.
 
 use super::*;
+use crate::{
+  CapabilityAlreadyExistsError, CapabilityNotFoundError,
+  CapabilityNotRevocableError, RuntimeAuthorityScope,
+  RuntimeCapabilitySnapshot,
+};
+use std::collections::{HashMap, HashSet};
+
+#[derive(Clone, Debug)]
+pub(super) enum RuntimeCapabilityMutation {
+  Grant(Arc<dyn Capability>),
+  Revoke(CapabilityId),
+  Use(CapabilityId),
+}
+
+#[derive(Clone, Debug, Default)]
+pub(super) struct RuntimeCapabilityOverlay {
+  operations: Vec<RuntimeCapabilityMutation>,
+  grants: HashMap<CapabilityId, Arc<dyn Capability>>,
+  grant_order: Vec<CapabilityId>,
+  revocations: HashSet<CapabilityId>,
+  uses: HashMap<CapabilityId, u64>,
+  usage_order: Vec<CapabilityId>,
+}
+
+impl RuntimeCapabilityOverlay {
+  pub(super) fn mark(&self) -> usize {
+    self.operations.len()
+  }
+
+  pub(super) fn is_empty(&self) -> bool {
+    self.grants.is_empty()
+      && self.revocations.is_empty()
+      && self.uses.is_empty()
+  }
+
+  pub(super) fn stage_grant(
+    &mut self,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<()> {
+    self.stage_operation(RuntimeCapabilityMutation::Grant(capability))
+  }
+
+  pub(super) fn stage_revocation(
+    &mut self,
+    capability: CapabilityId,
+  ) -> MResult<()> {
+    self.stage_operation(RuntimeCapabilityMutation::Revoke(capability))
+  }
+
+  pub(super) fn stage_use(
+    &mut self,
+    capability: CapabilityId,
+  ) -> MResult<()> {
+    self.stage_operation(RuntimeCapabilityMutation::Use(capability))
+  }
+
+  pub(super) fn rollback_to(&mut self, mark: usize) -> MResult<()> {
+    if mark > self.operations.len() {
+      return Err(MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "rollback_capability_overlay",
+          reason: format!(
+            "capability savepoint mark {} exceeds overlay length {}",
+            mark,
+            self.operations.len(),
+          ),
+        },
+        None,
+      ));
+    }
+    self.operations.truncate(mark);
+    self.rebuild()
+  }
+
+  pub(super) fn provisional(
+    &self,
+    capability: CapabilityId,
+  ) -> Option<Arc<dyn Capability>> {
+    self.grants.get(&capability).cloned()
+  }
+
+  pub(super) fn check(
+    &mut self,
+    request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
+  ) -> MResult<Option<CapabilityId>> {
+    let selected = self.preview_check(request, scope)?;
+    if let Some(capability) = selected {
+      self.stage_use(capability)?;
+    }
+    Ok(selected)
+  }
+
+  pub(super) fn preview_check(
+    &self,
+    request: &CapabilityRequest,
+    scope: &RuntimeAuthorityScope,
+  ) -> MResult<Option<CapabilityId>> {
+    for id in &self.grant_order {
+      if !scope.contains(*id) {
+        continue;
+      }
+      let Some(capability) = self.grants.get(id) else {
+        continue;
+      };
+      let subject = extension::invoke_extension_value(
+        "capability",
+        "subject_key",
+        || capability.subject_key().to_string(),
+      )?;
+      if subject != request.subject {
+        continue;
+      }
+      let max_uses = extension::invoke_extension_value(
+        "capability",
+        "max_uses",
+        || capability.max_uses(),
+      )?;
+      if let Some(max_uses) = max_uses {
+        let actual = self.uses.get(id).copied().unwrap_or(0);
+        if actual >= max_uses {
+          continue;
+        }
+      }
+      let decision = extension::invoke_extension(
+        "capability",
+        "preview_check",
+        || capability.preview_check(request),
+      )?;
+      if decision.allowed {
+        return Ok(Some(*id));
+      }
+    }
+    Ok(None)
+  }
+
+  pub(super) fn grants(
+    &self,
+  ) -> impl Iterator<Item = (CapabilityId, Arc<dyn Capability>)> + '_ {
+    self.grant_order.iter().filter_map(|id| {
+      self
+        .grants
+        .get(id)
+        .map(|capability| (*id, capability.clone()))
+    })
+  }
+
+  pub(super) fn usage_deltas(
+    &self,
+  ) -> impl Iterator<Item = (CapabilityId, u64)> + '_ {
+    self.usage_order.iter().filter_map(|id| {
+      let uses = self.uses.get(id).copied().unwrap_or(0);
+      (uses != 0).then_some((*id, uses))
+    })
+  }
+
+  pub(super) fn pending_uses(
+    &self,
+  ) -> &HashMap<CapabilityId, u64> {
+    &self.uses
+  }
+
+  pub(super) fn revocations(
+    &self,
+  ) -> impl Iterator<Item = CapabilityId> + '_ {
+    self.revocations.iter().copied()
+  }
+
+  pub(super) fn revocation_ids(&self) -> HashSet<CapabilityId> {
+    self.revocations.clone()
+  }
+
+  fn stage_operation(
+    &mut self,
+    operation: RuntimeCapabilityMutation,
+  ) -> MResult<()> {
+    self.operations.push(operation);
+    if let Err(error) = self.rebuild() {
+      self.operations.pop();
+      if let Err(rollback_error) = self.rebuild() {
+        return Err(rollback_error.with_source(error));
+      }
+      return Err(error);
+    }
+    Ok(())
+  }
+
+  fn rebuild(&mut self) -> MResult<()> {
+    self.grants.clear();
+    self.grant_order.clear();
+    self.revocations.clear();
+    self.uses.clear();
+    self.usage_order.clear();
+    for operation in &self.operations {
+      match operation {
+        RuntimeCapabilityMutation::Grant(capability) => {
+          let id = extension::invoke_extension_value(
+            "capability",
+            "id",
+            || capability.id(),
+          )?;
+          self.revocations.remove(&id);
+          if !self.grants.contains_key(&id) {
+            self.grant_order.push(id);
+          }
+          self.grants.insert(id, capability.clone());
+        }
+        RuntimeCapabilityMutation::Revoke(capability) => {
+          if self.grants.remove(capability).is_some() {
+            self.grant_order.retain(|id| id != capability);
+            self.uses.remove(capability);
+            self.usage_order.retain(|id| id != capability);
+          } else {
+            self.revocations.insert(*capability);
+          }
+        }
+        RuntimeCapabilityMutation::Use(capability) => {
+          if self.revocations.contains(capability) {
+            return Err(MechError::new(
+              RuntimeInvalidOperationError {
+                operation: "rebuild_capability_overlay",
+                reason: format!(
+                  "capability {} was used after transaction-local revocation",
+                  capability,
+                ),
+              },
+              None,
+            ));
+          }
+          if !self.uses.contains_key(capability) {
+            self.usage_order.push(*capability);
+          }
+          let current = self.uses.get(capability).copied().unwrap_or(0);
+          let next =
+            Self::incremented_usage(*capability, current)?;
+          self.uses.insert(*capability, next);
+        }
+      }
+    }
+    Ok(())
+  }
+
+  fn incremented_usage(
+    capability: CapabilityId,
+    current: u64,
+  ) -> MResult<u64> {
+    current.checked_add(1).ok_or_else(|| {
+      MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "rebuild_capability_overlay",
+          reason: format!(
+            "capability {} transaction-local usage count overflowed",
+            capability,
+          ),
+        },
+        None,
+      )
+    })
+  }
+}
+
+pub(super) fn check_transactional_capability(
+  capability_kernel: &mut dyn CapabilityKernel,
+  overlay: &mut RuntimeCapabilityOverlay,
+  scope: &RuntimeAuthorityScope,
+  request: &CapabilityRequest,
+) -> MResult<CapabilityId> {
+  if let Some(capability) = overlay.check(request, scope)? {
+    return Ok(capability);
+  }
+  let revocations = overlay.revocation_ids();
+  let pending_uses = overlay.pending_uses().clone();
+  let capability =
+    capability_kernel.preview_scoped_with_transaction(
+      request,
+      scope,
+      &revocations,
+      &pending_uses,
+    )?;
+  overlay.stage_use(capability)?;
+  Ok(capability)
+}
 
 fn finish_failed_capability_grant(
   capability: CapabilityId,
@@ -40,17 +322,99 @@ fn finish_failed_capability_grant(
 }
 
 impl MechRuntime {
+  pub fn get_capability_snapshot(
+    &self,
+    id: CapabilityId,
+  ) -> MResult<Option<RuntimeCapabilitySnapshot>> {
+    let Some(capability) = self.capability_kernel.get(id)? else {
+      return Ok(None);
+    };
+    let snapshot = extension::invoke_extension_value(
+      "capability",
+      "snapshot",
+      || RuntimeCapabilitySnapshot {
+        id: capability.id(),
+        subject: capability.subject_key().to_string(),
+        revocable: capability.is_revocable(),
+        delegable: capability.is_delegable(),
+        attenuable: capability.is_attenuable(),
+        max_uses: capability.max_uses(),
+      },
+    )?;
+    Ok(Some(snapshot))
+  }
+
 
   pub fn grant_capability_with_context(
     &mut self,
     context: &mut RuntimeContext,
     capability: Arc<dyn Capability>,
   ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed(
+      "grant_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    capability.validate()?;
+    extension::invoke_extension(
+      "capability",
+      "validate",
+      || capability.validate(),
+    )?;
 
-    let id = capability.id();
+    let id = extension::invoke_extension_value(
+      "capability",
+      "id",
+      || capability.id(),
+    )?;
+
+    if let Some(transaction_id) = context.transaction {
+      if self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .provisional(id)
+        .is_some()
+        || self.capability_kernel.get(id)?.is_some()
+      {
+        return Err(MechError::new(
+          CapabilityAlreadyExistsError { capability: id },
+          None,
+        ));
+      }
+
+      let store_before = self
+        .active_execution_transaction(transaction_id)?
+        .store
+        .clone();
+      let overlay_mark = self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .mark();
+      let context_events_before = context.events.clone();
+      let context_authority_before = context.authority.clone();
+
+      self
+        .active_execution_transaction_mut(transaction_id)?
+        .capabilities
+        .stage_grant(capability)?;
+      if let Err(error) = self.emit_event_to_context(
+        context,
+        RuntimeEventKind::CapabilityGranted {
+          capability_id: id,
+        },
+      ) {
+        let transaction =
+          self.active_execution_transaction_mut(transaction_id)?;
+        transaction.store = store_before;
+        let rollback_result =
+          transaction.capabilities.rollback_to(overlay_mark);
+        context.events = context_events_before;
+        context.authority = context_authority_before;
+        rollback_result?;
+        return Err(error);
+      }
+      context.add_capability(id);
+      return Ok(id);
+    }
 
     self.store.grant_capability(id, capability.clone())?;
 
@@ -99,7 +463,20 @@ impl MechRuntime {
     Ok(id)
   }
 
+  pub fn grant_capability(
+    &mut self,
+    capability: Arc<dyn Capability>,
+  ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed("grant_capability")?;
+    let mut context = self.runtime_context()?;
+    self.grant_capability_with_context(
+      &mut context,
+      capability,
+    )
+  }
+
   pub fn revoke_capability(&mut self, capability: CapabilityId) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("revoke_capability")?;
     let mut context = self.runtime_context()?;
     self.revoke_capability_with_context(&mut context, capability)
   }
@@ -109,8 +486,74 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     capability: CapabilityId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "revoke_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
+
+    if let Some(transaction_id) = context.transaction {
+      let staged = self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .provisional(capability);
+      let live = if staged.is_none() {
+        self.capability_kernel.get(capability)?
+      } else {
+        None
+      };
+      let Some(existing) = staged.or(live) else {
+        return Err(MechError::new(
+          CapabilityNotFoundError { capability },
+          None,
+        ));
+      };
+      let revocable = extension::invoke_extension_value(
+        "capability",
+        "is_revocable",
+        || existing.is_revocable(),
+      )?;
+      if !revocable {
+        return Err(MechError::new(
+          CapabilityNotRevocableError { capability },
+          None,
+        ));
+      }
+
+      let store_before = self
+        .active_execution_transaction(transaction_id)?
+        .store
+        .clone();
+      let overlay_mark = self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .mark();
+      let context_events_before = context.events.clone();
+      let context_authority_before = context.authority.clone();
+
+      self
+        .active_execution_transaction_mut(transaction_id)?
+        .capabilities
+        .stage_revocation(capability)?;
+      context.remove_capability(capability);
+      if let Err(error) = self.emit_event_to_context(
+        context,
+        RuntimeEventKind::CapabilityRevoked {
+          capability_id: capability,
+        },
+      ) {
+        let transaction =
+          self.active_execution_transaction_mut(transaction_id)?;
+        transaction.store = store_before;
+        let rollback_result =
+          transaction.capabilities.rollback_to(overlay_mark);
+        context.events = context_events_before;
+        context.authority = context_authority_before;
+        rollback_result?;
+        return Err(error);
+      }
+      return Ok(());
+    }
 
     self
       .capability_kernel
@@ -133,7 +576,11 @@ impl MechRuntime {
     &mut self,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
-    self.capability_kernel.check(request)
+    self.ensure_runtime_mutation_allowed("check_capability")?;
+    self.capability_kernel.check_scoped(
+      request,
+      &RuntimeAuthorityScope::AllForSubject,
+    )
   }
 
   pub fn check_capability_with_context(
@@ -141,12 +588,91 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: &CapabilityRequest,
   ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed(
+      "check_capability_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    self.capability_kernel.check(request)
+    self.check_capability_for_execution(context, request)
   }
 
-  pub fn get_capability(
+  pub(super) fn check_capability_for_execution(
+    &mut self,
+    context: &RuntimeContext,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    self.validate_context_for_runtime(context)?;
+    if let Some(transaction_id) = context.transaction {
+      let transaction = self
+        .active_transactions
+        .get_mut(&transaction_id)
+        .ok_or_else(|| {
+          MechError::new(
+            RuntimeTransactionNotFoundError { transaction_id },
+            None,
+          )
+        })?;
+      return check_transactional_capability(
+        self.capability_kernel.as_mut(),
+        &mut transaction.capabilities,
+        &context.authority,
+        request,
+      );
+    }
+    self
+      .capability_kernel
+      .check_scoped(request, &context.authority)
+  }
+
+  pub(super) fn preview_capability_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    self.ensure_runtime_mutation_allowed(
+      "preview_capability_with_context",
+    )?;
+    self.validate_context_for_runtime(context)?;
+    context.charge_step()?;
+    self.preview_capability_for_execution(context, request)
+  }
+
+  pub(super) fn preview_capability_for_execution(
+    &self,
+    context: &RuntimeContext,
+    request: &CapabilityRequest,
+  ) -> MResult<CapabilityId> {
+    self.validate_context_for_runtime(context)?;
+    if let Some(transaction_id) = context.transaction {
+      let provisional = self
+        .active_execution_transaction(transaction_id)?
+        .capabilities
+        .preview_check(request, &context.authority)?;
+      if let Some(capability) = provisional {
+        return Ok(capability);
+      }
+      let transaction =
+        self.active_execution_transaction(transaction_id)?;
+      let revocations = transaction.capabilities.revocation_ids();
+      let pending_uses = transaction.capabilities.pending_uses().clone();
+      return self
+        .capability_kernel
+        .preview_scoped_with_transaction(
+          request,
+          &context.authority,
+          &revocations,
+          &pending_uses,
+        );
+    }
+    self.capability_kernel.preview_scoped_with_transaction(
+      request,
+      &context.authority,
+      &HashSet::new(),
+      &HashMap::new(),
+    )
+  }
+
+  pub(crate) fn get_capability(
     &self,
     id: CapabilityId,
   ) -> MResult<Option<Arc<dyn Capability>>> {
@@ -155,419 +681,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-
-  use std::collections::VecDeque;
-  use std::sync::atomic::{AtomicBool, Ordering};
-
-  use mech_core::{GenericError, MResult, MechError};
-
-  use crate::capability::{
-    BasicCapability, BasicCapabilityKernel, CapabilityDerivation, CapabilityGrant,
-    CapabilityKernel, Subject,
-  };
-  use crate::id::{
-    ActorId, EventId, IdGenerator, MessageId, NodeId, ObjectId, RuntimeId,
-    SequentialIdGenerator, TaskId, TransactionId,
-  };
-  use crate::store::{InMemoryStore, MechStore};
-
-  fn capability(
-    id: CapabilityId,
-    subject: &str,
-    revocable: bool,
-  ) -> Arc<dyn Capability> {
-    Arc::new(
-      BasicCapability::from_keys(id, subject, "db://users", [":read"])
-        .revocable(revocable),
-    )
-  }
-
-  fn request(subject: &str) -> CapabilityRequest {
-    CapabilityRequest::from_keys(subject, ":read", "db://users")
-  }
-
-  #[derive(Debug)]
-  struct ScriptedEventIdGenerator {
-    next: u128,
-    event_ids: VecDeque<EventId>,
-  }
-
-  impl ScriptedEventIdGenerator {
-    fn new(next: u128, event_ids: impl IntoIterator<Item = EventId>) -> Self {
-      Self {
-        next,
-        event_ids: event_ids.into_iter().collect(),
-      }
-    }
-
-    fn next_id(&mut self) -> u128 {
-      let id = self.next;
-      self.next = self.next.saturating_add(1);
-      id
-    }
-  }
-
-  impl IdGenerator for ScriptedEventIdGenerator {
-    fn runtime_id(&mut self) -> RuntimeId {
-      RuntimeId(self.next_id())
-    }
-
-    fn object_id(&mut self) -> ObjectId {
-      ObjectId(self.next_id())
-    }
-
-    fn actor_id(&mut self) -> ActorId {
-      ActorId(self.next_id())
-    }
-
-    fn task_id(&mut self) -> TaskId {
-      TaskId(self.next_id())
-    }
-
-    fn capability_id(&mut self) -> CapabilityId {
-      CapabilityId(self.next_id())
-    }
-
-    fn transaction_id(&mut self) -> TransactionId {
-      TransactionId(self.next_id())
-    }
-
-    fn event_id(&mut self) -> EventId {
-      self
-        .event_ids
-        .pop_front()
-        .unwrap_or_else(|| EventId(self.next_id()))
-    }
-
-    fn node_id(&mut self) -> NodeId {
-      NodeId(self.next_id())
-    }
-
-    fn message_id(&mut self) -> MessageId {
-      MessageId(self.next_id())
-    }
-  }
-
-  #[derive(Debug)]
-  struct FailingRollbackKernel {
-    inner: BasicCapabilityKernel,
-    rollback_attempted: Arc<AtomicBool>,
-  }
-
-  impl CapabilityKernel for FailingRollbackKernel {
-    fn grant(&mut self, grant: CapabilityGrant) -> MResult<CapabilityId> {
-      self.inner.grant(grant)
-    }
-
-    fn rollback_grant(&mut self, _capability: CapabilityId) -> MResult<()> {
-      self.rollback_attempted.store(true, Ordering::SeqCst);
-      Err(MechError::new(
-        GenericError {
-          msg: "test kernel rollback failed".to_string(),
-        },
-        None,
-      ))
-    }
-
-    fn revoke(&mut self, revocation: CapabilityRevocation) -> MResult<()> {
-      self.inner.revoke(revocation)
-    }
-
-    fn check(&mut self, request: &CapabilityRequest) -> MResult<CapabilityId> {
-      self.inner.check(request)
-    }
-
-    fn get(&self, id: CapabilityId) -> MResult<Option<Arc<dyn Capability>>> {
-      self.inner.get(id)
-    }
-
-    fn list_for_subject(
-      &self,
-      subject: &dyn Subject,
-    ) -> MResult<Vec<CapabilityId>> {
-      self.inner.list_for_subject(subject)
-    }
-
-    fn derive_capability(
-      &mut self,
-      derivation: CapabilityDerivation,
-    ) -> MResult<CapabilityId> {
-      self.inner.derive_capability(derivation)
-    }
-
-    fn is_revoked(&self, id: CapabilityId) -> MResult<bool> {
-      self.inner.is_revoked(id)
-    }
-  }
-
-  #[test]
-  fn capability_grant_store_failure_never_grants_kernel_authority() {
-    let mut store = InMemoryStore::new();
-    store
-      .grant_capability(CapabilityId(100), capability(CapabilityId(100), "task:1", true))
-      .unwrap();
-
-    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let durable_events_before = runtime.list_events(None).unwrap();
-
-    let error = runtime
-      .grant_capability_with_context(
-        &mut context,
-        capability(CapabilityId(100), "task:1", true),
-      )
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "StoreRecordAlreadyExists");
-    assert!(runtime
-      .capability_kernel()
-      .get(CapabilityId(100))
-      .unwrap()
-      .is_none());
-    assert!(!context.has_capability(CapabilityId(100)));
-    assert!(!context.events.iter().any(|event| {
-      matches!(
-        event.kind,
-        RuntimeEventKind::CapabilityGranted {
-          capability_id: CapabilityId(100),
-        }
-      )
-    }));
-    assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_some());
-    assert_eq!(
-      runtime
-        .store()
-        .list_capabilities_for_subject("task:1")
-        .unwrap(),
-      vec![CapabilityId(100)],
-    );
-    assert_eq!(runtime.list_events(None).unwrap(), durable_events_before);
-  }
-
-  #[test]
-  fn capability_grant_kernel_failure_rolls_back_store() {
-    let mut kernel = BasicCapabilityKernel::new();
-    kernel
-      .grant(CapabilityGrant::new(capability(CapabilityId(100), "task:1", true)))
-      .unwrap();
-
-    let mut runtime = MechRuntime::builder()
-      .capability_kernel(kernel)
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let context_events_before = context.events.clone();
-    let context_capabilities_before = context.capabilities.clone();
-
-    let error = runtime
-      .grant_capability_with_context(
-        &mut context,
-        capability(CapabilityId(100), "task:1", true),
-      )
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "CapabilityAlreadyExists");
-    assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert!(runtime
-      .capability_kernel()
-      .get(CapabilityId(100))
-      .unwrap()
-      .is_some());
-    assert_eq!(context.events, context_events_before);
-    assert_eq!(context.capabilities, context_capabilities_before);
-  }
-
-  #[test]
-  fn capability_grant_event_failure_removes_non_revocable_live_authority() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_in_memory_events = Some(1);
-    let mut runtime = MechRuntime::builder()
-      .config(config)
-      .id_generator(ScriptedEventIdGenerator::new(
-        1,
-        [EventId(100), EventId(100)],
-      ))
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    context.events.push(RuntimeEvent::new(
-      EventId(999),
-      999,
-      RuntimeEventKind::RuntimeTickStarted,
-    ));
-    let context_events_before = context.events.clone();
-
-    let error = runtime
-      .grant_capability_with_context(
-        &mut context,
-        capability(CapabilityId(100), "task:1", false),
-      )
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "StoreRecordAlreadyExists");
-    assert_eq!(context.events, context_events_before);
-    assert!(!context.has_capability(CapabilityId(100)));
-    assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert!(runtime
-      .capability_kernel()
-      .get(CapabilityId(100))
-      .unwrap()
-      .is_none());
-    assert!(runtime.check_capability(&request("task:1")).is_err());
-    assert!(runtime.list_events(None).unwrap().iter().any(|event| {
-      matches!(event.kind, RuntimeEventKind::RuntimeCreated { .. })
-    }));
-    assert!(!runtime.list_events(None).unwrap().iter().any(|event| {
-      matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. })
-    }));
-  }
-
-  #[test]
-  fn capability_grant_failed_transactional_event_staging_is_compensated() {
-    let mut runtime = MechRuntime::builder()
-      .id_generator(ScriptedEventIdGenerator::new(
-        1,
-        [EventId(100), EventId(101), EventId(0)],
-      ))
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-    let context_events_before = context.events.clone();
-
-    let error = runtime
-      .grant_capability_with_context(
-        &mut context,
-        capability(CapabilityId(100), "task:1", true),
-      )
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "InvalidRuntimeEvent");
-    assert_eq!(context.events, context_events_before);
-    assert_eq!(context.transaction, Some(transaction_id));
-    assert!(runtime.active_transactions.contains_key(&transaction_id));
-    assert!(!runtime
-      .active_transactions
-      .get(&transaction_id)
-      .unwrap()
-      .staged_events()
-      .any(|event| matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. })));
-    assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert!(runtime
-      .capability_kernel()
-      .get(CapabilityId(100))
-      .unwrap()
-      .is_none());
-    assert!(!context.has_capability(CapabilityId(100)));
-
-    runtime
-      .abort_runtime_transaction(&mut context, "test cleanup")
-      .unwrap();
-  }
-
-  #[test]
-  fn capability_grant_incomplete_rollback_is_reported_and_continues() {
-    let rollback_attempted = Arc::new(AtomicBool::new(false));
-    let kernel = FailingRollbackKernel {
-      inner: BasicCapabilityKernel::new(),
-      rollback_attempted: rollback_attempted.clone(),
-    };
-    let mut config = RuntimeConfig::default();
-    config.limits.max_in_memory_events = Some(1);
-    let mut runtime = MechRuntime::builder()
-      .config(config)
-      .id_generator(ScriptedEventIdGenerator::new(
-        1,
-        [EventId(100), EventId(100)],
-      ))
-      .capability_kernel(kernel)
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    context.events.push(RuntimeEvent::new(
-      EventId(999),
-      999,
-      RuntimeEventKind::RuntimeTickStarted,
-    ));
-    let context_events_before = context.events.clone();
-
-    let error = runtime
-      .grant_capability_with_context(
-        &mut context,
-        capability(CapabilityId(100), "task:1", false),
-      )
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "RuntimeCapabilityGrantRollbackFailed");
-    assert_eq!(
-      error.source.as_ref().unwrap().kind_name(),
-      "StoreRecordAlreadyExists",
-    );
-    let rollback = error
-      .kind_as::<RuntimeCapabilityGrantRollbackFailed>()
-      .unwrap();
-    assert!(rollback
-      .rollback_failures
-      .iter()
-      .any(|failure| failure.contains("capability kernel: GenericError")));
-    assert!(rollback_attempted.load(Ordering::SeqCst));
-    assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert_eq!(context.events, context_events_before);
-    assert!(!context.has_capability(CapabilityId(100)));
-    assert!(runtime
-      .capability_kernel()
-      .get(CapabilityId(100))
-      .unwrap()
-      .is_some());
-  }
-
-  #[test]
-  fn capability_grant_success_updates_every_component_once() {
-    let mut runtime = MechRuntime::builder()
-      .id_generator(SequentialIdGenerator::starting_at(1))
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let id = CapabilityId(100);
-
-    assert_eq!(
-      runtime
-        .grant_capability_with_context(&mut context, capability(id, "task:1", true))
-        .unwrap(),
-      id,
-    );
-    assert!(runtime.get_capability(id).unwrap().is_some());
-    assert!(runtime.capability_kernel().get(id).unwrap().is_some());
-    assert_eq!(runtime.check_capability(&request("task:1")).unwrap(), id);
-    assert_eq!(context.capabilities.iter().filter(|candidate| **candidate == id).count(), 1);
-    assert_eq!(
-      context
-        .events
-        .iter()
-        .filter(|event| {
-          matches!(
-            event.kind,
-            RuntimeEventKind::CapabilityGranted { capability_id } if capability_id == id
-          )
-        })
-        .count(),
-      1,
-    );
-    assert_eq!(
-      runtime
-        .list_events(None)
-        .unwrap()
-        .iter()
-        .filter(|event| {
-          matches!(
-            event.kind,
-            RuntimeEventKind::CapabilityGranted { capability_id } if capability_id == id
-          )
-        })
-        .count(),
-      1,
-    );
-  }
-}
+#[path = "capability/tests/mod.rs"]
+mod tests;

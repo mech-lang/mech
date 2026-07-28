@@ -94,6 +94,7 @@ impl ModuleBuilder {
     let module_id = module_id(&resolved.canonical_uri);
 
     let module_version = module_version_id(
+      module_id,
       &source_version_input(&resolved),
       &compiler_version,
       &language_edition,
@@ -202,5 +203,49 @@ mod tests {
     .unwrap_err();
 
     assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+  }
+
+  #[test]
+  fn identical_builds_for_one_uri_reuse_version_identity() {
+    let source = MechSourceCode::String("value := 41".to_string());
+    let first = build(
+      ResolvedSource::new("lib.mec", "memory://lib.mec", source.clone())
+        .with_kind(crate::SourceKind::Mech),
+    )
+    .unwrap();
+    let second = build(
+      ResolvedSource::new("lib.mec", "memory://lib.mec", source)
+        .with_kind(crate::SourceKind::Mech),
+    )
+    .unwrap();
+
+    assert_eq!(first.module_id, second.module_id);
+    assert_eq!(first.module_version, second.module_version);
+  }
+
+  #[test]
+  fn identical_source_at_distinct_uris_has_distinct_version_identity() {
+    let source = MechSourceCode::String("value := 41".to_string());
+    let first = build(
+      ResolvedSource::new(
+        "lib.mec",
+        "memory://first/lib.mec",
+        source.clone(),
+      )
+      .with_kind(crate::SourceKind::Mech),
+    )
+    .unwrap();
+    let second = build(
+      ResolvedSource::new(
+        "lib.mec",
+        "memory://second/lib.mec",
+        source,
+      )
+      .with_kind(crate::SourceKind::Mech),
+    )
+    .unwrap();
+
+    assert_ne!(first.module_id, second.module_id);
+    assert_ne!(first.module_version, second.module_version);
   }
 }

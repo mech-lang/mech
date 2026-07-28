@@ -32,7 +32,7 @@ use std::collections::HashSet;
 
 pub type Environment = HashMap<u64, Value>;
 
-pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn expression(expr: &Expression, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
     match &expr {
         #[cfg(feature = "variables")]
         Expression::Var(v) => var(v, env, p),
@@ -63,10 +63,10 @@ pub fn expression(expr: &Expression, env: Option<&Environment>, p: &Interpreter)
 fn comprehension_environments(
     qualifiers: &[ComprehensionQualifier],
     comprehension_id: u64,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<(Vec<Environment>, Interpreter)> {
     let mut envs: Vec<Environment> = vec![HashMap::new()];
-    let mut new_p = p.clone();
+    let mut new_p: Interpreter = (**p).clone();
     new_p.id = comprehension_id;
     new_p.clear_plan();
     for qual in qualifiers {
@@ -75,13 +75,27 @@ fn comprehension_environments(
                 let compiled = crate::patterns::compile_pattern(pttrn, None, &new_p)?;
                 let mut new_envs = Vec::new();
                 for env in &envs {
-                    let collection = expression(expr, Some(env), &new_p)?;
+                    let collection = p.with_interpreter(
+                        &new_p,
+                        |execution| expression(
+                            expr,
+                            Some(env),
+                            execution,
+                        ),
+                    )?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
-                        let pattern_match =
-                            crate::patterns::match_compiled_pattern_with_environment_constraints(
-                                &compiled, &elmnt, &new_env, &new_p,
-                            )?;
+                        let pattern_match = p.with_interpreter(
+                            &new_p,
+                            |execution| {
+                                crate::patterns::match_compiled_pattern_with_environment_constraints(
+                                    &compiled,
+                                    &elmnt,
+                                    &new_env,
+                                    execution,
+                                )
+                            },
+                        )?;
                         if pattern_match.matched {
                             crate::patterns::EnvironmentBindingSink::new(&mut new_env)
                                 .commit(&pattern_match)?;
@@ -94,7 +108,14 @@ fn comprehension_environments(
             ComprehensionQualifier::Filter(expr) => envs
                 .into_iter()
                 .filter(|env| {
-                    let result = expression(expr, Some(env), &new_p);
+                    let result = p.with_interpreter(
+                        &new_p,
+                        |execution| expression(
+                            expr,
+                            Some(env),
+                            execution,
+                        ),
+                    );
                     match result {
                         Ok(Value::Bool(v)) => v.borrow().clone(),
                         Ok(_) => false,
@@ -105,7 +126,14 @@ fn comprehension_environments(
             ComprehensionQualifier::Let(var_def) => envs
                 .into_iter()
                 .map(|mut env| -> MResult<_> {
-                    let val = expression(&var_def.expression, Some(&env), &new_p)?;
+                    let val = p.with_interpreter(
+                        &new_p,
+                        |execution| expression(
+                            &var_def.expression,
+                            Some(&env),
+                            execution,
+                        ),
+                    )?;
                     env.insert(var_def.var.name.hash(), val);
                     Ok(env)
                 })
@@ -206,6 +234,10 @@ impl MechFunctionImpl for ValueSetComprehension {
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
@@ -294,10 +326,35 @@ impl MechFunctionImpl for ValueMatrixComprehension {
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(vec![Value::MutableReference(self.out.clone())])
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 }
+
+#[cfg(all(test, feature = "matrix_comprehensions", feature = "functions"))]
+mod matrix_comprehension_transaction_tests {
+    use super::*;
+
+    #[test]
+    fn transaction_state_retains_matrix_comprehension_outer_output_ref() {
+        let out = Ref::new(Value::Empty);
+        let function = ValueMatrixComprehension {
+            arguments: Vec::new(),
+            out: out.clone(),
+        };
+
+        let values = function.transaction_state_values().unwrap();
+        assert_eq!(values.len(), 1);
+        match &values[0] {
+            Value::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
+            other => panic!("expected mutable-reference transaction root, got {other:?}"),
+        }
+    }
+}
+
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueMatrixComprehension {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -362,12 +419,19 @@ register_descriptor! {
 }
 
 #[cfg(feature = "set_comprehensions")]
-pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResult<Value> {
+pub fn set_comprehension(set_comp: &SetComprehension, p: &InterpreterExecution<'_>) -> MResult<Value> {
     let comprehension_id = hash_str(&format!("{:?}", set_comp));
     let (envs, new_p) = comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
     for env in envs {
-        let val = expression(&set_comp.expression, Some(&env), &new_p)?;
+        let val = p.with_interpreter(
+            &new_p,
+            |execution| expression(
+                &set_comp.expression,
+                Some(&env),
+                execution,
+            ),
+        )?;
         values.push(val);
     }
     let functions = p.functions();
@@ -392,12 +456,19 @@ pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResul
 }
 
 #[cfg(feature = "matrix_comprehensions")]
-pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) -> MResult<Value> {
+pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &InterpreterExecution<'_>) -> MResult<Value> {
     let comprehension_id = hash_str(&format!("{:?}", matrix_comp));
     let (envs, new_p) = comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
     for env in envs {
-        values.push(expression(&matrix_comp.expression, Some(&env), &new_p)?);
+        values.push(p.with_interpreter(
+            &new_p,
+            |execution| expression(
+                &matrix_comp.expression,
+                Some(&env),
+                execution,
+            ),
+        )?);
     }
     let functions = p.functions();
     let horzcat_id = hash_str("matrix/comprehension");
@@ -454,6 +525,10 @@ mod indexed_expression_registration_tests {
     fn solve(&self) { self.solve_calls.fetch_add(1, Ordering::SeqCst); }
     fn out(&self) -> Value { self.output.clone() }
     fn to_string(&self) -> String { "indexed-expression-test".to_string() }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      Ok(self.reactive_output_values())
+    }
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for IndexedExpressionTestFunction {
@@ -621,7 +696,7 @@ mod variable_kind_cast_dependency_tests {
 }
 
 #[cfg(feature = "range")]
-pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn range(rng: &RangeExpression, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let start = factor(&rng.start, env, p)?;
   let terminal = factor(&rng.terminal, env, p)?;
@@ -668,7 +743,7 @@ fn addressed_identifier_hash(name: &Identifier, context: &Option<Identifier>) ->
 }
 
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
-pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn slice(slc: &Slice, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
     let id = addressed_identifier_hash(&slc.name, &slc.context);
     let name = addressed_identifier_name(&slc.name, &slc.context);
     let val: Value = if let Some(env) = env {
@@ -718,7 +793,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
 pub fn subscript_formula(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     match sbscrpt {
         Subscript::Formula(fctr) => factor(fctr, env, p),
@@ -730,7 +805,7 @@ pub fn subscript_formula(
 pub fn subscript_formula_ix(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     match sbscrpt {
         Subscript::Formula(fctr) => {
@@ -743,24 +818,24 @@ pub fn subscript_formula_ix(
 
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn reset_current_string_access_expression_live(p: &Interpreter) {
+pub(crate) fn reset_current_string_access_expression_live(p: &InterpreterExecution<'_>) {
     *p.current_string_access_expression_live.borrow_mut() = false;
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn current_string_access_expression_live(p: &Interpreter) -> bool {
+pub(crate) fn current_string_access_expression_live(p: &InterpreterExecution<'_>) -> bool {
     *p.current_string_access_expression_live.borrow()
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn take_current_string_access_expression_live(p: &Interpreter) -> bool {
+pub(crate) fn take_current_string_access_expression_live(p: &InterpreterExecution<'_>) -> bool {
     let value = *p.current_string_access_expression_live.borrow();
     *p.current_string_access_expression_live.borrow_mut() = false;
     value
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn mark_current_string_access_expression_live(p: &Interpreter) {
+pub(crate) fn mark_current_string_access_expression_live(p: &InterpreterExecution<'_>) {
     *p.current_string_access_expression_live.borrow_mut() = true;
 }
 
@@ -804,14 +879,14 @@ fn string_access_scalar_addr(value: &Value) -> Option<usize> {
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn mark_string_access_value_live(p: &Interpreter, value: &Value) {
+pub(crate) fn mark_string_access_value_live(p: &InterpreterExecution<'_>, value: &Value) {
     if let Some(addr) = string_access_scalar_addr(value) {
         p.string_access_live_values.borrow_mut().insert(addr);
     }
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn string_access_value_is_marked_live(p: &Interpreter, value: &Value) -> bool {
+pub(crate) fn string_access_value_is_marked_live(p: &InterpreterExecution<'_>, value: &Value) -> bool {
     string_access_scalar_addr(value)
         .map(|addr| p.string_access_live_values.borrow().contains(&addr))
         .unwrap_or(false)
@@ -821,7 +896,7 @@ pub(crate) fn string_access_value_is_marked_live(p: &Interpreter, value: &Value)
 fn subscript_formula_is_mutable_symbol(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> bool {
     if env.is_some() {
         return false;
@@ -842,17 +917,17 @@ fn subscript_formula_is_mutable_symbol(
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &Interpreter) -> bool {
+fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &InterpreterExecution<'_>) -> bool {
     let state_brrw = p.state.borrow();
     let symbols_brrw = state_brrw.symbol_table.borrow();
     symbols_brrw
         .mutable_variables
         .values()
-        .any(|symbol| std::rc::Rc::ptr_eq(&symbol.0, &reference.0))
+        .any(|symbol| symbol.same_handle(reference))
 }
 
 #[cfg(feature = "subscript_formula")]
-fn value_is_mutable_symbol_reference(value: &Value, p: &Interpreter) -> bool {
+fn value_is_mutable_symbol_reference(value: &Value, p: &InterpreterExecution<'_>) -> bool {
     match value {
         Value::MutableReference(reference) => mutable_reference_is_mutable_symbol(reference, p),
         _ => false,
@@ -860,23 +935,23 @@ fn value_is_mutable_symbol_reference(value: &Value, p: &Interpreter) -> bool {
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mutable_reference_is_live_plan_output(reference: &MutableReference, p: &Interpreter) -> bool {
+fn mutable_reference_is_live_plan_output(reference: &MutableReference, p: &InterpreterExecution<'_>) -> bool {
     let current = reference.borrow();
     string_access_value_is_marked_live(p, &current)
 }
 
 #[cfg(feature = "subscript_formula")]
-fn string_access_argument_is_live(value: &Value, p: &Interpreter) -> bool {
+fn string_access_argument_is_live(value: &Value, p: &InterpreterExecution<'_>) -> bool {
     string_access_value_is_marked_live(p, value)
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn string_access_input_is_live(value: &Value, p: &Interpreter) -> bool {
+pub(crate) fn string_access_input_is_live(value: &Value, p: &InterpreterExecution<'_>) -> bool {
     value_is_mutable_symbol_reference(value, p) || string_access_argument_is_live(value, p)
 }
 
 #[cfg(feature = "subscript_formula")]
-fn string_access_source_argument(value: &Value, p: &Interpreter) -> Value {
+fn string_access_source_argument(value: &Value, p: &InterpreterExecution<'_>) -> Value {
     match value {
         Value::MutableReference(reference)
             if matches!(value.deref_kind(), ValueKind::String)
@@ -894,7 +969,7 @@ fn string_access_index_argument(
     raw_index: Value,
     sbscrpt: &Subscript,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     match &raw_index {
         Value::MutableReference(reference)
@@ -912,7 +987,7 @@ fn string_access_index_argument(
 pub fn subscript_range(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     match sbscrpt {
         Subscript::Range(rng) => {
@@ -938,7 +1013,7 @@ pub fn subscript(
     sbscrpt: &Subscript,
     val: &Value,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     let plan = p.plan();
     match sbscrpt {
@@ -1230,7 +1305,7 @@ pub fn subscript(
 }
 
 #[cfg(feature = "symbol_table")]
-pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
     let plan = p.plan();
     let maybe_cast_to_kind = |value: Value| -> MResult<Value> {
         match &v.kind {
@@ -1240,6 +1315,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                     kind_annotation(&kind_anntn.kind, p)?.to_value_kind(&state_brrw.kinds)?
                 };
                 execute_initialized_indexed_compiler(
+                    p,
                     &plan,
                     &ConvertKind {},
                     vec![value, Value::Kind(target_kind)],
@@ -1307,7 +1383,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
 pub fn match_expression(
     match_expr: &MatchExpression,
     env: Option<&Environment>,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     let source = expression(&match_expr.source, env, p)?;
     let detached_source = match &source {
@@ -1423,7 +1499,7 @@ pub fn match_expression(
 fn infer_missing_enum_match_patterns(
     match_expr: &MatchExpression,
     source: &Value,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> Option<(String, Vec<String>)> {
     let (source_enum_id, source_tag) = match source {
         Value::Enum(enum_value) => {
@@ -1512,7 +1588,7 @@ fn match_validate_arm_kinds(
     matched_kind: &ValueKind,
     source: &Value,
     base_env: &Environment,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
     for (ix, arm) in match_expr.arms.iter().enumerate() {
         if ix == matched_arm_ix {
@@ -1561,7 +1637,7 @@ fn match_validate_arm_kinds(
 fn validate_match_arm_output_kinds(
     match_expr: &MatchExpression,
     env: &Environment,
-    p: &Interpreter,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
     let mut expected: Option<ValueKind> = None;
     for arm in &match_expr.arms {
@@ -1588,7 +1664,7 @@ fn validate_match_arm_output_kinds(
     Ok(())
 }
 
-fn guard_expression_true(guard: &Expression, env: &Environment, p: &Interpreter) -> MResult<bool> {
+fn guard_expression_true(guard: &Expression, env: &Environment, p: &InterpreterExecution<'_>) -> MResult<bool> {
   let guard_result = expression(guard, Some(env), p)?;
   let flag = validate_guard_expression_result(guard_result, guard.tokens())?;
   let result = *flag.borrow();
@@ -1721,7 +1797,7 @@ fn value_contains_empty(value: &Value) -> bool {
 }
 
 #[cfg(feature = "formulas")]
-pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   match fctr {
     Factor::Term(trm) => {
       let result = term(trm, env, p)?;
@@ -1783,7 +1859,7 @@ pub fn factor(fctr: &Factor, env: Option<&Environment>, p: &Interpreter) -> MRes
 }
 
 #[cfg(feature = "formulas")]
-pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<Value> {
+pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
   let plan = p.plan();
   let mut lhs = factor(&trm.lhs, env, p)?;
   let mut term_plan: Vec<(Box<dyn MechFunction>, Vec<Value>)> = Vec::new();
@@ -2025,7 +2101,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
 }
 
 #[cfg(feature = "kind_annotation")]
-fn value_in_kind(value: &Value, kind: &ValueKind, p: &Interpreter) -> bool {
+fn value_in_kind(value: &Value, kind: &ValueKind, p: &InterpreterExecution<'_>) -> bool {
   let detached = detach_value(value);
   #[cfg(all(feature = "enum", feature = "atom"))]
   if let ValueKind::Enum(enum_id, _) = kind {

@@ -5,6 +5,8 @@ use mech_runtime::{
   materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory,
   RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
   RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+  PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost,
+  RuntimeEffectMetadata, RuntimeEffectSource,
 };
 
 use crate::{console_error, console_host_manifest};
@@ -38,16 +40,23 @@ impl ConsoleBackend for RecordingConsoleBackend {
 #[derive(Debug)]
 pub struct ConsoleResourceProvider<B: ConsoleBackend> {
   instance: String,
-  backend: B,
+  backend: Arc<Mutex<B>>,
 }
 
 impl<B: ConsoleBackend> ConsoleResourceProvider<B> {
   pub fn new(instance: impl Into<String>, backend: B) -> Self {
-    Self { instance: instance.into(), backend }
+    Self {
+      instance: instance.into(),
+      backend: Arc::new(Mutex::new(backend)),
+    }
   }
 
-  pub fn backend(&self) -> &B { &self.backend }
-  pub fn backend_mut(&mut self) -> &mut B { &mut self.backend }
+  pub fn backend(&self) -> std::sync::MutexGuard<'_, B> {
+    self.backend.lock().expect("console backend lock poisoned")
+  }
+  pub fn backend_mut(&mut self) -> std::sync::MutexGuard<'_, B> {
+    self.backend.lock().expect("console backend lock poisoned")
+  }
 
   fn base(&self) -> String { format!("console://{}/output", self.instance) }
 
@@ -56,21 +65,13 @@ impl<B: ConsoleBackend> ConsoleResourceProvider<B> {
   }
 }
 
-impl<B: ConsoleBackend> RuntimeResourceProvider for ConsoleResourceProvider<B> {
+impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourceProvider<B> {
   fn scheme(&self) -> &str { "console" }
 
   fn base_uris(&self) -> Vec<String> {
     let mut bases = vec![self.base()];
     if self.instance == "console" { bases.push("console://output".to_string()); }
     bases
-  }
-
-  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
-    if self.instance == "console" {
-      vec![vec![self.base(), "console://output".to_string()]]
-    } else {
-      Vec::new()
-    }
   }
 
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
@@ -90,7 +91,7 @@ impl<B: ConsoleBackend> RuntimeResourceProvider for ConsoleResourceProvider<B> {
     Ok(())
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),
@@ -98,7 +99,45 @@ impl<B: ConsoleBackend> RuntimeResourceProvider for ConsoleResourceProvider<B> {
       operation: request.operation.clone(),
       intent: request.intent,
     })?;
-    self.backend.write_line(&value_to_text(&request.value))
+    let text = value_to_text(&request.value);
+    Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+      ConsoleOutputEffect {
+        backend: self.backend.clone(),
+        text,
+        resource: request.base_uri,
+      },
+    )))
+  }
+}
+
+#[derive(Debug)]
+struct ConsoleOutputEffect<B: ConsoleBackend> {
+  backend: Arc<Mutex<B>>,
+  text: String,
+  resource: String,
+}
+
+impl<B: ConsoleBackend> RuntimeAfterCommitEffect for ConsoleOutputEffect<B> {
+  fn metadata(&self) -> RuntimeEffectMetadata {
+    RuntimeEffectMetadata::new(
+      RuntimeEffectSource::ResourceProvider {
+        scheme: "console".to_string(),
+      },
+      "write-line",
+    )
+    .with_resource(self.resource.clone())
+    .with_cost(RuntimeEffectCost {
+      bytes: u64::try_from(self.text.len()).unwrap_or(u64::MAX),
+      items: 1,
+    })
+  }
+
+  fn deliver(&mut self) -> MResult<()> {
+    self
+      .backend
+      .lock()
+      .map_err(|_| console_error(&self.resource, "console backend lock poisoned"))?
+      .write_line(&self.text)
   }
 }
 
