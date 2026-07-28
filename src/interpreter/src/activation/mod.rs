@@ -1,4 +1,5 @@
 #![cfg(all(feature = "functions", feature = "symbol_table"))]
+#![forbid(unsafe_code)]
 //! Statically elaborated structural dispatch for patterned activation scopes.
 use crate::*;
 use std::collections::HashSet;
