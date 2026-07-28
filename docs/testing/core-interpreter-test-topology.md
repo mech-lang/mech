@@ -67,6 +67,87 @@ Interpreter test construction remains local to its owning suite. Add an
 interpreter test support module only after the same helper is genuinely reused
 by more than one sibling suite.
 
+### Expression evaluation
+
+Expression unit tests live under `src/interpreter/src/expressions/tests/`,
+grouped by the expression behavior whose private wiring they inspect:
+
+- `registration.rs` owns initialized function registration, dependency edges,
+  alias deduplication, and batch order.
+- `comprehensions.rs` owns comprehension output transaction-state roots.
+- `structural_access.rs` owns record and tuple alias nodes, member-cell
+  dependencies, and source/bytecode parity.
+- `variables.rs` owns variable lookup and kind-cast dependency registration.
+
+`tests/mod.rs` carries the original feature gates for each group. Add
+`subscripts.rs`, `string_access.rs`, `formulas.rs`, or `matches.rs` only when
+the production root contains tests for that behavior; empty category modules
+do not document ownership. Keep a helper local to its owning file until at
+least two sibling suites genuinely share it, then place only that shared
+fixture in `support.rs`.
+
+For the production modules exercised by these suites, see the
+[expression evaluation topology](../interpreter/expression-topology.md).
+
+### Statement evaluation
+
+Statement unit tests live under `src/interpreter/src/statements/tests/`,
+grouped by the statement behavior whose graph construction or scheduling they
+prove:
+
+- `scheduling.rs` owns reachable combinational scheduling and register
+  boundaries.
+- `activation_scope.rs` owns activation-block lowering, sampled-versus-reactive
+  dependencies, plan registration, trigger-write rejection, and plan
+  stability. Runtime activation arm selection and dispatch belong to the
+  activation subsystem tests instead.
+- `variable_define.rs` owns variable-definition registration dependencies.
+- `variable_assign.rs` owns whole assignment graph shape, decoded parity,
+  matrix root cells, and plain-assignment register commits.
+- `op_assign.rs` owns operator-assignment graph shape, decoded parity, staged
+  register commits, and multi-turn propagation.
+- `support.rs` contains only the assignment graph and interpreter fixtures
+  shared by `variable_assign.rs` and `op_assign.rs`.
+
+`tests/mod.rs` preserves the original feature boundaries. Files for
+destructuring, integrity declarations, kinds, enums, state machines, or
+decoding should be added only when statement-owned tests for those behaviors
+exist; do not create empty ownership placeholders.
+
+For the production modules exercised by these suites, see the
+[statement evaluation topology](../interpreter/statement-topology.md).
+
+### Activation coordination
+
+Activation unit tests live under `src/interpreter/src/activation/tests/`,
+grouped by the activation responsibility whose private coordination they
+inspect:
+
+- `registration.rs` owns static graph construction, dependency
+  classification, trigger-write rejection, and arm-local symbol isolation.
+- `dispatch.rs` owns source-order arm selection, repeated trigger packets,
+  selected-body execution, and structural pattern dispatch.
+- `exhaustiveness.rs` owns final irrefutable arms, wildcard placement, tuple
+  and fixed-matrix exhaustiveness, and non-exhaustive rejection.
+- `guards.rs` owns guard order, sampled guard dependencies, refresh behavior,
+  purity validation, and guarded capture selection.
+- `captures.rs` owns capture-slot kind support, stable identity, sampled outer
+  values, capture commit atomicity, and composite capture snapshots.
+- `registers.rs` owns selected-arm register scheduling, register dependency
+  classification, and repeated register transitions.
+- `rollback.rs` owns failed registration, register staging, guard solving,
+  preflight, and elaboration checkpoint restoration.
+- `support.rs` contains the plan, dispatch, symbol, and trigger fixtures shared
+  by more than one activation suite.
+
+`tests/mod.rs` declares only populated behavior modules. All 69 activation test
+leaf names are preserved; their qualified paths now identify the owning
+behavior. Statement-level activation lowering and plan registration remain in
+`statements/tests/activation_scope.rs`.
+
+For the production modules exercised by these suites, see the
+[activation coordination topology](../interpreter/activation-topology.md).
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,

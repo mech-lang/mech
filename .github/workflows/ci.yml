@@ -89,6 +89,30 @@ jobs:
       - name: Run complete program library suite
         run: cargo test -p mech-program --lib
 
+      - name: Check isolated interpreter feature boundaries
+        run: |
+          cargo check -p mech-interpreter \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_mul_assign"
+          cargo test -p mech-interpreter \
+            --test op_assign_feature_gates \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_mul_assign" \
+            whole_mul_assignment_uses_mul_feature_only \
+            -- --exact --nocapture
+          cargo check -p mech-interpreter \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_div_assign"
+          cargo test -p mech-interpreter \
+            --test op_assign_feature_gates \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_div_assign" \
+            whole_div_assignment_uses_div_feature_only \
+            -- --exact --nocapture
+          cargo check -p mech-interpreter \
+            --no-default-features \
+            --features "compiler functions formulas string_concat"
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
@@ -105,7 +129,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Audit sealed runtime boundaries
-        run: scripts/check-runtime-boundaries.sh
+        run: |
+          scripts/check-runtime-boundaries.sh
+          bash scripts/test-runtime-boundaries.sh
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh

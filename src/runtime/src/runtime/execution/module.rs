@@ -23,18 +23,18 @@ use crate::resolver::{
 };
 use crate::runtime::{
   MechRuntime,
-  ModuleInstance,
   RuntimeInvalidOperationError,
   RuntimeModuleExportNotFound,
   RuntimeModuleImportConflict,
   RuntimeRecordNotFoundError,
   UnknownAddressTarget,
-  validate_module_import_edges,
 };
+use crate::runtime::module::validate_module_import_edges;
 use crate::store::ModuleVersionRecord;
 use crate::{
   RuntimeContext,
   RuntimeModuleResult,
+  RuntimeValueSnapshot,
 };
 use mech_core::{
   hash_str,
@@ -56,6 +56,27 @@ use std::collections::{
 use web_time::Instant;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
+
+#[derive(Clone, Debug)]
+pub(in crate::runtime) struct ModuleInstance {
+  pub(in crate::runtime) version: ModuleVersionId,
+  pub(in crate::runtime) exports: HashMap<String, mech_core::ValRef>,
+  pub(in crate::runtime) result: Value,
+}
+
+impl ModuleInstance {
+  pub(in crate::runtime) fn detached_result(&self) -> RuntimeModuleResult {
+    RuntimeModuleResult {
+      version: self.version,
+      exports: self
+        .exports
+        .iter()
+        .map(|(name, value)| (name.clone(), RuntimeValueSnapshot::capture(&value.borrow())))
+        .collect(),
+      result: RuntimeValueSnapshot::capture(&self.result),
+    }
+  }
+}
 
 impl MechRuntime {
   pub fn run_module(
@@ -355,7 +376,7 @@ impl MechRuntime {
       ),
       &prepared.source,
       scope,
-      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      crate::runtime::live_state::LiveRegistrationMode::IsolatedSnapshot,
     );
     let result = match result {
       Ok(value) => value,
@@ -466,7 +487,7 @@ impl MechRuntime {
           &mut RuntimeProgramTarget::Retained,
           &prepared.source,
           scope,
-          crate::runtime::LiveRegistrationMode::RetainedRoot,
+          crate::runtime::live_state::LiveRegistrationMode::RetainedRoot,
         )
         .and_then(|value| {
           self.enforce_turn_duration(turn_started)?;
@@ -494,7 +515,7 @@ impl MechRuntime {
     target: &mut RuntimeProgramTarget<'_>,
     source: &MechSourceCode,
     scope: &SourceScope,
-    registration_mode: crate::runtime::LiveRegistrationMode,
+    registration_mode: crate::runtime::live_state::LiveRegistrationMode,
   ) -> MResult<Value> {
     match target {
       RuntimeProgramTarget::Retained => {

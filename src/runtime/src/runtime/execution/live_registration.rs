@@ -1,7 +1,5 @@
-use crate::runtime::{
-  LiveRegistrationMode,
-  MechRuntime,
-};
+use crate::runtime::live_state::LiveRegistrationMode;
+use crate::runtime::MechRuntime;
 #[cfg(test)]
 use crate::RuntimeContext;
 use mech_core::MResult;

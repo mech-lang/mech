@@ -5,7 +5,8 @@ use mech_core::{
     Ref, Value,
 };
 
-use super::super::{MechRuntime, RuntimePersistentSendSchedule};
+use super::super::live_state::RuntimePersistentSendSchedule;
+use super::super::MechRuntime;
 use super::persistent_send::{publish, runtime_with_console, snapshot};
 use crate::runtime::execution::ACTIVATION_EFFECT_BARRIER_NAME;
 use crate::runtime::test_support::{

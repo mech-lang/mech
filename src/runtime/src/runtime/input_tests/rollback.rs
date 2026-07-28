@@ -5,7 +5,8 @@ use std::sync::{
 
 use mech_core::{MechError, Ref, Value, hash_str};
 
-use super::super::{RuntimeBuilder, RuntimeConfig};
+use super::super::RuntimeBuilder;
+use crate::RuntimeConfig;
 use super::scheduling::{
     activation_plan_snapshot, activation_send_count, apply_f64_input, only_reactive_turn,
     recorded_f64,

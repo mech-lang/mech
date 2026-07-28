@@ -20,6 +20,9 @@ use crate::runtime::{
   RuntimeActivationEffectBarrierInvariantError,
   RuntimeInvalidOperationError,
   RuntimeIsolatedActivationSendUnsupported,
+};
+use crate::runtime::live_state::{
+  LiveRegistrationMode,
   RuntimePersistentSend,
   RuntimePersistentSendSchedule,
 };
@@ -314,7 +317,7 @@ impl MechRuntime {
         resolve_runtime_value(value),
       )?
     };
-    if self.live_registration_mode == crate::runtime::LiveRegistrationMode::RetainedRoot {
+    if self.live_registration_mode == LiveRegistrationMode::RetainedRoot {
       let bindings = self.live_input_bindings.entry(source).or_default();
       if !bindings.iter().any(|binding| *binding == input) {
         bindings.push(input);
@@ -1132,7 +1135,7 @@ impl MechRuntime {
           }
           lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
           if registration_count > 0 {
-            if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+            if self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot {
               return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None));
             }
             self.validate_live_context_candidate(context)?;
@@ -1396,7 +1399,7 @@ impl MechRuntime {
         self.flush_direct_execution(context, target, pending, result)?;
         let expression = self.resolve_context_reads_in_expression(context, target, registry, &send.expression)?;
         let path = send.target.name.to_string();
-        if self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+        if self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot {
           let value = resolve_runtime_value(
             self.evaluate_expression_on_program(
               context,
@@ -1515,7 +1518,7 @@ impl MechRuntime {
             mech_core::ActivationArmBody::Block(body) => body.iter().any(|(code, _)| matches!(code, mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_)))),
             mech_core::ActivationArmBody::Expression(_) => false,
           });
-          if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot {
+          if has_send && self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot {
             return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None));
           }
           for arm in arms {
@@ -1544,7 +1547,7 @@ impl MechRuntime {
           _ => false,
         });
         if has_send && has_register { return Err(MechError::new(ActivationScopeEffectWithRegisterUnsupported, None)); }
-        if has_send && self.live_registration_mode == crate::runtime::LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
+        if has_send && self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot { return Err(MechError::new(RuntimeIsolatedActivationSendUnsupported, None)); }
         for (body_code, _) in scope_body {
           self.preflight_code_context_capabilities(context, registry, body_code, DirectContextEffectPlacement::ActivationScope, addressed_read_preflight)?;
         }

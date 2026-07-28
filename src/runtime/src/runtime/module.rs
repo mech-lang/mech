@@ -14,8 +14,55 @@
 // - `activate_module_version`: Activates a specific version of a module, making it the active version for that module.
 // - `active_module_version`: Retrieves the active version of a module, if any.
 
-use super::*;
-use crate::{NonExecutableModuleSource, SourceIndex};
+use super::{
+  extension,
+  MechRuntime,
+  RuntimeInvalidOperationError,
+  RuntimeModuleDependencyCycleError,
+  RuntimeModuleDependencyMissingError,
+  RuntimeModuleImportEdgeInvalid,
+  RuntimeRootModuleSourceNotFound,
+};
+use crate::{
+  module_id,
+  CapabilityRequest,
+  ModuleBuildOptions,
+  ModuleDependencyGraph,
+  ModuleId,
+  ModuleImportEdge,
+  ModuleRecord,
+  ModuleVersionId,
+  ModuleVersionRecord,
+  NonExecutableModuleSource,
+  ResolvedSource,
+  RuntimeContext,
+  RuntimeEventKind,
+  RuntimeModuleJournalConflict,
+  SourceImportAlias,
+  SourceIndex,
+  SourceRequest,
+  SourceScope,
+};
+use mech_core::{MResult, MechError, MechSourceCode, Value};
+use std::collections::{HashMap, HashSet};
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
+
+pub(in crate::runtime) fn validate_module_import_edges(
+  record: &ModuleVersionRecord,
+) -> MResult<()> {
+  record.validate_import_edges().map_err(|error| {
+    MechError::new(
+      RuntimeModuleImportEdgeInvalid {
+        module: record.id,
+        reason: format!("{:?}", error),
+      },
+      None,
+    )
+  })
+}
 
 fn source_index_for_module_record_source(
   source: &mech_core::MechSourceCode,

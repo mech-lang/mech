@@ -17,7 +17,18 @@
 // - `fail_task`: Marks a task as failed with a given reason and emits a TaskFailed event.
 // - `fail_task_with_context`: Marks a task as failed with a given reason, considering any active transaction, and emits a TaskFailed event.
 
-use super::*;
+use crate::runtime::{MechRuntime, RuntimeRecordNotFoundError};
+use crate::{
+  CapabilityId,
+  ModuleVersionId,
+  ResourceBudgetExceededError,
+  RuntimeContext,
+  RuntimeEventKind,
+  TaskId,
+  TaskRecord,
+  TaskStatus,
+};
+use mech_core::{MResult, MechError};
 
 impl MechRuntime {
 

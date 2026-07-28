@@ -121,7 +121,6 @@ src/core/src/stdlib.rs|value-representation|mech-core|Value variants and matrix 
 src/core/src/structures/matrix.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
 src/core/src/types/mod.rs|value-representation|mech-core|raw pointers remain process-local observations of an opaque Ref backing cell and never cross transaction boundaries|existing low-level Ref representation
 src/core/src/value.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
-src/interpreter/src/expressions.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/interpreter/src/modules.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/interpreter/src/stdlib/access/matrix.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/interpreter/src/stdlib/access/table.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch

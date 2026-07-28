@@ -9,7 +9,9 @@
 // - `get_object`: Retrieves an object record by its ID.
 // - `update_object`: Updates an existing object record in the store and emits an ObjectUpdated event.
 
-use super::*;
+use crate::runtime::MechRuntime;
+use crate::{ObjectId, ObjectRecord, RuntimeContext, RuntimeEventKind};
+use mech_core::MResult;
 
 impl MechRuntime {
 
