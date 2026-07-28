@@ -111,6 +111,6 @@ Do not rename an externally filtered test merely to improve its wording.
 | Sealed affine-journal boundaries | `src/runtime/tests/ui/sealed/`, driven by `src/runtime/tests/sealed_api.rs`. Journal construction, participant escape, reuse, and multiple-operation cases remain compile-fail fixtures with checked diagnostics. |
 | macOS workspace-watch regressions | `src/runtime/src/workspace/watch.rs` — `workspace::watch::tests`, including the macOS-only `macos_temp_directory_alias_handles_missing_watch_paths`. The macOS CI job filters this module directly. |
 
-The stacked core/interpreter reorganization adds the companion
-`docs/testing/core-interpreter-test-topology.md` guide for journal, reactive
-plan, checkpoint, and bytecode test ownership.
+For journal, reactive-plan, checkpoint, bytecode, and cross-layer reactive
+transaction ownership, see the companion
+[core and interpreter test topology](core-interpreter-test-topology.md) guide.
