@@ -117,6 +117,34 @@ exist; do not create empty ownership placeholders.
 For the production modules exercised by these suites, see the
 [statement evaluation topology](../interpreter/statement-topology.md).
 
+### Activation coordination
+
+Activation unit tests live under `src/interpreter/src/activation/tests/`,
+grouped by the activation responsibility whose private coordination they
+inspect:
+
+- `registration.rs` owns static graph construction, dependency
+  classification, trigger-write rejection, and arm-local symbol isolation.
+- `dispatch.rs` owns source-order arm selection, repeated trigger packets,
+  selected-body execution, and structural pattern dispatch.
+- `exhaustiveness.rs` owns final irrefutable arms, wildcard placement, tuple
+  and fixed-matrix exhaustiveness, and non-exhaustive rejection.
+- `guards.rs` owns guard order, sampled guard dependencies, refresh behavior,
+  purity validation, and guarded capture selection.
+- `captures.rs` owns capture-slot kind support, stable identity, sampled outer
+  values, capture commit atomicity, and composite capture snapshots.
+- `registers.rs` owns selected-arm register scheduling, register dependency
+  classification, and repeated register transitions.
+- `rollback.rs` owns failed registration, register staging, guard solving,
+  preflight, and elaboration checkpoint restoration.
+- `support.rs` contains the plan, dispatch, symbol, and trigger fixtures shared
+  by more than one activation suite.
+
+`tests/mod.rs` declares only populated behavior modules. All 69 activation test
+leaf names are preserved; their qualified paths now identify the owning
+behavior. Statement-level activation lowering and plan registration remain in
+`statements/tests/activation_scope.rs`.
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,
