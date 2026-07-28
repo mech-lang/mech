@@ -17,6 +17,20 @@
 use super::*;
 use crate::{NonExecutableModuleSource, SourceIndex};
 
+pub(in crate::runtime) fn validate_module_import_edges(
+  record: &ModuleVersionRecord,
+) -> MResult<()> {
+  record.validate_import_edges().map_err(|error| {
+    MechError::new(
+      RuntimeModuleImportEdgeInvalid {
+        module: record.id,
+        reason: format!("{:?}", error),
+      },
+      None,
+    )
+  })
+}
+
 fn source_index_for_module_record_source(
   source: &mech_core::MechSourceCode,
 ) -> MResult<Option<SourceIndex>> {

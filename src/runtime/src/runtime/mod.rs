@@ -27,10 +27,12 @@ pub(crate) mod extension;
 mod host;
 mod id;
 mod live_state;
+mod limits;
+mod lifecycle;
 mod module;
 mod object;
+mod operation_context;
 mod resources;
-mod runtime_context;
 mod schedule;
 mod state;
 mod task;
@@ -53,9 +55,7 @@ pub(in crate::runtime) use self::resources::{
 };
 pub use self::resources::{RuntimeResourceBinding, RuntimeResourceBindingError};
 pub use self::state::MechRuntime;
-pub(in crate::runtime) use self::state::{
-  validate_module_import_edges, ModuleInstance, ScopedRuntimeState,
-};
+pub(in crate::runtime) use self::state::ScopedRuntimeState;
 use self::transaction::ActiveRuntimeProgramOperation;
 use self::transaction::RuntimeCommitResolution;
 use self::transaction::{RuntimeCapabilityOverlay, RuntimeEffectJournal, RuntimeModuleJournal};

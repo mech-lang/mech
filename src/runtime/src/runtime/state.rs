@@ -85,27 +85,6 @@ impl std::fmt::Debug for MechRuntime {
   }
 }
 
-#[derive(Clone, Debug)]
-pub(in crate::runtime) struct ModuleInstance {
-  pub(in crate::runtime) version: ModuleVersionId,
-  pub(in crate::runtime) exports: HashMap<String, mech_core::ValRef>,
-  pub(in crate::runtime) result: Value,
-}
-
-impl ModuleInstance {
-  pub(in crate::runtime) fn detached_result(&self) -> RuntimeModuleResult {
-    RuntimeModuleResult {
-      version: self.version,
-      exports: self
-        .exports
-        .iter()
-        .map(|(name, value)| (name.clone(), RuntimeValueSnapshot::capture(&value.borrow())))
-        .collect(),
-      result: RuntimeValueSnapshot::capture(&self.result),
-    }
-  }
-}
-
 impl MechRuntime {
   pub fn builder() -> RuntimeBuilder {
     RuntimeBuilder::new()
@@ -146,77 +125,4 @@ impl MechRuntime {
   pub fn is_poisoned(&self) -> bool {
     matches!(self.health, RuntimeHealth::Poisoned(_))
   }
-
-  // ---------------------------------------------------------------------------
-  // Shutdown
-  // ---------------------------------------------------------------------------
-
-  pub fn shutdown(&mut self) -> MResult<()> {
-    let mut first_error = None;
-
-    if let Err(error) = self.close_ingress() {
-      first_error = Some(error);
-    }
-
-    if let Err(error) = self.stop_input_drivers() {
-      if first_error.is_none() {
-        first_error = Some(error);
-      }
-    }
-    self.input_driver_cleanup_armed = false;
-
-    match self.runtime_context() {
-      Ok(mut context) => {
-        if let Err(error) = self.emit_event_to_context(
-          &mut context,
-          RuntimeEventKind::RuntimeShutdown {
-            runtime_id: self.id,
-          },
-        ) {
-          if first_error.is_none() {
-            first_error = Some(error);
-          }
-        }
-      }
-      Err(error) => {
-        if first_error.is_none() {
-          first_error = Some(error);
-        }
-      }
-    }
-
-    match first_error {
-      Some(error) => Err(error),
-      None => Ok(()),
-    }
-  }
-}
-
-impl Drop for MechRuntime {
-  fn drop(&mut self) {
-    if self.input_driver_cleanup_armed {
-      let _ = self.close_ingress();
-      for driver in self.input_drivers[..self.attached_input_driver_count]
-        .iter_mut()
-        .rev()
-      {
-        let _ = extension::catch_extension("host input driver", "stop", || driver.stop());
-      }
-      self.input_driver_cleanup_armed = false;
-    }
-  }
-}
-
-pub(in crate::runtime) fn validate_module_import_edges(
-  record: &ModuleVersionRecord,
-) -> MResult<()> {
-  record.validate_import_edges().map_err(|error| {
-    MechError::new(
-      RuntimeModuleImportEdgeInvalid {
-        module: record.id,
-        reason: format!("{:?}", error),
-      },
-      None,
-    )
-  })
 }
