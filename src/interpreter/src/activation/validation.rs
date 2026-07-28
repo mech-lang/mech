@@ -14,6 +14,7 @@ use super::{
     ActivationPatternWildcardMustBeLast, ActivationScopeTriggerWriteUnsupported,
     arms::{PreflightActivationArm, PreflightPatternedActivation},
     create_capture_slot_for_kind,
+    registers::validate_patterned_register_write,
 };
 
 fn pattern_is_irrefutable(pattern: &CompiledPattern, trigger_kind: &ValueKind) -> bool {
@@ -206,40 +207,6 @@ fn validate_patterned_code(
         }
     }
 }
-fn validate_patterned_register_write(
-    target: &SliceRef,
-    expression: &Expression,
-    trigger_id: u64,
-    trigger_cells: &[ReactiveCellId],
-    interpreter: &Interpreter,
-    tokens: Vec<Token>,
-) -> MResult<()> {
-    if target.context.is_some() {
-        return validation_error(ActivationPatternContextEffectUnsupported, tokens);
-    }
-    let target_id = target.name.hash();
-    let aliases_trigger = interpreter
-        .symbols()
-        .borrow()
-        .get(target_id)
-        .is_some_and(|value| {
-            value
-                .borrow()
-                .reactive_root_cell_ids()
-                .iter()
-                .any(|cell| trigger_cells.contains(cell))
-        });
-    if target_id == trigger_id || aliases_trigger {
-        return validation_error(ActivationScopeTriggerWriteUnsupported, tokens);
-    }
-    // Indexed assignment implementations still mutate eagerly and do not
-    // implement the reactive-register staging contract.
-    if target.subscript.is_some() {
-        return validation_error(ActivationPatternRegisterWriteUnsupported, tokens);
-    }
-    validate_patterned_expression(expression)
-}
-
 fn validate_patterned_statement(
     statement: &Statement,
     trigger_id: u64,
@@ -284,7 +251,7 @@ fn validate_patterned_statement(
         _ => validation_error(ActivationPatternDefinitionUnsupported, statement.tokens()),
     }
 }
-fn validate_patterned_expression(expression: &Expression) -> MResult<()> {
+pub(super) fn validate_patterned_expression(expression: &Expression) -> MResult<()> {
     match expression {
         Expression::Literal(_) | Expression::Var(_) => Ok(()),
         Expression::Slice(slice) => validate_patterned_slice(slice),

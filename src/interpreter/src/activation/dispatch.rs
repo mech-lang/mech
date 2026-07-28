@@ -1,17 +1,11 @@
 use super::captures::transaction_bool_state;
-use super::{
-    ActivationPatternCapture, GuardFinalize, ReactiveBindingSink, commit_proposed_captures,
-};
+use super::{ActivationPatternCapture, GuardFinalize, ReactiveBindingSink};
 use crate::{
     CompileCtx, CompiledPattern, GenericError, MResult, MechError, MechFunctionCompiler,
     MechFunctionImpl, PatternBindingSink, ReactiveDependencyKind, ReactiveDependencyScope,
     ReactiveSolveStatus, Ref, Register, Value, match_compiled_pattern_with_values,
 };
 
-pub(super) fn generation() -> (Ref<usize>, Value) {
-    let r = Ref::new(0);
-    (r.clone(), Value::Index(r))
-}
 pub(super) struct ScopePulse {
     pub(super) out: Ref<usize>,
 }
@@ -188,44 +182,6 @@ impl MechFunctionImpl for Select {
         "ActivationPatternSelectArm".into()
     }
 }
-pub(super) struct Gate {
-    pub(super) arm: usize,
-    pub(super) selected: Ref<usize>,
-    pub(super) captures: Vec<ActivationPatternCapture>,
-    pub(super) out: Ref<usize>,
-}
-impl MechFunctionImpl for Gate {
-    fn solve(&self) {}
-    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
-        if *self.selected.borrow() == self.arm {
-            commit_proposed_captures(&self.captures)?;
-            *self.out.borrow_mut() += 1;
-            Ok(ReactiveSolveStatus::Changed)
-        } else {
-            Ok(ReactiveSolveStatus::Unchanged)
-        }
-    }
-    fn out(&self) -> Value {
-        Value::Index(self.out.clone())
-    }
-    fn reactive_output_values(&self) -> Vec<Value> {
-        let mut outputs = vec![self.out()];
-        outputs.extend(
-            self.captures
-                .iter()
-                .map(|capture| capture.committed.clone()),
-        );
-        outputs
-    }
-    fn to_string(&self) -> String {
-        "ActivationPatternArmGate".into()
-    }
-
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
-}
-
 #[cfg(feature = "compiler")]
 macro_rules! interpreter_only {
     ($t:ty) => {
@@ -255,5 +211,3 @@ interpreter_only!(UnmatchedFinalize);
 interpreter_only!(GuardFinalize);
 #[cfg(feature = "compiler")]
 interpreter_only!(Select);
-#[cfg(feature = "compiler")]
-interpreter_only!(Gate);

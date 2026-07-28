@@ -5,15 +5,15 @@ mod arms;
 mod captures;
 mod dispatch;
 mod guards;
+mod registers;
 
 use captures::{
     ActivationPatternCapture, ReactiveBindingSink, commit_capture_slot,
-    commit_proposed_captures, create_capture_slot_for_kind, detached,
+    commit_proposed_captures, create_capture_slot_for_kind, detached, generation,
 };
-use dispatch::{
-    Finalize, Gate, MatchGate, Matcher, ScopePulse, Select, UnmatchedFinalize, generation,
-};
+use dispatch::{Finalize, MatchGate, Matcher, ScopePulse, Select, UnmatchedFinalize};
 use guards::{GuardFinalize, elaborate_patterned_arm_guard};
+use registers::Gate;
 
 mod errors;
 mod registration;

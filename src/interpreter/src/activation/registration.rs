@@ -7,11 +7,12 @@ use crate::{
 use crate::patterns::PatternBindingSink;
 
 use super::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternBodyDependencyInvariant,
-    ActivationPatternCapture, ActivationPatternTriggerInvariant, Finalize, Gate, MatchGate,
+    ActivationPatternArmsNonExhaustive, ActivationPatternCapture, ActivationPatternTriggerInvariant,
+    Finalize, MatchGate,
     Matcher, ReactiveBindingSink, ScopePulse, Select, UnmatchedFinalize,
     arms::PreflightPatternedActivation, commit_proposed_captures,
     elaborate_patterned_arm_guard, generation,
+    registers::{Gate, elaborate_patterned_arm_body},
     validation::preflight_patterned_activation,
 };
 
@@ -29,69 +30,6 @@ pub(crate) fn activation_scope_entry_cells(
         }
     }
     cells
-}
-
-fn elaborate_patterned_arm_body(
-    arm: &ActivationArm,
-    captures: &[ActivationPatternCapture],
-    pulse: &Value,
-    interpreter: &InterpreterExecution<'_>,
-) -> MResult<(usize, usize)> {
-    let symbols = interpreter.symbols();
-    let symbol_snapshot = symbols.borrow().snapshot();
-    let plan = interpreter.plan();
-    let original_scope_depth = plan.activation_registration_depth();
-    {
-        let mut symbols = symbols.borrow_mut();
-        for capture in captures {
-            symbols.mutable_variables.remove(&capture.id);
-            symbols.insert(capture.id, capture.committed.clone(), false);
-            symbols
-                .dictionary
-                .borrow_mut()
-                .insert(capture.id, capture.name.clone());
-        }
-    }
-    let body_node_start = plan.len();
-    plan.push_activation_registration_scope_with_sampled_cells(
-        pulse.reactive_root_cell_ids(),
-        activation_scope_entry_cells(interpreter),
-    );
-    let body_result = (|| -> MResult<()> {
-        match &arm.body {
-            ActivationArmBody::Block(body) => {
-                for (code, _) in body {
-                    crate::mech_code(code, interpreter)?;
-                }
-                Ok(())
-            }
-            ActivationArmBody::Expression(expression) => {
-                crate::expression(expression, None, interpreter)?;
-                Ok(())
-            }
-        }
-    })();
-    while plan.activation_registration_depth() > original_scope_depth {
-        plan.pop_activation_registration_scope();
-    }
-    symbols.borrow_mut().restore(symbol_snapshot);
-    body_result?;
-    let body_node_end = plan.len();
-    {
-        let mut plan = plan.borrow_mut();
-        for node in body_node_start..body_node_end {
-            for capture in captures {
-                let cell = capture.committed.reactive_root_cell_ids()[0];
-                if !plan.add_sampled_dependency(node, cell) {
-                    return Err(MechError::new(
-                        ActivationPatternBodyDependencyInvariant,
-                        None,
-                    ));
-                }
-            }
-        }
-    }
-    Ok((body_node_start, body_node_end))
 }
 
 fn elaborate_patterned_activation_inner(

@@ -24,6 +24,11 @@ use super::{
     ActivationPatternCaptureKindUnsupported, ActivationPatternTransactionBoolStateUnsupported,
 };
 
+pub(super) fn generation() -> (Ref<usize>, Value) {
+    let generation = Ref::new(0);
+    (generation.clone(), Value::Index(generation))
+}
+
 pub(super) fn transaction_bool_state(value: &Ref<bool>) -> MResult<Value> {
     #[cfg(any(feature = "bool", feature = "variable_define"))]
     {
