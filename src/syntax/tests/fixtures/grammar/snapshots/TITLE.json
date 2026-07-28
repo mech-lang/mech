@@ -1,0 +1,82 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "Paragraph": {
+                "elements": [
+                  {
+                    "Text": {
+                      "chars": [
+                        "B",
+                        "o",
+                        "d",
+                        "y",
+                        " ",
+                        "p",
+                        "a",
+                        "r",
+                        "a",
+                        "g",
+                        "r",
+                        "a",
+                        "p",
+                        "h",
+                        "."
+                      ],
+                      "kind": "Text"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": {
+      "author": null,
+      "date": null,
+      "hero": null,
+      "kicker": null,
+      "next": null,
+      "previous": null,
+      "section": null,
+      "summary": null,
+      "text": {
+        "chars": [
+          "G",
+          "r",
+          "a",
+          "m",
+          "m",
+          "a",
+          "r",
+          " ",
+          "C",
+          "o",
+          "n",
+          "f",
+          "o",
+          "r",
+          "m",
+          "a",
+          "n",
+          "c",
+          "e"
+        ],
+        "kind": "Title"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 55,
+    "remaining_source": "",
+    "source_graphemes": 55
+  },
+  "entry_point": "parse",
+  "rule": "title"
+}

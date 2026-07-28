@@ -1,0 +1,3 @@
+#Counter(n<u64>) => <u64> :=
+| :Count(n)
+| :Done(n).

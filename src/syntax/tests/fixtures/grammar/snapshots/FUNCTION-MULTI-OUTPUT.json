@@ -1,0 +1,168 @@
+{
+  "ast": {
+    "input": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "match_arms": [],
+    "name": {
+      "name": {
+        "chars": [
+          "d",
+          "u",
+          "p",
+          "l",
+          "i",
+          "c",
+          "a",
+          "t",
+          "e"
+        ],
+        "kind": "Identifier"
+      }
+    },
+    "output": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "a"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      },
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "b"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "statements": [
+      {
+        "VariableDefine": {
+          "expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "x"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          },
+          "mutable": false,
+          "var": {
+            "context": null,
+            "kind": null,
+            "name": {
+              "name": {
+                "chars": [
+                  "a"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      },
+      {
+        "VariableDefine": {
+          "expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "x"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          },
+          "mutable": false,
+          "var": {
+            "context": null,
+            "kind": null,
+            "name": {
+              "name": {
+                "chars": [
+                  "b"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 55,
+    "remaining_source": "",
+    "source_graphemes": 55
+  },
+  "entry_point": "function-define",
+  "rule": "function-define"
+}

@@ -1,0 +1,55 @@
+{
+  "ast": {
+    "ContextSend": {
+      "expression": {
+        "Literal": {
+          "String": {
+            "text": {
+              "chars": [
+                "h",
+                "e",
+                "l",
+                "l",
+                "o"
+              ],
+              "kind": "String"
+            }
+          }
+        }
+      },
+      "target": {
+        "context": {
+          "name": {
+            "chars": [
+              "u",
+              "i"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "kind": null,
+        "name": {
+          "name": {
+            "chars": [
+              "m",
+              "e",
+              "s",
+              "s",
+              "a",
+              "g",
+              "e"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 22,
+    "remaining_source": "",
+    "source_graphemes": 22
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

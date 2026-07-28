@@ -1,0 +1,39 @@
+{
+  "ast": [
+    {
+      "Swizzle": [
+        {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        {
+          "name": {
+            "chars": [
+              "y"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        {
+          "name": {
+            "chars": [
+              "z"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      ]
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "subscript",
+  "rule": "subscript"
+}

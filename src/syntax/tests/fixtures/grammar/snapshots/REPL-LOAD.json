@@ -1,0 +1,15 @@
+{
+  "ast": {
+    "Load": [
+      "one.mec",
+      "two.mec"
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 23,
+    "remaining_source": "",
+    "source_graphemes": 23
+  },
+  "entry_point": "repl-crlf",
+  "rule": "repl-command"
+}

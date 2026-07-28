@@ -1,0 +1,15 @@
+{
+  "ast": {
+    "chars": [
+      "┼"
+    ],
+    "kind": "BoxDrawing"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": "",
+    "source_graphemes": 1
+  },
+  "entry_point": "box-drawing-char",
+  "rule": "box-drawing-char"
+}

@@ -1,0 +1,13 @@
+{
+  "ast": {
+    "elements": [],
+    "subtitle": null
+  },
+  "consumption": {
+    "consumed_source_graphemes": 0,
+    "remaining_source": "⸥",
+    "source_graphemes": 1
+  },
+  "entry_point": "section",
+  "rule": "section"
+}

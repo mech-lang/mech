@@ -1,0 +1,36 @@
+{
+  "ast": {
+    "Real": {
+      "TypedInteger": [
+        {
+          "chars": [
+            "1",
+            "2",
+            "3"
+          ],
+          "kind": "Number"
+        },
+        {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "8"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

@@ -1,0 +1,36 @@
+{
+  "ast": {
+    "paragraph": {
+      "elements": [
+        {
+          "Text": {
+            "chars": [
+              " ",
+              "p",
+              "l",
+              "a",
+              "i",
+              "n",
+              " ",
+              "c",
+              "o",
+              "m",
+              "m",
+              "e",
+              "n",
+              "t"
+            ],
+            "kind": "Text"
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 16,
+    "remaining_source": "",
+    "source_graphemes": 16
+  },
+  "entry_point": "comment",
+  "rule": "comment"
+}

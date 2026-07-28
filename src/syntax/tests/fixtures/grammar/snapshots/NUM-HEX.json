@@ -1,0 +1,20 @@
+{
+  "ast": {
+    "Real": {
+      "Hexadecimal": {
+        "chars": [
+          "F",
+          "F"
+        ],
+        "kind": "Number"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 4,
+    "remaining_source": "",
+    "source_graphemes": 4
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

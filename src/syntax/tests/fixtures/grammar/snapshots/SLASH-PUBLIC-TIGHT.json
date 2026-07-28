@@ -1,0 +1,46 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "MechCode": [
+                [
+                  {
+                    "Expression": {
+                      "Var": {
+                        "context": null,
+                        "kind": null,
+                        "name": {
+                          "name": {
+                            "chars": [
+                              "a",
+                              "/",
+                              "b"
+                            ],
+                            "kind": "Identifier"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  null
+                ]
+              ]
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": null
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "parse",
+  "rule": "section-selection"
+}

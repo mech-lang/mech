@@ -1,0 +1,72 @@
+{
+  "ast": {
+    "args": [
+      [
+        null,
+        {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "3"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        }
+      ],
+      [
+        {
+          "name": {
+            "chars": [
+              "l",
+              "i",
+              "m",
+              "i",
+              "t"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "5"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        }
+      ]
+    ],
+    "name": {
+      "name": {
+        "chars": [
+          "C",
+          "o",
+          "u",
+          "n",
+          "t",
+          "e",
+          "r"
+        ],
+        "kind": "Identifier"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 21,
+    "remaining_source": "",
+    "source_graphemes": 21
+  },
+  "entry_point": "fsm-instance",
+  "rule": "fsm-instance"
+}

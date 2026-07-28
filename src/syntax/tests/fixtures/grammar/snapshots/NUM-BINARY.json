@@ -1,0 +1,22 @@
+{
+  "ast": {
+    "Real": {
+      "Binary": {
+        "chars": [
+          "1",
+          "0",
+          "1",
+          "0"
+        ],
+        "kind": "Number"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

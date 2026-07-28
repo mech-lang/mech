@@ -1,0 +1,75 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "MechCode": [
+                [
+                  {
+                    "Expression": {
+                      "Formula": {
+                        "Term": {
+                          "lhs": {
+                            "Expression": {
+                              "Var": {
+                                "context": null,
+                                "kind": null,
+                                "name": {
+                                  "name": {
+                                    "chars": [
+                                      "a"
+                                    ],
+                                    "kind": "Identifier"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "rhs": [
+                            [
+                              {
+                                "MulDiv": "Div"
+                              },
+                              {
+                                "Expression": {
+                                  "Var": {
+                                    "context": null,
+                                    "kind": null,
+                                    "name": {
+                                      "name": {
+                                        "chars": [
+                                          "b"
+                                        ],
+                                        "kind": "Identifier"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  null
+                ]
+              ]
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": null
+  },
+  "consumption": {
+    "consumed_source_graphemes": 4,
+    "remaining_source": "",
+    "source_graphemes": 4
+  },
+  "entry_point": "parse",
+  "rule": "section-selection"
+}

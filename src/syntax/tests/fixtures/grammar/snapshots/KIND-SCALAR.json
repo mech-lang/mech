@@ -1,0 +1,23 @@
+{
+  "ast": {
+    "kind": {
+      "Scalar": {
+        "name": {
+          "chars": [
+            "u",
+            "6",
+            "4"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "kind-annotation",
+  "rule": "kind-annotation"
+}

@@ -1,0 +1,188 @@
+{
+  "ast": {
+    "body": {
+      "PatternArms": [
+        {
+          "body": {
+            "Expression": {
+              "Var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "x"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          },
+          "guard": {
+            "Formula": {
+              "Term": {
+                "lhs": {
+                  "Expression": {
+                    "Var": {
+                      "context": null,
+                      "kind": null,
+                      "name": {
+                        "name": {
+                          "chars": [
+                            "x"
+                          ],
+                          "kind": "Identifier"
+                        }
+                      }
+                    }
+                  }
+                },
+                "rhs": [
+                  [
+                    {
+                      "Comparison": "GreaterThan"
+                    },
+                    {
+                      "Expression": {
+                        "Literal": {
+                          "Number": {
+                            "Real": {
+                              "Integer": {
+                                "chars": [
+                                  "0"
+                                ],
+                                "kind": "Number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          },
+          "pattern": {
+            "TupleStruct": {
+              "name": {
+                "name": {
+                  "chars": [
+                    "p",
+                    "r",
+                    "e",
+                    "s",
+                    "s",
+                    "e",
+                    "d"
+                  ],
+                  "kind": "Identifier"
+                }
+              },
+              "patterns": [
+                {
+                  "Expression": {
+                    "Var": {
+                      "context": null,
+                      "kind": null,
+                      "name": {
+                        "name": {
+                          "chars": [
+                            "x"
+                          ],
+                          "kind": "Identifier"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "body": {
+            "Block": [
+              [
+                {
+                  "Statement": {
+                    "VariableDefine": {
+                      "expression": {
+                        "Literal": {
+                          "Number": {
+                            "Real": {
+                              "Integer": {
+                                "chars": [
+                                  "0"
+                                ],
+                                "kind": "Number"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "mutable": false,
+                      "var": {
+                        "context": null,
+                        "kind": null,
+                        "name": {
+                          "name": {
+                            "chars": [
+                              "o",
+                              "u",
+                              "t",
+                              "p",
+                              "u",
+                              "t"
+                            ],
+                            "kind": "Identifier"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                null
+              ]
+            ]
+          },
+          "guard": null,
+          "pattern": "Wildcard"
+        }
+      ]
+    },
+    "operator": {
+      "chars": [
+        "~",
+        ">"
+      ],
+      "kind": "AsyncTransitionOperator"
+    },
+    "trigger": {
+      "Var": {
+        "context": null,
+        "kind": null,
+        "name": {
+          "name": {
+            "chars": [
+              "e",
+              "v",
+              "e",
+              "n",
+              "t"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 58,
+    "remaining_source": "",
+    "source_graphemes": 58
+  },
+  "entry_point": "activation-scope",
+  "rule": "activation-scope"
+}

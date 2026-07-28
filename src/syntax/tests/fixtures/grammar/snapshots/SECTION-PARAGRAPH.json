@@ -1,0 +1,57 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "Paragraph": {
+                "elements": [
+                  {
+                    "Text": {
+                      "chars": [
+                        "p",
+                        "l",
+                        "a",
+                        "i",
+                        "n",
+                        " ",
+                        "w",
+                        "o",
+                        "r",
+                        "d",
+                        "s",
+                        " ",
+                        "o",
+                        "n",
+                        " ",
+                        "o",
+                        "n",
+                        "e",
+                        " ",
+                        "l",
+                        "i",
+                        "n",
+                        "e"
+                      ],
+                      "kind": "Text"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": null
+  },
+  "consumption": {
+    "consumed_source_graphemes": 23,
+    "remaining_source": "",
+    "source_graphemes": 23
+  },
+  "entry_point": "parse",
+  "rule": "section-selection"
+}

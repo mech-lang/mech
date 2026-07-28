@@ -1,0 +1,53 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Literal": {
+              "Boolean": {
+                "chars": [
+                  "t",
+                  "r",
+                  "u",
+                  "e"
+                ],
+                "kind": "True"
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "Set": "SymmetricDifference"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Boolean": {
+                    "chars": [
+                      "f",
+                      "a",
+                      "l",
+                      "s",
+                      "e"
+                    ],
+                    "kind": "False"
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "",
+    "source_graphemes": 12
+  },
+  "entry_point": "expression",
+  "rule": "expression"
+}

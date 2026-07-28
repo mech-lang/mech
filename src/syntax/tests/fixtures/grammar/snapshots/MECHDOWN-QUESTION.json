@@ -1,0 +1,41 @@
+{
+  "ast": {
+    "QuestionBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "q",
+                "u",
+                "e",
+                "s",
+                "t",
+                "i",
+                "o",
+                "n"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 23,
+    "remaining_source": "",
+    "source_graphemes": 23
+  },
+  "entry_point": "question-block",
+  "rule": "question-block"
+}

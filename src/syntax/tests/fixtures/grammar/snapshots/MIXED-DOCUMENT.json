@@ -1,0 +1,435 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "Paragraph": {
+                "elements": [
+                  {
+                    "Text": {
+                      "chars": [
+                        "A",
+                        " ",
+                        "p",
+                        "a",
+                        "r",
+                        "a",
+                        "g",
+                        "r",
+                        "a",
+                        "p",
+                        "h",
+                        " ",
+                        "w",
+                        "i",
+                        "t",
+                        "h",
+                        " "
+                      ],
+                      "kind": "Text"
+                    }
+                  },
+                  {
+                    "Strong": {
+                      "Text": {
+                        "chars": [
+                          "s",
+                          "t",
+                          "r",
+                          "o",
+                          "n",
+                          "g"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  },
+                  {
+                    "Text": {
+                      "chars": [
+                        " ",
+                        "t",
+                        "e",
+                        "x",
+                        "t",
+                        ",",
+                        " "
+                      ],
+                      "kind": "Text"
+                    }
+                  },
+                  {
+                    "Hyperlink": [
+                      {
+                        "elements": [
+                          {
+                            "Text": {
+                              "chars": [
+                                "a",
+                                " ",
+                                "l",
+                                "i",
+                                "n",
+                                "k"
+                              ],
+                              "kind": "Text"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "chars": [
+                          "h",
+                          "t",
+                          "t",
+                          "p",
+                          "s",
+                          ":",
+                          "/",
+                          "/",
+                          "e",
+                          "x",
+                          "a",
+                          "m",
+                          "p",
+                          "l",
+                          "e",
+                          ".",
+                          "c",
+                          "o",
+                          "m"
+                        ],
+                        "kind": "Alpha"
+                      }
+                    ]
+                  },
+                  {
+                    "Text": {
+                      "chars": [
+                        ",",
+                        " ",
+                        "a",
+                        "n",
+                        "d",
+                        " "
+                      ],
+                      "kind": "Text"
+                    }
+                  },
+                  {
+                    "InlineMechCode": {
+                      "Expression": {
+                        "Formula": {
+                          "Term": {
+                            "lhs": {
+                              "Expression": {
+                                "Var": {
+                                  "context": null,
+                                  "kind": null,
+                                  "name": {
+                                    "name": {
+                                      "chars": [
+                                        "x"
+                                      ],
+                                      "kind": "Identifier"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "rhs": [
+                              [
+                                {
+                                  "AddSub": "Add"
+                                },
+                                {
+                                  "Expression": {
+                                    "Literal": {
+                                      "Number": {
+                                        "Real": {
+                                          "Integer": {
+                                            "chars": [
+                                              "1"
+                                            ],
+                                            "kind": "Number"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "Text": {
+                      "chars": [
+                        "."
+                      ],
+                      "kind": "Text"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "MechCode": [
+                [
+                  {
+                    "Statement": {
+                      "VariableDefine": {
+                        "expression": {
+                          "Literal": {
+                            "Number": {
+                              "Real": {
+                                "Integer": {
+                                  "chars": [
+                                    "1"
+                                  ],
+                                  "kind": "Number"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "mutable": false,
+                        "var": {
+                          "context": null,
+                          "kind": null,
+                          "name": {
+                            "name": {
+                              "chars": [
+                                "x"
+                              ],
+                              "kind": "Identifier"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  null
+                ]
+              ]
+            },
+            {
+              "FencedMechCode": {
+                "code": [
+                  [
+                    {
+                      "Statement": {
+                        "VariableDefine": {
+                          "expression": {
+                            "Formula": {
+                              "Term": {
+                                "lhs": {
+                                  "Expression": {
+                                    "Var": {
+                                      "context": null,
+                                      "kind": null,
+                                      "name": {
+                                        "name": {
+                                          "chars": [
+                                            "x"
+                                          ],
+                                          "kind": "Identifier"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "rhs": [
+                                  [
+                                    {
+                                      "AddSub": "Add"
+                                    },
+                                    {
+                                      "Expression": {
+                                        "Literal": {
+                                          "Number": {
+                                            "Real": {
+                                              "Integer": {
+                                                "chars": [
+                                                  "1"
+                                                ],
+                                                "kind": "Number"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                ]
+                              }
+                            }
+                          },
+                          "mutable": false,
+                          "var": {
+                            "context": null,
+                            "kind": null,
+                            "name": {
+                              "name": {
+                                "chars": [
+                                  "y"
+                                ],
+                                "kind": "Identifier"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    null
+                  ]
+                ],
+                "config": {
+                  "disabled": false,
+                  "hidden": false,
+                  "namespace": 0,
+                  "namespace_str": "",
+                  "output": true
+                },
+                "exports": [],
+                "imports": [],
+                "options": null,
+                "source": {
+                  "chars": [
+                    "y",
+                    " ",
+                    ":",
+                    "=",
+                    " ",
+                    "x",
+                    " ",
+                    "+",
+                    " ",
+                    "1",
+                    "\n"
+                  ],
+                  "kind": "CodeBlock"
+                }
+              }
+            },
+            {
+              "InfoBlock": [
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "P",
+                          "a",
+                          "r",
+                          "s",
+                          "e",
+                          "d",
+                          " ",
+                          "a",
+                          "s",
+                          " ",
+                          "a",
+                          "n",
+                          " ",
+                          "i",
+                          "n",
+                          "f",
+                          "o",
+                          "r",
+                          "m",
+                          "a",
+                          "t",
+                          "i",
+                          "o",
+                          "n",
+                          " ",
+                          "b",
+                          "l",
+                          "o",
+                          "c",
+                          "k",
+                          "."
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": {
+      "author": {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "A",
+                "d",
+                "a"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      },
+      "date": {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "2",
+                "0",
+                "2",
+                "6"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      },
+      "hero": null,
+      "kicker": null,
+      "next": null,
+      "previous": null,
+      "section": null,
+      "summary": null,
+      "text": {
+        "chars": [
+          "M",
+          "i",
+          "x",
+          "e",
+          "d",
+          " ",
+          "D",
+          "o",
+          "c",
+          "u",
+          "m",
+          "e",
+          "n",
+          "t"
+        ],
+        "kind": "Title"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 217,
+    "remaining_source": "",
+    "source_graphemes": 217
+  },
+  "entry_point": "parse",
+  "rule": "complete-document"
+}

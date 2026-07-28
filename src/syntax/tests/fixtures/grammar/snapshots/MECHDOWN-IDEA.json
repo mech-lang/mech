@@ -1,0 +1,37 @@
+{
+  "ast": {
+    "IdeaBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "i",
+                "d",
+                "e",
+                "a"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 19,
+    "remaining_source": "",
+    "source_graphemes": 19
+  },
+  "entry_point": "idea-block",
+  "rule": "idea-block"
+}

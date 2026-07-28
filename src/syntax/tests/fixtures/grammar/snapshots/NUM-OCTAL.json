@@ -1,0 +1,20 @@
+{
+  "ast": {
+    "Real": {
+      "Octal": {
+        "chars": [
+          "7",
+          "7"
+        ],
+        "kind": "Number"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 4,
+    "remaining_source": "",
+    "source_graphemes": 4
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

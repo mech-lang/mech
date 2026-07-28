@@ -1,0 +1,57 @@
+{
+  "ast": {
+    "Set": {
+      "elements": [
+        {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "1"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "2"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "Literal": {
+            "Number": {
+              "Real": {
+                "Integer": {
+                  "chars": [
+                    "3"
+                  ],
+                  "kind": "Number"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "",
+    "source_graphemes": 7
+  },
+  "entry_point": "structure",
+  "rule": "set-whitespace-separator"
+}

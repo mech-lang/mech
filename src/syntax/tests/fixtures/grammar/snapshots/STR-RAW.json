@@ -1,0 +1,41 @@
+{
+  "ast": {
+    "text": {
+      "chars": [
+        "r",
+        "a",
+        "w",
+        " ",
+        "\"",
+        "q",
+        "u",
+        "o",
+        "t",
+        "e",
+        "s",
+        "\"",
+        " ",
+        "a",
+        "n",
+        "d",
+        " ",
+        "\\",
+        "s",
+        "l",
+        "a",
+        "s",
+        "h",
+        "e",
+        "s"
+      ],
+      "kind": "String"
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 31,
+    "remaining_source": "",
+    "source_graphemes": 31
+  },
+  "entry_point": "string",
+  "rule": "string"
+}

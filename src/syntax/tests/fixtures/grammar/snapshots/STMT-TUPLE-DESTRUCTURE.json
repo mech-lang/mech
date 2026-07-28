@@ -1,0 +1,67 @@
+{
+  "ast": {
+    "TupleDestructure": {
+      "expression": {
+        "Structure": {
+          "Tuple": {
+            "elements": [
+              {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "1"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "2"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "vars": [
+        {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        {
+          "name": {
+            "chars": [
+              "y"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 16,
+    "remaining_source": "",
+    "source_graphemes": 16
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}
