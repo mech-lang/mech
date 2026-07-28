@@ -1,3 +1,5 @@
+//! Runtime component access and controlled replacement.
+
 use super::*;
 
 impl MechRuntime {

@@ -18,7 +18,7 @@
 
 mod actor;
 mod builder;
-mod dependencies;
+mod components;
 mod errors;
 mod events;
 mod execution;
