@@ -1,3 +1,6 @@
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+mod comprehensions;
+
 #[cfg(all(feature = "functions", feature = "f64"))]
 mod registration;
 
