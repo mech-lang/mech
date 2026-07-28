@@ -1,0 +1,288 @@
+Mech Grammar Audit
+===============================================================================
+
+Status: Phase 0 audit infrastructure.
+
+Baseline commit:
+`75bb213f42a0f8116ca1299d1d39a5cf14fc0303`, the merge commit for PR 680.
+
+This directory records the language accepted by the syntax crate at that
+baseline. It is an audit of existing behavior, not a parser redesign.
+
+1. Authority
+-------------------------------------------------------------------------------
+
+For Phase 0:
+
+```
+the current parser implementation is law
+```
+
+The Rust implementation determines the accepted language, AST shape,
+alternative selection, completion rules, whitespace behavior, feature-set
+differences, and entry-point normalization. `docs/design/specification.mec`,
+documentation and repository examples, formatter output, and inline EBNF
+comments are supporting evidence. When evidence disagrees with executable
+parser behavior, the current behavior is recorded and the disagreement is
+entered in `discrepancies.mec`; Phase 0 does not silently choose the prose or
+change the parser.
+
+This authority rule is intentionally temporary. The completed Phase 0
+specification will become the single canonical grammar, with tests and CI
+making later changes explicit.
+
+2. Audit scope
+-------------------------------------------------------------------------------
+
+Every top-level function, including private functions, is inventoried in these
+parser modules:
+
+```
+src/syntax/src/base.rs
+src/syntax/src/literals.rs
+src/syntax/src/structures.rs
+src/syntax/src/expressions.rs
+src/syntax/src/patterns.rs
+src/syntax/src/statements.rs
+src/syntax/src/functions.rs
+src/syntax/src/state_machines.rs
+src/syntax/src/activation.rs
+src/syntax/src/imports.rs
+src/syntax/src/mechdown.rs
+src/syntax/src/mika.rs
+src/syntax/src/grammar.rs
+src/syntax/src/repl.rs
+src/syntax/src/parser.rs
+```
+
+The Phase 0 request's original list predates the baseline. PR 680's
+`parser.rs::mech_code_alt` directly selects `activation_scope` and
+`module_import`, so omitting `activation.rs` and `imports.rs` would omit
+accepted syntax. They are therefore part of this audit.
+
+The audit also follows behavior into `src/syntax/src/lib.rs` where necessary,
+notably `ParseString`, `graphemes::init_source`, and `alt_best`, and into the
+AST definitions needed to identify constructed output types. Those supporting
+functions are described where they affect grammar or parser control, but
+`lib.rs` is not part of the top-level-function coverage manifest. Formatter
+methods are evidence only and are not selected parser inventory.
+
+The artifacts have distinct responsibilities:
+
+- `productions.tsv` maps every selected Rust function to a stable ID, grammar
+  name, role, output type, callers, callees, selection behavior, termination,
+  whitespace behavior, evidence, and conformance cases.
+- `current-grammar.mec` is the mechanically extracted grammar candidate. It
+  describes this baseline and is not yet the normative specification.
+- `discrepancies.mec` is the append-only, stable-ID ledger for conflicts,
+  ambiguities, and required behavioral investigations.
+- `src/syntax/tests/grammar_inventory.rs` mechanically checks inventory
+  coverage and manifest invariants.
+
+3. Grammar notation
+-------------------------------------------------------------------------------
+
+The audit retains the extended EBNF notation already used by
+`docs/design/specification.mec` and by the grammar sublanguage:
+
+```ebnf
+rule := expression ;
+
+sequence := first, second, third ;
+
+alternative := first
+             | second
+             | third ;
+
+optional := ?element ;
+
+zero-or-more := *element ;
+
+one-or-more := +element ;
+
+excluded := ¬element ;
+
+peeked := >element ;
+
+grouped := (first | second), third ;
+
+separated := [separator, element] ;
+
+terminal := "literal" ;
+
+terminal-range := "a".."z" ;
+```
+
+Definitions use `:=`. Every formal rule ends in `;`. Sequence uses `,`,
+choice uses `|`, repetition and optionality are prefix operators, grouping
+uses parentheses, separated lists use the existing two-operand square-bracket
+form, and terminals are quoted. Grammar names are kebab-case. Existing
+specification names are preserved; Rust snake-case function names are mapped
+to them in the inventory.
+
+The audit does not add PEG `/`, brace repetition, square-bracket optionality,
+or formal operators for commit, cut, recovery, errors, feature gates,
+`alt_best`, source normalization, or complete-consumption checks. Those
+mechanics appear in adjacent prose under the labels `Selection rule:`,
+`Completion rule:`, `Whitespace rule:`, `Source rule:`, `Feature rule:`,
+`Validation rule:`, `Recovery note:`, and `Implementation anomaly:`.
+
+The notation has historical inconsistencies. In particular, the
+specification's notation table describes the first square-bracket operand as
+the element and the second as its delimiter, while the Phase 0 required form
+labels them separator then element. The meta-parser stores two operands
+without validating that semantic role. The specification also uses
+descriptive primitives and terminal ranges that are not all represented in
+its printed “grammar grammar.” These are recorded in the discrepancy ledger;
+the meta-parser is not changed in Phase 0.
+
+4. Classification system
+-------------------------------------------------------------------------------
+
+Every selected function receives one or more of these classifications:
+
+- `root`: a public or independently invoked parse entry.
+- `production`: recognizes language syntax and normally constructs an AST
+  value or a grammar-level component.
+- `terminal`: recognizes a fixed textual token or a small fixed choice of
+  textual tokens.
+- `lexical-primitive`: recognizes a character/grapheme class or other
+  implementation-defined lexical unit.
+- `semantic-validation`: rejects a grammatically formed result because of a
+  value, shape, or context constraint.
+- `parser-control`: controls choice, completion, lookahead, commitment, or
+  delegation rather than denoting an ordinary language union.
+- `recovery`: consumes input to resynchronize or constructs an error
+  placeholder.
+- `diagnostic`: labels, logs, formats, or selects parse errors.
+- `helper`: supports a production without independently denoting canonical
+  syntax.
+- `not-grammar`: a selected top-level function that performs no grammar role.
+
+Slash-separated classifications mean that more than one role is material; for
+example, a function can be `production/parser-control`. Classifications do not
+erase behavior. A helper that consumes syntax still records its children,
+whitespace, and termination, and a semantic validator still maps to the
+production whose recognized form it constrains.
+
+5. Five layers that must not be conflated
+-------------------------------------------------------------------------------
+
+Grammar
+
+Grammar describes which token sequences form the accepted language and the
+AST-producing production that consumes them. Ordinary `alt`, sequence,
+optional, repetition, and separated-list structure can usually be written
+directly in EBNF.
+
+Disambiguation
+
+Disambiguation chooses among overlapping successful or partially successful
+parses. Ordered `alt`, manual fallbacks, lookahead gates, prefix commitments,
+and `alt_best` longest-success ranking are not interchangeable. The inventory
+records the applicable selection behavior, and the extracted grammar adds a
+`Selection rule:` whenever plain `|` would lose information.
+
+Semantic validation
+
+Semantic validation runs after enough syntax has been recognized to inspect
+its meaning or shape. Examples include rejecting wildcard or spread patterns
+as state-machine values and requiring a generator or let qualifier in a matrix
+comprehension. Such checks constrain acceptance but are described with a
+`Validation rule:` rather than invented EBNF operators.
+
+Diagnostics
+
+Diagnostics determine which failure is reported, its range and label, and
+whether a recoverable error is logged. Diagnostic wording is not the grammar,
+and Phase 0 does not snapshot the current human-readable messages.
+
+Recovery
+
+Recovery consumes input after an error and may insert an AST error
+placeholder. It can make an internal production return success while leaving
+an error in `ParseString.error_log`; the public root then rejects when that log
+is nonempty. Recovery behavior is frozen by structural conformance cases but
+is not included as accepted-language EBNF.
+
+6. Entry points and completion
+-------------------------------------------------------------------------------
+
+Completion is recorded independently for each root. `parse` and
+`parse_grammar` report remaining input after their delegated parsers;
+`parse_repl_command` is a separate `&str` root with its own explicit
+end-of-input check. `mech_code`, fenced Mech, evaluated inline Mech, displayed
+inline Mech, `grammar`, and lower-level functions have different caller-owned
+completion contracts.
+
+`graphemes::init_source` unconditionally appends one synthetic newline. This
+is an entry normalization rule used by `parse`, `parse_grammar`, rich-comment
+reparsing, and fenced-Mech reparsing. It is not hidden in the grammar for
+`program`, `mech-code`, or any other production.
+
+7. Updating the inventory
+-------------------------------------------------------------------------------
+
+Any parser change must update the audit in the same change:
+
+1. Run the inventory coverage test against all selected modules. Account for
+   every added, removed, renamed, public, private, and macro-generated
+   top-level function.
+2. Add or update the `productions.tsv` row. Stable IDs are never reused.
+   Preserve the grammar name when the language concept is unchanged.
+3. Classify the function and record its feature gate, root status, output
+   type, implementation path, parent and child rules, exact whitespace
+   parsers, completion/termination contract, and specification evidence.
+4. Record real choice behavior: `ordered-first-success`,
+   `alt-best-longest-success`, `manual-fallback`, `peek-gated`,
+   `prefix-committed`, `caller-controlled`, or `none`.
+5. Update `current-grammar.mec` from implementation structure. Put parser
+   mechanics in labeled prose rather than inventing syntax.
+6. Add or update accepted, rejected, disambiguation, whitespace, completion,
+   feature-set, recovery, and AST-shape conformance cases.
+7. Append or amend the applicable stable discrepancy entry. Never renumber
+   entries; if a future design resolves one, retain it with the resolution and
+   commit.
+8. Run the inventory, rule-graph, conformance, relevant feature-set, and
+   ordinary syntax-crate tests before review.
+
+An implementation production must map to a canonical grammar rule, and every
+canonical grammar rule must map back to at least one implementation function
+or an explicitly declared primitive/feature gate. Separate roots and
+intentional legacy/dead rules are named rather than made artificially
+reachable.
+
+8. Completion criteria
+-------------------------------------------------------------------------------
+
+PR 0A is complete when the selected-function discovery and inventory counts
+match; every row is uniquely identified and classified; implementation paths,
+output types, selection, completion, and whitespace are recorded; the
+coverage test enforces those invariants; and the initial discrepancy ledger
+explicitly covers every required investigation without changing parser
+behavior.
+
+Phase 0 as a whole is complete only when all of the following are true:
+
+1. Every selected parser function has a reviewed role and implementation
+   mapping.
+2. The entire accepted grammar, including roots, feature differences,
+   normalization, whitespace, completion, disambiguation, and AST-relevant
+   validation, has been extracted from the implementation.
+3. Every grammar rule maps to implementation and every implementation
+   production maps to grammar; duplicates and unexplained unreachable rules
+   fail mechanical checks.
+4. A conformance suite freezes accepted syntax, rejected syntax,
+   disambiguation, whitespace behavior, public-root completion, recovery
+   structure, feature gates, and AST shape without snapshotting diagnostic
+   prose.
+5. Every known conflict among parser behavior, inline EBNF, specification,
+   formatter, and documentation/examples has a stable ledger entry and a
+   conformance case.
+6. The reviewed grammar replaces competing grammar fragments with one
+   canonical grammar in `docs/design/specification.mec`.
+7. CI checks inventory coverage, the rule graph, canonical mappings, and the
+   conformance corpus so grammar, parser, and tests cannot silently drift.
+8. No Phase 0 change has altered AST types, alternative order, whitespace,
+   delimiters, periods, recovery, diagnostics machinery, or accepted/rejected
+   syntax.
