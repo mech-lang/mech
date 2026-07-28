@@ -19,7 +19,8 @@ Scenarios that exercise a private runtime coordinator live in a sibling
 `tests/` directory selected with a test-only `#[path]` declaration. For
 example, execution scenarios live under
 `src/runtime/src/runtime/execution/tests/`, and transaction protocol scenarios
-live under `src/runtime/src/runtime/transaction/tests/`.
+live under `src/runtime/src/runtime/transaction/tests/`, grouped by store,
+program, reactive, effect, capability, and module ownership.
 
 Host-input scenarios are grouped by invariant under
 `src/runtime/src/runtime/input_tests/`. These tests may inspect private runtime
@@ -104,10 +105,10 @@ Do not rename an externally filtered test merely to improve its wording.
 | Contract | Location and anchor |
 | --- | --- |
 | Staged receiver integrity acceptance | `src/runtime/src/runtime/input_tests/integrity.rs` — `integrity_invalid_host_input_aborts_staged_receiver_before_commit`. The shell and PowerShell transactional-integrity demos select this test by its stable function name. |
-| Final explicit integrity revalidation | `src/runtime/src/runtime/program_transaction/tests/integrity.rs` — `final_explicit_commit_revalidates_without_consuming_transaction`. |
-| Runtime-service reentrant-borrow recovery | `src/runtime/src/runtime/reactive_transaction/tests/service_borrow.rs` — `reentrant_runtime_service_borrow_returns_structured_error_and_recovers`. |
+| Final explicit integrity revalidation | `src/runtime/src/runtime/transaction/tests/program/integrity.rs` — `final_explicit_commit_revalidates_without_consuming_transaction`. |
+| Runtime-service reentrant-borrow recovery | `src/runtime/src/runtime/transaction/tests/reactive/service_borrow.rs` — `reentrant_runtime_service_borrow_returns_structured_error_and_recovers`. |
 | Module graph rollback | `src/runtime/src/runtime/module/tests/rollback.rs` — the rollback suite includes `explicit_abort_discards_provisional_graph` and `retained_root_failure_rolls_back_graph_events_and_program`. |
-| Indeterminate store commit | `src/runtime/src/runtime/transaction/tests/indeterminate.rs` — `store_commit_panic_is_indeterminate_and_never_rolled_back`. |
+| Indeterminate store commit | `src/runtime/src/runtime/transaction/tests/store/indeterminate.rs` — `store_commit_panic_is_indeterminate_and_never_rolled_back`. |
 | Sealed affine-journal boundaries | `src/runtime/tests/ui/sealed/`, driven by `src/runtime/tests/sealed_api.rs`. Journal construction, participant escape, reuse, and multiple-operation cases remain compile-fail fixtures with checked diagnostics. |
 | macOS workspace-watch regressions | `src/runtime/src/workspace/watch.rs` — `workspace::watch::tests`, including the macOS-only `macos_temp_directory_alias_handles_missing_watch_paths`. The macOS CI job filters this module directly. |
 
@@ -116,3 +117,6 @@ transaction ownership, see the companion
 [core and interpreter test topology](core-interpreter-test-topology.md) guide.
 For the production files exercised by execution scenarios, see the
 [runtime execution topology](../runtime/execution-topology.md).
+For the private transaction coordinator, its ownership boundaries, and the
+complete harness-prefix migration map, see the
+[runtime transaction topology](../runtime/transaction-topology.md).
