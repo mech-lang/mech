@@ -145,6 +145,9 @@ leaf names are preserved; their qualified paths now identify the owning
 behavior. Statement-level activation lowering and plan registration remain in
 `statements/tests/activation_scope.rs`.
 
+For the production modules exercised by these suites, see the
+[activation coordination topology](../interpreter/activation-topology.md).
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,
