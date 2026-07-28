@@ -1,3 +1,7 @@
+//! Private runtime transaction coordination.
+//!
+//! Public transaction protocols and models remain in `crate::transaction`.
+
 // ---------------------------------------------------------------------------
 // Transaction methods
 // ---------------------------------------------------------------------------
@@ -1155,5 +1159,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "transaction/tests/mod.rs"]
+#[path = "tests/mod.rs"]
 mod tests;
