@@ -4,6 +4,9 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repository_root"
 
+"$repository_root/scripts/check-runtime-wildcard-imports.sh" \
+  "$repository_root"
+
 production_source_roots=$(find src \
   -mindepth 2 \
   -maxdepth 2 \
