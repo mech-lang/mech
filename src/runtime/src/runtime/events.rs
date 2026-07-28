@@ -1,0 +1,76 @@
+use super::*;
+
+impl MechRuntime {
+  pub fn next_event_sequence(&mut self) -> u64 {
+    let sequence = self.event_sequence;
+    self.event_sequence = self.event_sequence.saturating_add(1);
+    sequence
+  }
+
+  pub(in crate::runtime) fn make_event(&mut self, kind: RuntimeEventKind) -> RuntimeEvent {
+    RuntimeEvent::new(self.next_event_id(), self.next_event_sequence(), kind)
+  }
+
+  pub(in crate::runtime) fn emit_event_to_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    self.validate_context_for_runtime(context)?;
+
+    let context_events_before = context.events.clone();
+    let event = self.make_event(kind);
+    let id = event.id;
+
+    context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
+    if let Some(transaction_id) = context.transaction {
+      if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
+        if let Err(error) = transaction.store.stage_event(event) {
+          context.events = context_events_before;
+          return Err(error);
+        }
+        return Ok(id);
+      }
+    }
+
+    if let Err(error) = self.store.append_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
+
+    Ok(id)
+  }
+
+  pub(in crate::runtime) fn emit_event_immediate_to_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    kind: RuntimeEventKind,
+  ) -> MResult<EventId> {
+    self.validate_context_for_runtime(context)?;
+
+    let context_events_before = context.events.clone();
+    let event = self.make_event(kind);
+    let id = event.id;
+
+    context.push_event(event.clone());
+    self.trim_events_to_retention(&mut context.events);
+    if let Err(error) = self.store.append_event(event) {
+      context.events = context_events_before;
+      return Err(error);
+    }
+
+    Ok(id)
+  }
+
+  pub(in crate::runtime) fn push_persisted_event_to_context(
+    &self,
+    context: &mut RuntimeContext,
+    event: RuntimeEvent,
+  ) -> EventId {
+    let id = event.id;
+    context.push_event(event);
+    self.trim_events_to_retention(&mut context.events);
+    id
+  }
+}
