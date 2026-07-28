@@ -4571,7 +4571,6 @@ fn merge_module_environment(
 
 
 #[cfg(test)]
-#[path = "execution/tests/mod.rs"]
 mod tests;
 
 impl MechRuntime {
