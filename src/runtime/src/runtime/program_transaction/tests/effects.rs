@@ -48,7 +48,10 @@ fn resource_provider_staging_failure_leaves_effect_journal_unchanged() {
 fn committed_implicit_participant_failure_never_rolls_back_program() {
     let log = Arc::new(Mutex::new(Vec::new()));
     let mut builder = MechRuntime::builder();
-    for (name, fail_commit) in [("round4/first", false), ("round4/second", true)] {
+    for (name, fail_commit) in [
+        ("participant-commit/first", false),
+        ("participant-commit/second", true),
+    ] {
         let effect_log = log.clone();
         builder = builder
             .host_function(PlannedStagedHostFunction::new(
@@ -71,8 +74,8 @@ fn committed_implicit_participant_failure_never_rolls_back_program() {
     }
     let mut runtime = builder.build().unwrap();
     for (id, name) in [
-        (CapabilityId(800), "round4/first"),
-        (CapabilityId(801), "round4/second"),
+        (CapabilityId(800), "participant-commit/first"),
+        (CapabilityId(801), "participant-commit/second"),
     ] {
         grant_host_call(&mut runtime, id, name);
     }
@@ -81,7 +84,7 @@ fn committed_implicit_participant_failure_never_rolls_back_program() {
     let error = runtime
     .run_string_with_context(
       &mut context,
-      "round4-committed-symbol := 41\nfirst-result := round4/first()\nsecond-result := round4/second()",
+      "participant-commit-symbol := 41\nfirst-result := participant-commit/first()\nsecond-result := participant-commit/second()",
     )
     .unwrap_err();
 
@@ -89,16 +92,16 @@ fn committed_implicit_participant_failure_never_rolls_back_program() {
     assert_eq!(
         *log.lock().unwrap(),
         vec![
-            "round4/first:prepare",
-            "round4/second:prepare",
-            "round4/first:commit",
-            "round4/second:commit",
+            "participant-commit/first:prepare",
+            "participant-commit/second:prepare",
+            "participant-commit/first:commit",
+            "participant-commit/second:commit",
         ],
     );
     assert!(
         runtime
             .program
-            .root_symbol_value("round4-committed-symbol")
+            .root_symbol_value("participant-commit-symbol")
             .is_ok()
     );
     assert_eq!(context.transaction, None);

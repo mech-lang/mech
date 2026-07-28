@@ -6,13 +6,13 @@ fn program_transaction_implicit_success_commits_program_store_and_events() {
     let mut context = runtime.runtime_context().unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "round3-implicit-success := 7")
+        .run_string_with_context(&mut context, "implicit-committed-symbol := 7")
         .unwrap();
 
     assert!(
         runtime
             .program
-            .root_symbol_value("round3-implicit-success")
+            .root_symbol_value("implicit-committed-symbol")
             .is_ok(),
     );
     assert!(runtime.active_transactions.is_empty());

@@ -10,7 +10,7 @@ fn explicit_program_commit_keeps_program_and_commits_access_delta() {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "round3-committed := 41 + 1")
+        .run_string_with_context(&mut context, "explicit-committed-symbol := 41 + 1")
         .unwrap();
     context.record_read(ObjectId(71));
     context.record_write(ObjectId(72));
@@ -20,7 +20,7 @@ fn explicit_program_commit_keeps_program_and_commits_access_delta() {
     assert!(
         runtime
             .program
-            .root_symbol_value("round3-committed")
+            .root_symbol_value("explicit-committed-symbol")
             .is_ok()
     );
     assert_eq!(runtime.program_transaction_owner, None);
@@ -38,7 +38,7 @@ fn explicit_commit_failure_keeps_program_provisional_until_abort() {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "round3-provisional := 42")
+        .run_string_with_context(&mut context, "failed-commit-provisional-symbol := 42")
         .unwrap();
     runtime
         .update_object_with_context(
@@ -51,7 +51,7 @@ fn explicit_commit_failure_keeps_program_provisional_until_abort() {
     assert!(
         runtime
             .program
-            .root_symbol_value("round3-provisional")
+            .root_symbol_value("failed-commit-provisional-symbol")
             .is_ok()
     );
     assert_eq!(context.transaction, Some(transaction_id));
@@ -65,7 +65,7 @@ fn explicit_commit_failure_keeps_program_provisional_until_abort() {
     assert!(
         runtime
             .program
-            .root_symbol_value("round3-provisional")
+            .root_symbol_value("failed-commit-provisional-symbol")
             .is_err()
     );
     assert_eq!(runtime.program_transaction_owner, None);
@@ -77,7 +77,7 @@ fn one_transaction_owns_program_while_other_store_work_remains_allowed() {
     let mut context_a = runtime.runtime_context().unwrap();
     let transaction_a = runtime.begin_transaction(&mut context_a).unwrap();
     runtime
-        .run_string_with_context(&mut context_a, "round3-owner-a := 1")
+        .run_string_with_context(&mut context_a, "first-owner-program := 1")
         .unwrap();
 
     let mut context_b = runtime.runtime_context().unwrap();
@@ -90,13 +90,13 @@ fn one_transaction_owns_program_while_other_store_work_remains_allowed() {
         .unwrap();
 
     let b_error = runtime
-        .run_string_with_context(&mut context_b, "round3-owner-b := 2")
+        .run_string_with_context(&mut context_b, "second-owner-program := 2")
         .unwrap_err();
     assert_eq!(b_error.kind_name(), "RuntimeProgramBusy");
 
     let mut unowned_context = runtime.runtime_context().unwrap();
     let implicit_error = runtime
-        .run_string_with_context(&mut unowned_context, "round3-unowned := 3")
+        .run_string_with_context(&mut unowned_context, "unowned-program-attempt := 3")
         .unwrap_err();
     assert_eq!(implicit_error.kind_name(), "RuntimeProgramBusy");
     assert_eq!(runtime.program_transaction_owner, Some(transaction_a));
@@ -105,17 +105,27 @@ fn one_transaction_owns_program_while_other_store_work_remains_allowed() {
         .abort_runtime_transaction(&mut context_a, "release A")
         .unwrap();
     runtime
-        .run_string_with_context(&mut context_b, "round3-owner-b := 2")
+        .run_string_with_context(&mut context_b, "second-owner-program := 2")
         .unwrap();
 
     assert_eq!(runtime.program_transaction_owner, Some(transaction_b));
-    assert!(runtime.program.root_symbol_value("round3-owner-b").is_ok());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("second-owner-program")
+            .is_ok()
+    );
     assert!(runtime.get_object(ObjectId(300)).unwrap().is_none());
 
     runtime
         .abort_runtime_transaction(&mut context_b, "release B")
         .unwrap();
-    assert!(runtime.program.root_symbol_value("round3-owner-b").is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("second-owner-program")
+            .is_err()
+    );
     assert!(runtime.get_object(ObjectId(300)).unwrap().is_none());
 }
 
@@ -129,7 +139,7 @@ fn failed_first_explicit_operation_releases_program_ownership() {
         runtime
             .run_string_with_context(
                 &mut context_a,
-                "round3-first-fails := missing-round3-first + 1",
+                "failing-first-operation := missing-first-operation-input + 1",
             )
             .is_err()
     );
@@ -146,7 +156,7 @@ fn failed_first_explicit_operation_releases_program_ownership() {
     let mut context_b = runtime.runtime_context().unwrap();
     let transaction_b = runtime.begin_transaction(&mut context_b).unwrap();
     runtime
-        .run_string_with_context(&mut context_b, "round3-after-failure := 2")
+        .run_string_with_context(&mut context_b, "owner-after-failed-operation := 2")
         .unwrap();
     assert_eq!(runtime.program_transaction_owner, Some(transaction_b));
 

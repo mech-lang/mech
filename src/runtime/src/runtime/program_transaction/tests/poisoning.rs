@@ -103,7 +103,7 @@ fn missing_implicit_envelope_during_cleanup_is_not_hidden() {
 #[test]
 fn incomplete_program_restore_poisons_retained_execution_until_abort() {
     let mut runtime = MechRuntime::builder().build().unwrap();
-    runtime.run_string("round3-poison-anchor := 1").unwrap();
+    runtime.run_string("rollback-poison-anchor := 1").unwrap();
     assert!(runtime.program.interpreter().plan_len() > 0);
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
@@ -138,7 +138,7 @@ fn incomplete_program_restore_poisons_retained_execution_until_abort() {
 
     assert_eq!(
         runtime
-            .run_string("round3-poison-rejected := 1")
+            .run_string("poisoned-runtime-rejected-symbol := 1")
             .unwrap_err()
             .kind_name(),
         "RuntimePoisoned",
@@ -162,7 +162,7 @@ fn incomplete_program_restore_poisons_retained_execution_until_abort() {
     assert!(
         runtime
             .program()
-            .root_symbol_value("round3-poison-anchor")
+            .root_symbol_value("rollback-poison-anchor")
             .is_ok()
     );
 

@@ -14,18 +14,23 @@ fn program_transaction_outer_abort_restores_program_baseline() {
             &mut context,
             "program_transaction_test",
             |runtime, _context| {
-                runtime
-                    .program
-                    .run_source(&MechSourceCode::String("round3-owned := 42".to_string()))
+                runtime.program.run_source(&MechSourceCode::String(
+                    "outer-transaction-symbol := 42".to_string(),
+                ))
             },
         )
         .unwrap();
 
     assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
-    assert!(runtime.program.root_symbol_value("round3-owned").is_ok(),);
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("outer-transaction-symbol")
+            .is_ok(),
+    );
 
     runtime
-        .abort_runtime_transaction(&mut context, "round3 test abort")
+        .abort_runtime_transaction(&mut context, "discard outer transaction program")
         .unwrap();
 
     assert_eq!(context.transaction, None);
@@ -33,19 +38,24 @@ fn program_transaction_outer_abort_restores_program_baseline() {
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(runtime.program.interpreter().id, root_interpreter_id);
     assert_eq!(runtime.program.interpreter().plan_len(), plan_len_before);
-    assert!(runtime.program.root_symbol_value("round3-owned").is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("outer-transaction-symbol")
+            .is_err()
+    );
 }
 
 #[test]
 fn program_transaction_implicit_partial_failure_restores_everything() {
     let mut runtime = MechRuntime::builder().build().unwrap();
-    runtime.run_string("round3-anchor := 1").unwrap();
+    runtime.run_string("implicit-rollback-anchor := 1").unwrap();
     let anchor = runtime
         .program
         .interpreter()
         .symbols()
         .borrow()
-        .get(hash_str("round3-anchor"))
+        .get(hash_str("implicit-rollback-anchor"))
         .unwrap()
         .clone();
     let anchor_address = anchor.addr();
@@ -55,14 +65,23 @@ fn program_transaction_implicit_partial_failure_restores_everything() {
     let events_before = runtime.list_events(None).unwrap().len();
     let mut context = runtime.runtime_context().unwrap();
     let source = MechSourceCode::Program(vec![
-        MechSourceCode::String("round3-partial := round3-anchor + 1".to_string()),
-        MechSourceCode::String("round3-failure := missing-round3-value + 1".to_string()),
+        MechSourceCode::String(
+            "implicit-rollback-partial := implicit-rollback-anchor + 1".to_string(),
+        ),
+        MechSourceCode::String(
+            "implicit-rollback-failure := missing-implicit-rollback-value + 1".to_string(),
+        ),
     ]);
 
     let error = runtime.run_source_with_context(&mut context, &source);
 
     assert_eq!(error.unwrap_err().kind_name(), "UndefinedVariable");
-    assert!(runtime.program.root_symbol_value("round3-partial").is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("implicit-rollback-partial")
+            .is_err()
+    );
     assert_eq!(runtime.program.interpreter().plan_len(), plan_len_before);
     assert_eq!(
         runtime
@@ -70,7 +89,7 @@ fn program_transaction_implicit_partial_failure_restores_everything() {
             .interpreter()
             .symbols()
             .borrow()
-            .get(hash_str("round3-anchor"))
+            .get(hash_str("implicit-rollback-anchor"))
             .unwrap()
             .addr(),
         anchor_address,
@@ -136,14 +155,14 @@ fn completion_event_staging_failure_rolls_back_implicit_program() {
     let mut context = runtime.runtime_context().unwrap();
 
     let error = runtime
-        .run_string_with_context(&mut context, "round3-completion-event-failure := 1")
+        .run_string_with_context(&mut context, "completion-event-staging-failure := 1")
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "InvalidRuntimeTransaction");
     assert!(
         runtime
             .program
-            .root_symbol_value("round3-completion-event-failure")
+            .root_symbol_value("completion-event-staging-failure")
             .is_err()
     );
     assert!(runtime.active_transactions.is_empty());

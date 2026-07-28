@@ -92,10 +92,10 @@ fn failed_root_does_not_deliver_dependency_after_commit_effect() {
     let deliveries_for_host = deliveries.clone();
     let mut runtime = runtime_builder_with_sources(&[
         ("root.mec", "+> ./dep.mec\nanswer := missing\nanswer\n"),
-        ("dep.mec", "value := round5/after_commit()\n<+ value\n"),
+        ("dep.mec", "value := dependency/after_commit()\n<+ value\n"),
     ])
     .host_function(PlannedStagedHostFunction::new(
-        "round5/after_commit",
+        "dependency/after_commit",
         |_context, _args| Ok(Value::F64(mech_core::Ref::new(1.0)).into()),
         move |_context, _args| {
             Ok(RuntimePreparedHostCall {
@@ -109,7 +109,7 @@ fn failed_root_does_not_deliver_dependency_after_commit_effect() {
     .unwrap()
     .build()
     .unwrap();
-    grant_host_call(&mut runtime, CapabilityId(910), "round5/after_commit");
+    grant_host_call(&mut runtime, CapabilityId(910), "dependency/after_commit");
 
     assert!(runtime
         .resolve_and_run_root_module("root.mec", test_module_options(),)
@@ -161,7 +161,7 @@ fn outer_abort_discards_graph_object_capability_effect_and_program() {
     runtime
         .resolve_and_run_root_module_with_context(&mut context, "root.mec", test_module_options())
         .unwrap();
-    let object = ObjectRecord::text(ObjectId(921), "round5", "discarded");
+    let object = ObjectRecord::text(ObjectId(921), "module-transaction", "discarded");
     runtime
         .put_object_with_context(&mut context, object.clone())
         .unwrap();

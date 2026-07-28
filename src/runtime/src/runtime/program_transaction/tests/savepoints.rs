@@ -76,7 +76,7 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "round3-a := 1")
+        .run_string_with_context(&mut context, "savepoint-before-failure := 1")
         .unwrap();
     let plan_len_after_a = runtime.program.interpreter().plan_len();
     let events_after_a = context.events.clone();
@@ -91,7 +91,7 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
         "explicit_b_test",
         |runtime, context| {
             runtime.program.run_source(&MechSourceCode::String(
-                "round3-b := round3-a + 1".to_string(),
+                "savepoint-rolled-back := savepoint-before-failure + 1".to_string(),
             ))?;
             runtime
                 .active_transaction_mut(transaction_id)?
@@ -114,8 +114,18 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
     );
 
     assert!(failure.is_err());
-    assert!(runtime.program.root_symbol_value("round3-a").is_ok());
-    assert!(runtime.program.root_symbol_value("round3-b").is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("savepoint-before-failure")
+            .is_ok()
+    );
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("savepoint-rolled-back")
+            .is_err()
+    );
     assert_eq!(runtime.program.interpreter().plan_len(), plan_len_after_a);
     assert_eq!(context.events, events_after_a);
     assert_eq!(context.access, access_after_a);
@@ -126,17 +136,40 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
     assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
 
     runtime
-        .run_string_with_context(&mut context, "round3-c := round3-a + 2")
+        .run_string_with_context(
+            &mut context,
+            "savepoint-after-failure := savepoint-before-failure + 2",
+        )
         .unwrap();
-    assert!(runtime.program.root_symbol_value("round3-c").is_ok());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("savepoint-after-failure")
+            .is_ok()
+    );
 
     runtime
         .abort_runtime_transaction(&mut context, "discard A and C")
         .unwrap();
 
-    assert!(runtime.program.root_symbol_value("round3-a").is_err());
-    assert!(runtime.program.root_symbol_value("round3-b").is_err());
-    assert!(runtime.program.root_symbol_value("round3-c").is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("savepoint-before-failure")
+            .is_err()
+    );
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("savepoint-rolled-back")
+            .is_err()
+    );
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("savepoint-after-failure")
+            .is_err()
+    );
     assert!(runtime.get_object(ObjectId(350)).unwrap().is_none());
     assert_eq!(runtime.program_transaction_owner, None);
 }

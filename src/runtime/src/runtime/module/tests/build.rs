@@ -65,7 +65,7 @@ fn graph_object_capability_and_effect_commit_together() {
     runtime
         .resolve_and_run_root_module_with_context(&mut context, "root.mec", test_module_options())
         .unwrap();
-    let object = ObjectRecord::text(ObjectId(920), "round5", "committed");
+    let object = ObjectRecord::text(ObjectId(920), "module-transaction", "committed");
     runtime
         .put_object_with_context(&mut context, object.clone())
         .unwrap();

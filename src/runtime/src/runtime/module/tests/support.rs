@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use mech_core::MResult;
 
@@ -27,7 +27,7 @@ pub(super) fn counting_after_commit_effect(deliveries: Arc<AtomicUsize>) -> Test
     TestAfterCommitEffect::new(
         RuntimeEffectMetadata::new(
             RuntimeEffectSource::Custom {
-                name: "round5-after-commit".to_string(),
+                name: "after-commit-delivery".to_string(),
             },
             "deliver",
         ),
@@ -65,9 +65,9 @@ pub(super) fn staged_test_capability(
         Arc::new(BasicCapability::from_keys(
             id,
             &subject,
-            "round5://resource",
+            "module-transaction://resource",
             [":read"],
         )),
-        CapabilityRequest::from_keys(subject, ":read", "round5://resource"),
+        CapabilityRequest::from_keys(subject, ":read", "module-transaction://resource"),
     )
 }

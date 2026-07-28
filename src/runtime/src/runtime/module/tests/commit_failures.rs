@@ -27,7 +27,7 @@ impl RuntimeTransactionalEffect for FailingCommitEffect {
     fn metadata(&self) -> RuntimeEffectMetadata {
         RuntimeEffectMetadata::new(
             RuntimeEffectSource::Custom {
-                name: "round5-failing-commit".to_string(),
+                name: "failing-participant-commit".to_string(),
             },
             "commit",
         )
@@ -40,7 +40,7 @@ impl RuntimeTransactionalEffect for FailingCommitEffect {
     fn commit(&mut self) -> MResult<()> {
         Err(MechError::new(
             RuntimeInvalidOperationError {
-                operation: "round5_effect_commit",
+                operation: "post-store-participant-commit",
                 reason: "deliberate post-store failure".to_string(),
             },
             None,
@@ -57,7 +57,7 @@ fn failing_after_commit_effect(deliveries: Arc<AtomicUsize>) -> TestAfterCommitE
     TestAfterCommitEffect::new(
         RuntimeEffectMetadata::new(
             RuntimeEffectSource::Custom {
-                name: "round5-after-commit".to_string(),
+                name: "after-commit-delivery".to_string(),
             },
             "deliver",
         ),
@@ -65,7 +65,7 @@ fn failing_after_commit_effect(deliveries: Arc<AtomicUsize>) -> TestAfterCommitE
             deliveries.fetch_add(1, Ordering::SeqCst);
             Err(MechError::new(
                 RuntimeInvalidOperationError {
-                    operation: "round5_after_commit",
+                    operation: "deliver_after_commit_effect",
                     reason: "deliberate delivery failure".to_string(),
                 },
                 None,
@@ -135,10 +135,10 @@ fn retryable_explicit_store_failure_keeps_graph_without_rebuilding() {
 fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
     let mut runtime = runtime_builder_with_sources(&[(
         "root.mec",
-        "answer := round5/stage_bad_update()\nanswer\n",
+        "answer := module/stage_invalid_store_update()\nanswer\n",
     )])
     .host_function(PlannedRuntimeManagedHostFunction::new(
-        "round5/stage_bad_update",
+        "module/stage_invalid_store_update",
         |_context, _args| Ok(Value::F64(mech_core::Ref::new(42.0)).into()),
         move |services, _context, _args| {
             services.update_object(ObjectRecord::text(
@@ -153,7 +153,11 @@ fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
     .build()
     .unwrap();
     runtime.run_string("baseline := 7").unwrap();
-    grant_host_call(&mut runtime, CapabilityId(912), "round5/stage_bad_update");
+    grant_host_call(
+        &mut runtime,
+        CapabilityId(912),
+        "module/stage_invalid_store_update",
+    );
 
     assert!(runtime
         .resolve_and_run_root_module("root.mec", test_module_options(),)
@@ -288,7 +292,7 @@ fn store_failure_exposes_none_of_the_staged_categories() {
     runtime
         .resolve_and_run_root_module_with_context(&mut context, "root.mec", test_module_options())
         .unwrap();
-    let object = ObjectRecord::text(ObjectId(922), "round5", "provisional");
+    let object = ObjectRecord::text(ObjectId(922), "module-transaction", "provisional");
     runtime
         .put_object_with_context(&mut context, object.clone())
         .unwrap();
@@ -339,7 +343,7 @@ fn post_store_failure_preserves_every_durable_category() {
     runtime
         .resolve_and_run_root_module_with_context(&mut context, "root.mec", test_module_options())
         .unwrap();
-    let object = ObjectRecord::text(ObjectId(923), "round5", "durable");
+    let object = ObjectRecord::text(ObjectId(923), "module-transaction", "durable");
     runtime
         .put_object_with_context(&mut context, object.clone())
         .unwrap();
