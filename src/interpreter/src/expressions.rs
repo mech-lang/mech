@@ -247,13 +247,15 @@ impl MechFunctionImpl for ValueSetComprehension {
 impl MechFunctionFactory for ValueSetComprehension {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<MechSet> = unsafe { out.as_unchecked().clone() };
-                Ok(Box::new(ValueSetComprehension {
-                    arguments: Vec::new(),
-                    out,
-                }))
-            }
+            FunctionArgs::Nullary(Value::Set(out)) => Ok(Box::new(ValueSetComprehension {
+                arguments: Vec::new(),
+                out,
+            })),
+            FunctionArgs::Nullary(out) => Err(MechError::new(
+                SetComprehensionOutputKindMismatchError { found: out.kind() },
+                None,
+            )
+            .with_compiler_loc()),
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 0,
@@ -1971,6 +1973,24 @@ impl MechErrorKind for ComprehensionGeneratorError {
         "Comprehension generator must produce a set or matrix, found kind: {:?}",
         self.found
       )
+  }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SetComprehensionOutputKindMismatchError {
+  found: ValueKind,
+}
+
+impl MechErrorKind for SetComprehensionOutputKindMismatchError {
+  fn name(&self) -> &str {
+    "SetComprehensionOutputKindMismatch"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "Set comprehension bytecode output must be a set, but found {:?}.",
+      self.found
+    )
   }
 }
 
