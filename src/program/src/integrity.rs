@@ -48,7 +48,51 @@ pub struct IntegrityConstraintReport {
 #[derive(Clone, Debug)]
 pub struct IntegrityConstraintViolationSet {
   pub checked: usize,
+  pub evaluations: Vec<IntegrityConstraintEvaluation>,
   pub violations: Vec<IntegrityConstraintViolation>,
+}
+
+impl IntegrityConstraintReport {
+  pub fn from_evaluations(
+    evaluations: Vec<IntegrityConstraintEvaluation>,
+  ) -> Self {
+    let violations = evaluations
+      .iter()
+      .filter_map(|evaluation| {
+        let reason = evaluation.reason.clone()?;
+        Some(IntegrityConstraintViolation {
+          interpreter_id: evaluation.interpreter_id,
+          constraint_id: evaluation.constraint_id,
+          name: evaluation.name.clone(),
+          expression: evaluation.expression.clone(),
+          reason,
+          evaluated_kind: evaluation.evaluated_kind.clone(),
+          actual: evaluation.actual.clone(),
+          operator: evaluation.operator.clone(),
+          expected: evaluation.expected.clone(),
+          tokens: evaluation.tokens.clone(),
+        })
+      })
+      .collect::<Vec<_>>();
+    Self {
+      checked: evaluations.len(),
+      evaluations,
+      violations,
+    }
+  }
+
+  pub fn into_violation_set(
+    self,
+  ) -> Option<IntegrityConstraintViolationSet> {
+    if self.violations.is_empty() {
+      return None;
+    }
+    Some(IntegrityConstraintViolationSet {
+      checked: self.checked,
+      evaluations: self.evaluations,
+      violations: self.violations,
+    })
+  }
 }
 
 impl MechErrorKind for IntegrityConstraintViolationSet {
@@ -125,46 +169,21 @@ impl MechProgram {
     evaluations.sort_by_key(|evaluation| {
       (evaluation.interpreter_id, evaluation.constraint_id)
     });
-    let violations = evaluations
-      .iter()
-      .filter_map(|evaluation| {
-        let reason = evaluation.reason.clone()?;
-        Some(IntegrityConstraintViolation {
-          interpreter_id: evaluation.interpreter_id,
-          constraint_id: evaluation.constraint_id,
-          name: evaluation.name.clone(),
-          expression: evaluation.expression.clone(),
-          reason,
-          evaluated_kind: evaluation.evaluated_kind.clone(),
-          actual: evaluation.actual.clone(),
-          operator: evaluation.operator.clone(),
-          expected: evaluation.expected.clone(),
-          tokens: evaluation.tokens.clone(),
-        })
-      })
-      .collect::<Vec<_>>();
-    Ok(IntegrityConstraintReport {
-      checked: evaluations.len(),
-      evaluations,
-      violations,
-    })
+    Ok(IntegrityConstraintReport::from_evaluations(evaluations))
   }
 
   pub fn validate_integrity_constraints(&self) -> MResult<()> {
     let report = self.integrity_constraint_report()?;
-    if report.violations.is_empty() {
+    let Some(failures) = report.into_violation_set() else {
       return Ok(());
-    }
-    let tokens = report
+    };
+    let tokens = failures
       .violations
       .iter()
       .flat_map(|violation| violation.tokens.clone())
       .collect::<Vec<_>>();
     Err(MechError::new(
-      IntegrityConstraintViolationSet {
-        checked: report.checked,
-        violations: report.violations,
-      },
+      failures,
       None,
     ).with_compiler_loc().with_tokens(tokens))
   }
@@ -652,6 +671,7 @@ mod tests {
       .kind_as::<IntegrityConstraintViolationSet>()
       .unwrap();
     assert_eq!(failures.checked, 1);
+    assert_eq!(failures.evaluations.len(), 1);
     assert_eq!(
       failures.violations[0].reason,
       IntegrityConstraintFailureReason::EvaluatedFalse,
@@ -669,6 +689,36 @@ mod tests {
     );
     assert_eq!(failure.evaluated_kind, Some(ValueKind::F64));
     assert_eq!(failure.actual.as_deref(), Some("42"));
+  }
+
+  #[test]
+  fn reports_derive_complete_violation_sets_without_reordering_evaluations() {
+    let passing = program_with_constraint("first! := true")
+      .integrity_constraint_report()
+      .unwrap()
+      .evaluations
+      .remove(0);
+    let failing = program_with_constraint("second! := false")
+      .integrity_constraint_report()
+      .unwrap()
+      .evaluations
+      .remove(0);
+
+    let report = IntegrityConstraintReport::from_evaluations(vec![
+      passing,
+      failing,
+    ]);
+    assert_eq!(report.checked, 2);
+    assert_eq!(report.evaluations[0].name, "first!");
+    assert_eq!(report.evaluations[1].name, "second!");
+    assert_eq!(report.violations.len(), 1);
+    assert_eq!(report.violations[0].name, "second!");
+
+    let failures = report.into_violation_set().unwrap();
+    assert_eq!(failures.checked, 2);
+    assert_eq!(failures.evaluations.len(), 2);
+    assert_eq!(failures.evaluations[0].name, "first!");
+    assert_eq!(failures.evaluations[1].name, "second!");
   }
 
   #[test]

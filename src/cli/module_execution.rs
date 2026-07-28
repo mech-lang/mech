@@ -6,6 +6,20 @@ use mech_runtime::{
     FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
     SourceRequest,
 };
+#[cfg(feature = "test")]
+use mech_program::IntegrityConstraintReport;
+
+#[cfg(feature = "test")]
+pub(crate) struct SourceModuleExecution {
+    pub(crate) runtime: MechRuntime,
+    pub(crate) integrity: IntegrityConstraintReport,
+}
+
+struct SourceModuleExecutionInternal {
+    runtime: MechRuntime,
+    #[cfg(feature = "test")]
+    integrity: IntegrityConstraintReport,
+}
 
 #[derive(Debug, Clone)]
 struct RuntimeStepLimitConversionError {
@@ -127,6 +141,27 @@ pub(crate) fn execute_source_module_roots(
     config: RuntimeConfig,
     roots: &[PathBuf],
 ) -> MResult<MechRuntime> {
+    execute_source_module_roots_internal(config, roots)
+        .map(|execution| execution.runtime)
+}
+
+#[cfg(feature = "test")]
+pub(crate) fn execute_source_module_roots_with_report(
+    config: RuntimeConfig,
+    roots: &[PathBuf],
+) -> MResult<SourceModuleExecution> {
+    execute_source_module_roots_internal(config, roots).map(|execution| {
+        SourceModuleExecution {
+            runtime: execution.runtime,
+            integrity: execution.integrity,
+        }
+    })
+}
+
+fn execute_source_module_roots_internal(
+    config: RuntimeConfig,
+    roots: &[PathBuf],
+) -> MResult<SourceModuleExecutionInternal> {
     let canonical_roots = canonical_source_roots(roots)?;
     let mut resolver = FileSourceResolver::empty();
     for root in resolver_roots(&canonical_roots)? {
@@ -137,13 +172,30 @@ pub(crate) fn execute_source_module_roots(
         .config(config)
         .source_resolver(resolver)
         .build()?;
+    #[cfg(feature = "test")]
+    let mut integrity_evaluations = Vec::new();
     for root in canonical_roots {
+        #[cfg(feature = "test")]
+        {
+            let report = runtime.resolve_and_run_root_module_report(
+                SourceRequest::new(root.to_string_lossy().to_string()),
+                module_build_options(),
+            )?;
+            integrity_evaluations.extend(report.integrity.evaluations);
+        }
+        #[cfg(not(feature = "test"))]
         runtime.resolve_and_run_root_module(
             SourceRequest::new(root.to_string_lossy().to_string()),
             module_build_options(),
         )?;
     }
-    Ok(runtime)
+    Ok(SourceModuleExecutionInternal {
+        runtime,
+        #[cfg(feature = "test")]
+        integrity: IntegrityConstraintReport::from_evaluations(
+            integrity_evaluations,
+        ),
+    })
 }
 
 #[cfg(test)]

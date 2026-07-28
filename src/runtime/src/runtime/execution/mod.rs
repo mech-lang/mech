@@ -45,6 +45,7 @@ use module_environment::{
   RuntimeAddressTarget,
 };
 use source_reconstruction::module_source_for_scope;
+pub(super) use module::IntegrityEvaluationCollector;
 
 #[cfg(test)]
 use crate::{

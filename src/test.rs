@@ -4,7 +4,10 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::cli::module_execution::{execute_source_module_roots, module_runtime_config};
+use crate::cli::module_execution::{
+  execute_source_module_roots_with_report,
+  module_runtime_config,
+};
 use crate::fs_paths::{extension_allowed, unsupported_source_path_error};
 use crate::source_discovery::{
   collect_sources_with_events,
@@ -372,31 +375,53 @@ pub(crate) fn run_mech_tests_without_tree(
       time_flag,
       10_000,
     )?;
-    let runtime = match execute_source_module_roots(config, &[PathBuf::from(path)]) {
-      Ok(runtime) => runtime,
+    let execution = match execute_source_module_roots_with_report(
+      config,
+      &[PathBuf::from(path)],
+    ) {
+      Ok(execution) => execution,
       Err(err) => {
         if let Some(failures) =
           err.kind_as::<IntegrityConstraintViolationSet>()
         {
-          let failed_cases = failures
-            .violations
-            .iter()
-            .map(integrity_violation_case)
-            .collect::<Vec<_>>();
+          let mut passed_cases = Vec::new();
+          let mut failed_cases = Vec::new();
+          if failures.evaluations.is_empty() {
+            failed_cases.extend(
+              failures
+                .violations
+                .iter()
+                .map(integrity_violation_case),
+            );
+          } else {
+            for evaluation in &failures.evaluations {
+              let detail = integrity_evaluation_case(evaluation);
+              if evaluation.passed {
+                passed_cases.push(detail);
+              } else {
+                failed_cases.push(detail);
+              }
+            }
+          }
+          let passed = passed_cases.len();
           let failed = failed_cases.len();
+          let total = passed + failed;
           println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
+          for detail in &passed_cases {
+            println!("{}   ✓", detail.name);
+          }
           for detail in &failed_cases {
             println!("{}   ✗", detail.name);
           }
           file_reports.push(FileReport {
             path: path.clone(),
             result: FileResult {
-              total: failed,
-              passed: 0,
+              total,
+              passed,
               failed,
             },
             failed: failed_cases,
-            passed: Vec::new(),
+            passed: passed_cases,
             run_error: None,
           });
           continue;
@@ -406,7 +431,8 @@ pub(crate) fn run_mech_tests_without_tree(
         continue;
       }
     };
-    let report = runtime.integrity_constraint_report()?;
+    let report = execution.integrity;
+    let _runtime = execution.runtime;
     println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
 
     let mut passed_cases = Vec::new();
@@ -574,6 +600,16 @@ mod tests {
     .unwrap();
     std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
     (root, main)
+  }
+
+  fn contains_address_like_diagnostic(text: &str) -> bool {
+    text.split("0x").skip(1).any(|suffix| {
+      suffix
+        .chars()
+        .take_while(char::is_ascii_hexdigit)
+        .count()
+        >= 6
+    })
   }
 
   #[test]
@@ -752,18 +788,18 @@ mod tests {
   }
 
   #[test]
-  fn mech_tests_include_dependency_invariants_in_root_reports() {
-    let root = temp_test_root("dependency-invariant");
+  fn mech_tests_include_passing_dependency_constraint_without_root_proxy() {
+    let root = temp_test_root("dependency-pass-no-proxy");
     let main = root.join("main.mec");
     let output = root.join("report.json");
     std::fs::write(
       &main,
-      "+> ./dep.mec\ndependency! := dep/dependencypassed\nanswer := dep/value + 1\n",
+      "+> ./dep.mec\n\nanswer := dep/value + 1\n",
     )
     .unwrap();
     std::fs::write(
       root.join("dep.mec"),
-      "value := 41\ndependency! := value == 41\ndependencypassed := value == 41\n<+ value\n<+ dependencypassed\n",
+      "value := 41\n\ndependency-pass! := value == 41\n\n<+ value\n",
     )
     .unwrap();
 
@@ -780,8 +816,97 @@ mod tests {
 
     let report = std::fs::read_to_string(&output).unwrap();
     assert_eq!(exit_code, 0);
-    assert!(report.contains("dependency!"));
     assert!(report.contains("\"tests-total\": 1"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert!(report.contains("\"tests-failed\": 0"));
+    assert!(report.contains("dependency-pass!"));
+    assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_aggregate_passing_and_failing_dependency_constraints() {
+    let root = temp_test_root("dependency-pass-fail");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> ./dep.mec\n\nanswer := dep/value + 1\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("dep.mec"),
+      "value := 41\n\ndependency-pass! := value == 41\ndependency-fail! := value == 42\n\n<+ value\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      true,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 1);
+    assert!(report.contains("\"tests-total\": 2"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert!(report.contains("\"tests-failed\": 1"));
+    assert!(report.contains("dependency-pass!"));
+    assert!(report.contains("dependency-fail!"));
+    assert!(report.contains("\"run-error\": null"));
+    assert!(!report.contains("@0x"));
+    assert!(!contains_address_like_diagnostic(&report));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_include_nested_dependency_constraints_once() {
+    let root = temp_test_root("nested-dependency-once");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> ./left.mec\n+> ./right.mec\n\nanswer := left/value + right/value\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("left.mec"),
+      "+> ./shared.mec\n\nvalue := shared/value\n\n<+ value\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("right.mec"),
+      "+> ./shared.mec\n\nvalue := shared/value\n\n<+ value\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("shared.mec"),
+      "value := 21\n\nnested-once! := value == 21\n\n<+ value\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"tests-total\": 1"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert_eq!(report.matches("nested-once!").count(), 1);
+    assert!(report.contains("\"run-error\": null"));
     std::fs::remove_dir_all(root).unwrap();
   }
 

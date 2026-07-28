@@ -48,6 +48,11 @@ use mech_program::{
   MechProgramConfig,
   MechProgramEnvironment,
 };
+#[cfg(feature = "invariant_define")]
+use mech_program::{
+  IntegrityConstraintEvaluation,
+  IntegrityConstraintReport,
+};
 use std::collections::{
   HashMap,
   HashSet,
@@ -56,6 +61,36 @@ use std::collections::{
 use web_time::Instant;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
+
+#[cfg(feature = "invariant_define")]
+pub(in crate::runtime) type IntegrityEvaluationCollector =
+  Vec<IntegrityConstraintEvaluation>;
+#[cfg(not(feature = "invariant_define"))]
+pub(in crate::runtime) type IntegrityEvaluationCollector = ();
+
+#[cfg(feature = "invariant_define")]
+fn append_integrity_report(
+  collector: &mut IntegrityEvaluationCollector,
+  report: IntegrityConstraintReport,
+) -> MResult<()> {
+  collector.extend(report.evaluations);
+  let Some(failures) =
+    IntegrityConstraintReport::from_evaluations(collector.clone())
+      .into_violation_set()
+  else {
+    return Ok(());
+  };
+  let tokens = failures
+    .violations
+    .iter()
+    .flat_map(|violation| violation.tokens.clone())
+    .collect::<Vec<_>>();
+  Err(
+    MechError::new(failures, None)
+      .with_compiler_loc()
+      .with_tokens(tokens),
+  )
+}
 
 #[derive(Clone, Debug)]
 pub(in crate::runtime) struct ModuleInstance {
@@ -129,6 +164,8 @@ impl MechRuntime {
 
         let mut seen = HashSet::new();
         let mut module_instances = HashMap::new();
+        let mut integrity_evaluations =
+          IntegrityEvaluationCollector::default();
 
         let instance = runtime.execute_module_isolated_for_scope(
           context,
@@ -136,6 +173,7 @@ impl MechRuntime {
           &scope,
           &mut seen,
           &mut module_instances,
+          &mut integrity_evaluations,
         )?;
 
         runtime.enforce_turn_duration(turn_started)?;
@@ -259,6 +297,7 @@ impl MechRuntime {
     scope: &SourceScope,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+    integrity_evaluations: &mut IntegrityEvaluationCollector,
   ) -> MResult<PreparedModuleScopeExecution> {
     let Some(record) =
       self.get_module_version_visible(context, version)?
@@ -283,6 +322,7 @@ impl MechRuntime {
         &SourceScope::Program,
         seen,
         module_instances,
+        integrity_evaluations,
       )?;
     }
 
@@ -301,6 +341,7 @@ impl MechRuntime {
       &context_registry,
       seen,
       module_instances,
+      integrity_evaluations,
     )?;
     merge_module_environment(
       &mut environment,
@@ -321,6 +362,7 @@ impl MechRuntime {
     scope: &SourceScope,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+    integrity_evaluations: &mut IntegrityEvaluationCollector,
   ) -> MResult<ModuleInstance> {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
@@ -342,6 +384,7 @@ impl MechRuntime {
       scope,
       seen,
       module_instances,
+      integrity_evaluations,
     )?;
     let mut module_program = MechProgram::new(MechProgramConfig {
       name: self.config.name.clone(),
@@ -392,15 +435,20 @@ impl MechRuntime {
       }
     };
     #[cfg(feature = "invariant_define")]
-    if let Err(error) = module_program.validate_integrity_constraints() {
-      self.emit_event_to_context(
-        context,
-        RuntimeEventKind::ModuleExecutionFailed {
-          module_version: version,
-          message: format!("{:?}", error),
-        },
-      )?;
-      return Err(error);
+    {
+      let report = module_program.integrity_constraint_report()?;
+      if let Err(error) =
+        append_integrity_report(integrity_evaluations, report)
+      {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: version,
+            message: format!("{:?}", error),
+          },
+        )?;
+        return Err(error);
+      }
     }
     let mut exports = HashMap::new();
     {
@@ -439,6 +487,7 @@ impl MechRuntime {
     scope: &SourceScope,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+    integrity_evaluations: &mut IntegrityEvaluationCollector,
     turn_started: Instant,
   ) -> MResult<Value> {
     self.validate_context_for_runtime(context)?;
@@ -463,6 +512,7 @@ impl MechRuntime {
       scope,
       seen,
       module_instances,
+      integrity_evaluations,
     )?;
 
     let result = (|| -> MResult<Value> {
@@ -491,6 +541,11 @@ impl MechRuntime {
         )
         .and_then(|value| {
           self.enforce_turn_duration(turn_started)?;
+          #[cfg(feature = "invariant_define")]
+          append_integrity_report(
+            integrity_evaluations,
+            self.program.integrity_constraint_report()?,
+          )?;
           Ok(value)
         });
 
@@ -625,6 +680,7 @@ impl MechRuntime {
     context_registry: &RuntimeContextRegistry,
     seen: &mut HashSet<(ModuleVersionId, SourceScope)>,
     module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
+    integrity_evaluations: &mut IntegrityEvaluationCollector,
   ) -> MResult<HashMap<String, mech_core::ValRef>> {
     fn address_binding_key(target: &str, name: &str) -> String {
       format!("@{target}/{name}")
@@ -664,6 +720,7 @@ impl MechRuntime {
         &interpreter_scope,
         seen,
         module_instances,
+        integrity_evaluations,
       )?;
 
       for reference in requested_refs {

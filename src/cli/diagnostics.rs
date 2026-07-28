@@ -172,6 +172,7 @@ mod tests {
         let error = MechError::new(
             IntegrityConstraintViolationSet {
                 checked: 1,
+                evaluations: Vec::new(),
                 violations: vec![IntegrityConstraintViolation {
                     interpreter_id: 7,
                     constraint_id: 11,

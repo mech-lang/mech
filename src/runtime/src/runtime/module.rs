@@ -44,11 +44,19 @@ use crate::{
   SourceScope,
 };
 use mech_core::{MResult, MechError, MechSourceCode, Value};
+#[cfg(feature = "invariant_define")]
+use mech_program::IntegrityConstraintReport;
 use std::collections::{HashMap, HashSet};
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 use web_time::Instant;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
+
+struct RootModuleExecution {
+  result: Value,
+  #[cfg(feature = "invariant_define")]
+  integrity: IntegrityConstraintReport,
+}
 
 pub(in crate::runtime) fn validate_module_import_edges(
   record: &ModuleVersionRecord,
@@ -701,12 +709,63 @@ impl MechRuntime {
       .map(|value| crate::RuntimeValueSnapshot::capture(&value))
   }
 
+  #[cfg(feature = "invariant_define")]
+  pub fn resolve_and_run_root_module_report(
+    &mut self,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_and_run_root_module_report",
+    )?;
+    let mut context = self.runtime_context()?;
+    self.resolve_and_run_root_module_report_with_context(
+      &mut context,
+      request,
+      options,
+    )
+  }
+
+  #[cfg(feature = "invariant_define")]
+  pub fn resolve_and_run_root_module_report_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
+    self
+      .resolve_and_run_root_module_execution_with_context(
+        context,
+        request,
+        options,
+      )
+      .map(|execution| crate::RuntimeRootModuleExecutionReport {
+        result: crate::RuntimeValueSnapshot::capture(&execution.result),
+        integrity: execution.integrity,
+      })
+  }
+
   pub(crate) fn resolve_and_run_root_module_value_with_context(
     &mut self,
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Value> {
+    self
+      .resolve_and_run_root_module_execution_with_context(
+        context,
+        request,
+        options,
+      )
+      .map(|execution| execution.result)
+  }
+
+  fn resolve_and_run_root_module_execution_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<RootModuleExecution> {
     let request = request.into();
     request.validate()?;
     let root_specifier = request.specifier.clone();
@@ -745,14 +804,24 @@ impl MechRuntime {
 
         let mut seen = HashSet::new();
         let mut module_instances = HashMap::new();
-        runtime.execute_module_retained_root_for_scope(
+        let mut integrity_evaluations =
+          super::execution::IntegrityEvaluationCollector::default();
+        let result = runtime.execute_module_retained_root_for_scope(
           context,
           root_version,
           &SourceScope::Program,
           &mut seen,
           &mut module_instances,
+          &mut integrity_evaluations,
           turn_started,
-        )
+        )?;
+        Ok(RootModuleExecution {
+          result,
+          #[cfg(feature = "invariant_define")]
+          integrity: IntegrityConstraintReport::from_evaluations(
+            integrity_evaluations,
+          ),
+        })
       },
     );
 
