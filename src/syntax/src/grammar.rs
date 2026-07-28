@@ -21,14 +21,14 @@ use colored::*;
 
 use crate::*;
 
-// grammar := +rule ;
+// Grammar: docs/design/specification.mec, `grammar`.
 pub fn grammar(input: ParseString) -> ParseResult<Grammar> {
   let ((input, rules)) = many1(rule)(input)?;
   let (input, _) = new_line(input)?;
   Ok((input, Grammar { rules }))
 }
 
-// grammar-identifier := alpha_token, *(alpha_token | digit_token | dash) ;
+// Grammar: docs/design/specification.mec, `grammar-identifier`.
 fn grammar_identifier(input: ParseString) -> ParseResult<GrammarIdentifier> {
   let (input, first) = alpha_token(input)?;
   let (input, mut rest) = many0(alt((alpha_token, digit_token, dash)))(input)?;
@@ -38,7 +38,7 @@ fn grammar_identifier(input: ParseString) -> ParseResult<GrammarIdentifier> {
   Ok((input, GrammarIdentifier{name}))
 }
 
-// rule := grammar-identifier, define_operator, grammar_expression, semicolon ;
+// Grammar: docs/design/specification.mec, `grammar-rule`.
 fn rule(input: ParseString) -> ParseResult<Rule> {
   let ((input, name)) = grammar_identifier(input)?;
   let ((input, _)) = define_operator(input)?;
@@ -47,7 +47,7 @@ fn rule(input: ParseString) -> ParseResult<Rule> {
   Ok((input, Rule { name, expr }))
 }
 
-// grammar-expression := term, *( "|" term ) ;
+// Grammar: docs/design/specification.mec, `grammar-expression`.
 fn grammar_expression(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, first) = term(input)?;
   let (input, rest) = many0(nom_tuple((bar, term)))(input)?;
@@ -60,7 +60,7 @@ fn grammar_expression(input: ParseString) -> ParseResult<GrammarExpression> {
   }
 }
 
-// term := factor, *( "," factor ) ;
+// Grammar: docs/design/specification.mec, `grammar-term`.
 fn term(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, first) = factor(input)?;
   let (input, rest) = many0(nom_tuple((comma, factor)))(input)?;
@@ -72,48 +72,48 @@ fn term(input: ParseString) -> ParseResult<GrammarExpression> {
   Ok((input, GrammarExpression::Sequence(seq)))
 }
 
-// definition := grammar_identifier ;
+// Grammar: docs/design/specification.mec, `grammar-definition`.
 fn definition(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, id) = grammar_identifier(input)?;
   Ok((input, GrammarExpression::Definition(id)))
 }
 
-// repeat0 := "*", factor ;
+// Grammar: docs/design/specification.mec, `grammar-repeat0`.
 fn repeat0(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = asterisk(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, GrammarExpression::Repeat0(Box::new(expr))))
 }
 
-// repeat1 := "+", factor ;
+// Grammar: docs/design/specification.mec, `grammar-repeat1`.
 fn repeat1(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = plus(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, GrammarExpression::Repeat1(Box::new(expr))))
 }
 
-// optional := "?", factor ;
+// Grammar: docs/design/specification.mec, `grammar-optional`.
 fn optional(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = question(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, GrammarExpression::Optional(Box::new(expr))))
 }
 
-// peek := ">", factor ;
+// Grammar: docs/design/specification.mec, `grammar-peek`.
 fn peek(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = right_angle(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, GrammarExpression::Peek(Box::new(expr))))
 }
 
-// not := "¬", factor ;
+// Grammar: docs/design/specification.mec, `grammar-not`.
 fn not(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = negate(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, GrammarExpression::Not(Box::new(expr))))
 }
 
-// list := "[", factor, ",", factor, "]" ;
+// Grammar: docs/design/specification.mec, `grammar-list`.
 fn list(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = left_bracket(input)?;
   let (input, first) = factor(input)?;
@@ -123,7 +123,7 @@ fn list(input: ParseString) -> ParseResult<GrammarExpression> {
   Ok((input, GrammarExpression::List(Box::new(first), Box::new(second))))
 }
 
-// g-range := terminal, "..", terminal ;
+// Grammar: docs/design/specification.mec, `grammar-range`.
 fn g_range(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, start) = terminal_token(input)?;
   let (input, _) = tuple((period,period))(input)?;
@@ -131,7 +131,7 @@ fn g_range(input: ParseString) -> ParseResult<GrammarExpression> {
   Ok((input, GrammarExpression::Range(start, end)))
 }
 
-// factor := repeat0 | repeat1 | optional | peek | not | group | definition | terminal ;
+// Grammar: docs/design/specification.mec, `grammar-factor`.
 fn factor(input: ParseString) -> ParseResult<GrammarExpression> {
   alt((
     repeat0,
@@ -148,19 +148,19 @@ fn factor(input: ParseString) -> ParseResult<GrammarExpression> {
   
 }
   
-// group := "(", GrammarExpression, ")" ;
+// Grammar: docs/design/specification.mec, `grammar-group`.
 fn group(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, expr) = delimited(left_parenthesis, grammar_expression, right_parenthesis)(input)?;
   Ok((input, GrammarExpression::Group(Box::new(expr))))
 }
 
-// terminal := quote, +any_token, quote ;
+// Grammar: docs/design/specification.mec, `grammar-terminal`.
 fn terminal(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, trminl) = terminal_token(input)?;
   Ok((input, GrammarExpression::Terminal(trminl)))
 }
 
-// terminal := quote, +any_token, quote ;
+// Grammar: docs/design/specification.mec, `grammar-terminal-token`.
 fn terminal_token(input: ParseString) -> ParseResult<Token> {
   let (input, _) = quote(input)?;
   let (input, mut t) = many0(tuple((is_not(quote),any_token)))(input)?;

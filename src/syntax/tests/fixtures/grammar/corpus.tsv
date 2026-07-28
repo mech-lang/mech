@@ -2,7 +2,6 @@ path	outcome	entry-path	reason
 docs/design/ROADMAP.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/dynamic-modules-prototype.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/grammar-audit/README.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
-docs/design/grammar-audit/current-grammar.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/grammar-audit/discrepancies.mec	reject	mech_syntax::parser::parse	Raw source is rejected unchanged by the current parser; no preprocessing or exclusion.
 docs/design/history.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/index.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.

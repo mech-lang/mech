@@ -59,7 +59,7 @@ pub static MICROMIKA_ATTENTION: &[&str] = &[
 // Mika Section
 // ---------------------------------------------------------------------------
 
-// mika-speech-bubble := "⸢", +section-element, "⸥" ;
+// Grammar: docs/design/specification.mec, `mika-section`.
 pub fn mika_section(input: ParseString) -> ParseResult<MikaSection> {
   let msg = "Expects ⸥ to close speech bubble";
   let (input, (_, r)) = range(mika_section_open)(input)?;
@@ -293,7 +293,7 @@ pub fn mika_eye_right(input: ParseString) -> ParseResult<MikaEyeRight> {
   }))
 }
 
-// mika-nose := "⦿" | "◯" | "⊕" | "∘" | "⦾" | "⊖" | "⦵" | "⊗" | "⏺" | "⍜" ;
+// Grammar: docs/design/specification.mec, `mika-nose`.
 pub fn mika_nose(input: ParseString) -> ParseResult<MikaNose> {
   for &variant in NOSE_ORDER {
     if let Ok((rest, _)) = tag(variant.symbol())(input.clone()) {
@@ -310,7 +310,7 @@ pub fn mika_nose(input: ParseString) -> ParseResult<MikaNose> {
   }))
 }
 
-// mika-expression-inner := eye-left, nose, eye-right;
+// Grammar: docs/design/specification.mec, `mika-expression-inner`.
 pub fn mika_expression_inner(input: ParseString) -> ParseResult<MikaExpression> {
   let (input, left) = mika_eye_left(input)?;
   let (input, nose) = mika_nose(input)?;
@@ -340,7 +340,7 @@ pub fn mika_expression_inner(input: ParseString) -> ParseResult<MikaExpression> 
 // Mika Character
 // ---------------------------------------------------------------------------
 
-// micro-mika := arm-left, face, arm-right ;   e.g. ╭⦿╮  ╰⦿╯  ─⦿╮  ╭⦿⌣
+// Grammar: docs/design/specification.mec, `micro-mika`.
 pub fn micro_mika(input: ParseString) -> ParseResult<Mika> {
   let (input, left_arm)  = mika_arm_left(input)?;
   let (input, nose)      = mika_nose(input)?;
@@ -348,7 +348,7 @@ pub fn micro_mika(input: ParseString) -> ParseResult<Mika> {
   Ok((input, Mika::Micro(MicroMika{ left_arm, nose, right_arm})))
 }
 
-// mini-mika := arm-left, expression-inner, arm-right ;   e.g. ╭(˙◯˙)╮
+// Grammar: docs/design/specification.mec, `mini-mika`.
 pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
   let (input, left_arm)        = opt(mika_arm_left)(input)?;
   let (input, _)               = left_parenthesis(input)?;
@@ -360,7 +360,7 @@ pub fn mini_mika(input: ParseString) -> ParseResult<Mika> {
   Ok((input, Mika::Mini(MiniMika { expression, left_arm: left_arm.or(right_arm_left), right_arm: right_arm.or(left_arm_right) })))
 }
 
-// mika := mini-mika | micro-mika ;
+// Grammar: docs/design/specification.mec, `mika`.
 pub fn mika(input: ParseString) -> ParseResult<(Mika,Option<MikaSection>)> {
   let (input, mika) = alt((mini_mika, micro_mika))(input)?;
   let (input, _) = whitespace0(input)?;

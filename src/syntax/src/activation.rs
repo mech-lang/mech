@@ -3,7 +3,7 @@ use crate::*;
 use mech_core::nodes::*;
 use nom::{branch::alt, combinator::{cut, opt}, multi::many1, sequence::preceded};
 
-/// activation-scope := "~>" expression ("{" mech-code "}" | activation-arm+) ;
+// Grammar: docs/design/specification.mec, `activation-scope`.
 pub fn activation_scope(input: ParseString) -> ParseResult<ActivationScope> {
   let (input, operator) = async_transition_operator(input)?;
   let (input, trigger) = cut(expression)(input)?;

@@ -11,7 +11,7 @@ use crate::nodes::Kind;
 // Literals
 // =============================================================================
 
-// literal := (number | string | atom | boolean | empty | kind-annotation), kind-annotation? ;
+// Grammar: docs/design/specification.mec, `literal`.
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = alt((
     map(number, |num| Literal::Number(num)),
@@ -29,25 +29,25 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
-// empty := +underscore ;
+// Grammar: docs/design/specification.mec, `empty`.
 pub fn empty(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(many1(tag("_")))(input)?;
   Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
 }
 
-// atom := ":", identifier ;
+// Grammar: docs/design/specification.mec, `atom`.
 pub fn atom(input: ParseString) -> ParseResult<Atom> {
   let (input, _) = colon(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, Atom{name}))
 }
 
-// string := raw-string | utf8-string ;
+// Grammar: docs/design/specification.mec, `string`.
 pub fn string(input: ParseString) -> ParseResult<MechString> {
   alt((raw_string, utf8_string))(input)
 }
 
-// utf8-string := quote, *(¬quote, (text | new-line)), quote ;
+// Grammar: docs/design/specification.mec, `utf8-string`.
 pub fn utf8_string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
@@ -62,7 +62,7 @@ pub fn utf8_string(input: ParseString) -> ParseResult<MechString> {
   Ok((input, MechString { text: merged }))
 }
 
-// raw-string := `"""`, *(¬`"""`, (raw-text | new-line)), `"""` ;
+// Grammar: docs/design/specification.mec, `raw-string`.
 pub fn raw_string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = nom_tuple((quote, quote, quote))(input)?;
@@ -80,19 +80,19 @@ pub fn raw_string(input: ParseString) -> ParseResult<MechString> {
 // Boolean
 // ----------------------------------------------------------------------------
 
-// boolean_literal := true_literal | false_literal ;
+// Grammar: docs/design/specification.mec, `boolean`.
 pub fn boolean(input: ParseString) -> ParseResult<Token> {
   let (input, boolean) = alt((true_literal, false_literal))(input)?;
   Ok((input, boolean))
 }
 
-// true_literal := english_true_literal | check_mark ;
+// Grammar: docs/design/specification.mec, `true-literal`.
 pub fn true_literal(input: ParseString) -> ParseResult<Token> {
   let (input, token) = alt((english_true_literal, check_mark))(input)?;
   Ok((input, token))
 }
 
-// false_literal := english_false_literal | cross ;
+// Grammar: docs/design/specification.mec, `false-literal`.
 pub fn false_literal(input: ParseString) -> ParseResult<Token> {
   let (input, token) = alt((english_false_literal, cross))(input)?;
   Ok((input, token))
@@ -101,7 +101,7 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
 // Number
 // ----------------------------------------------------------------------------
 
-// number := complex-number | real-number ;
+// Grammar: docs/design/specification.mec, `number`.
 pub fn number(input: ParseString) -> ParseResult<Number> {
   alt((
     map(complex_number, |complex_num| Number::Complex(complex_num)),
@@ -109,7 +109,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
   ))(input)
 }
 
-// complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
+// Grammar: docs/design/specification.mec, `complex-number`.
 pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
   let (input, real_num) = untyped_real_number(input)?;
   if let Ok((input, _)) = alt((tag("i"), tag("j")))(input.clone()) {
@@ -144,7 +144,7 @@ pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
   }
 }
 
-// real-number := ?dash, (hexadecimal-literal | decimal-literal | octal-literal | binary-literal | scientific-literal | rational-literal | float-literal | integer-literal) ;
+// Grammar: docs/design/specification.mec, `real-number`.
 pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   let (input, neg) = opt(dash)(input)?;
   let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, integer_literal))(input)?;
@@ -155,7 +155,7 @@ pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
-// real-number := ?dash, (hexadecimal-literal | decimal-literal | octal-literal | binary-literal | scientific-literal | rational-literal | float-literal | integer-literal) ;
+// Grammar: docs/design/specification.mec, `untyped-real-number`.
 pub fn untyped_real_number(input: ParseString) -> ParseResult<RealNumber> {
   let (input, neg) = opt(dash)(input)?;
   let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, untyped_integer))(input)?;
@@ -166,7 +166,7 @@ pub fn untyped_real_number(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
-// rational-literal := integer-literal, slash, integer-literal ;
+// Grammar: docs/design/specification.mec, `rational-literal`.
 pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, numerator) = match integer_literal(input)? {
     (input, RealNumber::Integer(num)) => (input, num),
@@ -182,7 +182,7 @@ pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Rational((numerator, denominator))))
 }
 
-// scientific-literal := (float-literal | integer-literal), ("e" | "E"), ?plus, ?dash, (float-literal | integer-literal) ;
+// Grammar: docs/design/specification.mec, `scientific-literal`.
 pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, base) = match float_literal(input.clone()) {
     Ok((input, RealNumber::Float(base))) => {
@@ -221,7 +221,7 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Scientific((base,(ex_sign,ex_whole,ex_part)))))
 }
 
-// float-decimal-start := ".", digit-sequence ;
+// Grammar: docs/design/specification.mec, `float-decimal-start`.
 pub fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   let (input, _) = period(input)?;
   let (input, part) = digit_sequence(input)?;
@@ -231,7 +231,7 @@ pub fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((Token::default(),merged))))
 }
 
-// float-full := digit-sequence, ".", digit-sequnce ;
+// Grammar: docs/design/specification.mec, `float-full`.
 pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut whole) = digit_sequence(input)?;
   let (input, _) = period(input)?;
@@ -243,18 +243,18 @@ pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((whole,part))))
 }
 
-// float-literal := float-decimal-start | float-full ;
+// Grammar: docs/design/specification.mec, `float-literal`.
 pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, result) = alt((float_decimal_start,float_full))(input)?;
   Ok((input, result))
 }
 
-// integer := typed-integer | untyped-integer ;
+// Grammar: docs/design/specification.mec, `integer-literal`.
 pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
   alt((typed_integer, untyped_integer))(input)
 }
 
-// typed-integer := digit-sequence, identifier ;
+// Grammar: docs/design/specification.mec, `typed-integer`.
 pub fn typed_integer(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = Token::merge_tokens(&mut digits).unwrap();
@@ -266,7 +266,7 @@ pub fn typed_integer(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::TypedInteger((merged, kind_annotation))))
 }
 
-// untyped_integer := digit-sequence ;
+// Grammar: docs/design/specification.mec, `untyped-integer`.
 pub fn untyped_integer(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = Token::merge_tokens(&mut digits).unwrap();
@@ -274,7 +274,7 @@ pub fn untyped_integer(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Integer(merged)))
 }
 
-// decimal_literal := "0d", +digit-sequence ;
+// Grammar: docs/design/specification.mec, `decimal-literal`.
 pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects decimal digits after \"0d\"";
   let input = tag("0d")(input);
@@ -285,7 +285,7 @@ pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Decimal(merged)))
 }
 
-// hexadecimal_literal := "0x", +(digit-token | underscore | alpha-token) ;
+// Grammar: docs/design/specification.mec, `hexadecimal-literal`.
 pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects hexadecimal digits after \"0x\"";
   let input = tag("0x")(input);
@@ -296,7 +296,7 @@ pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Hexadecimal(merged)))
 }
 
-// octal_literal := "0o", +digit-sequence;
+// Grammar: docs/design/specification.mec, `octal-literal`.
 pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects octal digits after \"0o\"";
   let input = tag("0o")(input);
@@ -307,7 +307,7 @@ pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Octal(merged)))
 }
 
-// binary_literal := "0b", +digit-sequence; ;
+// Grammar: docs/design/specification.mec, `binary-literal`.
 pub fn binary_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects binary digits after \"0b\"";
   let input = tag("0b")(input);
@@ -332,7 +332,7 @@ pub fn right_angle(input: ParseString) -> ParseResult<Token> {
 }
 
 
-// kind_annotation := left_angle, kind, ?question, right_angle ;
+// Grammar: docs/design/specification.mec, `kind-annotation`.
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
@@ -341,7 +341,7 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, KindAnnotation{ kind }))
 }
 
-// kind := kind-fxn | kind-empty | kind-record | kind-atom | kind-tuple | kind-scalar | kind-matrix | kind-map ;
+// Grammar: docs/design/specification.mec, `kind`.
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = alt((
     kind_any,
@@ -369,7 +369,7 @@ pub fn kind_with_option(input: ParseString) -> ParseResult<Kind> {
   Ok((input, kind))
 }
 
-// kind-kind := "<", kind, ">" ;
+// Grammar: docs/design/specification.mec, `kind-kind`.
 pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
@@ -379,7 +379,7 @@ pub fn kind_kind(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Kind(Box::new(kind))))
 }
 
-// kind-table := "|" , list1(",", (identifier, kind)), "|", ":", list0(",", literal) ;
+// Grammar: docs/design/specification.mec, `kind-table`.
 pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = bar(input)?;
   let (input, elements) = separated_list1(
@@ -398,26 +398,26 @@ pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Table((elements, Box::new(size)))))
 }
 
-// kind-any := "*";
+// Grammar: docs/design/specification.mec, `kind-any`.
 pub fn kind_any(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = asterisk(input)?;
   Ok((input, Kind::Any))
 }
 
-// kind-empty := underscore+ ;
+// Grammar: docs/design/specification.mec, `kind-empty`.
 pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = many1(underscore)(input)?;
   Ok((input, Kind::Empty))
 }
 
-// kind-atom := ":", identifier ;
+// Grammar: docs/design/specification.mec, `kind-atom`.
 pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = colon(input)?;
   let (input, atm) = identifier(input)?;
   Ok((input, Kind::Atom(atm)))
 }
 
-// kind-set := "{", kind, "}", (":", literal)? ;
+// Grammar: docs/design/specification.mec, `kind-set`.
 pub fn kind_set(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, kind) = kind(input)?;
@@ -434,7 +434,7 @@ pub fn kind_set(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Set(Box::new(kind), ltrl)))
 }
 
-// kind-map := "{", kind, ":", kind, "}" ;
+// Grammar: docs/design/specification.mec, `kind-map`.
 pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, key_kind) = kind(input)?;
@@ -444,7 +444,7 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
 }
 
-// kind-record := "{", list1(",", (identifier, kind)), "}" ;
+// Grammar: docs/design/specification.mec, `kind-record`.
 pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
@@ -459,19 +459,7 @@ pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Record(elements)))
 }
 
-// kind-fxn := "(", list0(list_separator, kind), ")", "=", "(", list0(list_separator, kind), ")" ;
-/*pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
-  let (input, _) = left_parenthesis(input)?;
-  let (input, input_kinds) = separated_list0(list_separator,kind)(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  let (input, _) = equal(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, output_kinds) = separated_list0(list_separator,kind)(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  Ok((input, Kind::Function(input_kinds,output_kinds)))
-}*/
-
-// kind-matrox := "[", list1(",",kind), "]", ":"?, list0(",", literal) ;
+// Grammar: docs/design/specification.mec, `kind-matrix`.
 pub fn kind_matrix(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_bracket(input)?;
   let (input, kind) = kind_with_option(input)?;
@@ -481,7 +469,7 @@ pub fn kind_matrix(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Matrix((Box::new(kind),size))))
 }
 
-// kind-tuple := "(", list1(",", kind), ")" ;
+// Grammar: docs/design/specification.mec, `kind-tuple`.
 pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, kinds) = separated_list1(list_separator, kind)(input)?;
@@ -489,7 +477,7 @@ pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Tuple(kinds)))
 }
 
-// kind-scalar := identifier, [":", range_expression] ;
+// Grammar: docs/design/specification.mec, `kind-scalar`.
 pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = identifier(input)?;
   let (input, range) = opt(tuple((colon,range_expression)))(input)?;
