@@ -86,6 +86,9 @@ do not document ownership. Keep a helper local to its owning file until at
 least two sibling suites genuinely share it, then place only that shared
 fixture in `support.rs`.
 
+For the production modules exercised by these suites, see the
+[expression evaluation topology](../interpreter/expression-topology.md).
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,
