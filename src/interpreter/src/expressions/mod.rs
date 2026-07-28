@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use crate::*;
 
 pub(crate) struct DeferredExpressionSolveScope {
@@ -28,7 +30,6 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 #[cfg(test)]
-#[path = "expressions/tests/mod.rs"]
 mod tests;
 
 // Expressions
