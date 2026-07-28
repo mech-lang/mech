@@ -73,3 +73,42 @@ impl RuntimeExecutionTransaction {
     }
   }
 }
+
+impl MechRuntime {
+  pub(in crate::runtime) fn active_transaction_mut(
+    &mut self,
+    transaction_id: TransactionId,
+  ) -> MResult<&mut RuntimeTransaction> {
+    Ok(&mut self.active_execution_transaction_mut(transaction_id)?.store)
+  }
+
+  pub(in crate::runtime) fn active_execution_transaction(
+    &self,
+    transaction_id: TransactionId,
+  ) -> MResult<&RuntimeExecutionTransaction> {
+    self
+      .active_transactions
+      .get(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })
+  }
+
+  pub(in crate::runtime) fn active_execution_transaction_mut(
+    &mut self,
+    transaction_id: TransactionId,
+  ) -> MResult<&mut RuntimeExecutionTransaction> {
+    self
+      .active_transactions
+      .get_mut(&transaction_id)
+      .ok_or_else(|| {
+        MechError::new(
+          RuntimeTransactionNotFoundError { transaction_id },
+          None,
+        )
+      })
+  }
+}

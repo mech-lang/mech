@@ -510,89 +510,8 @@ impl MechRuntime {
     failures
   }
 
-  fn validate_implicit_cleanup_complete(
-    &self,
-    context: &RuntimeContext,
-    transaction_id: TransactionId,
-  ) -> Vec<String> {
-    let mut failures = Vec::new();
-
-    if self.active_transactions.contains_key(&transaction_id) {
-      failures.push(format!(
-        "active implicit transaction envelope {} still exists after cleanup",
-        transaction_id,
-      ));
-    }
-    if self.program_transaction_owner == Some(transaction_id) {
-      failures.push(format!(
-        "program owner still references implicit transaction {} after cleanup",
-        transaction_id,
-      ));
-    }
-    if context.transaction == Some(transaction_id) {
-      failures.push(format!(
-        "runtime context still references implicit transaction {} after cleanup",
-        transaction_id,
-      ));
-    }
-    if self
-      .active_program_operation
-      .get()
-      .is_some_and(|active| active.transaction_id == transaction_id)
-    {
-      failures.push(format!(
-        "active program operation still references implicit transaction {} after cleanup",
-        transaction_id,
-      ));
-    }
-
-    failures
-  }
-
-  fn finish_implicit_cleanup_best_effort(
-    &mut self,
-    context: &mut RuntimeContext,
-    transaction_id: TransactionId,
-    reason: &str,
-  ) -> Vec<String> {
-    let mut failures = Vec::new();
-
-    if let Some(mut transaction) = self.active_transactions.remove(&transaction_id) {
-      let phase_guard = ScopedRuntimeState::enter(
-        &self.active_effect_phase,
-        ActiveRuntimeEffectPhase::Aborting,
-      );
-      let effect_abort_failures = transaction.effects.abort_all();
-      drop(phase_guard);
-      failures.extend(
-        Self::describe_effect_failures(effect_abort_failures),
-      );
-      if let Err(error) = transaction.store.abort(reason) {
-        failures.push(format!(
-          "best-effort staged store discard failed: {:?}",
-          error,
-        ));
-      }
-    }
-    if self.program_transaction_owner == Some(transaction_id) {
-      self.program_transaction_owner = None;
-    }
-    if context.transaction == Some(transaction_id) {
-      context.transaction = None;
-    }
-    if self
-      .active_program_operation
-      .get()
-      .is_some_and(|active| active.transaction_id == transaction_id)
-    {
-      self.active_program_operation.set(None);
-    }
-
-    failures
-  }
-
   #[cfg(test)]
-  fn apply_program_transaction_test_fault(
+  pub(in crate::runtime) fn apply_program_transaction_test_fault(
     &mut self,
     transaction_id: TransactionId,
   ) -> Vec<String> {
@@ -615,68 +534,6 @@ impl MechRuntime {
         }
       }
       None => {}
-    }
-
-    failures
-  }
-
-  pub(in crate::runtime) fn cleanup_failed_implicit_operation(
-    &mut self,
-    context: &mut RuntimeContext,
-    operation: &'static str,
-    transaction_id: TransactionId,
-    reason: &str,
-  ) -> Vec<String> {
-    let mut failures = Vec::new();
-
-    #[cfg(test)]
-    failures.extend(
-      self.apply_program_transaction_test_fault(transaction_id),
-    );
-
-    match self.abort_runtime_transaction_cleanup(
-      context,
-      reason,
-      false,
-    ) {
-      Ok((cleaned_transaction_id, cleanup_failures)) => {
-        failures.extend(cleanup_failures);
-        if cleaned_transaction_id != transaction_id {
-          failures.push(format!(
-            "implicit cleanup targeted transaction {}, expected {}",
-            cleaned_transaction_id,
-            transaction_id,
-          ));
-        }
-      }
-      Err(error) => failures.push(format!(
-        "implicit transaction cleanup for `{}` transaction {} could not start: {:?}",
-        operation,
-        transaction_id,
-        error,
-      )),
-    }
-
-    let invariant_failures =
-      self.validate_implicit_cleanup_complete(context, transaction_id);
-    if !invariant_failures.is_empty() {
-      failures.extend(invariant_failures);
-      failures.extend(self.finish_implicit_cleanup_best_effort(
-        context,
-        transaction_id,
-        reason,
-      ));
-      failures.extend(
-        self
-          .validate_implicit_cleanup_complete(context, transaction_id)
-          .into_iter()
-          .map(|failure| {
-            format!(
-              "implicit cleanup invariant remained unsatisfied: {}",
-              failure,
-            )
-          }),
-      );
     }
 
     failures

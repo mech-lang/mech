@@ -180,3 +180,17 @@ impl RuntimeContextCheckpoint {
     }
   }
 }
+
+impl MechRuntime {
+  pub(in crate::runtime) fn context_transaction_id(context: &RuntimeContext) -> MResult<TransactionId> {
+    context.transaction.ok_or_else(|| {
+      MechError::new(
+        RuntimeInvalidOperationError {
+          operation: "context_transaction_id",
+          reason: "context has no active transaction".to_string(),
+        },
+        None,
+      )
+    })
+  }
+}

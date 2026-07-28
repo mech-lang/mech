@@ -178,8 +178,7 @@ pub(crate) enum RuntimePersistentSendSchedule {
 }
 
 use crate::capability::{
-  BasicCapabilityKernel, CapabilityGrant, CapabilityKernel,
-  CapabilityRequest, CapabilityRevocation,
+  BasicCapabilityKernel, CapabilityKernel, CapabilityRequest,
 };
 
 use crate::config::RuntimeConfig;
@@ -218,11 +217,10 @@ use crate::scheduler::{
 use crate::store::{
   ActorRecord, InMemoryStore, MechStore, MessageRecord, ModuleRecord,
   ModuleImportEdge, ModuleVersionRecord, ObjectRecord, TaskRecord, TaskStatus, TransactionRecord,
-  RuntimeStoreCommit,
 };
 
 use crate::transaction::{
-  RuntimeTransaction, RuntimeTransactionNotFoundError,
+  RuntimeTransactionNotFoundError,
 };
 
 use crate::actor::ActorTurn;
