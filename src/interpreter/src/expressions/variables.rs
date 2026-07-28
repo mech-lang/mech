@@ -1,7 +1,46 @@
 use super::{Environment, UndefinedVariableError};
-#[cfg(feature = "kind_annotation")]
+#[cfg(all(feature = "kind_annotation", feature = "convert"))]
 use crate::{ConvertKind, execute_initialized_indexed_compiler, kind_annotation};
-use crate::{Identifier, InterpreterExecution, MResult, MutableReference, Value, Var, hash_str};
+use crate::{
+    Identifier, InterpreterExecution, MResult, MutableReference, Value, Var, hash_str,
+};
+#[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
+use crate::{FeatureNotEnabledError, MechError};
+
+fn maybe_cast_variable_to_kind(
+    variable: &Var,
+    value: Value,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<Value> {
+    let Some(annotation) = &variable.kind else {
+        return Ok(value);
+    };
+
+    #[cfg(all(feature = "kind_annotation", feature = "convert"))]
+    {
+        let target_kind = {
+            let state = interpreter.state.borrow();
+            kind_annotation(&annotation.kind, interpreter)?.to_value_kind(&state.kinds)?
+        };
+
+        return execute_initialized_indexed_compiler(
+            interpreter,
+            &interpreter.plan(),
+            &ConvertKind {},
+            vec![value, Value::Kind(target_kind)],
+        );
+    }
+
+    #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
+    {
+        let _ = value;
+        Err(
+            MechError::new(FeatureNotEnabledError, None)
+                .with_compiler_loc()
+                .with_tokens(annotation.tokens()),
+        )
+    }
+}
 
 pub(super) fn addressed_identifier_name(name: &Identifier, context: &Option<Identifier>) -> String {
     match context {
@@ -19,25 +58,6 @@ pub(super) fn addressed_identifier_hash(name: &Identifier, context: &Option<Iden
 
 #[cfg(feature = "symbol_table")]
 pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
-    let plan = p.plan();
-    let maybe_cast_to_kind = |value: Value| -> MResult<Value> {
-        match &v.kind {
-            Some(kind_anntn) => {
-                let target_kind = {
-                    let state_brrw = p.state.borrow();
-                    kind_annotation(&kind_anntn.kind, p)?.to_value_kind(&state_brrw.kinds)?
-                };
-                execute_initialized_indexed_compiler(
-                    p,
-                    &plan,
-                    &ConvertKind {},
-                    vec![value, Value::Kind(target_kind)],
-                )
-            }
-            None => Ok(value),
-        }
-    };
-
     let id = addressed_identifier_hash(&v.name, &v.context);
     let name = addressed_identifier_name(&v.name, &v.context);
     let mark_if_live_symbol = |value: &MutableReference| {
@@ -62,7 +82,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
     };
     match env {
         Some(env) => match env.get(&id) {
-            Some(value) => maybe_cast_to_kind(value.clone()),
+            Some(value) => maybe_cast_variable_to_kind(v, value.clone(), p),
             None => {
                 let state_brrw = p.state.borrow();
                 let symbols_brrw = state_brrw.symbol_table.borrow();
@@ -72,7 +92,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
                 match symbol_value {
                     Some(value) => {
                         mark_if_live_symbol(&value);
-                        maybe_cast_to_kind(Value::MutableReference(value))
+                        maybe_cast_variable_to_kind(v, Value::MutableReference(value), p)
                     }
                     None => Err(crate::MechError::new(
                         UndefinedVariableError {
@@ -95,7 +115,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
             match symbol_value {
                 Some(value) => {
                     mark_if_live_symbol(&value);
-                    maybe_cast_to_kind(Value::MutableReference(value))
+                    maybe_cast_variable_to_kind(v, Value::MutableReference(value), p)
                 }
                 None => Err(crate::MechError::new(
                     UndefinedVariableError {

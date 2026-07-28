@@ -506,8 +506,9 @@ fn execute_function_match_arms(
         }
       }
       // Normal arm: evaluate the expression and coerce to the declared output kind.
-      let out = expression(&arm.expression, Some(&env), p)?;
-      let coerced = coerce_function_output_kind(detach_value(&out), fxn_def, p)?;
+      let coerced = detach_value(&expression(&arm.expression, Some(&env), p)?);
+      #[cfg(feature = "kind_annotation")]
+      let coerced = coerce_function_output_kind(coerced, fxn_def, p)?;
       trace_println!(
         p,
         "{}",
@@ -859,7 +860,16 @@ fn collect_function_output(p: &InterpreterExecution<'_>, fxn_def: &FunctionDefin
   Ok(match outputs.len() {
     0 => Value::Empty,
     1 => outputs.remove(0),
+    #[cfg(feature = "tuple")]
     _ => Value::Tuple(Ref::new(MechTuple::from_vec(outputs))),
+    #[cfg(not(feature = "tuple"))]
+    _ => {
+      return Err(
+        MechError::new(FeatureNotEnabledError, None)
+          .with_compiler_loc()
+          .with_tokens(fxn_def.code.name.tokens()),
+      );
+    }
   })
 }
 

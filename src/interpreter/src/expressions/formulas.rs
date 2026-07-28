@@ -161,14 +161,12 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>)
       || string_access_input_is_live(&rhs, p);
     let new_fxn: Box<dyn MechFunction> = match op {
       // Math
-      FormulaOperator::AddSub(AddSubOp::Add) => match (&lhs, &rhs) {
-        #[cfg(feature = "string_concat")]
-        (_, value) | (value, _) if value.is_string() => {
-          StringConcat {}.compile(&vec![lhs, rhs])?
-        }
-        #[cfg(feature = "math_add")]
-        _ => MathAdd {}.compile(&vec![lhs, rhs])?,
-      },
+      #[cfg(feature = "string_concat")]
+      FormulaOperator::AddSub(AddSubOp::Add) if lhs.is_string() || rhs.is_string() => {
+        StringConcat {}.compile(&vec![lhs, rhs])?
+      }
+      #[cfg(feature = "math_add")]
+      FormulaOperator::AddSub(AddSubOp::Add) => MathAdd {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "math_sub")]
       FormulaOperator::AddSub(AddSubOp::Sub) => MathSub {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "math_mul")]

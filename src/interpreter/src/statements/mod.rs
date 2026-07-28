@@ -42,9 +42,9 @@ pub use op_assign::op_assign;
 pub use op_assign::add_assign;
 #[cfg(feature = "math_sub_assign")]
 pub use op_assign::sub_assign;
-#[cfg(feature = "math_div_assign")]
-pub use op_assign::mul_assign;
 #[cfg(feature = "math_mul_assign")]
+pub use op_assign::mul_assign;
+#[cfg(feature = "math_div_assign")]
 pub use op_assign::div_assign;
 #[cfg(feature = "variable_assign")]
 pub use variable_assign::variable_assign;

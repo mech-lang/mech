@@ -22,10 +22,37 @@ use crate::{MulAssignRange, MulAssignRangeAll, MulAssignValue};
   feature = "math_div_assign",
   feature = "math_mul_assign"
 ))]
-use crate::{
-  MatrixAssignScalar, MatrixAssignScalarAll, NativeFunctionCompiler, Subscript,
-  subscript_formula_ix, subscript_range,
-};
+use crate::Subscript;
+#[cfg(all(
+  any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+  ),
+  any(feature = "subscript_formula", feature = "subscript_range")
+))]
+use crate::NativeFunctionCompiler;
+#[cfg(all(
+  any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+  ),
+  feature = "subscript_formula"
+))]
+use crate::{MatrixAssignScalar, MatrixAssignScalarAll, subscript_formula_ix};
+#[cfg(all(
+  any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+  ),
+  feature = "subscript_range"
+))]
+use crate::subscript_range;
 #[cfg(any(
   feature = "math_add_assign",
   feature = "math_sub_assign",
@@ -120,6 +147,7 @@ macro_rules! op_assign {
           Subscript::Bracket(subs) => {
             let mut fxn_input = vec![sink.clone()];
             match &subs[..] {
+              #[cfg(feature = "subscript_formula")]
               [Subscript::Formula(ix)] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_formula_ix(&subs[0], env, p)?;
@@ -132,6 +160,7 @@ macro_rules! op_assign {
                   _ => todo!(),
                 }
               },
+              #[cfg(feature = "subscript_formula")]
               [Subscript::Formula(ix1),Subscript::All] => {
                 fxn_input.push(source.clone());
                 let ix = subscript_formula_ix(&subs[0], env, p)?;
@@ -145,12 +174,14 @@ macro_rules! op_assign {
                   _ => todo!(),
                 }
               },
+              #[cfg(feature = "subscript_range")]
               [Subscript::Range(ix)] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
                 plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?);
               },
+              #[cfg(feature = "subscript_range")]
               [Subscript::Range(ix), Subscript::All] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
@@ -179,9 +210,9 @@ macro_rules! op_assign {
 op_assign!(add_assign, Add);
 #[cfg(feature = "math_sub_assign")]
 op_assign!(sub_assign, Sub);
-#[cfg(feature = "math_div_assign")]
-op_assign!(mul_assign, Mul);
 #[cfg(feature = "math_mul_assign")]
+op_assign!(mul_assign, Mul);
+#[cfg(feature = "math_div_assign")]
 op_assign!(div_assign, Div);
 //#[cfg(feature = "math_pow")]
 //op_assign!(pow_assign, Pow);

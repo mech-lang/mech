@@ -1,7 +1,9 @@
 use crate::{
-    Interpreter, MResult, MechError, MechTuple, PatternBindingSink, PatternMatch, Ref, Value,
-    ValueKind, hash_str,
+    Interpreter, MResult, MechError, PatternBindingSink, PatternMatch, Ref, Value, ValueKind,
+    hash_str,
 };
+#[cfg(feature = "tuple")]
+use crate::MechTuple;
 #[cfg(feature = "matrix")]
 use mech_core::structures::matrix::Matrix;
 #[cfg(feature = "atom")]
