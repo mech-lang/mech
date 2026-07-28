@@ -13,8 +13,12 @@
 
 mod activation_effects;
 mod context_preflight;
+mod host_input;
+mod input_drivers;
+mod live_registration;
 mod module;
 mod module_environment;
+mod persistent_send;
 mod query;
 mod reactive;
 mod source;
@@ -272,30 +276,7 @@ fn snapshot_runtime_value(value: &Value) -> Value {
 
 
 impl MechRuntime {
-  fn with_live_registration_mode<T>(
-    &mut self,
-    mode: crate::runtime::LiveRegistrationMode,
-    f: impl FnOnce(&mut Self) -> MResult<T>,
-  ) -> MResult<T> {
-    let previous = std::mem::replace(&mut self.live_registration_mode, mode);
-    let result = f(self);
-    self.live_registration_mode = previous;
-    result
-  }
 
-  #[cfg(test)]
-  pub(super) fn run_string_with_isolated_registration_for_test(
-    &mut self,
-    context: &mut RuntimeContext,
-    source: &str,
-  ) -> MResult<Value> {
-    self.with_live_registration_mode(
-      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
-      |runtime| {
-        runtime.run_string_value_with_context(context, source)
-      },
-    )
-  }
 
 
 
@@ -771,269 +752,21 @@ impl MechRuntime {
 mod tests;
 
 impl MechRuntime {
-  pub fn ingress(&self) -> crate::RuntimeIngress {
-    crate::RuntimeIngress::new(self.host_input_queue.clone())
-  }
 
-  pub fn has_pending_host_inputs(&self) -> MResult<bool> {
-    Ok(self.pending_host_input_count()? > 0)
-  }
 
-  pub fn persistent_send_count(&self) -> usize {
-    self.persistent_sends.len()
-  }
 
-  pub fn input_driver_count(&self) -> usize {
-    self.attached_input_driver_count
-  }
 
-  pub fn has_input_drivers(&self) -> bool {
-    self.input_driver_count() > 0
-  }
 
-  pub fn live_input_binding_count(&self) -> usize {
-    self.live_input_bindings.values().map(Vec::len).sum()
-  }
 
-  pub fn has_live_input_bindings(&self) -> bool {
-    self.live_input_binding_count() > 0
-  }
 
-  pub fn driven_live_input_binding_count(&self) -> MResult<usize> {
-    let mut count = 0;
-    for (source, bindings) in &self.live_input_bindings {
-      let mut driven = false;
-      for driver in &self.input_drivers[..self.attached_input_driver_count] {
-        if extension::invoke_extension_value(
-          "host input driver",
-          "drives",
-          || driver.drives(source),
-        )? {
-          driven = true;
-          break;
-        }
-      }
-      if driven {
-        count += bindings.len();
-      }
-    }
-    Ok(count)
-  }
 
-  pub fn has_driven_live_input_bindings(&self) -> MResult<bool> {
-    Ok(self.driven_live_input_binding_count()? > 0)
-  }
 
-  pub fn pending_host_input_count(&self) -> MResult<usize> {
-    let guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
-    Ok(guard.queue.len())
-  }
 
-  pub fn apply_host_input(&mut self, input: crate::RuntimeHostInput) -> MResult<crate::RuntimeHostInputOutcome> {
-    self.ensure_runtime_mutation_allowed("apply_host_input")?;
-    self.reject_program_operation_reentrancy("apply_host_input")?;
-    let prepared = self.prepare_runtime_host_input(&input)?;
-    if prepared.binding_count == 0 {
-      return Ok(crate::RuntimeHostInputOutcome {
-        update_count: prepared.update_count,
-        ignored_update_count: prepared.ignored_update_count,
-        binding_count: 0,
-        turn: None,
-      });
-    }
 
-    let mut context = self.live_turn_context()?;
-    self.validate_context_for_runtime(&context)?;
-    self.validate_live_turn_context(&context)?;
-    self.apply_prepared_host_input_with_context(
-      &mut context,
-      prepared,
-    )
-  }
 
-  pub fn apply_host_input_with_context(
-    &mut self,
-    context: &mut RuntimeContext,
-    input: crate::RuntimeHostInput,
-  ) -> MResult<crate::RuntimeHostInputOutcome> {
-    self.ensure_runtime_mutation_allowed(
-      "apply_host_input_with_context",
-    )?;
-    self.validate_context_for_runtime(context)?;
-    self.reject_program_operation_reentrancy(
-      "apply_host_input_with_context",
-    )?;
-    self.validate_live_turn_context(context)?;
-    let prepared = self.prepare_runtime_host_input(&input)?;
 
-    if prepared.binding_count == 0 {
-      return Ok(crate::RuntimeHostInputOutcome {
-        update_count: prepared.update_count,
-        ignored_update_count: prepared.ignored_update_count,
-        binding_count: 0,
-        turn: None,
-      });
-    }
 
-    self.apply_prepared_host_input_with_context(context, prepared)
-  }
 
-  fn apply_prepared_host_input_with_context(
-    &mut self,
-    context: &mut RuntimeContext,
-    prepared: PreparedRuntimeHostInput,
-  ) -> MResult<crate::RuntimeHostInputOutcome> {
-    let turn_started = Instant::now();
-    let turn = self.with_atomic_reactive_turn(
-      context,
-      "apply_host_input_with_context",
-      |program, services, finalize| {
-        program.update_inputs_and_advance_turn_coordinated(
-          &prepared.updates,
-          services,
-          |turn| finalize(turn),
-        )
-      },
-      move |runtime, context, turn| {
-        runtime.enforce_turn_duration(turn_started)?;
-        runtime.execute_persistent_sends(context, turn)?;
-        Ok(())
-      },
-    )?;
-    Ok(crate::RuntimeHostInputOutcome {
-      update_count: prepared.update_count,
-      ignored_update_count: prepared.ignored_update_count,
-      binding_count: prepared.binding_count,
-      turn: Some(turn),
-    })
-  }
 
-  fn execute_persistent_sends(&mut self, context: &mut RuntimeContext, turn: &mech_program::ProgramInputTurnOutcome) -> MResult<()> {
-    for send in self.persistent_sends.clone() {
-      let should_send = match send.schedule {
-        RuntimePersistentSendSchedule::EveryAcceptedTurn => true,
-        RuntimePersistentSendSchedule::Activation { interpreter_id, barrier_node_id } => turn.interpreter_turns.iter().find(|outcome| outcome.interpreter_id == interpreter_id).map(|outcome| {
-          outcome.turn.before_commit.executed_nodes.contains(&barrier_node_id) || outcome.turn.after_commit.executed_nodes.contains(&barrier_node_id)
-        }).unwrap_or(false),
-      };
-      if !should_send { continue; }
-      let value = resolve_runtime_value(send.value.borrow().clone());
-      self.write_context_resource(context, &send.binding, &send.path, value, RuntimeResourceWriteIntent::Send)?;
-    }
-    Ok(())
-  }
 
-  pub fn drain_host_inputs(&mut self, max_inputs: usize) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {
-    let mut outcomes = Vec::new();
-    for _ in 0..max_inputs {
-      let input = {
-        let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
-        guard.queue.pop_front()
-      };
-      let Some(input) = input else { break; };
-      outcomes.push(self.apply_host_input(input)?);
-    }
-    Ok(outcomes)
-  }
-
-  pub fn close_ingress(&mut self) -> MResult<()> {
-    let mut guard = self.host_input_queue.lock().map_err(|_| crate::input::input_error("RuntimeIngressUnavailable", "host input queue lock is poisoned"))?;
-    guard.closed = true;
-    Ok(())
-  }
-
-  pub fn start_input_drivers(&mut self) -> MResult<()> {
-    if self.ingress().is_closed()? {
-      return Err(crate::input::input_error("RuntimeIngressClosed", "cannot start input drivers after ingress is closed"));
-    }
-    let mut started = vec![false; self.attached_input_driver_count];
-    for index in 0..self.attached_input_driver_count {
-      if extension::invoke_extension_value(
-        "host input driver",
-        "is_live",
-        || self.input_drivers[index].is_live(),
-      )? {
-        continue;
-      }
-      let has_driven_input = {
-        let driver = &self.input_drivers[index];
-        self
-          .live_input_bindings
-          .iter()
-          .try_fold(false, |driven, (source, bindings)| {
-            if driven || bindings.is_empty() {
-              return Ok(driven);
-            }
-            extension::invoke_extension_value(
-              "host input driver",
-              "drives",
-              || driver.drives(source),
-            )
-          })?
-      };
-      if !has_driven_input { continue; }
-      if let Err(error) = extension::invoke_extension(
-        "host input driver",
-        "start",
-        || self.input_drivers[index].start(),
-      ) {
-        let mut cleanup_failures = Vec::new();
-        for cleanup_index in (0..self.attached_input_driver_count).rev() {
-          if !started[cleanup_index] { continue; }
-          if let Err(cleanup_error) = extension::invoke_extension(
-            "host input driver",
-            "stop",
-            || self.input_drivers[cleanup_index].stop(),
-          ) {
-            cleanup_failures.push(format!(
-              "input driver {} stop failed: {:?}",
-              cleanup_index,
-              cleanup_error,
-            ));
-          }
-        }
-        if !cleanup_failures.is_empty() {
-          return Err(self.poison_program_operation(
-            "start_input_drivers",
-            None,
-            format!("{:?}", error),
-            cleanup_failures,
-          ));
-        }
-        return Err(error);
-      }
-      started[index] = true;
-    }
-    Ok(())
-  }
-
-  pub fn stop_input_drivers(&mut self) -> MResult<()> {
-    let mut first_error = None;
-    let mut panic_failures = Vec::new();
-    for driver in self.input_drivers[..self.attached_input_driver_count].iter_mut().rev() {
-      if let Err(error) = extension::invoke_extension(
-        "host input driver",
-        "stop",
-        || driver.stop(),
-      ) {
-        if error.kind_name() == "RuntimeExtensionPanicked" {
-          panic_failures.push(format!("{:?}", error));
-        }
-        if first_error.is_none() { first_error = Some(error); }
-      }
-    }
-    if !panic_failures.is_empty() {
-      return Err(self.poison_program_operation(
-        "stop_input_drivers",
-        None,
-        first_error
-          .as_ref()
-          .map(|error| format!("{:?}", error))
-          .unwrap_or_else(|| "input driver cleanup panicked".to_string()),
-        panic_failures,
-      ));
-    }
-    if let Some(error) = first_error { return Err(error); }
-    Ok(())
-  }
 }
