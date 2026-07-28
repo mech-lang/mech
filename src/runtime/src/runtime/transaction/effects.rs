@@ -8,10 +8,8 @@ use super::{
 use crate::runtime::extension::{
   catch_extension, invoke_extension,
 };
-use crate::runtime::{
-  MechRuntime,
-  ScopedRuntimeState,
-};
+use crate::runtime::state::ScopedRuntimeState;
+use crate::runtime::MechRuntime;
 use crate::{
   ActiveRuntimeEffectPhase,
   PreparedRuntimeEffect,

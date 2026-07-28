@@ -1,5 +1,5 @@
 use super::RuntimeContextCheckpoint;
-use crate::runtime::RuntimeLiveStateSnapshot;
+use crate::runtime::live_state::RuntimeLiveStateSnapshot;
 use crate::RuntimeTransaction;
 use mech_program::MechProgramCheckpoint;
 

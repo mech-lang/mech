@@ -1,6 +1,17 @@
 //! Runtime budget, source, duration, and event-retention limits.
 
-use super::*;
+use super::MechRuntime;
+use crate::{
+  ResourceBudget,
+  ResourceBudgetExceededError,
+  RuntimeContext,
+  RuntimeEvent,
+};
+use mech_core::{MResult, MechError, MechSourceCode};
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 impl MechRuntime {
   pub fn default_budget(&self) -> ResourceBudget {

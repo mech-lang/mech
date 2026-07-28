@@ -35,7 +35,6 @@
 */
 
 
-use super::*;
 use super::extension::invoke_extension;
 use super::execution::{
   ACTIVATION_EFFECT_BARRIER_NAME,
@@ -43,14 +42,35 @@ use super::execution::{
   ActivationEffectBarrierCompiler,
   ActivationEffectPayloadCaptureCompiler,
 };
+use super::{
+  MechRuntime,
+  RuntimeHostFunctionNotBytecodeCompilableError,
+};
 use mech_core::{
-  GuardFunctionSafety, MechExecutionServices, Ref,
+  CompileCtx,
+  GuardFunctionSafety,
+  MResult,
+  MechError,
+  MechErrorKind,
+  MechExecutionServices,
+  MechFunctionCompiler,
+  MechFunctionImpl,
+  NativeFunctionCompiler,
+  Ref,
+  Register,
+  Value,
   ValueKind,
 };
+use mech_program::MechProgram;
 use crate::{
-  RegisteredHostFunction, RuntimeCallContext,
+  HostCall,
+  HostFunctionNotFoundError,
+  RegisteredHostFunction,
+  RuntimeCallContext,
+  RuntimeContext,
   RuntimeValueSnapshot,
 };
+use std::sync::Arc;
 
 impl MechRuntime {
 

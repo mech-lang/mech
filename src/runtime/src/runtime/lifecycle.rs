@@ -1,6 +1,8 @@
 //! Runtime shutdown and cleanup lifecycle.
 
-use super::*;
+use super::{extension, MechRuntime};
+use crate::RuntimeEventKind;
+use mech_core::MResult;
 
 impl MechRuntime {
   pub fn shutdown(&mut self) -> MResult<()> {

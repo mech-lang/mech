@@ -9,10 +9,8 @@ use super::{
   RuntimePoisonRecord,
   RuntimeTransactionContextIdentity,
 };
-use crate::runtime::{
-  MechRuntime,
-  ScopedRuntimeState,
-};
+use crate::runtime::state::ScopedRuntimeState;
+use crate::runtime::MechRuntime;
 use crate::{
   module_id,
   AccessSet,

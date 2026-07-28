@@ -4,7 +4,36 @@
 
 // Actors are the primary entities in the Mech runtime that encapsulate state and behavior. They can receive messages, execute turns, and interact with other actors. The methods in this section allow you to create, retrieve, update, and manage actors, as well as send messages to them and run their turns.
 
-use super::*;
+use crate::runtime::{
+  extension,
+  MechRuntime,
+  RuntimeInvalidOperationError,
+  RuntimeRecordNotFoundError,
+};
+use crate::{
+  ActorBehaviorRuntime,
+  ActorId,
+  ActorRecord,
+  ActorTurn,
+  CapabilityId,
+  HostCall,
+  MessageId,
+  MessageRecord,
+  ModuleVersionId,
+  NoActorBehaviorDriver,
+  ObjectId,
+  ResourceBudgetExceededError,
+  RuntimeContext,
+  RuntimeEventKind,
+  RuntimeTransactionNotFoundError,
+  TransactionId,
+};
+use mech_core::{MResult, MechError, Value};
+use std::collections::HashMap;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 enum VisibleTransactionMessage {
   Durable(MessageRecord),

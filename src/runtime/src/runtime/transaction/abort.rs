@@ -1,9 +1,7 @@
 //! Runtime transaction abort and rollback protocol.
 
-use crate::runtime::{
-  MechRuntime,
-  ScopedRuntimeState,
-};
+use crate::runtime::state::ScopedRuntimeState;
+use crate::runtime::MechRuntime;
 use crate::{
   ActiveRuntimeEffectPhase,
   RuntimeContext,

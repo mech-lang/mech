@@ -1,10 +1,8 @@
-use crate::runtime::{
-  ActorTurn,
-  MechRuntime,
-};
+use crate::runtime::MechRuntime;
 use crate::{
   AccessSet,
   ActorId,
+  ActorTurn,
   MessageRecord,
   ModuleVersionId,
   ObjectId,

@@ -1,8 +1,9 @@
-use super::super::{
-    InMemoryScheduler, MResult, MechRuntime, RuntimeEventKind, RuntimeTurnOutcome, ScheduledWork,
-    Scheduler, TaskId,
+use super::super::MechRuntime;
+use crate::{
+    InMemoryScheduler, RuntimeEventKind, RuntimeTurnOutcome, ScheduledWork, ScheduledWorkFailure,
+    ScheduledWorkOutcome, Scheduler, TaskId,
 };
-use crate::{ScheduledWorkFailure, ScheduledWorkOutcome};
+use mech_core::MResult;
 
 #[derive(Debug, Default)]
 struct PanickingScheduler {

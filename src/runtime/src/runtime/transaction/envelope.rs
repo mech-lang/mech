@@ -5,10 +5,8 @@ use super::{
   RuntimeModuleJournal,
   RuntimeTransactionContextIdentity,
 };
-use crate::runtime::{
-  MechRuntime,
-  RuntimeLiveStateSnapshot,
-};
+use crate::runtime::live_state::RuntimeLiveStateSnapshot;
+use crate::runtime::MechRuntime;
 use crate::{
   RuntimeTransaction,
   RuntimeTransactionNotFoundError,

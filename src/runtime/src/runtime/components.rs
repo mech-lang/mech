@@ -1,6 +1,18 @@
 //! Runtime component access and controlled replacement.
 
-use super::*;
+use super::MechRuntime;
+use crate::{
+  ActorBehaviorDriver,
+  CapabilityKernel,
+  HostCallPolicy,
+  HostRegistry,
+  MechStore,
+  ModuleBuilder,
+  Scheduler,
+  SchedulerPolicy,
+  SourceResolver,
+};
+use mech_core::MResult;
 
 impl MechRuntime {
   pub(crate) fn store(&self) -> &dyn MechStore {

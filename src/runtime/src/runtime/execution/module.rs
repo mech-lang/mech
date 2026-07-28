@@ -376,7 +376,7 @@ impl MechRuntime {
       ),
       &prepared.source,
       scope,
-      crate::runtime::LiveRegistrationMode::IsolatedSnapshot,
+      crate::runtime::live_state::LiveRegistrationMode::IsolatedSnapshot,
     );
     let result = match result {
       Ok(value) => value,
@@ -487,7 +487,7 @@ impl MechRuntime {
           &mut RuntimeProgramTarget::Retained,
           &prepared.source,
           scope,
-          crate::runtime::LiveRegistrationMode::RetainedRoot,
+          crate::runtime::live_state::LiveRegistrationMode::RetainedRoot,
         )
         .and_then(|value| {
           self.enforce_turn_duration(turn_started)?;
@@ -515,7 +515,7 @@ impl MechRuntime {
     target: &mut RuntimeProgramTarget<'_>,
     source: &MechSourceCode,
     scope: &SourceScope,
-    registration_mode: crate::runtime::LiveRegistrationMode,
+    registration_mode: crate::runtime::live_state::LiveRegistrationMode,
   ) -> MResult<Value> {
     match target {
       RuntimeProgramTarget::Retained => {

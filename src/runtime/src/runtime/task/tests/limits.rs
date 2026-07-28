@@ -1,4 +1,5 @@
-use super::super::{MechRuntime, ResourceBudgetExceededError, RuntimeConfig, TaskId, TaskRecord};
+use super::super::MechRuntime;
+use crate::{ResourceBudgetExceededError, RuntimeConfig, TaskId, TaskRecord};
 
 #[test]
 fn max_tasks_is_enforced() {

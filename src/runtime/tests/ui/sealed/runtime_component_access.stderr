@@ -4,7 +4,7 @@ error[E0624]: method `program` is private
 5 |   let _ = runtime.program();
   |                   ^^^^^^^ private method
   |
- ::: src/runtime/mod.rs
+ ::: src/runtime/state.rs
   |
   |   pub(crate) fn program(&self) -> &MechProgram {
   |   -------------------------------------------- private method defined here
@@ -15,7 +15,7 @@ error[E0624]: method `program_mut` is private
 6 |   let _ = runtime.program_mut();
   |                   ^^^^^^^^^^^ private method
   |
- ::: src/runtime/mod.rs
+ ::: src/runtime/state.rs
   |
   |   pub(crate) fn program_mut(&mut self) -> &mut MechProgram {
   |   -------------------------------------------------------- private method defined here
@@ -32,7 +32,7 @@ error[E0624]: method `store_mut` is private
 8 |   let _ = runtime.store_mut();
   |                   ^^^^^^^^^ private method
   |
- ::: src/runtime/mod.rs
+ ::: src/runtime/components.rs
   |
   |   pub(crate) fn store_mut(&mut self) -> &mut dyn MechStore {
   |   -------------------------------------------------------- private method defined here
@@ -43,7 +43,7 @@ error[E0624]: method `capability_kernel_mut` is private
 9 |   let _ = runtime.capability_kernel_mut();
   |                   ^^^^^^^^^^^^^^^^^^^^^ private method
   |
- ::: src/runtime/mod.rs
+ ::: src/runtime/components.rs
   |
   |   pub(crate) fn capability_kernel_mut(&mut self) -> &mut dyn CapabilityKernel {
   |   --------------------------------------------------------------------------- private method defined here
@@ -54,7 +54,7 @@ error[E0624]: method `source_resolver_mut` is private
 10 |   let _ = runtime.source_resolver_mut();
    |                   ^^^^^^^^^^^^^^^^^^^ private method
    |
-  ::: src/runtime/mod.rs
+  ::: src/runtime/components.rs
    |
    |   pub(crate) fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
    |   ----------------------------------------------------------------------- private method defined here
@@ -65,7 +65,7 @@ error[E0624]: method `host_registry_mut` is private
 11 |   let _ = runtime.host_registry_mut();
    |                   ^^^^^^^^^^^^^^^^^ private method
    |
-  ::: src/runtime/mod.rs
+  ::: src/runtime/components.rs
    |
    |   pub(crate) fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
    |   ------------------------------------------------------------------- private method defined here
@@ -76,7 +76,7 @@ error[E0624]: method `host_policy_mut` is private
 12 |   let _ = runtime.host_policy_mut();
    |                   ^^^^^^^^^^^^^^^ private method
    |
-  ::: src/runtime/mod.rs
+  ::: src/runtime/components.rs
    |
    |   pub(crate) fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
    |   ------------------------------------------------------------------- private method defined here
@@ -87,7 +87,7 @@ error[E0624]: method `scheduler_mut` is private
 13 |   let _ = runtime.scheduler_mut();
    |                   ^^^^^^^^^^^^^ private method
    |
-  ::: src/runtime/mod.rs
+  ::: src/runtime/components.rs
    |
    |   pub(crate) fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
    |   ------------------------------------------------------------ private method defined here
@@ -98,7 +98,7 @@ error[E0624]: method `scheduler_policy_mut` is private
 14 |   let _ = runtime.scheduler_policy_mut();
    |                   ^^^^^^^^^^^^^^^^^^^^ private method
    |
-  ::: src/runtime/mod.rs
+  ::: src/runtime/components.rs
    |
    |   pub(crate) fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
    |   --------------------------------------------------------------------- private method defined here
@@ -109,7 +109,7 @@ error[E0624]: method `actor_behavior_driver_mut` is private
 15 |   let _ = runtime.actor_behavior_driver_mut();
    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^ private method
    |
-  ::: src/runtime/mod.rs
+  ::: src/runtime/components.rs
    |
    |   pub(crate) fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
    |   ---------------------------------------------------------------------------------- private method defined here

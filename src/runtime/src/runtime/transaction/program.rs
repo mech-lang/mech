@@ -12,11 +12,9 @@ use super::{
   RuntimeProgramBaseline,
   RuntimeProgramOperationSavepoint,
 };
-use crate::runtime::{
-  MechRuntime,
-  RuntimeLiveStateSnapshot,
-  ScopedRuntimeState,
-};
+use crate::runtime::live_state::RuntimeLiveStateSnapshot;
+use crate::runtime::state::ScopedRuntimeState;
+use crate::runtime::MechRuntime;
 use crate::{
   ActiveRuntimeEffectPhase,
   RuntimeContext,

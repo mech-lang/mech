@@ -7,10 +7,8 @@ use super::{
   RuntimeOperationSavepoint,
   RuntimeProgramOwnershipAcquisition,
 };
-use crate::runtime::{
-  MechRuntime,
-  ScopedRuntimeState,
-};
+use crate::runtime::state::ScopedRuntimeState;
+use crate::runtime::MechRuntime;
 use crate::{
   RuntimeContext,
   RuntimeInvalidOperationError,

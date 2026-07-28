@@ -1,8 +1,6 @@
 use super::resolve_runtime_value;
-use crate::runtime::{
-  MechRuntime,
-  RuntimePersistentSendSchedule,
-};
+use crate::runtime::live_state::RuntimePersistentSendSchedule;
+use crate::runtime::MechRuntime;
 use crate::{
   RuntimeContext,
   RuntimeResourceWriteIntent,

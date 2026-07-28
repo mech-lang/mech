@@ -6,8 +6,15 @@
 
 // See /src/core/src/error.rs for the base error types and traits used by these runtime errors.
 
-use super::*;
-use crate::RuntimeEffectFailure;
+use super::transaction::RuntimePoisonRecord;
+use crate::{
+  ActiveRuntimeEffectPhase,
+  CapabilityId,
+  RuntimeEffectFailure,
+  TransactionId,
+};
+use mech_core::MechErrorKind;
+use crate::ModuleVersionId;
 
 #[derive(Debug, Clone)]
 pub struct RuntimeEffectOperationReentrant {
