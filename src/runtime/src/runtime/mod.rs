@@ -37,6 +37,9 @@ mod transaction;
 #[cfg(test)]
 mod input_tests;
 
+#[cfg(test)]
+pub(crate) mod test_support;
+
 pub use self::errors::*;
 pub use self::program_transaction::{
   RuntimeHealth,
