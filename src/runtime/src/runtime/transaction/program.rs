@@ -1,10 +1,44 @@
-//! Runtime-owned execution transaction coordination.
+//! Atomic retained-program transaction coordination.
 //!
 //! [`RuntimeTransaction`] remains the staged-store component. The private
 //! execution envelope in this module coordinates it with retained-program,
 //! live-runtime, and context state.
 
-use super::*;
+use super::{
+  RuntimeCommitResolution,
+  RuntimeContextCheckpoint,
+  RuntimeExecutionTransactionMode,
+  RuntimeOperationSavepoint,
+  RuntimeProgramBaseline,
+  RuntimeProgramOperationSavepoint,
+};
+use crate::runtime::{
+  MechRuntime,
+  RuntimeLiveStateSnapshot,
+  ScopedRuntimeState,
+};
+use crate::{
+  ActiveRuntimeEffectPhase,
+  RuntimeContext,
+  RuntimeEffectId,
+  RuntimeEffectOperationReentrant,
+  RuntimeEventKind,
+  RuntimeHealth,
+  RuntimeInvalidOperationError,
+  RuntimePoisonRecord,
+  RuntimePoisoned,
+  RuntimeProgramBusy,
+  RuntimeProgramOperationReentrant,
+  RuntimeProgramRollbackFailed,
+  TaskId,
+  TransactionId,
+};
+use mech_core::{
+  MResult,
+  MechError,
+};
+use mech_program::MechProgramCheckpoint;
+use std::collections::HashSet;
 #[cfg(feature = "invariant_define")]
 use mech_program::{
   IntegrityConstraintFailureReason, IntegrityConstraintViolationSet,
@@ -16,14 +50,14 @@ use crate::{
 };
 
 #[cfg(feature = "invariant_define")]
-pub(super) struct IntegrityFailureAudit {
+pub(in crate::runtime) struct IntegrityFailureAudit {
   transaction_id: TransactionId,
   task_id: Option<TaskId>,
   violations: Vec<RuntimeIntegrityConstraintViolation>,
 }
 
 #[cfg(feature = "invariant_define")]
-pub(super) fn integrity_failure_audit(
+pub(in crate::runtime) fn integrity_failure_audit(
   error: &MechError,
   transaction_id: TransactionId,
   task_id: Option<TaskId>,
@@ -67,7 +101,7 @@ pub(super) fn integrity_failure_audit(
   })
 }
 
-pub(super) enum RuntimeProgramOwnershipAcquisition {
+pub(in crate::runtime) enum RuntimeProgramOwnershipAcquisition {
   Existing,
   NewlyAcquired {
     program: MechProgramCheckpoint,
@@ -76,9 +110,9 @@ pub(super) enum RuntimeProgramOwnershipAcquisition {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(super) struct ActiveRuntimeProgramOperation {
-  pub(super) transaction_id: TransactionId,
-  pub(super) operation: &'static str,
+pub(in crate::runtime) struct ActiveRuntimeProgramOperation {
+  pub(in crate::runtime) transaction_id: TransactionId,
+  pub(in crate::runtime) operation: &'static str,
 }
 
 #[cfg(test)]
@@ -113,18 +147,18 @@ fn take_program_transaction_test_fault() -> Option<ProgramTransactionTestFault> 
 }
 
 #[cfg(test)]
-pub(super) fn reset_runtime_program_checkpoint_count() {
+pub(in crate::runtime) fn reset_runtime_program_checkpoint_count() {
   RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(|count| count.set(0));
 }
 
 #[cfg(test)]
-pub(super) fn runtime_program_checkpoint_count() -> usize {
+pub(in crate::runtime) fn runtime_program_checkpoint_count() -> usize {
   RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(std::cell::Cell::get)
 }
 
 impl MechRuntime {
   #[cfg(feature = "invariant_define")]
-  pub(super) fn emit_integrity_failure_audit(
+  pub(in crate::runtime) fn emit_integrity_failure_audit(
     &mut self,
     context: &mut RuntimeContext,
     audit: Option<IntegrityFailureAudit>,
@@ -152,7 +186,7 @@ impl MechRuntime {
     self.program.checkpoint()
   }
 
-  pub(super) fn acquire_program_transaction_ownership(
+  pub(in crate::runtime) fn acquire_program_transaction_ownership(
     &mut self,
     transaction_id: TransactionId,
     operation: &'static str,
@@ -220,7 +254,7 @@ impl MechRuntime {
     })
   }
 
-  pub(super) fn release_new_program_transaction_ownership(
+  pub(in crate::runtime) fn release_new_program_transaction_ownership(
     &mut self,
     transaction_id: TransactionId,
   ) -> MResult<()> {
@@ -257,7 +291,7 @@ impl MechRuntime {
     Ok(())
   }
 
-  pub(super) fn ensure_runtime_healthy(
+  pub(in crate::runtime) fn ensure_runtime_healthy(
     &self,
     operation: &'static str,
   ) -> MResult<()> {
@@ -273,7 +307,7 @@ impl MechRuntime {
     }
   }
 
-  pub(super) fn reject_program_operation_reentrancy(
+  pub(in crate::runtime) fn reject_program_operation_reentrancy(
     &self,
     requested_operation: &'static str,
   ) -> MResult<()> {
@@ -290,7 +324,7 @@ impl MechRuntime {
     ))
   }
 
-  pub(super) fn reject_effect_reentrancy(
+  pub(in crate::runtime) fn reject_effect_reentrancy(
     &self,
     requested_operation: &'static str,
   ) -> MResult<()> {
@@ -306,7 +340,7 @@ impl MechRuntime {
     ))
   }
 
-  pub(super) fn ensure_runtime_mutation_allowed(
+  pub(in crate::runtime) fn ensure_runtime_mutation_allowed(
     &self,
     operation: &'static str,
   ) -> MResult<()> {
@@ -314,7 +348,7 @@ impl MechRuntime {
     self.reject_effect_reentrancy(operation)
   }
 
-  pub(super) fn poison_program_operation(
+  pub(in crate::runtime) fn poison_program_operation(
     &mut self,
     operation: &'static str,
     transaction_id: Option<TransactionId>,
@@ -338,7 +372,7 @@ impl MechRuntime {
     )
   }
 
-  pub(super) fn coordinator_invariant_failure<T>(
+  pub(in crate::runtime) fn coordinator_invariant_failure<T>(
     &mut self,
     operation: &'static str,
     transaction_id: Option<TransactionId>,
@@ -353,7 +387,7 @@ impl MechRuntime {
     ))
   }
 
-  pub(super) fn capture_runtime_operation_savepoint(
+  pub(in crate::runtime) fn capture_runtime_operation_savepoint(
     &self,
     context: &RuntimeContext,
     transaction_id: TransactionId,
@@ -369,7 +403,7 @@ impl MechRuntime {
     })
   }
 
-  pub(super) fn rollback_runtime_operation(
+  pub(in crate::runtime) fn rollback_runtime_operation(
     &mut self,
     context: &mut RuntimeContext,
     transaction_id: TransactionId,
@@ -586,7 +620,7 @@ impl MechRuntime {
     failures
   }
 
-  pub(super) fn cleanup_failed_implicit_operation(
+  pub(in crate::runtime) fn cleanup_failed_implicit_operation(
     &mut self,
     context: &mut RuntimeContext,
     operation: &'static str,
@@ -648,7 +682,7 @@ impl MechRuntime {
     failures
   }
 
-  pub(super) fn preflight_atomic_program_operation(
+  pub(in crate::runtime) fn preflight_atomic_program_operation(
     &self,
     context: &RuntimeContext,
     operation: &'static str,
@@ -673,7 +707,7 @@ impl MechRuntime {
     Ok(())
   }
 
-  pub(super) fn with_atomic_program_operation<T>(
+  pub(in crate::runtime) fn with_atomic_program_operation<T>(
     &mut self,
     context: &mut RuntimeContext,
     operation: &'static str,
@@ -750,11 +784,11 @@ impl MechRuntime {
     let original_error = match execution_result {
       Ok(value) if implicit => {
         match self.commit_runtime_transaction_internal(context) {
-          Ok(super::transaction::RuntimeCommitResolution::Committed(_)) => {
+          Ok(RuntimeCommitResolution::Committed(_)) => {
             return Ok(value);
           }
           Ok(
-            super::transaction::RuntimeCommitResolution::CommittedWithError {
+            RuntimeCommitResolution::CommittedWithError {
               error,
               ..
             },
@@ -849,5 +883,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "program_transaction/tests/mod.rs"]
+#[path = "../program_transaction/tests/mod.rs"]
 mod tests;

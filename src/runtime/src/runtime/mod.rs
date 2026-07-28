@@ -28,8 +28,6 @@ mod id;
 mod module;
 mod module_transaction;
 mod object;
-mod program_transaction;
-mod reactive_transaction;
 mod schedule;
 mod task;
 mod transaction;
@@ -45,17 +43,14 @@ pub use self::transaction::{
   RuntimeHealth,
   RuntimePoisonRecord,
 };
-use self::program_transaction::{
+use self::transaction::{
   ActiveRuntimeProgramOperation,
-  RuntimeProgramOwnershipAcquisition,
 };
 use self::transaction::{
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
   RuntimeExecutionTransactionState,
   RuntimeOperationSavepoint,
-  RuntimeProgramBaseline,
-  RuntimeProgramOperationSavepoint,
   RuntimeTransactionContextIdentity,
 };
 use self::transaction::RuntimeCommitResolution;
@@ -90,7 +85,7 @@ use mech_core::{
 use mech_core::hash_str;
 
 use mech_program::{
-  MechProgram, MechProgramCheckpoint, MechProgramConfig, MechProgramEnvironment, ProgramInputId
+  MechProgram, MechProgramConfig, MechProgramEnvironment, ProgramInputId
 };
 
 

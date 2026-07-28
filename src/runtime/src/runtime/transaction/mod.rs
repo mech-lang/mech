@@ -5,6 +5,8 @@
 mod context;
 mod envelope;
 mod health;
+mod program;
+mod reactive;
 mod savepoint;
 
 pub(super) use context::{
@@ -18,6 +20,11 @@ pub(super) use envelope::{
   RuntimeProgramBaseline,
 };
 pub use health::{RuntimeHealth, RuntimePoisonRecord};
+pub(super) use program::{
+  ActiveRuntimeProgramOperation,
+  RuntimeProgramOwnershipAcquisition,
+};
+pub(super) use reactive::PreparedRuntimeHostInput;
 pub(super) use savepoint::{
   RuntimeOperationSavepoint,
   RuntimeProgramOperationSavepoint,

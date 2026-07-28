@@ -1,5 +1,5 @@
 use crate::runtime::{
-  reactive_transaction::PreparedRuntimeHostInput,
+  transaction::PreparedRuntimeHostInput,
   MechRuntime,
 };
 use crate::RuntimeContext;

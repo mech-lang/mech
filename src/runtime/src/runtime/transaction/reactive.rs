@@ -1,11 +1,32 @@
 //! Runtime coordination for compact reactive program turns.
 
-use super::*;
+use super::{
+  ActiveRuntimeProgramOperation,
+  RuntimeCommitResolution,
+  RuntimeExecutionTransactionMode,
+  RuntimeOperationSavepoint,
+  RuntimeProgramOwnershipAcquisition,
+};
+use crate::runtime::{
+  MechRuntime,
+  ScopedRuntimeState,
+};
+use crate::{
+  RuntimeContext,
+  RuntimeInvalidOperationError,
+  TransactionId,
+};
+use mech_core::{
+  MResult,
+  MechError,
+  MechExecutionServices,
+  Value,
+};
 use std::cell::RefCell;
-use mech_core::MechExecutionServices;
+use std::collections::HashSet;
 use mech_program::{
   ExecutionServicesBorrowConflict, ProgramInputUpdate,
-  ProgramTurnFinalization,
+  MechProgram, ProgramTurnFinalization,
 };
 
 #[cfg(test)]
@@ -99,15 +120,15 @@ enum RuntimeReactiveFinalization {
   RollbackRequired,
 }
 
-pub(super) struct PreparedRuntimeHostInput {
-  pub(super) update_count: usize,
-  pub(super) ignored_update_count: usize,
-  pub(super) binding_count: usize,
-  pub(super) updates: Vec<ProgramInputUpdate>,
+pub(in crate::runtime) struct PreparedRuntimeHostInput {
+  pub(in crate::runtime) update_count: usize,
+  pub(in crate::runtime) ignored_update_count: usize,
+  pub(in crate::runtime) binding_count: usize,
+  pub(in crate::runtime) updates: Vec<ProgramInputUpdate>,
 }
 
 impl MechRuntime {
-  pub(super) fn prepare_runtime_host_input(
+  pub(in crate::runtime) fn prepare_runtime_host_input(
     &self,
     input: &crate::RuntimeHostInput,
   ) -> MResult<PreparedRuntimeHostInput> {
@@ -152,7 +173,7 @@ impl MechRuntime {
     })
   }
 
-  pub(super) fn validate_live_turn_context(
+  pub(in crate::runtime) fn validate_live_turn_context(
     &self,
     context: &RuntimeContext,
   ) -> MResult<()> {
@@ -223,7 +244,7 @@ impl MechRuntime {
     Ok(())
   }
 
-  pub(super) fn with_atomic_reactive_turn<T>(
+  pub(in crate::runtime) fn with_atomic_reactive_turn<T>(
     &mut self,
     context: &mut RuntimeContext,
     operation: &'static str,
@@ -382,7 +403,7 @@ impl MechRuntime {
             .commit_runtime_transaction_internal(context)
           {
             Ok(
-              super::transaction::RuntimeCommitResolution::Committed(
+              RuntimeCommitResolution::Committed(
                 _,
               ),
             ) => {
@@ -391,7 +412,7 @@ impl MechRuntime {
               ProgramTurnFinalization::Commit
             }
             Ok(
-              super::transaction::RuntimeCommitResolution::CommittedWithError {
+              RuntimeCommitResolution::CommittedWithError {
                 error,
                 ..
               },
@@ -482,7 +503,7 @@ impl MechRuntime {
     let original_error_text = format!("{:?}", original_error);
     #[cfg(feature = "invariant_define")]
     let integrity_audit =
-      super::program_transaction::integrity_failure_audit(
+      super::program::integrity_failure_audit(
         &original_error,
         transaction_id,
         context.task,
@@ -557,5 +578,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "reactive_transaction/tests/mod.rs"]
+#[path = "../reactive_transaction/tests/mod.rs"]
 mod tests;
