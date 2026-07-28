@@ -1,4 +1,32 @@
-use super::*;
+use super::support::{
+    ActivationPatternGuardMustBePure,
+    Arc,
+    AtomicUsize,
+    EagerGuardTestCompiler,
+    Ordering,
+    Pattern,
+    ReactiveDependencyKind,
+    Ref,
+    Value,
+    arm_pulse_generation,
+    assert_dispatch_turn,
+    body_output_f64,
+    committed_capture_value,
+    hash_str,
+    interpret,
+    interpret_more,
+    plan_snapshot,
+    proposed_capture_value,
+    registration,
+    root_cell,
+    selected_arm_index,
+    set_atom_tuple_event,
+    set_f64_matrix_event,
+    symbol,
+    turn_changed_nodes,
+    turn_executed_nodes,
+    turn_unchanged_nodes,
+};
 
     #[test]
     fn activation_guards_fall_through_in_source_order_and_commit_only_the_selected_arm() {

@@ -1,4 +1,29 @@
-use super::*;
+use super::support::{
+    ActivationPatternRegisterWriteUnsupported,
+    ActivationScopeTriggerWriteUnsupported,
+    CompiledPattern,
+    Finalize,
+    GuardFinalize,
+    Interpreter,
+    Matcher,
+    MechFunctionImpl,
+    ReactiveDependencyKind,
+    Ref,
+    Select,
+    UnmatchedFinalize,
+    Value,
+    arm_register_nodes,
+    f64_symbol,
+    hash_str,
+    interpret,
+    interpret_more,
+    plan_snapshot,
+    registration,
+    root_cell,
+    selected_arm_index,
+    set_f64_symbol,
+    symbol,
+};
 
     #[cfg(any(feature = "bool", feature = "variable_define"))]
     #[test]
@@ -183,4 +208,76 @@ event := 0.0
         ] {
             assert!(!i.symbols().borrow().contains(hash_str(name)));
         }
+    }
+
+    #[test]
+    fn activation_arm_alias_of_live_input_remains_sampled_until_trigger() {
+        let mut interpreter = Interpreter::new_with_full_stdlib(0);
+        let outer_id = hash_str("outer");
+        {
+            let symbols = interpreter.symbols();
+            let mut symbols = symbols.borrow_mut();
+            symbols.insert(outer_id, Value::F64(Ref::new(1.0)), true);
+            symbols
+                .dictionary
+                .borrow_mut()
+                .insert(outer_id, "outer".to_string());
+        }
+        interpreter
+            .dictionary()
+            .borrow_mut()
+            .insert(outer_id, "outer".to_string());
+        interpret_more(
+            &mut interpreter,
+            r#"
+event := 0.0
+~state := 0.0
+
+~> event
+  | tick => {
+      sampled := outer
+      state = sampled
+    }
+"#,
+        )
+        .unwrap();
+
+        let trigger = root_cell(&interpreter, "event");
+        let outer = root_cell(&interpreter, "outer");
+        let activation = registration(&interpreter);
+        let registers = arm_register_nodes(&interpreter, &activation, 0);
+        let topology = plan_snapshot(&interpreter);
+        assert_eq!(registers.len(), 1);
+        assert_eq!(f64_symbol(&interpreter, "state"), 0.0);
+        {
+            let plan = interpreter.plan();
+            let plan = plan.borrow();
+            let register = plan.node(registers[0]).unwrap();
+            assert!(register.inputs.iter().any(|dependency| {
+                dependency.cell == outer
+                    && dependency.kind == ReactiveDependencyKind::Sampled
+            }));
+            assert!(register.inputs.iter().any(|dependency| {
+                dependency.cell == activation.arms[0].pulse_cell
+                    && dependency.kind == ReactiveDependencyKind::Reactive
+            }));
+        }
+
+        set_f64_symbol(&interpreter, "outer", 5.0);
+        let sampled_only = interpreter.advance_reactive_turn(&[outer]).unwrap();
+        assert!(!sampled_only
+            .before_commit
+            .pending_register_nodes
+            .contains(&registers[0]));
+        assert!(!sampled_only
+            .register_commit
+            .committed_nodes
+            .contains(&registers[0]));
+        assert_eq!(f64_symbol(&interpreter, "state"), 0.0);
+
+        let tick = interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(selected_arm_index(&activation, &tick), 0);
+        assert_eq!(tick.register_commit.committed_nodes, registers);
+        assert_eq!(f64_symbol(&interpreter, "state"), 5.0);
+        assert_eq!(plan_snapshot(&interpreter), topology);
     }
