@@ -89,6 +89,31 @@ fixture in `support.rs`.
 For the production modules exercised by these suites, see the
 [expression evaluation topology](../interpreter/expression-topology.md).
 
+### Statement evaluation
+
+Statement unit tests live under `src/interpreter/src/statements/tests/`,
+grouped by the statement behavior whose graph construction or scheduling they
+prove:
+
+- `scheduling.rs` owns reachable combinational scheduling and register
+  boundaries.
+- `activation_scope.rs` owns activation-block lowering, sampled-versus-reactive
+  dependencies, plan registration, trigger-write rejection, and plan
+  stability. Runtime activation arm selection and dispatch belong to the
+  activation subsystem tests instead.
+- `variable_define.rs` owns variable-definition registration dependencies.
+- `variable_assign.rs` owns whole assignment graph shape, decoded parity,
+  matrix root cells, and plain-assignment register commits.
+- `op_assign.rs` owns operator-assignment graph shape, decoded parity, staged
+  register commits, and multi-turn propagation.
+- `support.rs` contains only the assignment graph and interpreter fixtures
+  shared by `variable_assign.rs` and `op_assign.rs`.
+
+`tests/mod.rs` preserves the original feature boundaries. Files for
+destructuring, integrity declarations, kinds, enums, state machines, or
+decoding should be added only when statement-owned tests for those behaviors
+exist; do not create empty ownership placeholders.
+
 ### Reactive transaction coordination
 
 Coordination across runtime state, interpreter execution, capabilities,
