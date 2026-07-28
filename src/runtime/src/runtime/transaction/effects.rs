@@ -1,26 +1,50 @@
 //! Runtime-owned effect journal and lifecycle mechanics.
 
-use super::*;
-use super::extension::{
+use super::{
+  RuntimeExecutionTransactionState,
+  RuntimeHealth,
+  RuntimePoisonRecord,
+};
+use crate::runtime::extension::{
   catch_extension, invoke_extension,
 };
+use crate::runtime::{
+  MechRuntime,
+  ScopedRuntimeState,
+};
 use crate::{
-  PreparedRuntimeEffect, RuntimeEffectFailure, RuntimeEffectFailurePhase,
-  RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectProtocol,
+  ActiveRuntimeEffectPhase,
+  PreparedRuntimeEffect,
+  RuntimeContext,
+  RuntimeEffectCleanupFailed,
+  RuntimeEffectFailure,
+  RuntimeEffectFailurePhase,
+  RuntimeEffectId,
+  RuntimeEffectMetadata,
+  RuntimeEffectProtocol,
   RuntimeEffectRecord,
+  RuntimeEventKind,
+  RuntimeExternalCommitIndeterminate,
+  RuntimeInvalidOperationError,
+  TransactionId,
+};
+use mech_core::{
+  MResult,
+  MechError,
+  Value,
 };
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum RuntimeEffectState {
+pub(in crate::runtime) enum RuntimeEffectState {
   Staged,
   Prepared,
   Applied,
 }
 
 #[derive(Debug)]
-pub(super) struct RuntimeEffectEntry {
-  pub(super) id: RuntimeEffectId,
-  pub(super) state: RuntimeEffectState,
-  pub(super) effect: PreparedRuntimeEffect,
+pub(in crate::runtime) struct RuntimeEffectEntry {
+  pub(in crate::runtime) id: RuntimeEffectId,
+  pub(in crate::runtime) state: RuntimeEffectState,
+  pub(in crate::runtime) effect: PreparedRuntimeEffect,
   resource_write: Option<RuntimeStagedResourceWrite>,
 }
 
@@ -31,37 +55,37 @@ struct RuntimeStagedResourceWrite {
   value: Value,
 }
 
-pub(super) struct RuntimeEffectStepFailure {
-  pub(super) failure: RuntimeEffectFailure,
-  pub(super) error: MechError,
+pub(in crate::runtime) struct RuntimeEffectStepFailure {
+  pub(in crate::runtime) failure: RuntimeEffectFailure,
+  pub(in crate::runtime) error: MechError,
 }
 
-pub(super) struct RuntimeTransactionalCommitReport {
-  pub(super) committed: Vec<RuntimeEffectId>,
-  pub(super) failures: Vec<RuntimeEffectStepFailure>,
-  pub(super) participant_outcomes: Vec<String>,
+pub(in crate::runtime) struct RuntimeTransactionalCommitReport {
+  pub(in crate::runtime) committed: Vec<RuntimeEffectId>,
+  pub(in crate::runtime) failures: Vec<RuntimeEffectStepFailure>,
+  pub(in crate::runtime) participant_outcomes: Vec<String>,
 }
 
 #[derive(Debug, Default)]
-pub(super) struct RuntimeEffectJournal {
+pub(in crate::runtime) struct RuntimeEffectJournal {
   entries: Vec<RuntimeEffectEntry>,
   next_sequence: u64,
 }
 
 impl RuntimeEffectJournal {
-  pub(super) fn new() -> Self {
+  pub(in crate::runtime) fn new() -> Self {
     Self::default()
   }
 
-  pub(super) fn mark(&self) -> usize {
+  pub(in crate::runtime) fn mark(&self) -> usize {
     self.entries.len()
   }
 
-  pub(super) fn is_empty(&self) -> bool {
+  pub(in crate::runtime) fn is_empty(&self) -> bool {
     self.entries.is_empty()
   }
 
-  pub(super) fn records(&self) -> MResult<Vec<RuntimeEffectRecord>> {
+  pub(in crate::runtime) fn records(&self) -> MResult<Vec<RuntimeEffectRecord>> {
     self.entries.iter().map(|entry| {
       let (metadata, protocol) = effect_description(
         entry.id,
@@ -75,7 +99,7 @@ impl RuntimeEffectJournal {
     }).collect()
   }
 
-  pub(super) fn prepared_transactional_ids(
+  pub(in crate::runtime) fn prepared_transactional_ids(
     &self,
   ) -> Vec<RuntimeEffectId> {
     self.entries.iter().filter_map(|entry| {
@@ -89,7 +113,7 @@ impl RuntimeEffectJournal {
     }).collect()
   }
 
-  pub(super) fn applied_compensatable_ids(
+  pub(in crate::runtime) fn applied_compensatable_ids(
     &self,
   ) -> Vec<RuntimeEffectId> {
     self.entries.iter().filter_map(|entry| {
@@ -103,7 +127,7 @@ impl RuntimeEffectJournal {
     }).collect()
   }
 
-  pub(super) fn after_commit_ids(&self) -> Vec<RuntimeEffectId> {
+  pub(in crate::runtime) fn after_commit_ids(&self) -> Vec<RuntimeEffectId> {
     self.entries.iter().filter_map(|entry| {
       if matches!(entry.effect, PreparedRuntimeEffect::AfterCommit(_)) {
         Some(entry.id)
@@ -113,7 +137,7 @@ impl RuntimeEffectJournal {
     }).collect()
   }
 
-  pub(super) fn abortable_ids(&self) -> Vec<RuntimeEffectId> {
+  pub(in crate::runtime) fn abortable_ids(&self) -> Vec<RuntimeEffectId> {
     self.entries.iter().filter_map(|entry| {
       if matches!(entry.effect, PreparedRuntimeEffect::AfterCommit(_)) {
         None
@@ -123,7 +147,7 @@ impl RuntimeEffectJournal {
     }).collect()
   }
 
-  pub(super) fn abortable_ids_after(
+  pub(in crate::runtime) fn abortable_ids_after(
     &self,
     mark: usize,
   ) -> Vec<RuntimeEffectId> {
@@ -141,7 +165,7 @@ impl RuntimeEffectJournal {
       .collect()
   }
 
-  pub(super) fn validate_active(
+  pub(in crate::runtime) fn validate_active(
     &self,
     transaction: TransactionId,
   ) -> Vec<String> {
@@ -188,16 +212,16 @@ impl RuntimeEffectJournal {
   }
 
   #[cfg(test)]
-  pub(super) fn len(&self) -> usize {
+  pub(in crate::runtime) fn len(&self) -> usize {
     self.entries.len()
   }
 
   #[cfg(test)]
-  pub(super) fn next_sequence(&self) -> u64 {
+  pub(in crate::runtime) fn next_sequence(&self) -> u64 {
     self.next_sequence
   }
 
-  pub(super) fn stage(
+  pub(in crate::runtime) fn stage(
     &mut self,
     transaction: TransactionId,
     effect: PreparedRuntimeEffect,
@@ -205,7 +229,7 @@ impl RuntimeEffectJournal {
     self.stage_entry(transaction, effect, None)
   }
 
-  pub(super) fn stage_resource_write(
+  pub(in crate::runtime) fn stage_resource_write(
     &mut self,
     transaction: TransactionId,
     effect: PreparedRuntimeEffect,
@@ -244,7 +268,7 @@ impl RuntimeEffectJournal {
     id
   }
 
-  pub(super) fn staged_resource_value(
+  pub(in crate::runtime) fn staged_resource_value(
     &self,
     base_uri: &str,
     path: &str,
@@ -259,7 +283,7 @@ impl RuntimeEffectJournal {
     })
   }
 
-  pub(super) fn rollback_to(
+  pub(in crate::runtime) fn rollback_to(
     &mut self,
     mark: usize,
   ) -> Vec<RuntimeEffectFailure> {
@@ -299,11 +323,11 @@ impl RuntimeEffectJournal {
     failures
   }
 
-  pub(super) fn abort_all(&mut self) -> Vec<RuntimeEffectFailure> {
+  pub(in crate::runtime) fn abort_all(&mut self) -> Vec<RuntimeEffectFailure> {
     self.rollback_to(0)
   }
 
-  pub(super) fn prepare_transactional(
+  pub(in crate::runtime) fn prepare_transactional(
     &mut self,
   ) -> Result<(), RuntimeEffectStepFailure> {
     for entry in &mut self.entries {
@@ -329,7 +353,7 @@ impl RuntimeEffectJournal {
     Ok(())
   }
 
-  pub(super) fn abort_prepared_reverse(
+  pub(in crate::runtime) fn abort_prepared_reverse(
     &mut self,
   ) -> Vec<RuntimeEffectFailure> {
     let mut failures = Vec::new();
@@ -356,7 +380,7 @@ impl RuntimeEffectJournal {
     failures
   }
 
-  pub(super) fn apply_compensatable(
+  pub(in crate::runtime) fn apply_compensatable(
     &mut self,
   ) -> Result<(), RuntimeEffectStepFailure> {
     for entry in &mut self.entries {
@@ -382,7 +406,7 @@ impl RuntimeEffectJournal {
     Ok(())
   }
 
-  pub(super) fn compensate_applied_reverse(
+  pub(in crate::runtime) fn compensate_applied_reverse(
     &mut self,
   ) -> Vec<RuntimeEffectFailure> {
     let mut failures = Vec::new();
@@ -409,7 +433,7 @@ impl RuntimeEffectJournal {
     failures
   }
 
-  pub(super) fn commit_transactional(
+  pub(in crate::runtime) fn commit_transactional(
     &mut self,
   ) -> RuntimeTransactionalCommitReport {
     let mut outcomes = Vec::new();
@@ -456,7 +480,7 @@ impl RuntimeEffectJournal {
     }
   }
 
-  pub(super) fn deliver_after_commit(
+  pub(in crate::runtime) fn deliver_after_commit(
     &mut self,
   ) -> Vec<RuntimeEffectFailure> {
     let mut failures = Vec::new();
@@ -554,7 +578,7 @@ fn effect_description(
 }
 
 impl MechRuntime {
-  pub(super) fn describe_effect_failures(
+  pub(in crate::runtime) fn describe_effect_failures(
     failures: impl IntoIterator<Item = RuntimeEffectFailure>,
   ) -> Vec<String> {
     failures
@@ -570,7 +594,7 @@ impl MechRuntime {
       .collect()
   }
 
-  pub(super) fn poison_effect_cleanup(
+  pub(in crate::runtime) fn poison_effect_cleanup(
     &mut self,
     operation: &'static str,
     transaction_id: TransactionId,
@@ -594,7 +618,7 @@ impl MechRuntime {
     )
   }
 
-  pub(super) fn poison_external_commit_indeterminate(
+  pub(in crate::runtime) fn poison_external_commit_indeterminate(
     &mut self,
     transaction_id: TransactionId,
     failures: Vec<RuntimeEffectFailure>,
@@ -710,7 +734,7 @@ impl MechRuntime {
     Ok(effect_id)
   }
 
-  pub(super) fn stage_runtime_resource_effect_with_context(
+  pub(in crate::runtime) fn stage_runtime_resource_effect_with_context(
     &mut self,
     context: &mut RuntimeContext,
     effect: PreparedRuntimeEffect,
@@ -803,7 +827,7 @@ impl MechRuntime {
     Ok(effect_id)
   }
 
-  pub(super) fn execute_runtime_effect_immediately(
+  pub(in crate::runtime) fn execute_runtime_effect_immediately(
     &mut self,
     mut effect: PreparedRuntimeEffect,
   ) -> MResult<RuntimeEffectId> {
@@ -872,5 +896,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "effect/tests/mod.rs"]
+#[path = "../effect/tests/mod.rs"]
 mod tests;

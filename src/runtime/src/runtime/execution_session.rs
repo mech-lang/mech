@@ -1,5 +1,5 @@
 use super::*;
-use super::capability::check_transactional_capability;
+use super::transaction::check_transactional_capability;
 use super::extension::{
   catch_extension, invoke_extension,
 };

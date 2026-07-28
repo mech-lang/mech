@@ -1,15 +1,36 @@
 //! Transaction-local staging for module and module-version records.
 
-use super::*;
+use super::{
+  RuntimeCommitResolution,
+  RuntimeExecutionTransactionMode,
+  RuntimeOperationSavepoint,
+};
+use crate::runtime::MechRuntime;
+use crate::{
+  module_id,
+  ModuleId,
+  ModuleRecord,
+  ModuleVersionId,
+  ModuleVersionRecord,
+  RuntimeContext,
+  RuntimeInvalidOperationError,
+  RuntimeModuleJournalConflict,
+  TransactionId,
+};
+use mech_core::{
+  MResult,
+  MechError,
+};
+use std::collections::HashMap;
 
 #[derive(Debug)]
-pub(super) enum RuntimeModuleMutation {
+pub(in crate::runtime) enum RuntimeModuleMutation {
   PutModule(ModuleRecord),
   PutVersion(ModuleVersionRecord),
 }
 
 #[derive(Debug, Default)]
-pub(super) struct RuntimeModuleJournal {
+pub(in crate::runtime) struct RuntimeModuleJournal {
   operations: Vec<RuntimeModuleMutation>,
   module_index: HashMap<ModuleId, usize>,
   module_name_index: HashMap<String, ModuleId>,
@@ -17,19 +38,19 @@ pub(super) struct RuntimeModuleJournal {
 }
 
 impl RuntimeModuleJournal {
-  pub(super) fn new() -> Self {
+  pub(in crate::runtime) fn new() -> Self {
     Self::default()
   }
 
-  pub(super) fn is_empty(&self) -> bool {
+  pub(in crate::runtime) fn is_empty(&self) -> bool {
     self.operations.is_empty()
   }
 
-  pub(super) fn mark(&self) -> usize {
+  pub(in crate::runtime) fn mark(&self) -> usize {
     self.operations.len()
   }
 
-  pub(super) fn rollback_to(&mut self, mark: usize) -> MResult<()> {
+  pub(in crate::runtime) fn rollback_to(&mut self, mark: usize) -> MResult<()> {
     if mark > self.operations.len() {
       return Err(MechError::new(
         RuntimeInvalidOperationError {
@@ -48,7 +69,7 @@ impl RuntimeModuleJournal {
     self.rebuild_indexes()
   }
 
-  pub(super) fn get_module(
+  pub(in crate::runtime) fn get_module(
     &self,
     id: ModuleId,
   ) -> Option<&ModuleRecord> {
@@ -59,7 +80,7 @@ impl RuntimeModuleJournal {
     }
   }
 
-  pub(super) fn find_module_by_name(
+  pub(in crate::runtime) fn find_module_by_name(
     &self,
     canonical_uri: &str,
   ) -> Option<&ModuleRecord> {
@@ -67,7 +88,7 @@ impl RuntimeModuleJournal {
     self.get_module(id)
   }
 
-  pub(super) fn get_version(
+  pub(in crate::runtime) fn get_version(
     &self,
     id: ModuleVersionId,
   ) -> Option<&ModuleVersionRecord> {
@@ -78,7 +99,7 @@ impl RuntimeModuleJournal {
     }
   }
 
-  pub(super) fn stage_module(
+  pub(in crate::runtime) fn stage_module(
     &mut self,
     module: ModuleRecord,
   ) -> MResult<bool> {
@@ -126,7 +147,7 @@ impl RuntimeModuleJournal {
     Ok(true)
   }
 
-  pub(super) fn stage_version(
+  pub(in crate::runtime) fn stage_version(
     &mut self,
     version: ModuleVersionRecord,
   ) -> MResult<bool> {
@@ -152,7 +173,7 @@ impl RuntimeModuleJournal {
     Ok(true)
   }
 
-  pub(super) fn module_puts(
+  pub(in crate::runtime) fn module_puts(
     &self,
   ) -> impl Iterator<Item = &ModuleRecord> {
     self.operations.iter().filter_map(|operation| match operation {
@@ -161,7 +182,7 @@ impl RuntimeModuleJournal {
     })
   }
 
-  pub(super) fn version_puts(
+  pub(in crate::runtime) fn version_puts(
     &self,
   ) -> impl Iterator<Item = &ModuleVersionRecord> {
     self.operations.iter().filter_map(|operation| match operation {
@@ -278,7 +299,7 @@ impl MechRuntime {
     self.store.get_module_version(id)
   }
 
-  pub(super) fn get_module_visible(
+  pub(in crate::runtime) fn get_module_visible(
     &self,
     context: &RuntimeContext,
     id: ModuleId,
@@ -293,7 +314,7 @@ impl MechRuntime {
     self.store.get_module(id)
   }
 
-  pub(super) fn find_module_by_name_visible(
+  pub(in crate::runtime) fn find_module_by_name_visible(
     &self,
     context: &RuntimeContext,
     canonical_uri: &str,
@@ -311,7 +332,7 @@ impl MechRuntime {
     self.store.find_module_by_name(canonical_uri)
   }
 
-  pub(super) fn get_module_version_visible(
+  pub(in crate::runtime) fn get_module_version_visible(
     &self,
     context: &RuntimeContext,
     id: ModuleVersionId,
@@ -326,7 +347,7 @@ impl MechRuntime {
     self.store.get_module_version(id)
   }
 
-  pub(super) fn with_atomic_module_operation<T>(
+  pub(in crate::runtime) fn with_atomic_module_operation<T>(
     &mut self,
     context: &mut RuntimeContext,
     operation: &'static str,
@@ -374,11 +395,11 @@ impl MechRuntime {
       Ok(value) => match self
         .commit_runtime_transaction_internal(context)
       {
-        Ok(super::transaction::RuntimeCommitResolution::Committed(_)) => {
+        Ok(RuntimeCommitResolution::Committed(_)) => {
           Ok(value)
         }
         Ok(
-          super::transaction::RuntimeCommitResolution::CommittedWithError {
+          RuntimeCommitResolution::CommittedWithError {
             error,
             ..
           },
@@ -443,5 +464,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "module_transaction/tests/mod.rs"]
+#[path = "../module_transaction/tests/mod.rs"]
 mod tests;

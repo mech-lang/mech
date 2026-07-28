@@ -2,9 +2,12 @@
 //!
 //! Public transaction protocols and models remain in `crate::transaction`.
 
+mod capabilities;
 mod context;
 mod envelope;
+mod effects;
 mod health;
+mod modules;
 mod program;
 mod reactive;
 mod savepoint;
@@ -20,6 +23,7 @@ pub(super) use envelope::{
   RuntimeProgramBaseline,
 };
 pub use health::{RuntimeHealth, RuntimePoisonRecord};
+pub(super) use modules::RuntimeModuleJournal;
 pub(super) use program::{
   ActiveRuntimeProgramOperation,
   RuntimeProgramOwnershipAcquisition,
@@ -1189,3 +1193,8 @@ impl MechRuntime {
 #[cfg(test)]
 #[path = "tests/mod.rs"]
 mod tests;
+pub(super) use capabilities::{
+  check_transactional_capability,
+  RuntimeCapabilityOverlay,
+};
+pub(super) use effects::RuntimeEffectJournal;

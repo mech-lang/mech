@@ -11,23 +11,45 @@
 
 // Like with actors, there is a _with_context version of each method, allowing for transactional operations and proper event emission within the context of an active transaction.
 
-use super::*;
+use crate::runtime::extension::{
+  invoke_extension,
+  invoke_extension_value,
+};
+use crate::runtime::MechRuntime;
 use crate::{
-  CapabilityAlreadyExistsError, CapabilityNotFoundError,
-  CapabilityNotRevocableError, RuntimeAuthorityScope,
+  Capability,
+  CapabilityAlreadyExistsError,
+  CapabilityGrant,
+  CapabilityId,
+  CapabilityKernel,
+  CapabilityNotFoundError,
+  CapabilityNotRevocableError,
+  CapabilityRequest,
+  CapabilityRevocation,
+  RuntimeAuthorityScope,
+  RuntimeCapabilityGrantRollbackFailed,
   RuntimeCapabilitySnapshot,
+  RuntimeContext,
+  RuntimeEventKind,
+  RuntimeInvalidOperationError,
+  RuntimeTransactionNotFoundError,
+};
+use mech_core::{
+  MResult,
+  MechError,
 };
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-pub(super) enum RuntimeCapabilityMutation {
+pub(in crate::runtime) enum RuntimeCapabilityMutation {
   Grant(Arc<dyn Capability>),
   Revoke(CapabilityId),
   Use(CapabilityId),
 }
 
 #[derive(Clone, Debug, Default)]
-pub(super) struct RuntimeCapabilityOverlay {
+pub(in crate::runtime) struct RuntimeCapabilityOverlay {
   operations: Vec<RuntimeCapabilityMutation>,
   grants: HashMap<CapabilityId, Arc<dyn Capability>>,
   grant_order: Vec<CapabilityId>,
@@ -37,38 +59,38 @@ pub(super) struct RuntimeCapabilityOverlay {
 }
 
 impl RuntimeCapabilityOverlay {
-  pub(super) fn mark(&self) -> usize {
+  pub(in crate::runtime) fn mark(&self) -> usize {
     self.operations.len()
   }
 
-  pub(super) fn is_empty(&self) -> bool {
+  pub(in crate::runtime) fn is_empty(&self) -> bool {
     self.grants.is_empty()
       && self.revocations.is_empty()
       && self.uses.is_empty()
   }
 
-  pub(super) fn stage_grant(
+  pub(in crate::runtime) fn stage_grant(
     &mut self,
     capability: Arc<dyn Capability>,
   ) -> MResult<()> {
     self.stage_operation(RuntimeCapabilityMutation::Grant(capability))
   }
 
-  pub(super) fn stage_revocation(
+  pub(in crate::runtime) fn stage_revocation(
     &mut self,
     capability: CapabilityId,
   ) -> MResult<()> {
     self.stage_operation(RuntimeCapabilityMutation::Revoke(capability))
   }
 
-  pub(super) fn stage_use(
+  pub(in crate::runtime) fn stage_use(
     &mut self,
     capability: CapabilityId,
   ) -> MResult<()> {
     self.stage_operation(RuntimeCapabilityMutation::Use(capability))
   }
 
-  pub(super) fn rollback_to(&mut self, mark: usize) -> MResult<()> {
+  pub(in crate::runtime) fn rollback_to(&mut self, mark: usize) -> MResult<()> {
     if mark > self.operations.len() {
       return Err(MechError::new(
         RuntimeInvalidOperationError {
@@ -86,14 +108,14 @@ impl RuntimeCapabilityOverlay {
     self.rebuild()
   }
 
-  pub(super) fn provisional(
+  pub(in crate::runtime) fn provisional(
     &self,
     capability: CapabilityId,
   ) -> Option<Arc<dyn Capability>> {
     self.grants.get(&capability).cloned()
   }
 
-  pub(super) fn check(
+  pub(in crate::runtime) fn check(
     &mut self,
     request: &CapabilityRequest,
     scope: &RuntimeAuthorityScope,
@@ -105,7 +127,7 @@ impl RuntimeCapabilityOverlay {
     Ok(selected)
   }
 
-  pub(super) fn preview_check(
+  pub(in crate::runtime) fn preview_check(
     &self,
     request: &CapabilityRequest,
     scope: &RuntimeAuthorityScope,
@@ -117,7 +139,7 @@ impl RuntimeCapabilityOverlay {
       let Some(capability) = self.grants.get(id) else {
         continue;
       };
-      let subject = extension::invoke_extension_value(
+      let subject = invoke_extension_value(
         "capability",
         "subject_key",
         || capability.subject_key().to_string(),
@@ -125,7 +147,7 @@ impl RuntimeCapabilityOverlay {
       if subject != request.subject {
         continue;
       }
-      let max_uses = extension::invoke_extension_value(
+      let max_uses = invoke_extension_value(
         "capability",
         "max_uses",
         || capability.max_uses(),
@@ -136,7 +158,7 @@ impl RuntimeCapabilityOverlay {
           continue;
         }
       }
-      let decision = extension::invoke_extension(
+      let decision = invoke_extension(
         "capability",
         "preview_check",
         || capability.preview_check(request),
@@ -148,7 +170,7 @@ impl RuntimeCapabilityOverlay {
     Ok(None)
   }
 
-  pub(super) fn grants(
+  pub(in crate::runtime) fn grants(
     &self,
   ) -> impl Iterator<Item = (CapabilityId, Arc<dyn Capability>)> + '_ {
     self.grant_order.iter().filter_map(|id| {
@@ -159,7 +181,7 @@ impl RuntimeCapabilityOverlay {
     })
   }
 
-  pub(super) fn usage_deltas(
+  pub(in crate::runtime) fn usage_deltas(
     &self,
   ) -> impl Iterator<Item = (CapabilityId, u64)> + '_ {
     self.usage_order.iter().filter_map(|id| {
@@ -168,19 +190,19 @@ impl RuntimeCapabilityOverlay {
     })
   }
 
-  pub(super) fn pending_uses(
+  pub(in crate::runtime) fn pending_uses(
     &self,
   ) -> &HashMap<CapabilityId, u64> {
     &self.uses
   }
 
-  pub(super) fn revocations(
+  pub(in crate::runtime) fn revocations(
     &self,
   ) -> impl Iterator<Item = CapabilityId> + '_ {
     self.revocations.iter().copied()
   }
 
-  pub(super) fn revocation_ids(&self) -> HashSet<CapabilityId> {
+  pub(in crate::runtime) fn revocation_ids(&self) -> HashSet<CapabilityId> {
     self.revocations.clone()
   }
 
@@ -208,7 +230,7 @@ impl RuntimeCapabilityOverlay {
     for operation in &self.operations {
       match operation {
         RuntimeCapabilityMutation::Grant(capability) => {
-          let id = extension::invoke_extension_value(
+          let id = invoke_extension_value(
             "capability",
             "id",
             || capability.id(),
@@ -273,7 +295,7 @@ impl RuntimeCapabilityOverlay {
   }
 }
 
-pub(super) fn check_transactional_capability(
+pub(in crate::runtime) fn check_transactional_capability(
   capability_kernel: &mut dyn CapabilityKernel,
   overlay: &mut RuntimeCapabilityOverlay,
   scope: &RuntimeAuthorityScope,
@@ -329,7 +351,7 @@ impl MechRuntime {
     let Some(capability) = self.capability_kernel.get(id)? else {
       return Ok(None);
     };
-    let snapshot = extension::invoke_extension_value(
+    let snapshot = invoke_extension_value(
       "capability",
       "snapshot",
       || RuntimeCapabilitySnapshot {
@@ -355,13 +377,13 @@ impl MechRuntime {
     )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
-    extension::invoke_extension(
+    invoke_extension(
       "capability",
       "validate",
       || capability.validate(),
     )?;
 
-    let id = extension::invoke_extension_value(
+    let id = invoke_extension_value(
       "capability",
       "id",
       || capability.id(),
@@ -508,7 +530,7 @@ impl MechRuntime {
           None,
         ));
       };
-      let revocable = extension::invoke_extension_value(
+      let revocable = invoke_extension_value(
         "capability",
         "is_revocable",
         || existing.is_revocable(),
@@ -596,7 +618,7 @@ impl MechRuntime {
     self.check_capability_for_execution(context, request)
   }
 
-  pub(super) fn check_capability_for_execution(
+  pub(in crate::runtime) fn check_capability_for_execution(
     &mut self,
     context: &RuntimeContext,
     request: &CapabilityRequest,
@@ -624,7 +646,7 @@ impl MechRuntime {
       .check_scoped(request, &context.authority)
   }
 
-  pub(super) fn preview_capability_with_context(
+  pub(in crate::runtime) fn preview_capability_with_context(
     &mut self,
     context: &mut RuntimeContext,
     request: &CapabilityRequest,
@@ -637,7 +659,7 @@ impl MechRuntime {
     self.preview_capability_for_execution(context, request)
   }
 
-  pub(super) fn preview_capability_for_execution(
+  pub(in crate::runtime) fn preview_capability_for_execution(
     &self,
     context: &RuntimeContext,
     request: &CapabilityRequest,
@@ -681,5 +703,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-#[path = "capability/tests/mod.rs"]
+#[path = "../capability/tests/mod.rs"]
 mod tests;

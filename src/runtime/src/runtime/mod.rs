@@ -17,16 +17,13 @@
 //! and accumulated events.
 
 mod actor;
-mod capability;
 mod errors;
-mod effect;
 mod execution;
 mod execution_session;
 pub(crate) mod extension;
 mod host;
 mod id;
 mod module;
-mod module_transaction;
 mod object;
 mod schedule;
 mod task;
@@ -50,15 +47,8 @@ use self::transaction::{
   RuntimeExecutionTransaction,
   RuntimeExecutionTransactionMode,
   RuntimeExecutionTransactionState,
-  RuntimeOperationSavepoint,
-  RuntimeTransactionContextIdentity,
 };
 use self::transaction::RuntimeCommitResolution;
-use self::capability::{
-  RuntimeCapabilityOverlay,
-};
-use self::effect::RuntimeEffectJournal;
-use self::module_transaction::RuntimeModuleJournal;
 use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId};
 use std::sync::Arc;
 use std::cell::Cell;
@@ -188,7 +178,7 @@ pub(crate) enum RuntimePersistentSendSchedule {
 }
 
 use crate::capability::{
-  BasicCapabilityKernel, Capability, CapabilityGrant, CapabilityKernel,
+  BasicCapabilityKernel, CapabilityGrant, CapabilityKernel,
   CapabilityRequest, CapabilityRevocation,
 };
 
