@@ -6,19 +6,17 @@ const INVENTORY_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/design/grammar-audit/productions.tsv"
 );
-const GRAMMAR_PATH: &str = concat!(
+const SPECIFICATION_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../docs/design/grammar-audit/current-grammar.mec"
+    "/../../docs/design/specification.mec"
 );
+const EXPECTED_CANONICAL_RULES: usize = 540;
+const EXPECTED_NESTED_EBNF_EXAMPLES: usize = 2;
 
 // Public, independently useful lower-level parsers which are not called by
-// any of the seven complete/prefix roots in the candidate rule graph.
-const DECLARED_SEPARATE_ROOTS: &[&str] = &[
-    "gen-operator",
-    "match-expression",
-    "synth-operator",
-    "tag",
-];
+// any of the seven complete/prefix roots in the canonical rule graph.
+const DECLARED_SEPARATE_ROOTS: &[&str] =
+    &["gen-operator", "match-expression", "synth-operator", "tag"];
 
 // Implemented baseline rules with no accepted-language caller at PR 680's
 // audited head. Keeping this list explicit makes accidental reachability drift
@@ -56,7 +54,8 @@ const DECLARED_PRIMITIVES: &[&str] = &[
 //   collide with inventoried grammar rules;
 // - `grammar-peek` is parser control used to choose a parser without consuming;
 // - the remaining names are embedded-parser or paragraph implementation calls
-//   which the candidate describes as prose mechanics at their call sites.
+//   which the canonical grammar describes as prose mechanics at their call
+//   sites.
 const DECLARED_IMPLEMENTATION_ONLY_CHILDREN: &[&str] = &[
     "grammar-peek",
     "inline-paragraph",
@@ -155,37 +154,80 @@ fn is_rule_name(name: &str) -> bool {
 }
 
 /// This deliberately is not an EBNF parser. It only finds the stable
-/// `kebab-name := ... ;` declarations inside inert Phase 0 grammar fences.
-fn candidate_rules() -> BTreeMap<String, String> {
-    let source = fs::read_to_string(GRAMMAR_PATH)
-        .unwrap_or_else(|err| panic!("failed to read {GRAMMAR_PATH}: {err}"));
-    candidate_rules_from(&source)
+/// `kebab-name := ... ;` declarations inside the one inert canonical fence.
+fn canonical_rules() -> BTreeMap<String, String> {
+    let source = fs::read_to_string(SPECIFICATION_PATH)
+        .unwrap_or_else(|err| panic!("failed to read {SPECIFICATION_PATH}: {err}"));
+    assert_eq!(
+        nested_ebnf_examples(&source),
+        EXPECTED_NESTED_EBNF_EXAMPLES,
+        "{SPECIFICATION_PATH}: the two literal nested EBNF fence examples must be preserved"
+    );
+    canonical_rules_from(&source)
 }
 
-fn candidate_rules_from(source: &str) -> BTreeMap<String, String> {
+fn nested_ebnf_examples(source: &str) -> usize {
+    let mut in_tilde_fence = false;
+    let mut examples = 0;
+
+    for line in source.lines() {
+        if line == "~~~" {
+            in_tilde_fence = !in_tilde_fence;
+        } else if in_tilde_fence && line.starts_with("```ebnf") {
+            examples += 1;
+        }
+    }
+
+    assert!(
+        !in_tilde_fence,
+        "{SPECIFICATION_PATH}: unclosed tilde fence"
+    );
+    examples
+}
+
+fn canonical_rules_from(source: &str) -> BTreeMap<String, String> {
     let mut rules = BTreeMap::new();
-    let mut in_candidate_fence = false;
+    let mut in_canonical_fence = false;
+    let mut in_tilde_fence = false;
+    let mut canonical_fences = 0;
     let mut current: Option<(String, usize, String)> = None;
 
     for (offset, line) in source.lines().enumerate() {
         let line_number = offset + 1;
-        if line == "```ebnf:phase-0" {
-            assert!(
-                !in_candidate_fence,
-                "{GRAMMAR_PATH}:{line_number}: nested grammar fence"
-            );
-            in_candidate_fence = true;
+
+        if !in_canonical_fence && line == "~~~" {
+            in_tilde_fence = !in_tilde_fence;
             continue;
         }
-        if in_candidate_fence && line == "```" {
+        if in_tilde_fence {
+            continue;
+        }
+        assert_ne!(
+            line, "```ebnf",
+            "{SPECIFICATION_PATH}:{line_number}: competing top-level executable EBNF fence"
+        );
+        if line == "```ebnf:canonical" {
+            assert!(
+                !in_canonical_fence,
+                "{SPECIFICATION_PATH}:{line_number}: nested canonical grammar fence"
+            );
+            canonical_fences += 1;
+            assert_eq!(
+                canonical_fences, 1,
+                "{SPECIFICATION_PATH}:{line_number}: multiple canonical grammar fences"
+            );
+            in_canonical_fence = true;
+            continue;
+        }
+        if in_canonical_fence && line == "```" {
             assert!(
                 current.is_none(),
-                "{GRAMMAR_PATH}:{line_number}: grammar fence closed inside a rule"
+                "{SPECIFICATION_PATH}:{line_number}: canonical grammar fence closed inside a rule"
             );
-            in_candidate_fence = false;
+            in_canonical_fence = false;
             continue;
         }
-        if !in_candidate_fence {
+        if !in_canonical_fence {
             continue;
         }
 
@@ -196,7 +238,7 @@ fn candidate_rules_from(source: &str) -> BTreeMap<String, String> {
                 let (name, start, body) = current.take().unwrap();
                 assert!(
                     rules.insert(name.clone(), body).is_none(),
-                    "{GRAMMAR_PATH}:{start}: duplicate rule {name:?}"
+                    "{SPECIFICATION_PATH}:{start}: duplicate canonical rule {name:?}"
                 );
             }
             continue;
@@ -207,35 +249,43 @@ fn candidate_rules_from(source: &str) -> BTreeMap<String, String> {
         }
         assert!(
             !line.starts_with(char::is_whitespace),
-            "{GRAMMAR_PATH}:{line_number}: indented grammar line has no active declaration"
+            "{SPECIFICATION_PATH}:{line_number}: indented canonical grammar line has no active declaration"
         );
         let Some((lhs, rhs)) = line.split_once(":=") else {
             panic!(
-                "{GRAMMAR_PATH}:{line_number}: unindented grammar-fence line is not a rule declaration"
+                "{SPECIFICATION_PATH}:{line_number}: unindented canonical grammar line is not a rule declaration"
             );
         };
         let name = lhs.trim();
         assert!(
             is_rule_name(name),
-            "{GRAMMAR_PATH}:{line_number}: rule name {name:?} is not kebab-case"
+            "{SPECIFICATION_PATH}:{line_number}: canonical rule name {name:?} is not kebab-case"
         );
         current = Some((name.to_owned(), line_number, rhs.trim().to_owned()));
         if line.trim_end().ends_with(';') {
             let (name, start, body) = current.take().unwrap();
             assert!(
                 rules.insert(name.clone(), body).is_none(),
-                "{GRAMMAR_PATH}:{start}: duplicate rule {name:?}"
+                "{SPECIFICATION_PATH}:{start}: duplicate canonical rule {name:?}"
             );
         }
     }
 
     assert!(
-        !in_candidate_fence,
-        "{GRAMMAR_PATH}: unclosed grammar fence"
+        !in_tilde_fence,
+        "{SPECIFICATION_PATH}: unclosed tilde fence"
+    );
+    assert!(
+        !in_canonical_fence,
+        "{SPECIFICATION_PATH}: unclosed canonical grammar fence"
     );
     assert!(
         current.is_none(),
-        "{GRAMMAR_PATH}: unterminated grammar rule"
+        "{SPECIFICATION_PATH}: unterminated canonical grammar rule"
+    );
+    assert_eq!(
+        canonical_fences, 1,
+        "{SPECIFICATION_PATH}: expected exactly one canonical grammar fence"
     );
     rules
 }
@@ -292,7 +342,7 @@ fn unquoted_ascii_words(body: &str) -> Vec<String> {
         .map(|word| {
             assert!(
                 is_rule_name(word),
-                "{GRAMMAR_PATH}: malformed unquoted grammar name {word:?}"
+                "{SPECIFICATION_PATH}: malformed unquoted grammar name {word:?}"
             );
             word.to_owned()
         })
@@ -372,10 +422,15 @@ fn recursive_components(graph: &BTreeMap<String, BTreeSet<String>>) -> Vec<Vec<S
 }
 
 #[test]
-fn candidate_grammar_and_inventory_form_a_closed_rule_graph() {
+fn canonical_grammar_and_inventory_form_a_closed_rule_graph() {
     let rows = inventory_rows();
-    let rules = candidate_rules();
+    let rules = canonical_rules();
     let declared_primitives = DECLARED_PRIMITIVES.iter().copied().collect::<BTreeSet<_>>();
+    assert_eq!(
+        rules.len(),
+        EXPECTED_CANONICAL_RULES,
+        "{SPECIFICATION_PATH}: canonical grammar rule count changed"
+    );
 
     let mut manifest_names: BTreeMap<String, Vec<&InventoryRow>> = BTreeMap::new();
     let mut module_functions = BTreeSet::new();
@@ -435,8 +490,13 @@ fn candidate_grammar_and_inventory_form_a_closed_rule_graph() {
     let defined = rules.keys().cloned().collect::<BTreeSet<_>>();
     let inventoried = manifest_names.keys().cloned().collect::<BTreeSet<_>>();
     assert_eq!(
+        inventoried.len(),
+        EXPECTED_CANONICAL_RULES,
+        "{INVENTORY_PATH}: inventoried grammar rule count changed"
+    );
+    assert_eq!(
         defined, inventoried,
-        "candidate rules and inventoried canonical grammar names differ"
+        "specification rules and inventoried canonical grammar names differ"
     );
 
     // `child-rules` is the manifest-driven implementation graph. It must never
@@ -453,7 +513,7 @@ fn candidate_grammar_and_inventory_form_a_closed_rule_graph() {
         }
     }
 
-    // Scan only names from the inert formal rule bodies. This catches candidate
+    // Scan only names from the inert formal rule bodies. This catches canonical
     // transcription typos while intentionally avoiding a generalized EBNF AST.
     let mut graph: BTreeMap<String, BTreeSet<String>> = rules
         .keys()
@@ -466,7 +526,7 @@ fn candidate_grammar_and_inventory_form_a_closed_rule_graph() {
             } else {
                 assert!(
                     declared_primitives.contains(reference.as_str()),
-                    "{GRAMMAR_PATH}: rule {name:?} references undefined name {reference:?}",
+                    "{SPECIFICATION_PATH}: rule {name:?} references undefined name {reference:?}",
                 );
             }
         }
@@ -504,19 +564,13 @@ fn candidate_grammar_and_inventory_form_a_closed_rule_graph() {
                         && !implementation_only.contains(*child)
                         && !reachable.contains(*child)
                 })
-                .map(|child| {
-                    (
-                        row.line,
-                        row.grammar_name.clone(),
-                        child.to_owned(),
-                    )
-                })
+                .map(|child| (row.line, row.grammar_name.clone(), child.to_owned()))
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
     assert!(
         edge_drift.is_empty(),
-        "inventory language children missing from candidate reachability: {edge_drift:#?}"
+        "inventory language children missing from canonical reachability: {edge_drift:#?}"
     );
 
     let roots = rows
@@ -567,19 +621,26 @@ fn candidate_grammar_and_inventory_form_a_closed_rule_graph() {
 }
 
 #[test]
-fn candidate_grammar_is_inert_parseable_mechdown() {
-    let source = fs::read_to_string(GRAMMAR_PATH)
-        .unwrap_or_else(|err| panic!("failed to read {GRAMMAR_PATH}: {err}"));
-    mech_syntax::parse(&source)
-        .unwrap_or_else(|err| panic!("{GRAMMAR_PATH} must parse as inert Mechdown: {err:?}"));
+fn canonical_grammar_is_inert_parseable_specification() {
+    let source = fs::read_to_string(SPECIFICATION_PATH)
+        .unwrap_or_else(|err| panic!("failed to read {SPECIFICATION_PATH}: {err}"));
+    mech_syntax::parse(&source).unwrap_or_else(|err| {
+        panic!("{SPECIFICATION_PATH} must parse with its canonical grammar inert: {err:?}")
+    });
 }
 
 #[test]
-fn candidate_scanner_rejects_malformed_declarations_and_references() {
-    let indented = "```ebnf:phase-0\n  bad-name := \"x\" ;\n```\n";
+fn canonical_scanner_rejects_malformed_declarations_and_references() {
+    let indented = "```ebnf:canonical\n  bad-name := \"x\" ;\n```\n";
     assert!(
-        std::panic::catch_unwind(|| candidate_rules_from(indented)).is_err(),
+        std::panic::catch_unwind(|| canonical_rules_from(indented)).is_err(),
         "an orphaned indented declaration must not disappear from the rule graph"
+    );
+
+    let competing = "```ebnf\nold := \"x\" ;\n```\n```ebnf:canonical\ncanonical := \"x\" ;\n```\n";
+    assert!(
+        std::panic::catch_unwind(|| canonical_rules_from(competing)).is_err(),
+        "a competing top-level executable EBNF block must be rejected"
     );
 
     assert!(

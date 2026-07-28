@@ -1,35 +1,37 @@
 Mech Grammar Audit
 ===============================================================================
 
-Status: Phase 0 audit infrastructure.
+Status: Phase 0 complete; canonical grammar published.
 
 Baseline commit:
 `75bb213f42a0f8116ca1299d1d39a5cf14fc0303`, the merge commit for PR 680.
 
-This directory records the language accepted by the syntax crate at that
-baseline. It is an audit of existing behavior, not a parser redesign.
+This directory records the audit trail for the language accepted by the syntax
+crate at that baseline. It documents existing behavior, not a parser redesign.
 
 1. Authority
 -------------------------------------------------------------------------------
 
-For Phase 0:
+During Phase 0 extraction:
 
 ```
 the current parser implementation is law
 ```
 
-The Rust implementation determines the accepted language, AST shape,
+The Rust implementation determined the accepted language, AST shape,
 alternative selection, completion rules, whitespace behavior, feature-set
-differences, and entry-point normalization. `docs/design/specification.mec`,
-documentation and repository examples, formatter output, and inline EBNF
-comments are supporting evidence. When evidence disagrees with executable
-parser behavior, the current behavior is recorded and the disagreement is
-entered in `discrepancies.mec`; Phase 0 does not silently choose the prose or
-change the parser.
+differences, and entry-point normalization during reconstruction.
+Documentation and repository examples, formatter output, the previous
+specification text, and former inline EBNF comments were supporting evidence.
+When that evidence disagreed with executable parser behavior, the implemented
+behavior was recorded and the disagreement entered in `discrepancies.mec`;
+Phase 0 did not silently change the parser.
 
-This authority rule is intentionally temporary. The completed Phase 0
-specification will become the single canonical grammar, with tests and CI
-making later changes explicit.
+`docs/design/specification.mec` is now the sole normative, canonical grammar.
+Its Phase 0 grammar describes the concrete syntax implemented by the reference
+parser at the recorded baseline; parsing strategy, recovery, and diagnostics
+are specified separately. Future language changes must update the
+specification, implementation mapping, conformance cases, and CI together.
 
 2. Audit scope
 -------------------------------------------------------------------------------
@@ -71,13 +73,17 @@ The artifacts have distinct responsibilities:
 
 - `productions.tsv` maps every selected Rust function to a stable ID, grammar
   name, role, output type, callers, callees, selection behavior, termination,
-  whitespace behavior, evidence, and conformance cases.
-- `current-grammar.mec` is the mechanically extracted grammar candidate. It
-  describes this baseline and is not yet the normative specification.
+  whitespace behavior, stable canonical specification reference, and
+  conformance cases.
+- `docs/design/specification.mec` is the sole normative grammar source. The
+  mechanically extracted `current-grammar.mec` candidate was reviewed,
+  incorporated into the specification, and removed so it cannot compete with
+  the canonical grammar.
 - `discrepancies.mec` is the append-only, stable-ID ledger for conflicts,
   ambiguities, and required behavioral investigations.
 - `src/syntax/tests/grammar_inventory.rs` mechanically checks inventory
-  coverage and manifest invariants.
+  coverage, stable specification references, source-comment hygiene, and
+  manifest invariants.
 
 3. Grammar notation
 -------------------------------------------------------------------------------
@@ -236,8 +242,9 @@ Any parser change must update the audit in the same change:
 4. Record real choice behavior: `ordered-first-success`,
    `alt-best-longest-success`, `manual-fallback`, `peek-gated`,
    `prefix-committed`, `caller-controlled`, or `none`.
-5. Update `current-grammar.mec` from implementation structure. Put parser
-   mechanics in labeled prose rather than inventing syntax.
+5. Update the canonical grammar in `docs/design/specification.mec` from
+   implementation structure. Put parser mechanics in labeled prose rather
+   than inventing syntax or adding competing inline EBNF to Rust sources.
 6. Add or update accepted, rejected, disambiguation, whitespace, completion,
    feature-set, recovery, and AST-shape conformance cases.
 7. Append or amend the applicable stable discrepancy entry. Never renumber
