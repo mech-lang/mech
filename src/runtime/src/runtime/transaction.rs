@@ -1157,50 +1157,11 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::{
-    PreparedRuntimeEffect, RuntimeEffectMetadata,
-    RuntimeEffectSource, RuntimeTransactionalEffect,
+  use crate::PreparedRuntimeEffect;
+  use crate::runtime::test_support::{
+    effects::{EffectLifecycleLog, TransactionalEffectProbe},
+    events::event_count,
   };
-  use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-  };
-
-  #[derive(Debug)]
-  struct PrepareProbe {
-    prepared: Arc<AtomicBool>,
-  }
-
-  impl RuntimeTransactionalEffect for PrepareProbe {
-    fn metadata(&self) -> RuntimeEffectMetadata {
-      RuntimeEffectMetadata::new(
-        RuntimeEffectSource::Custom {
-          name: "module-validation-probe".to_string(),
-        },
-        "prepare",
-      )
-    }
-
-    fn prepare(&mut self) -> MResult<()> {
-      self.prepared.store(true, Ordering::SeqCst);
-      Ok(())
-    }
-
-    fn commit(&mut self) -> MResult<()> {
-      Ok(())
-    }
-
-    fn abort(&mut self) -> MResult<()> {
-      Ok(())
-    }
-  }
-
-  fn event_count(
-    events: &[RuntimeEvent],
-    kind: RuntimeEventKind,
-  ) -> usize {
-    events.iter().filter(|event| event.kind == kind).count()
-  }
 
   fn new_runtime() -> MechRuntime {
     MechRuntime::builder().build().unwrap()
@@ -1235,7 +1196,7 @@ mod tests {
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::ObjectCreated {
+        |kind| kind == &RuntimeEventKind::ObjectCreated {
           object_id: ObjectId(100),
         },
       ),
@@ -1244,7 +1205,7 @@ mod tests {
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::ObjectUpdated {
+        |kind| kind == &RuntimeEventKind::ObjectUpdated {
           object_id: ObjectId(200),
         },
       ),
@@ -1268,7 +1229,7 @@ mod tests {
         1,
       ))
       .unwrap();
-    let prepared = Arc::new(AtomicBool::new(false));
+    let lifecycle = EffectLifecycleLog::default();
     runtime
       .active_execution_transaction_mut(transaction_id)
       .unwrap()
@@ -1276,9 +1237,10 @@ mod tests {
       .stage(
         transaction_id,
         PreparedRuntimeEffect::Transactional(Box::new(
-          PrepareProbe {
-            prepared: prepared.clone(),
-          },
+          TransactionalEffectProbe::new(
+            "module-validation-probe",
+            lifecycle.clone(),
+          ),
         )),
       );
 
@@ -1288,7 +1250,7 @@ mod tests {
     assert!(
       error.kind_as::<RuntimeModuleJournalConflict>().is_some(),
     );
-    assert!(!prepared.load(Ordering::SeqCst));
+    assert!(lifecycle.observations().is_empty());
     assert!(runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(context.transaction, Some(transaction_id));
     assert!(matches!(runtime.health(), RuntimeHealth::Healthy));
@@ -1361,14 +1323,14 @@ mod tests {
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::TransactionStarted { transaction_id },
+        |kind| kind == &RuntimeEventKind::TransactionStarted { transaction_id },
       ),
       1,
     );
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::TransactionAborted {
+        |kind| kind == &RuntimeEventKind::TransactionAborted {
           transaction_id,
           message: "abort".to_string(),
         },
@@ -1430,7 +1392,7 @@ mod tests {
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::ObjectCreated {
+        |kind| kind == &RuntimeEventKind::ObjectCreated {
           object_id: ObjectId(100),
         },
       ),
@@ -1439,7 +1401,7 @@ mod tests {
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::ObjectUpdated {
+        |kind| kind == &RuntimeEventKind::ObjectUpdated {
           object_id: ObjectId(100),
         },
       ),
@@ -1448,7 +1410,7 @@ mod tests {
     assert_eq!(
       event_count(
         &events,
-        RuntimeEventKind::TransactionCommitted { transaction_id },
+        |kind| kind == &RuntimeEventKind::TransactionCommitted { transaction_id },
       ),
       1,
     );

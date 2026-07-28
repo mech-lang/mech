@@ -684,7 +684,6 @@ impl MechRuntime {
 mod tests {
   use super::*;
 
-  use std::collections::VecDeque;
   use std::sync::atomic::{AtomicBool, Ordering};
 
   use mech_core::{GenericError, MResult, MechError};
@@ -696,10 +695,10 @@ mod tests {
     SharedCapabilityKernel,
   };
   use crate::id::{
-    ActorId, EventId, IdGenerator, MessageId, NodeId, ObjectId, RuntimeId,
-    SequentialIdGenerator, TaskId, TransactionId,
+    EventId, ObjectId, SequentialIdGenerator,
   };
   use crate::store::{InMemoryStore, MechStore};
+  use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
 
   fn capability(
     id: CapabilityId,
@@ -731,68 +730,6 @@ mod tests {
         BasicConstraints::default().with_max_uses(max_uses),
       ),
     )
-  }
-
-  #[derive(Debug)]
-  struct ScriptedEventIdGenerator {
-    next: u128,
-    event_ids: VecDeque<EventId>,
-  }
-
-  impl ScriptedEventIdGenerator {
-    fn new(next: u128, event_ids: impl IntoIterator<Item = EventId>) -> Self {
-      Self {
-        next,
-        event_ids: event_ids.into_iter().collect(),
-      }
-    }
-
-    fn next_id(&mut self) -> u128 {
-      let id = self.next;
-      self.next = self.next.saturating_add(1);
-      id
-    }
-  }
-
-  impl IdGenerator for ScriptedEventIdGenerator {
-    fn runtime_id(&mut self) -> RuntimeId {
-      RuntimeId(self.next_id())
-    }
-
-    fn object_id(&mut self) -> ObjectId {
-      ObjectId(self.next_id())
-    }
-
-    fn actor_id(&mut self) -> ActorId {
-      ActorId(self.next_id())
-    }
-
-    fn task_id(&mut self) -> TaskId {
-      TaskId(self.next_id())
-    }
-
-    fn capability_id(&mut self) -> CapabilityId {
-      CapabilityId(self.next_id())
-    }
-
-    fn transaction_id(&mut self) -> TransactionId {
-      TransactionId(self.next_id())
-    }
-
-    fn event_id(&mut self) -> EventId {
-      self
-        .event_ids
-        .pop_front()
-        .unwrap_or_else(|| EventId(self.next_id()))
-    }
-
-    fn node_id(&mut self) -> NodeId {
-      NodeId(self.next_id())
-    }
-
-    fn message_id(&mut self) -> MessageId {
-      MessageId(self.next_id())
-    }
   }
 
   #[derive(Debug)]

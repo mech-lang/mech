@@ -384,13 +384,15 @@ mod transaction_tests {
   use std::sync::{Arc, Mutex};
   use std::sync::atomic::{AtomicUsize, Ordering};
   use crate::{
-    BasicCapability, BasicConstraints, BasicOperation, BasicResource,
-    BasicSubject, Capability, CapabilityDecision, CapabilityRequest,
+    Capability, CapabilityDecision, CapabilityRequest,
     PlannedPureHostFunction, PlannedRuntimeManagedHostFunction,
     PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect,
     RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimePreparedHostCall, RuntimeTransactionalEffect,
+  };
+  use crate::runtime::test_support::capabilities::{
+    grant_host_call, grant_host_call_with_limit,
   };
 
   #[derive(Debug)]
@@ -413,39 +415,6 @@ mod transaction_tests {
       self.log.lock().unwrap().push(self.entry.clone());
       Ok(())
     }
-  }
-
-  fn grant_host_call(runtime: &mut MechRuntime, name: &str) {
-    let subject = runtime.runtime_context().unwrap().subject;
-    runtime
-      .grant_capability(Arc::new(BasicCapability::new(
-        CapabilityId(700),
-        &BasicSubject::new(&subject),
-        &BasicResource::new(format!("host:{name}")),
-        [BasicOperation::new("call")],
-      )))
-      .unwrap();
-  }
-
-  fn grant_limited_host_call(
-    runtime: &mut MechRuntime,
-    id: CapabilityId,
-    name: &str,
-  ) {
-    let subject = runtime.runtime_context().unwrap().subject;
-    runtime
-      .grant_capability(Arc::new(
-        BasicCapability::new(
-          id,
-          &BasicSubject::new(&subject),
-          &BasicResource::new(format!("host:{name}")),
-          [BasicOperation::new("call")],
-        )
-        .with_constraints(
-          BasicConstraints::default().with_max_uses(1),
-        ),
-      ))
-      .unwrap();
   }
 
   #[derive(Debug)]
@@ -566,7 +535,7 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_host_call(&mut runtime, "demo/staged");
+    grant_host_call(&mut runtime, CapabilityId(700), "demo/staged");
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
 
@@ -607,7 +576,7 @@ mod transaction_tests {
       ))
       .unwrap();
     let mut runtime = runtime.build().unwrap();
-    grant_host_call(&mut runtime, "demo/pure");
+    grant_host_call(&mut runtime, CapabilityId(700), "demo/pure");
 
     runtime.run_string("implicit := demo/pure()").unwrap();
     let mut context = runtime.runtime_context().unwrap();
@@ -664,10 +633,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_limited_host_call(
+    grant_host_call_with_limit(
       &mut runtime,
       CapabilityId(710),
       "demo/pure-limited",
+      1,
     );
 
     runtime
@@ -700,10 +670,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_limited_host_call(
+    grant_host_call_with_limit(
       &mut runtime,
       CapabilityId(711),
       "demo/managed-limited",
+      1,
     );
 
     runtime
@@ -744,10 +715,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_limited_host_call(
+    grant_host_call_with_limit(
       &mut runtime,
       CapabilityId(712),
       "demo/staged-limited",
+      1,
     );
 
     runtime
@@ -822,7 +794,11 @@ mod transaction_tests {
       .build()
       .unwrap();
     assert!(lifecycle.lock().unwrap().is_empty());
-    grant_host_call(&mut runtime, "demo/staged-lifecycle");
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(700),
+      "demo/staged-lifecycle",
+    );
 
     runtime
       .run_string(
@@ -861,7 +837,7 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_host_call(&mut runtime, "demo/staged");
+    grant_host_call(&mut runtime, CapabilityId(700), "demo/staged");
     let mut context = runtime.runtime_context().unwrap();
     runtime.begin_transaction(&mut context).unwrap();
 
@@ -912,7 +888,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_host_call(&mut runtime, "demo/runtime-managed");
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(700),
+      "demo/runtime-managed",
+    );
 
     runtime
       .run_string("result := demo/runtime-managed()")
@@ -977,7 +957,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_host_call(&mut runtime, "sealed/pure-panic");
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(700),
+      "sealed/pure-panic",
+    );
     runtime.run_string("panic-anchor := 1.0").unwrap();
 
     let error = runtime
@@ -1007,7 +991,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_host_call(&mut runtime, "sealed/managed-panic");
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(700),
+      "sealed/managed-panic",
+    );
 
     let error = runtime
       .run_string("discarded := sealed/managed-panic()")
@@ -1035,7 +1023,11 @@ mod transaction_tests {
       .unwrap()
       .build()
       .unwrap();
-    grant_host_call(&mut runtime, "sealed/staged-panic");
+    grant_host_call(
+      &mut runtime,
+      CapabilityId(700),
+      "sealed/staged-panic",
+    );
 
     let error = runtime
       .run_string("discarded := sealed/staged-panic()")

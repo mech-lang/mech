@@ -1095,18 +1095,19 @@ impl MechRuntime {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use std::collections::VecDeque;
   use std::sync::Mutex;
 
   use crate::capability::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject,
   };
   use crate::{
-    NodeId, PlannedRuntimeManagedHostFunction,
+    PlannedRuntimeManagedHostFunction,
     PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimePreparedHostCall, RuntimeTransactionalEffect,
   };
+  use crate::runtime::test_support::capabilities::grant_host_call;
+  use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
 
   #[derive(Debug)]
   struct SavepointAfterCommitEffect {
@@ -1185,84 +1186,6 @@ mod tests {
         .unwrap()
         .push(format!("{}:abort", self.name));
       Ok(())
-    }
-  }
-
-  fn grant_program_host_call(
-    runtime: &mut MechRuntime,
-    id: CapabilityId,
-    name: &str,
-  ) {
-    let subject = runtime.runtime_context().unwrap().subject;
-    runtime
-      .grant_capability(Arc::new(BasicCapability::new(
-        id,
-        &BasicSubject::new(&subject),
-        &BasicResource::new(format!("host:{name}")),
-        [BasicOperation::new("call")],
-      )))
-      .unwrap();
-  }
-
-  #[derive(Debug)]
-  struct ScriptedEventIdGenerator {
-    next: u128,
-    event_ids: VecDeque<EventId>,
-  }
-
-  impl ScriptedEventIdGenerator {
-    fn new(next: u128, event_ids: impl IntoIterator<Item = EventId>) -> Self {
-      Self {
-        next,
-        event_ids: event_ids.into_iter().collect(),
-      }
-    }
-
-    fn next_id(&mut self) -> u128 {
-      let id = self.next;
-      self.next = self.next.saturating_add(1);
-      id
-    }
-  }
-
-  impl IdGenerator for ScriptedEventIdGenerator {
-    fn runtime_id(&mut self) -> RuntimeId {
-      RuntimeId(self.next_id())
-    }
-
-    fn object_id(&mut self) -> ObjectId {
-      ObjectId(self.next_id())
-    }
-
-    fn actor_id(&mut self) -> ActorId {
-      ActorId(self.next_id())
-    }
-
-    fn task_id(&mut self) -> TaskId {
-      TaskId(self.next_id())
-    }
-
-    fn capability_id(&mut self) -> CapabilityId {
-      CapabilityId(self.next_id())
-    }
-
-    fn transaction_id(&mut self) -> TransactionId {
-      TransactionId(self.next_id())
-    }
-
-    fn event_id(&mut self) -> EventId {
-      self
-        .event_ids
-        .pop_front()
-        .unwrap_or_else(|| EventId(self.next_id()))
-    }
-
-    fn node_id(&mut self) -> NodeId {
-      NodeId(self.next_id())
-    }
-
-    fn message_id(&mut self) -> MessageId {
-      MessageId(self.next_id())
     }
   }
 
@@ -1693,7 +1616,7 @@ mod tests {
       (CapabilityId(811), "integrity/b"),
       (CapabilityId(812), "integrity/c"),
     ] {
-      grant_program_host_call(&mut runtime, id, name);
+      grant_host_call(&mut runtime, id, name);
     }
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
@@ -1880,7 +1803,7 @@ mod tests {
       (CapabilityId(800), "round4/first"),
       (CapabilityId(801), "round4/second"),
     ] {
-      grant_program_host_call(&mut runtime, id, name);
+      grant_host_call(&mut runtime, id, name);
     }
     let mut context = runtime.runtime_context().unwrap();
 

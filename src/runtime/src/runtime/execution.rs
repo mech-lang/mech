@@ -5187,13 +5187,7 @@ impl MechRuntime {
 #[cfg(test)]
 mod root_symbol_snapshot_runtime_tests {
   use super::*;
-
-  fn f64_value(value: &Value) -> f64 {
-    match value {
-      Value::F64(value) => *value.borrow(),
-      other => panic!("expected f64, got {other:?}"),
-    }
-  }
+  use crate::runtime::test_support::values::f64_value;
 
   #[test]
   fn runtime_delegates_root_symbol_value() {
