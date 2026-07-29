@@ -1,0 +1,19 @@
+@out := console://console/output{:write(line)}
+
+@scan := lidar://front/scan{:read(nearest-mm),
+                            :read(nearest-angle),
+                            :read(front-mm),
+                            :read(count),
+                            :read(scan-id)}
+
+nearest-mm    := @scan/nearest-mm
+nearest-angle := @scan/nearest-angle
+front-mm      := @scan/front-mm
+point-count   := @scan/count
+scan-id       := @scan/scan-id
+
+-- reactive obstacle logic: 1 if the closest return is under 500 mm
+too-close := nearest-mm < 500
+
+-- print the live nearest distance every time a new scan arrives
+@out/line <- nearest-mm

@@ -31,6 +31,7 @@ required-features = ["compiler"]
 debug = false
 
 [features]
+lidar_host_native = ["dep:mech-host-lidar", "mech-host-lidar/native"]
 no_std = ["mech-core/no_std", "mech-program/no_std", "mech-syntax/no_std"]
 
 default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
@@ -218,6 +219,7 @@ mech-runtime = { version = "0.3.5", default-features = false, optional = true }
 mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-host-cli = { version = "0.3.5", default-features = false, optional = true }
 mech-host-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
+mech-host-lidar = { path = 'hosts/lidar', default-features = false, optional = true }
 mech-host-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
 mech-host-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-host-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
@@ -267,6 +269,7 @@ members = [
   "hosts/console",
   "hosts/robot-arm",
   "hosts/time",
+  "hosts/lidar",
   "hosts/timer",
   "hosts/scene",
 ]

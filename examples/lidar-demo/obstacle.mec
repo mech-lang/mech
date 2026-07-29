@@ -1,0 +1,12 @@
+@out := console://console/output{:write(line)}
+
+@scan := lidar://front/scan{:read(nearest-mm),
+                            :read(nearest-angle),
+                            :read(count),
+                            :read(scan-id)}
+
+nearest-mm := @scan/nearest-mm
+nearest-angle := @scan/nearest-angle
+point-count := @scan/count
+
+@out/line <- nearest-mm

@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
-
+#[cfg(feature = "lidar_host_native")]
+use mech_host_lidar::NativeLidarHostFactory;
 use mech_core::MResult;
 use mech_host_cli::CliHostFactory;
 #[cfg(feature = "console_host_native")]
@@ -25,6 +26,13 @@ pub fn register_cli_host_factories(
         let time_factory = NativeTimeHostFactory::new()?;
         providers.insert(time_factory.provider_name().to_string());
         builder = builder.host_factory(Box::new(time_factory))?;
+    }
+    
+    #[cfg(feature = "lidar_host_native")]
+    {
+        let lidar_factory = NativeLidarHostFactory::new()?;
+        providers.insert(lidar_factory.provider_name().to_string());
+        builder = builder.host_factory(Box::new(lidar_factory))?;
     }
 
     #[cfg(feature = "timer_host_native")]
