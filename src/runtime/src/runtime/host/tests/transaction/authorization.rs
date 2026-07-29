@@ -11,6 +11,11 @@ use mech_core::{Ref, Value};
 
 use super::support::{CountingAfterCommitEffect, PreviewUnsupportedCapability};
 
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value)
+        .expect("acyclic fixture")
+}
+
 #[test]
 fn pure_host_planning_does_not_consume_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
@@ -19,11 +24,11 @@ fn pure_host_planning_does_not_consume_single_use_capability() {
         .host_function(PlannedPureHostFunction::new(
             "demo/pure-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(1.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(1.0))))
             },
         ))
         .unwrap()
@@ -49,11 +54,11 @@ fn runtime_managed_planning_does_not_consume_single_use_capability() {
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/managed-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(1.0))))
             },
             move |_services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(1.0))))
             },
         ))
         .unwrap()
@@ -81,13 +86,13 @@ fn staged_planning_does_not_consume_single_use_capability() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(1.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
                 let delivered = delivered.clone();
                 Ok(RuntimePreparedHostCall {
-                    value: Value::F64(Ref::new(1.0)).into(),
+                    value: snapshot(Value::F64(Ref::new(1.0))),
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(
                         CountingAfterCommitEffect {
                             deliveries: delivered,
@@ -119,10 +124,12 @@ fn custom_capability_without_preview_contract_fails_closed() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedPureHostFunction::new(
             "demo/unsupported-preview",
-            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| Ok(Value::Empty.into()),
+            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+                Ok(RuntimeValueSnapshot::empty())
+            },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Empty.into())
+                Ok(RuntimeValueSnapshot::empty())
             },
         ))
         .unwrap()

@@ -5,7 +5,7 @@
 //! arity checks, and `Value` construction boilerplate.
 //!
 //! The scalar helpers use Mech's existing `Value::as_*` conversion methods where
-//! possible. Compound values are exposed as borrowed/cloned `Value`s here rather
+//! possible. Compound values are exposed as owned `Value`s here rather
 //! than overfitting this runtime crate to every internal container layout.
 
 use mech_core::{
@@ -14,16 +14,18 @@ use mech_core::{
 use crate::RuntimeValueSnapshot;
 
 pub trait HostArgumentValue {
-  fn host_argument_value(&self) -> &Value;
+  fn host_argument_value(&self) -> Value;
 }
 
 impl HostArgumentValue for Value {
-  fn host_argument_value(&self) -> &Value { self }
+  fn host_argument_value(&self) -> Value {
+    self.clone()
+  }
 }
 
 impl HostArgumentValue for RuntimeValueSnapshot {
-  fn host_argument_value(&self) -> &Value {
-    self.as_value()
+  fn host_argument_value(&self) -> Value {
+    self.to_value()
   }
 }
 
@@ -94,11 +96,11 @@ fn wrong_type_error(
 // Generic argument access / arity
 // -----------------------------------------------------------------------------
 
-pub fn host_arg<'a, A: HostArgumentValue>(
+pub fn host_arg<A: HostArgumentValue>(
   function: &str,
-  args: &'a [A],
+  args: &[A],
   index: usize,
-) -> MResult<&'a Value> {
+) -> MResult<Value> {
   args.get(index).map(HostArgumentValue::host_argument_value).ok_or_else(|| {
     host_argument_error(
       function,
@@ -112,14 +114,14 @@ pub fn host_arg_cloned(
   args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Value> {
-  Ok(host_arg_resolved(function, args, index)?.clone())
+  host_arg_resolved(function, args, index)
 }
 
-pub fn host_arg_raw<'a>(
+pub fn host_arg_raw(
   function: &str,
-  args: &'a [Value],
+  args: &[Value],
   index: usize,
-) -> MResult<&'a Value> {
+) -> MResult<Value> {
   host_arg(function, args, index)
 }
 
@@ -128,7 +130,7 @@ pub fn host_arg_resolved(
   args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Value> {
-  let mut value = host_arg(function, args, index)?.clone();
+  let mut value = host_arg(function, args, index)?;
 
   loop {
     value = match value {
@@ -158,9 +160,7 @@ pub fn host_args_tail(
   Ok(
     args[start..]
       .iter()
-      .map(|argument| {
-        argument.host_argument_value().clone()
-      })
+      .map(HostArgumentValue::host_argument_value)
       .collect(),
   )
 }
@@ -309,7 +309,7 @@ pub fn host_arg_optional_string(
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -338,7 +338,7 @@ pub fn host_arg_optional_bool(
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -398,7 +398,7 @@ pub fn host_arg_optional_u64(
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -458,7 +458,7 @@ pub fn host_arg_optional_i64(
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -525,8 +525,8 @@ pub fn host_arg_id(
   index: usize,
 ) -> MResult<u64> {
   match host_arg(function, args, index)? {
-    Value::Id(value) => Ok(*value),
-    other => Err(wrong_type_error(function, index, "id", other)),
+    Value::Id(value) => Ok(value),
+    other => Err(wrong_type_error(function, index, "id", &other)),
   }
 }
 
@@ -538,7 +538,7 @@ pub fn host_arg_enum(
 ) -> MResult<mech_core::MechEnum> {
   match host_arg(function, args, index)? {
     Value::Enum(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "enum", other)),
+    other => Err(wrong_type_error(function, index, "enum", &other)),
   }
 }
 
@@ -549,7 +549,7 @@ pub fn host_arg_kind(
 ) -> MResult<ValueKind> {
   match host_arg(function, args, index)? {
     Value::Kind(kind) => Ok(kind.clone()),
-    other => Err(wrong_type_error(function, index, "kind", other)),
+    other => Err(wrong_type_error(function, index, "kind", &other)),
   }
 }
 
@@ -564,7 +564,7 @@ pub fn host_arg_reference_value(
 ) -> MResult<Value> {
   match host_arg(function, args, index)? {
     Value::MutableReference(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "mutable reference", other)),
+    other => Err(wrong_type_error(function, index, "mutable reference", &other)),
   }
 }
 
@@ -575,7 +575,7 @@ pub fn host_arg_deref_cloned(
 ) -> MResult<Value> {
   match host_arg(function, args, index)? {
     Value::MutableReference(value) => Ok(value.borrow().clone()),
-    other => Ok(other.clone()),
+    other => Ok(other),
   }
 }
 
@@ -842,11 +842,11 @@ pub fn host_arg_optional_value(
 
   let value = host_arg(function, args, index)?;
 
-  if is_empty_value(value) {
+  if is_empty_value(&value) {
     return Ok(None);
   }
 
-  Ok(Some(value.clone()))
+  Ok(Some(value))
 }
 
 // -----------------------------------------------------------------------------
@@ -1091,7 +1091,7 @@ where
       return Ok(None);
     }
 
-    if is_empty_value(host_arg(function, args, index)?) {
+    if is_empty_value(&host_arg(function, args, index)?) {
       return Ok(None);
     }
 

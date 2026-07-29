@@ -23,6 +23,10 @@ use crate::{
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 const TEST_OUTPUT_BASE_URI: &str = "test://effects/output";
 
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
 #[derive(Debug, Default)]
 struct ReceiverCounters {
     stage_count: AtomicUsize,
@@ -210,7 +214,7 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
         "test/receiver-send",
         |_context: &RuntimeCallContext, arguments: &[RuntimeValueSnapshot]| {
             let payload = host_f64_argument(&arguments[0]);
-            Ok(Value::F64(Ref::new(payload)).into())
+            Ok(snapshot(Value::F64(Ref::new(payload))))
         },
         move |_context: &RuntimeCallContext, arguments: Vec<RuntimeValueSnapshot>| {
             let payload = host_f64_argument(&arguments[0]);
@@ -223,7 +227,7 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
                 .unwrap()
                 .push(payload);
             Ok(RuntimePreparedHostCall {
-                value: Value::F64(Ref::new(payload)).into(),
+                value: snapshot(Value::F64(Ref::new(payload))),
                 effect: PreparedRuntimeEffect::Transactional(Box::new(
                     ReceiverTransactionalEffect {
                         payload,

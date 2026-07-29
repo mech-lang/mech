@@ -19,6 +19,10 @@ use crate::{
 
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
 #[test]
 fn live_input_recomputes_runtime_host_function() {
     let calls = Arc::new(AtomicUsize::new(0));
@@ -26,11 +30,15 @@ fn live_input_recomputes_runtime_host_function() {
     let host = PlannedPureHostFunction::new(
         "demo/live-plus-one",
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+            Ok(snapshot(Value::F64(Ref::new(
+                host_f64_argument(&args[0]) + 1.0,
+            ))))
         },
         move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
             host_calls.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+            Ok(snapshot(Value::F64(Ref::new(
+                host_f64_argument(&args[0]) + 1.0,
+            ))))
         },
     );
     let mut runtime =
@@ -81,22 +89,30 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
         .host_function(PlannedPureHostFunction::new(
             "demo/left-branch",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 100.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(
+                    host_f64_argument(&args[0]) + 100.0,
+                ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 left_host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 100.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(
+                    host_f64_argument(&args[0]) + 100.0,
+                ))))
             },
         ))
         .unwrap()
         .host_function(PlannedPureHostFunction::new(
             "demo/right-branch",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 200.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(
+                    host_f64_argument(&args[0]) + 200.0,
+                ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 right_host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 200.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(
+                    host_f64_argument(&args[0]) + 200.0,
+                ))))
             },
         ))
         .unwrap()
@@ -224,14 +240,18 @@ fn live_host_output_kind_change_preserves_previous_output() {
         PlannedPureHostFunction::new(
             "demo/kind-change",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(
+                    host_f64_argument(&args[0]) + 1.0,
+                ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 let call = host_calls.fetch_add(1, Ordering::SeqCst);
                 if call == 0 {
-                    Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+                    Ok(snapshot(Value::F64(Ref::new(
+                        host_f64_argument(&args[0]) + 1.0,
+                    ))))
                 } else {
-                    Ok(Value::String(Ref::new("bad-kind".to_string())).into())
+                    Ok(snapshot(Value::String(Ref::new("bad-kind".to_string()))))
                 }
             },
         ),
@@ -292,10 +312,12 @@ fn live_host_empty_output_can_recompute() {
         test_provider_with("test://clock/ticks", "value", 1.0),
         PlannedPureHostFunction::new(
             "demo/live-empty",
-            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| Ok(Value::Empty.into()),
+            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+                Ok(RuntimeValueSnapshot::empty())
+            },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Empty.into())
+                Ok(RuntimeValueSnapshot::empty())
             },
         ),
     );

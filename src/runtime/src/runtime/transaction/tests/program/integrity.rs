@@ -5,6 +5,7 @@ use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
 use crate::{
     CapabilityId, EventId, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeEventKind, RuntimeIntegrityConstraintFailureReason, RuntimePreparedHostCall,
+    RuntimeValueSnapshot,
 };
 use mech_core::{Value, hash_str};
 use std::sync::{Arc, Mutex};
@@ -230,10 +231,14 @@ fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
         builder = builder
             .host_function(PlannedStagedHostFunction::new(
                 name,
-                |_context, _args| Ok(Value::F64(mech_core::Ref::new(1.0)).into()),
+                |_context, _args| {
+                    RuntimeValueSnapshot::try_capture(&Value::F64(mech_core::Ref::new(1.0)))
+                },
                 move |_context, _args| {
                     Ok(RuntimePreparedHostCall {
-                        value: Value::F64(mech_core::Ref::new(1.0)).into(),
+                        value: RuntimeValueSnapshot::try_capture(&Value::F64(
+                            mech_core::Ref::new(1.0),
+                        ))?,
                         effect: PreparedRuntimeEffect::Transactional(Box::new(
                             CommitDecisionEffect {
                                 name,

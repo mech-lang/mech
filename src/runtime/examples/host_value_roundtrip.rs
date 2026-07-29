@@ -134,7 +134,10 @@ fn main() -> MResult<()> {
   )?;
 
   println!();
-  println!("program result: {}", display_value(value.as_value()));
+  println!(
+    "program result: {}",
+    display_value(&value.to_value()),
+  );
 
   assert_string(value.into_value(), "rust-wrap(mech) runtime");
 

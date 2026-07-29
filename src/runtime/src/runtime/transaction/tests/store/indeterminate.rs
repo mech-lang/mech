@@ -25,7 +25,7 @@ fn store_commit_panic_is_indeterminate_and_never_rolled_back() {
     let retained = runtime
         .root_symbol_value("store-commit-panic-state")
         .unwrap();
-    match retained.as_value() {
+    match retained.to_value() {
         Value::F64(value) => assert_eq!(*value.borrow(), 42.0),
         other => panic!("expected retained f64 value, got {other:?}"),
     }

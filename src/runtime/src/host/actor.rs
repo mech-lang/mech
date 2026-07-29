@@ -9,8 +9,10 @@ use crate::{
 
 use crate::host::*;
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
-  RuntimeValueSnapshot::capture(&value)
+fn snapshot(
+  value: Value,
+) -> MResult<RuntimeValueSnapshot> {
+  RuntimeValueSnapshot::try_capture(&value)
 }
 
 fn invalid_context(
@@ -54,9 +56,9 @@ impl HostFunctionPlan for ActorMessageKindHostFunction {
         "no actor message is bound to the runtime context",
       )
     })?;
-    Ok(snapshot(Value::String(Ref::new(
+    snapshot(Value::String(Ref::new(
       message.kind.clone(),
-    ))))
+    )))
   }
 
   fn estimated_cost_items(
@@ -105,9 +107,9 @@ impl HostFunctionPlan for ActorMessagePayloadHostFunction {
         "no actor message is bound to the runtime context",
       )
     })?;
-    Ok(snapshot(Value::String(Ref::new(
+    snapshot(Value::String(Ref::new(
       String::from_utf8_lossy(&message.payload).to_string(),
-    ))))
+    )))
   }
 
   fn estimated_cost_items(
@@ -150,12 +152,12 @@ impl HostFunctionPlan for ActorStateIdHostFunction {
     context: &RuntimeCallContext,
     _arguments: &[RuntimeValueSnapshot],
   ) -> MResult<RuntimeValueSnapshot> {
-    Ok(match context.actor_state() {
+    match context.actor_state() {
       Some(state) => snapshot(Value::String(Ref::new(
         state.to_string(),
       ))),
       None => snapshot(Value::Empty),
-    })
+    }
   }
 
   fn estimated_cost_items(
@@ -198,7 +200,7 @@ impl HostFunctionPlan for ActorStateGetHostFunction {
     _context: &RuntimeCallContext,
     _arguments: &[RuntimeValueSnapshot],
   ) -> MResult<RuntimeValueSnapshot> {
-    Ok(snapshot(Value::Empty))
+    snapshot(Value::Empty)
   }
 
   fn estimated_cost_items(
@@ -224,14 +226,14 @@ impl RuntimeManagedHostFunction for ActorStateGetHostFunction {
     _arguments: Vec<RuntimeValueSnapshot>,
   ) -> MResult<RuntimeValueSnapshot> {
     let Some(state) = context.actor_state() else {
-      return Ok(snapshot(Value::Empty));
+      return snapshot(Value::Empty);
     };
     let Some(object) = services.get_object(state)? else {
-      return Ok(snapshot(Value::Empty));
+      return snapshot(Value::Empty);
     };
-    Ok(snapshot(Value::String(Ref::new(
+    snapshot(Value::String(Ref::new(
       String::from_utf8_lossy(&object.data).to_string(),
-    ))))
+    )))
   }
 }
 
@@ -258,10 +260,10 @@ impl HostFunctionPlan for ActorStatePutHostFunction {
     }
     let values = arguments
       .iter()
-      .map(|argument| argument.as_value().clone())
+      .map(RuntimeValueSnapshot::to_value)
       .collect::<Vec<_>>();
     host_arg_string(self.name(), &values, 0)?;
-    Ok(snapshot(Value::String(Ref::new(String::new()))))
+    snapshot(Value::String(Ref::new(String::new())))
   }
 
   fn estimated_cost_items(
@@ -301,7 +303,7 @@ impl RuntimeManagedHostFunction for ActorStatePutHostFunction {
     })?;
     let values = arguments
       .iter()
-      .map(|argument| argument.as_value().clone())
+      .map(RuntimeValueSnapshot::to_value)
       .collect::<Vec<_>>();
     let text = host_arg_string(self.name(), &values, 0)?;
     let object_id = services.allocate_object_id()?;
@@ -316,8 +318,8 @@ impl RuntimeManagedHostFunction for ActorStatePutHostFunction {
     actor.state = Some(object_id);
     services.update_actor(actor)?;
     services.set_current_actor_state(object_id)?;
-    Ok(snapshot(Value::String(Ref::new(
+    snapshot(Value::String(Ref::new(
       object_id.to_string(),
-    ))))
+    )))
   }
 }

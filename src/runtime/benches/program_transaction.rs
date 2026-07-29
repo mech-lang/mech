@@ -176,9 +176,11 @@ fn execution_session_host_fixture() -> MechRuntime {
   let mut runtime = MechRuntime::builder()
     .host_function(PlannedRuntimeManagedHostFunction::new(
       "bench/execution-session",
-      |_context, _arguments| Ok(Value::Bool(Ref::new(true)).into()),
+      |_context, _arguments| {
+        RuntimeValueSnapshot::try_capture(&Value::Bool(Ref::new(true)))
+      },
       |_services, _context, _arguments| {
-        Ok(Value::Bool(Ref::new(true)).into())
+        RuntimeValueSnapshot::try_capture(&Value::Bool(Ref::new(true)))
       },
     ))
     .unwrap()
@@ -259,11 +261,11 @@ fn staged_effect_rollback_fixture(
     .host_function(PlannedStagedHostFunction::new(
       "bench/staged",
       |_context, _arguments| {
-        Ok(Value::Empty.into())
+        Ok(RuntimeValueSnapshot::empty())
       },
       |_context, _arguments| {
         Ok(RuntimePreparedHostCall {
-          value: Value::Empty.into(),
+          value: RuntimeValueSnapshot::empty(),
           effect: PreparedRuntimeEffect::AfterCommit(Box::new(
             BenchmarkAfterCommitEffect { sequence: 0 },
           )),
@@ -308,7 +310,12 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
 
   group.bench_function("detached_scalar_snapshot", |b| {
     let value = Value::F64(Ref::new(42.0));
-    b.iter(|| black_box(RuntimeValueSnapshot::capture(black_box(&value))))
+    b.iter(|| {
+      black_box(
+        RuntimeValueSnapshot::try_capture(black_box(&value))
+          .expect("acyclic fixture"),
+      )
+    })
   });
 
   group.bench_function("detached_nested_value_snapshot", |b| {
@@ -319,7 +326,12 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
         Value::Bool(Ref::new(true)),
       ]))),
     ])));
-    b.iter(|| black_box(RuntimeValueSnapshot::capture(black_box(&value))))
+    b.iter(|| {
+      black_box(
+        RuntimeValueSnapshot::try_capture(black_box(&value))
+          .expect("acyclic fixture"),
+      )
+    })
   });
 
   group.bench_function("explicit_execution_session_host_dispatch", |b| {

@@ -163,9 +163,11 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<RuntimeValueSnapshot> {
-    self
-      .call_host_value_with_context(context, call)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+    self.call_host_with_context_map(
+      context,
+      call,
+      |value| RuntimeValueSnapshot::try_capture(&value),
+    )
   }
 
   pub(crate) fn call_host_value_with_context(
@@ -173,6 +175,19 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
+    self.call_host_with_context_map(
+      context,
+      call,
+      Ok,
+    )
+  }
+
+  fn call_host_with_context_map<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    call: HostCall,
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     self.ensure_runtime_mutation_allowed("call_host_with_context")?;
     self.validate_context_for_runtime(context)?;
     call.validate()?;
@@ -187,7 +202,8 @@ impl MechRuntime {
       |session| {
         session.invoke_native(&call.name, &call.args)
       },
-    );
+    )
+    .and_then(finish);
     if !implicit {
       return result;
     }
@@ -253,8 +269,8 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
   ) -> MResult<Box<dyn mech_core::MechFunction>> {
     let argument_snapshots = arguments
       .iter()
-      .map(RuntimeValueSnapshot::capture)
-      .collect::<Vec<_>>();
+      .map(RuntimeValueSnapshot::try_capture)
+      .collect::<MResult<Vec<_>>>()?;
     let planned = invoke_extension(
       format!("host function `{}`", self.host_name),
       "plan",
@@ -268,7 +284,9 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
       host_name: self.host_name.clone(),
       arguments: arguments.clone(),
       value: Ref::new(
-        planned.into_value().deep_snapshot(),
+        planned
+          .into_value()
+          .try_deep_snapshot()?,
       ),
     }))
   }
@@ -305,11 +323,13 @@ impl MechErrorKind for RuntimeHostOutputUpdateError {
 impl RuntimeHostNativeFunction {
   fn update_output(&self, next: Value) -> MResult<()> {
     let expected = self.value.borrow().kind();
-    let actual = next.kind();
     if expected == ValueKind::Empty {
-      *self.value.borrow_mut() = next.deep_snapshot();
+      *self.value.borrow_mut() =
+        next.try_deep_snapshot()?;
       return Ok(());
     }
+    let next = next.try_deep_snapshot()?;
+    let actual = next.kind();
     mech_program::apply_stable_value_update(self.value.clone(), next)
       .map(|_| ())
       .map_err(|error| {

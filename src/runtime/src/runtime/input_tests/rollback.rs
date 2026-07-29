@@ -30,6 +30,10 @@ use crate::{
 
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
 #[test]
 fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
     let calls = Arc::new(AtomicUsize::new(0));
@@ -41,7 +45,9 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
         PlannedPureHostFunction::new(
             "demo/fails-after-first",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]) + 1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(
+                    host_f64_argument(&args[0]) + 1.0,
+                ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 host_calls.fetch_add(1, Ordering::SeqCst);
@@ -49,7 +55,7 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
                     return Err(MechError::new(DeliberateHostCallError, None));
                 }
                 let input = host_f64_argument(&args[0]);
-                Ok(Value::F64(Ref::new(input + 1.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(input + 1.0))))
             },
         ),
     );
@@ -358,14 +364,18 @@ fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
     let host = PlannedPureHostFunction::new(
         "demo/patterned-body-fail-second",
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
+            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
+                &args[0],
+            )))))
         },
         move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
             let call = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
             if call == 1 {
                 return Err(MechError::new(DeliberateHostCallError, None));
             }
-            Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
+            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
+                &args[0],
+            )))))
         },
     );
     let (mut runtime, output) = test_runtime_with_output_host(provider, host);
@@ -440,14 +450,18 @@ fn activation_send_reactive_failure_produces_no_writes() {
         PlannedPureHostFunction::new(
             "demo/activation-fail-second",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
+                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
+                    &args[0],
+                )))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
                 if call_number == 1 {
                     return Err(MechError::new(DeliberateHostCallError, None));
                 }
-                Ok(Value::F64(Ref::new(host_f64_argument(&args[0]))).into())
+                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
+                    &args[0],
+                )))))
             },
         ),
     );
@@ -512,11 +526,11 @@ fn patterned_activation_guard_rejects_runtime_host_before_elaboration() {
         PlannedPureHostFunction::new(
             "demo/audit",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(Value::Bool(Ref::new(true)).into())
+                Ok(snapshot(Value::Bool(Ref::new(true))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Bool(Ref::new(true)).into())
+                Ok(snapshot(Value::Bool(Ref::new(true))))
             },
         ),
     );

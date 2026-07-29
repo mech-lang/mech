@@ -22,7 +22,9 @@ fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
             .next()
             .expect("expected output value after run_string")
     };
-    let output = runtime.output_value_for_interpreter(root_id, output_id);
+    let output = runtime
+        .output_value_for_interpreter(root_id, output_id)
+        .expect("output snapshot should succeed");
     assert!(output.is_some());
 }
 
@@ -31,7 +33,12 @@ fn runtime_delegates_root_symbol_value() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     runtime.run_string("answer := 42.0").unwrap();
     assert_eq!(
-        f64_value(runtime.root_symbol_value("answer").unwrap().as_value(),),
+        f64_value(
+            &runtime
+                .root_symbol_value("answer")
+                .unwrap()
+                .to_value(),
+        ),
         42.0,
     );
 }
@@ -42,7 +49,7 @@ fn runtime_delegates_root_symbol_values() {
     runtime.run_string("a := 1.0\nb := 2.0").unwrap();
     let rows = runtime.root_symbol_values(&["b", "a"]).unwrap();
     assert_eq!(rows[0].0, "b");
-    assert_eq!(f64_value(rows[0].1.as_value()), 2.0);
+    assert_eq!(f64_value(&rows[0].1.to_value()), 2.0);
     assert_eq!(rows[1].0, "a");
-    assert_eq!(f64_value(rows[1].1.as_value()), 1.0);
+    assert_eq!(f64_value(&rows[1].1.to_value()), 1.0);
 }

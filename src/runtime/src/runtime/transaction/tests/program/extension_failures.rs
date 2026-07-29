@@ -1,8 +1,9 @@
 use crate::{
     CapabilityId, MechRuntime, PlannedRuntimeManagedHostFunction, RuntimeInvalidOperationError,
+    RuntimeValueSnapshot,
 };
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
-use mech_core::{MechError, Value};
+use mech_core::MechError;
 use std::sync::Arc;
 
 #[test]
@@ -10,7 +11,7 @@ fn host_callback_failure_cannot_escape_execution_session() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/reenter",
-            |_context, _args| Ok(Value::Empty.into()),
+            |_context, _args| Ok(RuntimeValueSnapshot::empty()),
             move |_services, _context, _args| {
                 Err(MechError::new(
                     RuntimeInvalidOperationError {

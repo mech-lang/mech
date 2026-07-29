@@ -50,10 +50,15 @@ fn mutating_runtime_value_snapshot_does_not_change_runtime_output() {
   let mut runtime = MechRuntime::builder().build().unwrap();
   let snapshot = runtime.run_string("sealed-value := 41.0").unwrap();
 
-  mutate_f64(snapshot.as_value(), 99.0);
+  mutate_f64(&snapshot.to_value(), 99.0);
 
   assert_eq!(
-    f64_value(runtime.root_symbol_value("sealed-value").unwrap().as_value()),
+    f64_value(
+      &runtime
+        .root_symbol_value("sealed-value")
+        .unwrap()
+        .to_value(),
+    ),
     41.0,
   );
 }
@@ -71,12 +76,15 @@ fn mutating_module_result_snapshot_does_not_change_module_exports() {
     .unwrap();
   let first = runtime.run_module(version).unwrap();
 
-  mutate_f64(first.exports["value"].as_value(), 99.0);
-  mutate_f64(first.result.as_value(), 100.0);
+  mutate_f64(&first.exports["value"].to_value(), 99.0);
+  mutate_f64(&first.result.to_value(), 100.0);
 
   let second = runtime.run_module(version).unwrap();
-  assert_eq!(f64_value(second.exports["value"].as_value()), 41.0);
-  assert_eq!(f64_value(second.result.as_value()), 41.0);
+  assert_eq!(
+    f64_value(&second.exports["value"].to_value()),
+    41.0,
+  );
+  assert_eq!(f64_value(&second.result.to_value()), 41.0);
 }
 
 #[test]
@@ -87,13 +95,17 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
   let function = PlannedPureHostFunction::new(
     "sealed/snapshot",
     |_context: &RuntimeCallContext, _arguments: &[RuntimeValueSnapshot]| {
-      Ok(Value::F64(Ref::new(5.0)).into())
+      RuntimeValueSnapshot::try_capture(
+        &Value::F64(Ref::new(5.0)),
+      )
     },
     |_context: &RuntimeCallContext, arguments: Vec<RuntimeValueSnapshot>| {
       RETAINED_HOST_ARGUMENT.with(|slot| {
         *slot.borrow_mut() = arguments.first().cloned();
       });
-      let result: RuntimeValueSnapshot = Value::F64(Ref::new(5.0)).into();
+      let result = RuntimeValueSnapshot::try_capture(
+        &Value::F64(Ref::new(5.0)),
+      )?;
       RETAINED_HOST_RESULT.with(|slot| {
         *slot.borrow_mut() = Some(result.clone());
       });
@@ -114,23 +126,33 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
 
   RETAINED_HOST_ARGUMENT.with(|slot| {
     mutate_f64(
-      slot.borrow().as_ref().unwrap().as_value(),
+      &slot.borrow().as_ref().unwrap().to_value(),
       101.0,
     );
   });
   RETAINED_HOST_RESULT.with(|slot| {
     mutate_f64(
-      slot.borrow().as_ref().unwrap().as_value(),
+      &slot.borrow().as_ref().unwrap().to_value(),
       202.0,
     );
   });
 
   assert_eq!(
-    f64_value(runtime.root_symbol_value("sealed-input").unwrap().as_value()),
+    f64_value(
+      &runtime
+        .root_symbol_value("sealed-input")
+        .unwrap()
+        .to_value(),
+    ),
     1.0,
   );
   assert_eq!(
-    f64_value(runtime.root_symbol_value("sealed-output").unwrap().as_value()),
+    f64_value(
+      &runtime
+        .root_symbol_value("sealed-output")
+        .unwrap()
+        .to_value(),
+    ),
     5.0,
   );
 }

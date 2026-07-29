@@ -2,9 +2,10 @@
 
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Display, Formatter};
-use std::ops::Deref;
 
-use mech_core::{Value, ValueKind};
+use mech_core::{
+  MResult, MechError, Value, ValueKind,
+};
 
 use crate::{CapabilityId, ModuleVersionId};
 
@@ -15,19 +16,29 @@ use mech_program::IntegrityConstraintReport;
 #[path = "snapshot/tests.rs"]
 mod tests;
 
-/// A detached snapshot of a runtime value graph.
+/// An owned, detached snapshot of an acyclic runtime value graph.
 ///
-/// No reachable `Ref<T>` is shared with the live runtime. Sharing and cycles
-/// within the captured graph are preserved using newly allocated cells.
-#[derive(Clone, PartialEq)]
+/// No reachable `Ref<T>` is shared with the live runtime or with another cloned
+/// `RuntimeValueSnapshot`. Sharing within one snapshot is preserved.
+///
+/// Cyclic values are rejected by `try_capture`.
+#[derive(PartialEq)]
 pub struct RuntimeValueSnapshot {
   value: Value,
 }
 
 impl RuntimeValueSnapshot {
-  pub fn capture(value: &Value) -> Self {
+  pub fn try_capture(
+    value: &Value,
+  ) -> MResult<Self> {
+    Ok(Self {
+      value: value.try_deep_snapshot()?,
+    })
+  }
+
+  pub fn empty() -> Self {
     Self {
-      value: value.deep_snapshot(),
+      value: Value::Empty,
     }
   }
 
@@ -35,8 +46,13 @@ impl RuntimeValueSnapshot {
     self.value.kind()
   }
 
-  pub fn as_value(&self) -> &Value {
-    &self.value
+  pub fn to_value(&self) -> Value {
+    self
+      .value
+      .try_deep_snapshot()
+      .expect(
+        "RuntimeValueSnapshot invariant violated: stored value must remain acyclic",
+      )
   }
 
   pub fn into_value(self) -> Value {
@@ -44,17 +60,54 @@ impl RuntimeValueSnapshot {
   }
 }
 
-impl From<Value> for RuntimeValueSnapshot {
-  fn from(value: Value) -> Self {
-    Self::capture(&value)
+impl Clone for RuntimeValueSnapshot {
+  fn clone(&self) -> Self {
+    Self {
+      value: self
+        .value
+        .try_deep_snapshot()
+        .expect(
+          "RuntimeValueSnapshot invariant violated during clone",
+        ),
+    }
   }
 }
 
-impl Deref for RuntimeValueSnapshot {
-  type Target = Value;
+impl TryFrom<Value> for RuntimeValueSnapshot {
+  type Error = MechError;
 
-  fn deref(&self) -> &Self::Target {
-    self.as_value()
+  fn try_from(value: Value) -> MResult<Self> {
+    Self::try_capture(&value)
+  }
+}
+
+impl TryFrom<&Value> for RuntimeValueSnapshot {
+  type Error = MechError;
+
+  fn try_from(value: &Value) -> MResult<Self> {
+    Self::try_capture(value)
+  }
+}
+
+pub trait TryIntoRuntimeValueSnapshot {
+  fn try_into_runtime_value_snapshot(
+    self,
+  ) -> MResult<RuntimeValueSnapshot>;
+}
+
+impl TryIntoRuntimeValueSnapshot for RuntimeValueSnapshot {
+  fn try_into_runtime_value_snapshot(
+    self,
+  ) -> MResult<RuntimeValueSnapshot> {
+    Ok(self)
+  }
+}
+
+impl TryIntoRuntimeValueSnapshot for Value {
+  fn try_into_runtime_value_snapshot(
+    self,
+  ) -> MResult<RuntimeValueSnapshot> {
+    RuntimeValueSnapshot::try_capture(&self)
   }
 }
 

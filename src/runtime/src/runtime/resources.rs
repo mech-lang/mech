@@ -309,8 +309,8 @@ impl MechRuntime {
       };
     }
 
+    request.value = request.value.try_deep_snapshot()?;
     self.authorize_resource_with_context(context, &request.operation, &key)?;
-    request.value = request.value.deep_snapshot();
     let staged_resource = if request.intent == RuntimeResourceWriteIntent::Assign {
       Some((
         request.base_uri.clone(),
@@ -388,16 +388,19 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: RuntimeResourceReadRequest,
   ) -> MResult<RuntimeValueSnapshot> {
-    self
-      .read_resource_value_with_context(context, request)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+    self.read_resource_with_context_map(
+      context,
+      request,
+      |value| RuntimeValueSnapshot::try_capture(&value),
+    )
   }
 
-  pub(crate) fn read_resource_value_with_context(
+  fn read_resource_with_context_map<T>(
     &mut self,
     context: &mut RuntimeContext,
     mut request: RuntimeResourceReadRequest,
-  ) -> MResult<Value> {
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     self.validate_context_for_runtime(context)?;
     let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
     request.base_uri = key.base_uri.clone();
@@ -407,7 +410,11 @@ impl MechRuntime {
         context,
         RuntimeExecutionTransactionMode::ImplicitResourceOperation,
       )?;
-      let value = match self.read_resource_value_with_context(context, request) {
+      let value = match self.read_resource_with_context_map(
+        context,
+        request,
+        finish,
+      ) {
         Ok(value) => value,
         Err(error) => {
           return Err(self.cleanup_failed_implicit_resource_operation(
@@ -437,10 +444,11 @@ impl MechRuntime {
         .effects
         .staged_resource_value(&request.base_uri, &request.path)
       {
-        return Ok(value);
+        return finish(value);
       }
     }
-    self.resources.read(request)
+    let value = self.resources.read(request)?;
+    finish(value)
   }
 
   pub(crate) fn authorize_resource_with_context(

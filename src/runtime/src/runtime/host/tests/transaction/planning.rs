@@ -9,6 +9,11 @@ use crate::{
 };
 use mech_core::{NativeFunctionCompiler, Ref, Value};
 
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value)
+        .expect("acyclic fixture")
+}
+
 #[test]
 fn planned_pure_host_runs_inside_implicit_and_explicit_transactions() {
     let calls = Arc::new(AtomicUsize::new(0));
@@ -17,11 +22,11 @@ fn planned_pure_host_runs_inside_implicit_and_explicit_transactions() {
         .host_function(PlannedPureHostFunction::new(
             "demo/pure",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(Value::F64(Ref::new(42.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(42.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(42.0)).into())
+                Ok(snapshot(Value::F64(Ref::new(42.0))))
             },
         ))
         .unwrap();
@@ -46,10 +51,12 @@ fn planning_never_invokes_a_host_callback() {
     let runtime = MechRuntime::builder()
         .host_function(PlannedPureHostFunction::new(
             "demo/plan-only",
-            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| Ok(Value::Empty.into()),
+            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+                Ok(RuntimeValueSnapshot::empty())
+            },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_invocations.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Empty.into())
+                Ok(RuntimeValueSnapshot::empty())
             },
         ))
         .unwrap()
@@ -68,13 +75,13 @@ fn runtime_managed_planning_does_not_duplicate_staged_mutation() {
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/runtime-managed",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(Value::String(Ref::new("planned".to_string())).into())
+                Ok(snapshot(Value::String(Ref::new("planned".to_string()))))
             },
             move |services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 let id = services.allocate_object_id()?;
                 callback_ids.lock().unwrap().push(id);
                 services.put_object(ObjectRecord::text(id, "preview-test", "value"))?;
-                Ok(Value::String(Ref::new(id.to_string())).into())
+                Ok(snapshot(Value::String(Ref::new(id.to_string()))))
             },
         ))
         .unwrap()
@@ -111,7 +118,7 @@ fn host_planning_panics_are_converted_without_invocation() {
             },
             move |_context, _arguments| {
                 invoke_count.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Empty.into())
+                Ok(RuntimeValueSnapshot::empty())
             },
         )
         .into(),

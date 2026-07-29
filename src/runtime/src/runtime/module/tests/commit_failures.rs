@@ -10,13 +10,17 @@ use crate::{
     Capability, CapabilityId, EventId, InMemorySourceResolver, MechRuntime, ObjectId, ObjectRecord,
     PlannedRuntimeManagedHostFunction, PreparedRuntimeEffect, RuntimeBuilder,
     RuntimeEffectMetadata, RuntimeEffectSource, RuntimeEventKind, RuntimeInvalidOperationError,
-    RuntimeTransactionalEffect,
+    RuntimeTransactionalEffect, RuntimeValueSnapshot,
 };
 
 use super::support::{
     counting_after_commit_effect, runtime_builder_with_sources, runtime_with_sources,
     staged_test_capability, test_module_options, CountingSourceResolver,
 };
+
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
 
 #[derive(Debug)]
 struct FailingCommitEffect {
@@ -139,14 +143,14 @@ fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
     )])
     .host_function(PlannedRuntimeManagedHostFunction::new(
         "module/stage_invalid_store_update",
-        |_context, _args| Ok(Value::F64(mech_core::Ref::new(42.0)).into()),
+        |_context, _args| Ok(snapshot(Value::F64(mech_core::Ref::new(42.0)))),
         move |services, _context, _args| {
             services.update_object(ObjectRecord::text(
                 ObjectId(912),
                 "missing",
                 "invalid update",
             ))?;
-            Ok(Value::F64(mech_core::Ref::new(42.0)).into())
+            Ok(snapshot(Value::F64(mech_core::Ref::new(42.0))))
         },
     ))
     .unwrap()

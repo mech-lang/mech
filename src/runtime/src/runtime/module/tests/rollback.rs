@@ -7,12 +7,17 @@ use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
     module_id, CapabilityId, ObjectId, ObjectRecord, PlannedStagedHostFunction,
     PreparedRuntimeEffect, RuntimeEventKind, RuntimePreparedHostCall,
+    RuntimeValueSnapshot,
 };
 
 use super::support::{
     counting_after_commit_effect, runtime_builder_with_sources, runtime_with_sources,
     staged_test_capability, test_module_options,
 };
+
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
 
 #[test]
 fn explicit_abort_discards_provisional_graph() {
@@ -96,10 +101,10 @@ fn failed_root_does_not_deliver_dependency_after_commit_effect() {
     ])
     .host_function(PlannedStagedHostFunction::new(
         "dependency/after_commit",
-        |_context, _args| Ok(Value::F64(mech_core::Ref::new(1.0)).into()),
+        |_context, _args| Ok(snapshot(Value::F64(mech_core::Ref::new(1.0)))),
         move |_context, _args| {
             Ok(RuntimePreparedHostCall {
-                value: Value::F64(mech_core::Ref::new(1.0)).into(),
+                value: snapshot(Value::F64(mech_core::Ref::new(1.0))),
                 effect: PreparedRuntimeEffect::AfterCommit(Box::new(counting_after_commit_effect(
                     deliveries_for_host.clone(),
                 ))),

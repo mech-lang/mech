@@ -30,7 +30,11 @@ use crate::context::RuntimeCallContext;
 #[cfg(test)]
 use crate::context::RuntimeContext;
 use crate::service::RuntimeManagedServices;
-use crate::{PreparedRuntimeEffect, RuntimeValueSnapshot};
+use crate::{
+  PreparedRuntimeEffect,
+  RuntimeValueSnapshot,
+  TryIntoRuntimeValueSnapshot,
+};
 
 pub mod actor;
 pub mod arg;
@@ -313,7 +317,7 @@ where
     + Send
     + Sync
     + 'static,
-  R: Into<RuntimeValueSnapshot>,
+  R: TryIntoRuntimeValueSnapshot,
 {
   fn name(&self) -> &str { &self.name }
 
@@ -322,7 +326,8 @@ where
     context: &RuntimeCallContext,
     arguments: &[RuntimeValueSnapshot],
   ) -> MResult<RuntimeValueSnapshot> {
-    (self.plan)(context, arguments).map(Into::into)
+    let result = (self.plan)(context, arguments)?;
+    result.try_into_runtime_value_snapshot()
   }
 
   fn required_capability(
@@ -349,14 +354,15 @@ where
     + Send
     + Sync
     + 'static,
-  R: Into<RuntimeValueSnapshot>,
+  R: TryIntoRuntimeValueSnapshot,
 {
   fn invoke(
     &self,
     context: &RuntimeCallContext,
     arguments: Vec<RuntimeValueSnapshot>,
   ) -> MResult<RuntimeValueSnapshot> {
-    (self.function)(context, &arguments).map(Into::into)
+    let result = (self.function)(context, &arguments)?;
+    result.try_into_runtime_value_snapshot()
   }
 }
 
@@ -377,7 +383,7 @@ where
     + Send
     + Sync
     + 'static,
-  R: Into<RuntimeValueSnapshot> + 'static,
+  R: TryIntoRuntimeValueSnapshot + 'static,
 {
   fn from(function: DeterministicHostFunction<P, F, R>) -> Self {
     Self::Pure(Arc::new(function))

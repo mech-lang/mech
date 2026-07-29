@@ -97,7 +97,7 @@ fn main() -> MResult<()> {
     "#,
   )?;
 
-  println!("echo result: {}", fmt_value(value.as_value()));
+  println!("echo result: {}", fmt_value(&value.to_value()));
 
   match value.into_value() {
     Value::String(text) => {
@@ -122,7 +122,7 @@ fn main() -> MResult<()> {
     "#,
   )?;
 
-  println!("join result: {}", fmt_value(value.as_value()));
+  println!("join result: {}", fmt_value(&value.to_value()));
 
   match value.into_value() {
     Value::String(text) => {

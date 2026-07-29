@@ -100,16 +100,27 @@ pub(in crate::runtime) struct ModuleInstance {
 }
 
 impl ModuleInstance {
-  pub(in crate::runtime) fn detached_result(&self) -> RuntimeModuleResult {
-    RuntimeModuleResult {
+  pub(in crate::runtime) fn try_detached_result(
+    &self,
+  ) -> MResult<RuntimeModuleResult> {
+    Ok(RuntimeModuleResult {
       version: self.version,
       exports: self
         .exports
         .iter()
-        .map(|(name, value)| (name.clone(), RuntimeValueSnapshot::capture(&value.borrow())))
-        .collect(),
-      result: RuntimeValueSnapshot::capture(&self.result),
-    }
+        .map(|(name, value)| {
+          Ok((
+            name.clone(),
+            RuntimeValueSnapshot::try_capture(
+              &value.borrow(),
+            )?,
+          ))
+        })
+        .collect::<MResult<_>>()?,
+      result: RuntimeValueSnapshot::try_capture(
+        &self.result,
+      )?,
+    })
   }
 }
 
@@ -177,7 +188,7 @@ impl MechRuntime {
         )?;
 
         runtime.enforce_turn_duration(turn_started)?;
-        Ok(instance.detached_result())
+        instance.try_detached_result()
       },
     )
   }

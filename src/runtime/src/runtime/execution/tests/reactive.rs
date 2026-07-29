@@ -64,15 +64,16 @@ fn step_with_context_recomputes_runtime_host_function_with_provided_context() {
             move |context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 assert_eq!(context.subject(), "program:step-host-test");
                 host_calls_for_host.fetch_add(1, Ordering::SeqCst);
-                match args[0].as_value() {
-                    Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+                let argument = args[0].to_value();
+                let value = match argument {
+                    Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
                     Value::MutableReference(value) => match &*value.borrow() {
-                        Value::F64(value) => Ok(Value::F64(Ref::new(*value.borrow()))),
+                        Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
                         other => panic!("expected F64 mutable reference, got {:?}", other),
                     },
                     other => panic!("expected F64 argument, got {:?}", other),
-                }
-                .map(Into::into)
+                };
+                RuntimeValueSnapshot::try_capture(&value)
             },
         ))
         .unwrap()

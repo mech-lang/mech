@@ -27,6 +27,10 @@ struct HostHarness {
     capability_uses: CapabilityUseProbe,
 }
 
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
 fn resolver_with_sources(sources: &[(&str, &str)]) -> InMemorySourceResolver {
     let mut resolver = InMemorySourceResolver::new();
     for (specifier, source) in sources {
@@ -53,11 +57,11 @@ fn runtime_with_colliding_host(
             host_name,
             move |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
                 plans_for_host.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(sentinel)).into())
+                Ok(snapshot(Value::F64(Ref::new(sentinel))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 invocations_for_host.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(sentinel)).into())
+                Ok(snapshot(Value::F64(Ref::new(sentinel))))
             },
         ))
         .unwrap()

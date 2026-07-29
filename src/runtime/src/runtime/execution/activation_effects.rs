@@ -61,7 +61,9 @@ impl NativeFunctionCompiler for ActivationEffectPayloadCaptureCompiler {
     };
     Ok(Box::new(ActivationEffectPayloadCapture {
       payload: payload.clone(),
-      snapshot: mech_core::Ref::new(snapshot_runtime_value(payload)),
+      snapshot: mech_core::Ref::new(
+        snapshot_runtime_value(payload)?,
+      ),
     }))
   }
 }
@@ -72,12 +74,28 @@ struct ActivationEffectPayloadCapture {
   snapshot: mech_core::ValRef,
 }
 
+impl ActivationEffectPayloadCapture {
+  fn update_snapshot(&self) -> MResult<()> {
+    let snapshot = snapshot_runtime_value(&self.payload)?;
+    *self.snapshot.borrow_mut() = snapshot;
+    Ok(())
+  }
+}
+
 impl MechFunctionImpl for ActivationEffectPayloadCapture {
   fn solve(&self) {
-    *self.snapshot.borrow_mut() = snapshot_runtime_value(&self.payload);
+    if let Err(error) = self.update_snapshot() {
+      eprintln!(
+        "[Mech Runtime Activation Error] payload snapshot failed during solve; preserving previous payload: {:?}",
+        error,
+      );
+    }
+  }
+  fn solve_result(&self) -> MResult<()> {
+    self.update_snapshot()
   }
   fn solve_reactive(&self) -> MResult<mech_core::ReactiveSolveStatus> {
-    self.solve();
+    self.update_snapshot()?;
     Ok(mech_core::ReactiveSolveStatus::Unchanged)
   }
   fn out(&self) -> Value { Value::MutableReference(self.snapshot.clone()) }

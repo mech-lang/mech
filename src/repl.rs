@@ -342,7 +342,7 @@ impl MechRepl {
           .as_ref()
           .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
         let mut output = String::new();
-        for (name, value) in runtime.root_symbol_values_all() {
+        for (name, value) in runtime.root_symbol_values_all()? {
           output.push_str(&format!("{} = {}\n", name, value));
         }
         Ok(output)
@@ -356,7 +356,7 @@ impl MechRepl {
           .as_ref()
           .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
         let rows = if names.is_empty() {
-          runtime.root_symbol_values_all()
+          runtime.root_symbol_values_all()?
         } else {
           let name_refs = names.iter().map(String::as_str).collect::<Vec<_>>();
           runtime.root_symbol_values(&name_refs)?
@@ -403,7 +403,7 @@ impl MechRepl {
           .runtime
           .as_mut()
           .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
-        let mut result = mech_runtime::RuntimeValueSnapshot::capture(&Value::Empty);
+        let mut result = mech_runtime::RuntimeValueSnapshot::empty();
         for source_path in paths {
           let request = runtime_repl_load_request(&source_path)?;
           let (value, _events) =
@@ -421,7 +421,7 @@ impl MechRepl {
           .runtime
           .as_mut()
           .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
-        let mut result = mech_runtime::RuntimeValueSnapshot::capture(&Value::Empty);
+        let mut result = mech_runtime::RuntimeValueSnapshot::empty();
         for (_, source) in code {
           result = runtime.run_string(&source.to_string())?;
         }

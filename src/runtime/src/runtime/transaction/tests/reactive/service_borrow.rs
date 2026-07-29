@@ -5,7 +5,7 @@ use super::ReactiveTransactionalProbe;
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 use crate::{
     CapabilityId, MechRuntime, PlannedPureHostFunction, PlannedStagedHostFunction,
-    PreparedRuntimeEffect, RuntimeHealth, RuntimePreparedHostCall,
+    PreparedRuntimeEffect, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 use mech_core::{
     CompileCtx, MResult, MechExecutionServices, MechFunctionCompiler, MechFunctionImpl,
@@ -13,6 +13,10 @@ use mech_core::{
 };
 use mech_program::ExecutionServicesBorrowConflict;
 use std::sync::{Arc, Mutex};
+
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
 
 struct ReentrantRuntimeServiceFunction {
     output: Ref<usize>,
@@ -74,10 +78,10 @@ fn reentrant_runtime_service_borrow_returns_structured_error_and_recovers() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedStagedHostFunction::new(
             STAGED_HOST,
-            |_context, _arguments| Ok(Value::F64(Ref::new(1.0)).into()),
+            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
             move |_context, _arguments| {
                 Ok(RuntimePreparedHostCall {
-                    value: Value::F64(Ref::new(1.0)).into(),
+                    value: snapshot(Value::F64(Ref::new(1.0))),
                     effect: PreparedRuntimeEffect::Transactional(Box::new(
                         ReactiveTransactionalProbe {
                             log: effect_log.clone(),
@@ -92,8 +96,8 @@ fn reentrant_runtime_service_borrow_returns_structured_error_and_recovers() {
         .unwrap()
         .host_function(PlannedPureHostFunction::new(
             REENTRANT_HOST,
-            |_context, _arguments| Ok(Value::F64(Ref::new(1.0)).into()),
-            |_context, _arguments| Ok(Value::F64(Ref::new(1.0)).into()),
+            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
         ))
         .unwrap()
         .build()

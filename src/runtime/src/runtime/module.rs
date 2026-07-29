@@ -43,7 +43,7 @@ use crate::{
   SourceRequest,
   SourceScope,
 };
-use mech_core::{MResult, MechError, MechSourceCode, Value};
+use mech_core::{MResult, MechError, MechSourceCode};
 #[cfg(feature = "invariant_define")]
 use mech_program::IntegrityConstraintReport;
 use std::collections::{HashMap, HashSet};
@@ -53,7 +53,7 @@ use web_time::Instant;
 use std::time::Instant;
 
 struct RootModuleExecution {
-  result: Value,
+  result: crate::RuntimeValueSnapshot,
   #[cfg(feature = "invariant_define")]
   integrity: IntegrityConstraintReport,
 }
@@ -701,12 +701,12 @@ impl MechRuntime {
     options: ModuleBuildOptions<'_>,
   ) -> MResult<crate::RuntimeValueSnapshot> {
     self
-      .resolve_and_run_root_module_value_with_context(
+      .resolve_and_run_root_module_execution_with_context(
         context,
         request,
         options,
       )
-      .map(|value| crate::RuntimeValueSnapshot::capture(&value))
+      .map(|execution| execution.result)
   }
 
   #[cfg(feature = "invariant_define")]
@@ -740,24 +740,9 @@ impl MechRuntime {
         options,
       )
       .map(|execution| crate::RuntimeRootModuleExecutionReport {
-        result: crate::RuntimeValueSnapshot::capture(&execution.result),
+        result: execution.result,
         integrity: execution.integrity,
       })
-  }
-
-  pub(crate) fn resolve_and_run_root_module_value_with_context(
-    &mut self,
-    context: &mut RuntimeContext,
-    request: impl Into<SourceRequest>,
-    options: ModuleBuildOptions<'_>,
-  ) -> MResult<Value> {
-    self
-      .resolve_and_run_root_module_execution_with_context(
-        context,
-        request,
-        options,
-      )
-      .map(|execution| execution.result)
   }
 
   fn resolve_and_run_root_module_execution_with_context(
@@ -816,7 +801,9 @@ impl MechRuntime {
           turn_started,
         )?;
         Ok(RootModuleExecution {
-          result,
+          result: crate::RuntimeValueSnapshot::try_capture(
+            &result,
+          )?,
           #[cfg(feature = "invariant_define")]
           integrity: IntegrityConstraintReport::from_evaluations(
             integrity_evaluations,

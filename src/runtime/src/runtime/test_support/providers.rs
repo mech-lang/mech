@@ -269,12 +269,16 @@ pub(crate) fn sleep_host(name: &str) -> RegisteredHostFunction {
     PlannedPureHostFunction::new(
         name,
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(args.first().cloned().unwrap_or_else(|| Value::Empty.into()))
+            Ok(args
+                .first()
+                .cloned()
+                .unwrap_or_else(RuntimeValueSnapshot::empty))
         },
         move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
             thread::sleep(Duration::from_millis(5));
 
-            let value = match args.first().map(RuntimeValueSnapshot::as_value) {
+            let argument = args.first().map(RuntimeValueSnapshot::to_value);
+            let value = match argument {
                 Some(Value::F64(value)) => Value::F64(Ref::new(*value.borrow())),
                 Some(Value::MutableReference(value)) => match &*value.borrow() {
                     Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
@@ -282,7 +286,7 @@ pub(crate) fn sleep_host(name: &str) -> RegisteredHostFunction {
                 },
                 other => panic!("expected f64 argument, got {other:?}"),
             };
-            Ok(value.into())
+            RuntimeValueSnapshot::try_capture(&value)
         },
     )
     .into()

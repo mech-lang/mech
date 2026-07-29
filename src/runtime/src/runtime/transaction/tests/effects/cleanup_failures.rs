@@ -80,10 +80,12 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
         .resource_provider(Box::new(InMemoryDocsProvider::new()))
         .host_function(PlannedPureHostFunction::new(
             "demo/poison-gate",
-            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| Ok(Value::Empty.into()),
+            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
+                Ok(RuntimeValueSnapshot::empty())
+            },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 observed_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Empty.into())
+                Ok(RuntimeValueSnapshot::empty())
             },
         ))
         .unwrap()

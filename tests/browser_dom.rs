@@ -106,7 +106,7 @@ fn runtime_with_binding(name: &str, uri: &str) -> MechRuntime {
 
 fn snapshot_string(value: RuntimeValueSnapshot) -> String {
   value
-    .as_value()
+    .into_value()
     .as_string()
     .unwrap()
     .borrow()

@@ -365,13 +365,13 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
       ));
     };
 
-    let arguments = arguments
-      .iter()
-      .map(RuntimeValueSnapshot::capture)
-      .collect::<Vec<_>>();
     let call_context =
       RuntimeCallContext::capture(services.context);
-    let result = (|| -> MResult<RuntimeValueSnapshot> {
+    let result = (|| -> MResult<Value> {
+      let arguments = arguments
+        .iter()
+        .map(RuntimeValueSnapshot::try_capture)
+        .collect::<MResult<Vec<_>>>()?;
       invoke_extension(
         "host call policy",
         "validate_call",
@@ -417,14 +417,15 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
       services.check_capability(&capability_request)?;
       match function {
         RegisteredHostFunction::Pure(function) => {
-          invoke_extension(
+          let snapshot = invoke_extension(
             component,
             "invoke",
             || function.invoke(&call_context, arguments),
-          )
+          )?;
+          snapshot.into_value().try_deep_snapshot()
         }
         RegisteredHostFunction::RuntimeManaged(function) => {
-          invoke_extension(
+          let snapshot = invoke_extension(
             component,
             "invoke",
             || {
@@ -434,7 +435,8 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
                 arguments,
               )
             },
-          )
+          )?;
+          snapshot.into_value().try_deep_snapshot()
         }
         RegisteredHostFunction::Staged(function) => {
           let RuntimePreparedHostCall {
@@ -450,6 +452,8 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
               )
             },
           )?;
+          let value =
+            value.into_value().try_deep_snapshot()?;
           services.stage_effect(effect)?;
           Ok(value)
         }
@@ -473,9 +477,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         )?;
       }
     }
-    result.map(|snapshot| {
-      snapshot.into_value().deep_snapshot()
-    })
+    result
   }
 }
 

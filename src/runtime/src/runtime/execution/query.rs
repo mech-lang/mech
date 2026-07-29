@@ -34,12 +34,13 @@ impl MechRuntime {
     &self,
     interpreter_id: u64,
     output_id: u64,
-  ) -> Option<RuntimeValueSnapshot> {
+  ) -> MResult<Option<RuntimeValueSnapshot>> {
     self
       .program
       .output_value_for_interpreter(interpreter_id, output_id)
       .as_ref()
-      .map(RuntimeValueSnapshot::capture)
+      .map(RuntimeValueSnapshot::try_capture)
+      .transpose()
   }
 
   pub fn symbol_name_for_interpreter_output(
@@ -54,7 +55,7 @@ impl MechRuntime {
     &self,
     interpreter_id: u64,
     names: &[String],
-  ) -> Option<Vec<(String, RuntimeValueSnapshot)>> {
+  ) -> MResult<Option<Vec<(String, RuntimeValueSnapshot)>>> {
     self
       .program
       .symbol_values_for_interpreter(interpreter_id, names)
@@ -62,10 +63,14 @@ impl MechRuntime {
         values
           .into_iter()
           .map(|(name, value)| {
-            (name, RuntimeValueSnapshot::capture(&value))
+            Ok((
+              name,
+              RuntimeValueSnapshot::try_capture(&value)?,
+            ))
           })
-          .collect()
+          .collect::<MResult<Vec<_>>>()
       })
+      .transpose()
   }
 
   pub fn root_symbol_value(
@@ -75,7 +80,9 @@ impl MechRuntime {
     self
       .program
       .root_symbol_value(name)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+      .and_then(|value| {
+        RuntimeValueSnapshot::try_capture(&value)
+      })
   }
 
   pub fn root_symbol_values(
@@ -85,27 +92,33 @@ impl MechRuntime {
     self
       .program
       .root_symbol_values(names)
-      .map(|values| {
+      .and_then(|values| {
         values
           .into_iter()
           .map(|(name, value)| {
-            (name, RuntimeValueSnapshot::capture(&value))
+            Ok((
+              name,
+              RuntimeValueSnapshot::try_capture(&value)?,
+            ))
           })
-          .collect()
+          .collect::<MResult<Vec<_>>>()
       })
   }
 
   pub fn root_symbol_values_all(
     &self,
-  ) -> Vec<(String, RuntimeValueSnapshot)> {
+  ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
     self
       .program
       .root_symbol_values_all()
       .into_iter()
       .map(|(name, value)| {
-        (name, RuntimeValueSnapshot::capture(&value))
+        Ok((
+          name,
+          RuntimeValueSnapshot::try_capture(&value)?,
+        ))
       })
-      .collect()
+      .collect::<MResult<Vec<_>>>()
   }
 
   pub fn bind_ans_for_interpreter(

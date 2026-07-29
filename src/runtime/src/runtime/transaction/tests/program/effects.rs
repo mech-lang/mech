@@ -4,10 +4,14 @@ use crate::{
     CapabilityId, MechRuntime, RuntimeEventKind,
     InMemoryDocsProvider, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCapabilityOperation, RuntimePreparedHostCall, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest,
+    RuntimeResourceWriteRequest, RuntimeValueSnapshot,
 };
 use mech_core::Value;
 use std::sync::{Arc, Mutex};
+
+fn snapshot(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
 
 #[test]
 fn resource_provider_staging_failure_leaves_effect_journal_unchanged() {
@@ -57,10 +61,10 @@ fn committed_implicit_participant_failure_never_rolls_back_program() {
         builder = builder
             .host_function(PlannedStagedHostFunction::new(
                 name,
-                |_context, _args| Ok(Value::F64(mech_core::Ref::new(1.0)).into()),
+                |_context, _args| Ok(snapshot(Value::F64(mech_core::Ref::new(1.0)))),
                 move |_context, _args| {
                     Ok(RuntimePreparedHostCall {
-                        value: Value::F64(mech_core::Ref::new(1.0)).into(),
+                        value: snapshot(Value::F64(mech_core::Ref::new(1.0))),
                         effect: PreparedRuntimeEffect::Transactional(Box::new(
                             CommitDecisionEffect {
                                 name,

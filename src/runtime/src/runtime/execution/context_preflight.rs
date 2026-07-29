@@ -2757,6 +2757,8 @@ pub(super) fn resolve_runtime_value(value: Value) -> Value {
 // Activation effects are released after the reactive turn succeeds. Keep the
 // body-time payload separate from any live source cells so a register commit
 // cannot change the value that the selected arm staged for its send.
-pub(super) fn snapshot_runtime_value(value: &Value) -> Value {
-  value.deep_snapshot()
+pub(super) fn snapshot_runtime_value(
+  value: &Value,
+) -> MResult<Value> {
+  value.try_deep_snapshot()
 }

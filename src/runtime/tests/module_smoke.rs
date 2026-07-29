@@ -3684,6 +3684,7 @@ ok := true
   assert!(runtime.has_interpreter(hash_str("foo")));
   let values = runtime
     .symbol_values_for_interpreter(hash_str("foo"), &["ok".to_string()])
+    .expect("symbol snapshot should succeed")
     .expect("named fence interpreter should expose symbols");
   assert_eq!(values.len(), 1, "named fence export should remain observable after direct run");
 }

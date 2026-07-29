@@ -170,9 +170,11 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &str,
   ) -> MResult<RuntimeValueSnapshot> {
-    self
-      .run_string_value_with_context(context, source)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+    self.run_string_with_context_map(
+      context,
+      source,
+      |value| RuntimeValueSnapshot::try_capture(&value),
+    )
   }
 
   pub(crate) fn run_string_value_with_context(
@@ -180,6 +182,19 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &str,
   ) -> MResult<Value> {
+    self.run_string_with_context_map(
+      context,
+      source,
+      Ok,
+    )
+  }
+
+  fn run_string_with_context_map<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &str,
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     let turn_started = Instant::now();
     let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
     let result = self.with_atomic_program_operation(
@@ -198,7 +213,12 @@ impl MechRuntime {
           )
         })?;
         runtime.enforce_source_byte_count(context, source_bytes)?;
-        runtime.run_string_operation(context, source, turn_started)
+        let value = runtime.run_string_operation(
+          context,
+          source,
+          turn_started,
+        )?;
+        finish(value)
       },
     );
     if let Err(error) = &result {
@@ -295,9 +315,11 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     bytecode: &[u8],
   ) -> MResult<RuntimeValueSnapshot> {
-    self
-      .run_bytecode_value_with_context(context, bytecode)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+    self.run_bytecode_with_context_map(
+      context,
+      bytecode,
+      |value| RuntimeValueSnapshot::try_capture(&value),
+    )
   }
 
   fn run_bytecode_value_with_context(
@@ -305,6 +327,19 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     bytecode: &[u8],
   ) -> MResult<Value> {
+    self.run_bytecode_with_context_map(
+      context,
+      bytecode,
+      Ok,
+    )
+  }
+
+  fn run_bytecode_with_context_map<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    bytecode: &[u8],
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
     let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
@@ -319,15 +354,21 @@ impl MechRuntime {
       )
     })?;
     self.enforce_source_byte_count(context, source_bytes)?;
-    self.run_bytecode_with_context_inner(context, bytecode, turn_started)
+    self.run_bytecode_with_context_inner_map(
+      context,
+      bytecode,
+      turn_started,
+      finish,
+    )
   }
 
-  fn run_bytecode_with_context_inner(
+  fn run_bytecode_with_context_inner_map<T>(
     &mut self,
     context: &mut RuntimeContext,
     bytecode: &[u8],
     turn_started: Instant,
-  ) -> MResult<Value> {
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -352,7 +393,10 @@ impl MechRuntime {
       bytecode_program.run_bytecode(bytecode)
     })();
 
-    let result = result.and_then(|value| { self.enforce_turn_duration(turn_started)?; Ok(value) });
+    let result = result.and_then(|value| {
+      self.enforce_turn_duration(turn_started)?;
+      finish(value)
+    });
 
     // Runtime bytecode execution is one-shot. Direct MechProgram
     // bytecode loading is the persistent installation path.
@@ -403,9 +447,11 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &MechSourceCode,
   ) -> MResult<RuntimeValueSnapshot> {
-    self
-      .run_source_value_with_context(context, source)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+    self.run_source_with_context_map(
+      context,
+      source,
+      |value| RuntimeValueSnapshot::try_capture(&value),
+    )
   }
 
   pub fn run_source(
@@ -421,9 +467,26 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     source: &MechSourceCode,
   ) -> MResult<Value> {
+    self.run_source_with_context_map(
+      context,
+      source,
+      Ok,
+    )
+  }
+
+  fn run_source_with_context_map<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    source: &MechSourceCode,
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     let turn_started = Instant::now();
     if let MechSourceCode::ByteCode(bytes) = source {
-      return self.run_bytecode_value_with_context(context, bytes);
+      return self.run_bytecode_with_context_map(
+        context,
+        bytes,
+        finish,
+      );
     }
 
     let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -432,7 +495,12 @@ impl MechRuntime {
       "run_source_with_context",
       |runtime, context| {
         runtime.enforce_source_limits(context, source)?;
-        runtime.run_source_operation(context, source, turn_started)
+        let value = runtime.run_source_operation(
+          context,
+          source,
+          turn_started,
+        )?;
+        finish(value)
       },
     );
     if let Err(error) = &result {
@@ -454,7 +522,14 @@ impl MechRuntime {
     match source {
       MechSourceCode::String(source) => self.run_string_operation(context, source, turn_started),
       MechSourceCode::Tree(tree) => self.run_tree_operation(context, tree, turn_started),
-      MechSourceCode::ByteCode(bytes) => self.run_bytecode_with_context_inner(context, bytes, turn_started),
+      MechSourceCode::ByteCode(bytes) => {
+        self.run_bytecode_with_context_inner_map(
+          context,
+          bytes,
+          turn_started,
+          Ok,
+        )
+      }
       MechSourceCode::Program(sources) => {
         let mut value = Value::Empty;
         for source in sources {
@@ -479,9 +554,11 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     tree: &mech_core::Program,
   ) -> MResult<RuntimeValueSnapshot> {
-    self
-      .run_tree_value_with_context(context, tree)
-      .map(|value| RuntimeValueSnapshot::capture(&value))
+    self.run_tree_with_context_map(
+      context,
+      tree,
+      |value| RuntimeValueSnapshot::try_capture(&value),
+    )
   }
 
   pub(crate) fn run_tree_value_with_context(
@@ -489,12 +566,32 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     tree: &mech_core::Program,
   ) -> MResult<Value> {
+    self.run_tree_with_context_map(
+      context,
+      tree,
+      Ok,
+    )
+  }
+
+  fn run_tree_with_context_map<T>(
+    &mut self,
+    context: &mut RuntimeContext,
+    tree: &mech_core::Program,
+    finish: impl FnOnce(Value) -> MResult<T>,
+  ) -> MResult<T> {
     let turn_started = Instant::now();
     let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
     let result = self.with_atomic_program_operation(
       context,
       "run_tree_with_context",
-      |runtime, context| runtime.run_tree_operation(context, tree, turn_started),
+      |runtime, context| {
+        let value = runtime.run_tree_operation(
+          context,
+          tree,
+          turn_started,
+        )?;
+        finish(value)
+      },
     );
     if let Err(error) = &result {
       self.emit_program_failure_audit(

@@ -212,7 +212,7 @@ fn render_config_event(event: &config::ConfigLoadEvent) {
 fn print_value(value: &RuntimeValueSnapshot) {
     println!("{}", value.kind());
     #[cfg(feature = "pretty_print")]
-    println!("{}", value.as_value().pretty_print());
+    println!("{}", value.to_value().pretty_print());
     #[cfg(not(feature = "pretty_print"))]
     println!("{:#?}", value);
 }
@@ -250,10 +250,10 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         }
         _ => {
             if plan.run_paths.is_empty() {
-                Ok(RuntimeValueSnapshot::capture(&Value::Empty))
+                Ok(RuntimeValueSnapshot::empty())
             } else {
                 let fs_kernel = plan.filesystem_access.kernel.clone();
-                let mut last = RuntimeValueSnapshot::capture(&Value::Empty);
+                let mut last = RuntimeValueSnapshot::empty();
                 for p in &plan.run_paths {
                     for target in collect_run_targets_with_capabilities(Path::new(p), &fs_kernel)? {
                         let (value, events) = if SourceKind::from_path(&target) == SourceKind::Mech {
