@@ -262,6 +262,115 @@ impl CompileCtx {
   }
 }
 
+#[cfg(feature = "compiler")]
+impl BytecodeCompilerContext for CompileCtx {
+  fn register_for_ptr_with_initialization_status(
+    &mut self,
+    pointer: usize,
+  ) -> (Register, bool) {
+    CompileCtx::register_for_ptr_with_initialization_status(self, pointer)
+  }
+
+  fn compile_const(
+    &mut self,
+    bytes: &[u8],
+    kind: ValueKind,
+  ) -> MResult<u32> {
+    CompileCtx::compile_const(self, bytes, kind)
+  }
+
+  fn define_symbol(
+    &mut self,
+    pointer: usize,
+    register: Register,
+    name: &str,
+    mutable: bool,
+  ) {
+    CompileCtx::define_symbol(self, pointer, register, name, mutable);
+  }
+
+  fn require(
+    &mut self,
+    requirement: FeatureFlag,
+  ) {
+    self.features.insert(requirement);
+  }
+
+  fn emit_const_load(
+    &mut self,
+    destination: Register,
+    constant: u32,
+  ) {
+    CompileCtx::emit_const_load(self, destination, constant);
+  }
+
+  fn emit_nullop(
+    &mut self,
+    function: u64,
+    destination: Register,
+  ) {
+    CompileCtx::emit_nullop(self, function, destination);
+  }
+
+  fn emit_unop(
+    &mut self,
+    function: u64,
+    destination: Register,
+    source: Register,
+  ) {
+    CompileCtx::emit_unop(self, function, destination, source);
+  }
+
+  fn emit_binop(
+    &mut self,
+    function: u64,
+    destination: Register,
+    lhs: Register,
+    rhs: Register,
+  ) {
+    CompileCtx::emit_binop(self, function, destination, lhs, rhs);
+  }
+
+  fn emit_ternop(
+    &mut self,
+    function: u64,
+    destination: Register,
+    a: Register,
+    b: Register,
+    c: Register,
+  ) {
+    CompileCtx::emit_ternop(self, function, destination, a, b, c);
+  }
+
+  fn emit_quadop(
+    &mut self,
+    function: u64,
+    destination: Register,
+    a: Register,
+    b: Register,
+    c: Register,
+    d: Register,
+  ) {
+    CompileCtx::emit_quadop(self, function, destination, a, b, c, d);
+  }
+
+  fn emit_varop(
+    &mut self,
+    function: u64,
+    destination: Register,
+    arguments: Vec<Register>,
+  ) {
+    CompileCtx::emit_varop(self, function, destination, arguments);
+  }
+
+  fn emit_ret(
+    &mut self,
+    source: Register,
+  ) {
+    CompileCtx::emit_ret(self, source);
+  }
+}
+
 #[inline]
 fn align_up(offset: u64, align: u64) -> u64 {
   if align == 0 { return offset; }
