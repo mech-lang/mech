@@ -74,6 +74,34 @@ encoding, instruction encoding, constant alignment, section order and layout,
 and the CRC32 trailer remain unchanged. Moving the decoder or format model is
 separate future work.
 
+## API migration
+
+Bytecode compilation is now a `MechProgram` concern. The public call changes
+from:
+
+```rust
+interpreter.compile()
+```
+
+to:
+
+```rust
+program.compile_bytecode()
+```
+
+For the temporary legacy native-packaging artifact, use:
+
+```rust
+program.compile_bytecode_artifact()
+```
+
+Direct interpreter embedders that need to compile bytecode must wrap their
+interpreter use in `MechProgram`. Runtime-only interpreter builds intentionally
+do not expose bytecode compilation.
+
+`compile_bytecode_artifact` is temporary compatibility scaffolding for legacy
+`mechc`; it is not the permanent native-build contract.
+
 ## Legacy native packaging
 
 `MechProgram::compile_bytecode_artifact` temporarily returns both the emitted
