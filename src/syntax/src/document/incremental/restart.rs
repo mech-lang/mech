@@ -48,11 +48,31 @@ pub fn select_reparse_root(
   let context_change = changes.changes_parser_context(|range| {
     snapshot.source.text(range).unwrap_or_default()
   });
-  if changes.touches_boundary(selected.range) || context_change {
+  if changes.touches_boundary(selected.range) {
+    selected = expand_boundary_root(snapshot, selected);
+  }
+  if context_change {
     selected = parent_supported_root(snapshot, selected)
       .unwrap_or_else(|| document_root(snapshot));
+    if selected.kind == SyntaxKind::SectionElement {
+      selected = parent_supported_root(snapshot, selected)
+        .unwrap_or_else(|| document_root(snapshot));
+    }
   }
   selected
+}
+
+fn expand_boundary_root(
+  snapshot: &SyntaxSnapshot,
+  root: ReparseRoot,
+) -> ReparseRoot {
+  let mut expanded = parent_supported_root(snapshot, root)
+    .unwrap_or_else(|| document_root(snapshot));
+  if expanded.kind == SyntaxKind::SectionElement {
+    expanded = parent_supported_root(snapshot, expanded)
+      .unwrap_or_else(|| document_root(snapshot));
+  }
+  expanded
 }
 
 pub fn parent_supported_root(

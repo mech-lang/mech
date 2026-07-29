@@ -1,0 +1,14 @@
+Document
+  Body
+    Section
+      SectionElement
+        MechItem
+          VariableDefine
+            Identifier
+              IdentifierToken "x"
+            Whitespace " "
+            DefineOperator
+              Colon ":"
+              Equal "="
+            Newline "\n"
+            Missing

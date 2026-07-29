@@ -179,3 +179,6 @@ paste = "1.0.15"
 version = "0.2.19"
 default-features = false
 features = ["libm"]
+
+[dev-dependencies]
+proptest = { version = "1.7.0", default-features = false, features = ["std"] }
