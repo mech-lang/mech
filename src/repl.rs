@@ -42,6 +42,54 @@ fn repl_error(msg: impl Into<String>) -> MechError {
   MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
 }
 
+#[cfg(feature = "run")]
+fn has_explicit_source_scheme(specifier: &str) -> bool {
+  let Some(colon) = specifier.find(':') else {
+    return false;
+  };
+
+  if colon == 1
+    && specifier.as_bytes()[0].is_ascii_alphabetic()
+  {
+    return false;
+  }
+
+  let scheme = &specifier[..colon];
+  let mut chars = scheme.chars();
+  let Some(first) = chars.next() else {
+    return false;
+  };
+
+  first.is_ascii_alphabetic()
+    && chars.all(|character| {
+      character.is_ascii_alphanumeric()
+        || matches!(character, '+' | '.' | '-')
+    })
+}
+
+#[cfg(feature = "run")]
+fn runtime_repl_load_request(
+  source_path: &str,
+) -> MResult<mech_runtime::SourceRequest> {
+  if source_path.is_empty() {
+    return Err(repl_error("runtime REPL load path cannot be empty"));
+  }
+
+  let path = std::path::Path::new(source_path);
+  let specifier = if has_explicit_source_scheme(source_path)
+    || path.is_absolute()
+  {
+    source_path.to_string()
+  } else {
+    std::env::current_dir()?
+      .join(path)
+      .to_string_lossy()
+      .into_owned()
+  };
+
+  Ok(mech_runtime::SourceRequest::new(specifier))
+}
+
 impl MechRepl {
 
   pub fn new() -> MechRepl {
@@ -357,8 +405,14 @@ impl MechRepl {
           .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
         let mut result = mech_runtime::RuntimeValueSnapshot::capture(&Value::Empty);
         for source_path in paths {
-          let source = std::fs::read_to_string(&source_path)?;
-          result = runtime.run_string(&source)?;
+          let request = runtime_repl_load_request(&source_path)?;
+          let (value, _events) =
+            crate::cli::run::run_cli_root_module_with_events(
+              runtime,
+              request,
+              crate::cli::run::cli_module_options(),
+            )?;
+          result = value;
         }
         Ok(format!("\n{}\n{}\n", result.kind(), result))
       }
@@ -387,6 +441,10 @@ impl MechRepl {
   }
 
 }
+
+#[cfg(all(test, feature = "run"))]
+#[path = "repl/tests/runtime_load.rs"]
+mod runtime_load_tests;
 
 fn format_cycles(n: u64, total_duration: Duration) -> String {
   let total_ns = total_duration.as_nanos() as f64;
