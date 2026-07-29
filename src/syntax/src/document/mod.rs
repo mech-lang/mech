@@ -40,7 +40,10 @@ pub use index::*;
 pub use kind::*;
 pub use line_index::*;
 pub use pointer::*;
-pub use parser::{ParseConfig, ParseLimits, parse_document};
+pub use parser::{
+  FenceDelimiter, FragmentKind, FragmentSnapshot, ParseConfig, ParseContext, ParseLimits,
+  ParseMode, parse_document, parse_fragment,
+};
 pub use red::*;
 pub use source::*;
 
@@ -79,6 +82,10 @@ impl RestartIndex {
   pub fn as_slice(&self) -> &[RestartEntry] {
     &self.entries
   }
+
+  pub fn get(&self, node: NodeId) -> Option<&RestartEntry> {
+    self.entries.iter().find(|entry| entry.node == node)
+  }
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -87,6 +94,7 @@ pub struct ParseStats {
   pub parser_steps: u64,
   pub events_emitted: u64,
   pub diagnostics_emitted: u64,
+  pub diagnostics_truncated: bool,
   pub recovery_bytes: u64,
   pub reparse_root_count: u64,
   pub reused_node_count: u64,

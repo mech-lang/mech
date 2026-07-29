@@ -119,7 +119,7 @@ fn malformed_and_promoted_regression_fixtures_remain_lossless() {
     let malformed = fixture_files("malformed");
     let regressions = fixture_files("fuzz-regressions");
     assert_eq!(malformed.len(), 4);
-    assert_eq!(regressions.len(), 7);
+    assert_eq!(regressions.len(), 8);
     for path in malformed.into_iter().chain(regressions) {
         let source = fs::read_to_string(path).unwrap();
         assert_general_invariants(&source);
@@ -160,12 +160,21 @@ fn structured_diagnostic_fixture_is_stable() {
         .unwrap_or_else(|| String::from("None"));
     let actual = json!({
       "code": diagnostic.code.as_str(),
-      "rule": diagnostic.rule.unwrap().0,
+      "rule": diagnostic.rule.map(|rule| rule.0),
+      "context": if diagnostic.context
+        == Some(mech_syntax::document::parser::parser_context_id(
+          "prototype-expression"
+        ))
+      {
+        "prototype-expression"
+      } else {
+        "other"
+      },
       "range": {
         "start": range.start.0,
         "end": range.end.0,
       },
-      "expected": "expression",
+      "expected": "prototype-expression",
       "found": found,
       "recovery": if recovery.starts_with("Insert") { "Insert" } else { "Other" },
     });

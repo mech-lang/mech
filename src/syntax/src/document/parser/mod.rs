@@ -6,14 +6,16 @@ use alloc::vec::Vec;
 use crate::document::{
   Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticStore, DiagnosticTags,
   DocumentId, ExpectedSyntax, FoundSyntax, GreenBuilder, GreenNode, IdGenerator, NodeFlags,
-  ParseStats, RecoveryAction, RestartEntry, RestartIndex, RestartMode, Revision, RuleId, Severity,
-  SyntaxKind, SyntaxSnapshot, TextRange, TextSize, TextSnapshot, TokenFlags,
+  ParseStats, ParserContextId, RecoveryAction, RestartEntry, RestartIndex, RestartMode, Revision,
+  RuleId, Severity, SyntaxKind, SyntaxSnapshot, TextRange, TextSize, TextSnapshot, TokenFlags,
 };
 
+mod canonical_rules;
 pub mod checkpoint;
 pub mod cursor;
 pub mod document;
 pub mod event;
+pub mod fragment;
 pub mod limits;
 pub mod marker;
 pub mod mech;
@@ -25,6 +27,7 @@ pub mod terminal;
 pub use checkpoint::*;
 pub use cursor::*;
 pub use event::*;
+pub use fragment::*;
 pub use limits::*;
 pub use marker::*;
 pub use recovery::*;
@@ -44,8 +47,11 @@ struct ParserOutput {
 
 pub(crate) struct Parser<'a> {
   source: &'a TextSnapshot,
+  parse_range: TextRange,
   cursor: Cursor<'a>,
   events: Vec<Event>,
+  open_markers: Vec<usize>,
+  covered_end: TextSize,
   diagnostics: Vec<PendingDiagnostic>,
   rules: RuleStack,
   config: ParseConfig,
@@ -53,6 +59,7 @@ pub(crate) struct Parser<'a> {
   nesting: u32,
   halted: bool,
   resource_diagnostic_emitted: bool,
+  resource_finalizing: bool,
   ids: &'a mut IdGenerator,
   stats: ParseStats,
 }
@@ -65,8 +72,11 @@ impl<'a> Parser<'a> {
   ) -> Self {
     Self {
       source,
+      parse_range: source.full_range(),
       cursor: Cursor::new(source),
       events: Vec::new(),
+      open_markers: Vec::new(),
+      covered_end: TextSize::ZERO,
       diagnostics: Vec::new(),
       rules: RuleStack::default(),
       config,
@@ -74,12 +84,48 @@ impl<'a> Parser<'a> {
       nesting: 0,
       halted: false,
       resource_diagnostic_emitted: false,
+      resource_finalizing: false,
       ids,
       stats: ParseStats {
         source_bytes: u64::from(source.byte_len().0),
         ..ParseStats::default()
       },
     }
+  }
+
+  fn for_range(
+    source: &'a TextSnapshot,
+    range: TextRange,
+    _root_kind: SyntaxKind,
+    initial_nesting: u32,
+    config: ParseConfig,
+    ids: &'a mut IdGenerator,
+  ) -> Self {
+    let mut parser = Self {
+      source,
+      parse_range: range,
+      cursor: Cursor::for_range(source, range),
+      events: Vec::new(),
+      open_markers: Vec::new(),
+      covered_end: range.start,
+      diagnostics: Vec::new(),
+      rules: RuleStack::default(),
+      config,
+      fuel: config.limits.fuel,
+      nesting: initial_nesting,
+      halted: false,
+      resource_diagnostic_emitted: false,
+      resource_finalizing: false,
+      ids,
+      stats: ParseStats {
+        source_bytes: u64::from(range.len().0),
+        ..ParseStats::default()
+      },
+    };
+    if source.text(range).is_err() {
+      parser.halted = true;
+    }
+    parser
   }
 
   pub(crate) fn source(&self) -> &TextSnapshot {
@@ -119,8 +165,18 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn start(&mut self) -> Marker {
-    let position = self.events.len();
-    self.events.push(Event::Tombstone);
+    if self.halted || self.resource_finalizing {
+      return Marker {
+        position: usize::MAX,
+      };
+    }
+    let open_after = self.open_markers.len().saturating_add(1);
+    let position = self
+      .emit(Event::Tombstone, open_after)
+      .unwrap_or(usize::MAX);
+    if position != usize::MAX {
+      self.open_markers.push(position);
+    }
     Marker { position }
   }
 
@@ -130,10 +186,40 @@ impl<'a> Parser<'a> {
     kind: SyntaxKind,
     flags: NodeFlags,
   ) -> CompletedMarker {
+    if marker.position == usize::MAX {
+      return CompletedMarker {
+        position: usize::MAX,
+        kind,
+      };
+    }
+    if self.halted && !self.resource_finalizing {
+      self.consume_resource_remainder();
+    }
+    if self.open_markers.is_empty() {
+      return CompletedMarker {
+        position: usize::MAX,
+        kind,
+      };
+    }
+    assert_eq!(
+      self.open_markers.last().copied(),
+      Some(marker.position),
+      "parser markers must complete in strict LIFO order"
+    );
     if let Some(event) = self.events.get_mut(marker.position) {
       *event = Event::Start { kind, flags };
     }
-    self.events.push(Event::Finish);
+    let open_after = self.open_markers.len().saturating_sub(1);
+    let finish = if self.resource_finalizing {
+      self.emit_emergency(Event::Finish)
+    } else {
+      self.emit(Event::Finish, open_after)
+    };
+    assert!(
+      finish.is_some(),
+      "accepted marker start must reserve capacity for its finish"
+    );
+    self.open_markers.pop();
     CompletedMarker {
       position: marker.position,
       kind,
@@ -141,6 +227,19 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn abandon_marker(&mut self, marker: Marker) {
+    if marker.position == usize::MAX {
+      return;
+    }
+    assert!(
+      !self.resource_finalizing,
+      "resource finalization cannot abandon an enclosing parser marker"
+    );
+    assert_eq!(
+      self.open_markers.last().copied(),
+      Some(marker.position),
+      "parser markers must abandon in strict LIFO order"
+    );
+    self.open_markers.pop();
     if marker.position + 1 == self.events.len() {
       self.events.pop();
     } else if let Some(event) = self.events.get_mut(marker.position) {
@@ -153,6 +252,8 @@ impl<'a> Parser<'a> {
       cursor: self.cursor.checkpoint(),
       events: self.events.len(),
       diagnostics: self.diagnostics.len(),
+      open_markers: self.open_markers.len(),
+      covered_end: self.covered_end,
       rule_depth: self.rules.len(),
       nesting: self.nesting,
     }
@@ -162,20 +263,35 @@ impl<'a> Parser<'a> {
     self.cursor.rewind(checkpoint.cursor);
     self.events.truncate(checkpoint.events);
     self.diagnostics.truncate(checkpoint.diagnostics);
+    self.open_markers.truncate(checkpoint.open_markers);
+    self.covered_end = checkpoint.covered_end;
     self.rules.truncate(checkpoint.rule_depth);
     self.nesting = checkpoint.nesting;
   }
 
-  pub(crate) fn enter(&mut self, name: &str) {
-    self.rules.push(rule_id(name));
-  }
-
-  pub(crate) fn leave(&mut self) {
-    self.rules.pop();
+  pub(crate) fn with_rule<T>(
+    &mut self,
+    context: ParserContextId,
+    canonical: Option<RuleId>,
+    parse: impl FnOnce(&mut Self) -> T,
+  ) -> T {
+    let depth = self.rules.len();
+    self.rules.push(context, canonical);
+    let result = parse(self);
+    self.rules.truncate(depth);
+    result
   }
 
   pub(crate) fn current_rule(&self) -> Option<RuleId> {
-    self.rules.current()
+    self.rules.current_rule()
+  }
+
+  pub(crate) fn current_context(&self) -> Option<ParserContextId> {
+    self.rules.current_context()
+  }
+
+  pub(crate) fn rule_depth(&self) -> usize {
+    self.rules.len()
   }
 
   pub(crate) fn bump_char_raw(&mut self) -> Option<(char, TextRange)> {
@@ -214,18 +330,21 @@ impl<'a> Parser<'a> {
     range: TextRange,
     flags: TokenFlags,
   ) {
-    if self.events.len() >= self.config.limits.max_events as usize {
-      self.halted = true;
-    }
-    self.events.push(Event::Token { kind, range, flags });
+    let _ = self.emit(
+      Event::Token { kind, range, flags },
+      self.open_markers.len(),
+    );
   }
 
   pub(crate) fn missing_token(&mut self, kind: SyntaxKind) {
-    self.events.push(Event::Token {
-      kind,
-      range: TextRange::empty(self.offset()),
-      flags: TokenFlags::SYNTHETIC | TokenFlags::MISSING,
-    });
+    let _ = self.emit(
+      Event::Token {
+        kind,
+        range: TextRange::empty(self.offset()),
+        flags: TokenFlags::SYNTHETIC | TokenFlags::MISSING,
+      },
+      self.open_markers.len(),
+    );
   }
 
   pub(crate) fn next_diagnostic_id(&mut self) -> crate::document::DiagnosticId {
@@ -239,6 +358,7 @@ impl<'a> Parser<'a> {
     relative: TextRange,
   ) {
     if self.diagnostics.len() >= self.config.limits.max_diagnostics as usize {
+      self.stats.diagnostics_truncated = true;
       return;
     }
     self.diagnostics.push(PendingDiagnostic {
@@ -294,13 +414,13 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn found_syntax(&self) -> FoundSyntax {
-    if self.is_eof() {
+    let character = self.cursor.context_peek_char();
+    if character.is_none() {
       return FoundSyntax {
         kind: Some(SyntaxKind::Eof),
         text: None,
       };
     }
-    let character = self.cursor.peek_char();
     FoundSyntax {
       kind: character.map(terminal::token_kind_for_char),
       text: character.map(|character| character.to_string()),
@@ -327,35 +447,57 @@ impl<'a> Parser<'a> {
     mechdown::fence_delimiter(self.cursor()).is_some()
   }
 
+  pub(crate) fn is_context_fence_start(&self) -> bool {
+    mechdown::fence_delimiter_context(self.cursor.context_view()).is_some()
+  }
+
   pub(crate) fn is_strong_document_boundary(&self) -> bool {
-    self.cursor.is_line_start()
-      && (mechdown::is_ul_subtitle(self.cursor()) || self.is_fence_start())
+    let context = self.cursor.context_view();
+    context.is_line_start()
+      && (mechdown::is_ul_subtitle_context(context) || self.is_context_fence_start())
   }
 
   pub(crate) fn consume_resource_remainder(&mut self) {
-    let start = self.offset();
-    let marker = self.start();
-    let range = TextRange::new(start, self.cursor.end());
+    if self.resource_finalizing {
+      return;
+    }
+    self.resource_finalizing = true;
+    let mut range = TextRange::new(self.covered_end, self.parse_range.end);
     self.cursor.rewind(CursorCheckpoint { offset: range.end });
-    if !range.is_empty() {
-      self.events.push(Event::Token {
+
+    if self.config.limits.max_events < MIN_PREFIX_PRESERVING_EVENTS {
+      self.events.clear();
+      self.open_markers.clear();
+      self.covered_end = self.parse_range.start;
+      range = self.parse_range;
+    } else if !range.is_empty() {
+      let required = self.open_markers.len().saturating_add(3);
+      assert!(
+        self.events.len().saturating_add(required)
+          <= self.config.limits.max_events as usize,
+        "ordinary events must reserve the resource envelope and open-marker finishes"
+      );
+      let _ = self.emit_emergency(Event::Start {
+        kind: SyntaxKind::Error,
+        flags: NodeFlags::ERROR,
+      });
+      let _ = self.emit_emergency(Event::Token {
         kind: SyntaxKind::Unknown,
         range,
         flags: TokenFlags::ERROR,
       });
+      let _ = self.emit_emergency(Event::Finish);
+      self.covered_end = range.end;
     }
-    let error =
-      marker.complete_with_flags(self, SyntaxKind::Error, NodeFlags::ERROR);
-    if !self.resource_diagnostic_emitted
-      && self.diagnostics.len() < self.config.limits.max_diagnostics as usize
-    {
+    if !self.resource_diagnostic_emitted {
       self.resource_diagnostic_emitted = true;
       let diagnostic = Diagnostic {
         id: self.next_diagnostic_id(),
         code: DiagnosticCode::syntax("recovery-limit"),
         phase: DiagnosticPhase::Syntax,
         severity: Severity::Error,
-        rule: Some(recovery::recovery_limit_rule()),
+        rule: None,
+        context: self.current_context(),
         primary: DiagnosticAnchor::Absolute {
           revision: self.source.revision(),
           range,
@@ -374,15 +516,50 @@ impl<'a> Parser<'a> {
       };
       self.push_diagnostic(
         diagnostic,
-        Some(error.position()),
-        TextRange::new(TextSize::ZERO, range.len()),
+        None,
+        range,
       );
     }
-    self.halted = false;
+    self.halted = true;
+  }
+
+  fn emit(&mut self, event: Event, open_after: usize) -> Option<usize> {
+    if self.halted || self.resource_finalizing {
+      self.halted = true;
+      return None;
+    }
+    let emergency = open_after.saturating_add(3);
+    if self
+      .events
+      .len()
+      .saturating_add(1)
+      .saturating_add(emergency)
+      > self.config.limits.max_events as usize
+    {
+      self.halted = true;
+      return None;
+    }
+    let position = self.events.len();
+    if let Event::Token { range, flags, .. } = &event
+      && !flags.contains(TokenFlags::SYNTHETIC)
+    {
+      self.covered_end = self.covered_end.max(range.end);
+    }
+    self.events.push(event);
+    Some(position)
+  }
+
+  fn emit_emergency(&mut self, event: Event) -> Option<usize> {
+    if self.events.len() >= self.config.limits.max_events as usize {
+      return None;
+    }
+    let position = self.events.len();
+    self.events.push(event);
+    Some(position)
   }
 
   fn charge(&mut self) -> bool {
-    if self.fuel == 0 {
+    if self.halted || self.fuel == 0 {
       self.halted = true;
       return false;
     }
@@ -392,6 +569,22 @@ impl<'a> Parser<'a> {
   }
 
   fn finish(mut self) -> ParserOutput {
+    if self.halted && !self.resource_finalizing {
+      self.consume_resource_remainder();
+    }
+    assert_eq!(
+      self.rules.len(),
+      0,
+      "parser rule stack must be empty after every parse"
+    );
+    assert!(
+      self.open_markers.is_empty(),
+      "parser marker stack must be empty after every parse"
+    );
+    assert!(
+      self.events.len() <= self.config.limits.max_events as usize,
+      "parser event budget must be a hard limit"
+    );
     self.stats.events_emitted = self.events.len() as u64;
     self.stats.diagnostics_emitted = self.diagnostics.len() as u64;
     ParserOutput {
@@ -489,18 +682,74 @@ pub(crate) fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
       node,
       range: record.range,
       mode,
-      delimiter_depth: if record.kind == SyntaxKind::ParentheticalExpression {
-        1
-      } else {
-        0
-      },
+      delimiter_depth: enclosing_delimiter_depth(snapshot, node),
       line_start: snapshot
         .source
         .line_index()
         .line_start(snapshot.source.line_index().line_of(record.range.start))
         == Some(record.range.start),
-      indentation: 0,
+      indentation: leading_indentation(&snapshot.source, record.range),
     });
   }
   restarts
+}
+
+fn enclosing_delimiter_depth(
+  snapshot: &SyntaxSnapshot,
+  node: crate::document::NodeId,
+) -> u32 {
+  let mut depth = 0_u32;
+  let mut current = snapshot.nodes.node(node).and_then(|record| record.parent);
+  while let Some(parent) = current {
+    let Some(record) = snapshot.nodes.node(parent) else {
+      break;
+    };
+    if owns_delimiter(record.kind) {
+      depth = depth.saturating_add(1);
+    }
+    current = record.parent;
+  }
+  depth
+}
+
+fn owns_delimiter(kind: SyntaxKind) -> bool {
+  matches!(kind, SyntaxKind::ParentheticalExpression)
+}
+
+fn leading_indentation(source: &TextSnapshot, range: TextRange) -> u32 {
+  let mut cursor = Cursor::for_range(source, range);
+  let start = cursor.offset();
+  while cursor.peek_char().is_some_and(terminal::is_horizontal_space) {
+    let _ = cursor.bump_char();
+  }
+  cursor.offset().0.saturating_sub(start.0)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  #[should_panic(expected = "parser markers must complete in strict LIFO order")]
+  fn marker_completion_rejects_non_lifo_order() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let outer = parser.start();
+    let _inner = parser.start();
+    let _ = outer.complete(&mut parser, SyntaxKind::Document);
+  }
+
+  #[test]
+  #[should_panic(expected = "parser markers must abandon in strict LIFO order")]
+  fn marker_abandonment_rejects_non_lifo_order() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let outer = parser.start();
+    let _inner = parser.start();
+    outer.abandon(&mut parser);
+  }
 }

@@ -1,7 +1,7 @@
 use mech_syntax::document::{
-  DiagnosticAnchor, DocumentSession, NodeMap, ParseConfig, Revision,
+  DiagnosticAnchor, DocumentSession, NodeMap, ParseConfig, ParseLimits, Revision,
   SyntaxKind, SyntaxNode, TextEdit, TextRange, TextSize, TextSnapshot, compact_debug_tree,
-  parse_document, reconstruct_source, validate_lossless,
+  normalize_diagnostics, parse_document, reconstruct_source, validate_lossless,
 };
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -36,29 +36,6 @@ fn full_parse(
   )
 }
 
-fn normalized_diagnostics(
-  snapshot: &mech_syntax::document::SyntaxSnapshot,
-) -> Vec<String> {
-  snapshot
-    .diagnostics
-    .iter()
-    .map(|diagnostic| {
-      let range = diagnostic
-        .primary
-        .resolve(snapshot.revision, &snapshot.nodes);
-      format!(
-        "{}|{:?}|{:?}|{:?}|{:?}|{:?}",
-        diagnostic.code.as_str(),
-        diagnostic.rule,
-        range,
-        diagnostic.expected,
-        diagnostic.found,
-        diagnostic.recovery
-      )
-    })
-    .collect()
-}
-
 fn assert_incremental_equals_full(
   snapshot: &mech_syntax::document::SyntaxSnapshot,
 ) {
@@ -68,13 +45,36 @@ fn assert_incremental_equals_full(
     compact_debug_tree(&full.syntax())
   );
   assert_eq!(
-    normalized_diagnostics(snapshot),
-    normalized_diagnostics(&full)
+    normalize_diagnostics(&snapshot.diagnostics, snapshot.revision, &snapshot.nodes),
+    normalize_diagnostics(&full.diagnostics, full.revision, &full.nodes)
   );
   validate_lossless(&snapshot.root, &snapshot.source).unwrap();
   assert_eq!(
     reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
     snapshot.source.to_contiguous_string()
+  );
+}
+
+fn assert_work_accounting(
+  stats: &mech_syntax::document::ReparseStats,
+) {
+  assert_eq!(stats.parser_steps, stats.total_parser_steps);
+  assert_eq!(stats.events_emitted, stats.total_events_emitted);
+  assert_eq!(
+    stats.total_parser_steps,
+    stats
+      .fragment_parser_steps
+      .saturating_add(stats.validation_parser_steps)
+      .saturating_add(stats.rejected_parser_steps)
+      .saturating_add(stats.fallback_parser_steps)
+  );
+  assert_eq!(
+    stats.total_events_emitted,
+    stats
+      .fragment_events_emitted
+      .saturating_add(stats.validation_events_emitted)
+      .saturating_add(stats.rejected_events_emitted)
+      .saturating_add(stats.fallback_events_emitted)
   );
 }
 
@@ -115,9 +115,10 @@ fn required_edit_sequence_reparses_only_mech_item_and_reuses_later_section() {
   assert_eq!(update.stats.reparse_root_count, 1);
   assert_eq!(update.stats.document_fallbacks, 0);
   assert!(update.stats.reused_node_count > 0);
+  assert_work_accounting(&update.stats);
+  let full_parser_steps = full_parse(middle).stats.parser_steps;
   assert!(
-    update.stats.parser_steps
-      < full_parse(middle).stats.parser_steps
+    update.stats.total_parser_steps < full_parser_steps
   );
   assert_eq!(
     find_nodes(&middle.syntax(), SyntaxKind::Section)[2].id(),
@@ -152,6 +153,7 @@ fn required_edit_sequence_reparses_only_mech_item_and_reuses_later_section() {
   );
   assert!(update.stats.reused_node_count > 0);
   assert_eq!(update.stats.document_fallbacks, 0);
+  assert_work_accounting(&update.stats);
 }
 
 #[test]
@@ -270,6 +272,57 @@ fn fence_content_edit_reuses_later_section_and_never_treats_inner_heading_as_res
 }
 
 #[test]
+fn edit_that_opens_a_fence_reparses_across_the_following_section() {
+  let text = "text```\n2. Heading\n-\n";
+  let mut session = DocumentSession::new(text, ParseConfig::default());
+
+  session.apply_edits(&[TextEdit::insert(TextSize(4), "\n")]);
+
+  assert_incremental_equals_full(session.snapshot());
+  assert_eq!(
+    find_nodes(&session.snapshot().syntax(), SyntaxKind::Section).len(),
+    1
+  );
+  assert_eq!(
+    find_nodes(&session.snapshot().syntax(), SyntaxKind::GenericFence).len(),
+    1
+  );
+}
+
+#[test]
+fn editing_a_diagnostic_truncated_snapshot_recovers_later_diagnostics() {
+  let config = ParseConfig {
+    limits: ParseLimits {
+      max_diagnostics: 1,
+      ..ParseLimits::default()
+    },
+  };
+  let text = "`first`\n`later`\n";
+  let mut session = DocumentSession::new(text, config);
+  assert!(session.snapshot().stats.diagnostics_truncated);
+
+  let update = session.apply_edits(&[TextEdit::delete(TextRange::new(
+    TextSize(0),
+    TextSize(8),
+  ))]);
+
+  let snapshot = session.snapshot();
+  assert_incremental_equals_full(snapshot);
+  assert_eq!(update.stats.document_fallbacks, 1);
+  assert_eq!(snapshot.diagnostics.len(), 1);
+  assert_eq!(
+    snapshot
+      .diagnostics
+      .iter()
+      .next()
+      .unwrap()
+      .primary
+      .resolve(snapshot.revision, &snapshot.nodes),
+    Some(TextRange::new(TextSize(0), TextSize(7)))
+  );
+}
+
+#[test]
 fn repeated_eof_appends_behave_like_streamed_editing() {
   let mut session =
     DocumentSession::new("x := 1 +", ParseConfig::default());
@@ -284,4 +337,52 @@ fn repeated_eof_appends_behave_like_streamed_editing() {
     "x := 1 + 2\r\nstreamed 💡"
   );
   assert!(session.snapshot().is_strictly_clean());
+}
+
+#[test]
+fn rhs_deletion_before_heading_preserves_right_context_diagnostic() {
+  let text =
+    "1. Code\n-------\n\nx := 1\n2. Later\n--------\nstable\n";
+  let mut session = DocumentSession::new(text, ParseConfig::default());
+  let later_id =
+    find_nodes(&session.snapshot().syntax(), SyntaxKind::Section)[1].id();
+  let rhs = text.find("x := 1").unwrap() + "x := ".len();
+  let update = session.apply_edits(&[TextEdit::delete(TextRange::new(
+    TextSize(rhs as u32),
+    TextSize((rhs + 1) as u32),
+  ))]);
+
+  assert_incremental_equals_full(session.snapshot());
+  assert_work_accounting(&update.stats);
+  let diagnostic = session.snapshot().diagnostics.iter().next().unwrap();
+  assert_eq!(
+    diagnostic
+      .found
+      .as_ref()
+      .and_then(|found| found.text.as_deref()),
+    Some("2")
+  );
+  assert_eq!(
+    find_nodes(&session.snapshot().syntax(), SyntaxKind::Section)[1].id(),
+    later_id
+  );
+  assert_eq!(update.stats.document_fallbacks, 0);
+}
+
+#[test]
+fn one_section_edit_reports_all_validation_work() {
+  let text = "1. Code\n-------\nx := 1\n";
+  let mut session = DocumentSession::new(text, ParseConfig::default());
+  let rhs = text.find("x := 1").unwrap() + "x := ".len();
+  let update = session.apply_edits(&[TextEdit::replace(
+    TextRange::new(
+      TextSize(rhs as u32),
+      TextSize((rhs + 1) as u32),
+    ),
+    "2",
+  )]);
+  assert_incremental_equals_full(session.snapshot());
+  assert_work_accounting(&update.stats);
+  assert!(update.stats.fragment_parser_steps > 0);
+  assert!(update.stats.validation_parser_steps > 0);
 }

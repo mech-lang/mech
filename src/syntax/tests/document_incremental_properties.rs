@@ -1,31 +1,13 @@
 use mech_syntax::document::{
     DocumentId, DocumentSession, ParseConfig, SyntaxKind, TextEdit, TextRange, TextSize,
-    TextSnapshot, compact_debug_tree, parse_document, reconstruct_source, validate_lossless,
+    TextSnapshot, compact_debug_tree, normalize_diagnostics, parse_document, reconstruct_source,
+    validate_lossless,
 };
 use proptest::prelude::*;
 
 fn unicode_string(max_chars: usize) -> impl Strategy<Value = String> {
     proptest::collection::vec(any::<char>(), 0..=max_chars)
         .prop_map(|characters| characters.into_iter().collect())
-}
-
-fn normalize_diagnostics(snapshot: &mech_syntax::document::SyntaxSnapshot) -> Vec<String> {
-    snapshot
-        .diagnostics
-        .iter()
-        .map(|diagnostic| {
-            format!(
-                "{}|{:?}|{:?}|{:?}|{:?}",
-                diagnostic.code.as_str(),
-                diagnostic.rule,
-                diagnostic
-                    .primary
-                    .resolve(snapshot.revision, &snapshot.nodes),
-                diagnostic.expected,
-                diagnostic.recovery
-            )
-        })
-        .collect()
 }
 
 fn assert_equivalent(session: &DocumentSession) {
@@ -44,8 +26,12 @@ fn assert_equivalent(session: &DocumentSession) {
         compact_debug_tree(&full.syntax())
     );
     assert_eq!(
-        normalize_diagnostics(incremental),
-        normalize_diagnostics(&full)
+        normalize_diagnostics(
+            &incremental.diagnostics,
+            incremental.revision,
+            &incremental.nodes,
+        ),
+        normalize_diagnostics(&full.diagnostics, full.revision, &full.nodes)
     );
     validate_lossless(&incremental.root, &incremental.source).unwrap();
     assert_eq!(
@@ -233,6 +219,41 @@ fn removing_a_section_heading_merges_it_with_the_prior_section() {
         .filter(|(_, record)| record.kind == SyntaxKind::Section)
         .count();
     assert_eq!(sections, 1);
+}
+
+#[test]
+fn inserting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
+    let regression =
+        include_str!("fixtures/document/fuzz-regressions/heading-prefix-joins-section.mec");
+    let initial = regression
+        .strip_suffix('\n')
+        .expect("the checked-in fixture has a conventional final newline");
+    let mut session = DocumentSession::new(initial, ParseConfig::default());
+    session.apply_edits(&[TextEdit::replace(
+        TextRange::new(TextSize(32), TextSize(124)),
+        "\n4. Output",
+    )]);
+    assert_equivalent(&session);
+    session.apply_edits(&[TextEdit::replace(
+        TextRange::new(TextSize(10), TextSize(45)),
+        "-------------",
+    )]);
+    assert_equivalent(&session);
+    let update = session.apply_edits(&[TextEdit::insert(
+        TextSize(45),
+        "-------------",
+    )]);
+    assert_eq!(update.stats.document_fallbacks, 1);
+    assert_equivalent(&session);
+    assert_eq!(
+        session
+            .snapshot()
+            .nodes
+            .nodes()
+            .filter(|(_, record)| record.kind == SyntaxKind::Section)
+            .count(),
+        1
+    );
 }
 
 #[test]
