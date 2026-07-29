@@ -1,0 +1,100 @@
+{
+  "ast": {
+    "FencedMechCode": {
+      "code": [
+        [
+          {
+            "Statement": {
+              "VariableDefine": {
+                "expression": {
+                  "Literal": {
+                    "Number": {
+                      "Real": {
+                        "Integer": {
+                          "chars": [
+                            "1"
+                          ],
+                          "kind": "Number"
+                        }
+                      }
+                    }
+                  }
+                },
+                "mutable": false,
+                "var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "x"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          null
+        ]
+      ],
+      "config": {
+        "disabled": false,
+        "hidden": false,
+        "namespace": 0,
+        "namespace_str": "",
+        "output": true
+      },
+      "exports": [],
+      "imports": [],
+      "options": null,
+      "source": {
+        "chars": [
+          "x",
+          " ",
+          ":",
+          "=",
+          " ",
+          "1",
+          "\n",
+          "(",
+          "?",
+          ")",
+          ">",
+          " ",
+          "t",
+          "h",
+          "i",
+          "s",
+          " ",
+          "i",
+          "s",
+          " ",
+          "n",
+          "o",
+          "t",
+          " ",
+          "M",
+          "e",
+          "c",
+          "h",
+          " ",
+          "c",
+          "o",
+          "d",
+          "e",
+          "\n"
+        ],
+        "kind": "CodeBlock"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 45,
+    "remaining_source": "",
+    "source_graphemes": 45
+  },
+  "entry_point": "code-block",
+  "rule": "fenced-mech"
+}

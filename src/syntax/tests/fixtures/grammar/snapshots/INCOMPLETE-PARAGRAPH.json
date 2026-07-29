@@ -1,0 +1,45 @@
+{
+  "ast": {
+    "elements": [
+      {
+        "Text": {
+          "chars": [
+            "x"
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Error": [
+          {
+            "chars": [
+              " ",
+              ":"
+            ],
+            "kind": "Any"
+          },
+          null
+        ]
+      },
+      {
+        "Text": {
+          "chars": [
+            "=",
+            " ",
+            "1",
+            " ",
+            "+"
+          ],
+          "kind": "Text"
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 9,
+    "remaining_source": "",
+    "source_graphemes": 9
+  },
+  "entry_point": "normalized-paragraph-newline",
+  "rule": "paragraph"
+}

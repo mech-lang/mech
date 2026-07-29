@@ -1,0 +1,10 @@
+{
+  "ast": null,
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "space-tab1",
+  "rule": "space-tab1"
+}

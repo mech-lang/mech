@@ -5,13 +5,13 @@ use nom::sequence::tuple as nom_tuple;
 
 // #### Statements
 
-// comment-sigil := "--" | "//" ;
+// Grammar: docs/design/specification.mec, `comment-sigil`.
 pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
   let (input, _) = alt((tag("--"),tag("//")))(input)?;
   Ok((input, ()))
 }
 
-// comment := comment_sigil, paragraph ;
+// Grammar: docs/design/specification.mec, `comment`.
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = comment_sigil(input)?;
@@ -60,12 +60,12 @@ pub fn comment(input: ParseString) -> ParseResult<Comment> {
   }
 }
 
-// op-assign-operator := add-assign-operator | sub-assign-operator | mul-assign-operator | div-assign-operator | exp-assign-operator ;
+// Grammar: docs/design/specification.mec, `op-assign-operator`.
 pub fn op_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   alt((add_assign_operator, sub_assign_operator, mul_assign_operator, div_assign_operator, exp_assign_operator))(input)
 }
 
-// add-assign-operator := "+=" ;
+// Grammar: docs/design/specification.mec, `add-assign-operator`.
 pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("+=")(input)?;
@@ -73,7 +73,7 @@ pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Add))
 }
 
-// sub-assign-operator := "-=" ;
+// Grammar: docs/design/specification.mec, `sub-assign-operator`.
 pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("-=")(input)?;
@@ -81,14 +81,14 @@ pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Sub))
 }
 
-// mul-assign-operator := "*=" ;
+// Grammar: docs/design/specification.mec, `mul-assign-operator`.
 pub fn mul_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("*=")(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, OpAssignOp::Mul))
 }
-// div-assign-operator := "/=" ;
+// Grammar: docs/design/specification.mec, `div-assign-operator`.
 pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("/=")(input)?;
@@ -96,7 +96,7 @@ pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Div))
 }
 
-// exp-assign-operator := "^=" ;
+// Grammar: docs/design/specification.mec, `exp-assign-operator`.
 pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("^=")(input)?;
@@ -104,34 +104,7 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Exp))
 }
 
-// split_data := (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
-/*pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expects spaces around operator";
-  let msg2 = "Expects expression";
-  let (input, table) = alt((identifier, table))(input)?;
-  let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = split_operator(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, expression) = label!(expression, msg2)(input)?;*/
-  Ok((input, ParserNode::SplitData{children: vec![]}))
-}*/
-
-// flatten_data := identifier, <!stmt_operator>, space*, flatten_operator, <space+>, <expression> ;
-/*pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expects spaces around operator";
-  let msg2 = "Expects expression";
-  let (input, table) = identifier(input)?;
-  let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = flatten_operator(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, expression) = label!(expression, msg2)(input)?;*/
-  Ok((input, ParserNode::FlattenData{children: vec![]}))
-}*/
-
-
-// send-operator := "<-" ;
+// Grammar: docs/design/specification.mec, `send-operator`.
 pub fn send_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("<-")(input)?;
@@ -139,7 +112,7 @@ pub fn send_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// context-send := prefixed-context-path, send-operator, expression ;
+// Grammar: docs/design/specification.mec, `context-send`.
 pub fn context_send(input: ParseString) -> ParseResult<ContextSend> {
   let msg2 = "Expects expression";
   let (input, target) = var(input)?;
@@ -154,7 +127,7 @@ pub fn context_send(input: ParseString) -> ParseResult<ContextSend> {
   Ok((input, ContextSend { target, expression }))
 }
 
-// variable-define := tilde?, var, !assign-operator, define-operator, expression ;
+// Grammar: docs/design/specification.mec, `variable-define`.
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -174,7 +147,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
 }
 
 #[cfg(feature = "invariant_define")]
-// invariant-define := identifier, "!", define-operator, expression ;
+// Grammar: docs/design/specification.mec, `invariant-define`.
 pub fn invariant_define(input: ParseString) -> ParseResult<InvariantDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -187,7 +160,7 @@ pub fn invariant_define(input: ParseString) -> ParseResult<InvariantDefine> {
   Ok((input, InvariantDefine{name, expression}))
 }
 
-// variable-assign := slice-ref, !define-operator, assign-operator, expression ;
+// Grammar: docs/design/specification.mec, `variable-assign`.
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -198,7 +171,7 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, VariableAssign{target,expression}))
 }
 
-// op-assign := slice-ref, !define-operator, op-assign-operator, expression ;
+// Grammar: docs/design/specification.mec, `op-assign`.
 pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -212,20 +185,7 @@ pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
 // parser for the second line of the output table, generate the
 // var name if there is one.
 
-// split_operator := ">-" ;
-/*pub fn split_operator(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag(">-")(input)?;
-  Ok((input, ParserNode::Null))
-}*/
-
-// flatten_operator := "-<" ;
-/*pub fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("-<")(input)?;
-  Ok((input, ParserNode::Null))
-}*/
-
-
-// tuple-destructure := "(", list1(identifier, comma), ")", ":=", expression ;
+// Grammar: docs/design/specification.mec, `tuple-destructure`.
 fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   let (input, _) = left_parenthesis(input)?;
   let (input, vars) = separated_list1(list_separator, identifier)(input)?;
@@ -359,7 +319,7 @@ fn source_import_specifier(input: ParseString) -> ParseResult<MechString> {
   ))(input)
 }
 
-// import-declaration := "+>", source-import-specifier ;
+// Grammar: docs/design/specification.mec, `import-declaration`.
 pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = module_import_sigil(input)?;
@@ -371,7 +331,7 @@ pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> 
   Ok((input, ImportDeclaration { specifier }))
 }
 
-// export-declaration := "<+", export-name ;
+// Grammar: docs/design/specification.mec, `export-declaration`.
 pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = module_export_sigil(input)?;
@@ -380,7 +340,7 @@ pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> 
   Ok((input, ExportDeclaration { name }))
 }
 
-// context-declaration := "@", identifier, define-operator, context-base, ("{", list1(list-separator, context-capability-declaration), list-separator?, "}")? ;
+// Grammar: docs/design/specification.mec, `context-declaration`.
 pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = at(input)?;
@@ -397,14 +357,14 @@ pub fn context_declaration(input: ParseString) -> ParseResult<ContextDeclaration
   Ok((input, ContextDeclaration { name, base, capabilities: capabilities.unwrap_or_default() }))
 }
 
-// context-base-context := "@", identifier ;
+// Grammar: docs/design/specification.mec, `context-base-context`.
 fn context_base_context(input: ParseString) -> ParseResult<ContextBase> {
   let (input, _) = at(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, ContextBase::Context(name)))
 }
 
-// context-base-resource-uri := (alpha-token | digit-token | "-" | ".")+, "://", (alpha-token | digit-token | "-" | "." | "/" | "_")+ ;
+// Grammar: docs/design/specification.mec, `context-base-resource-uri`.
 fn context_base_resource_uri(input: ParseString) -> ParseResult<ContextBase> {
   let start = input.cursor;
   let src_start = input.loc();
@@ -418,7 +378,7 @@ fn context_base_resource_uri(input: ParseString) -> ParseResult<ContextBase> {
   Ok((input, ContextBase::ResourceUri(token)))
 }
 
-// context-capability-declaration := ":", identifier, "(", context-capability-scope, ")" ;
+// Grammar: docs/design/specification.mec, `context-capability-declaration`.
 fn context_capability_declaration(input: ParseString) -> ParseResult<ContextCapabilityDeclaration> {
   let (input, _) = colon(input)?;
   let (input, operation) = identifier(input)?;
@@ -456,7 +416,7 @@ fn context_capability_path(input: ParseString) -> ParseResult<Identifier> {
   Ok((input, Identifier { name: merged }))
 }
 
-// context-capability-scope := "*" | context-capability-path ;
+// Grammar: docs/design/specification.mec, `context-capability-scope`.
 fn context_capability_scope(input: ParseString) -> ParseResult<ContextCapabilityScope> {
   if let Ok((input, wildcard)) = asterisk(input.clone()) {
     Ok((input, ContextCapabilityScope::Wildcard(wildcard)))
@@ -466,7 +426,7 @@ fn context_capability_scope(input: ParseString) -> ParseResult<ContextCapability
   }
 }
 
-// statement := variable-define | variable-assign | op-assign | enum-define | tuple-destructure | kind-define ;
+// Grammar: docs/design/specification.mec, `statement`.
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
     ("import_declaration", Box::new(|i| import_declaration(i).map(|(i, v)| (i, Statement::ImportDeclaration(v))))),
@@ -486,7 +446,7 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   alt_best(input, &parsers)
 }
 
-// enum-define := "<", identifier, ">", define-operator, list1(enum-separator, enum-variant);
+// Grammar: docs/design/specification.mec, `enum-define`.
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   let (input, (_, r)) = range(left_angle)(input)?;
   let (input, name) = identifier(input)?;
@@ -496,7 +456,7 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
-// enum-variant := grave?, colon?, identifier, enum-variant-kind? ;
+// Grammar: docs/design/specification.mec, `enum-variant`.
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
   let (input, _) = opt(colon)(input)?;
@@ -505,7 +465,7 @@ pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   Ok((input, EnumVariant{name, value}))
 }
 
-// enum-variant-kind := "(", kind-annotation, ")" ;
+// Grammar: docs/design/specification.mec, `enum-variant-kind`.
 pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   let (input, _) = left_parenthesis(input)?;
   let (input, annotation) = kind_annotation(input)?;
@@ -513,13 +473,13 @@ pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, annotation))
 }
 
-// enum-variant-inline-kind := kind-annotation ;
+// Grammar: docs/design/specification.mec, `enum-variant-inline-kind`.
 // Allows compact tagged-union syntax like `:ok<u64>`.
 pub fn enum_variant_inline_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   kind_annotation(input)
 }
 
-// kind-define := "<", identifier, ">", define-operator, kind-annotation ;
+// Grammar: docs/design/specification.mec, `kind-define`.
 pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, (_, r)) = range(left_angle)(input)?;
   let (input, name) = identifier(input)?;

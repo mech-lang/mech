@@ -1,0 +1,15 @@
+{
+  "ast": {
+    "chars": [
+      "─"
+    ],
+    "kind": "BoxDrawing"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": "",
+    "source_graphemes": 1
+  },
+  "entry_point": "table-horz",
+  "rule": "table-horz"
+}

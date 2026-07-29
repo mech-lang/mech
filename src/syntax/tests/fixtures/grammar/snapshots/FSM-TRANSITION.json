@@ -1,0 +1,69 @@
+{
+  "ast": {
+    "Transition": [
+      {
+        "Expression": {
+          "Literal": {
+            "Atom": {
+              "name": {
+                "name": {
+                  "chars": [
+                    "I",
+                    "d",
+                    "l",
+                    "e"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      },
+      [
+        {
+          "Next": {
+            "TupleStruct": {
+              "name": {
+                "name": {
+                  "chars": [
+                    "D",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Identifier"
+                }
+              },
+              "patterns": [
+                {
+                  "Expression": {
+                    "Literal": {
+                      "Number": {
+                        "Real": {
+                          "Integer": {
+                            "chars": [
+                              "1"
+                            ],
+                            "kind": "Number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 17,
+    "remaining_source": "",
+    "source_graphemes": 17
+  },
+  "entry_point": "fsm-transition",
+  "rule": "fsm-transition"
+}

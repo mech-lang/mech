@@ -1,0 +1,26 @@
+{
+  "ast": {
+    "Expression": {
+      "Literal": {
+        "Number": {
+          "Real": {
+            "Integer": {
+              "chars": [
+                "4",
+                "2"
+              ],
+              "kind": "Number"
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "pattern",
+  "rule": "pattern"
+}

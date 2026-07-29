@@ -1,0 +1,70 @@
+{
+  "ast": {
+    "Formula": {
+      "Parenthetical": {
+        "Expression": {
+          "MatrixComprehension": {
+            "expression": {
+              "Var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "x"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            },
+            "qualifiers": [
+              {
+                "Generator": [
+                  {
+                    "Expression": {
+                      "Var": {
+                        "context": null,
+                        "kind": null,
+                        "name": {
+                          "name": {
+                            "chars": [
+                              "x"
+                            ],
+                            "kind": "Identifier"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "Var": {
+                      "context": null,
+                      "kind": null,
+                      "name": {
+                        "name": {
+                          "chars": [
+                            "x",
+                            "s"
+                          ],
+                          "kind": "Identifier"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 15,
+    "remaining_source": "",
+    "source_graphemes": 15
+  },
+  "entry_point": "expression",
+  "rule": "factor-matrix-comprehension"
+}

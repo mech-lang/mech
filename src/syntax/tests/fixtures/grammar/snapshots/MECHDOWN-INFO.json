@@ -1,0 +1,37 @@
+{
+  "ast": {
+    "InfoBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "i",
+                "n",
+                "f",
+                "o"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 19,
+    "remaining_source": "",
+    "source_graphemes": 19
+  },
+  "entry_point": "info-block",
+  "rule": "info-block"
+}

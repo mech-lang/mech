@@ -1,0 +1,31 @@
+{
+  "ast": {
+    "elements": [
+      {
+        "Text": {
+          "chars": [
+            "S",
+            "o",
+            "u",
+            "r",
+            "c",
+            "e",
+            " ",
+            "l",
+            "i",
+            "n",
+            "e"
+          ],
+          "kind": "Text"
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "\n\n",
+    "source_graphemes": 14
+  },
+  "entry_point": "normalized-paragraph-newline",
+  "rule": "paragraph"
+}

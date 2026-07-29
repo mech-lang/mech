@@ -1,0 +1,59 @@
+{
+  "ast": {
+    "Array": {
+      "prefix": [
+        {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "h",
+                    "e",
+                    "a",
+                    "d"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "spread": {
+        "binding": null,
+        "kind": "Spread"
+      },
+      "suffix": [
+        {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "t",
+                    "a",
+                    "i",
+                    "l"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 17,
+    "remaining_source": "",
+    "source_graphemes": 17
+  },
+  "entry_point": "pattern",
+  "rule": "pattern"
+}

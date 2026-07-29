@@ -1,0 +1,108 @@
+{
+  "ast": {
+    "rules": [
+      {
+        "expr": {
+          "Terminal": {
+            "chars": [
+              "a",
+              "b"
+            ],
+            "kind": "Any"
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "s",
+              "p",
+              "a",
+              "c",
+              "e",
+              "d"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      },
+      {
+        "expr": {
+          "Range": [
+            {
+              "chars": [
+                "0"
+              ],
+              "kind": "Any"
+            },
+            {
+              "chars": [
+                "9"
+              ],
+              "kind": "Any"
+            }
+          ]
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "r",
+              "a",
+              "n",
+              "g",
+              "e"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      },
+      {
+        "expr": {
+          "List": [
+            {
+              "Terminal": {
+                "chars": [
+                  ","
+                ],
+                "kind": "Any"
+              }
+            },
+            {
+              "Definition": {
+                "name": {
+                  "chars": [
+                    "s",
+                    "p",
+                    "a",
+                    "c",
+                    "e",
+                    "d"
+                  ],
+                  "kind": "Alpha"
+                }
+              }
+            }
+          ]
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "i",
+              "t",
+              "e",
+              "m",
+              "s"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 61,
+    "remaining_source": "",
+    "source_graphemes": 61
+  },
+  "entry_point": "grammar",
+  "rule": "grammar"
+}

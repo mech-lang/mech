@@ -1,0 +1,38 @@
+{
+  "ast": {
+    "ErrorBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "e",
+                "r",
+                "r",
+                "o",
+                "r"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 20,
+    "remaining_source": "",
+    "source_graphemes": 20
+  },
+  "entry_point": "error-block",
+  "rule": "error-block"
+}

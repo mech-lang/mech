@@ -1,0 +1,16 @@
+{
+  "ast": {
+    "chars": [
+      "_",
+      "_"
+    ],
+    "kind": "UnderlineSigil"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "underline-sigil",
+  "rule": "underline-sigil"
+}

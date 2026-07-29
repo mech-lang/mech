@@ -1,0 +1,75 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "2"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "MulDiv": "Mul"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "3"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          [
+            {
+              "MulDiv": "Mul"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "4"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 9,
+    "remaining_source": "",
+    "source_graphemes": 9
+  },
+  "entry_point": "expression",
+  "rule": "multiply"
+}

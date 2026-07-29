@@ -1,0 +1,490 @@
+{
+  "ast": {
+    "elements": [
+      {
+        "Text": {
+          "chars": [
+            "T",
+            "e",
+            "x",
+            "t",
+            " ",
+            "w",
+            "i",
+            "t",
+            "h",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Strong": {
+          "Text": {
+            "chars": [
+              "s",
+              "t",
+              "r",
+              "o",
+              "n",
+              "g"
+            ],
+            "kind": "Text"
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Emphasis": {
+          "Text": {
+            "chars": [
+              "e",
+              "m",
+              "p",
+              "h",
+              "a",
+              "s",
+              "i",
+              "s"
+            ],
+            "kind": "Text"
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Strikethrough": {
+          "Text": {
+            "chars": [
+              "s",
+              "t",
+              "r",
+              "i",
+              "k",
+              "e"
+            ],
+            "kind": "Text"
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Underline": {
+          "Text": {
+            "chars": [
+              "u",
+              "n",
+              "d",
+              "e",
+              "r",
+              "l",
+              "i",
+              "n",
+              "e"
+            ],
+            "kind": "Text"
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Highlight": {
+          "Text": {
+            "chars": [
+              "h",
+              "i",
+              "g",
+              "h",
+              "l",
+              "i",
+              "g",
+              "h",
+              "t"
+            ],
+            "kind": "Text"
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "InlineCode": {
+          "chars": [
+            "c",
+            "o",
+            "d",
+            "e"
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "InlineEquation": {
+          "chars": [
+            "x",
+            "+",
+            "1"
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Hyperlink": [
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "l",
+                    "i",
+                    "n",
+                    "k"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          },
+          {
+            "chars": [
+              "h",
+              "t",
+              "t",
+              "p",
+              "s",
+              ":",
+              "/",
+              "/",
+              "e",
+              "x",
+              "a",
+              "m",
+              "p",
+              "l",
+              "e",
+              ".",
+              "c",
+              "o",
+              "m"
+            ],
+            "kind": "Alpha"
+          }
+        ]
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Hyperlink": [
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "h",
+                    "t",
+                    "t",
+                    "p",
+                    ":",
+                    "/",
+                    "/",
+                    "e",
+                    "x",
+                    "a",
+                    "m",
+                    "p",
+                    "l",
+                    "e",
+                    ".",
+                    "c",
+                    "o",
+                    "m",
+                    ","
+                  ],
+                  "kind": "Alpha"
+                }
+              }
+            ]
+          },
+          {
+            "chars": [
+              "h",
+              "t",
+              "t",
+              "p",
+              ":",
+              "/",
+              "/",
+              "e",
+              "x",
+              "a",
+              "m",
+              "p",
+              "l",
+              "e",
+              ".",
+              "c",
+              "o",
+              "m",
+              ","
+            ],
+            "kind": "Alpha"
+          }
+        ]
+      },
+      {
+        "Text": {
+          "chars": [
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "Reference": {
+          "chars": [
+            "r",
+            "e",
+            "f"
+          ],
+          "kind": "Alpha"
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "FootnoteReference": {
+          "chars": [
+            "n",
+            "o",
+            "t",
+            "e"
+          ],
+          "kind": "Alpha"
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "SectionReference": {
+          "chars": [
+            "1",
+            ".",
+            "2"
+          ],
+          "kind": "Digit"
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "InlineMechCode": {
+          "Expression": {
+            "Formula": {
+              "Term": {
+                "lhs": {
+                  "Expression": {
+                    "Var": {
+                      "context": null,
+                      "kind": null,
+                      "name": {
+                        "name": {
+                          "chars": [
+                            "x"
+                          ],
+                          "kind": "Identifier"
+                        }
+                      }
+                    }
+                  }
+                },
+                "rhs": [
+                  [
+                    {
+                      "AddSub": "Add"
+                    },
+                    {
+                      "Expression": {
+                        "Literal": {
+                          "Number": {
+                            "Real": {
+                              "Integer": {
+                                "chars": [
+                                  "1"
+                                ],
+                                "kind": "Number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            ",",
+            " ",
+            "a",
+            "n",
+            "d",
+            " "
+          ],
+          "kind": "Text"
+        }
+      },
+      {
+        "EvalInlineMechCode": {
+          "Formula": {
+            "Term": {
+              "lhs": {
+                "Expression": {
+                  "Var": {
+                    "context": null,
+                    "kind": null,
+                    "name": {
+                      "name": {
+                        "chars": [
+                          "x"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                }
+              },
+              "rhs": [
+                [
+                  {
+                    "AddSub": "Add"
+                  },
+                  {
+                    "Expression": {
+                      "Literal": {
+                        "Number": {
+                          "Real": {
+                            "Integer": {
+                              "chars": [
+                                "1"
+                              ],
+                              "kind": "Number"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      {
+        "Text": {
+          "chars": [
+            "."
+          ],
+          "kind": "Text"
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 184,
+    "remaining_source": "",
+    "source_graphemes": 184
+  },
+  "entry_point": "normalized-paragraph-newline",
+  "rule": "paragraph"
+}

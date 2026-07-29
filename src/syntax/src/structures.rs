@@ -31,7 +31,7 @@ pub fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'
   }
 }
 
-// structure := empty-set | empty-table | table | matrix | tuple | tuple-struct | record | map | set ;
+// Grammar: docs/design/specification.mec, `structure`.
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
   match empty_set(input.clone()) {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
@@ -78,7 +78,7 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
 // Matrix
 // ----------------------------------------------------------------------------
 
-// matrix := matrix-start, (box-drawing-char | whitespace)*, matrix-row*, box-drawing-char*, matrix-end ;
+// Grammar: docs/design/specification.mec, `matrix`.
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
   let (mut input, (_, r)) = range(matrix_start)(input)?;
@@ -127,7 +127,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   Ok((input, Matrix{rows}))
 }
 
-// matrix-column := (space | tab)*, expression, ((space | tab)*, ","?, (space | tab)*) ;
+// Grammar: docs/design/specification.mec, `matrix-column`.
 pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   let (input, _) = space_tab0(input)?;
   let (input, element) = match expression(input) {
@@ -140,7 +140,7 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   Ok((input, MatrixColumn{element}))
 }
 
-// matrix-row := table-separator?, (space | tab)*, matrix-column+, semicolon?, new-line?, (box-drawing-char+, new-line)? ;
+// Grammar: docs/design/specification.mec, `matrix-row`.
 pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
   let (input, _) = space_tab0(input)?;
   let (input, _) = opt(table_separator)(input)?;
@@ -156,12 +156,12 @@ pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
   Ok((input, MatrixRow{columns}))
 }
 
-// matrix-start := box-tl-round | box-tl | left-bracket ;
+// Grammar: docs/design/specification.mec, `matrix-start`.
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_tl, box_tl_bold, left_bracket))(input)
 }
 
-// matrix-end := box-br-round | box-br | right-bracket ;
+// Grammar: docs/design/specification.mec, `matrix-end`.
 pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, box_br, box_br_bold, right_bracket))(input);
   result
@@ -170,12 +170,12 @@ pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
 // Table
 // ----------------------------------------------------------------------------
 
-// table := inline-table | regular-table | fancy-table ;
+// Grammar: docs/design/specification.mec, `table`.
 fn table(input: ParseString) -> ParseResult<Table> { 
   alt((inline_table, regular_table, fancy_table))(input)
 }
 
-// fancy-table := table-top, fancy-header, +fancy-row, table-bottom ;
+// Grammar: docs/design/specification.mec, `fancy-table`.
 pub fn fancy_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_top(input)?;
   let (input, _) = table_separator(input)?;
@@ -185,7 +185,7 @@ pub fn fancy_table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header: TableHeader::new(header), rows}))
 }
 
-// table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
+// Grammar: docs/design/specification.mec, `fancy-table-header`.
 pub fn fancy_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(table_separator,field)(input)?;
   let (input, _) = table_separator(input)?;
@@ -193,7 +193,7 @@ pub fn fancy_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
-// row-separator := *whitespace, *box-drawing-char, *(space | tab), *whitespace ;
+// Grammar: docs/design/specification.mec, `row-separator`.
 pub fn row_separator(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = space_tab0(input)?;
   let (input, _) = many1(alt((box_drawing_char,table_end,space_tab)))(input)?;
@@ -201,7 +201,7 @@ pub fn row_separator(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow{columns: vec![]}))
 }
 
-// table-top := table-start, *box-drawing-char, new-line ;
+// Grammar: docs/design/specification.mec, `table-top`.
 fn table_top(input: ParseString) -> ParseResult<()> {
   let (input, _) = table_start(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
@@ -209,14 +209,14 @@ fn table_top(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// table-bottom := *box-drawing-char, table-end;
+// Implementation helper for consuming a table's bottom border and closing token.
 fn table_bottom(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(box_drawing_char)(input)?;
   let (input, _) = table_end(input)?;
   Ok((input, ()))
 }
 
-// inline-table := table-separator, *whitespace, table-header, *whitespace, +table-row;
+// Grammar: docs/design/specification.mec, `inline-table`.
 pub fn inline_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_separator(input)?;
   let (input, _) = space_tab0(input)?;
@@ -226,7 +226,7 @@ pub fn inline_table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header: TableHeader::new(header), rows}))
 }
 
-// inline-table-row := *(space | tab), +(*(space | tab), expression) , *(space | tab), table-separator ;
+// Grammar: docs/design/specification.mec, `inline-table-row`.
 pub fn inline_table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = space_tab0(input)?;
   let (input, row) = many1(nom_tuple((space_tab0, expression)))(input)?;
@@ -236,7 +236,7 @@ pub fn inline_table_row(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow{columns: row}))
 }
 
-// regular-table := table-separator, whitespace*, table-header, +table-row ;
+// Grammar: docs/design/specification.mec, `regular-table`.
 pub fn regular_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_separator(input)?;
   let (input, _) = whitespace0(input)?;
@@ -245,7 +245,7 @@ pub fn regular_table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header: TableHeader::new(header), rows}))
 }
 
-// table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
+// Grammar: docs/design/specification.mec, `table-header`.
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(space_tab1,header_field)(input)?;
   let (input, _) = space_tab0(input)?;
@@ -254,7 +254,7 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
-// table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
+// Grammar: docs/design/specification.mec, `inline-table-header`.
 pub fn inline_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(space_tab1,header_field)(input)?;
   let (input, _) = space_tab0(input)?;
@@ -263,7 +263,7 @@ pub fn inline_table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
-// table-row := table-separator, *(space | tab), +table-column, *(space | tab), table-separator, ?new-line ;
+// Grammar: docs/design/specification.mec, `table-row2`.
 pub fn table_row2(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = table_separator(input)?;
   let sep = delimited(space_tab0, table_separator, space_tab0);
@@ -278,7 +278,7 @@ pub fn table_row2(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow { columns }))
 }
 
-// table-row := table-separator, *(space | tab), +table-column, *(space | tab), table-separator, ?new-line ;
+// Grammar: docs/design/specification.mec, `table-row`.
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = table_separator(input)?;
   let (input, cells) = separated_list1(space_tab1, expression)(input)?;
@@ -292,7 +292,7 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow { columns }))
 }
 
-// table-column := *(space | tab), expression, (*(space | tab), ("," | ?table-separator), *(space | tab)) ;
+// Grammar: docs/design/specification.mec, `table-column`.
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = space_tab0(input)?;
   let (input, element) = match expression(input) {
@@ -305,42 +305,42 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   Ok((input, TableColumn{element}))
 }
 
-// field := identifier, kind-annotation? ;
+// Grammar: docs/design/specification.mec, `header-field`.
 pub fn header_field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
   let (input, kind) = kind_annotation(input)?;
   Ok((input, Field{name, kind: Some(kind)}))
 }
 
-// field := identifier, kind-annotation? ;
+// Grammar: docs/design/specification.mec, `field`.
 pub fn field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   Ok((input, Field{name, kind}))
 }
 
-// box-drawing-char := box-tl | box-br | box-bl | box-tr | box-tr-round | box-bl-round | box-vert | box-cross | box-horz | box-t-left | box-t-right | box-t-top | box-t-bottom ;
+// Grammar: docs/design/specification.mec, `box-drawing-char`.
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// box-drawing-emoji := box-tl | box-br | box-bl | box-tr | box-tl-round | box-br-round | box-tr-round | box-bl-round | box-vert | box-cross | box-horz | box-t-left | box-t-right | box-t-top | box-t-bottom ;
+// Grammar: docs/design/specification.mec, `box-drawing-emoji`.
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_vert_bold, box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// table-start := box-tl-round | box-tl | left-brace ;
+// Grammar: docs/design/specification.mec, `table-start`.
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_tl, box_tl_bold, left_brace, table_separator))(input)
 }
 
-// table-end := box-br-round | box-br | right-brace ;
+// Grammar: docs/design/specification.mec, `table-end`.
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, box_br, box_br_bold, right_brace, table_separator))(input);
   result
 }
 
-// table-separator := box_vert ;
+// Grammar: docs/design/specification.mec, `table-separator`.
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
   let (input, _) = space_tab0(input)?;
   let (input, token) = alt((box_vert,box_vert_bold,bar))(input)?;
@@ -356,7 +356,7 @@ pub fn table_horz(input: ParseString) -> ParseResult<Token> {
 // Map
 // ----------------------------------------------------------------------------
 
-// empty-table := table-start, whitespace*, table-end ;
+// Grammar: docs/design/specification.mec, `empty-map`.
 pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
@@ -366,7 +366,7 @@ pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements: vec![]}))
 }
 
-// map := "{", whitespace*, mapping*, whitespace*, "}" ;
+// Grammar: docs/design/specification.mec, `map`.
 pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -377,7 +377,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements}))
 }
 
-// mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
+// Grammar: docs/design/specification.mec, `mapping`.
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -399,7 +399,7 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
 // Record
 // ----------------------------------------------------------------------------
 
-// record := table-start, whitespace*, binding+, whitespace*, table_end ;
+// Grammar: docs/design/specification.mec, `record`.
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(table_start)(input)?;
@@ -410,7 +410,7 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
   Ok((input, Record{bindings}))
 }
 
-// binding := identifier, kind_annotation?, colon, expression, ","? ;
+// Grammar: docs/design/specification.mec, `binding`.
 pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -432,7 +432,7 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
 // Set
 // ----------------------------------------------------------------------------
 
-// empty-set := table-start, whitespace*, empty, whitespace*, table-end ;
+// Grammar: docs/design/specification.mec, `empty-set`.
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
@@ -442,7 +442,7 @@ pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   Ok((input,  Set{elements: vec![]}))
 }
 
-// set := "{", whitespace*, list0(("," | whitespace+), expression), whitespace*, "}" ;
+// Grammar: docs/design/specification.mec, `set`.
 pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -456,7 +456,7 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 // Tuple
 // ----------------------------------------------------------------------------
 
-// tuple := "(", list0(",", expression), ")" ;
+// Grammar: docs/design/specification.mec, `tuple`.
 pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = whitespace0(input)?;

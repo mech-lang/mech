@@ -1,0 +1,99 @@
+{
+  "ast": {
+    "header": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      },
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "f",
+                  "3",
+                  "2"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "y"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "rows": [
+      {
+        "columns": [
+          {
+            "element": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "element": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "2"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 99,
+    "remaining_source": "",
+    "source_graphemes": 99
+  },
+  "entry_point": "fancy-table",
+  "rule": "fancy-table"
+}

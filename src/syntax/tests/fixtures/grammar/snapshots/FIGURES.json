@@ -1,0 +1,103 @@
+{
+  "ast": {
+    "rows": [
+      [
+        {
+          "caption": {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          },
+          "src": {
+            "chars": [
+              "o",
+              "n",
+              "e",
+              ".",
+              "p",
+              "n",
+              "g"
+            ],
+            "kind": "Alpha"
+          }
+        },
+        {
+          "caption": {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "t",
+                    "w",
+                    "o"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          },
+          "src": {
+            "chars": [
+              "t",
+              "w",
+              "o",
+              ".",
+              "p",
+              "n",
+              "g"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      ],
+      [
+        {
+          "caption": {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "w",
+                    "i",
+                    "d",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          },
+          "src": {
+            "chars": [
+              "w",
+              "i",
+              "d",
+              "e",
+              ".",
+              "p",
+              "n",
+              "g"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 59,
+    "remaining_source": "",
+    "source_graphemes": 59
+  },
+  "entry_point": "figures",
+  "rule": "image"
+}

@@ -1,0 +1,50 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "Comment": {
+            "paragraph": {
+              "elements": [
+                {
+                  "Text": {
+                    "chars": [
+                      " ",
+                      "s",
+                      "e",
+                      "l",
+                      "e",
+                      "c",
+                      "t",
+                      "e",
+                      "d",
+                      " ",
+                      "c",
+                      "o",
+                      "m",
+                      "m",
+                      "e",
+                      "n",
+                      "t"
+                    ],
+                    "kind": "Text"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 19,
+    "remaining_source": "",
+    "source_graphemes": 19
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code-comment"
+}

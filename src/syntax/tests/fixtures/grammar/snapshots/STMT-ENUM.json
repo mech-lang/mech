@@ -1,0 +1,84 @@
+{
+  "ast": {
+    "EnumDefine": {
+      "name": {
+        "name": {
+          "chars": [
+            "r",
+            "e",
+            "s",
+            "u",
+            "l",
+            "t"
+          ],
+          "kind": "Identifier"
+        }
+      },
+      "variants": [
+        {
+          "name": {
+            "name": {
+              "chars": [
+                "o",
+                "k"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          "value": {
+            "kind": {
+              "Scalar": {
+                "name": {
+                  "chars": [
+                    "u",
+                    "6",
+                    "4"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": {
+            "name": {
+              "chars": [
+                "e",
+                "r",
+                "r",
+                "o",
+                "r"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          "value": {
+            "kind": {
+              "Scalar": {
+                "name": {
+                  "chars": [
+                    "s",
+                    "t",
+                    "r",
+                    "i",
+                    "n",
+                    "g"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 39,
+    "remaining_source": "",
+    "source_graphemes": 39
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

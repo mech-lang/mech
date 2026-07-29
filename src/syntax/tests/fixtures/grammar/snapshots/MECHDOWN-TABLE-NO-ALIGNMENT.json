@@ -1,0 +1,73 @@
+{
+  "ast": {
+    "alignment": [
+      "Left",
+      "Left"
+    ],
+    "header": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "A",
+                " "
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      },
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "B",
+                " "
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ],
+    "rows": [
+      [
+        {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "x",
+                  " "
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        },
+        {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "y",
+                  " "
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 33,
+    "remaining_source": "",
+    "source_graphemes": 33
+  },
+  "entry_point": "mechdown-table",
+  "rule": "no-alignment"
+}

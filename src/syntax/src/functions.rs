@@ -15,7 +15,7 @@ use nom::{
   Err::Failure
 };
 
-// function_define := identifier, "(", list0(list_separator, function_arg), ")", "=", (function_out_args | function_out_arg), define_operator, list1((whitespace1 | statement_separator), statement), period ;
+// Grammar: docs/design/specification.mec, `function-define`.
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
@@ -101,7 +101,7 @@ fn function_match_arm(input: ParseString) -> ParseResult<FunctionMatchArm> {
   }))
 }
 
-// function_out_args := "(", list1(list_separator, function_arg), ")" ;
+// Grammar: docs/design/specification.mec, `function-out-args`.
 pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, args)) = separated_list1(list_separator,function_arg)(input)?;
@@ -109,20 +109,20 @@ pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument
   Ok((input, args))
 }
 
-// function_out_arg := function_arg ;
+// Grammar: docs/design/specification.mec, `function-out-arg`.
 pub fn function_out_arg(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
   let ((input, arg)) = function_arg(input)?;
   Ok((input, vec![arg]))
 }
 
-// function_arg := identifier, kind_annotation ;
+// Grammar: docs/design/specification.mec, `function-arg`.
 pub fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
   let ((input, name)) = identifier(input)?;
   let ((input, kind)) = kind_annotation(input)?;
   Ok((input, FunctionArgument{ name, kind }))
 }
 
-// argument_list := "(", list0(",", call_arg_with_biding | call_arg), ")" ;
+// Grammar: docs/design/specification.mec, `argument-list`.
 pub fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
@@ -130,14 +130,14 @@ pub fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   Ok((input, args))
 }
 
-// function_call := identifier, argument_list ;
+// Grammar: docs/design/specification.mec, `function-call`.
 pub fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
   let (input, name) = identifier(input)?;
   let (input, args) = argument_list(input)?;
   Ok((input, FunctionCall{name,args} ))
 }
 
-// call_arg_with_binding := identifier, colon, expression ;
+// Grammar: docs/design/specification.mec, `call-arg-with-binding`.
 pub fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, arg_name) = identifier(input)?;
   let (input, _) = whitespace0(input)?;
@@ -147,7 +147,7 @@ pub fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifi
   Ok((input, (Some(arg_name), expr)))
 }
 
-// call_arg := expression ;
+// Grammar: docs/design/specification.mec, `call-arg`.
 pub fn call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, expr) = expression(input)?;
   Ok((input, (None, expr)))

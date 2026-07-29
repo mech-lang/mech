@@ -214,7 +214,7 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 // 3. Recovery functions
 // -----------------------
 
-// skip_till_eol := (!new_line, any)* ;
+// Recovery: consume tokens up to, but not including, the next line ending.
 pub fn skip_till_eol(input: ParseString) -> ParseResult<Token> {
   let (input, matched) = many0(nom_tuple((
     is_not(new_line),
@@ -225,7 +225,7 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<Token> {
   Ok((input, tkn))
 }
 
-// skip_past_eol := skip_till_eol, new_line ;
+// Recovery: consume tokens through the next line ending.
 pub fn skip_past_eol(input: ParseString) -> ParseResult<Token> {
   let (input, matched) = skip_till_eol(input)?;
   let (input, nl) = new_line(input)?;
@@ -233,7 +233,7 @@ pub fn skip_past_eol(input: ParseString) -> ParseResult<Token> {
   Ok((input, matched))
 }
 
-// skip-till-end-of-statement := *((!new-line, !";"), any) ;
+// Recovery: consume tokens up to a newline, semicolon, or Mika section close.
 pub fn skip_till_end_of_statement(input: ParseString) -> ParseResult<Token> {
   // If empty, return
   if input.is_empty() {
@@ -257,7 +257,7 @@ pub fn skip_till_end_of_statement(input: ParseString) -> ParseResult<Token> {
   Ok((input, tkn))
 }
 
-// skip_till_section_element := skip_past_eol, (!section_element, skip_past_eol)* ;
+// Recovery: skip whole lines until a section element can begin.
 pub fn skip_till_section_element(input: ParseString) -> ParseResult<Token> {
   if input.is_empty() {
     return Ok((input, Token::default()));
@@ -288,18 +288,18 @@ pub fn skip_till_paragraph_element(input: ParseString) -> ParseResult<Token> {
   Ok((input, tkn))
 }
 
-// skip_spaces := space* ;
+// Recovery helper: consume zero or more ordinary space tokens.
 pub fn skip_spaces(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(space)(input)?;
   Ok((input, ()))
 }
 
-// skip_nil := ;
+// Recovery helper: succeed without consuming input.
 pub fn skip_nil(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// skip_empty_mech_directive := ;
+// Recovery helper: synthesize an empty Mech directive without consuming input.
 pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
   Ok((input, String::from("mech:")))
 }
@@ -318,7 +318,7 @@ where
 // 4. Public interface
 // ---------------------
 
-// mech_code_alt := activation_scope | fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
+// Grammar: docs/design/specification.mec, `mech-code-alt`.
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   let (input, _) = whitespace0(input)?;
   let parsers: Vec<(&str, Box<dyn Fn(ParseString) -> ParseResult<MechCode>>)> = vec![
@@ -342,7 +342,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 
 }
 
-/// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | right-brace | eof), *whitespace ;
+// Grammar: docs/design/specification.mec, `code-terminal`.
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
@@ -355,7 +355,7 @@ pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
   Ok((input, cmmt))
 }
 
-// mech-code-block := +(mech-code, code-terminal) ;
+// Grammar: docs/design/specification.mec, `mech-code`.
 pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
   let mut lines = vec![];
   let mut imports = vec![];
@@ -454,7 +454,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
   Ok((new_input, ParsedMechCode { code: lines, imports, exports }))
 }
 
-// program := ws0, ?title, body, ws0 ;
+// Grammar: docs/design/specification.mec, `program`.
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
@@ -466,7 +466,7 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   Ok((input, Program{title, body}))
 }
 
-// parse_mech := program | statement ;
+// Grammar: docs/design/specification.mec, `parse-mech`.
 pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
   //let (input, mech) = alt((program, statement))(input)?;
   //Ok((input, ParserNode::Root { children: vec![mech] }))
