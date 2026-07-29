@@ -1,8 +1,9 @@
 use std::collections::BTreeSet;
 
 use mech_core::{
-  Dictionary, MechAtom, MechEnum, MechError, MechRecord,
-  MechTuple, Ref, Value, ValueKind, ValueSnapshotBorrowConflict,
+  Dictionary, MechAtom, MechEnum, MechError, MechMap,
+  MechRecord, MechSet, MechTuple, Ref, Value, ValueKind,
+  ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision,
   hash_str,
 };
 use mech_core::structures::matrix::Matrix;
@@ -44,6 +45,24 @@ fn assert_borrow_conflict(
   let rendered = format!("{error:?}");
   assert!(!rendered.contains("@0x"), "{rendered}");
   assert!(!rendered.contains("0x"), "{rendered}");
+}
+
+fn assert_collection_collision(
+  error: MechError,
+  collection: &str,
+) {
+  assert_eq!(
+    error.kind_name(),
+    "ValueSnapshotCollectionCollision",
+  );
+  let collision = error
+    .kind_as::<ValueSnapshotCollectionCollision>()
+    .expect("collection collision kind");
+  assert_eq!(collision.collection, collection);
+  assert_eq!(collision.first_index, 0);
+  assert_eq!(collision.second_index, 1);
+  let rendered = format!("{error:?}");
+  assert!(!rendered.contains("@0x"), "{rendered}");
 }
 
 #[test]
@@ -92,6 +111,80 @@ fn runtime_value_snapshot_returns_error_for_mutably_borrowed_matrix() {
   .unwrap_err();
 
   assert_borrow_conflict(error, "validate", "matrix");
+}
+
+#[test]
+fn runtime_value_snapshot_rejects_duplicate_equal_map_keys() {
+  let left_key = Ref::new(1.0);
+  let right_key = Ref::new(2.0);
+  let map = Ref::new(MechMap::from_vec(vec![
+    (
+      Value::F64(left_key.clone()),
+      Value::F64(Ref::new(10.0)),
+    ),
+    (
+      Value::F64(right_key.clone()),
+      Value::F64(Ref::new(20.0)),
+    ),
+  ]));
+  *right_key.borrow_mut() = 1.0;
+
+  let error = RuntimeValueSnapshot::try_capture(
+    &Value::Map(map.clone()),
+  )
+  .unwrap_err();
+
+  assert_collection_collision(error, "map key");
+  let source = map.borrow();
+  assert_eq!(source.num_elements, 2);
+  assert_eq!(source.map.len(), 2);
+  let keys = source
+    .map
+    .keys()
+    .map(|value| {
+      let Value::F64(value) = value else {
+        panic!("expected scalar map key");
+      };
+      value.clone()
+    })
+    .collect::<Vec<_>>();
+  assert!(keys[0].same_handle(&left_key));
+  assert!(keys[1].same_handle(&right_key));
+}
+
+#[test]
+fn runtime_value_snapshot_rejects_duplicate_equal_set_elements() {
+  let left = Ref::new(-0.0);
+  let right = Ref::new(1.0);
+  let set = Ref::new(MechSet::from_vec(vec![
+    Value::F64(left.clone()),
+    Value::F64(right.clone()),
+  ]));
+  *right.borrow_mut() = 0.0;
+
+  let error = RuntimeValueSnapshot::try_capture(
+    &Value::Set(set.clone()),
+  )
+  .unwrap_err();
+
+  assert_collection_collision(error, "set element");
+  let source = set.borrow();
+  assert_eq!(source.num_elements, 2);
+  assert_eq!(source.set.len(), 2);
+  let elements = source
+    .set
+    .iter()
+    .map(|value| {
+      let Value::F64(value) = value else {
+        panic!("expected scalar set element");
+      };
+      value.clone()
+    })
+    .collect::<Vec<_>>();
+  assert!(elements[0].same_handle(&left));
+  assert!(elements[1].same_handle(&right));
+  assert_eq!(left.borrow().to_bits(), (-0.0f64).to_bits());
+  assert_eq!(*right.borrow(), 0.0);
 }
 
 #[test]

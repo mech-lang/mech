@@ -127,6 +127,44 @@ impl MechErrorKind for ValueSnapshotBorrowConflict {
   }
 }
 
+#[derive(Debug, Clone)]
+pub struct ValueSnapshotCollectionCollision {
+  pub collection: &'static str,
+  pub first_index: usize,
+  pub second_index: usize,
+}
+
+impl MechErrorKind for ValueSnapshotCollectionCollision {
+  fn name(&self) -> &str {
+    "ValueSnapshotCollectionCollision"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "detached value snapshot found duplicate-equal {} entries at indices {} and {}",
+      self.collection,
+      self.first_index,
+      self.second_index,
+    )
+  }
+}
+
+fn snapshot_collection_collision(
+  collection: &'static str,
+  first_index: usize,
+  second_index: usize,
+) -> MechError {
+  MechError::new(
+    ValueSnapshotCollectionCollision {
+      collection,
+      first_index,
+      second_index,
+    },
+    None,
+  )
+  .with_compiler_loc()
+}
+
 fn snapshot_borrow_conflict<T>(
   phase: &'static str,
   node: &'static str,
@@ -686,11 +724,24 @@ impl ValueSnapshotCloneContext {
           value,
           "set",
           |context, mut set| {
-            let mut detached = IndexSet::new();
-            for value in set.set {
-              detached.insert(
-                context.snapshot_value(&value)?,
-              );
+            let mut detached =
+              IndexSet::with_capacity(set.set.len());
+            for (second_index, value) in
+              set.set.into_iter().enumerate()
+            {
+              let element =
+                context.snapshot_value(&value)?;
+              if let Some(first_index) = detached
+                .iter()
+                .position(|existing| existing == &element)
+              {
+                return Err(snapshot_collection_collision(
+                  "set element",
+                  first_index,
+                  second_index,
+                ));
+              }
+              detached.insert(element);
             }
             set.set = detached;
             Ok(set)
@@ -704,12 +755,27 @@ impl ValueSnapshotCloneContext {
           value,
           "map",
           |context, mut map| {
-            let mut detached = IndexMap::new();
-            for (key, value) in map.map {
-              detached.insert(
-                context.snapshot_value(&key)?,
-                context.snapshot_value(&value)?,
-              );
+            let mut detached =
+              IndexMap::with_capacity(map.map.len());
+            for (
+              second_index,
+              (source_key, source_value),
+            ) in map.map.into_iter().enumerate() {
+              let key =
+                context.snapshot_value(&source_key)?;
+              if let Some(first_index) = detached
+                .keys()
+                .position(|existing| existing == &key)
+              {
+                return Err(snapshot_collection_collision(
+                  "map key",
+                  first_index,
+                  second_index,
+                ));
+              }
+              let value =
+                context.snapshot_value(&source_value)?;
+              detached.insert(key, value);
             }
             map.map = detached;
             Ok(map)

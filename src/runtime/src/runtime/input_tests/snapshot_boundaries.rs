@@ -3,8 +3,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use mech_core::{
-  MResult, Ref, ValRef, Value, ValueSnapshotBorrowConflict,
-  hash_str,
+  MResult, MechMap, Ref, ValRef, Value,
+  ValueSnapshotBorrowConflict,
+  ValueSnapshotCollectionCollision, hash_str,
 };
 
 use crate::runtime::test_support::capabilities::{
@@ -14,12 +15,13 @@ use crate::runtime::test_support::events::events_since;
 use crate::runtime::test_support::stores::StoreCommitProbe;
 use crate::{
   CapabilityId, DeterministicHostFunction, HostCall, InMemorySourceResolver,
-  ModuleBuildOptions, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
-  RuntimeBuilder, RuntimeCapabilityOperation, RuntimeEffectMetadata,
+  HostCallPolicy, ModuleBuildOptions, PreparedRuntimeEffect,
+  RegisteredHostFunction, RuntimeAfterCommitEffect, RuntimeBuilder,
+  RuntimeCallContext, RuntimeCapabilityOperation, RuntimeEffectMetadata,
   RuntimeEffectSource, RuntimeEventKind, RuntimeResourceProvider,
   RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
   RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-  SharedCapabilityKernel,
+  RuntimeValueSnapshot, SharedCapabilityKernel,
 };
 
 const SNAPSHOT_RESOURCE: &str = "snapshot://boundary";
@@ -92,6 +94,23 @@ fn assert_borrow_conflict(
   assert!(!rendered.contains("0x"), "{rendered}");
 }
 
+fn assert_collection_collision(
+  error: &mech_core::MechError,
+  collection: &str,
+) {
+  assert_eq!(
+    error.kind_name(),
+    "ValueSnapshotCollectionCollision",
+    "{error:?}",
+  );
+  let collision = error
+    .kind_as::<ValueSnapshotCollectionCollision>()
+    .expect("collection collision kind");
+  assert_eq!(collision.collection, collection);
+  assert_eq!(collision.first_index, 0);
+  assert_eq!(collision.second_index, 1);
+}
+
 fn event_count(
   events: &[crate::RuntimeEvent],
   predicate: impl Fn(&RuntimeEventKind) -> bool,
@@ -113,6 +132,23 @@ impl RuntimeAfterCommitEffect for NoopAfterCommit {
   }
 
   fn deliver(&mut self) -> MResult<()> {
+    Ok(())
+  }
+}
+
+#[derive(Debug)]
+struct CountingHostPolicy {
+  calls: Arc<AtomicUsize>,
+}
+
+impl HostCallPolicy for CountingHostPolicy {
+  fn validate_call(
+    &self,
+    _context: &RuntimeCallContext,
+    _function: &RegisteredHostFunction,
+    _arguments: &[RuntimeValueSnapshot],
+  ) -> MResult<()> {
+    self.calls.fetch_add(1, Ordering::SeqCst);
     Ok(())
   }
 }
@@ -427,6 +463,117 @@ fn cyclic_host_result_is_rejected_before_host_completion() {
   assert_cycle_error(&error);
   assert_eq!(store_commits.calls(), store_commits_before);
   assert_eq!(capability_uses.committed_uses(), 0);
+  let events = events_since(&runtime, event_start);
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::HostCallStarted { .. },
+    )),
+    1,
+  );
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::HostCallFailed { .. },
+    )),
+    1,
+  );
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::HostCallCompleted { .. },
+    )),
+    0,
+  );
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::EffectStaged { .. },
+    )),
+    0,
+  );
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::TransactionAborted { .. },
+    )),
+    1,
+  );
+  assert!(!runtime.is_poisoned());
+}
+
+#[test]
+fn stale_map_key_collision_is_rejected_before_host_invocation() {
+  let left_key = Ref::new(1.0);
+  let right_key = Ref::new(2.0);
+  let map = Ref::new(MechMap::from_vec(vec![
+    (
+      Value::F64(left_key),
+      Value::F64(Ref::new(10.0)),
+    ),
+    (
+      Value::F64(right_key.clone()),
+      Value::F64(Ref::new(20.0)),
+    ),
+  ]));
+  *right_key.borrow_mut() = 1.0;
+
+  let policy_calls = Arc::new(AtomicUsize::new(0));
+  let plan_calls = Arc::new(AtomicUsize::new(0));
+  let invocation_calls = Arc::new(AtomicUsize::new(0));
+  let plan_count = plan_calls.clone();
+  let invocation_count = invocation_calls.clone();
+  let function = DeterministicHostFunction::new(
+    "snapshot/stale-map-collision",
+    move |_context, _arguments| -> MResult<Value> {
+      plan_count.fetch_add(1, Ordering::SeqCst);
+      Ok(Value::Empty)
+    },
+    move |_context, _arguments| -> MResult<Value> {
+      invocation_count.fetch_add(1, Ordering::SeqCst);
+      Ok(Value::Empty)
+    },
+  );
+  let (store, store_commits) = StoreCommitProbe::new();
+  let kernel = SharedCapabilityKernel::new();
+  let observed_kernel = kernel.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .store(store)
+    .capability_kernel(kernel)
+    .host_policy(CountingHostPolicy {
+      calls: policy_calls.clone(),
+    })
+    .host_function(function)
+    .unwrap()
+    .build()
+    .unwrap();
+  let capability = grant_host_call(
+    &mut runtime,
+    CapabilityId(98_002),
+    "snapshot/stale-map-collision",
+  );
+  let capability_uses = CapabilityUseProbe::new(
+    observed_kernel,
+    capability,
+  );
+  let event_start = runtime.list_events(None).unwrap().len();
+  let store_commits_before = store_commits.calls();
+
+  let error = runtime
+    .call_host(HostCall::new(
+      "snapshot/stale-map-collision",
+      vec![Value::Map(map.clone())],
+    ))
+    .unwrap_err();
+
+  assert_collection_collision(&error, "map key");
+  assert_eq!(policy_calls.load(Ordering::SeqCst), 0);
+  assert_eq!(plan_calls.load(Ordering::SeqCst), 0);
+  assert_eq!(invocation_calls.load(Ordering::SeqCst), 0);
+  assert_eq!(store_commits.calls(), store_commits_before);
+  assert_eq!(capability_uses.committed_uses(), 0);
+  assert_eq!(map.borrow().map.len(), 2);
+  assert_eq!(map.borrow().num_elements, 2);
   let events = events_since(&runtime, event_start);
   assert_eq!(
     event_count(&events, |kind| matches!(
