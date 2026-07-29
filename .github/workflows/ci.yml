@@ -101,7 +101,7 @@ jobs:
         run: cargo test -p mech-core -p mech-interpreter
 
       - name: Run complete program library suite
-        run: cargo test -p mech-program --lib
+        run: cargo test -p mech-program --lib --tests
 
       - name: Run non-UTF-8 source-root regressions
         run: |
