@@ -184,3 +184,6 @@ features = ["libm"]
 name = "formatter"
 path = "tests/formatter.rs"
 required-features = ["formatter", "mika", "variable_define"]
+
+[dev-dependencies]
+proptest = { version = "1.7.0", default-features = false, features = ["std"] }

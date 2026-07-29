@@ -3,7 +3,9 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 use crate::document::green::{child_text_len, hash_node, propagated_flags};
-use crate::document::parser::{build_restart_index, parse_document_with_ids};
+use crate::document::parser::{
+  build_restart_index, parse_document, parse_document_with_ids,
+};
 use crate::document::{
   Diagnostic, DiagnosticAnchor, DiagnosticId, DiagnosticStore, DocumentId, GreenElement,
   GreenNode, IdGenerator, NodeFlags, NodeId, ParseConfig, RecoveryAction, Revision,
@@ -101,8 +103,42 @@ fn try_reparse_root(
   if fragment_range != TextRange::new(TextSize::ZERO, mapped.len()) {
     return None;
   }
+  if root.kind == SyntaxKind::Section
+    && root.range.len().0 > 0
+    && replacement.text_len.0 == 0
+  {
+    return None;
+  }
+  if root.kind == SyntaxKind::Section {
+    let original = find_node_by_id(&old.root, root.node)?;
+    if has_direct_child(original, SyntaxKind::UlSubtitle)
+      && !has_direct_child(&replacement, SyntaxKind::UlSubtitle)
+    {
+      return None;
+    }
+  }
+  if replacement
+    .flags
+    .intersects(NodeFlags::MISSING | NodeFlags::CONTAINS_MISSING)
+    && mapped.end < source.byte_len()
+    && !tail_starts_with_ul_subtitle(source, mapped.end, config)
+  {
+    return None;
+  }
 
   let new_root = splice_node(&old.root, root.node, replacement, ids)?.0;
+  if root.kind != SyntaxKind::Section
+    && !section_envelope_matches(
+      old,
+      source,
+      changes,
+      root,
+      &new_root,
+      config,
+    )
+  {
+    return None;
+  }
   let mut snapshot = SyntaxSnapshot::new(
     source.clone(),
     new_root,
@@ -245,6 +281,154 @@ fn find_node_with_range(
   for child in node.children.iter() {
     if let GreenElement::Node(child) = child {
       if let Some(found) = find_node_with_range(child, kind, offset) {
+        return Some(found);
+      }
+    }
+    offset += child.text_len();
+  }
+  None
+}
+
+fn find_node_by_id(
+  node: &Arc<GreenNode>,
+  id: NodeId,
+) -> Option<&Arc<GreenNode>> {
+  if node.id == id {
+    return Some(node);
+  }
+  node.children.iter().find_map(|child| match child {
+    GreenElement::Node(child) => find_node_by_id(child, id),
+    GreenElement::Token(_) => None,
+  })
+}
+
+fn has_direct_child(node: &GreenNode, kind: SyntaxKind) -> bool {
+  node.children.iter().any(|child| {
+    matches!(child, GreenElement::Node(child) if child.kind == kind)
+  })
+}
+
+fn tail_starts_with_ul_subtitle(
+  source: &TextSnapshot,
+  start: TextSize,
+  config: ParseConfig,
+) -> bool {
+  let tail = TextRange::new(start, source.byte_len());
+  let Ok(text) = source.text(tail) else {
+    return false;
+  };
+  let Ok(tail_source) = TextSnapshot::new(
+    source.document(),
+    source.revision(),
+    text.as_str(),
+  ) else {
+    return false;
+  };
+  let parsed = parse_document(tail_source, config);
+  parsed
+    .root
+    .children
+    .iter()
+    .find_map(|child| match child {
+      GreenElement::Node(child) if child.kind == SyntaxKind::Body => {
+        Some(child)
+      }
+      _ => None,
+    })
+    .and_then(|body| {
+      body.children.iter().find_map(|child| match child {
+        GreenElement::Node(child) if child.kind == SyntaxKind::Section => {
+          Some(child)
+        }
+        _ => None,
+      })
+    })
+    .is_some_and(|section| {
+      has_direct_child(section, SyntaxKind::UlSubtitle)
+    })
+}
+
+fn section_envelope_matches(
+  old: &SyntaxSnapshot,
+  source: &TextSnapshot,
+  changes: &ChangeMap,
+  root: ReparseRoot,
+  new_root: &Arc<GreenNode>,
+  config: ParseConfig,
+) -> bool {
+  let Some(section) =
+    ancestor_record(old, root.node, SyntaxKind::Section)
+  else {
+    return true;
+  };
+  let mapped = changes.map_range(section.range);
+  if mapped.end > source.byte_len() {
+    return false;
+  }
+  let Some(actual) =
+    find_node_at_range(new_root, SyntaxKind::Section, mapped, TextSize::ZERO)
+  else {
+    return false;
+  };
+  let Ok(text) = source.text(mapped) else {
+    return false;
+  };
+  let Ok(fragment_source) = TextSnapshot::new(
+    source.document(),
+    source.revision(),
+    text.as_str(),
+  ) else {
+    return false;
+  };
+  let expected_snapshot = parse_document(fragment_source, config);
+  let expected_range = TextRange::at(TextSize::ZERO, mapped.len());
+  let Some((expected, range)) = find_node_with_range(
+    &expected_snapshot.root,
+    SyntaxKind::Section,
+    TextSize::ZERO,
+  ) else {
+    return false;
+  };
+  range == expected_range
+    && actual.structural_hash == expected.structural_hash
+    && actual.flags == expected.flags
+}
+
+fn ancestor_record<'a>(
+  snapshot: &'a SyntaxSnapshot,
+  node: NodeId,
+  kind: SyntaxKind,
+) -> Option<&'a crate::document::NodeRecord> {
+  let mut current = Some(node);
+  while let Some(node) = current {
+    let record = snapshot.nodes.node(node)?;
+    if record.kind == kind {
+      return Some(record);
+    }
+    current = record.parent;
+  }
+  None
+}
+
+fn find_node_at_range(
+  node: &Arc<GreenNode>,
+  kind: SyntaxKind,
+  target: TextRange,
+  start: TextSize,
+) -> Option<Arc<GreenNode>> {
+  let range = TextRange::at(start, node.text_len);
+  if node.kind == kind && range == target {
+    return Some(node.clone());
+  }
+  if !range.contains_range(target) {
+    return None;
+  }
+  let mut offset = start;
+  for child in node.children.iter() {
+    if let GreenElement::Node(child) = child {
+      if let Some(found) =
+        find_node_at_range(child, kind, target, offset)
+      {
         return Some(found);
       }
     }

@@ -1,0 +1,46 @@
+[package]
+name = "mech-syntax-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+mech-syntax = { path = "../src/syntax" }
+
+[workspace]
+members = ["."]
+
+[patch.crates-io]
+mech-core = { path = "../src/core" }
+
+[[bin]]
+name = "parse_document"
+path = "fuzz_targets/parse_document.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "incremental_equivalence"
+path = "fuzz_targets/incremental_equivalence.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "recovery_progress"
+path = "fuzz_targets/recovery_progress.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "edit_piece_table"
+path = "fuzz_targets/edit_piece_table.rs"
+test = false
+doc = false
+bench = false

@@ -1,0 +1,41 @@
+name: Syntax fuzzing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1"
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - parse_document
+          - incremental_equivalence
+          - recovery_progress
+          - edit_piece_table
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        run: |
+          rustup toolchain install nightly --profile minimal
+          rustup default nightly
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Run bounded target
+        run: cargo fuzz run "${{ matrix.target }}" -- -runs=25000 -max_total_time=900
+
+      - name: Upload crashes and timeouts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: syntax-fuzz-${{ matrix.target }}
+          path: |
+            fuzz/artifacts/${{ matrix.target }}
+            fuzz/corpus/${{ matrix.target }}
