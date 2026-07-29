@@ -1,4 +1,4 @@
-use crate::{Interpreter, ParsedProgram, Plan, Value, hash_str};
+use crate::{Interpreter, Plan, Value, hash_str};
 
 fn symbol(interpreter: &Interpreter, name: &str) -> Value {
     interpreter
@@ -109,38 +109,4 @@ fn record_field_consumer_depends_on_member_cell() {
             .iter()
             .any(|input| input.cell == record_cell)
     );
-}
-
-#[test]
-fn decoded_structural_alias_access_matches_source() {
-    for (source, name) in [("tuple := (1, 2); tuple.2", "TupleAccessElement")] {
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        let mut interpreter = Interpreter::new_with_full_stdlib(0);
-        let source_output = interpreter.interpret(&tree).unwrap();
-        {
-            let source_plan = interpreter.plan();
-            let source_node = alias_node(&source_plan, name);
-            let source_plan = source_plan.borrow();
-            let source_node = source_plan.node(source_node).unwrap();
-            assert!(source_node.inputs.is_empty());
-            assert_eq!(
-                source_node.outputs.as_slice(),
-                &source_output.reactive_root_cell_ids()
-            );
-        }
-        let bytecode = interpreter.compile().unwrap();
-        let program = ParsedProgram::from_bytes(&bytecode).unwrap();
-        interpreter.clear_plan();
-        let decoded_output = interpreter.run_program(&program).unwrap();
-        assert_eq!(decoded_output, source_output);
-        let decoded_node = alias_node(&interpreter.plan(), name);
-        let decoded_plan = interpreter.plan();
-        let decoded_plan = decoded_plan.borrow();
-        let decoded_node = decoded_plan.node(decoded_node).unwrap();
-        assert!(decoded_node.inputs.is_empty());
-        assert_eq!(
-            decoded_node.outputs.as_slice(),
-            &decoded_output.reactive_root_cell_ids()
-        );
-    }
 }

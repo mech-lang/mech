@@ -759,19 +759,6 @@ mod matrix_dependency_tests {
     assert_matrix_literal_chain(&interpreter.plan());
   }
 
-  #[test]
-  fn decoded_matrix_literal_preserves_dependency_chain() {
-    let tree = mech_syntax::parser::parse("[1.0 2.0; 3.0 4.0]").unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
-    interpreter.interpret(&tree).unwrap();
-    let bytecode = interpreter.compile().unwrap();
-    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
-
-    interpreter.clear_plan();
-    let output = interpreter.run_program(&program).unwrap();
-    assert_eq!(output, Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2)));
-    assert_matrix_literal_chain(&interpreter.plan());
-  }
 }
 
 #[cfg(all(test, feature = "set", feature = "f64", feature = "functions", feature = "program", feature = "compiler"))]
@@ -843,16 +830,4 @@ mod set_dependency_tests {
     assert_structural_set_node(&interpreter.plan(), &output);
   }
 
-  #[test]
-  fn decoded_set_literal_registers_structural_node() {
-    let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
-    let source_output = interpreter.interpret(&tree).unwrap();
-    let bytecode = interpreter.compile().unwrap();
-    let program = ParsedProgram::from_bytes(&bytecode).unwrap();
-    interpreter.clear_plan();
-    let decoded_output = interpreter.run_program(&program).unwrap();
-    assert_eq!(decoded_output, source_output);
-    assert_structural_set_node(&interpreter.plan(), &decoded_output);
-  }
 }

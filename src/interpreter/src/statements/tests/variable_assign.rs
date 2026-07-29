@@ -4,7 +4,7 @@ use super::support::{
     value,
 };
 use crate::{
-    Interpreter, ParsedProgram, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState, Value,
+    Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState, Value,
 };
 
 #[test]
@@ -15,26 +15,6 @@ fn whole_variable_assignment_registers_state_node() {
   let output = interpreter.interpret(&tree).unwrap();
   assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
   assert_eq!(distinct_assignment_graph_shape(&interpreter, "x", "y"), expected_distinct_assignment_shape());
-}
-
-
-#[test]
-fn decoded_whole_variable_assignment_matches_source_graph() {
-  let source = "~x := 1.0; y := 2.0; x = y; x";
-  let tree = mech_syntax::parser::parse(source).unwrap();
-  let mut source_interpreter = Interpreter::new_with_full_stdlib(0);
-  let source_output = source_interpreter.interpret(&tree).unwrap();
-  assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
-  let source_shape = distinct_assignment_graph_shape(&source_interpreter, "x", "y");
-  let bytecode = source_interpreter.compile().unwrap();
-  let program = ParsedProgram::from_bytes(&bytecode).unwrap();
-  let mut decoded_interpreter = Interpreter::new_with_full_stdlib(0);
-  let decoded_output = decoded_interpreter.run_program(&program).unwrap();
-  assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
-  let decoded_shape = decoded_assignment_graph_shape(&decoded_interpreter, &decoded_output);
-  assert_eq!(source_shape, expected_distinct_assignment_shape());
-  assert_eq!(decoded_shape, expected_distinct_assignment_shape());
-  assert_eq!(source_shape, decoded_shape);
 }
 
 

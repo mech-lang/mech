@@ -134,35 +134,12 @@ impl CompileCtx {
       DictEntry::new(*id, name).write_to(&mut buffer)?;
     }
 
-    let position = buffer.position();
-    if position != file_len_before_trailer {
-      return Err(
-        MechError::new(
-          BufferPositionMismatchError {
-            expected: file_len_before_trailer,
-            got: position,
-          },
-          None,
-        )
-        .with_compiler_loc(),
-      );
-    }
+    validate_buffer_position(buffer.position(), file_len_before_trailer)?;
 
     let checksum = crc32fast::hash(buffer.get_ref().as_slice());
     buffer.write_u32::<LittleEndian>(checksum)?;
 
-    if buffer.position() != full_file_len {
-      return Err(
-        MechError::new(
-          FinalBufferLengthMismatchError {
-            expected: full_file_len,
-            got: buffer.position(),
-          },
-          None,
-        )
-        .with_compiler_loc(),
-      );
-    }
+    validate_final_buffer_length(buffer.position(), full_file_len)?;
 
     Ok(buffer.into_inner())
   }
@@ -342,6 +319,38 @@ fn align_up(offset: u64, align: u64) -> u64 {
   ((offset + align - 1) / align) * align
 }
 
+fn validate_buffer_position(position: u64, expected: u64) -> MResult<()> {
+  if position == expected {
+    return Ok(());
+  }
+  Err(
+    MechError::new(
+      BufferPositionMismatchError {
+        expected,
+        got: position,
+      },
+      None,
+    )
+    .with_compiler_loc(),
+  )
+}
+
+fn validate_final_buffer_length(length: u64, expected: u64) -> MResult<()> {
+  if length == expected {
+    return Ok(());
+  }
+  Err(
+    MechError::new(
+      FinalBufferLengthMismatchError {
+        expected,
+        got: length,
+      },
+      None,
+    )
+    .with_compiler_loc(),
+  )
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -372,5 +381,137 @@ mod tests {
       context.register_for_ptr_with_initialization_status(pointer_a);
     assert_eq!(register_a_after_clear, 0);
     assert!(initializes_a_after_clear);
+  }
+
+  #[test]
+  fn distinct_pointers_with_equal_values_receive_distinct_registers() {
+    let value_a = 42u64;
+    let value_b = 42u64;
+    let mut context = CompileCtx::new();
+
+    let value_a_address = std::ptr::from_ref(&value_a).addr();
+    let value_b_address = std::ptr::from_ref(&value_b).addr();
+    let (register_a, _) =
+      context.register_for_ptr_with_initialization_status(value_a_address);
+    let (register_b, _) =
+      context.register_for_ptr_with_initialization_status(value_b_address);
+
+    assert_ne!(value_a_address, value_b_address);
+    assert_ne!(register_a, register_b);
+  }
+
+  #[test]
+  fn symbol_and_mutability_metadata_survive_emission() {
+    let mut context = CompileCtx::new();
+    let pointer = 0x1234usize;
+    let (register, _) = context.register_for_ptr_with_initialization_status(pointer);
+    context.define_symbol(pointer, register, "answer", true);
+
+    let symbol_id = hash_str("answer");
+    assert_eq!(context.symbol_ptrs.get(&symbol_id), Some(&pointer));
+
+    let bytes = context.compile().unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    assert_eq!(parsed.symbols.get(&symbol_id), Some(&register));
+    assert!(parsed.mutable_symbols.contains(&symbol_id));
+    assert_eq!(parsed.dictionary.get(&symbol_id).map(String::as_str), Some("answer"));
+  }
+
+  #[test]
+  fn constants_keep_their_alignment() {
+    let mut context = CompileCtx::new();
+    context.compile_const(&[1], ValueKind::Index).unwrap();
+    context.compile_const(&[2; 8], ValueKind::Index).unwrap();
+
+    assert_eq!(context.const_entries[0].offset, 0);
+    assert_eq!(context.const_entries[0].align, 8);
+    assert_eq!(context.const_entries[1].offset, 8);
+    assert_eq!(context.const_entries[1].align, 8);
+
+    let parsed = ParsedProgram::from_bytes(&context.compile().unwrap()).unwrap();
+    assert_eq!(parsed.const_entries[1].offset, 8);
+  }
+
+  #[test]
+  fn instruction_emission_round_trips_unchanged() {
+    let mut context = CompileCtx::new();
+    context.emit_nullop(10, 0);
+    context.emit_unop(11, 1, 0);
+    context.emit_binop(12, 2, 0, 1);
+    context.emit_ternop(13, 3, 0, 1, 2);
+    context.emit_quadop(14, 4, 0, 1, 2, 3);
+    context.emit_ret(5);
+    context.emit_varop(15, 5, vec![0, 1, 2, 3, 4]);
+
+    let parsed = ParsedProgram::from_bytes(&context.compile().unwrap()).unwrap();
+    assert_eq!(
+      parsed.instrs,
+      vec![
+        DecodedInstr::NullOp { fxn_id: 10, dst: 0 },
+        DecodedInstr::UnOp { fxn_id: 11, dst: 1, src: 0 },
+        DecodedInstr::BinOp { fxn_id: 12, dst: 2, lhs: 0, rhs: 1 },
+        DecodedInstr::TernOp { fxn_id: 13, dst: 3, a: 0, b: 1, c: 2 },
+        DecodedInstr::QuadOp { fxn_id: 14, dst: 4, a: 0, b: 1, c: 2, d: 3 },
+        DecodedInstr::Ret { src: 5 },
+        DecodedInstr::VarArg { fxn_id: 15, dst: 5, args: vec![0, 1, 2, 3, 4] },
+      ],
+    );
+  }
+
+  #[test]
+  fn emitted_sections_retain_version_one_layout_and_checksum() {
+    let mut context = CompileCtx::new();
+    context.require(FeatureFlag::Builtin(FeatureKind::Index));
+    context.compile_const(&[1; 8], ValueKind::Index).unwrap();
+    let (register, _) = context.register_for_ptr_with_initialization_status(1);
+    context.define_symbol(1, register, "index", false);
+    context.emit_const_load(register, 0);
+
+    let bytes = context.compile().unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    let header = &parsed.header;
+    assert_eq!(header.version, 1);
+    assert_eq!(header.feature_off, ByteCodeHeader::HEADER_SIZE as u64);
+    assert_eq!(
+      header.types_off,
+      header.feature_off + 4 + (header.feature_count as u64 * 8),
+    );
+    assert_eq!(header.const_tbl_off, header.types_off + parsed.types.byte_len());
+    assert_eq!(header.const_blob_off, header.const_tbl_off + header.const_tbl_len);
+    assert_eq!(header.symbols_off, header.const_blob_off + header.const_blob_len);
+    assert_eq!(header.instr_off, header.symbols_off + header.symbols_len);
+    assert_eq!(header.dict_off, header.instr_off + header.instr_len);
+    assert_eq!(bytes.len() as u64, header.dict_off + header.dict_len + 4);
+
+    let mut corrupted = bytes;
+    corrupted[ByteCodeHeader::HEADER_SIZE] ^= 1;
+    assert!(ParsedProgram::from_bytes(&corrupted).is_err());
+  }
+
+  #[test]
+  fn requirements_are_deduplicated() {
+    let mut context = CompileCtx::new();
+    let requirement = FeatureFlag::Builtin(FeatureKind::Add);
+    context.require(requirement.clone());
+    context.require(requirement.clone());
+    assert_eq!(context.requirements().len(), 1);
+    assert!(context.requirements().contains(&requirement));
+  }
+
+  #[test]
+  fn malformed_writer_positions_return_structured_errors() {
+    let position_error = validate_buffer_position(4, 5).unwrap_err();
+    let position = position_error
+      .kind_as::<BufferPositionMismatchError>()
+      .unwrap();
+    assert_eq!(position.expected, 5);
+    assert_eq!(position.got, 4);
+
+    let length_error = validate_final_buffer_length(8, 9).unwrap_err();
+    let length = length_error
+      .kind_as::<FinalBufferLengthMismatchError>()
+      .unwrap();
+    assert_eq!(length.expected, 9);
+    assert_eq!(length.got, 8);
   }
 }

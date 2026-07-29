@@ -37,6 +37,8 @@ jobs:
 
       - name: Check feature boundaries and examples
         run: |
+          bash scripts/check-bytecode-compiler-boundaries.sh
+
           # Linked-stdlib CLI build for examples that import named modules.
           cargo build --bin mech --features linked_stdlib
           ./target/debug/mech test examples/working
