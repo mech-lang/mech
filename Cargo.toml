@@ -256,6 +256,7 @@ zip = { version =  "5.1.1", optional = true }
 [workspace]
 members = [
   "src/abi",
+  "src/bytecode",
   "src/core",
   "src/syntax",
   "src/interpreter",
@@ -279,6 +280,7 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
+mech-bytecode = { path = 'src/bytecode' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}

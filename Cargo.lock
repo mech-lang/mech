@@ -2131,6 +2131,15 @@ name = "mech-abi"
 version = "0.3.5"
 
 [[package]]
+name = "mech-bytecode"
+version = "0.3.5"
+dependencies = [
+ "byteorder",
+ "crc32fast",
+ "mech-core",
+]
+
+[[package]]
 name = "mech-combinatorics"
 version = "0.3.5"
 dependencies = [
