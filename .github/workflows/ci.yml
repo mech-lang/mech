@@ -110,6 +110,9 @@ jobs:
             --features test \
             cli::module_execution::tests::test_module_execution_preserves_non_utf8_root_path \
             -- --exact --nocapture
+          cargo test -p mech \
+            cli::commands::run::command_outcome_tests::run_command_preserves_non_utf8_source_path \
+            -- --exact --nocapture
 
       - name: Check isolated interpreter feature boundaries
         run: |

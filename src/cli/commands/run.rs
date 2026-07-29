@@ -268,7 +268,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                             })?;
                             run_cli_root_module_with_events(
                                 &mut runtime,
-                                SourceRequest::new(canonical_target.to_string_lossy().to_string()),
+                                SourceRequest::from_filesystem_path(&canonical_target)?,
                                 cli_module_options(),
                             )?
                         } else {
@@ -364,5 +364,76 @@ mod command_outcome_tests {
     fn run_command_outcome_reports_exit_code_without_exiting_process() {
         let outcome = CliOutcome::exit(0);
         assert!(matches!(outcome, CliOutcome::Exit(0)));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn run_command_preserves_non_utf8_source_path() {
+        use crate::cli::capabilities::{FilesystemCapabilityArgs, build_filesystem_runtime_access};
+        use crate::cli::config::ConfigLoadEvent;
+        use crate::cli::host_grants::CliHostCapabilitySelection;
+        use crate::cli::run::RunInputMode;
+        use crate::cli::run_options::PreparedRunOptions;
+        use crate::cli::runtime_plan::build_run_execution_plan;
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        struct CurrentDirGuard {
+            previous: PathBuf,
+            _lock: std::sync::MutexGuard<'static, ()>,
+        }
+
+        impl CurrentDirGuard {
+            fn enter(path: &Path) -> Self {
+                let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+                let previous = std::env::current_dir().unwrap();
+                std::env::set_current_dir(path).unwrap();
+                Self {
+                    previous,
+                    _lock: lock,
+                }
+            }
+        }
+
+        impl Drop for CurrentDirGuard {
+            fn drop(&mut self) {
+                std::env::set_current_dir(&self.previous).unwrap();
+            }
+        }
+
+        let root = std::env::temp_dir().join(format!(
+            "mech-run-non-utf8-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let source = root.join(OsString::from_vec(b"run-\xFF.mec".to_vec()));
+        std::fs::write(&source, "answer := 42\nanswer\n").unwrap();
+
+        let guard = CurrentDirGuard::enter(&root);
+        let filesystem_access =
+            build_filesystem_runtime_access(&FilesystemCapabilityArgs::default(), None).unwrap();
+        let plan = build_run_execution_plan(PreparedRunOptions {
+            input_mode: RunInputMode::Paths(vec![".".to_string()]),
+            explicit_run_command: true,
+            debug: false,
+            trace: false,
+            time: false,
+            repl: false,
+            rounds_per_step: None,
+            loaded_config: None,
+            config_event: ConfigLoadEvent::NotFound,
+            cli_capability_selection: CliHostCapabilitySelection::default(),
+            filesystem_access,
+        })
+        .unwrap();
+
+        let outcome = execute_plan(plan).unwrap();
+
+        assert!(matches!(outcome, CliOutcome::Exit(0)));
+        drop(guard);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
