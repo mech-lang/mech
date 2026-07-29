@@ -7,7 +7,7 @@
         commit_capture_slot, create_capture_slot_for_kind, detached,
     };
     pub(super) use crate::{
-        C64, CompileCtx, CompiledPattern, Dictionary, GenericError, Interpreter, MResult, Matrix,
+        C64, BytecodeCompilerContext, CompiledPattern, Dictionary, GenericError, Interpreter, MResult, Matrix,
         MechAtom, MechEnum, MechError, MechErrorKind, MechFunction, MechFunctionCompiler,
         MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple,
         NativeFunctionCompiler, Pattern, PatternActivationRegistration, PatternBinding,
@@ -74,7 +74,7 @@
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for FailingPatternRegister {
-        fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Err(MechError::new(PatternRegisterStageFailure, None))
         }
     }

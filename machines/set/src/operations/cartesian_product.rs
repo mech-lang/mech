@@ -65,7 +65,7 @@ impl MechFunctionImpl for SetCartesianProductFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetCartesianProductFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetCartesianProductFxn");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/cartesian-product")) );
   }

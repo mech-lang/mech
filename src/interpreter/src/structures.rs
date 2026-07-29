@@ -272,7 +272,7 @@ impl MechFunctionFactory for ValueSet {
 #[cfg(feature = "set")]
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ValueSet {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     compile_nullop!("set/define", self.out, ctx, FeatureFlag::Builtin(FeatureKind::Set));
   }
 }

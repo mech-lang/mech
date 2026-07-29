@@ -74,7 +74,7 @@ impl<T> MechFunctionCompiler for NChooseK<T>
 where
     T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NChooseK<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
@@ -167,7 +167,7 @@ impl<T> MechFunctionCompiler for NChooseKMatrix<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }

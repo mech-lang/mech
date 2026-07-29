@@ -43,7 +43,7 @@ impl<T> MechFunctionCompiler for TupleAssign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("TupleAssign<{}>", T::as_value_kind());
     compile_unop!(
       name,

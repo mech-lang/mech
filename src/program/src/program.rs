@@ -2371,7 +2371,7 @@ mod compact_program_reactive_turn_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for ProgramTestFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<mech_core::Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> {
       Ok(0)
     }
   }
@@ -2537,7 +2537,7 @@ mod compact_program_reactive_turn_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for ProgramRegister {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<mech_core::Register> { Ok(0) }
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> { Ok(0) }
   }
 
   #[test]
@@ -3267,7 +3267,7 @@ mod retained_checkpoint_tests {
 
   #[cfg(feature = "compiler")]
   impl mech_core::MechFunctionCompiler for RestoreProbe {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<mech_core::Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> {
       Ok(0)
     }
   }
@@ -3295,7 +3295,7 @@ mod retained_checkpoint_tests {
 
   #[cfg(feature = "compiler")]
   impl mech_core::MechFunctionCompiler for UnsupportedCheckpointFunction {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<mech_core::Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> {
       Ok(0)
     }
   }

@@ -30,7 +30,7 @@ impl MechFunctionImpl for StrictEqValue {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StrictEqValue {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     Err(MechError::new(
       GenericError {
         msg: "bytecode compilation for dynamic strict equality is not supported yet".to_string(),

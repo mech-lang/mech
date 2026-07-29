@@ -292,7 +292,7 @@ impl MechFunctionImpl for TableJoinFxn {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableJoinFxn {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableJoinFxn::{:?}", self.mode);
         compile_binop!(
             name,

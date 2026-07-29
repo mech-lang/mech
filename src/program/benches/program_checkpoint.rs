@@ -26,7 +26,7 @@ impl MechFunctionImpl for BenchNode {
 
 #[cfg(feature = "compiler")]
 impl mech_core::MechFunctionCompiler for BenchNode {
-  fn compile(&self, _ctx: &mut mech_core::CompileCtx) -> mech_core::MResult<mech_core::Register> {
+  fn compile(&self, _ctx: &mut dyn mech_core::BytecodeCompilerContext) -> mech_core::MResult<mech_core::Register> {
     Ok(0)
   }
 }

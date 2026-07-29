@@ -48,7 +48,7 @@ impl MechFunctionImpl for SetDisjointFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetDisjointFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetDisjointFxn");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/disjoint") ));
   }

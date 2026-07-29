@@ -100,7 +100,7 @@ macro_rules! vertcat_two_args {
     where
       T: ConstElem + CompileConst + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1));
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
@@ -176,7 +176,7 @@ macro_rules! vertcat_three_args {
     where
       T: ConstElem + CompileConst + AsValueKind + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
         compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
@@ -241,7 +241,7 @@ macro_rules! vertcat_four_args {
     where
       T: ConstElem + CompileConst + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
@@ -299,14 +299,14 @@ impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
     registers[1] = compile_register_mat!(self.e0, ctx);
     registers[2] = compile_register_mat!(self.e1, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_binop(
       hash_str(&format!("VerticalConcatenateTwoArgs<{}>", T::as_value_kind())),
@@ -374,7 +374,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -382,7 +382,7 @@ where
     registers[2] = compile_register_mat!(self.e1, ctx);
     registers[3] = compile_register_mat!(self.e2, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_ternop(
       hash_str(&format!("VerticalConcatenateThreeArgs<{}>", T::as_value_kind())),
@@ -454,7 +454,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
 let mut registers = [0, 0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -463,7 +463,7 @@ let mut registers = [0, 0, 0, 0, 0];
     registers[3] = compile_register_mat!(self.e2, ctx);
     registers[4] = compile_register_mat!(self.e3, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_quadop(
       hash_str(&format!("VerticalConcatenateFourArgs<{}>", T::as_value_kind())),
@@ -533,7 +533,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -542,7 +542,7 @@ where
     for e in &self.e0 {
       mat_regs.push(compile_register_mat!(e, ctx));
     }
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
     ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
       registers[0],
@@ -622,7 +622,7 @@ macro_rules! vertical_concatenate {
       where
         T: ConstElem + CompileConst + AsValueKind + AsValueKind
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
           compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
         }
@@ -681,7 +681,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -689,7 +689,7 @@ where
     registers[1] = compile_register_mat!(self.e0, ctx);
     registers[2] = compile_register_mat!(self.e1, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_binop(
       hash_str(&format!("VerticalConcatenateVD2<{}>", T::as_value_kind())),
@@ -757,7 +757,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -765,7 +765,7 @@ where
     registers[2] = compile_register_mat!(self.e1, ctx);
     registers[3] = compile_register_mat!(self.e2, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_ternop(
       hash_str(&format!("VerticalConcatenateVD3<{}>", T::as_value_kind())),
@@ -836,7 +836,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -845,7 +845,7 @@ where
     registers[3] = compile_register_mat!(self.e2, ctx);
     registers[4] = compile_register_mat!(self.e3, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_quadop(
       hash_str(&format!("VerticalConcatenateVD4<{}>", T::as_value_kind())),
@@ -928,7 +928,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -937,7 +937,7 @@ where
     for (e,_) in &self.matrix {
       mat_regs.push(compile_register_mat!(e, ctx));
     }
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateVDN<{}>", T::as_value_kind())),
       registers[0],
@@ -993,7 +993,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateS1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("VerticalConcatenateS1<{}>", T::as_value_kind());
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
@@ -1113,7 +1113,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateSD<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("VerticalConcatenateSD<{}>", T::as_value_kind());
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
@@ -1305,7 +1305,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("VerticalConcatenateM1M1M1M1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }

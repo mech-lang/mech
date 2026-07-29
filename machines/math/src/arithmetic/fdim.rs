@@ -61,7 +61,7 @@ macro_rules! impl_two_arg_fxn {
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         todo!();
       }
     }};}

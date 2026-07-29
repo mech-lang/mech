@@ -63,7 +63,7 @@ macro_rules! impl_transpose {
     where
       T: ConstElem + CompileConst + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }

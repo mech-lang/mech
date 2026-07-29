@@ -156,7 +156,7 @@ pub trait CopyMat<T> {
   #[cfg(feature = "matrixd")]
   fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
   fn addr(&self) -> usize;
-  fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32>;
+  fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
 #[cfg(feature = "compiler")]
@@ -210,7 +210,7 @@ macro_rules! copy_mat {
         src_rows
       }
       fn addr(&self) -> usize { self.addr() }
-      fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+      fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         self.borrow().compile_const(ctx)
       }
     }};}

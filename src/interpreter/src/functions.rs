@@ -1000,7 +1000,7 @@ mod native_dependency_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for NativeDependencyTestFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       Ok(0)
     }
   }
@@ -1044,7 +1044,7 @@ mod native_dependency_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for IndexedInitializedFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       Ok(0)
     }
   }
@@ -1121,7 +1121,7 @@ mod native_dependency_tests {
   }
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for DeferredNativeSolveFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> { Ok(0) }
   }
 
   #[test]
@@ -1260,7 +1260,7 @@ mod native_initialization_failure_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for FailingInitializationFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       panic!("failing initialization test function must not be bytecode compiled")
     }
   }

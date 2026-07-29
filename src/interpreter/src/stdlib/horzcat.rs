@@ -94,7 +94,7 @@ macro_rules! horizontal_concatenate {
       where
         T: ConstElem + CompileConst + AsValueKind
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}<{}{}>", stringify!($name), T::as_value_kind(), stringify!([<RowVector $vec_size>]));
           compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
         }
@@ -159,7 +159,7 @@ macro_rules! horzcat_two_args {
     where
       T: ConstElem + CompileConst + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1));
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
@@ -226,7 +226,7 @@ macro_rules! horzcat_three_args {
     where
       T: ConstElem + CompileConst + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2));
         compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
@@ -295,7 +295,7 @@ macro_rules! horzcat_four_args {
     where
       T: ConstElem + CompileConst + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2), stringify!($e3));
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
@@ -357,14 +357,14 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
     registers[1] = compile_register_mat!(self.e0, ctx);
     registers[2] = compile_register_mat!(self.e1, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_binop(
       hash_str(&format!("HorizontalConcatenateTwoArgs<{}>", T::as_value_kind())),
@@ -436,7 +436,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -444,7 +444,7 @@ where
     registers[2] = compile_register_mat!(self.e1, ctx);
     registers[3] = compile_register_mat!(self.e2, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_ternop(
       hash_str(&format!("HorizontalConcatenateThreeArgs<{}>", T::as_value_kind())),
@@ -519,10 +519,10 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let registers = [compile_register!(self.out, ctx), compile_register_mat!(self.e0, ctx), compile_register_mat!(self.e1, ctx), compile_register_mat!(self.e2, ctx), compile_register_mat!(self.e3, ctx)];
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_quadop(
       hash_str(&format!("HorizontalConcatenateFourArgs<{}>", T::as_value_kind())),
@@ -594,7 +594,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0];
     registers[0] = compile_register!(self.out, ctx);
 
@@ -602,7 +602,7 @@ where
     for e in &self.e0 {
       mat_regs.push(compile_register_mat!(e, ctx));
     }
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_varop(
       hash_str("HorizontalConcatenateNArgs"),
       registers[0],
@@ -660,7 +660,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateRD<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateRD<{}>", T::as_value_kind());
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -739,7 +739,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
 where
   T: CompileConst + ConstElem + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -758,7 +758,7 @@ where
     all_regs.extend(mat_regs);
     all_regs.extend(scalar_regs);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_varop(
       hash_str(&format!("HorizontalConcatenateRDN<{}>", T::as_value_kind())),
@@ -907,7 +907,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateS1D<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateS1D<{}>", T::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -970,7 +970,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateS1<{}>", T::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1036,7 +1036,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateS2<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1105,7 +1105,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateS3<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1177,7 +1177,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateS4<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1248,7 +1248,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSD<{}>", T::as_value_kind());
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1302,7 +1302,7 @@ macro_rules! horzcat_single {
     where
       T: ConstElem + CompileConst + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
         compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
@@ -1395,7 +1395,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSR2<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1463,7 +1463,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR2S<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1530,7 +1530,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1598,7 +1598,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1S<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1674,7 +1674,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSSSM1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1750,7 +1750,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSSM1S<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1826,7 +1826,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1SS<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1902,7 +1902,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SSS<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -1972,7 +1972,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSR3<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2042,7 +2042,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR3S<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2114,7 +2114,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSSM1<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2186,7 +2186,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1S<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2258,7 +2258,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SS<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2331,7 +2331,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSSR2<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2404,7 +2404,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSR2S<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2477,7 +2477,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR2SS<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2549,7 +2549,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1M1S<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2631,7 +2631,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SM1<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2703,7 +2703,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1M1<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2812,7 +2812,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1R2<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2885,7 +2885,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SR2<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -2961,7 +2961,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1SM1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3034,7 +3034,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1R2S<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3107,7 +3107,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR2M1S<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));  
   }
@@ -3180,7 +3180,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR2SM1<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3253,7 +3253,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSR2M1<{}>", T::as_value_kind());
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3329,7 +3329,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSSM1M1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3405,7 +3405,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1M1SS<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
   }
@@ -3481,7 +3481,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1M1S<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3557,7 +3557,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SSM1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3633,7 +3633,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SM1S<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3782,7 +3782,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1M1M1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3858,7 +3858,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1SM1M1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -3933,7 +3933,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1M1SM1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
@@ -4008,7 +4008,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1M1M1S<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
   }
@@ -4083,7 +4083,7 @@ impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1M1M1M1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }

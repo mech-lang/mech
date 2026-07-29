@@ -60,7 +60,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   Mat: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("IoPrintMatrix<{}>", Mat::as_value_kind());
     compile_nullop!(name, self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
@@ -155,7 +155,7 @@ impl<T> MechFunctionCompiler for IoPrintScalar<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("IoPrintScalar<{}>", T::as_value_kind());
     compile_nullop!(name, self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }

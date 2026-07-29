@@ -70,7 +70,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   MatA: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let variable_register = compile_register_brrw!(self.var, ctx);
     let variable_name = self.name.borrow().clone();
     let variable_mutable = *self.mutable.borrow();
@@ -120,7 +120,7 @@ macro_rules! impl_variable_define_fxn {
       }
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let variable_register = compile_register_brrw!(self.var, ctx);
           let variable_name = self.name.borrow().clone();
           let variable_mutable = *self.mutable.borrow();
@@ -203,7 +203,7 @@ impl MechFunctionImpl for VariableDefineEmpty {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let variable_register = compile_register_brrw!(self.var, ctx);
     let variable_name = self.name.borrow().clone();
     let variable_mutable = *self.mutable.borrow();

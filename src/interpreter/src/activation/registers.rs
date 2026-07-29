@@ -1,6 +1,6 @@
 use crate::{
-    ActivationArm, ActivationArmBody, CompileCtx, Expression, GenericError, Interpreter,
-    InterpreterExecution, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
+    ActivationArm, ActivationArmBody, BytecodeCompilerContext, Expression, GenericError,
+    Interpreter, InterpreterExecution, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
     ReactiveCellId, ReactiveSolveStatus, Ref, Register, SliceRef, Token, Value,
 };
 
@@ -159,7 +159,7 @@ impl MechFunctionImpl for Gate {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for Gate {
-    fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
                 msg: "Activation pattern dispatch is interpreter-only.".into(),

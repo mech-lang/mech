@@ -100,7 +100,7 @@ impl<T> MechFunctionCompiler for Assign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("Assign<{}>", T::as_value_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
@@ -162,7 +162,7 @@ impl MechFunctionImpl for AssignEmpty {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for AssignEmpty {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     Err(
       MechError::new(
         EmptyAssignmentNotBytecodeCompilable,

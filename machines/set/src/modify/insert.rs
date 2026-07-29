@@ -85,7 +85,7 @@ impl MechFunctionImpl for SetInsertFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetInsertFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetInsertFxn");
     compile_binop!(name, self.out, self.arg1, self.arg2, ctx, FeatureFlag::Custom(hash_str("set/insert")) );
   }

@@ -47,7 +47,7 @@ use super::{
   RuntimeHostFunctionNotBytecodeCompilableError,
 };
 use mech_core::{
-  CompileCtx,
+  BytecodeCompilerContext,
   GuardFunctionSafety,
   MResult,
   MechError,
@@ -434,7 +434,7 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
 impl MechFunctionCompiler for RuntimeHostNativeFunction {
   fn compile(
     &self,
-    _ctx: &mut CompileCtx,
+    _ctx: &mut dyn BytecodeCompilerContext,
   ) -> MResult<Register> {
     Err(MechError::new(
       RuntimeHostFunctionNotBytecodeCompilableError {

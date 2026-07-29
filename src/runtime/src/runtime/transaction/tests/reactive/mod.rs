@@ -2,7 +2,7 @@ use crate::{
     MechRuntime, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect,
 };
 use mech_core::{
-    CompileCtx, GenericError, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
+    BytecodeCompilerContext, GenericError, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
     ReactiveSolveStatus, Ref, Register, Value,
 };
 use std::cell::RefCell;
@@ -118,7 +118,7 @@ impl MechFunctionImpl for ReactiveTransactionTestFunction {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ReactiveTransactionTestFunction {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

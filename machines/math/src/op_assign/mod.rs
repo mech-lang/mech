@@ -104,7 +104,7 @@ macro_rules! impl_op_assign_range_fxn_s {
       IxVec: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
@@ -193,7 +193,7 @@ macro_rules! impl_op_assign_range_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
@@ -319,7 +319,7 @@ macro_rules! impl_assign_scalar_scalar {
       where
         T: CompileConst + ConstElem + AsValueKind,
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignSS<{}>", stringify!($op_name), T::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
         }
@@ -422,7 +422,7 @@ macro_rules! impl_assign_vector_vector {
         MatA: CompileConst + ConstElem + AsValueKind,
         MatB: CompileConst + ConstElem + AsValueKind,
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVV<{}>", stringify!($op_name), MatA::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }
@@ -507,7 +507,7 @@ macro_rules! impl_assign_vector_scalar {
         T: CompileConst + ConstElem + AsValueKind,
         MatA: CompileConst + ConstElem + AsValueKind,
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVS<{}>", stringify!($op_name), MatA::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }

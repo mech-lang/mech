@@ -37,7 +37,7 @@ impl MechFunctionImpl for ConvertSEnum
 }
 #[cfg(all(feature = "compiler", feature = "enum"))]
 impl MechFunctionCompiler for ConvertSEnum {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("ConvertSEnum<enum>");
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
@@ -65,7 +65,7 @@ impl MechFunctionImpl for ConvertSEmpty {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ConvertSEmpty {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("ConvertSEmpty<empty>");
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
@@ -142,13 +142,13 @@ impl<T> MechFunctionCompiler for ConvertMat2Table<T>
 where
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0,0];
 
     registers[0] = compile_register_brrw!(self.out, ctx);
     registers[1] = compile_register!(self.arg, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Convert));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Convert));
 
     ctx.emit_unop(
       hash_str("ConvertMat2Table"),
@@ -254,7 +254,7 @@ impl MechFunctionImpl for ConvertMatToSet {
 }
 #[cfg(all(feature = "compiler", feature = "matrix", feature = "set"))]
 impl MechFunctionCompiler for ConvertMatToSet {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("ConvertMatToSet");
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
@@ -283,7 +283,7 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
 }
 #[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
 impl MechFunctionCompiler for ConvertSRationalToF64 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("ConvertSRationalToF64<f64>");
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
@@ -430,7 +430,7 @@ where
   F: ConstElem + CompileConst + AsValueKind,
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("ConvertScalarToScalar<{},{}>", F::as_value_kind(), T::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
@@ -470,7 +470,7 @@ where
   F: ConstElem + CompileConst + AsValueKind,
   T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("ConvertScalarToScalarBasic<{},{}>", F::as_value_kind(), T::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }

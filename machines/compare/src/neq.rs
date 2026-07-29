@@ -134,7 +134,7 @@ impl MechFunctionImpl for AtomNeq {
 #[cfg(feature = "atom")]
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for AtomNeq {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("AtomNeq");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Atom));
   }
@@ -185,7 +185,7 @@ impl MechFunctionImpl for TableNeq {
 #[cfg(feature = "table")]
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableNeq {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("TableNeq");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Table));
   }

@@ -112,7 +112,7 @@ macro_rules! impl_logic_binop {
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for $struct_name
   {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       let name = format!("{}<bool>", stringify!($struct_name));
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }

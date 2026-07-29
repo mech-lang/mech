@@ -6,7 +6,7 @@ use super::super::{
 };
 use super::support::reg;
 #[cfg(feature = "compiler")]
-use crate::{CompileCtx, Register};
+use crate::{BytecodeCompilerContext, Register};
 use crate::{GenericError, MResult, MechError, Ref, ToValue, Value};
 use std::{cell::RefCell, rc::Rc};
 
@@ -53,7 +53,7 @@ impl MechFunctionImpl for SchedulerFunction {
 }
 #[cfg(all(feature = "f64", feature = "compiler"))]
 impl MechFunctionCompiler for SchedulerFunction {
-    fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }
@@ -125,7 +125,7 @@ impl MechFunctionImpl for Comb {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for Comb {
-    fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

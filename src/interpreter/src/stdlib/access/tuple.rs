@@ -38,11 +38,11 @@ register_descriptor! {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TupleAccessElement {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0];
     registers[0] = compile_register!(self.out, ctx);
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Tuple));
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Tuple));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
     ctx.emit_nullop(
       hash_str("TupleAccessElement"),
       registers[0],

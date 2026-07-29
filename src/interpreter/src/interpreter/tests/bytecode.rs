@@ -12,7 +12,7 @@ mod bytecode_dependency_tests {
     };
 
     #[cfg(feature = "compiler")]
-    use super::super::super::{CompileCtx, MechFunctionCompiler, Register};
+    use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
     struct BytecodeDependencyTestFunction {
         output: Value,
@@ -36,7 +36,7 @@ mod bytecode_dependency_tests {
 
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for BytecodeDependencyTestFunction {
-        fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
         }
     }

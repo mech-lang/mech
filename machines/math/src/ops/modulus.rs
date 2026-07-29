@@ -73,7 +73,7 @@ macro_rules! impl_binop2 {
   where
     T: CompileConst + ConstElem + AsValueKind
   {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
