@@ -4,10 +4,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mech_core::{MResult, MechSourceCode, Value};
 use mech_runtime::{
-    FS_IMPORT, FS_READ, FS_RESOLVE, FileSourceResolver, HostFilesystemAuthority,
-    InMemorySourceResolver, MechRuntime, ResolvedSource, RuntimeBuilder, RuntimeHealth,
-    RuntimeValueSnapshot, SequentialIdGenerator, SharedCapabilityKernel, SourceKind, SourceRequest,
-    SourceResolver, module_id,
+    FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FileSourceResolver, HostFilesystemAuthority,
+    InMemorySourceResolver, MECH_TOOL_SUBJECT, MechRuntime, ResolvedSource, RuntimeBuilder,
+    RuntimeHealth, RuntimeValueSnapshot, SequentialIdGenerator, SharedCapabilityKernel, SourceKind,
+    SourceRequest, SourceResolver, module_id,
 };
 
 use super::{MechRepl, ReplCommand, runtime_repl_load_request};
@@ -374,4 +374,44 @@ fn runtime_repl_load_request_preserves_explicit_source_schemes() {
             .specifier,
         r"C:\project\main.mec",
     );
+}
+
+#[test]
+fn runtime_repl_directory_commands_require_filesystem_list_authority() {
+    let _current_dir_lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+    let initial_dir = std::env::current_dir().unwrap();
+    let denied_dir = TestRoot::new("directory-authority-denied");
+    let mut denied = MechRepl::from_runtime(
+        RuntimeBuilder::new()
+            .capability_kernel(SharedCapabilityKernel::new())
+            .build()
+            .unwrap(),
+    );
+
+    for command in [
+        ReplCommand::Ls,
+        ReplCommand::Cd(denied_dir.path().to_string_lossy().into_owned()),
+    ] {
+        let error = denied.execute_repl_command(command).unwrap_err();
+        assert_eq!(error.kind_name(), "CapabilityDenied");
+    }
+    assert_eq!(std::env::current_dir().unwrap(), initial_dir);
+    assert_eq!(runtime(&denied).runtime_health(), RuntimeHealth::Healthy);
+
+    let mut ids = SequentialIdGenerator::new();
+    let mut authority =
+        HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+    authority
+        .grant_path(&mut ids, &initial_dir, false, [FS_LIST])
+        .unwrap();
+    let mut allowed = MechRepl::from_runtime(
+        RuntimeBuilder::new()
+            .capability_kernel(authority.kernel().clone())
+            .build()
+            .unwrap(),
+    );
+
+    let listing = allowed.execute_repl_command(ReplCommand::Ls).unwrap();
+    assert!(listing.contains("Mode"));
+    assert_eq!(runtime(&allowed).runtime_health(), RuntimeHealth::Healthy);
 }

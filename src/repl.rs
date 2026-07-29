@@ -2,7 +2,12 @@ use crate::*;
 use mech_core::*;
 use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 #[cfg(feature = "run")]
-use mech_runtime::MechRuntime;
+use mech_runtime::{
+  FS_LIST,
+  MECH_TOOL_SUBJECT,
+  MechRuntime,
+  fs_request,
+};
 use std::collections::HashMap;
 use nom::{
   IResult,
@@ -372,9 +377,30 @@ impl MechRepl {
           "clearing a runtime-backed REPL is not supported; start a new REPL session",
         ))
       }
-      ReplCommand::Ls => Ok(ls()),
+      ReplCommand::Ls => {
+        let current_dir = env::current_dir()?;
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        runtime.check_capability(&fs_request(
+          MECH_TOOL_SUBJECT,
+          FS_LIST,
+          &current_dir,
+        )?)?;
+        Ok(ls())
+      }
       ReplCommand::Cd(path) => {
         let path = PathBuf::from(path);
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        runtime.check_capability(&fs_request(
+          MECH_TOOL_SUBJECT,
+          FS_LIST,
+          &path,
+        )?)?;
         env::set_current_dir(&path).map_err(|_| {
           MechError::new(
             PathNotFound {
