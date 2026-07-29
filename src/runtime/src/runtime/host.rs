@@ -198,7 +198,6 @@ impl MechRuntime {
     } else {
       context.transaction
     };
-    let context_event_mark = context.events.len();
     let result = self.with_runtime_execution_session(
       context,
       |session| {
@@ -213,16 +212,27 @@ impl MechRuntime {
     // only the failure audit after rollback; completed calls still publish
     // their events through the normal commit path.
     let failed_host_audit = if result.is_err() {
-      context.events[context_event_mark..]
-        .iter()
-        .filter_map(|event| match &event.kind {
-          RuntimeEventKind::HostCallStarted { .. }
-          | RuntimeEventKind::HostCallFailed { .. } => {
-            Some(event.kind.clone())
-          }
-          _ => None,
+      // The context event vector is retention-bounded and can discard newly
+      // emitted events from the front without changing its length. The
+      // transaction journal retains the complete provisional host audit.
+      transaction_id
+        .and_then(|transaction_id| {
+          self.active_transactions.get(&transaction_id)
         })
-        .collect::<Vec<_>>()
+        .map(|transaction| {
+          transaction
+            .store
+            .staged_events()
+            .filter_map(|event| match &event.kind {
+              RuntimeEventKind::HostCallStarted { .. }
+              | RuntimeEventKind::HostCallFailed { .. } => {
+                Some(event.kind.clone())
+              }
+              _ => None,
+            })
+            .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
     } else {
       Vec::new()
     };

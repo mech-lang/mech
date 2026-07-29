@@ -1,7 +1,7 @@
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
-    CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction, RuntimeEventKind,
-    RuntimeValueSnapshot,
+    CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction, RuntimeConfig, RuntimeEventKind,
+    RuntimeHealth, RuntimeValueSnapshot,
 };
 use mech_core::{Ref, Value};
 
@@ -48,4 +48,54 @@ fn host_session_events_use_shared_monotonic_sequence() {
                 .collect::<Vec<_>>(),
         );
     }
+}
+
+#[test]
+fn failed_host_audit_survives_full_context_retention() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(4);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    for _ in 0..4 {
+        runtime
+            .emit_event_to_context(&mut context, RuntimeEventKind::RuntimeTickStarted)
+            .unwrap();
+    }
+    assert_eq!(context.events().len(), 4);
+
+    let error = runtime
+        .call_host_with_context(
+            &mut context,
+            HostCall::new("missing/retained-audit", Vec::new()),
+        )
+        .unwrap_err();
+
+    assert_eq!(error.kind_name(), "HostFunctionNotFound");
+    for events in [context.events().to_vec(), runtime.list_events(None).unwrap()] {
+        assert!(events.iter().any(|event| {
+            matches!(
+                event.kind,
+                RuntimeEventKind::HostCallStarted { ref name }
+                  if name == "missing/retained-audit"
+            )
+        }));
+        assert!(events.iter().any(|event| {
+            matches!(
+                event.kind,
+                RuntimeEventKind::HostCallFailed { ref name, .. }
+                  if name == "missing/retained-audit"
+            )
+        }));
+        assert!(!events.iter().any(|event| {
+            matches!(
+                event.kind,
+                RuntimeEventKind::HostCallCompleted { ref name }
+                  if name == "missing/retained-audit"
+            )
+        }));
+    }
+    assert!(context.events().iter().any(|event| {
+        matches!(event.kind, RuntimeEventKind::TransactionAborted { .. })
+    }));
+    assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
 }
