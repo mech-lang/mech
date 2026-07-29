@@ -176,12 +176,10 @@ tabled = "0.20.0"
 paste = "1.0.15"
 
 [dev-dependencies]
+proptest = { version = "1.7.0", default-features = false, features = ["std"] }
 serde_json = "1.0.149"
 
 [dependencies.num-traits]
 version = "0.2.19"
 default-features = false
 features = ["libm"]
-
-[dev-dependencies]
-proptest = { version = "1.7.0", default-features = false, features = ["std"] }
