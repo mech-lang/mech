@@ -388,10 +388,15 @@ impl MechRepl {
           FS_LIST,
           &current_dir,
         )?)?;
-        Ok(ls())
+        ls_path(&current_dir)
       }
       ReplCommand::Cd(path) => {
-        let path = PathBuf::from(path);
+        let requested_path = PathBuf::from(path);
+        let path = if requested_path.is_absolute() {
+          requested_path
+        } else {
+          env::current_dir()?.join(requested_path)
+        };
         let runtime = self
           .runtime
           .as_mut()
