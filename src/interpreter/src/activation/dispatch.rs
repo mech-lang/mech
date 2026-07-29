@@ -1,9 +1,12 @@
 use super::captures::transaction_bool_state;
 use super::{ActivationPatternCapture, GuardFinalize, ReactiveBindingSink};
+#[cfg(feature = "compiler")]
 use crate::{
-    BytecodeCompilerContext, CompiledPattern, GenericError, MResult, MechError,
-    MechFunctionCompiler, MechFunctionImpl, PatternBindingSink, ReactiveDependencyKind,
-    ReactiveDependencyScope, ReactiveSolveStatus, Ref, Register, Value, match_compiled_pattern_with_values,
+    BytecodeCompilerContext, GenericError, MechError, MechFunctionCompiler, Register,
+};
+use crate::{
+    CompiledPattern, MResult, MechFunctionImpl, PatternBindingSink, ReactiveDependencyKind,
+    ReactiveDependencyScope, ReactiveSolveStatus, Ref, Value, match_compiled_pattern_with_values,
 };
 
 pub(super) struct ScopePulse {

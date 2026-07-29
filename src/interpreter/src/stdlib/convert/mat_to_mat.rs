@@ -152,8 +152,12 @@ where
     Ref<na::RowDVector<TTo>>: ToValue,
     #[cfg(feature = "matrixd")]
     Ref<na::DMatrix<TTo>>: ToValue,
-    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + CompileConst + AsValueKind,
-    TTo: Debug + Scalar + Default + ConstElem + CompileConst + AsValueKind,
+    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
+    TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    TFrom: CompileConst,
+    #[cfg(feature = "compiler")]
+    TTo: CompileConst,
 {
     let zero = TTo::default();
     match v {
@@ -286,8 +290,12 @@ where
     Ref<na::RowDVector<TTo>>: ToValue,
     #[cfg(feature = "matrixd")]
     Ref<na::DMatrix<TTo>>: ToValue,
-    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + CompileConst + AsValueKind,
-    TTo: Debug + Scalar + Default + ConstElem + CompileConst + AsValueKind,
+    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
+    TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    TFrom: CompileConst,
+    #[cfg(feature = "compiler")]
+    TTo: CompileConst,
 {
     let zero = TTo::default();
     let dims = v.shape();

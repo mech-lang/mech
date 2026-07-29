@@ -58,7 +58,9 @@ macro_rules! horizontal_concatenate {
       impl<T> MechFunctionFactory for $name<T>
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static +
-        ConstElem + CompileConst + AsValueKind,
+        ConstElem + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst,
         Ref<[<RowVector $vec_size>]<T>>: ToValue
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -115,7 +117,9 @@ macro_rules! horzcat_two_args {
     impl<T> MechFunctionFactory for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -180,7 +184,9 @@ macro_rules! horzcat_three_args {
     impl<T> MechFunctionFactory for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -247,7 +253,9 @@ macro_rules! horzcat_four_args {
     impl<T> MechFunctionFactory for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -315,7 +323,9 @@ struct HorizontalConcatenateTwoArgs<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -392,7 +402,9 @@ struct HorizontalConcatenateThreeArgs<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -473,7 +485,9 @@ struct HorizontalConcatenateFourArgs<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -547,7 +561,9 @@ struct HorizontalConcatenateNArgs<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -623,7 +639,9 @@ struct HorizontalConcatenateRD<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateRD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowDVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -680,7 +698,9 @@ struct HorizontalConcatenateRDN<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateRDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowDVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -864,7 +884,9 @@ struct HorizontalConcatenateS1D<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateS1D<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -927,7 +949,9 @@ struct HorizontalConcatenateS1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateS1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<Matrix1<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -991,7 +1015,9 @@ struct HorizontalConcatenateS2<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateS2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector2<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1058,7 +1084,9 @@ struct HorizontalConcatenateS3<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateS3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1128,7 +1156,9 @@ struct HorizontalConcatenateS4<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateS4<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1211,7 +1241,9 @@ struct HorizontalConcatenateSD<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowDVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1267,7 +1299,9 @@ macro_rules! horzcat_single {
     impl<T> MechFunctionFactory for $name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$shape<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1347,7 +1381,9 @@ struct HorizontalConcatenateSR2<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1416,7 +1452,9 @@ struct HorizontalConcatenateR2S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1483,7 +1521,9 @@ struct HorizontalConcatenateSM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector2<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1551,7 +1591,9 @@ struct HorizontalConcatenateM1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector2<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1621,7 +1663,9 @@ struct HorizontalConcatenateSSSM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1697,7 +1741,9 @@ struct HorizontalConcatenateSSM1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1773,7 +1819,9 @@ struct HorizontalConcatenateSM1SS<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1849,7 +1897,9 @@ struct HorizontalConcatenateM1SSS<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SSS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1923,7 +1973,9 @@ struct HorizontalConcatenateSR3<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSR3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1993,7 +2045,9 @@ struct HorizontalConcatenateR3S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateR3S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2064,7 +2118,9 @@ struct HorizontalConcatenateSSM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2136,7 +2192,9 @@ struct HorizontalConcatenateSM1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2208,7 +2266,9 @@ struct HorizontalConcatenateM1SS<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2280,7 +2340,9 @@ struct HorizontalConcatenateSSR2<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2353,7 +2415,9 @@ struct HorizontalConcatenateSR2S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2426,7 +2490,9 @@ struct HorizontalConcatenateR2SS<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateR2SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2499,7 +2565,9 @@ struct HorizontalConcatenateM1M1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2581,7 +2649,9 @@ struct HorizontalConcatenateM1SM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2653,7 +2723,9 @@ struct HorizontalConcatenateSM1M1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector3<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2761,7 +2833,9 @@ struct HorizontalConcatenateSM1R2<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1R2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2834,7 +2908,9 @@ struct HorizontalConcatenateM1SR2<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2908,7 +2984,9 @@ struct HorizontalConcatenateSM1SM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -2983,7 +3061,9 @@ struct HorizontalConcatenateM1R2S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1R2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3056,7 +3136,9 @@ struct HorizontalConcatenateR2M1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateR2M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3129,7 +3211,9 @@ struct HorizontalConcatenateR2SM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateR2SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3202,7 +3286,9 @@ struct HorizontalConcatenateSR2M1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3276,7 +3362,9 @@ struct HorizontalConcatenateSSM1M1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3352,7 +3440,9 @@ struct HorizontalConcatenateM1M1SS<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3428,7 +3518,9 @@ struct HorizontalConcatenateSM1M1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3504,7 +3596,9 @@ struct HorizontalConcatenateM1SSM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3580,7 +3674,9 @@ struct HorizontalConcatenateM1SM1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3729,7 +3825,9 @@ struct HorizontalConcatenateSM1M1M1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3805,7 +3903,9 @@ struct HorizontalConcatenateM1SM1M1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3881,7 +3981,9 @@ struct HorizontalConcatenateM1M1SM1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -3956,7 +4058,9 @@ struct HorizontalConcatenateM1M1M1S<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -4031,7 +4135,9 @@ struct HorizontalConcatenateM1M1M1M1<T> {
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<RowVector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

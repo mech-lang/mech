@@ -26,10 +26,14 @@ pub struct VariableDefineMatrix<T, MatA> {
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + CompileConst + ConstElem + AsNaKind + 'static,
+  MatA: Debug + ConstElem + AsNaKind + 'static,
+  #[cfg(feature = "compiler")]
+  MatA: CompileConst,
   Ref<MatA>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -53,7 +57,7 @@ impl<T, MatA> MechFunctionImpl for VariableDefineMatrix<T, MatA>
 where
   Ref<MatA>: ToValue,
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
   MatA: Debug,
 {
   fn solve(&self) {}

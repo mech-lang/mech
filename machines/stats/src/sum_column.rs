@@ -56,9 +56,11 @@ impl<T> MechFunctionFactory for StatsSumColumnRD2<T>
 where
   T: Copy + Debug + Clone + Sync + Send + 'static +
      Add<Output = T> + AddAssign +
-     CompileConst + ConstElem + AsValueKind +
+     ConstElem + AsValueKind +
      Zero + One +
      PartialEq + PartialOrd,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

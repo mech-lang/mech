@@ -6,6 +6,7 @@ use crate::structures::Matrix;
 // CompileConst Trait
 // ----------------------------------------------------------------------------
 
+#[cfg(feature = "compiler")]
 pub trait CompileConst {
   fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }

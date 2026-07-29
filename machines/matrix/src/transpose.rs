@@ -21,8 +21,10 @@ macro_rules! impl_transpose {
     impl<T> MechFunctionFactory for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + 'static + 
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
       PartialEq + PartialOrd,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

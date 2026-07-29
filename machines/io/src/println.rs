@@ -10,11 +10,15 @@ struct IoPrintlnMatrix<T,Mat> {
 impl<T,Mat> MechFunctionFactory for IoPrintlnMatrix<T,Mat>
 where
   T: Clone + Sync + Send + 'static + Display + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Debug,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   for<'a> &'a Mat: IntoIterator<Item = &'a T>,
   Mat: Debug + Clone +
-       CompileConst + ConstElem + AsValueKind + 'static + Default,
+       ConstElem + AsValueKind + 'static + Default,
+  #[cfg(feature = "compiler")]
+  Mat: CompileConst,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -116,8 +120,10 @@ struct IoPrintlnScalar<T> {
 impl<T> MechFunctionFactory for IoPrintlnScalar<T> 
 where
   T: Clone + Sync + Send + 'static + Display + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Debug + Default,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -154,7 +160,7 @@ impl<T> MechFunctionImpl for IoPrintlnScalar<T>
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for IoPrintlnScalar<T> 
 where
-  T: CompileConst + ConstElem + AsValueKind,
+  T: ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("IoPrintlnScalar<{}>", T::as_value_kind());

@@ -118,8 +118,10 @@ macro_rules! impl_powop {
     Mul<Output = T> + MulAssign +
     Div<Output = T> + DivAssign +
     Pow<T, Output = T> +
-    CompileConst + ConstElem + AsValueKind +
+    ConstElem + AsValueKind +
     Zero + One,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
     Ref<$out_type>: ToValue
   {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

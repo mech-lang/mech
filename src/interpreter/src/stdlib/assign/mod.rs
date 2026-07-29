@@ -36,15 +36,12 @@ struct Assign<T> {
 }
 impl<T> MechFunctionFactory for Assign<T>
 where
-  T: Clone
-    + Debug
-    + Sync
-    + Send
-    + 'static
-    + CompileConst
-    + ConstElem
-    + AsValueKind,
+  T: Clone + Debug + Sync + Send + 'static,
   Ref<T>: ToValue,
+  #[cfg(feature = "compiler")]
+  T: ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {

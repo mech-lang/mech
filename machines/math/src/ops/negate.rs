@@ -16,7 +16,9 @@ struct NegateV<O> {
 impl<O> MechFunctionFactory for NegateV<O>
 where
   O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static +
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  O: CompileConst,
   Ref<O>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -83,7 +85,9 @@ struct NegateS<O> {
 impl<O> MechFunctionFactory for NegateS<O>
 where
   O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static +
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  O: CompileConst,
   Ref<O>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

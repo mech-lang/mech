@@ -1,5 +1,6 @@
 #![no_main]
 #![allow(warnings)]
+#![feature(where_clause_attrs)]
 #[macro_use]
 extern crate mech_core;
 extern crate paste;
@@ -75,7 +76,9 @@ macro_rules! impl_string_binop {
     impl<T> MechFunctionFactory for $struct_name<T>
     where
       T: std::fmt::Debug + Clone + Sync + Send + 'static + 
-      ConstElem + CompileConst + AsValueKind + Concat,
+      ConstElem + AsValueKind + Concat,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

@@ -420,12 +420,20 @@ macro_rules! impl_access_all_fxn_v {
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -490,7 +498,9 @@ macro_rules! impl_access_fxn {
     impl<T> MechFunctionFactory for $struct_name<T> 
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-         CompileConst + ConstElem + AsValueKind,
+         ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -546,7 +556,9 @@ macro_rules! impl_access_fxn2 {
     impl<T> MechFunctionFactory for $struct_name<T> 
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-         CompileConst + ConstElem + AsValueKind,
+         ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

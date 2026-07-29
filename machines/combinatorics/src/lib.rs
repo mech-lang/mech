@@ -1,5 +1,6 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
+#![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;

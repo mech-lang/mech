@@ -1,7 +1,10 @@
+#[cfg(feature = "compiler")]
 use crate::{
-    ActivationArm, ActivationArmBody, BytecodeCompilerContext, Expression, GenericError,
-    Interpreter, InterpreterExecution, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
-    ReactiveCellId, ReactiveSolveStatus, Ref, Register, SliceRef, Token, Value,
+    BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register,
+};
+use crate::{
+    ActivationArm, ActivationArmBody, Expression, Interpreter, InterpreterExecution, MResult,
+    MechError, MechFunctionImpl, ReactiveCellId, ReactiveSolveStatus, Ref, SliceRef, Token, Value,
 };
 
 use super::{

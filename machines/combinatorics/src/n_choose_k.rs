@@ -23,8 +23,10 @@ where
       Add<Output = T> + AddAssign +
       Sub<Output = T> + Div<Output = T> +
       Zero + One +
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
       PartialEq + PartialOrd,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<T>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -96,8 +98,10 @@ where
        Add<Output = T> + AddAssign +
        Sub<Output = T> + Div<Output = T> +
        Zero + One +
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
        PartialEq + PartialOrd + ToMatrix,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
     Ref<T>: ToValue,
     Matrix<T>: ToValue,
 {

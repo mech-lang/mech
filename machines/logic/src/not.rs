@@ -21,8 +21,10 @@ struct NotS<T> {
 impl<T> MechFunctionFactory for NotS<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Not<Output = T>,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<T>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -80,11 +82,15 @@ pub struct NotV<T, MatA> {
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Not<Output = T>,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+  MatA: Debug + ConstElem + AsValueKind + 'static,
+  #[cfg(feature = "compiler")]
+  MatA: CompileConst,
   Ref<MatA>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -106,7 +112,7 @@ impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
   Ref<MatA>: ToValue,
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Not<Output = T>,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
