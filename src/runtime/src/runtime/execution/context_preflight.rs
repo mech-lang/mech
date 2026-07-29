@@ -174,11 +174,14 @@ impl MechRuntime {
     );
     self.check_capability_for_execution(context, &request)?;
     if let Some(transaction_id) = context.transaction {
+      let resource_identity = self
+        .resources
+        .staged_resource_identity_for(&resolved.provider_base_uri)?;
       if let Some(value) = self
         .active_execution_transaction(transaction_id)?
         .effects
         .staged_resource_value(
-          &resolved.provider_base_uri,
+          &resource_identity,
           &resolved.provider_path,
         )
       {

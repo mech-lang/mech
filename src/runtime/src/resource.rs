@@ -195,6 +195,22 @@ impl RuntimeResourceRegistry {
       .unwrap_or_else(|| vec![normalized]))
   }
 
+  /// Returns the stable transaction-journal identity for a provider base URI.
+  ///
+  /// Equivalent bases share the first normalized member declared by their
+  /// provider. Bases outside an equivalence group retain their own identity.
+  pub(crate) fn staged_resource_identity_for(
+    &self,
+    base_uri: &str,
+  ) -> MResult<String> {
+    let normalized = canonicalize_resource_base_uri(base_uri)?;
+    let equivalent_base_uris = self.equivalent_base_uris_for(&normalized)?;
+    Ok(equivalent_base_uris
+      .into_iter()
+      .next()
+      .unwrap_or(normalized))
+  }
+
   fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {
     self.providers
       .iter()
@@ -835,6 +851,18 @@ mod tests {
         "browser://browser/dom".to_string(),
         "browser://dom".to_string(),
       ],
+    );
+    assert_eq!(
+      registry
+        .staged_resource_identity_for("browser://dom/")
+        .unwrap(),
+      "browser://browser/dom",
+    );
+    assert_eq!(
+      registry
+        .staged_resource_identity_for("browser://browser/dom")
+        .unwrap(),
+      "browser://browser/dom",
     );
   }
 

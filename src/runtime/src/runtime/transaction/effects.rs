@@ -48,7 +48,7 @@ pub(in crate::runtime) struct RuntimeEffectEntry {
 
 #[derive(Debug)]
 struct RuntimeStagedResourceWrite {
-  base_uri: String,
+  resource_identity: String,
   path: String,
   value: Value,
 }
@@ -231,7 +231,7 @@ impl RuntimeEffectJournal {
     &mut self,
     transaction: TransactionId,
     effect: PreparedRuntimeEffect,
-    base_uri: String,
+    resource_identity: String,
     path: String,
     value: Value,
   ) -> RuntimeEffectId {
@@ -239,7 +239,7 @@ impl RuntimeEffectJournal {
       transaction,
       effect,
       Some(RuntimeStagedResourceWrite {
-        base_uri,
+        resource_identity,
         path,
         value,
       }),
@@ -268,12 +268,12 @@ impl RuntimeEffectJournal {
 
   pub(in crate::runtime) fn staged_resource_value(
     &self,
-    base_uri: &str,
+    resource_identity: &str,
     path: &str,
   ) -> Option<Value> {
     self.entries.iter().rev().find_map(|entry| {
       let write = entry.resource_write.as_ref()?;
-      if write.base_uri == base_uri && write.path == path {
+      if write.resource_identity == resource_identity && write.path == path {
         Some(write.value.clone())
       } else {
         None
@@ -736,7 +736,7 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
     effect: PreparedRuntimeEffect,
-    base_uri: String,
+    resource_identity: String,
     path: String,
     value: Value,
   ) -> MResult<RuntimeEffectId> {
@@ -784,7 +784,7 @@ impl MechRuntime {
       .stage_resource_write(
         transaction_id,
         effect,
-        base_uri,
+        resource_identity,
         path,
         value,
       );

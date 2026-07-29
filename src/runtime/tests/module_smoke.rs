@@ -4273,6 +4273,7 @@ fn cli_context_module_send_is_not_stripped() {
 struct RecordingResourceProvider {
   scheme: &'static str,
   bases: Vec<String>,
+  equivalent_base_uri_groups: Vec<Vec<String>>,
   values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Value>>>,
   writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, Value)>>>,
 }
@@ -4327,9 +4328,19 @@ impl RecordingResourceProvider {
     Self {
       scheme,
       bases: bases.iter().map(|base| base.to_string()).collect(),
+      equivalent_base_uri_groups: Vec::new(),
       values: Default::default(),
       writes: Default::default(),
     }
+  }
+
+  fn with_equivalent_base_uri_group(
+    mut self,
+    bases: &[&str],
+  ) -> Self {
+    self.equivalent_base_uri_groups
+      .push(bases.iter().map(|base| base.to_string()).collect());
+    self
   }
 
   fn with_value(self, base: &str, path: &str, value: Value) -> Self {
@@ -4342,6 +4353,10 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
   fn scheme(&self) -> &str { self.scheme }
 
   fn base_uris(&self) -> Vec<String> { self.bases.clone() }
+
+  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
+    self.equivalent_base_uri_groups.clone()
+  }
 
   fn preflight_write(&self, _request: RuntimeResourceWritePreflightRequest) -> mech_core::MResult<()> {
     Ok(())
@@ -4617,6 +4632,137 @@ fn module_context_read_after_context_write_ignores_stale_provider_value() {
 
   let version = runtime.resolve_and_store_module_source("main.mec", module_options()).unwrap().unwrap();
   let result = runtime.run_module(version).unwrap().result.into_value();
+
+  assert_string_value(result, "new");
+}
+
+#[test]
+fn staged_resource_aliases_share_read_your_writes_identity() {
+  let canonical = "docs://canonical";
+  let alias = "docs://legacy";
+  let first_path = "alias-to-canonical";
+  let second_path = "canonical-to-alias";
+  let provider = RecordingResourceProvider::new("docs", &[canonical, alias])
+    .with_equivalent_base_uri_group(&[canonical, alias])
+    .with_value(
+      canonical,
+      first_path,
+      Value::String(Ref::new("old-canonical".to_string())),
+    )
+    .with_value(
+      alias,
+      second_path,
+      Value::String(Ref::new("old-alias".to_string())),
+    );
+  let writes = provider.writes.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  let capability = ResourcePathCapability::wildcard(
+    test_capability_id(),
+    subject,
+    canonical,
+    ["read", "write"],
+  )
+  .unwrap()
+  .with_equivalent_base_uris([canonical, alias])
+  .unwrap();
+  runtime.grant_capability(Arc::new(capability)).unwrap();
+  let mut context = runtime.runtime_context().unwrap();
+  runtime.begin_transaction(&mut context).unwrap();
+
+  runtime
+    .write_resource_with_context(
+      &mut context,
+      RuntimeResourceWriteRequest {
+        base_uri: alias.to_string(),
+        path: first_path.to_string(),
+        context_name: "legacy".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value: Value::String(Ref::new("new-from-alias".to_string())),
+        intent: RuntimeResourceWriteIntent::Assign,
+      },
+    )
+    .unwrap();
+  let alias_to_canonical = runtime
+    .read_resource_with_context(
+      &mut context,
+      RuntimeResourceReadRequest {
+        base_uri: canonical.to_string(),
+        path: first_path.to_string(),
+        context_name: "canonical".to_string(),
+      },
+    )
+    .unwrap();
+
+  runtime
+    .write_resource_with_context(
+      &mut context,
+      RuntimeResourceWriteRequest {
+        base_uri: canonical.to_string(),
+        path: second_path.to_string(),
+        context_name: "canonical".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value: Value::String(Ref::new("new-from-canonical".to_string())),
+        intent: RuntimeResourceWriteIntent::Assign,
+      },
+    )
+    .unwrap();
+  let canonical_to_alias = runtime
+    .read_resource_with_context(
+      &mut context,
+      RuntimeResourceReadRequest {
+        base_uri: alias.to_string(),
+        path: second_path.to_string(),
+        context_name: "legacy".to_string(),
+      },
+    )
+    .unwrap();
+
+  assert_string_value(alias_to_canonical, "new-from-alias");
+  assert_string_value(canonical_to_alias, "new-from-canonical");
+  assert!(writes.lock().unwrap().is_empty());
+  runtime
+    .abort_runtime_transaction(&mut context, "alias identity test cleanup")
+    .unwrap();
+}
+
+#[test]
+fn context_resource_aliases_share_staged_read_your_writes_identity() {
+  let canonical = "docs://canonical";
+  let alias = "docs://legacy";
+  let path = "item";
+  let provider = RecordingResourceProvider::new("docs", &[canonical, alias])
+    .with_equivalent_base_uri_group(&[canonical, alias])
+    .with_value(
+      canonical,
+      path,
+      Value::String(Ref::new("stale".to_string())),
+    );
+  let mut runtime = RuntimeBuilder::new()
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+  let subject = runtime.runtime_context().unwrap().subject().to_string();
+  let capability = ResourcePathCapability::new(
+    test_capability_id(),
+    subject,
+    canonical,
+    ["read", "write"],
+    [ResourcePathScope::Exact(path.to_string())],
+  )
+  .unwrap()
+  .with_equivalent_base_uris([canonical, alias])
+  .unwrap();
+  runtime.grant_capability(Arc::new(capability)).unwrap();
+
+  let result = runtime
+    .run_string(
+      "@legacy := docs://legacy{:write(item)}\n@canonical := docs://canonical{:read(item)}\n@legacy/item = \"new\"\nresult := @canonical/item\n",
+    )
+    .unwrap();
 
   assert_string_value(result, "new");
 }

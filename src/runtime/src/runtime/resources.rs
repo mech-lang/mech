@@ -313,7 +313,9 @@ impl MechRuntime {
     self.authorize_resource_with_context(context, &request.operation, &key)?;
     let staged_resource = if request.intent == RuntimeResourceWriteIntent::Assign {
       Some((
-        request.base_uri.clone(),
+        self
+          .resources
+          .staged_resource_identity_for(&request.base_uri)?,
         request.path.clone(),
         request.value.clone(),
       ))
@@ -439,10 +441,13 @@ impl MechRuntime {
     self.authorize_resource_with_context(context, &RuntimeCapabilityOperation::Read, &key)?;
     if context.transaction.is_some() {
       let transaction_id = context.transaction.unwrap();
+      let resource_identity = self
+        .resources
+        .staged_resource_identity_for(&request.base_uri)?;
       if let Some(value) = self
         .active_execution_transaction(transaction_id)?
         .effects
-        .staged_resource_value(&request.base_uri, &request.path)
+        .staged_resource_value(&resource_identity, &request.path)
       {
         return finish(value);
       }
