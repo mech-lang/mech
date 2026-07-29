@@ -2,7 +2,10 @@ use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use mech_core::{MResult, Ref, ValRef, Value, hash_str};
+use mech_core::{
+  MResult, Ref, ValRef, Value, ValueSnapshotBorrowConflict,
+  hash_str,
+};
 
 use crate::runtime::test_support::capabilities::{
   CapabilityUseProbe, grant_host_call, grant_resource,
@@ -69,6 +72,26 @@ fn assert_cycle_error(error: &mech_core::MechError) {
   assert!(!rendered.contains("0x"), "{rendered}");
 }
 
+fn assert_borrow_conflict(
+  error: &mech_core::MechError,
+  phase: &str,
+  node: &str,
+) {
+  assert_eq!(
+    error.kind_name(),
+    "ValueSnapshotBorrowConflict",
+    "{error:?}",
+  );
+  let conflict = error
+    .kind_as::<ValueSnapshotBorrowConflict>()
+    .expect("borrow conflict kind");
+  assert_eq!(conflict.phase, phase);
+  assert_eq!(conflict.node, node);
+  let rendered = format!("{error:?}");
+  assert!(!rendered.contains("@0x"), "{rendered}");
+  assert!(!rendered.contains("0x"), "{rendered}");
+}
+
 fn event_count(
   events: &[crate::RuntimeEvent],
   predicate: impl Fn(&RuntimeEventKind) -> bool,
@@ -98,6 +121,7 @@ impl RuntimeAfterCommitEffect for NoopAfterCommit {
 struct SnapshotBoundaryProvider {
   cycle_reads: Arc<AtomicBool>,
   cycle: ValRef,
+  preflight_calls: Arc<AtomicUsize>,
   prepare_calls: Arc<AtomicUsize>,
 }
 
@@ -122,6 +146,7 @@ impl RuntimeResourceProvider for SnapshotBoundaryProvider {
     &self,
     _request: RuntimeResourceWritePreflightRequest,
   ) -> MResult<()> {
+    self.preflight_calls.fetch_add(1, Ordering::SeqCst);
     Ok(())
   }
 
@@ -151,6 +176,7 @@ fn cyclic_resource_write_is_rejected_before_effect_staging() {
   let provider = SnapshotBoundaryProvider {
     cycle_reads: Arc::new(AtomicBool::new(false)),
     cycle: cycle.clone(),
+    preflight_calls: Arc::new(AtomicUsize::new(0)),
     prepare_calls: prepare_calls.clone(),
   };
   let (store, store_commits) = StoreCommitProbe::new();
@@ -217,11 +243,94 @@ fn cyclic_resource_write_is_rejected_before_effect_staging() {
 }
 
 #[test]
+fn borrowed_resource_write_is_rejected_before_provider_prepare() {
+  let cell = Ref::new(41.0);
+  let _borrow = cell.borrow_mut();
+  let preflight_calls = Arc::new(AtomicUsize::new(0));
+  let prepare_calls = Arc::new(AtomicUsize::new(0));
+  let provider = SnapshotBoundaryProvider {
+    cycle_reads: Arc::new(AtomicBool::new(false)),
+    cycle: Ref::new(Value::Empty),
+    preflight_calls: preflight_calls.clone(),
+    prepare_calls: prepare_calls.clone(),
+  };
+  let (store, store_commits) = StoreCommitProbe::new();
+  let kernel = SharedCapabilityKernel::new();
+  let observed_kernel = kernel.clone();
+  let mut runtime = RuntimeBuilder::new()
+    .store(store)
+    .capability_kernel(kernel)
+    .resource_provider(Box::new(provider))
+    .build()
+    .unwrap();
+  let subject = runtime.runtime_context().unwrap().subject;
+  let capability = grant_resource(
+    &mut runtime,
+    &subject,
+    SNAPSHOT_RESOURCE,
+    RuntimeCapabilityOperation::Write,
+    &[SNAPSHOT_PATH],
+  );
+  let capability_uses = CapabilityUseProbe::new(
+    observed_kernel,
+    capability,
+  );
+  let event_start = runtime.list_events(None).unwrap().len();
+  let store_commits_before = store_commits.calls();
+  let capability_uses_before =
+    capability_uses.committed_uses();
+
+  let error = runtime
+    .write_resource(RuntimeResourceWriteRequest {
+      base_uri: SNAPSHOT_RESOURCE.to_string(),
+      path: SNAPSHOT_PATH.to_string(),
+      context_name: "snapshot".to_string(),
+      operation: RuntimeCapabilityOperation::Write,
+      value: Value::F64(cell.clone()),
+      intent: RuntimeResourceWriteIntent::Assign,
+    })
+    .unwrap_err();
+
+  assert_borrow_conflict(&error, "clone", "f64");
+  assert_eq!(preflight_calls.load(Ordering::SeqCst), 0);
+  assert_eq!(prepare_calls.load(Ordering::SeqCst), 0);
+  assert_eq!(store_commits.calls(), store_commits_before);
+  assert_eq!(
+    capability_uses.committed_uses(),
+    capability_uses_before,
+  );
+  let events = events_since(&runtime, event_start);
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::EffectStaged { .. },
+    )),
+    0,
+  );
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::TransactionCommitted { .. },
+    )),
+    0,
+  );
+  assert_eq!(
+    event_count(&events, |kind| matches!(
+      kind,
+      RuntimeEventKind::TransactionAborted { .. },
+    )),
+    1,
+  );
+  assert!(!runtime.is_poisoned());
+}
+
+#[test]
 fn cyclic_resource_read_is_rejected_before_implicit_commit() {
   let cycle = cyclic_node();
   let provider = SnapshotBoundaryProvider {
     cycle_reads: Arc::new(AtomicBool::new(true)),
     cycle: cycle.clone(),
+    preflight_calls: Arc::new(AtomicUsize::new(0)),
     prepare_calls: Arc::new(AtomicUsize::new(0)),
   };
   let (store, store_commits) = StoreCommitProbe::new();

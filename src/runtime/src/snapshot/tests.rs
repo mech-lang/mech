@@ -2,7 +2,8 @@ use std::collections::BTreeSet;
 
 use mech_core::{
   Dictionary, MechAtom, MechEnum, MechError, MechRecord,
-  MechTuple, Ref, Value, ValueKind, hash_str,
+  MechTuple, Ref, Value, ValueKind, ValueSnapshotBorrowConflict,
+  hash_str,
 };
 use mech_core::structures::matrix::Matrix;
 
@@ -23,6 +24,74 @@ fn assert_cycle_error(
   let rendered = format!("{error:?}");
   assert!(!rendered.contains("@0x"), "{rendered}");
   assert!(!rendered.contains("0x"), "{rendered}");
+}
+
+fn assert_borrow_conflict(
+  error: MechError,
+  phase: &str,
+  node: &str,
+) {
+  assert_eq!(
+    error.kind_name(),
+    "ValueSnapshotBorrowConflict",
+  );
+  let conflict = error
+    .kind_as::<ValueSnapshotBorrowConflict>()
+    .expect("borrow conflict kind");
+  assert_eq!(conflict.phase, phase);
+  assert_eq!(conflict.node, node);
+  assert!(!conflict.type_name.is_empty());
+  let rendered = format!("{error:?}");
+  assert!(!rendered.contains("@0x"), "{rendered}");
+  assert!(!rendered.contains("0x"), "{rendered}");
+}
+
+#[test]
+fn runtime_value_snapshot_returns_error_for_mutably_borrowed_leaf() {
+  let cell = Ref::new(41.0);
+  let _borrow = cell.borrow_mut();
+
+  let error = RuntimeValueSnapshot::try_capture(
+    &Value::F64(cell.clone()),
+  )
+  .unwrap_err();
+
+  assert_borrow_conflict(error, "clone", "f64");
+}
+
+#[test]
+fn runtime_value_snapshot_returns_error_for_mutably_borrowed_container() {
+  let tuple = Ref::new(MechTuple::from_vec(vec![
+    Value::F64(Ref::new(41.0)),
+  ]));
+  let _borrow = tuple.borrow_mut();
+
+  let error = RuntimeValueSnapshot::try_capture(
+    &Value::Tuple(tuple.clone()),
+  )
+  .unwrap_err();
+
+  assert_borrow_conflict(error, "validate", "tuple");
+}
+
+#[test]
+fn runtime_value_snapshot_returns_error_for_mutably_borrowed_matrix() {
+  let matrix = Matrix::from_vec(
+    vec![Value::Empty; 25],
+    5,
+    5,
+  );
+  let Matrix::DMatrix(backing) = &matrix else {
+    panic!("expected dynamic matrix fixture");
+  };
+  let _borrow = backing.borrow_mut();
+
+  let error = RuntimeValueSnapshot::try_capture(
+    &Value::MatrixValue(matrix.clone()),
+  )
+  .unwrap_err();
+
+  assert_borrow_conflict(error, "validate", "matrix");
 }
 
 #[test]

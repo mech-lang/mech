@@ -105,6 +105,65 @@ impl MechErrorKind for ValueSnapshotCycleUnsupported {
   }
 }
 
+#[derive(Debug, Clone)]
+pub struct ValueSnapshotBorrowConflict {
+  pub phase: &'static str,
+  pub node: &'static str,
+  pub type_name: &'static str,
+}
+
+impl MechErrorKind for ValueSnapshotBorrowConflict {
+  fn name(&self) -> &str {
+    "ValueSnapshotBorrowConflict"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "detached value snapshot could not {} `{}` because `{}` is already mutably borrowed",
+      self.phase,
+      self.node,
+      self.type_name,
+    )
+  }
+}
+
+fn snapshot_borrow_conflict<T>(
+  phase: &'static str,
+  node: &'static str,
+) -> MechError
+where
+  T: 'static,
+{
+  MechError::new(
+    ValueSnapshotBorrowConflict {
+      phase,
+      node,
+      type_name: core::any::type_name::<T>(),
+    },
+    None,
+  )
+  .with_compiler_loc()
+}
+
+fn try_clone_ref<T>(
+  source: &Ref<T>,
+  phase: &'static str,
+  node: &'static str,
+) -> MResult<T>
+where
+  T: Clone + 'static,
+{
+  source
+    .try_borrow()
+    .map(|value| value.clone())
+    .map_err(|_| {
+      snapshot_borrow_conflict::<T>(
+        phase,
+        node,
+      )
+    })
+}
+
 #[derive(Default)]
 struct ValueSnapshotCycleDetector {
   visiting: SnapshotSet<ValueSnapshotKey>,
@@ -150,7 +209,11 @@ impl ValueSnapshotCycleDetector {
           key,
           "mutable-reference",
           |detector| {
-            let value = value.borrow().clone();
+            let value = try_clone_ref(
+              value,
+              "validate",
+              "mutable-reference",
+            )?;
             detector.validate_value(&value)
           },
         )
@@ -160,7 +223,11 @@ impl ValueSnapshotCycleDetector {
       Value::Set(value) => {
         let key = ValueSnapshotKey::of_ref(value);
         self.visit_recursive_node(key, "set", |detector| {
-          let set = value.borrow().clone();
+          let set = try_clone_ref(
+            value,
+            "validate",
+            "set",
+          )?;
           for value in set.set {
             detector.validate_value(&value)?;
           }
@@ -171,7 +238,11 @@ impl ValueSnapshotCycleDetector {
       Value::Map(value) => {
         let key = ValueSnapshotKey::of_ref(value);
         self.visit_recursive_node(key, "map", |detector| {
-          let map = value.borrow().clone();
+          let map = try_clone_ref(
+            value,
+            "validate",
+            "map",
+          )?;
           for (key, value) in map.map {
             detector.validate_value(&key)?;
             detector.validate_value(&value)?;
@@ -186,7 +257,11 @@ impl ValueSnapshotCycleDetector {
           key,
           "record",
           |detector| {
-            let record = value.borrow().clone();
+            let record = try_clone_ref(
+              value,
+              "validate",
+              "record",
+            )?;
             for value in record.data.into_values() {
               detector.validate_value(&value)?;
             }
@@ -198,7 +273,11 @@ impl ValueSnapshotCycleDetector {
       Value::Table(value) => {
         let key = ValueSnapshotKey::of_ref(value);
         self.visit_recursive_node(key, "table", |detector| {
-          let table = value.borrow().clone();
+          let table = try_clone_ref(
+            value,
+            "validate",
+            "table",
+          )?;
           for (_, matrix) in table.data.into_values() {
             detector.validate_value_matrix(&matrix)?;
           }
@@ -209,7 +288,11 @@ impl ValueSnapshotCycleDetector {
       Value::Tuple(value) => {
         let key = ValueSnapshotKey::of_ref(value);
         self.visit_recursive_node(key, "tuple", |detector| {
-          let tuple = value.borrow().clone();
+          let tuple = try_clone_ref(
+            value,
+            "validate",
+            "tuple",
+          )?;
           for value in tuple.elements {
             detector.validate_value(&value)?;
           }
@@ -220,7 +303,11 @@ impl ValueSnapshotCycleDetector {
       Value::Enum(value) => {
         let key = ValueSnapshotKey::of_ref(value);
         self.visit_recursive_node(key, "enum", |detector| {
-          let value = value.borrow().clone();
+          let value = try_clone_ref(
+            value,
+            "validate",
+            "enum",
+          )?;
           for (_, payload) in value.variants {
             if let Some(payload) = payload {
               detector.validate_value(&payload)?;
@@ -244,7 +331,15 @@ impl ValueSnapshotCycleDetector {
   ) -> MResult<()> {
     let key = ValueSnapshotKey::of_matrix(value);
     self.visit_recursive_node(key, "matrix", |detector| {
-      for value in value.as_vec() {
+      let (values, _, _) = value
+        .try_clone_parts()
+        .map_err(|_| {
+          snapshot_borrow_conflict::<Matrix<Value>>(
+            "validate",
+            "matrix",
+          )
+        })?;
+      for value in values {
         detector.validate_value(&value)?;
       }
       Ok(())
@@ -289,22 +384,29 @@ impl ValueSnapshotCloneContext {
   fn snapshot_leaf<T>(
     &mut self,
     source: &Ref<T>,
-  ) -> Ref<T>
+    node: &'static str,
+  ) -> MResult<Ref<T>>
   where
     T: Clone + 'static,
   {
     let key = ValueSnapshotKey::of_ref(source);
     if let Some(snapshot) = self.memoized(key) {
-      return snapshot;
+      return Ok(snapshot);
     }
-    let snapshot = Ref::new(source.borrow().clone());
+    let value = try_clone_ref(
+      source,
+      "clone",
+      node,
+    )?;
+    let snapshot = Ref::new(value);
     self.memoize(key, snapshot.clone());
-    snapshot
+    Ok(snapshot)
   }
 
   fn snapshot_recursive_ref<T, B>(
     &mut self,
     source: &Ref<T>,
+    node: &'static str,
     build: B,
   ) -> MResult<Ref<T>>
   where
@@ -316,7 +418,11 @@ impl ValueSnapshotCloneContext {
       return Ok(snapshot);
     }
 
-    let source_value = source.borrow().clone();
+    let source_value = try_clone_ref(
+      source,
+      "clone",
+      node,
+    )?;
     let snapshot_value = build(self, source_value)?;
     let snapshot = Ref::new(snapshot_value);
     self.memoize(key, snapshot.clone());
@@ -327,42 +433,56 @@ impl ValueSnapshotCloneContext {
   fn snapshot_atom(
     &mut self,
     source: &Ref<MechAtom>,
-  ) -> Ref<MechAtom> {
+  ) -> MResult<Ref<MechAtom>> {
     let key = ValueSnapshotKey::of_ref(source);
     if let Some(snapshot) = self.memoized(key) {
-      return snapshot;
+      return Ok(snapshot);
     }
 
-    let atom = source.borrow().clone();
+    let atom = try_clone_ref(
+      source,
+      "clone",
+      "atom",
+    )?;
     let dictionary: Ref<Dictionary> =
-      self.snapshot_leaf(&atom.dictionary());
+      self.snapshot_leaf(
+        &atom.dictionary(),
+        "atom-dictionary",
+      )?;
     let snapshot =
       Ref::new(MechAtom((atom.id(), dictionary)));
     self.memoize(key, snapshot.clone());
-    snapshot
+    Ok(snapshot)
   }
 
   #[cfg(feature = "matrix")]
   fn snapshot_matrix<T>(
     &mut self,
     source: &Matrix<T>,
-  ) -> Matrix<T>
+  ) -> MResult<Matrix<T>>
   where
     T: Debug + Clone + PartialEq + 'static,
   {
     let key = ValueSnapshotKey::of_matrix(source);
     if let Some(snapshot) = self.memoized(key) {
-      return snapshot;
+      return Ok(snapshot);
     }
 
-    let values = source.as_vec();
+    let (values, rows, cols) = source
+      .try_clone_parts()
+      .map_err(|_| {
+        snapshot_borrow_conflict::<Matrix<T>>(
+          "clone",
+          "matrix",
+        )
+      })?;
     let snapshot = Matrix::from_vec(
       values,
-      source.rows(),
-      source.cols(),
+      rows,
+      cols,
     );
     self.memoize(key, snapshot.clone());
-    snapshot
+    Ok(snapshot)
   }
 
   #[cfg(feature = "matrix")]
@@ -375,14 +495,22 @@ impl ValueSnapshotCloneContext {
       return Ok(snapshot);
     }
 
+    let (values, rows, cols) = source
+      .try_clone_parts()
+      .map_err(|_| {
+        snapshot_borrow_conflict::<Matrix<Value>>(
+          "clone",
+          "matrix",
+        )
+      })?;
     let mut detached_values = Vec::new();
-    for value in source.as_vec() {
+    for value in values {
       detached_values.push(self.snapshot_value(&value)?);
     }
     let snapshot = Matrix::from_vec(
       detached_values,
-      source.rows(),
-      source.cols(),
+      rows,
+      cols,
     );
     self.memoize(key, snapshot.clone());
     Ok(snapshot)
@@ -397,7 +525,11 @@ impl ValueSnapshotCloneContext {
       return Ok(snapshot);
     }
 
-    let source_value = source.borrow().clone();
+    let source_value = try_clone_ref(
+      source,
+      "clone",
+      "mutable-reference",
+    )?;
     let snapshot = self.snapshot_value(&source_value)?;
     self.memoize(key, snapshot.clone());
     Ok(snapshot)
@@ -410,139 +542,139 @@ impl ValueSnapshotCloneContext {
     match source {
       #[cfg(feature = "u8")]
       Value::U8(value) => {
-        Ok(Value::U8(self.snapshot_leaf(value)))
+        Ok(Value::U8(self.snapshot_leaf(value, "u8")?))
       }
       #[cfg(feature = "u16")]
       Value::U16(value) => {
-        Ok(Value::U16(self.snapshot_leaf(value)))
+        Ok(Value::U16(self.snapshot_leaf(value, "u16")?))
       }
       #[cfg(feature = "u32")]
       Value::U32(value) => {
-        Ok(Value::U32(self.snapshot_leaf(value)))
+        Ok(Value::U32(self.snapshot_leaf(value, "u32")?))
       }
       #[cfg(feature = "u64")]
       Value::U64(value) => {
-        Ok(Value::U64(self.snapshot_leaf(value)))
+        Ok(Value::U64(self.snapshot_leaf(value, "u64")?))
       }
       #[cfg(feature = "u128")]
       Value::U128(value) => {
-        Ok(Value::U128(self.snapshot_leaf(value)))
+        Ok(Value::U128(self.snapshot_leaf(value, "u128")?))
       }
       #[cfg(feature = "i8")]
       Value::I8(value) => {
-        Ok(Value::I8(self.snapshot_leaf(value)))
+        Ok(Value::I8(self.snapshot_leaf(value, "i8")?))
       }
       #[cfg(feature = "i16")]
       Value::I16(value) => {
-        Ok(Value::I16(self.snapshot_leaf(value)))
+        Ok(Value::I16(self.snapshot_leaf(value, "i16")?))
       }
       #[cfg(feature = "i32")]
       Value::I32(value) => {
-        Ok(Value::I32(self.snapshot_leaf(value)))
+        Ok(Value::I32(self.snapshot_leaf(value, "i32")?))
       }
       #[cfg(feature = "i64")]
       Value::I64(value) => {
-        Ok(Value::I64(self.snapshot_leaf(value)))
+        Ok(Value::I64(self.snapshot_leaf(value, "i64")?))
       }
       #[cfg(feature = "i128")]
       Value::I128(value) => {
-        Ok(Value::I128(self.snapshot_leaf(value)))
+        Ok(Value::I128(self.snapshot_leaf(value, "i128")?))
       }
       #[cfg(feature = "f32")]
       Value::F32(value) => {
-        Ok(Value::F32(self.snapshot_leaf(value)))
+        Ok(Value::F32(self.snapshot_leaf(value, "f32")?))
       }
       #[cfg(feature = "f64")]
       Value::F64(value) => {
-        Ok(Value::F64(self.snapshot_leaf(value)))
+        Ok(Value::F64(self.snapshot_leaf(value, "f64")?))
       }
       #[cfg(feature = "complex")]
       Value::C64(value) => {
-        Ok(Value::C64(self.snapshot_leaf(value)))
+        Ok(Value::C64(self.snapshot_leaf(value, "c64")?))
       }
       #[cfg(feature = "rational")]
       Value::R64(value) => {
-        Ok(Value::R64(self.snapshot_leaf(value)))
+        Ok(Value::R64(self.snapshot_leaf(value, "r64")?))
       }
       #[cfg(any(feature = "string", feature = "variable_define"))]
       Value::String(value) => {
-        Ok(Value::String(self.snapshot_leaf(value)))
+        Ok(Value::String(self.snapshot_leaf(value, "string")?))
       }
       #[cfg(any(feature = "bool", feature = "variable_define"))]
       Value::Bool(value) => {
-        Ok(Value::Bool(self.snapshot_leaf(value)))
+        Ok(Value::Bool(self.snapshot_leaf(value, "bool")?))
       }
       #[cfg(feature = "atom")]
       Value::Atom(value) => {
-        Ok(Value::Atom(self.snapshot_atom(value)))
+        Ok(Value::Atom(self.snapshot_atom(value)?))
       }
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(value) => {
-        Ok(Value::MatrixIndex(self.snapshot_matrix(value)))
+        Ok(Value::MatrixIndex(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(value) => {
-        Ok(Value::MatrixBool(self.snapshot_matrix(value)))
+        Ok(Value::MatrixBool(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "u8"))]
       Value::MatrixU8(value) => {
-        Ok(Value::MatrixU8(self.snapshot_matrix(value)))
+        Ok(Value::MatrixU8(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "u16"))]
       Value::MatrixU16(value) => {
-        Ok(Value::MatrixU16(self.snapshot_matrix(value)))
+        Ok(Value::MatrixU16(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "u32"))]
       Value::MatrixU32(value) => {
-        Ok(Value::MatrixU32(self.snapshot_matrix(value)))
+        Ok(Value::MatrixU32(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "u64"))]
       Value::MatrixU64(value) => {
-        Ok(Value::MatrixU64(self.snapshot_matrix(value)))
+        Ok(Value::MatrixU64(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "u128"))]
       Value::MatrixU128(value) => {
-        Ok(Value::MatrixU128(self.snapshot_matrix(value)))
+        Ok(Value::MatrixU128(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "i8"))]
       Value::MatrixI8(value) => {
-        Ok(Value::MatrixI8(self.snapshot_matrix(value)))
+        Ok(Value::MatrixI8(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "i16"))]
       Value::MatrixI16(value) => {
-        Ok(Value::MatrixI16(self.snapshot_matrix(value)))
+        Ok(Value::MatrixI16(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "i32"))]
       Value::MatrixI32(value) => {
-        Ok(Value::MatrixI32(self.snapshot_matrix(value)))
+        Ok(Value::MatrixI32(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "i64"))]
       Value::MatrixI64(value) => {
-        Ok(Value::MatrixI64(self.snapshot_matrix(value)))
+        Ok(Value::MatrixI64(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "i128"))]
       Value::MatrixI128(value) => {
-        Ok(Value::MatrixI128(self.snapshot_matrix(value)))
+        Ok(Value::MatrixI128(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "f32"))]
       Value::MatrixF32(value) => {
-        Ok(Value::MatrixF32(self.snapshot_matrix(value)))
+        Ok(Value::MatrixF32(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(value) => {
-        Ok(Value::MatrixF64(self.snapshot_matrix(value)))
+        Ok(Value::MatrixF64(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(value) => {
-        Ok(Value::MatrixString(self.snapshot_matrix(value)))
+        Ok(Value::MatrixString(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "rational"))]
       Value::MatrixR64(value) => {
-        Ok(Value::MatrixR64(self.snapshot_matrix(value)))
+        Ok(Value::MatrixR64(self.snapshot_matrix(value)?))
       }
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(value) => {
-        Ok(Value::MatrixC64(self.snapshot_matrix(value)))
+        Ok(Value::MatrixC64(self.snapshot_matrix(value)?))
       }
       #[cfg(feature = "matrix")]
       Value::MatrixValue(value) => Ok(Value::MatrixValue(
@@ -552,6 +684,7 @@ impl ValueSnapshotCloneContext {
       Value::Set(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
+          "set",
           |context, mut set| {
             let mut detached = IndexSet::new();
             for value in set.set {
@@ -569,6 +702,7 @@ impl ValueSnapshotCloneContext {
       Value::Map(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
+          "map",
           |context, mut map| {
             let mut detached = IndexMap::new();
             for (key, value) in map.map {
@@ -587,6 +721,7 @@ impl ValueSnapshotCloneContext {
       Value::Record(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
+          "record",
           |context, mut record| {
             let mut detached = IndexMap::new();
             for (id, value) in record.data {
@@ -605,6 +740,7 @@ impl ValueSnapshotCloneContext {
       Value::Table(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
+          "table",
           |context, mut table| {
             let mut detached = IndexMap::new();
             for (id, (kind, values)) in table.data {
@@ -626,6 +762,7 @@ impl ValueSnapshotCloneContext {
       Value::Tuple(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
+          "tuple",
           |context, tuple| {
             let mut detached = Vec::new();
             for value in tuple.elements {
@@ -642,9 +779,13 @@ impl ValueSnapshotCloneContext {
       Value::Enum(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
+          "enum",
           |context, mut value| {
             value.names =
-              context.snapshot_leaf(&value.names);
+              context.snapshot_leaf(
+                &value.names,
+                "enum-dictionary",
+              )?;
             let mut detached = Vec::new();
             for (id, payload) in value.variants {
               detached.push((
@@ -665,7 +806,9 @@ impl ValueSnapshotCloneContext {
       }
       Value::Id(value) => Ok(Value::Id(*value)),
       Value::Index(value) => {
-        Ok(Value::Index(self.snapshot_leaf(value)))
+        Ok(Value::Index(
+          self.snapshot_leaf(value, "index")?,
+        ))
       }
       Value::MutableReference(value) => {
         self.snapshot_mutable_reference(value)
