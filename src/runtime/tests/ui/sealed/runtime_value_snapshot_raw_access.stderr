@@ -1,0 +1,34 @@
+error[E0599]: no method named `as_value` found for reference `&RuntimeValueSnapshot` in the current scope
+ --> tests/ui/sealed/runtime_value_snapshot_raw_access.rs:5:28
+  |
+5 |   let _: &Value = snapshot.as_value();
+  |                            ^^^^^^^^
+  |
+help: there is a method `to_value` with a similar name
+  |
+5 -   let _: &Value = snapshot.as_value();
+5 +   let _: &Value = snapshot.to_value();
+  |
+
+error[E0308]: mismatched types
+ --> tests/ui/sealed/runtime_value_snapshot_raw_access.rs:9:19
+  |
+9 |   let _: &Value = &*snapshot;
+  |          ------   ^^^^^^^^^^ expected `&Value`, found `&RuntimeValueSnapshot`
+  |          |
+  |          expected due to this
+  |
+  = note: expected reference `&mech_core::Value`
+             found reference `&RuntimeValueSnapshot`
+
+error[E0616]: field `value` of struct `RuntimeValueSnapshot` is private
+  --> tests/ui/sealed/runtime_value_snapshot_raw_access.rs:13:29
+   |
+13 |   let _: &Value = &snapshot.value;
+   |                             ^^^^^ private field
+
+error[E0614]: type `RuntimeValueSnapshot` cannot be dereferenced
+  --> tests/ui/sealed/runtime_value_snapshot_raw_access.rs:17:31
+   |
+17 |   if let Value::F64(value) = &**snapshot {
+   |                               ^^^^^^^^^^ can't be dereferenced

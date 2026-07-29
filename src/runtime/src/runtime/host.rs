@@ -68,6 +68,7 @@ use crate::{
   RegisteredHostFunction,
   RuntimeCallContext,
   RuntimeContext,
+  RuntimeEventKind,
   RuntimeValueSnapshot,
 };
 use std::sync::Arc;
@@ -197,6 +198,7 @@ impl MechRuntime {
     } else {
       context.transaction
     };
+    let context_event_mark = context.events.len();
     let result = self.with_runtime_execution_session(
       context,
       |session| {
@@ -207,6 +209,23 @@ impl MechRuntime {
     if !implicit {
       return result;
     }
+    // The implicit transaction owns the provisional host events. Preserve
+    // only the failure audit after rollback; completed calls still publish
+    // their events through the normal commit path.
+    let failed_host_audit = if result.is_err() {
+      context.events[context_event_mark..]
+        .iter()
+        .filter_map(|event| match &event.kind {
+          RuntimeEventKind::HostCallStarted { .. }
+          | RuntimeEventKind::HostCallFailed { .. } => {
+            Some(event.kind.clone())
+          }
+          _ => None,
+        })
+        .collect::<Vec<_>>()
+    } else {
+      Vec::new()
+    };
     match result {
       Ok(value) => {
         self.commit_runtime_transaction(context)?;
@@ -218,7 +237,15 @@ impl MechRuntime {
           context,
           format!("host call `{}` failed", call.name),
         ) {
-          Ok(()) => Err(error),
+          Ok(()) => {
+            for kind in failed_host_audit {
+              let _ = self.emit_event_to_context(
+                context,
+                kind,
+              );
+            }
+            Err(error)
+          }
           Err(cleanup_error) => Err(self.poison_program_operation(
             "call_host_with_context",
             transaction_id,

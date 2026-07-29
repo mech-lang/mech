@@ -170,7 +170,7 @@ fn run_resource_grant_authorizes_cli_env_legacy_alias() {
         .run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\nhome\n")
         .unwrap();
 
-    match result.as_value() {
+    match result.into_value() {
         Value::String(value) => assert_eq!(value.borrow().as_str(), "/test/home"),
         value => panic!("expected string HOME value, got {value:?}"),
     }

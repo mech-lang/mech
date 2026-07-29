@@ -1,12 +1,29 @@
 use std::collections::BTreeSet;
 
 use mech_core::{
-  Dictionary, MechAtom, MechEnum, MechRecord, MechTuple, Ref,
-  Value, hash_str,
+  Dictionary, MechAtom, MechEnum, MechError, MechRecord,
+  MechTuple, Ref, Value, ValueKind, hash_str,
 };
 use mech_core::structures::matrix::Matrix;
 
 use crate::RuntimeValueSnapshot;
+
+fn assert_cycle_error(
+  error: MechError,
+  node: &str,
+) {
+  assert_eq!(
+    error.kind_name(),
+    "ValueSnapshotCycleUnsupported",
+  );
+  assert!(
+    error.kind_message().contains(node),
+    "{error:?}",
+  );
+  let rendered = format!("{error:?}");
+  assert!(!rendered.contains("@0x"), "{rendered}");
+  assert!(!rendered.contains("0x"), "{rendered}");
+}
 
 #[test]
 fn runtime_value_snapshot_detaches_atom_dictionary() {
@@ -20,9 +37,10 @@ fn runtime_value_snapshot_detaches_atom_dictionary() {
     source_dictionary.clone(),
   )));
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let snapshot = RuntimeValueSnapshot::try_capture(
     &Value::Atom(source_atom.clone()),
   )
+  .expect("acyclic fixture")
   .into_value();
   let Value::Atom(snapshot_atom) = snapshot else {
     panic!("expected atom snapshot");
@@ -69,9 +87,10 @@ fn runtime_value_snapshot_detaches_enum_dictionary() {
     names: source_names.clone(),
   });
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let snapshot = RuntimeValueSnapshot::try_capture(
     &Value::Enum(source_enum.clone()),
   )
+  .expect("acyclic fixture")
   .into_value();
   let Value::Enum(snapshot_enum) = snapshot else {
     panic!("expected enum snapshot");
@@ -121,30 +140,21 @@ fn runtime_value_snapshot_detaches_enum_dictionary() {
 }
 
 #[test]
-fn runtime_value_snapshot_preserves_self_referential_mutable_cycle() {
+fn runtime_value_snapshot_rejects_self_referential_mutable_cycle() {
   let source = Ref::new(Value::Empty);
   *source.borrow_mut() =
     Value::MutableReference(source.clone());
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let error = RuntimeValueSnapshot::try_capture(
     &Value::MutableReference(source.clone()),
   )
-  .into_value();
-  let Value::MutableReference(detached) = snapshot else {
-    panic!("expected detached mutable-reference root");
-  };
-  let detached_payload = detached.borrow().clone();
-  let Value::MutableReference(back_edge) = detached_payload
-  else {
-    panic!("expected detached mutable-reference back-edge");
-  };
+  .unwrap_err();
 
-  assert!(back_edge.same_handle(&detached));
-  assert!(!detached.same_handle(&source));
+  assert_cycle_error(error, "mutable-reference");
 }
 
 #[test]
-fn runtime_value_snapshot_preserves_two_node_mutable_cycle() {
+fn runtime_value_snapshot_rejects_two_node_mutable_cycle() {
   let source_a = Ref::new(Value::Empty);
   let source_b = Ref::new(Value::Empty);
   *source_a.borrow_mut() =
@@ -152,58 +162,48 @@ fn runtime_value_snapshot_preserves_two_node_mutable_cycle() {
   *source_b.borrow_mut() =
     Value::MutableReference(source_a.clone());
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let error = RuntimeValueSnapshot::try_capture(
     &Value::MutableReference(source_a.clone()),
   )
-  .into_value();
-  let Value::MutableReference(detached_a) = snapshot else {
-    panic!("expected detached first mutable-reference node");
-  };
-  let detached_a_payload = detached_a.borrow().clone();
-  let Value::MutableReference(detached_b) =
-    detached_a_payload
-  else {
-    panic!("expected detached second mutable-reference node");
-  };
-  let detached_b_payload = detached_b.borrow().clone();
-  let Value::MutableReference(back_edge) =
-    detached_b_payload
-  else {
-    panic!("expected detached two-node back-edge");
-  };
+  .unwrap_err();
 
-  assert!(back_edge.same_handle(&detached_a));
-  assert!(!detached_a.same_handle(&source_a));
-  assert!(!detached_a.same_handle(&source_b));
-  assert!(!detached_b.same_handle(&source_a));
-  assert!(!detached_b.same_handle(&source_b));
-  assert!(!detached_a.same_handle(&detached_b));
+  assert_cycle_error(error, "mutable-reference");
 }
 
 #[test]
-fn runtime_value_snapshot_preserves_self_referential_tuple_cycle() {
+fn runtime_value_snapshot_rejects_cycle_after_acyclic_reference_prefix() {
+  let source_a = Ref::new(Value::Empty);
+  let source_b = Ref::new(Value::Empty);
+  let source_c = Ref::new(Value::Empty);
+  *source_a.borrow_mut() =
+    Value::MutableReference(source_b.clone());
+  *source_b.borrow_mut() =
+    Value::MutableReference(source_a.clone());
+  *source_c.borrow_mut() =
+    Value::MutableReference(source_a.clone());
+
+  let error = RuntimeValueSnapshot::try_capture(
+    &Value::MutableReference(source_c),
+  )
+  .unwrap_err();
+
+  assert_cycle_error(error, "mutable-reference");
+}
+
+#[test]
+fn runtime_value_snapshot_rejects_self_referential_tuple_cycle() {
   let source_tuple =
     Ref::new(MechTuple::from_vec(Vec::new()));
   source_tuple.borrow_mut().elements.push(Box::new(
     Value::Tuple(source_tuple.clone()),
   ));
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let error = RuntimeValueSnapshot::try_capture(
     &Value::Tuple(source_tuple.clone()),
   )
-  .into_value();
-  let Value::Tuple(detached_tuple) = snapshot else {
-    panic!("expected detached tuple root");
-  };
-  let first_element = {
-    detached_tuple.borrow().elements[0].as_ref().clone()
-  };
-  let Value::Tuple(back_edge) = first_element else {
-    panic!("expected detached tuple back-edge");
-  };
+  .unwrap_err();
 
-  assert!(back_edge.same_handle(&detached_tuple));
-  assert!(!detached_tuple.same_handle(&source_tuple));
+  assert_cycle_error(error, "tuple");
 }
 
 #[test]
@@ -214,9 +214,10 @@ fn runtime_value_snapshot_preserves_shared_detached_leaf() {
     Value::F64(source_scalar.clone()),
   ]));
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let snapshot = RuntimeValueSnapshot::try_capture(
     &Value::Tuple(source_tuple),
   )
+  .expect("acyclic fixture")
   .into_value();
   let Value::Tuple(snapshot_tuple) = snapshot else {
     panic!("expected detached tuple snapshot");
@@ -248,9 +249,10 @@ fn runtime_value_snapshot_still_unwraps_acyclic_mutable_reference_chain() {
   let outer =
     Ref::new(Value::MutableReference(inner.clone()));
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let snapshot = RuntimeValueSnapshot::try_capture(
     &Value::MutableReference(outer),
   )
+  .expect("acyclic fixture")
   .into_value();
   let Value::F64(snapshot_scalar) = snapshot else {
     panic!("expected value-transparent scalar snapshot");
@@ -308,7 +310,9 @@ fn runtime_value_snapshot_reachable_cells_are_disjoint_from_source() {
   ])));
 
   let snapshot =
-    RuntimeValueSnapshot::capture(&source).into_value();
+    RuntimeValueSnapshot::try_capture(&source)
+      .expect("acyclic fixture")
+      .into_value();
   let source_ids = source
     .reactive_cell_ids()
     .into_iter()
@@ -324,7 +328,110 @@ fn runtime_value_snapshot_reachable_cells_are_disjoint_from_source() {
 }
 
 #[test]
-fn runtime_value_snapshot_preserves_matrix_value_cycle() {
+fn runtime_value_snapshot_observers_are_safe_for_accepted_values() {
+  let shared = Ref::new(41.0);
+  let atom_id = hash_str("snapshot/observer/atom");
+  let atom_names = Ref::new(Dictionary::from([(
+    atom_id,
+    "observer-atom".to_string(),
+  )]));
+  let atom = Value::Atom(Ref::new(MechAtom((
+    atom_id,
+    atom_names,
+  ))));
+  let enum_id = hash_str("snapshot/observer/enum");
+  let variant_id =
+    hash_str("snapshot/observer/variant");
+  let enum_names = Ref::new(Dictionary::from([
+    (enum_id, "observer-enum".to_string()),
+    (variant_id, "observer-variant".to_string()),
+  ]));
+  let enum_value = Value::Enum(Ref::new(MechEnum {
+    id: enum_id,
+    variants: vec![(
+      variant_id,
+      Some(Value::F64(shared.clone())),
+    )],
+    names: enum_names,
+  }));
+  let tuple = Value::Tuple(Ref::new(
+    MechTuple::from_vec(vec![
+      Value::F64(shared.clone()),
+      Value::F64(shared.clone()),
+    ]),
+  ));
+  let matrix = Value::MatrixValue(Matrix::from_vec(
+    vec![Value::F64(shared.clone())],
+    1,
+    1,
+  ));
+  let source = Value::Record(Ref::new(MechRecord::new(vec![
+    ("atom", atom),
+    ("enum", enum_value),
+    ("tuple", tuple),
+    ("matrix", matrix),
+    ("shared", Value::F64(shared)),
+  ])));
+  let snapshot =
+    RuntimeValueSnapshot::try_capture(&source)
+      .expect("acyclic fixture");
+
+  assert!(matches!(
+    snapshot.kind(),
+    ValueKind::Record(_),
+  ));
+  let debug = format!("{snapshot:?}");
+  let display = format!("{snapshot}");
+  assert!(debug.contains("Record"), "{debug}");
+  assert!(!display.is_empty());
+  assert_eq!(snapshot, snapshot.clone());
+}
+
+#[test]
+fn runtime_value_snapshot_clone_has_independent_cells() {
+  let source = Value::Tuple(Ref::new(
+    MechTuple::from_vec(vec![Value::F64(Ref::new(
+      41.0,
+    ))]),
+  ));
+  let original =
+    RuntimeValueSnapshot::try_capture(&source)
+      .expect("acyclic fixture");
+  let consumed_clone = original.clone().into_value();
+  let Value::Tuple(consumed_tuple) = &consumed_clone
+  else {
+    panic!("expected consumed tuple");
+  };
+  let consumed_scalar = {
+    let tuple = consumed_tuple.borrow();
+    let Value::F64(value) = tuple.elements[0].as_ref()
+    else {
+      panic!("expected consumed scalar");
+    };
+    value.clone()
+  };
+  *consumed_scalar.borrow_mut() = 99.0;
+
+  let original_value = original.to_value();
+  let Value::Tuple(original_tuple) = original_value
+  else {
+    panic!("expected original tuple");
+  };
+  let original_scalar = {
+    let tuple = original_tuple.borrow();
+    let Value::F64(value) = tuple.elements[0].as_ref()
+    else {
+      panic!("expected original scalar");
+    };
+    value.clone()
+  };
+
+  assert_eq!(*original_scalar.borrow(), 41.0);
+  assert_eq!(*consumed_scalar.borrow(), 99.0);
+}
+
+#[test]
+fn runtime_value_snapshot_rejects_matrix_value_cycle() {
   let source_matrix =
     Matrix::from_element(1, 1, Value::Empty);
   source_matrix.set_index1d(
@@ -332,21 +439,10 @@ fn runtime_value_snapshot_preserves_matrix_value_cycle() {
     Value::MatrixValue(source_matrix.clone()),
   );
 
-  let snapshot = RuntimeValueSnapshot::capture(
+  let error = RuntimeValueSnapshot::try_capture(
     &Value::MatrixValue(source_matrix.clone()),
   )
-  .into_value();
-  let Value::MatrixValue(snapshot_matrix) = snapshot
-  else {
-    panic!("expected detached matrix root");
-  };
-  let snapshot_element = snapshot_matrix.index1d(1);
-  let Value::MatrixValue(back_edge) = snapshot_element
-  else {
-    panic!("expected detached matrix back-edge");
-  };
+  .unwrap_err();
 
-  assert_eq!(back_edge.addr(), snapshot_matrix.addr());
-  assert_ne!(snapshot_matrix.addr(), source_matrix.addr());
-  assert_ne!(back_edge.addr(), source_matrix.addr());
+  assert_cycle_error(error, "matrix");
 }

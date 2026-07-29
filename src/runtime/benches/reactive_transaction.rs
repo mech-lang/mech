@@ -20,7 +20,7 @@ use mech_runtime::{
   RuntimeEffectSource, RuntimeHostInput, RuntimeHostInputSource,
   RuntimeHostInputValue, RuntimePreparedHostCall,
   RuntimeResourceProvider, RuntimeResourceReadRequest,
-  SequentialIdGenerator,
+  RuntimeValueSnapshot, SequentialIdGenerator,
 };
 use std::hint::black_box;
 use std::sync::{
@@ -241,6 +241,13 @@ fn copied_host_f64(
   Value::F64(Ref::new(value))
 }
 
+fn copied_host_snapshot(
+  arguments: &[impl HostArgumentValue],
+) -> RuntimeValueSnapshot {
+  RuntimeValueSnapshot::try_capture(&copied_host_f64(arguments))
+    .expect("acyclic fixture")
+}
+
 fn failing_host_input_fixture() -> HostInputFixture {
   let fail = Arc::new(AtomicBool::new(false));
   let fail_for_host = fail.clone();
@@ -337,11 +344,11 @@ fn effect_host_input_fixture() -> HostInputFixture {
     .host_function(PlannedStagedHostFunction::new(
       "bench/after-commit",
       |_context, arguments| {
-        Ok(copied_host_f64(arguments).into())
+        Ok(copied_host_snapshot(arguments))
       },
       |_context, arguments| {
         Ok(RuntimePreparedHostCall {
-          value: copied_host_f64(&arguments).into(),
+          value: copied_host_snapshot(&arguments),
           effect: PreparedRuntimeEffect::AfterCommit(Box::new(
             BenchAfterCommitEffect,
           )),
@@ -381,14 +388,14 @@ fn object_host_input_fixture() -> HostInputFixture {
     .host_function(PlannedRuntimeManagedHostFunction::new(
       "bench/object",
       |_context, arguments| {
-        Ok(copied_host_f64(arguments).into())
+        Ok(copied_host_snapshot(arguments))
       },
       |services, _context, arguments| {
         let id = services.allocate_object_id()?;
         services.put_object(
           ObjectRecord::text(id, "benchmark", "reactive turn"),
         )?;
-        Ok(copied_host_f64(&arguments).into())
+        Ok(copied_host_snapshot(&arguments))
       },
     ))
     .unwrap()

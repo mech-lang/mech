@@ -156,3 +156,11 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
     5.0,
   );
 }
+
+#[test]
+fn runtime_value_snapshot_raw_access_is_sealed() {
+  let tests = trybuild::TestCases::new();
+  tests.compile_fail(
+    "tests/ui/sealed/runtime_value_snapshot_raw_access.rs",
+  );
+}
