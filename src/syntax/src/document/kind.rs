@@ -20,6 +20,7 @@ pub enum SyntaxKind {
   MechItem,
   VariableDefine,
   Identifier,
+  KindAnnotation,
   Expression,
   AdditiveExpression,
   ParentheticalExpression,
@@ -36,6 +37,9 @@ pub enum SyntaxKind {
   IntegerToken,
   Colon,
   Equal,
+  Tilde,
+  LeftAngle,
+  RightAngle,
   Plus,
   LeftParen,
   RightParen,
@@ -59,6 +63,9 @@ impl SyntaxKind {
         | Self::IntegerToken
         | Self::Colon
         | Self::Equal
+        | Self::Tilde
+        | Self::LeftAngle
+        | Self::RightAngle
         | Self::Plus
         | Self::LeftParen
         | Self::RightParen

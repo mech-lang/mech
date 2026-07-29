@@ -1,11 +1,12 @@
 {
   "code": "syntax/missing-expression",
-  "rule": 1192836915,
+  "rule": null,
+  "context": "prototype-expression",
   "range": {
     "start": 5,
     "end": 5
   },
-  "expected": "expression",
+  "expected": "prototype-expression",
   "found": "Eof",
   "recovery": "Insert"
 }

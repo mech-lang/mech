@@ -1,3 +1,4 @@
+use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -8,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use super::edit::{TextEdit, TextRange, TextSize};
 use super::flags::NodeFlags;
-use super::ids::{DiagnosticId, Revision, RuleId, SyntaxElementId};
+use super::ids::{DiagnosticId, ParserContextId, Revision, RuleId, SyntaxElementId};
 use super::index::NodeIndex;
 use super::kind::SyntaxKind;
 use super::source::TextSnapshot;
@@ -178,6 +179,7 @@ pub struct Diagnostic {
   pub phase: DiagnosticPhase,
   pub severity: Severity,
   pub rule: Option<RuleId>,
+  pub context: Option<ParserContextId>,
   pub primary: DiagnosticAnchor,
   pub labels: Vec<DiagnosticLabel>,
   pub expected: Vec<ExpectedSyntax>,
@@ -187,6 +189,36 @@ pub struct Diagnostic {
   pub recovery: Option<RecoveryAction>,
   pub tags: DiagnosticTags,
   pub message: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedDiagnosticLabel {
+  pub range: Option<TextRange>,
+  pub message: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedDiagnosticFix {
+  pub title: String,
+  pub applicability: FixApplicability,
+  pub edits: Vec<TextEdit>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NormalizedDiagnostic {
+  pub code: DiagnosticCode,
+  pub phase: DiagnosticPhase,
+  pub severity: Severity,
+  pub rule: Option<RuleId>,
+  pub context: Option<ParserContextId>,
+  pub primary: Option<TextRange>,
+  pub labels: Vec<NormalizedDiagnosticLabel>,
+  pub expected: Vec<ExpectedSyntax>,
+  pub found: Option<FoundSyntax>,
+  pub fixes: Vec<NormalizedDiagnosticFix>,
+  pub related: Vec<usize>,
+  pub recovery: Option<RecoveryAction>,
+  pub tags: DiagnosticTags,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -236,6 +268,55 @@ impl DiagnosticStore {
   pub fn to_json(&self) -> Result<String, serde_json::Error> {
     serde_json::to_string_pretty(self)
   }
+}
+
+pub fn normalize_diagnostics(
+  store: &DiagnosticStore,
+  revision: Revision,
+  nodes: &NodeIndex,
+) -> Vec<NormalizedDiagnostic> {
+  let related_indices = store
+    .iter()
+    .enumerate()
+    .map(|(index, diagnostic)| (diagnostic.id, index))
+    .collect::<BTreeMap<_, _>>();
+  store
+    .iter()
+    .map(|diagnostic| NormalizedDiagnostic {
+      code: diagnostic.code.clone(),
+      phase: diagnostic.phase,
+      severity: diagnostic.severity,
+      rule: diagnostic.rule,
+      context: diagnostic.context,
+      primary: diagnostic.primary.resolve(revision, nodes),
+      labels: diagnostic
+        .labels
+        .iter()
+        .map(|label| NormalizedDiagnosticLabel {
+          range: label.anchor.resolve(revision, nodes),
+          message: label.message.clone(),
+        })
+        .collect(),
+      expected: diagnostic.expected.clone(),
+      found: diagnostic.found.clone(),
+      fixes: diagnostic
+        .fixes
+        .iter()
+        .map(|fix| NormalizedDiagnosticFix {
+          title: fix.title.clone(),
+          applicability: fix.applicability,
+          edits: fix.edits.clone(),
+        })
+        .collect(),
+      related: diagnostic
+        .related
+        .iter()
+        .filter_map(|id| related_indices.get(id).copied())
+        .collect(),
+      recovery: diagnostic.recovery.clone(),
+      tags: diagnostic.tags,
+    })
+    .collect()
 }
 
 pub fn render_plain(

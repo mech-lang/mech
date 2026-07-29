@@ -4,6 +4,7 @@ pub struct ReparseStats {
   pub parser_steps: u64,
   pub events_emitted: u64,
   pub diagnostics_emitted: u64,
+  pub diagnostics_truncated: bool,
   pub recovery_bytes: u64,
   pub reparse_root_count: u64,
   pub reused_node_count: u64,

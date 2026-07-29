@@ -9,10 +9,10 @@ use super::recovery::{RecoveryClass, insert_missing, skip_error};
 use super::terminal::{
   is_horizontal_space, is_newline_start, token_kind_for_char,
 };
-use super::{Cursor, Parser};
+use super::{Cursor, Parser, parser_context_id};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum FenceDelimiter {
+pub enum FenceDelimiter {
   Grave,
   Tilde,
 }
@@ -119,157 +119,174 @@ pub(crate) fn is_subtitle(cursor: &Cursor<'_>) -> bool {
 }
 
 pub(crate) fn parse_ul_subtitle(parser: &mut Parser<'_>) {
-  parser.enter("ul-subtitle");
-  let heading = parser.start();
-  consume_line_tokens(parser);
-  consume_line_tokens(parser);
-  heading.complete_with_flags(
-    parser,
-    SyntaxKind::UlSubtitle,
-    NodeFlags::REPARSE_ROOT,
+  parser.with_rule(
+    parser_context_id("prototype-ul-subtitle"),
+    None,
+    |parser| {
+      let heading = parser.start();
+      consume_line_tokens(parser);
+      consume_line_tokens(parser);
+      heading.complete_with_flags(
+        parser,
+        SyntaxKind::UlSubtitle,
+        NodeFlags::REPARSE_ROOT,
+      );
+    },
   );
-  parser.leave();
 }
 
 pub(crate) fn parse_subtitle(parser: &mut Parser<'_>) {
-  parser.enter("subtitle");
-  let heading = parser.start();
-  consume_line_tokens(parser);
-  heading.complete_with_flags(
-    parser,
-    SyntaxKind::Subtitle,
-    NodeFlags::REPARSE_ROOT,
+  parser.with_rule(
+    parser_context_id("prototype-subtitle"),
+    None,
+    |parser| {
+      let heading = parser.start();
+      consume_line_tokens(parser);
+      heading.complete_with_flags(
+        parser,
+        SyntaxKind::Subtitle,
+        NodeFlags::REPARSE_ROOT,
+      );
+    },
   );
-  parser.leave();
 }
 
 pub(crate) fn parse_generic_fence(parser: &mut Parser<'_>) {
-  parser.enter("generic-code-fence");
-  let fence_start = fence_delimiter(parser.cursor()).expect("fence was checked");
-  let fence = parser.start();
-  let _ = parser.consume_horizontal_space();
-  let opening = parser
-    .bump_bytes_token(3, SyntaxKind::FenceDelimiter)
-    .unwrap_or_else(|| TextRange::empty(parser.offset()));
-  consume_line_tokens(parser);
+  parser.with_rule(
+    parser_context_id("prototype-code-block"),
+    None,
+    |parser| {
+      let fence_start = fence_delimiter(parser.cursor()).expect("fence was checked");
+      let fence = parser.start();
+      let _ = parser.consume_horizontal_space();
+      let opening = parser
+        .bump_bytes_token(3, SyntaxKind::FenceDelimiter)
+        .unwrap_or_else(|| TextRange::empty(parser.offset()));
+      consume_line_tokens(parser);
 
-  let content = parser.start();
-  while !parser.is_eof() && !parser.is_halted() {
-    if parser.cursor().is_line_start()
-      && matching_fence(parser.cursor(), fence_start.delimiter)
-    {
-      break;
-    }
-    consume_content_token(parser);
-  }
-  content.complete(parser, SyntaxKind::FenceContent);
+      let content = parser.start();
+      while !parser.is_eof() && !parser.is_halted() {
+        if parser.cursor().is_line_start()
+          && matching_fence(parser.cursor(), fence_start.delimiter)
+        {
+          break;
+        }
+        consume_content_token(parser);
+      }
+      content.complete(parser, SyntaxKind::FenceContent);
 
-  if matching_fence(parser.cursor(), fence_start.delimiter) {
-    let _ = parser.consume_horizontal_space();
-    let _ = parser.bump_bytes_token(3, SyntaxKind::FenceDelimiter);
-    consume_line_tokens(parser);
-  } else if !parser.is_halted() {
-    let _ = insert_missing(
-      parser,
-      "syntax/unclosed-fence",
-      "missing closing code fence",
-      ExpectedSyntax::Token(SyntaxKind::FenceDelimiter),
-      Some(SyntaxKind::FenceDelimiter),
-    );
-    let revision = parser.source().revision();
-    let offset = parser.offset();
-    if let Some(diagnostic) = parser.last_diagnostic_mut() {
-      diagnostic.labels.push(DiagnosticLabel {
-        anchor: DiagnosticAnchor::Absolute {
-          revision,
-          range: opening,
-        },
-        message: String::from("opening fence is here"),
-      });
-      diagnostic.fixes.push(DiagnosticFix {
-        title: String::from("Insert the matching closing fence"),
-        applicability: FixApplicability::MachineApplicable,
-        edits: alloc::vec![TextEdit::insert(
-          offset,
-          String::from(fence_start.delimiter.text()),
-        )],
-      });
-    }
-  }
-  fence.complete_with_flags(
-    parser,
-    SyntaxKind::GenericFence,
-    NodeFlags::REPARSE_ROOT,
+      if matching_fence(parser.cursor(), fence_start.delimiter) {
+        let _ = parser.consume_horizontal_space();
+        let _ = parser.bump_bytes_token(3, SyntaxKind::FenceDelimiter);
+        consume_line_tokens(parser);
+      } else if !parser.is_halted() {
+        let _ = insert_missing(
+          parser,
+          "syntax/unclosed-fence",
+          "missing closing code fence",
+          ExpectedSyntax::Token(SyntaxKind::FenceDelimiter),
+          Some(SyntaxKind::FenceDelimiter),
+        );
+        let revision = parser.source().revision();
+        let offset = parser.offset();
+        if let Some(diagnostic) = parser.last_diagnostic_mut() {
+          diagnostic.labels.push(DiagnosticLabel {
+            anchor: DiagnosticAnchor::Absolute {
+              revision,
+              range: opening,
+            },
+            message: String::from("opening fence is here"),
+          });
+          diagnostic.fixes.push(DiagnosticFix {
+            title: String::from("Insert the matching closing fence"),
+            applicability: FixApplicability::MachineApplicable,
+            edits: alloc::vec![TextEdit::insert(
+              offset,
+              String::from(fence_start.delimiter.text()),
+            )],
+          });
+        }
+      }
+      fence.complete_with_flags(
+        parser,
+        SyntaxKind::GenericFence,
+        NodeFlags::REPARSE_ROOT,
+      );
+    },
   );
-  parser.leave();
 }
 
 pub(crate) fn parse_paragraph(parser: &mut Parser<'_>) {
-  parser.enter("paragraph");
-  let paragraph = parser.start();
-  while !parser.is_eof() && !is_newline_start(parser.cursor()) && !parser.is_halted() {
-    if parser.cursor().starts_with(":=") {
-      let _ = skip_exact_paragraph_error(
-        parser,
-        2,
-        "syntax/invalid-paragraph-element",
-        "define operator is not valid paragraph text",
-      );
-      continue;
-    }
-    if parser
-      .cursor()
-      .peek_char()
-      .is_some_and(is_horizontal_space)
-    {
-      let _ = parser.consume_horizontal_space();
-      continue;
-    }
-    if parser
-      .cursor()
-      .peek_char()
-      .is_some_and(|character| matches!(character, '`' | '[' | ']' | '{' | '}' | '*' | '_' | '~'))
-    {
-      let _ = skip_error(
-        parser,
-        RecoveryClass::Paragraph,
-        "syntax/invalid-paragraph-element",
-        "invalid or incomplete paragraph element",
-      );
-      continue;
-    }
+  parser.with_rule(
+    parser_context_id("prototype-paragraph"),
+    None,
+    |parser| {
+      let paragraph = parser.start();
+      while !parser.is_eof() && !is_newline_start(parser.cursor()) && !parser.is_halted() {
+        if parser.cursor().starts_with(":=") {
+          let _ = skip_exact_paragraph_error(
+            parser,
+            2,
+            "syntax/invalid-paragraph-element",
+            "define operator is not valid paragraph text",
+          );
+          continue;
+        }
+        if parser
+          .cursor()
+          .peek_char()
+          .is_some_and(is_horizontal_space)
+        {
+          let _ = parser.consume_horizontal_space();
+          continue;
+        }
+        if parser
+          .cursor()
+          .peek_char()
+          .is_some_and(|character| matches!(character, '`' | '[' | ']' | '{' | '}' | '*' | '_' | '~'))
+        {
+          let _ = skip_error(
+            parser,
+            RecoveryClass::Paragraph,
+            "syntax/invalid-paragraph-element",
+            "invalid or incomplete paragraph element",
+          );
+          continue;
+        }
 
-    let element = parser.start();
-    let text = parser.start();
-    let start = parser.offset();
-    while !parser.is_eof()
-      && !is_newline_start(parser.cursor())
-      && !parser.cursor().starts_with(":=")
-      && !parser
-        .cursor()
-        .peek_char()
-        .is_some_and(is_horizontal_space)
-      && !parser
-        .cursor()
-        .peek_char()
-        .is_some_and(|character| matches!(character, '`' | '[' | ']' | '{' | '}' | '*' | '_' | '~'))
-    {
-      let _ = parser.bump_char_raw();
-    }
-    if parser.offset() == start {
-      let _ = parser.bump_char_raw();
-    }
-    parser.token(SyntaxKind::Text, TextRange::new(start, parser.offset()));
-    text.complete(parser, SyntaxKind::ParagraphText);
-    element.complete(parser, SyntaxKind::ParagraphElement);
-  }
-  let _ = parser.consume_newline();
-  paragraph.complete_with_flags(
-    parser,
-    SyntaxKind::Paragraph,
-    NodeFlags::REPARSE_ROOT,
+        let element = parser.start();
+        let text = parser.start();
+        let start = parser.offset();
+        while !parser.is_eof()
+          && !parser.is_halted()
+          && !is_newline_start(parser.cursor())
+          && !parser.cursor().starts_with(":=")
+          && !parser
+            .cursor()
+            .peek_char()
+            .is_some_and(is_horizontal_space)
+          && !parser
+            .cursor()
+            .peek_char()
+            .is_some_and(|character| matches!(character, '`' | '[' | ']' | '{' | '}' | '*' | '_' | '~'))
+        {
+          let _ = parser.bump_char_raw();
+        }
+        if parser.offset() == start {
+          let _ = parser.bump_char_raw();
+        }
+        parser.token(SyntaxKind::Text, TextRange::new(start, parser.offset()));
+        text.complete(parser, SyntaxKind::ParagraphText);
+        element.complete(parser, SyntaxKind::ParagraphElement);
+      }
+      let _ = parser.consume_newline();
+      paragraph.complete_with_flags(
+        parser,
+        SyntaxKind::Paragraph,
+        NodeFlags::REPARSE_ROOT,
+      );
+    },
   );
-  parser.leave();
 }
 
 fn matching_fence(cursor: &Cursor<'_>, delimiter: FenceDelimiter) -> bool {
@@ -293,6 +310,7 @@ fn consume_content_token(parser: &mut Parser<'_>) {
   }
   let start = parser.offset();
   while !parser.is_eof()
+    && !parser.is_halted()
     && !is_newline_start(parser.cursor())
     && !parser
       .cursor()
@@ -354,6 +372,7 @@ fn skip_exact_paragraph_error(
     phase: crate::document::DiagnosticPhase::Syntax,
     severity: crate::document::Severity::Error,
     rule: parser.current_rule(),
+    context: parser.current_context(),
     primary: DiagnosticAnchor::Absolute {
       revision: parser.source().revision(),
       range,
