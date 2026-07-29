@@ -222,6 +222,41 @@ fn removing_a_section_heading_merges_it_with_the_prior_section() {
 }
 
 #[test]
+fn inserting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
+    let regression =
+        include_str!("fixtures/document/fuzz-regressions/heading-prefix-joins-section.mec");
+    let initial = regression
+        .strip_suffix('\n')
+        .expect("the checked-in fixture has a conventional final newline");
+    let mut session = DocumentSession::new(initial, ParseConfig::default());
+    session.apply_edits(&[TextEdit::replace(
+        TextRange::new(TextSize(32), TextSize(124)),
+        "\n4. Output",
+    )]);
+    assert_equivalent(&session);
+    session.apply_edits(&[TextEdit::replace(
+        TextRange::new(TextSize(10), TextSize(45)),
+        "-------------",
+    )]);
+    assert_equivalent(&session);
+    let update = session.apply_edits(&[TextEdit::insert(
+        TextSize(45),
+        "-------------",
+    )]);
+    assert_eq!(update.stats.document_fallbacks, 1);
+    assert_equivalent(&session);
+    assert_eq!(
+        session
+            .snapshot()
+            .nodes
+            .nodes()
+            .filter(|(_, record)| record.kind == SyntaxKind::Section)
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn incomplete_definition_recovery_includes_the_following_line() {
     let _case_description =
         include_str!("fixtures/document/fuzz-regressions/incomplete-definition-following-nul.case");

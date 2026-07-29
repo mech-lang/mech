@@ -202,6 +202,18 @@ fn try_reparse_root(
     {
       return RootAttempt::rejected(fragment_stats, validation_stats);
     }
+    // A non-final section is followed by an underline-style heading.
+    // Boundary edits can otherwise shift that reused heading into the middle
+    // of a physical line while leaving its old subtree structurally intact.
+    if root.range.end < old.source.byte_len()
+      && !Cursor::for_range(
+        source,
+        TextRange::new(mapped.end, source.byte_len()),
+      )
+      .is_line_start()
+    {
+      return RootAttempt::rejected(fragment_stats, validation_stats);
+    }
   }
   if mapped.end < source.byte_len()
     && fragment
