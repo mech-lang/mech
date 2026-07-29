@@ -1,3 +1,7 @@
+/// Document parsing needs two enclosing starts plus a three-event error
+/// envelope and matching finishes to preserve a completed prefix.
+pub const MIN_PREFIX_PRESERVING_EVENTS: u32 = 7;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ParseLimits {
   pub max_nesting: u32,

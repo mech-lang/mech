@@ -2,7 +2,9 @@ use alloc::vec::Vec;
 
 use crate::document::{ParserContextId, RuleId};
 
-include!(concat!(env!("OUT_DIR"), "/canonical_rules.rs"));
+pub use super::canonical_rules::{
+  CANONICAL_RULE_COUNT, CANONICAL_RULES,
+};
 
 const fn stable_hash(name: &str) -> u32 {
   let bytes = name.as_bytes();

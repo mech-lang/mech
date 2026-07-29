@@ -10,6 +10,7 @@ use crate::document::{
   RuleId, Severity, SyntaxKind, SyntaxSnapshot, TextRange, TextSize, TextSnapshot, TokenFlags,
 };
 
+mod canonical_rules;
 pub mod checkpoint;
 pub mod cursor;
 pub mod document;
@@ -49,6 +50,8 @@ pub(crate) struct Parser<'a> {
   parse_range: TextRange,
   cursor: Cursor<'a>,
   events: Vec<Event>,
+  open_markers: Vec<usize>,
+  covered_end: TextSize,
   diagnostics: Vec<PendingDiagnostic>,
   rules: RuleStack,
   config: ParseConfig,
@@ -56,8 +59,7 @@ pub(crate) struct Parser<'a> {
   nesting: u32,
   halted: bool,
   resource_diagnostic_emitted: bool,
-  resource_finalized: bool,
-  resource_root_kind: SyntaxKind,
+  resource_finalizing: bool,
   ids: &'a mut IdGenerator,
   stats: ParseStats,
 }
@@ -73,6 +75,8 @@ impl<'a> Parser<'a> {
       parse_range: source.full_range(),
       cursor: Cursor::new(source),
       events: Vec::new(),
+      open_markers: Vec::new(),
+      covered_end: TextSize::ZERO,
       diagnostics: Vec::new(),
       rules: RuleStack::default(),
       config,
@@ -80,8 +84,7 @@ impl<'a> Parser<'a> {
       nesting: 0,
       halted: false,
       resource_diagnostic_emitted: false,
-      resource_finalized: false,
-      resource_root_kind: SyntaxKind::Document,
+      resource_finalizing: false,
       ids,
       stats: ParseStats {
         source_bytes: u64::from(source.byte_len().0),
@@ -93,7 +96,8 @@ impl<'a> Parser<'a> {
   fn for_range(
     source: &'a TextSnapshot,
     range: TextRange,
-    root_kind: SyntaxKind,
+    _root_kind: SyntaxKind,
+    initial_nesting: u32,
     config: ParseConfig,
     ids: &'a mut IdGenerator,
   ) -> Self {
@@ -102,15 +106,16 @@ impl<'a> Parser<'a> {
       parse_range: range,
       cursor: Cursor::for_range(source, range),
       events: Vec::new(),
+      open_markers: Vec::new(),
+      covered_end: range.start,
       diagnostics: Vec::new(),
       rules: RuleStack::default(),
       config,
       fuel: config.limits.fuel,
-      nesting: 0,
+      nesting: initial_nesting,
       halted: false,
       resource_diagnostic_emitted: false,
-      resource_finalized: false,
-      resource_root_kind: root_kind,
+      resource_finalizing: false,
       ids,
       stats: ParseStats {
         source_bytes: u64::from(range.len().0),
@@ -160,7 +165,18 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn start(&mut self) -> Marker {
-    let position = self.emit(Event::Tombstone).unwrap_or(usize::MAX);
+    if self.halted || self.resource_finalizing {
+      return Marker {
+        position: usize::MAX,
+      };
+    }
+    let open_after = self.open_markers.len().saturating_add(1);
+    let position = self
+      .emit(Event::Tombstone, open_after)
+      .unwrap_or(usize::MAX);
+    if position != usize::MAX {
+      self.open_markers.push(position);
+    }
     Marker { position }
   }
 
@@ -170,20 +186,40 @@ impl<'a> Parser<'a> {
     kind: SyntaxKind,
     flags: NodeFlags,
   ) -> CompletedMarker {
-    if self.resource_finalized || marker.position == usize::MAX {
+    if marker.position == usize::MAX {
       return CompletedMarker {
         position: usize::MAX,
         kind,
       };
     }
+    if self.halted && !self.resource_finalizing {
+      self.consume_resource_remainder();
+    }
+    if self.open_markers.is_empty() {
+      return CompletedMarker {
+        position: usize::MAX,
+        kind,
+      };
+    }
+    assert_eq!(
+      self.open_markers.last().copied(),
+      Some(marker.position),
+      "parser markers must complete in strict LIFO order"
+    );
     if let Some(event) = self.events.get_mut(marker.position) {
       *event = Event::Start { kind, flags };
     }
-    if self.emit(Event::Finish).is_none()
-      && let Some(event) = self.events.get_mut(marker.position)
-    {
-      *event = Event::Tombstone;
-    }
+    let open_after = self.open_markers.len().saturating_sub(1);
+    let finish = if self.resource_finalizing {
+      self.emit_emergency(Event::Finish)
+    } else {
+      self.emit(Event::Finish, open_after)
+    };
+    assert!(
+      finish.is_some(),
+      "accepted marker start must reserve capacity for its finish"
+    );
+    self.open_markers.pop();
     CompletedMarker {
       position: marker.position,
       kind,
@@ -191,9 +227,19 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn abandon_marker(&mut self, marker: Marker) {
-    if self.resource_finalized || marker.position == usize::MAX {
+    if marker.position == usize::MAX {
       return;
     }
+    assert!(
+      !self.resource_finalizing,
+      "resource finalization cannot abandon an enclosing parser marker"
+    );
+    assert_eq!(
+      self.open_markers.last().copied(),
+      Some(marker.position),
+      "parser markers must abandon in strict LIFO order"
+    );
+    self.open_markers.pop();
     if marker.position + 1 == self.events.len() {
       self.events.pop();
     } else if let Some(event) = self.events.get_mut(marker.position) {
@@ -206,6 +252,8 @@ impl<'a> Parser<'a> {
       cursor: self.cursor.checkpoint(),
       events: self.events.len(),
       diagnostics: self.diagnostics.len(),
+      open_markers: self.open_markers.len(),
+      covered_end: self.covered_end,
       rule_depth: self.rules.len(),
       nesting: self.nesting,
     }
@@ -215,6 +263,8 @@ impl<'a> Parser<'a> {
     self.cursor.rewind(checkpoint.cursor);
     self.events.truncate(checkpoint.events);
     self.diagnostics.truncate(checkpoint.diagnostics);
+    self.open_markers.truncate(checkpoint.open_markers);
+    self.covered_end = checkpoint.covered_end;
     self.rules.truncate(checkpoint.rule_depth);
     self.nesting = checkpoint.nesting;
   }
@@ -280,15 +330,21 @@ impl<'a> Parser<'a> {
     range: TextRange,
     flags: TokenFlags,
   ) {
-    let _ = self.emit(Event::Token { kind, range, flags });
+    let _ = self.emit(
+      Event::Token { kind, range, flags },
+      self.open_markers.len(),
+    );
   }
 
   pub(crate) fn missing_token(&mut self, kind: SyntaxKind) {
-    let _ = self.emit(Event::Token {
-      kind,
-      range: TextRange::empty(self.offset()),
-      flags: TokenFlags::SYNTHETIC | TokenFlags::MISSING,
-    });
+    let _ = self.emit(
+      Event::Token {
+        kind,
+        range: TextRange::empty(self.offset()),
+        flags: TokenFlags::SYNTHETIC | TokenFlags::MISSING,
+      },
+      self.open_markers.len(),
+    );
   }
 
   pub(crate) fn next_diagnostic_id(&mut self) -> crate::document::DiagnosticId {
@@ -358,13 +414,13 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn found_syntax(&self) -> FoundSyntax {
-    if self.is_eof() {
+    let character = self.cursor.context_peek_char();
+    if character.is_none() {
       return FoundSyntax {
         kind: Some(SyntaxKind::Eof),
         text: None,
       };
     }
-    let character = self.cursor.peek_char();
     FoundSyntax {
       kind: character.map(terminal::token_kind_for_char),
       text: character.map(|character| character.to_string()),
@@ -391,37 +447,47 @@ impl<'a> Parser<'a> {
     mechdown::fence_delimiter(self.cursor()).is_some()
   }
 
+  pub(crate) fn is_context_fence_start(&self) -> bool {
+    mechdown::fence_delimiter_context(self.cursor.context_view()).is_some()
+  }
+
   pub(crate) fn is_strong_document_boundary(&self) -> bool {
-    self.cursor.is_line_start()
-      && (mechdown::is_ul_subtitle(self.cursor()) || self.is_fence_start())
+    let context = self.cursor.context_view();
+    context.is_line_start()
+      && (mechdown::is_ul_subtitle_context(context) || self.is_context_fence_start())
   }
 
   pub(crate) fn consume_resource_remainder(&mut self) {
-    if self.resource_finalized {
+    if self.resource_finalizing {
       return;
     }
-    self.resource_finalized = true;
-    let start = self.offset();
-    let range = TextRange::new(start, self.cursor.end());
+    self.resource_finalizing = true;
+    let mut range = TextRange::new(self.covered_end, self.parse_range.end);
     self.cursor.rewind(CursorCheckpoint { offset: range.end });
-    self.events.clear();
-    if self.config.limits.max_events >= 5 {
-      let full = self.parse_range;
-      let _ = self.emit_resource(Event::Start {
-        kind: self.resource_root_kind,
-        flags: NodeFlags::ERROR | NodeFlags::CONTAINS_ERROR,
-      });
-      let _ = self.emit_resource(Event::Start {
+
+    if self.config.limits.max_events < MIN_PREFIX_PRESERVING_EVENTS {
+      self.events.clear();
+      self.open_markers.clear();
+      self.covered_end = self.parse_range.start;
+      range = self.parse_range;
+    } else if !range.is_empty() {
+      let required = self.open_markers.len().saturating_add(3);
+      assert!(
+        self.events.len().saturating_add(required)
+          <= self.config.limits.max_events as usize,
+        "ordinary events must reserve the resource envelope and open-marker finishes"
+      );
+      let _ = self.emit_emergency(Event::Start {
         kind: SyntaxKind::Error,
         flags: NodeFlags::ERROR,
       });
-      let _ = self.emit_resource(Event::Token {
+      let _ = self.emit_emergency(Event::Token {
         kind: SyntaxKind::Unknown,
-        range: full,
+        range,
         flags: TokenFlags::ERROR,
       });
-      let _ = self.emit_resource(Event::Finish);
-      let _ = self.emit_resource(Event::Finish);
+      let _ = self.emit_emergency(Event::Finish);
+      self.covered_end = range.end;
     }
     if !self.resource_diagnostic_emitted {
       self.resource_diagnostic_emitted = true;
@@ -457,19 +523,33 @@ impl<'a> Parser<'a> {
     self.halted = true;
   }
 
-  fn emit(&mut self, event: Event) -> Option<usize> {
-    if self.resource_finalized
-      || self.events.len() >= self.config.limits.max_events as usize
+  fn emit(&mut self, event: Event, open_after: usize) -> Option<usize> {
+    if self.halted || self.resource_finalizing {
+      self.halted = true;
+      return None;
+    }
+    let emergency = open_after.saturating_add(3);
+    if self
+      .events
+      .len()
+      .saturating_add(1)
+      .saturating_add(emergency)
+      > self.config.limits.max_events as usize
     {
       self.halted = true;
       return None;
     }
     let position = self.events.len();
+    if let Event::Token { range, flags, .. } = &event
+      && !flags.contains(TokenFlags::SYNTHETIC)
+    {
+      self.covered_end = self.covered_end.max(range.end);
+    }
     self.events.push(event);
     Some(position)
   }
 
-  fn emit_resource(&mut self, event: Event) -> Option<usize> {
+  fn emit_emergency(&mut self, event: Event) -> Option<usize> {
     if self.events.len() >= self.config.limits.max_events as usize {
       return None;
     }
@@ -479,7 +559,7 @@ impl<'a> Parser<'a> {
   }
 
   fn charge(&mut self) -> bool {
-    if self.fuel == 0 {
+    if self.halted || self.fuel == 0 {
       self.halted = true;
       return false;
     }
@@ -489,10 +569,17 @@ impl<'a> Parser<'a> {
   }
 
   fn finish(mut self) -> ParserOutput {
+    if self.halted && !self.resource_finalizing {
+      self.consume_resource_remainder();
+    }
     assert_eq!(
       self.rules.len(),
       0,
       "parser rule stack must be empty after every parse"
+    );
+    assert!(
+      self.open_markers.is_empty(),
+      "parser marker stack must be empty after every parse"
     );
     assert!(
       self.events.len() <= self.config.limits.max_events as usize,
@@ -595,11 +682,7 @@ pub(crate) fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
       node,
       range: record.range,
       mode,
-      delimiter_depth: if record.kind == SyntaxKind::ParentheticalExpression {
-        1
-      } else {
-        0
-      },
+      delimiter_depth: enclosing_delimiter_depth(snapshot, node),
       line_start: snapshot
         .source
         .line_index()
@@ -611,6 +694,28 @@ pub(crate) fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
   restarts
 }
 
+fn enclosing_delimiter_depth(
+  snapshot: &SyntaxSnapshot,
+  node: crate::document::NodeId,
+) -> u32 {
+  let mut depth = 0_u32;
+  let mut current = snapshot.nodes.node(node).and_then(|record| record.parent);
+  while let Some(parent) = current {
+    let Some(record) = snapshot.nodes.node(parent) else {
+      break;
+    };
+    if owns_delimiter(record.kind) {
+      depth = depth.saturating_add(1);
+    }
+    current = record.parent;
+  }
+  depth
+}
+
+fn owns_delimiter(kind: SyntaxKind) -> bool {
+  matches!(kind, SyntaxKind::ParentheticalExpression)
+}
+
 fn leading_indentation(source: &TextSnapshot, range: TextRange) -> u32 {
   let mut cursor = Cursor::for_range(source, range);
   let start = cursor.offset();
@@ -618,4 +723,33 @@ fn leading_indentation(source: &TextSnapshot, range: TextRange) -> u32 {
     let _ = cursor.bump_char();
   }
   cursor.offset().0.saturating_sub(start.0)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  #[should_panic(expected = "parser markers must complete in strict LIFO order")]
+  fn marker_completion_rejects_non_lifo_order() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let outer = parser.start();
+    let _inner = parser.start();
+    let _ = outer.complete(&mut parser, SyntaxKind::Document);
+  }
+
+  #[test]
+  #[should_panic(expected = "parser markers must abandon in strict LIFO order")]
+  fn marker_abandonment_rejects_non_lifo_order() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let outer = parser.start();
+    let _inner = parser.start();
+    outer.abandon(&mut parser);
+  }
 }

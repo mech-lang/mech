@@ -2,8 +2,31 @@ name: Syntax fuzzing
 
 on:
   workflow_dispatch:
+
+  pull_request:
+    branches:
+      - feature/syntax
+    paths:
+      - "src/syntax/**"
+      - "fuzz/**"
+      - "docs/design/grammar-audit/**"
+      - ".github/workflows/syntax-fuzz.yml"
+
+  push:
+    branches:
+      - feature/syntax
+    paths:
+      - "src/syntax/**"
+      - "fuzz/**"
+      - "docs/design/grammar-audit/**"
+      - ".github/workflows/syntax-fuzz.yml"
+
   schedule:
     - cron: "17 5 * * 1"
+
+concurrency:
+  group: syntax-fuzz-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   fuzz:
@@ -26,13 +49,24 @@ jobs:
           rustup default nightly-2026-03-03
 
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --locked
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
 
       - name: Refresh real target corpora
         run: bash fuzz/scripts/refresh-corpus.sh
 
       - name: Run bounded target
-        run: cargo fuzz run "${{ matrix.target }}" -- -runs=25000 -max_total_time=900
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            runs=5000
+            seconds=180
+          else
+            runs=25000
+            seconds=900
+          fi
+          cargo fuzz run "$TARGET" -- -runs="$runs" -max_total_time="$seconds"
 
       - name: Upload crashes and timeouts
         if: failure()
