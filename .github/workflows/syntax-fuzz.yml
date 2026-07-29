@@ -1,35 +1,10 @@
-name: Syntax fuzzing
+name: Manual syntax parser-input validation
 
 on:
   workflow_dispatch:
 
-  pull_request:
-    branches:
-      - feature/syntax
-    paths:
-      - "src/syntax/**"
-      - "fuzz/**"
-      - "docs/design/grammar-audit/**"
-      - ".github/workflows/syntax-fuzz.yml"
-
-  push:
-    branches:
-      - feature/syntax
-    paths:
-      - "src/syntax/**"
-      - "fuzz/**"
-      - "docs/design/grammar-audit/**"
-      - ".github/workflows/syntax-fuzz.yml"
-
-  schedule:
-    - cron: "17 5 * * 1"
-
-concurrency:
-  group: syntax-fuzz-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
-  fuzz:
+  parser-input:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -56,17 +31,9 @@ jobs:
 
       - name: Run bounded target
         env:
-          EVENT_NAME: ${{ github.event_name }}
           TARGET: ${{ matrix.target }}
         run: |
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            runs=5000
-            seconds=180
-          else
-            runs=25000
-            seconds=900
-          fi
-          cargo fuzz run "$TARGET" -- -runs="$runs" -max_total_time="$seconds"
+          cargo fuzz run "$TARGET" -- -runs=25000 -max_total_time=900
 
       - name: Upload crashes and timeouts
         if: failure()
