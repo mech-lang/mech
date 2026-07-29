@@ -1063,13 +1063,13 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
     }
   }
 
-  match program.interpreter_mut().compile() {
-    Ok(bytecode) => {
-      if let Some(ctx) = program.interpreter().context.as_ref() {
-        set_features(ctx.features.clone());
-      }
-      pb.set_message(format!("Compiled {} bytes.", bytecode.len()));
-      set_bytecode(bytecode);
+  match program.compile_bytecode_artifact() {
+    Ok(artifact) => {
+      // Temporary compatibility path for the legacy native packager.
+      // New native packaging must derive requirements from the emitted .mecb.
+      set_features(artifact.requirements.into_iter().collect());
+      pb.set_message(format!("Compiled {} bytes.", artifact.bytecode.len()));
+      set_bytecode(artifact.bytecode);
     }
     Err(e) => {
       pb.set_style(fail_style());

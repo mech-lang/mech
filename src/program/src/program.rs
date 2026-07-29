@@ -15,11 +15,14 @@ use web_time::Instant;
 use std::time::Instant;
 
 use mech_core::{
-  hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
+  hash_str, MResult, MechError, MechErrorKind, MechSourceCode,
   MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value, ValueKind,
   val_ref_reactive_cell_ids, with_reactive_journal_participant,
   ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome,
 };
+
+#[cfg(feature = "compiler")]
+use mech_bytecode::CompileCtx;
 
 use mech_interpreter::{
   Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint,
@@ -27,6 +30,12 @@ use mech_interpreter::{
 use mech_syntax::parser;
 
 use crate::ClosureNativeFunctionCompiler;
+
+#[cfg(feature = "compiler")]
+pub struct BytecodeCompilation {
+  pub bytecode: Vec<u8>,
+  pub requirements: Vec<FeatureFlag>,
+}
 
 #[derive(Debug, Clone)]
 pub struct StableValueUpdateKindMismatch {
@@ -1362,20 +1371,29 @@ impl MechProgram {
   }
 
   #[cfg(feature = "compiler")]
-  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-    let state_brrw = self.interpreter.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
+  pub fn compile_bytecode_artifact(&mut self) -> MResult<BytecodeCompilation> {
+    let state = self.interpreter.state.borrow();
+    let plan = state.plan.borrow();
+    let mut context = CompileCtx::new();
 
-    let mut ctx = CompileCtx::new();
-
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
+    for step in plan.iter() {
+      step.compile(&mut context)?;
     }
 
-    let bytes = ctx.compile()?;
-    self.interpreter.context = Some(ctx);
+    let requirements = context.requirements().iter().cloned().collect::<Vec<_>>();
+    let bytecode = context.compile()?;
 
-    Ok(bytes)
+    Ok(BytecodeCompilation {
+      bytecode,
+      requirements,
+    })
+  }
+
+  #[cfg(feature = "compiler")]
+  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
+    self
+      .compile_bytecode_artifact()
+      .map(|artifact| artifact.bytecode)
   }
 }
 

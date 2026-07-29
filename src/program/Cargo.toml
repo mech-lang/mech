@@ -86,7 +86,7 @@ baselib = ["bool", "string",
     ]
 
 program = ["native", "string", "mech-core/program", "mech-interpreter/program", "mech-interpreter/assign", "mech-syntax/program"]
-compiler = ["program", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
+compiler = ["program", "dep:mech-bytecode", "mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
 mika = ["mech-syntax/mika", "mech-core/mika"]
@@ -174,6 +174,7 @@ matrix_horzcat = ["matrix"]
 matrix_vertcat = ["matrix"]
 
 [dependencies]
+mech-bytecode = { version = "0.3.5", default-features = false, optional = true }
 mech-core = { version = "0.3.5", default-features = false }
 mech-syntax = { version = "0.3.5", default-features = false }
 mech-interpreter = { version = "0.3.5", default-features = false }
