@@ -1,6 +1,7 @@
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::fmt::Write;
 
 use super::edit::{SourceError, TextRange, TextSize};
 use super::flags::{NodeFlags, TokenFlags};
@@ -139,6 +140,35 @@ impl SyntaxToken {
 pub enum SyntaxElement {
   Node(SyntaxNode),
   Token(SyntaxToken),
+}
+
+pub fn compact_debug_tree(root: &SyntaxNode) -> String {
+  let mut output = String::new();
+  write_debug_node(root, 0, &mut output);
+  output
+}
+
+fn write_debug_node(node: &SyntaxNode, depth: usize, output: &mut String) {
+  for _ in 0..depth {
+    output.push_str("  ");
+  }
+  let _ = writeln!(output, "{:?}", node.kind());
+  for child in node.children_with_tokens() {
+    match child {
+      SyntaxElement::Node(child) => write_debug_node(&child, depth + 1, output),
+      SyntaxElement::Token(token) => {
+        for _ in 0..=depth {
+          output.push_str("  ");
+        }
+        if token.flags().contains(TokenFlags::MISSING) {
+          let _ = writeln!(output, "{:?} <missing>", token.kind());
+        } else {
+          let text = token.text().unwrap_or_default();
+          let _ = writeln!(output, "{:?} {text:?}", token.kind());
+        }
+      }
+    }
+  }
 }
 
 pub trait AstNode: Clone {
