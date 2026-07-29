@@ -69,6 +69,10 @@ impl NodeIndex {
     self.nodes.contains_key(&id)
   }
 
+  pub fn nodes(&self) -> impl Iterator<Item = (NodeId, &NodeRecord)> {
+    self.nodes.iter().map(|(id, record)| (*id, record))
+  }
+
   fn index_node(
     &mut self,
     node: &GreenNode,

@@ -8,6 +8,7 @@
 extern crate alloc;
 
 pub mod annotation;
+pub mod ast;
 pub mod builder;
 pub mod diagnostic;
 pub mod edit;
@@ -18,6 +19,7 @@ pub mod index;
 pub mod kind;
 pub mod line_index;
 pub mod pointer;
+pub mod parser;
 pub mod red;
 pub mod source;
 
@@ -25,6 +27,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 pub use annotation::*;
+pub use ast::*;
 pub use builder::*;
 pub use diagnostic::*;
 pub use edit::*;
@@ -35,6 +38,7 @@ pub use index::*;
 pub use kind::*;
 pub use line_index::*;
 pub use pointer::*;
+pub use parser::{ParseConfig, ParseLimits, parse_document};
 pub use red::*;
 pub use source::*;
 
