@@ -9,8 +9,6 @@ machines/compare/src/lte.rs|typed-machine-kernel|mech-compare|macro-selected Val
 machines/compare/src/max.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/min.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/neq.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/io/src/print.rs|typed-machine-kernel|mech-io|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/io/src/println.rs|typed-machine-kernel|mech-io|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/and.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/lib.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/not.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
