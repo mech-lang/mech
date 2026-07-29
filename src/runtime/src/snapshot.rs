@@ -11,6 +11,10 @@ use crate::{CapabilityId, ModuleVersionId};
 #[cfg(feature = "invariant_define")]
 use mech_program::IntegrityConstraintReport;
 
+#[cfg(test)]
+#[path = "snapshot/tests.rs"]
+mod tests;
+
 /// A detached snapshot of a runtime value graph.
 ///
 /// No reachable `Ref<T>` is shared with the live runtime. Sharing and cycles
