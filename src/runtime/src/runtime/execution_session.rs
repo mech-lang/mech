@@ -128,9 +128,10 @@ impl RuntimeSessionServices<'_> {
     let event = RuntimeEvent::new(
       self.id_generator.event_id(),
       {
+        let sequence = *self.event_sequence;
         *self.event_sequence =
           (*self.event_sequence).saturating_add(1);
-        *self.event_sequence
+        sequence
       },
       kind,
     );
