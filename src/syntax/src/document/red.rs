@@ -19,10 +19,18 @@ pub struct SyntaxNode {
 
 impl SyntaxNode {
   pub fn new_root(green: Arc<GreenNode>, source: TextSnapshot) -> Self {
+    Self::new_root_at(green, source, TextSize::ZERO)
+  }
+
+  pub fn new_root_at(
+    green: Arc<GreenNode>,
+    source: TextSnapshot,
+    offset: TextSize,
+  ) -> Self {
     Self {
       green,
       source,
-      offset: TextSize::ZERO,
+      offset,
     }
   }
 
@@ -204,13 +212,13 @@ ast_node!(ParagraphSyntax, SyntaxKind::Paragraph);
 ast_node!(MechItemSyntax, SyntaxKind::MechItem);
 ast_node!(VariableDefineSyntax, SyntaxKind::VariableDefine);
 ast_node!(IdentifierSyntax, SyntaxKind::Identifier);
+ast_node!(MissingSyntax, SyntaxKind::Missing);
 ast_node!(
   ExpressionSyntax,
   SyntaxKind::Expression
     | SyntaxKind::AdditiveExpression
     | SyntaxKind::ParentheticalExpression
     | SyntaxKind::IntegerLiteral
-    | SyntaxKind::Missing
 );
 
 impl VariableDefineSyntax {
@@ -232,5 +240,12 @@ impl VariableDefineSyntax {
       .0
       .children()
       .find_map(ExpressionSyntax::cast)
+  }
+
+  pub fn missing_value(&self) -> Option<MissingSyntax> {
+    self
+      .0
+      .first_child(SyntaxKind::Missing)
+      .and_then(MissingSyntax::cast)
   }
 }

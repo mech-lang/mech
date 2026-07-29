@@ -160,12 +160,21 @@ fn structured_diagnostic_fixture_is_stable() {
         .unwrap_or_else(|| String::from("None"));
     let actual = json!({
       "code": diagnostic.code.as_str(),
-      "rule": diagnostic.rule.unwrap().0,
+      "rule": diagnostic.rule.map(|rule| rule.0),
+      "context": if diagnostic.context
+        == Some(mech_syntax::document::parser::parser_context_id(
+          "prototype-expression"
+        ))
+      {
+        "prototype-expression"
+      } else {
+        "other"
+      },
       "range": {
         "start": range.start.0,
         "end": range.end.0,
       },
-      "expected": "expression",
+      "expected": "prototype-expression",
       "found": found,
       "recovery": if recovery.starts_with("Insert") { "Insert" } else { "Other" },
     });

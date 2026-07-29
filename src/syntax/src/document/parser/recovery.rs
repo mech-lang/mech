@@ -2,15 +2,16 @@ use alloc::string::String;
 
 use crate::document::{
   Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticTags, ExpectedSyntax,
-  FoundSyntax, NodeFlags, RecoveryAction, Severity, SyntaxKind, TextRange, TokenFlags,
+  FoundSyntax, NodeFlags, ParserContextId, RecoveryAction, RuleId, Severity, SyntaxKind, TextRange,
+  TokenFlags,
 };
 
 use super::terminal::{is_newline_start, token_kind_for_char};
-use super::{CompletedMarker, Parser, rule_id};
+use super::{CompletedMarker, Parser};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParseFailure {
-  pub rule: crate::document::RuleId,
+  pub context: ParserContextId,
   pub range: TextRange,
 }
 
@@ -81,6 +82,7 @@ pub(crate) fn skip_error(
     phase: DiagnosticPhase::Syntax,
     severity: Severity::Error,
     rule: parser.current_rule(),
+    context: parser.current_context(),
     primary: DiagnosticAnchor::Absolute {
       revision: parser.source().revision(),
       range,
@@ -123,6 +125,7 @@ pub(crate) fn insert_missing(
     phase: DiagnosticPhase::Syntax,
     severity: Severity::Error,
     rule: parser.current_rule(),
+    context: parser.current_context(),
     primary: DiagnosticAnchor::Absolute {
       revision: parser.source().revision(),
       range,
@@ -145,6 +148,31 @@ pub(crate) fn insert_missing(
     TextRange::empty(crate::document::TextSize::ZERO),
   );
   missing
+}
+
+pub(crate) fn abandon_error(
+  parser: &mut Parser<'_>,
+  class: RecoveryClass,
+  target: RuleId,
+  code: &str,
+  message: &str,
+) -> ParseFailure {
+  let start = parser.offset();
+  let _ = skip_error(parser, class, code, message);
+  let range = TextRange::new(start, parser.offset());
+  let at = parser.offset();
+  if let Some(diagnostic) = parser.last_diagnostic_mut() {
+    diagnostic.recovery = Some(RecoveryAction::Abandon {
+      rule: target,
+      at,
+    });
+  }
+  ParseFailure {
+    context: parser
+      .current_context()
+      .expect("abandon recovery requires a parser context"),
+    range,
+  }
 }
 
 fn should_stop(
@@ -185,8 +213,4 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
       None,
     );
   }
-}
-
-pub(crate) fn recovery_limit_rule() -> crate::document::RuleId {
-  rule_id("recovery-limit")
 }

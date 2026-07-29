@@ -1,7 +1,7 @@
 use mech_syntax::document::{
   AstNode, DiagnosticAnchor, DocumentId, DocumentSyntax, NodeFlags, ParseConfig, Revision,
-  SyntaxKind, SyntaxNode, TextSnapshot, compact_debug_tree, parse_document, reconstruct_source,
-  validate_lossless,
+  RecoveryAction, SyntaxKind, SyntaxNode, TextSnapshot, VariableDefineSyntax,
+  compact_debug_tree, parse_document, reconstruct_source, validate_lossless,
 };
 
 fn parse(text: &str) -> mech_syntax::document::SyntaxSnapshot {
@@ -69,17 +69,12 @@ fn missing_variable_rhs_is_structural_and_lossless() {
 }
 
 #[test]
-fn missing_right_operand_after_plus_uses_additive_rule() {
+fn missing_right_operand_after_plus_uses_prototype_context_not_a_canonical_rule() {
   let snapshot = parse("x := 1 +\n");
   assert_lossless("x := 1 +\n", &snapshot);
   let diagnostic = snapshot.diagnostics.iter().next().unwrap();
   assert_eq!(diagnostic.code.as_str(), "syntax/missing-expression");
-  assert_eq!(
-    diagnostic.rule,
-    Some(mech_syntax::document::parser::rule_id(
-      "additive-expression"
-    ))
-  );
+  assert_eq!(diagnostic.rule, None);
   assert_eq!(diagnostic.expected.len(), 1);
   assert!(diagnostic.recovery.is_some());
   assert_eq!(diagnostic.labels.len(), 1);
@@ -212,6 +207,68 @@ fn committed_mech_prefix_never_becomes_paragraph() {
   assert_lossless("x := @\n", &snapshot);
   assert_eq!(nodes_of_kind(&snapshot.syntax(), SyntaxKind::MechItem).len(), 1);
   assert_eq!(nodes_of_kind(&snapshot.syntax(), SyntaxKind::Paragraph).len(), 0);
+  let recovery = snapshot.diagnostics.iter().next().unwrap().recovery.as_ref();
+  let Some(RecoveryAction::Abandon { rule, .. }) = recovery else {
+    panic!("distinctive Mech prefix must abandon to an ancestor restart root");
+  };
+  assert_eq!(
+    mech_syntax::document::parser::canonical_rule_name(*rule),
+    Some("section-element")
+  );
+}
+
+#[test]
+fn prototype_definitions_handle_mutability_kind_annotations_and_typed_digits() {
+  let text = "~x := 1_024u16\nx<u8> := 1u8\n";
+  let snapshot = parse(text);
+  assert_lossless(text, &snapshot);
+  assert!(snapshot.diagnostics.is_empty());
+  assert_eq!(nodes_of_kind(&snapshot.syntax(), SyntaxKind::VariableDefine).len(), 2);
+  assert_eq!(nodes_of_kind(&snapshot.syntax(), SyntaxKind::KindAnnotation).len(), 1);
+  assert_eq!(nodes_of_kind(&snapshot.syntax(), SyntaxKind::Paragraph).len(), 0);
+}
+
+#[test]
+fn missing_expression_is_not_a_typed_expression() {
+  let snapshot = parse("x :=\n");
+  let definition = nodes_of_kind(&snapshot.syntax(), SyntaxKind::VariableDefine)
+    .into_iter()
+    .next()
+    .and_then(VariableDefineSyntax::cast)
+    .unwrap();
+  assert!(definition.value().is_none());
+  assert!(definition.missing_value().is_some());
+}
+
+#[test]
+fn malformed_items_restore_context_and_paragraph_errors_use_their_own_context() {
+  let snapshot = parse("x := @\ny := #\n`bad\n");
+  let contexts = snapshot
+    .diagnostics
+    .iter()
+    .map(|diagnostic| diagnostic.context)
+    .collect::<Vec<_>>();
+  assert_eq!(
+    contexts[0],
+    Some(mech_syntax::document::parser::parser_context_id(
+      "prototype-variable-define"
+    ))
+  );
+  assert_eq!(contexts[1], contexts[0]);
+  assert_eq!(
+    contexts[2],
+    Some(mech_syntax::document::parser::parser_context_id(
+      "prototype-paragraph"
+    ))
+  );
+  for diagnostic in snapshot.diagnostics.iter() {
+    if let Some(rule) = diagnostic.rule {
+      assert!(
+        mech_syntax::document::parser::canonical_rule_name(rule).is_some(),
+        "diagnostic used a noncanonical RuleId: {rule}"
+      );
+    }
+  }
 }
 
 #[test]

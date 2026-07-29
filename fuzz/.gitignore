@@ -1,6 +1,5 @@
 artifacts/
 coverage/
-corpus/generated/
 corpus/parse_document/*
 !corpus/parse_document/mixed-document
 !corpus/parse_document/two-errors

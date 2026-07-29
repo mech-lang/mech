@@ -3,8 +3,16 @@ Incremental Syntax Architecture
 
 Status: Phase 1 experimental architecture.
 
-Stack base: PR 650 at
-`8c2719a8c46ed8225cba5fc58dca789e3a64cc03`.
+Integration branch: `feature/syntax`.
+
+The branch combines PR 650 at
+`45a8acf1d1ee457a40340f17b9dc009ae781dfce` with the completed Phase 0
+canonical-grammar merge at
+`9511d4d0c9af7893d7230aa98c792f705d504565`.
+
+The authoritative canonical inventory is
+`docs/design/grammar-audit/productions.tsv`; it contains exactly 540 canonical
+rules and generates the `RuleId` table used by this module.
 
 The legacy parser, public `parse` API, existing `Program` AST, formatter,
 interpreter, runtime, and accepted grammar remain unchanged while this
@@ -22,8 +30,10 @@ analysis.
 The persisted canonical artifact remains UTF-8 `.mec` text. The parsed form is
 revisioned derived state.
 
-This phase deliberately implements a narrow grammar slice. It does not port or
-change the complete canonical grammar.
+This phase deliberately implements a narrow prototype grammar slice. Partial
+productions use `prototype-*` `ParserContextId` values rather than claiming
+canonical `RuleId` identities. It does not port or change the complete
+canonical grammar.
 
 2. Documents, not a host/guest format
 -------------------------------------------------------------------------------
@@ -122,8 +132,11 @@ Unexpected source is retained as ordinary tokens under an `ERROR` node.
 
 Diagnostic messages are not stored in green nodes. A revisioned
 `DiagnosticStore` contains stable namespaced codes, phases, severity, canonical
-rule IDs, structural or absolute anchors, labels, expected and found syntax,
-fixes, related diagnostics, recovery actions, tags, and display messages.
+rule IDs, internal parser-context IDs, structural or absolute anchors, labels,
+expected and found syntax, fixes, related diagnostics, recovery actions, tags,
+and display messages. Canonical rule IDs are generated only from the Phase 0
+inventory; recovery machinery and partial prototype productions cannot mint
+canonical-looking IDs.
 
 Structural anchors use an element identity plus a relative range. When an
 unchanged node shifts after an earlier edit, its diagnostics shift with it.
@@ -164,9 +177,19 @@ Edits create a `ChangeMap`, locate the smallest intersecting restart root, and
 expand when boundaries, newlines, composite sigils, delimiters, fence prefixes,
 headings, or relevant indentation change.
 
-A fragment splice is accepted only when it consumes the mapped region, preserves
-the ending boundary, and retains parser mode. Otherwise the reparser ascends.
-Document-root reparsing is the final fallback.
+A fragment parser operates on a bounded global range of the original
+`TextSnapshot`. It never copies source into a second snapshot with the same
+document identity. `FragmentKind` selects the exact production entry point, and
+`ParseContext` carries mode, delimiter depth, line-start state, indentation, and
+an enclosing fence delimiter. Fragment tokens and diagnostics retain global
+source ranges.
+
+A fragment splice is accepted only when that entry point matches, consumes the
+complete mapped range, preserves the ending boundary, and retains parser mode.
+Otherwise the reparser ascends. Document-root reparsing is the final fallback.
+Snapshots whose diagnostic budget was exhausted also use the document fallback,
+because a local fragment cannot reconstruct diagnostics suppressed outside its
+range.
 
 Unaffected green subtrees are reused with their IDs. Full and incremental parses
 are compared after normalization that ignores minted IDs.

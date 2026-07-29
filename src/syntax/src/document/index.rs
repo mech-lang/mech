@@ -30,8 +30,12 @@ pub struct NodeIndex {
 
 impl NodeIndex {
   pub fn build(root: &GreenNode) -> Self {
+    Self::build_at(root, TextSize::ZERO)
+  }
+
+  pub fn build_at(root: &GreenNode, start: TextSize) -> Self {
     let mut index = Self::default();
-    index.index_node(root, None, TextSize::ZERO);
+    index.index_node(root, None, start);
     index
   }
 

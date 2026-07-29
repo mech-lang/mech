@@ -1,6 +1,7 @@
 use mech_syntax::document::{
     DocumentId, ParseConfig, ParseLimits, Revision, SyntaxSnapshot, TextSnapshot,
-    compact_debug_tree, parse_document, reconstruct_source, validate_lossless,
+    NormalizedDiagnostic, compact_debug_tree, normalize_diagnostics, parse_document,
+    reconstruct_source, validate_lossless,
 };
 
 pub fn bounded_config(source_len: usize) -> ParseConfig {
@@ -32,6 +33,10 @@ pub fn assert_snapshot(source: &str, snapshot: &SyntaxSnapshot) {
     );
     assert!(snapshot.stats.parser_steps <= bounded_config(source.len()).limits.fuel);
     assert!(
+        snapshot.stats.events_emitted
+            <= u64::from(bounded_config(source.len()).limits.max_events)
+    );
+    assert!(
         snapshot.diagnostics.len() <= bounded_config(source.len()).limits.max_diagnostics as usize
     );
     for diagnostic in snapshot.diagnostics.iter() {
@@ -43,23 +48,9 @@ pub fn assert_snapshot(source: &str, snapshot: &SyntaxSnapshot) {
     }
 }
 
-pub fn normalized(snapshot: &SyntaxSnapshot) -> (String, Vec<String>) {
-    let diagnostics = snapshot
-        .diagnostics
-        .iter()
-        .map(|diagnostic| {
-            format!(
-                "{}|{:?}|{:?}|{:?}|{:?}",
-                diagnostic.code.as_str(),
-                diagnostic.rule,
-                diagnostic
-                    .primary
-                    .resolve(snapshot.revision, &snapshot.nodes),
-                diagnostic.expected,
-                diagnostic.recovery
-            )
-        })
-        .collect();
+pub fn normalized(snapshot: &SyntaxSnapshot) -> (String, Vec<NormalizedDiagnostic>) {
+    let diagnostics =
+        normalize_diagnostics(&snapshot.diagnostics, snapshot.revision, &snapshot.nodes);
     (compact_debug_tree(&snapshot.syntax()), diagnostics)
 }
 

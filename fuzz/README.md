@@ -9,6 +9,15 @@ cargo install cargo-fuzz
 cargo fuzz build
 ```
 
+CI runs these commands with the repository CI toolchain,
+`nightly-2026-03-03`. Local reproductions should select that same toolchain
+instead of an unpinned moving nightly:
+
+```bash
+rustup toolchain install nightly-2026-03-03 --profile minimal
+rustup default nightly-2026-03-03
+```
+
 Run the Phase 1 validation budgets from the repository root:
 
 ```bash
@@ -29,5 +38,17 @@ documents with:
 bash fuzz/scripts/refresh-corpus.sh
 ```
 
-The refresh script writes generated seeds under `fuzz/corpus/generated`, which
-is ignored. Checked-in corpus seeds remain small and intentional.
+The refresh script writes generated seeds into the actual libFuzzer target
+directories:
+
+```text
+fuzz/corpus/parse_document/
+fuzz/corpus/incremental_equivalence/
+fuzz/corpus/recovery_progress/
+```
+
+Those generated files are ignored, while the small intentional seed files stay
+checked in. The seeds include the Phase 0 accepted and rejected fixtures, the
+repository `.mec` corpus, Phase 1 malformed fixtures, and promoted regressions.
+The ordinary `cargo fuzz run <target>` commands above therefore consume the
+refreshed corpus without additional path arguments.

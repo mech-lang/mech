@@ -25,6 +25,16 @@ id_type!(DiagnosticId);
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct ParserContextId(pub u32);
+
+impl fmt::Display for ParserContextId {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{:08x}", self.0)
+  }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct RuleId(pub u32);
 
 impl fmt::Display for RuleId {

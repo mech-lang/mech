@@ -1,31 +1,13 @@
 use mech_syntax::document::{
     DocumentId, DocumentSession, ParseConfig, SyntaxKind, TextEdit, TextRange, TextSize,
-    TextSnapshot, compact_debug_tree, parse_document, reconstruct_source, validate_lossless,
+    TextSnapshot, compact_debug_tree, normalize_diagnostics, parse_document, reconstruct_source,
+    validate_lossless,
 };
 use proptest::prelude::*;
 
 fn unicode_string(max_chars: usize) -> impl Strategy<Value = String> {
     proptest::collection::vec(any::<char>(), 0..=max_chars)
         .prop_map(|characters| characters.into_iter().collect())
-}
-
-fn normalize_diagnostics(snapshot: &mech_syntax::document::SyntaxSnapshot) -> Vec<String> {
-    snapshot
-        .diagnostics
-        .iter()
-        .map(|diagnostic| {
-            format!(
-                "{}|{:?}|{:?}|{:?}|{:?}",
-                diagnostic.code.as_str(),
-                diagnostic.rule,
-                diagnostic
-                    .primary
-                    .resolve(snapshot.revision, &snapshot.nodes),
-                diagnostic.expected,
-                diagnostic.recovery
-            )
-        })
-        .collect()
 }
 
 fn assert_equivalent(session: &DocumentSession) {
@@ -44,8 +26,12 @@ fn assert_equivalent(session: &DocumentSession) {
         compact_debug_tree(&full.syntax())
     );
     assert_eq!(
-        normalize_diagnostics(incremental),
-        normalize_diagnostics(&full)
+        normalize_diagnostics(
+            &incremental.diagnostics,
+            incremental.revision,
+            &incremental.nodes,
+        ),
+        normalize_diagnostics(&full.diagnostics, full.revision, &full.nodes)
     );
     validate_lossless(&incremental.root, &incremental.source).unwrap();
     assert_eq!(
