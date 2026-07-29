@@ -469,7 +469,7 @@ fn fallback_tree(source: &TextSnapshot, ids: &mut IdGenerator) -> SinkResult {
   }
 }
 
-fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
+pub(crate) fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
   let mut restarts = RestartIndex::default();
   for (node, record) in snapshot.nodes.nodes() {
     let mode = match record.kind {
