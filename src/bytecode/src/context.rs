@@ -42,7 +42,6 @@ impl CompileCtx {
     self.reg_map.clear();
     self.initialized_ptrs.clear();
     self.symbols.clear();
-    self.symbol_ptrs.clear();
     self.dictionary.clear();
     self.mutable_symbols.clear();
     self.types = TypeSection::new();
@@ -215,12 +214,6 @@ impl CompileCtx {
     let const_id = self.const_entries.len() as u32;
     self.const_entries.push(entry);
     Ok(const_id)
-  }
-}
-
-impl Default for CompileCtx {
-  fn default() -> Self {
-    Self::new()
   }
 }
 

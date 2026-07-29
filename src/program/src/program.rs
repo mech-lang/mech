@@ -3436,6 +3436,46 @@ mod retained_checkpoint_tests {
     assert_eq!(*restored_inner.borrow(), 1.0);
   }
 
+  #[cfg(all(
+    feature = "compiler",
+    feature = "functions",
+    feature = "symbol_table",
+    feature = "f64",
+  ))]
+  #[test]
+  fn bytecode_compilation_preserves_checkpointability_and_execution_state() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("x := 1.0\ny := x + 2.0").unwrap();
+
+    let checkpoint_before_compilation = program.checkpoint().unwrap();
+    let plan = program.interpreter().plan();
+    let plan_address = plan.0.addr();
+    let plan_length = plan.borrow().len();
+    let symbols_address = program.interpreter().symbols().addr();
+    let output_before = program.interpreter().out.to_string();
+    let (_, x_before) = scalar_cell(&program, "x");
+    let (_, y_before) = scalar_cell(&program, "y");
+
+    let bytecode = program.compile_bytecode().unwrap();
+    assert!(!bytecode.is_empty());
+    let _checkpoint_after_compilation = program.checkpoint().unwrap();
+
+    assert_eq!(program.interpreter().plan().0.addr(), plan_address);
+    assert_eq!(program.interpreter().plan_len(), plan_length);
+    assert_eq!(program.interpreter().symbols().addr(), symbols_address);
+    assert_eq!(program.interpreter().out.to_string(), output_before);
+    assert_eq!(*x_before.borrow(), 1.0);
+    assert_eq!(*y_before.borrow(), 3.0);
+
+    program.restore(checkpoint_before_compilation).unwrap();
+    assert_eq!(program.interpreter().plan().0.addr(), plan_address);
+    assert_eq!(program.interpreter().plan_len(), plan_length);
+    let (_, restored_x) = scalar_cell(&program, "x");
+    let (_, restored_y) = scalar_cell(&program, "y");
+    assert_eq!(*restored_x.borrow(), 1.0);
+    assert_eq!(*restored_y.borrow(), 3.0);
+  }
+
   #[test]
   fn program_checkpoint_restores_activation_capture_identity_and_payload() {
     let mut program = MechProgram::new(MechProgramConfig::default());

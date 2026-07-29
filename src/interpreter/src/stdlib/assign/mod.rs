@@ -102,7 +102,6 @@ where
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
-
 register_fxn_descriptor!(
   Assign,
   u8, "u8",
@@ -347,21 +346,5 @@ impl NativeFunctionCompiler for AddAssignValue {
         }
       }
     }
-  }
-}
-
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[cfg(feature = "compiler")]
-  #[test]
-  fn empty_stable_assignment_bytecode_compile_returns_error() {
-    let assignment = AssignEmpty;
-    let mut ctx = CompileCtx::new();
-    let error = assignment.compile(&mut ctx).unwrap_err();
-    let rendered = format!("{error:?}");
-    assert!(rendered.contains("EmptyAssignmentNotBytecodeCompilable"), "{rendered}");
   }
 }

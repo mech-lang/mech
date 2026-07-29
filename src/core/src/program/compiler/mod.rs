@@ -9,12 +9,10 @@ use hashbrown::HashSet;
 pub mod sections;
 pub mod constants;
 pub mod api;
-pub mod context;
 
 pub use self::sections::*;
 pub use self::constants::*;
 pub use self::api::*;
-pub use self::context::*;
 
 pub type Register = u32;
 
