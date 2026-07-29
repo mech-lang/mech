@@ -145,6 +145,7 @@ pub enum Matrix<T> {
   DMatrix(Ref<DMatrix<T>>),
 }
 
+#[cfg(feature = "compiler")]
 pub trait CopyMat<T> {
   #[cfg(feature = "matrixd")]
   fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
@@ -158,6 +159,7 @@ pub trait CopyMat<T> {
   fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32>;
 }
 
+#[cfg(feature = "compiler")]
 macro_rules! copy_mat {
   ($matsize:ident) => {
     impl<T> CopyMat<T> for Ref<$matsize<T>>
@@ -213,35 +215,35 @@ macro_rules! copy_mat {
       }
     }};}
       
-#[cfg(feature = "matrix1")]
+#[cfg(all(feature = "compiler", feature = "matrix1"))]
 copy_mat!(Matrix1);
-#[cfg(feature = "matrix2")]
+#[cfg(all(feature = "compiler", feature = "matrix2"))]
 copy_mat!(Matrix2);
-#[cfg(feature = "matrix3")]
+#[cfg(all(feature = "compiler", feature = "matrix3"))]
 copy_mat!(Matrix3);
-#[cfg(feature = "matrix4")]
+#[cfg(all(feature = "compiler", feature = "matrix4"))]
 copy_mat!(Matrix4);
-#[cfg(feature = "matrix2x3")]
+#[cfg(all(feature = "compiler", feature = "matrix2x3"))]
 copy_mat!(Matrix2x3);
-#[cfg(feature = "matrix3x2")]
+#[cfg(all(feature = "compiler", feature = "matrix3x2"))]
 copy_mat!(Matrix3x2);
-#[cfg(feature = "vector2")]
+#[cfg(all(feature = "compiler", feature = "vector2"))]
 copy_mat!(Vector2);
-#[cfg(feature = "vector3")]
+#[cfg(all(feature = "compiler", feature = "vector3"))]
 copy_mat!(Vector3);
-#[cfg(feature = "vector4")]
+#[cfg(all(feature = "compiler", feature = "vector4"))]
 copy_mat!(Vector4);
-#[cfg(feature = "row_vector2")]
+#[cfg(all(feature = "compiler", feature = "row_vector2"))]
 copy_mat!(RowVector2);
-#[cfg(feature = "row_vector3")]
+#[cfg(all(feature = "compiler", feature = "row_vector3"))]
 copy_mat!(RowVector3);
-#[cfg(feature = "row_vector4")]
+#[cfg(all(feature = "compiler", feature = "row_vector4"))]
 copy_mat!(RowVector4);
-#[cfg(feature = "vectord")]
+#[cfg(all(feature = "compiler", feature = "vectord"))]
 copy_mat!(DVector);
-#[cfg(feature = "matrixd")]
+#[cfg(all(feature = "compiler", feature = "matrixd"))]
 copy_mat!(DMatrix);
-#[cfg(feature = "row_vectord")]
+#[cfg(all(feature = "compiler", feature = "row_vectord"))]
 copy_mat!(RowDVector);
 
 impl<T> Hash for Matrix<T> 
@@ -394,7 +396,8 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 }
 
-impl<T> Matrix<T> 
+#[cfg(feature = "compiler")]
+impl<T> Matrix<T>
 where
   T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq + AsValueKind,
 {

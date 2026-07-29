@@ -11,7 +11,7 @@ extern crate alloc;
 extern crate core;
 
 #[cfg(feature="no_std")]
-use hashbrown::HashMap;
+use hashbrown::HashMap as HashBrownMap;
 #[cfg(not(feature = "no_std"))]
 use std::collections::HashMap;
 
@@ -25,6 +25,9 @@ use alloc::vec::Vec;
 
 #[cfg(feature="no_std")]
 use fxhash::FxHasher;
+#[cfg(feature = "no_std")]
+type HashMap<K, V> =
+  HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
 
 #[cfg(feature = "no_std")]
 use embedded_io::{self, Read, Write};
@@ -294,7 +297,7 @@ pub fn humanize_bytes(bytes: &[u8]) -> String {
 pub fn emojify<T>(num: &T) -> String
 where
     T: Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: std::fmt::Debug,
+    <T as TryInto<u128>>::Error: core::fmt::Debug,
 {
   match (*num).try_into() {
     Ok(v) => {

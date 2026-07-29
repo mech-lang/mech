@@ -1,5 +1,4 @@
 use crate::*;
-use std::io::Cursor;
 #[cfg(not(feature = "no_std"))]
 use std::collections::{BTreeMap, HashSet};
 #[cfg(feature = "no_std")]
@@ -92,12 +91,12 @@ impl ProgramState {
       functions: Ref::new(Functions::new()),
       #[cfg(feature = "functions")]
       plan: Plan::new(),
-      kinds: KindTable::new(),
+      kinds: KindTable::default(),
       #[cfg(feature = "enum")]
       enums: EnumTable::new(),
       #[cfg(feature = "invariant_define")]
       integrity_constraints: IntegrityConstraintTable::new(),
-      dictionary: Ref::new(Dictionary::new()),
+      dictionary: Ref::new(Dictionary::default()),
     }
   }
 

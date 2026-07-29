@@ -1,6 +1,14 @@
 use crate::*;
+use core::{
+  any::Any,
+  fmt,
+  marker::PhantomData,
+  panic::Location,
+};
+#[cfg(feature = "no_std")]
+use alloc::sync::Arc;
+#[cfg(not(feature = "no_std"))]
 use std::sync::Arc;
-use std::any::Any;
 
 // Errors
 // ----------------------------------------------------------------------------
@@ -18,7 +26,7 @@ pub struct CompilerSourceRange {
 impl CompilerSourceRange {
   #[track_caller]
   pub fn here() -> Self {
-    let loc = std::panic::Location::caller();
+    let loc = Location::caller();
     Self {
       file: loc.file(),
       line: loc.line(),
@@ -43,12 +51,12 @@ trait ErrorKindCallbacks: Send + Sync {
 
 struct CallbacksImpl<K> {
   // zero-sized; all behavior encoded in trait impl below
-  _marker: std::marker::PhantomData<K>,
+  _marker: PhantomData<K>,
 }
 
 impl<K> CallbacksImpl<K> {
   fn new() -> Self {
-    Self { _marker: std::marker::PhantomData }
+    Self { _marker: PhantomData }
   }
 }
 
@@ -68,7 +76,7 @@ where
   }
 }
 
-pub trait MechErrorKind: std::fmt::Debug + Send + Sync + Clone {
+pub trait MechErrorKind: fmt::Debug + Send + Sync + Clone {
   fn name(&self) -> &str;
   fn message(&self) -> String;
 }
@@ -87,8 +95,8 @@ pub struct MechError {
   pub message: Option<String>,
 }
 
-impl std::fmt::Debug for MechError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for MechError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("MechError")
       .field("kind name", &self.kind_name())
       .field("kind message", &self.kind_message())
@@ -314,6 +322,7 @@ impl MechErrorKind for UndefinedKindError {
   }
 }
 
+#[cfg(not(feature = "no_std"))]
 impl From<std::io::Error> for MechError {
   fn from(err: std::io::Error) -> Self {
     MechError::new(

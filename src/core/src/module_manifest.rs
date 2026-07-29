@@ -1,7 +1,29 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "no_std")]
+use alloc::{
+  string::{String, ToString},
+  vec::Vec,
+};
+#[cfg(feature = "no_std")]
+use core::hash::BuildHasherDefault;
+#[cfg(feature = "no_std")]
+use fxhash::FxHasher;
+#[cfg(feature = "no_std")]
+use hashbrown::HashSet as HashBrownSet;
+#[cfg(not(feature = "no_std"))]
+use std::{
+  collections::HashSet,
+  string::{String, ToString},
+  vec::Vec,
+};
+
 use crate::{GenericError, MResult, MechError, MechErrorKind};
+
+#[cfg(feature = "no_std")]
+type HashSet<T> =
+  HashBrownSet<T, BuildHasherDefault<FxHasher>>;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -73,7 +95,8 @@ impl ModuleManifestConfig {
     if self.name.trim().is_empty() {
       return Err(MechError::new(GenericError { msg: "Module manifest name must not be empty".to_string() }, None).with_compiler_loc());
     }
-    let mut names = std::collections::HashSet::new();
+    let mut names: HashSet<String> =
+      HashSet::default();
     for export in &self.exports {
       if export.name.trim().is_empty() {
         return Err(MechError::new(GenericError { msg: format!("Module manifest `{}` has an empty export name", self.name) }, None).with_compiler_loc());

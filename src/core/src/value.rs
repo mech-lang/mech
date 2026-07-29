@@ -12,9 +12,16 @@ use core::mem;
 #[cfg(not(feature = "no_std"))]
 use std::mem;
 #[cfg(feature = "no_std")]
-use hashbrown::HashSet;
+use core::hash::BuildHasherDefault;
+#[cfg(feature = "no_std")]
+use fxhash::FxHasher;
+#[cfg(feature = "no_std")]
+use hashbrown::HashSet as HashBrownSet;
 #[cfg(not(feature = "no_std"))]
 use std::collections::HashSet;
+#[cfg(feature = "no_std")]
+type HashSet<T> =
+  HashBrownSet<T, BuildHasherDefault<FxHasher>>;
 
 #[cfg(feature = "matrix")]
 use nalgebra::DVector;
@@ -873,7 +880,7 @@ impl Value {
 
   pub fn reactive_cell_ids(&self) -> Vec<ReactiveCellId> {
     let mut ids = Vec::new();
-    let mut seen = HashSet::new();
+    let mut seen = HashSet::default();
 
     self.collect_reactive_cell_ids(&mut ids, &mut seen);
 
@@ -1056,7 +1063,7 @@ impl Value {
 
 pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
   let mut ids = Vec::new();
-  let mut seen = HashSet::new();
+  let mut seen = HashSet::default();
 
   Value::push_reactive_cell_id(&mut ids, &mut seen, value.id());
 
@@ -1117,8 +1124,11 @@ impl Value {
     todo!();
   }
 
-  #[cfg(feature = "matrix")]
-  pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>> 
+  #[cfg(all(
+    feature = "matrix",
+    feature = "compiler",
+  ))]
+  pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>>
   where T: AsValueKind + 'static
   {
     match (T::as_value_kind(), self) {

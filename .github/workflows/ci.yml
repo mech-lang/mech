@@ -78,6 +78,18 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Check reduced core feature boundaries
+        run: |
+          cargo check -p mech-core \
+            --no-default-features \
+            --features no_std
+          cargo check -p mech-core \
+            --no-default-features \
+            --features baselib
+          cargo check -p mech-core \
+            --no-default-features \
+            --features "matrix,matrixd,f64"
+
       - name: Run root interpreter and bytecode tests
         run: |
           cargo test --test interpreter --test bytecode
