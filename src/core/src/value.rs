@@ -1067,15 +1067,16 @@ pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
   ids
 }
 impl Value {
-  /// Snapshots this value into a detached value graph.
+  /// Creates a detached copy of an acyclic value graph.
   ///
-  /// Every reachable reference-backed cell is detached. Repeated source
-  /// handles remain shared within the detached graph, and direct or indirect
-  /// cycles are preserved. Atom and enum dictionaries are detached along with
-  /// their values. Acyclic mutable-reference chains remain value-transparent,
-  /// while pure mutable-reference cycles retain detached reference edges.
-  pub fn deep_snapshot(&self) -> Value {
-    crate::value_snapshot::deep_snapshot(self)
+  /// Every reachable reference-backed cell is detached. Repeated source handles
+  /// remain shared within the detached graph. Atom and enum dictionaries are
+  /// detached. Acyclic mutable-reference chains are value-transparent.
+  ///
+  /// Cyclic graphs return `ValueSnapshotCycleUnsupported` before the detached
+  /// clone phase begins.
+  pub fn try_deep_snapshot(&self) -> MResult<Value> {
+    crate::value_snapshot::try_deep_snapshot(self)
   }
 
   #[cfg(feature = "matrix")]
@@ -3186,7 +3187,9 @@ mod reactive_cell_tests {
       ]))),
     )])));
 
-    let snapshot = value.deep_snapshot();
+    let snapshot = value
+      .try_deep_snapshot()
+      .expect("acyclic fixture");
     *live.borrow_mut() = 9.0;
 
     let Value::Record(snapshot) = snapshot else {

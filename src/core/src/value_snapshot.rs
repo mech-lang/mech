@@ -3,7 +3,9 @@
 use core::any::{Any, TypeId};
 use core::fmt::Debug;
 
-use crate::{Ref, ValRef, Value};
+use crate::{
+  MResult, MechError, MechErrorKind, Ref, ValRef, Value,
+};
 
 #[cfg(feature = "atom")]
 use crate::{Dictionary, MechAtom};
@@ -28,7 +30,7 @@ use indexmap::IndexMap;
 use indexmap::IndexSet;
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 #[cfg(feature = "no_std")]
 use core::hash::BuildHasherDefault;
@@ -85,37 +87,177 @@ impl ValueSnapshotKey {
   }
 }
 
-struct SnapshotResult {
-  value: Value,
-  pure_reference_cycle: bool,
+#[derive(Debug, Clone)]
+pub struct ValueSnapshotCycleUnsupported {
+  pub node: &'static str,
 }
 
-impl SnapshotResult {
-  fn detached(value: Value) -> Self {
-    Self {
-      value,
-      pure_reference_cycle: false,
-    }
+impl MechErrorKind for ValueSnapshotCycleUnsupported {
+  fn name(&self) -> &str {
+    "ValueSnapshotCycleUnsupported"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "detached value snapshots do not support cyclic `{}` graphs",
+      self.node,
+    )
   }
 }
 
-struct ValueSnapshotContext {
+#[derive(Default)]
+struct ValueSnapshotCycleDetector {
+  visiting: SnapshotSet<ValueSnapshotKey>,
+  completed: SnapshotSet<ValueSnapshotKey>,
+}
+
+impl ValueSnapshotCycleDetector {
+  fn visit_recursive_node(
+    &mut self,
+    key: ValueSnapshotKey,
+    node: &'static str,
+    descend: impl FnOnce(&mut Self) -> MResult<()>,
+  ) -> MResult<()> {
+    if self.completed.contains(&key) {
+      return Ok(());
+    }
+    if !self.visiting.insert(key) {
+      return Err(
+        MechError::new(
+          ValueSnapshotCycleUnsupported { node },
+          None,
+        )
+        .with_compiler_loc(),
+      );
+    }
+
+    let result = descend(self);
+    self.visiting.remove(&key);
+    if result.is_ok() {
+      self.completed.insert(key);
+    }
+    result
+  }
+
+  fn validate_value(
+    &mut self,
+    value: &Value,
+  ) -> MResult<()> {
+    match value {
+      Value::MutableReference(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(
+          key,
+          "mutable-reference",
+          |detector| {
+            let value = value.borrow().clone();
+            detector.validate_value(&value)
+          },
+        )
+      }
+      Value::Typed(value, _) => self.validate_value(value),
+      #[cfg(feature = "set")]
+      Value::Set(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(key, "set", |detector| {
+          let set = value.borrow().clone();
+          for value in set.set {
+            detector.validate_value(&value)?;
+          }
+          Ok(())
+        })
+      }
+      #[cfg(feature = "map")]
+      Value::Map(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(key, "map", |detector| {
+          let map = value.borrow().clone();
+          for (key, value) in map.map {
+            detector.validate_value(&key)?;
+            detector.validate_value(&value)?;
+          }
+          Ok(())
+        })
+      }
+      #[cfg(feature = "record")]
+      Value::Record(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(
+          key,
+          "record",
+          |detector| {
+            let record = value.borrow().clone();
+            for value in record.data.into_values() {
+              detector.validate_value(&value)?;
+            }
+            Ok(())
+          },
+        )
+      }
+      #[cfg(feature = "table")]
+      Value::Table(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(key, "table", |detector| {
+          let table = value.borrow().clone();
+          for (_, matrix) in table.data.into_values() {
+            detector.validate_value_matrix(&matrix)?;
+          }
+          Ok(())
+        })
+      }
+      #[cfg(feature = "tuple")]
+      Value::Tuple(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(key, "tuple", |detector| {
+          let tuple = value.borrow().clone();
+          for value in tuple.elements {
+            detector.validate_value(&value)?;
+          }
+          Ok(())
+        })
+      }
+      #[cfg(feature = "enum")]
+      Value::Enum(value) => {
+        let key = ValueSnapshotKey::of_ref(value);
+        self.visit_recursive_node(key, "enum", |detector| {
+          let value = value.borrow().clone();
+          for (_, payload) in value.variants {
+            if let Some(payload) = payload {
+              detector.validate_value(&payload)?;
+            }
+          }
+          Ok(())
+        })
+      }
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(value) => {
+        self.validate_value_matrix(value)
+      }
+      _ => Ok(()),
+    }
+  }
+
+  #[cfg(feature = "matrix")]
+  fn validate_value_matrix(
+    &mut self,
+    value: &Matrix<Value>,
+  ) -> MResult<()> {
+    let key = ValueSnapshotKey::of_matrix(value);
+    self.visit_recursive_node(key, "matrix", |detector| {
+      for value in value.as_vec() {
+        detector.validate_value(&value)?;
+      }
+      Ok(())
+    })
+  }
+}
+
+#[derive(Default)]
+struct ValueSnapshotCloneContext {
   nodes: SnapshotMap<ValueSnapshotKey, Box<dyn Any>>,
-  resolving_value_refs: SnapshotSet<ValueSnapshotKey>,
-  cyclic_value_refs: SnapshotSet<ValueSnapshotKey>,
 }
 
-impl Default for ValueSnapshotContext {
-  fn default() -> Self {
-    Self {
-      nodes: SnapshotMap::default(),
-      resolving_value_refs: SnapshotSet::default(),
-      cyclic_value_refs: SnapshotSet::default(),
-    }
-  }
-}
-
-impl ValueSnapshotContext {
+impl ValueSnapshotCloneContext {
   fn memoized<T>(
     &self,
     key: ValueSnapshotKey,
@@ -160,28 +302,25 @@ impl ValueSnapshotContext {
     snapshot
   }
 
-  fn snapshot_recursive_ref<T, P, B>(
+  fn snapshot_recursive_ref<T, B>(
     &mut self,
     source: &Ref<T>,
-    placeholder: P,
     build: B,
-  ) -> Ref<T>
+  ) -> MResult<Ref<T>>
   where
     T: Clone + 'static,
-    P: FnOnce(&T) -> T,
-    B: FnOnce(&mut Self, T) -> T,
+    B: FnOnce(&mut Self, T) -> MResult<T>,
   {
     let key = ValueSnapshotKey::of_ref(source);
     if let Some(snapshot) = self.memoized(key) {
-      return snapshot;
+      return Ok(snapshot);
     }
 
     let source_value = source.borrow().clone();
-    let snapshot = Ref::new(placeholder(&source_value));
+    let snapshot_value = build(self, source_value)?;
+    let snapshot = Ref::new(snapshot_value);
     self.memoize(key, snapshot.clone());
-    let snapshot_value = build(self, source_value);
-    *snapshot.borrow_mut() = snapshot_value;
-    snapshot
+    Ok(snapshot)
   }
 
   #[cfg(feature = "atom")]
@@ -216,8 +355,9 @@ impl ValueSnapshotContext {
       return snapshot;
     }
 
+    let values = source.as_vec();
     let snapshot = Matrix::from_vec(
-      source.as_vec(),
+      values,
       source.rows(),
       source.cols(),
     );
@@ -229,400 +369,326 @@ impl ValueSnapshotContext {
   fn snapshot_value_matrix(
     &mut self,
     source: &Matrix<Value>,
-  ) -> Matrix<Value> {
+  ) -> MResult<Matrix<Value>> {
     let key = ValueSnapshotKey::of_matrix(source);
     if let Some(snapshot) = self.memoized(key) {
-      return snapshot;
+      return Ok(snapshot);
     }
 
-    let snapshot = Matrix::from_element(
+    let mut detached_values = Vec::new();
+    for value in source.as_vec() {
+      detached_values.push(self.snapshot_value(&value)?);
+    }
+    let snapshot = Matrix::from_vec(
+      detached_values,
       source.rows(),
       source.cols(),
-      Value::Empty,
     );
     self.memoize(key, snapshot.clone());
-    let source_values = source.as_vec();
-    for (index, value) in source_values.into_iter().enumerate() {
-      snapshot.set_index1d(
-        index,
-        self.snapshot_value(&value).value,
-      );
-    }
-    snapshot
+    Ok(snapshot)
   }
 
   fn snapshot_mutable_reference(
     &mut self,
     source: &ValRef,
-  ) -> SnapshotResult {
+  ) -> MResult<Value> {
     let key = ValueSnapshotKey::of_ref(source);
-    if let Some(snapshot) = self.memoized::<ValRef>(key) {
-      if self.resolving_value_refs.contains(&key)
-        || self.cyclic_value_refs.contains(&key)
-      {
-        return SnapshotResult {
-          value: Value::MutableReference(snapshot),
-          pure_reference_cycle: true,
-        };
-      }
-      return SnapshotResult::detached(
-        snapshot.borrow().clone(),
-      );
+    if let Some(snapshot) = self.memoized::<Value>(key) {
+      return Ok(snapshot);
     }
 
-    let snapshot = Ref::new(Value::Empty);
-    self.memoize(key, snapshot.clone());
-    self.resolving_value_refs.insert(key);
     let source_value = source.borrow().clone();
-    let snapshot_value = self.snapshot_value(&source_value);
-    let pure_reference_cycle =
-      snapshot_value.pure_reference_cycle;
-    *snapshot.borrow_mut() = snapshot_value.value;
-    self.resolving_value_refs.remove(&key);
-
-    if pure_reference_cycle {
-      self.cyclic_value_refs.insert(key);
-      SnapshotResult {
-        value: Value::MutableReference(snapshot),
-        pure_reference_cycle: true,
-      }
-    } else {
-      SnapshotResult::detached(snapshot.borrow().clone())
-    }
+    let snapshot = self.snapshot_value(&source_value)?;
+    self.memoize(key, snapshot.clone());
+    Ok(snapshot)
   }
 
   fn snapshot_value(
     &mut self,
     source: &Value,
-  ) -> SnapshotResult {
+  ) -> MResult<Value> {
     match source {
       #[cfg(feature = "u8")]
-      Value::U8(value) => SnapshotResult::detached(
-        Value::U8(self.snapshot_leaf(value)),
-      ),
+      Value::U8(value) => {
+        Ok(Value::U8(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "u16")]
-      Value::U16(value) => SnapshotResult::detached(
-        Value::U16(self.snapshot_leaf(value)),
-      ),
+      Value::U16(value) => {
+        Ok(Value::U16(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "u32")]
-      Value::U32(value) => SnapshotResult::detached(
-        Value::U32(self.snapshot_leaf(value)),
-      ),
+      Value::U32(value) => {
+        Ok(Value::U32(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "u64")]
-      Value::U64(value) => SnapshotResult::detached(
-        Value::U64(self.snapshot_leaf(value)),
-      ),
+      Value::U64(value) => {
+        Ok(Value::U64(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "u128")]
-      Value::U128(value) => SnapshotResult::detached(
-        Value::U128(self.snapshot_leaf(value)),
-      ),
+      Value::U128(value) => {
+        Ok(Value::U128(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "i8")]
-      Value::I8(value) => SnapshotResult::detached(
-        Value::I8(self.snapshot_leaf(value)),
-      ),
+      Value::I8(value) => {
+        Ok(Value::I8(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "i16")]
-      Value::I16(value) => SnapshotResult::detached(
-        Value::I16(self.snapshot_leaf(value)),
-      ),
+      Value::I16(value) => {
+        Ok(Value::I16(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "i32")]
-      Value::I32(value) => SnapshotResult::detached(
-        Value::I32(self.snapshot_leaf(value)),
-      ),
+      Value::I32(value) => {
+        Ok(Value::I32(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "i64")]
-      Value::I64(value) => SnapshotResult::detached(
-        Value::I64(self.snapshot_leaf(value)),
-      ),
+      Value::I64(value) => {
+        Ok(Value::I64(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "i128")]
-      Value::I128(value) => SnapshotResult::detached(
-        Value::I128(self.snapshot_leaf(value)),
-      ),
+      Value::I128(value) => {
+        Ok(Value::I128(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "f32")]
-      Value::F32(value) => SnapshotResult::detached(
-        Value::F32(self.snapshot_leaf(value)),
-      ),
+      Value::F32(value) => {
+        Ok(Value::F32(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "f64")]
-      Value::F64(value) => SnapshotResult::detached(
-        Value::F64(self.snapshot_leaf(value)),
-      ),
+      Value::F64(value) => {
+        Ok(Value::F64(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "complex")]
-      Value::C64(value) => SnapshotResult::detached(
-        Value::C64(self.snapshot_leaf(value)),
-      ),
+      Value::C64(value) => {
+        Ok(Value::C64(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "rational")]
-      Value::R64(value) => SnapshotResult::detached(
-        Value::R64(self.snapshot_leaf(value)),
-      ),
+      Value::R64(value) => {
+        Ok(Value::R64(self.snapshot_leaf(value)))
+      }
       #[cfg(any(feature = "string", feature = "variable_define"))]
-      Value::String(value) => SnapshotResult::detached(
-        Value::String(self.snapshot_leaf(value)),
-      ),
+      Value::String(value) => {
+        Ok(Value::String(self.snapshot_leaf(value)))
+      }
       #[cfg(any(feature = "bool", feature = "variable_define"))]
-      Value::Bool(value) => SnapshotResult::detached(
-        Value::Bool(self.snapshot_leaf(value)),
-      ),
+      Value::Bool(value) => {
+        Ok(Value::Bool(self.snapshot_leaf(value)))
+      }
       #[cfg(feature = "atom")]
-      Value::Atom(value) => SnapshotResult::detached(
-        Value::Atom(self.snapshot_atom(value)),
-      ),
+      Value::Atom(value) => {
+        Ok(Value::Atom(self.snapshot_atom(value)))
+      }
       #[cfg(feature = "matrix")]
-      Value::MatrixIndex(value) => SnapshotResult::detached(
-        Value::MatrixIndex(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixIndex(value) => {
+        Ok(Value::MatrixIndex(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "bool"))]
-      Value::MatrixBool(value) => SnapshotResult::detached(
-        Value::MatrixBool(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixBool(value) => {
+        Ok(Value::MatrixBool(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "u8"))]
-      Value::MatrixU8(value) => SnapshotResult::detached(
-        Value::MatrixU8(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixU8(value) => {
+        Ok(Value::MatrixU8(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "u16"))]
-      Value::MatrixU16(value) => SnapshotResult::detached(
-        Value::MatrixU16(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixU16(value) => {
+        Ok(Value::MatrixU16(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "u32"))]
-      Value::MatrixU32(value) => SnapshotResult::detached(
-        Value::MatrixU32(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixU32(value) => {
+        Ok(Value::MatrixU32(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "u64"))]
-      Value::MatrixU64(value) => SnapshotResult::detached(
-        Value::MatrixU64(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixU64(value) => {
+        Ok(Value::MatrixU64(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "u128"))]
-      Value::MatrixU128(value) => SnapshotResult::detached(
-        Value::MatrixU128(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixU128(value) => {
+        Ok(Value::MatrixU128(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "i8"))]
-      Value::MatrixI8(value) => SnapshotResult::detached(
-        Value::MatrixI8(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixI8(value) => {
+        Ok(Value::MatrixI8(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "i16"))]
-      Value::MatrixI16(value) => SnapshotResult::detached(
-        Value::MatrixI16(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixI16(value) => {
+        Ok(Value::MatrixI16(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "i32"))]
-      Value::MatrixI32(value) => SnapshotResult::detached(
-        Value::MatrixI32(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixI32(value) => {
+        Ok(Value::MatrixI32(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "i64"))]
-      Value::MatrixI64(value) => SnapshotResult::detached(
-        Value::MatrixI64(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixI64(value) => {
+        Ok(Value::MatrixI64(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "i128"))]
-      Value::MatrixI128(value) => SnapshotResult::detached(
-        Value::MatrixI128(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixI128(value) => {
+        Ok(Value::MatrixI128(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "f32"))]
-      Value::MatrixF32(value) => SnapshotResult::detached(
-        Value::MatrixF32(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixF32(value) => {
+        Ok(Value::MatrixF32(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "f64"))]
-      Value::MatrixF64(value) => SnapshotResult::detached(
-        Value::MatrixF64(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixF64(value) => {
+        Ok(Value::MatrixF64(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "string"))]
-      Value::MatrixString(value) => SnapshotResult::detached(
-        Value::MatrixString(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixString(value) => {
+        Ok(Value::MatrixString(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixR64(value) => SnapshotResult::detached(
-        Value::MatrixR64(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixR64(value) => {
+        Ok(Value::MatrixR64(self.snapshot_matrix(value)))
+      }
       #[cfg(all(feature = "matrix", feature = "complex"))]
-      Value::MatrixC64(value) => SnapshotResult::detached(
-        Value::MatrixC64(self.snapshot_matrix(value)),
-      ),
+      Value::MatrixC64(value) => {
+        Ok(Value::MatrixC64(self.snapshot_matrix(value)))
+      }
       #[cfg(feature = "matrix")]
-      Value::MatrixValue(value) => SnapshotResult::detached(
-        Value::MatrixValue(self.snapshot_value_matrix(value)),
-      ),
+      Value::MatrixValue(value) => Ok(Value::MatrixValue(
+        self.snapshot_value_matrix(value)?,
+      )),
       #[cfg(feature = "set")]
       Value::Set(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
-          |set| MechSet {
-            kind: set.kind.clone(),
-            num_elements: set.num_elements,
-            set: IndexSet::new(),
-          },
           |context, mut set| {
-            set.set = set
-              .set
-              .into_iter()
-              .map(|value| {
-                context.snapshot_value(&value).value
-              })
-              .collect();
-            set
+            let mut detached = IndexSet::new();
+            for value in set.set {
+              detached.insert(
+                context.snapshot_value(&value)?,
+              );
+            }
+            set.set = detached;
+            Ok(set)
           },
-        );
-        SnapshotResult::detached(Value::Set(snapshot))
+        )?;
+        Ok(Value::Set(snapshot))
       }
       #[cfg(feature = "map")]
       Value::Map(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
-          |map| MechMap {
-            key_kind: map.key_kind.clone(),
-            value_kind: map.value_kind.clone(),
-            num_elements: map.num_elements,
-            map: IndexMap::new(),
-          },
           |context, mut map| {
-            map.map = map
-              .map
-              .into_iter()
-              .map(|(key, value)| {
-                (
-                  context.snapshot_value(&key).value,
-                  context.snapshot_value(&value).value,
-                )
-              })
-              .collect();
-            map
+            let mut detached = IndexMap::new();
+            for (key, value) in map.map {
+              detached.insert(
+                context.snapshot_value(&key)?,
+                context.snapshot_value(&value)?,
+              );
+            }
+            map.map = detached;
+            Ok(map)
           },
-        );
-        SnapshotResult::detached(Value::Map(snapshot))
+        )?;
+        Ok(Value::Map(snapshot))
       }
       #[cfg(feature = "record")]
       Value::Record(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
-          |record| MechRecord {
-            cols: record.cols,
-            kinds: record.kinds.clone(),
-            data: IndexMap::new(),
-            field_names: record.field_names.clone(),
-          },
           |context, mut record| {
-            record.data = record
-              .data
-              .into_iter()
-              .map(|(id, value)| {
-                (id, context.snapshot_value(&value).value)
-              })
-              .collect();
-            record
+            let mut detached = IndexMap::new();
+            for (id, value) in record.data {
+              detached.insert(
+                id,
+                context.snapshot_value(&value)?,
+              );
+            }
+            record.data = detached;
+            Ok(record)
           },
-        );
-        SnapshotResult::detached(Value::Record(snapshot))
+        )?;
+        Ok(Value::Record(snapshot))
       }
       #[cfg(feature = "table")]
       Value::Table(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
-          |table| MechTable {
-            rows: table.rows,
-            cols: table.cols,
-            data: IndexMap::new(),
-            col_names: table.col_names.clone(),
-          },
           |context, mut table| {
-            table.data = table
-              .data
-              .into_iter()
-              .map(|(id, (kind, values))| {
+            let mut detached = IndexMap::new();
+            for (id, (kind, values)) in table.data {
+              detached.insert(
+                id,
                 (
-                  id,
-                  (
-                    kind,
-                    context.snapshot_value_matrix(&values),
-                  ),
-                )
-              })
-              .collect();
-            table
+                  kind,
+                  context.snapshot_value_matrix(&values)?,
+                ),
+              );
+            }
+            table.data = detached;
+            Ok(table)
           },
-        );
-        SnapshotResult::detached(Value::Table(snapshot))
+        )?;
+        Ok(Value::Table(snapshot))
       }
       #[cfg(feature = "tuple")]
       Value::Tuple(value) => {
         let snapshot = self.snapshot_recursive_ref(
           value,
-          |_| MechTuple::from_vec(Vec::new()),
           |context, tuple| {
-            MechTuple::from_vec(
-              tuple
-                .elements
-                .into_iter()
-                .map(|value| {
-                  context.snapshot_value(&value).value
-                })
-                .collect(),
-            )
+            let mut detached = Vec::new();
+            for value in tuple.elements {
+              detached.push(
+                context.snapshot_value(&value)?,
+              );
+            }
+            Ok(MechTuple::from_vec(detached))
           },
-        );
-        SnapshotResult::detached(Value::Tuple(snapshot))
+        )?;
+        Ok(Value::Tuple(snapshot))
       }
       #[cfg(feature = "enum")]
       Value::Enum(value) => {
-        let names = {
-          let source_enum = value.borrow().clone();
-          self.snapshot_leaf(&source_enum.names)
-        };
-        let placeholder_names = names.clone();
-        let snapshot_names = names.clone();
         let snapshot = self.snapshot_recursive_ref(
           value,
-          move |source_enum| MechEnum {
-            id: source_enum.id,
-            variants: Vec::new(),
-            names: placeholder_names,
+          |context, mut value| {
+            value.names =
+              context.snapshot_leaf(&value.names);
+            let mut detached = Vec::new();
+            for (id, payload) in value.variants {
+              detached.push((
+                id,
+                match payload {
+                  Some(payload) => Some(
+                    context.snapshot_value(&payload)?,
+                  ),
+                  None => None,
+                },
+              ));
+            }
+            value.variants = detached;
+            Ok(value)
           },
-          move |context, mut source_enum| {
-            source_enum.names = snapshot_names;
-            source_enum.variants = source_enum
-              .variants
-              .into_iter()
-              .map(|(id, payload)| {
-                (
-                  id,
-                  payload.map(|value| {
-                    context.snapshot_value(&value).value
-                  }),
-                )
-              })
-              .collect();
-            source_enum
-          },
-        );
-        SnapshotResult::detached(Value::Enum(snapshot))
+        )?;
+        Ok(Value::Enum(snapshot))
       }
-      Value::Id(value) => {
-        SnapshotResult::detached(Value::Id(*value))
+      Value::Id(value) => Ok(Value::Id(*value)),
+      Value::Index(value) => {
+        Ok(Value::Index(self.snapshot_leaf(value)))
       }
-      Value::Index(value) => SnapshotResult::detached(
-        Value::Index(self.snapshot_leaf(value)),
-      ),
       Value::MutableReference(value) => {
         self.snapshot_mutable_reference(value)
       }
-      Value::Typed(value, kind) => {
-        let value = self.snapshot_value(value).value;
-        SnapshotResult::detached(Value::Typed(
-          Box::new(value),
-          kind.clone(),
-        ))
-      }
-      Value::Kind(kind) => {
-        SnapshotResult::detached(Value::Kind(kind.clone()))
-      }
-      Value::IndexAll => {
-        SnapshotResult::detached(Value::IndexAll)
-      }
+      Value::Typed(value, kind) => Ok(Value::Typed(
+        Box::new(self.snapshot_value(value)?),
+        kind.clone(),
+      )),
+      Value::Kind(kind) => Ok(Value::Kind(kind.clone())),
+      Value::IndexAll => Ok(Value::IndexAll),
       Value::EmptyKind(kind) => {
-        SnapshotResult::detached(Value::EmptyKind(kind.clone()))
+        Ok(Value::EmptyKind(kind.clone()))
       }
-      Value::Empty => {
-        SnapshotResult::detached(Value::Empty)
-      }
+      Value::Empty => Ok(Value::Empty),
     }
   }
 }
 
-pub(crate) fn deep_snapshot(source: &Value) -> Value {
-  ValueSnapshotContext::default()
+pub(crate) fn try_deep_snapshot(
+  source: &Value,
+) -> MResult<Value> {
+  ValueSnapshotCycleDetector::default()
+    .validate_value(source)?;
+  ValueSnapshotCloneContext::default()
     .snapshot_value(source)
-    .value
 }

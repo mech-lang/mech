@@ -108,6 +108,7 @@ pub mod state_journal;
 pub mod structures;
 pub mod value;
 mod value_snapshot;
+pub use self::value_snapshot::ValueSnapshotCycleUnsupported;
 #[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "mika")]
