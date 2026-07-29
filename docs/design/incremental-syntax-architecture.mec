@@ -288,16 +288,16 @@ The design remains implementable in Mech: piece arrays, immutable nodes, event
 arrays, typed maps, checkpoints, and explicit recovery are concrete data
 structures rather than a Rust-specific framework.
 
-11. Hosted randomized parser validation
+11. Optional manual randomized parser-input harness
 -------------------------------------------------------------------------------
 
-The `Syntax fuzzing` workflow runs the four Phase 1 targets on pull requests
-targeting `feature/syntax` and on pushes to `feature/syntax`. Pull requests use
-5,000 runs and at most 180 seconds per target; pushes and manual dispatches use
-25,000 runs and at most 900 seconds per target. Superseded pull-request runs are
-cancelled.
+The optional randomized parser-input harness remains outside the main
+workspace for deliberate manual investigation. It is not a Phase 1 completion
+criterion, required agent validation, ordinary CI check, or scheduled task.
+Agents must not invoke it unless explicitly instructed.
 
-The Monday schedule uses the larger budget, but GitHub activates scheduled
-workflows only from the repository default branch. It is therefore not active
-weekly coverage while this workflow exists only on `feature/syntax`; the
-pull-request and push triggers provide the hosted coverage during Phase 1.
+The `Manual syntax parser-input validation` workflow is available only through
+`workflow_dispatch`; it has no pull-request, push, or scheduled trigger.
+Durable ordinary coverage comes from the deterministic property tests,
+mutation tests, and eight promoted regression fixtures in the syntax test
+suite.
