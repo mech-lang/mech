@@ -101,6 +101,16 @@ jobs:
       - name: Run complete program library suite
         run: cargo test -p mech-program --lib
 
+      - name: Run non-UTF-8 source-root regressions
+        run: |
+          cargo test -p mech \
+            cli::module_execution::tests::build_module_execution_preserves_non_utf8_root_path \
+            -- --exact --nocapture
+          cargo test -p mech \
+            --features test \
+            cli::module_execution::tests::test_module_execution_preserves_non_utf8_root_path \
+            -- --exact --nocapture
+
       - name: Check isolated interpreter feature boundaries
         run: |
           cargo check -p mech-interpreter \

@@ -175,17 +175,18 @@ fn execute_source_module_roots_internal(
     #[cfg(feature = "test")]
     let mut integrity_evaluations = Vec::new();
     for root in canonical_roots {
+        let request = SourceRequest::from_filesystem_path(&root)?;
         #[cfg(feature = "test")]
         {
             let report = runtime.resolve_and_run_root_module_report(
-                SourceRequest::new(root.to_string_lossy().to_string()),
+                request,
                 module_build_options(),
             )?;
             integrity_evaluations.extend(report.integrity.evaluations);
         }
         #[cfg(not(feature = "test"))]
         runtime.resolve_and_run_root_module(
-            SourceRequest::new(root.to_string_lossy().to_string()),
+            request,
             module_build_options(),
         )?;
     }
@@ -360,6 +361,50 @@ mod tests {
         let message = error.full_chain_message();
         assert!(message.contains(&missing.display().to_string()));
         assert!(message.contains("canonicalize source root"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn build_module_execution_preserves_non_utf8_root_path() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        let root = temp_root("non-utf8-build");
+        let source = root.join(OsString::from_vec(b"build-\xFF.mec".to_vec()));
+        std::fs::write(&source, "answer := 42\nanswer\n").unwrap();
+
+        let runtime = execute_source_module_roots(config(), &[source]).unwrap();
+
+        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(all(target_os = "linux", feature = "test"))]
+    #[test]
+    fn test_module_execution_preserves_non_utf8_root_path() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        let root = temp_root("non-utf8-test");
+        let source = root.join(OsString::from_vec(b"test-\xFF.mec".to_vec()));
+        std::fs::write(
+            &source,
+            "answer := 42\n\nnon-utf8-root-pass! := answer == 42\n\nanswer\n",
+        )
+        .unwrap();
+
+        let execution =
+            execute_source_module_roots_with_report(config(), &[source]).unwrap();
+
+        assert_eq!(execution.integrity.evaluations.len(), 1);
+        let evaluation = &execution.integrity.evaluations[0];
+        assert!(evaluation.passed);
+        assert!(evaluation.name.contains("non-utf8-root-pass!"));
+        assert_f64(
+            execution.runtime.root_symbol_value("answer").unwrap(),
+            42.0,
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 }
