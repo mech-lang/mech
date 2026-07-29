@@ -384,6 +384,29 @@ mod tests {
   }
 
   #[test]
+  fn pointer_register_scalar_initializes_once() {
+    let mut context = CompileCtx::new();
+    let context = &mut context;
+    let scalar_a = Ref::new(42usize);
+    let scalar_b = Ref::new(42usize);
+
+    let register_a = compile_register_brrw!(scalar_a, context);
+    let register_a_again = compile_register_brrw!(scalar_a, context);
+    let register_b = compile_register_brrw!(scalar_b, context);
+
+    assert_eq!(register_a_again, register_a);
+    assert_ne!(register_b, register_a);
+    assert_eq!(context.const_entries.len(), 2);
+    let const_loads = context.instrs.iter()
+      .filter_map(|instruction| match instruction {
+        EncodedInstr::ConstLoad { dst, const_id } => Some((*dst, *const_id)),
+        _ => None,
+      })
+      .collect::<Vec<_>>();
+    assert_eq!(const_loads, vec![(register_a, 0), (register_b, 1)]);
+  }
+
+  #[test]
   fn distinct_pointers_with_equal_values_receive_distinct_registers() {
     let value_a = 42u64;
     let value_b = 42u64;

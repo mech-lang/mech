@@ -568,6 +568,48 @@ where
 #[cfg(feature = "matrixd")]
 register_vertical_concatenate_fxn!(VerticalConcatenateNArgs);
 
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
+mod compiler_tests {
+  use super::*;
+  use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+
+  #[test]
+  fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {
+    let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7i64]));
+    let function = VerticalConcatenateNArgs {
+      e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+      out: Ref::new(DMatrix::from_element(2, 1, 0i64)),
+    };
+    let mut context = RecordingBytecodeCompilerContext::default();
+
+    function.compile(&mut context).unwrap();
+
+    let matrix_register = context.reg_map[&matrix.addr()];
+    assert_eq!(
+      context.instructions.iter()
+        .filter(|instruction| {
+          matches!(
+            instruction,
+            EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+          )
+        })
+        .count(),
+      1,
+    );
+    assert!(matches!(
+      context.instructions.last(),
+      Some(EncodedInstr::VarArg { args, .. })
+        if args == &vec![matrix_register, matrix_register]
+    ));
+    assert!(
+      context.requirements.contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
+    );
+    assert!(
+      !context.requirements.contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
+    );
+  }
+}
+
 // VerticalConcatenateVec -----------------------------------------------------
 
 macro_rules! vertical_concatenate {

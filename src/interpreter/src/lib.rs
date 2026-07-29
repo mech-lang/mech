@@ -95,6 +95,8 @@ use indexmap::set::IndexSet;
 use na::DMatrix;
 use std::time::Duration;
 
+#[cfg(all(test, feature = "compiler"))]
+mod bytecode_test_context;
 #[cfg(feature = "functions")]
 pub mod builtins;
 #[cfg(feature = "functions")]

@@ -792,6 +792,149 @@ where
 #[cfg(feature = "row_vectord")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateRDN);
 
+#[cfg(all(
+  test,
+  feature = "compiler",
+  feature = "matrixd",
+  feature = "row_vectord",
+  feature = "i64",
+))]
+mod compiler_tests {
+  use super::*;
+  use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+
+  fn matrix() -> Ref<DMatrix<i64>> {
+    Ref::new(DMatrix::from_vec(1, 1, vec![7i64]))
+  }
+
+  fn assert_single_matrix_load(
+    context: &RecordingBytecodeCompilerContext,
+    matrix: &Ref<DMatrix<i64>>,
+  ) -> Register {
+    let matrix_register = context.reg_map[&matrix.addr()];
+    assert_eq!(
+      context.instructions.iter()
+        .filter(|instruction| {
+          matches!(
+            instruction,
+            EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+          )
+        })
+        .count(),
+      1,
+    );
+    matrix_register
+  }
+
+  fn assert_horzcat_requirement(context: &RecordingBytecodeCompilerContext) {
+    assert!(
+      context.requirements.contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
+    );
+    assert!(
+      !context.requirements.contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
+    );
+  }
+
+  #[test]
+  fn pointer_register_matrix_initializes_once() {
+    let mut context = RecordingBytecodeCompilerContext::default();
+    let context = &mut context;
+    let matrix_a = matrix();
+    let matrix_b = matrix();
+
+    let register_a = compile_register_mat!(matrix_a, context);
+    let register_a_again = compile_register_mat!(matrix_a, context);
+    let register_b = compile_register_mat!(matrix_b, context);
+
+    assert_eq!(register_a_again, register_a);
+    assert_ne!(register_b, register_a);
+    assert_eq!(context.const_count, 2);
+    assert_eq!(
+      context.instructions.iter()
+        .filter(|instruction| {
+          matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_a)
+        })
+        .count(),
+      1,
+    );
+    assert_eq!(
+      context.instructions.iter()
+        .filter(|instruction| {
+          matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_b)
+        })
+        .count(),
+      1,
+    );
+  }
+
+  #[test]
+  fn horizontal_concatenate_four_args_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let function = HorizontalConcatenateFourArgs {
+      e0: Box::new(matrix.clone()),
+      e1: Box::new(matrix.clone()),
+      e2: Box::new(matrix.clone()),
+      e3: Box::new(matrix.clone()),
+      out: Ref::new(DMatrix::from_element(1, 4, 0i64)),
+    };
+    let mut context = RecordingBytecodeCompilerContext::default();
+    function.compile(&mut context).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&context, &matrix);
+    assert!(matches!(
+      context.instructions.last(),
+      Some(EncodedInstr::QuadOp { a, b, c, d, .. })
+        if [*a, *b, *c, *d] == [matrix_register; 4]
+    ));
+    assert_horzcat_requirement(&context);
+  }
+
+  #[test]
+  fn horizontal_concatenate_n_args_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let function = HorizontalConcatenateNArgs {
+      e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+      out: Ref::new(DMatrix::from_element(1, 2, 0i64)),
+    };
+    let mut context = RecordingBytecodeCompilerContext::default();
+    function.compile(&mut context).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&context, &matrix);
+    assert!(matches!(
+      context.instructions.last(),
+      Some(EncodedInstr::VarArg { args, .. })
+        if args == &vec![matrix_register, matrix_register]
+    ));
+    assert_horzcat_requirement(&context);
+  }
+
+  #[test]
+  fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let scalar = Ref::new(9i64);
+    let scalar_address = scalar.addr();
+    let function = HorizontalConcatenateRDN {
+      matrix: vec![
+        (Box::new(matrix.clone()), 0),
+        (Box::new(matrix.clone()), 1),
+      ],
+      scalar: vec![(scalar, 2)],
+      out: Ref::new(RowDVector::from_element(3, 0i64)),
+    };
+    let mut context = RecordingBytecodeCompilerContext::default();
+    function.compile(&mut context).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&context, &matrix);
+    let scalar_register = context.reg_map[&scalar_address];
+    assert!(matches!(
+      context.instructions.last(),
+      Some(EncodedInstr::VarArg { args, .. })
+        if args == &vec![matrix_register, matrix_register, scalar_register]
+    ));
+    assert_horzcat_requirement(&context);
+  }
+}
+
 // HorizontalConcatenateS1D ---------------------------------------------------
 
 #[cfg(feature = "matrixd")]
