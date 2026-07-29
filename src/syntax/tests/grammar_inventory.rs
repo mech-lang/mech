@@ -72,6 +72,11 @@ const SELECTION_BEHAVIORS: &[&str] = &[
     "caller-controlled",
 ];
 
+const EXPECTED_INVENTORY_ROWS: usize = 563;
+const EXPECTED_GRAMMAR_ROWS: usize = 540;
+const EXPECTED_MECHANICS_ROWS: usize = 23;
+const CANONICAL_SPECIFICATION: &str = "docs/design/specification.mec";
+
 fn syntax_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
@@ -86,6 +91,10 @@ fn repository_root() -> PathBuf {
 
 fn inventory_path() -> PathBuf {
     repository_root().join("docs/design/grammar-audit/productions.tsv")
+}
+
+fn specification_path() -> PathBuf {
+    repository_root().join(CANONICAL_SPECIFICATION)
 }
 
 /// Replace comments and literal contents with spaces while preserving newlines
@@ -231,9 +240,8 @@ fn mask_comments_and_literals(source: &str) -> String {
                 mask_char(&mut output, ch);
                 index += 1;
                 if ch == '"' {
-                    let closes = (0..hashes).all(|offset| {
-                        chars.get(index + offset).copied() == Some('#')
-                    });
+                    let closes =
+                        (0..hashes).all(|offset| chars.get(index + offset).copied() == Some('#'));
                     if closes {
                         for _ in 0..hashes {
                             mask_char(&mut output, '#');
@@ -398,11 +406,71 @@ fn is_kebab_case(name: &str) -> bool {
             .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
 }
 
-fn cell<'a>(
-    fields: &[&'a str],
-    column_index: &BTreeMap<&str, usize>,
-    name: &str,
-) -> &'a str {
+fn is_grammar_bearing(classes: &[&str]) -> bool {
+    classes.iter().any(|class| {
+        matches!(
+            *class,
+            "root" | "production" | "terminal" | "lexical-primitive"
+        )
+    })
+}
+
+fn inline_grammar_comment_definitions(source: &str) -> Vec<(usize, String)> {
+    source
+        .lines()
+        .enumerate()
+        .filter_map(|(offset, line)| {
+            let comment = line.trim_start().strip_prefix("//")?;
+            let text = comment
+                .trim_start_matches(|ch| ch == '/' || ch == '!')
+                .trim_start();
+            let (left_hand_side, _) = text.split_once(":=")?;
+            let name = left_hand_side.trim();
+            let mut chars = name.chars();
+            let starts_like_name = chars
+                .next()
+                .is_some_and(|ch| ch.is_ascii_alphabetic() || ch == '_');
+            let is_name = starts_like_name
+                && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-');
+            is_name.then(|| (offset + 1, line.trim().to_string()))
+        })
+        .collect()
+}
+
+fn canonical_specification_rules(source: &str) -> BTreeSet<String> {
+    const FENCE: &str = "```ebnf:canonical";
+    assert_eq!(
+        source.matches(FENCE).count(),
+        1,
+        "specification must contain exactly one canonical grammar fence"
+    );
+    let (_, after_opening) = source
+        .split_once(FENCE)
+        .expect("specification has no canonical grammar fence");
+    let (grammar, _) = after_opening
+        .split_once("```")
+        .expect("canonical grammar fence is not closed");
+
+    let mut rules = BTreeSet::new();
+    for line in grammar.lines() {
+        let Some((left_hand_side, _)) = line.split_once(":=") else {
+            continue;
+        };
+        let name = left_hand_side.trim();
+        if !is_kebab_case(name) {
+            // A quoted terminal may itself contain `:=` on a continuation
+            // line; only a kebab-case left-hand side starts a definition.
+            continue;
+        }
+        assert!(
+            rules.insert(name.to_string()),
+            "canonical grammar defines {name:?} more than once"
+        );
+    }
+    rules
+}
+
+fn cell<'a>(fields: &[&'a str], column_index: &BTreeMap<&str, usize>, name: &str) -> &'a str {
     fields[column_index[name]].trim()
 }
 
@@ -429,11 +497,17 @@ fn productions_inventory_covers_selected_parser_modules() {
 
     let mut inventoried = BTreeSet::new();
     let mut stable_ids = BTreeSet::new();
+    let mut canonical_grammar_names = BTreeSet::new();
+    let mut grammar_rows = 0usize;
+    let mut mechanics_rows = 0usize;
 
     for (offset, raw_line) in lines.enumerate() {
         let line_number = offset + 2;
         let line = raw_line.trim_end_matches('\r');
-        assert!(!line.trim().is_empty(), "blank TSV row at line {line_number}");
+        assert!(
+            !line.trim().is_empty(),
+            "blank TSV row at line {line_number}"
+        );
         let fields = line.split('\t').collect::<Vec<_>>();
         assert_eq!(
             fields.len(),
@@ -448,6 +522,7 @@ fn productions_inventory_covers_selected_parser_modules() {
         let module = cell(&fields, &column_index, "module");
         let rust_function = cell(&fields, &column_index, "rust-function");
         let classification = cell(&fields, &column_index, "classification");
+        let spec_location = cell(&fields, &column_index, "spec-location");
         let implementation_path = cell(&fields, &column_index, "implementation-path");
 
         assert!(!id.is_empty(), "line {line_number} has no stable ID");
@@ -480,21 +555,30 @@ fn productions_inventory_covers_selected_parser_modules() {
             );
         }
 
-        let is_canonical = classes.iter().any(|class| {
-            matches!(
-                *class,
-                "root" | "production" | "terminal" | "lexical-primitive"
-            )
-        });
-        if is_canonical {
+        if is_grammar_bearing(&classes) {
+            grammar_rows += 1;
             assert!(
                 is_kebab_case(grammar_name),
                 "canonical row {id} needs a kebab-case grammar name"
             );
+            assert!(
+                canonical_grammar_names.insert(grammar_name.to_string()),
+                "canonical grammar name {grammar_name:?} is claimed by more than one row"
+            );
+            assert_eq!(
+                spec_location,
+                format!("{CANONICAL_SPECIFICATION}::{grammar_name}"),
+                "canonical row {id} needs a stable specification reference"
+            );
         } else {
+            mechanics_rows += 1;
             assert!(
                 grammar_name.is_empty() || is_kebab_case(grammar_name),
                 "line {line_number} has invalid grammar name {grammar_name:?}"
+            );
+            assert_eq!(
+                spec_location, "not-applicable",
+                "mechanics/non-grammar row {id} must not claim a grammar location"
             );
         }
 
@@ -504,7 +588,13 @@ fn productions_inventory_covers_selected_parser_modules() {
             "line {line_number} has no canonical implementation path"
         );
 
-        for required in ["feature-gate", "entry-point", "output-type", "termination", "whitespace"] {
+        for required in [
+            "feature-gate",
+            "entry-point",
+            "output-type",
+            "termination",
+            "whitespace",
+        ] {
             assert!(
                 !cell(&fields, &column_index, required).is_empty(),
                 "line {line_number} has no {required}"
@@ -524,6 +614,28 @@ fn productions_inventory_covers_selected_parser_modules() {
         }
     }
 
+    assert_eq!(
+        stable_ids.len(),
+        EXPECTED_INVENTORY_ROWS,
+        "unexpected productions.tsv row count"
+    );
+    assert_eq!(
+        grammar_rows, EXPECTED_GRAMMAR_ROWS,
+        "unexpected grammar-bearing row count"
+    );
+    assert_eq!(
+        mechanics_rows, EXPECTED_MECHANICS_ROWS,
+        "unexpected mechanics/non-grammar row count"
+    );
+
+    let specification =
+        fs::read_to_string(specification_path()).expect("read canonical specification");
+    assert_eq!(
+        canonical_grammar_names,
+        canonical_specification_rules(&specification),
+        "inventory grammar names and canonical specification rules differ"
+    );
+
     let mut discovered = BTreeSet::new();
     for module in MODULES {
         let source_path = syntax_root().join(format!("src/{module}.rs"));
@@ -542,6 +654,27 @@ fn productions_inventory_covers_selected_parser_modules() {
          discovered: {}\ninventoried: {}",
         discovered.len(),
         inventoried.len()
+    );
+}
+
+#[test]
+fn parser_sources_do_not_define_competing_inline_grammars() {
+    let mut conflicts = Vec::new();
+    for module in MODULES {
+        let source_path = syntax_root().join(format!("src/{module}.rs"));
+        let source = fs::read_to_string(&source_path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", source_path.display()));
+        conflicts.extend(
+            inline_grammar_comment_definitions(&source)
+                .into_iter()
+                .map(|(line, definition)| format!("{module}.rs:{line}: {definition}")),
+        );
+    }
+    assert!(
+        conflicts.is_empty(),
+        "Rust parser sources contain competing inline grammar definitions; \
+         keep formal grammar only in {CANONICAL_SPECIFICATION}:\n{}",
+        conflicts.join("\n")
     );
 }
 
@@ -568,5 +701,26 @@ fn scanner_ignores_nested_and_non_code_functions() {
     assert_eq!(
         scan_top_level_functions(source),
         BTreeSet::from(["generated".to_string(), "visible".to_string()])
+    );
+}
+
+#[test]
+fn inline_grammar_comment_scanner_allows_ordinary_implementation_comments() {
+    let source = r#"
+        // Check `x := value` before trying the fallback.
+        // This implementation recognizes the := token.
+        // Example: x := 1
+        let source = "https://example.com/rule := text";
+
+        // expression := factor ;
+        /// code-terminal := new-line | eof ;
+    "#;
+
+    assert_eq!(
+        inline_grammar_comment_definitions(source),
+        vec![
+            (7, "// expression := factor ;".to_string()),
+            (8, "/// code-terminal := new-line | eof ;".to_string()),
+        ]
     );
 }

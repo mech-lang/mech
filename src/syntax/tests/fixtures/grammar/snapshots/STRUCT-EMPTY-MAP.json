@@ -1,0 +1,14 @@
+{
+  "ast": {
+    "Map": {
+      "elements": []
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "structure",
+  "rule": "structure"
+}

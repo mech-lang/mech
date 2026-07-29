@@ -1,0 +1,22 @@
+{
+  "ast": {
+    "Real": {
+      "Negated": {
+        "Integer": {
+          "chars": [
+            "4",
+            "2"
+          ],
+          "kind": "Number"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

@@ -1,0 +1,65 @@
+{
+  "ast": {
+    "Record": {
+      "bindings": [
+        {
+          "kind": null,
+          "name": {
+            "name": {
+              "chars": [
+                "x"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          "value": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "1"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "kind": null,
+          "name": {
+            "name": {
+              "chars": [
+                "y"
+              ],
+              "kind": "Identifier"
+            }
+          },
+          "value": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "2"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "",
+    "source_graphemes": 12
+  },
+  "entry_point": "structure",
+  "rule": "structure"
+}

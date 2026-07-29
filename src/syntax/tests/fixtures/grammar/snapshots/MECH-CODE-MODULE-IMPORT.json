@@ -1,0 +1,60 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "Import": {
+            "alias": null,
+            "group_items": null,
+            "item": {
+              "segments": [
+                {
+                  "Intrinsic": {
+                    "marker": {
+                      "chars": [
+                        "_"
+                      ],
+                      "kind": "Underscore"
+                    },
+                    "name": {
+                      "name": {
+                        "chars": [
+                          "s",
+                          "i",
+                          "n"
+                        ],
+                        "kind": "Identifier"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "kind": "Item",
+            "module": {
+              "name": {
+                "chars": [
+                  "m",
+                  "a",
+                  "t",
+                  "h"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "",
+    "source_graphemes": 12
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code-module-import"
+}

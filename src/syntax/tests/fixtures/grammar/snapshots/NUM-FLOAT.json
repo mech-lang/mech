@@ -1,0 +1,29 @@
+{
+  "ast": {
+    "Real": {
+      "Float": [
+        {
+          "chars": [
+            "1",
+            "2"
+          ],
+          "kind": "Number"
+        },
+        {
+          "chars": [
+            "3",
+            "4"
+          ],
+          "kind": "Number"
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

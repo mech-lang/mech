@@ -1,0 +1,50 @@
+{
+  "ast": {
+    "Check": [
+      [
+        [
+          true,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "d",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ],
+        null
+      ],
+      [
+        [
+          false,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [],
+                  "kind": "Error"
+                }
+              }
+            ]
+          }
+        ],
+        null
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 17,
+    "remaining_source": "",
+    "source_graphemes": 17
+  },
+  "entry_point": "mechdown-list",
+  "rule": "mechdown-list"
+}

@@ -1,0 +1,44 @@
+{
+  "ast": {
+    "context": null,
+    "name": {
+      "name": {
+        "chars": [
+          "x"
+        ],
+        "kind": "Identifier"
+      }
+    },
+    "subscript": [
+      {
+        "Bracket": [
+          {
+            "Formula": {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "1"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 4,
+    "remaining_source": "",
+    "source_graphemes": 4
+  },
+  "entry_point": "slice",
+  "rule": "slice"
+}

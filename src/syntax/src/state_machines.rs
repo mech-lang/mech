@@ -79,7 +79,7 @@ fn fsm_value(input: ParseString) -> ParseResult<Pattern> {
 // State Machines
 // ----------------------------------------------------------------------------
 
-// guard_operator := "|" | "│" | "├" | "└" ;
+// Grammar: docs/design/specification.mec, `guard-operator`.
 pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
@@ -87,7 +87,7 @@ pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// fsm_implementation := "#", identifier, "(", list0(",", var), ")", transition_operator, pattern, whitespace*, fsm_arm+, "." ;
+// Grammar: docs/design/specification.mec, `fsm-implementation`.
 pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -102,14 +102,14 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 
-// fsm_arm := comment*, (fsm_transition | fsm_guard_arm | fsm_comment_arm), whitespace* ;
+// Grammar: docs/design/specification.mec, `fsm-arm`.
 pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, arm) = alt((fsm_guard_arm,fsm_transition,fsm_comment_arm))(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, arm))
 }
 
-// fsm_guard_arm := comment*, pattern, fsm_guard+ ;
+// Grammar: docs/design/specification.mec, `fsm-guard-arm`.
 pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, start) = pattern(input)?;
   let (input, grds) = many1(fsm_guard)(input)?;
@@ -121,7 +121,7 @@ pub fn fsm_comment_arm(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, FsmArm::Comment(comment)))
 }
 
-// fsm_guard := guard_operator, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
+// Grammar: docs/design/specification.mec, `fsm-guard`.
 pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   let (input, _) = guard_operator(input)?;
   let (input, cnd) = pattern(input)?;
@@ -134,7 +134,7 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   Ok((input, Guard{condition: cnd, transitions: trns}))
 }
 
-// fsm_transition := comment*, pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
+// Grammar: docs/design/specification.mec, `fsm-transition`.
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, start) = pattern(input)?;
   let (input, trns) = many1(alt((
@@ -146,28 +146,28 @@ pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, FsmArm::Transition(start, trns)))
 }
 
-// fsm_state_transition := transition_operator, atom ;
+// Grammar: docs/design/specification.mec, `fsm-state-transition`.
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, ptrn) = fsm_value(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
-// fsm_async_transition := async_transition_operator, atom ;
+// Grammar: docs/design/specification.mec, `fsm-async-transition`.
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
   let (input, ptrn) = fsm_value(input)?;
   Ok((input, Transition::Async(ptrn)))
 }
 
-// fsm_statement_transition := transition_operator, statement ;
+// Grammar: docs/design/specification.mec, `fsm-statement-transition`.
 pub fn fsm_statement_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, stmnt) = statement(input)?;
   Ok((input, Transition::Statement(stmnt)))
 }
 
-// fsm_block_transition := transition_operator, left_brace, mech_code+, right_brace ;
+// Grammar: docs/design/specification.mec, `fsm-block-transition`.
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   let (mut input, _) = transition_operator(input)?;
   let (next_input, _) = left_brace(input)?;
@@ -194,14 +194,14 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::CodeBlock(code)))
 }
 
-// fsm_output := output_operator, pattern ;
+// Grammar: docs/design/specification.mec, `fsm-output`.
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
   let ((input, ptrn)) = fsm_value(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
-// fsm_specification := "#", identifier, "(", list0(",", var), ")", output_operator?, kind_annotation?, define_operator?, fsm_state_definition+, "." ;
+// Grammar: docs/design/specification.mec, `fsm-specification`.
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -216,7 +216,7 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   Ok((input, FsmSpecification{name,input: input_vars, output, states}))
 }
 
-// fsm_state_definition := guard_operator, atom, fsm_state_definition_variables? ;
+// Grammar: docs/design/specification.mec, `fsm-state-definition`.
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
   let (input, _) = guard_operator(input)?;
   let (input, _) = whitespace0(input)?;
@@ -225,7 +225,7 @@ pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> 
   Ok((input, StateDefinition{name: state_atom.name,state_variables: vars}))
 }
 
-// fsm_state_definition_variables := "(", list0(list_separator, var), ")" ;
+// Grammar: docs/design/specification.mec, `fsm-state-definition-variables`.
 pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Var>> {
   let (input, _) = left_parenthesis(input)?;
   let (input, names) = separated_list1(list_separator, var)(input)?;
@@ -233,14 +233,14 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Var
   Ok((input, names))
 }
 
-// fsm_pipe := fsm_instance, (fsm_state_transition | fsm_async_transition | fsm_output)* ;
+// Grammar: docs/design/specification.mec, `fsm-pipe`.
 pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
   let (input, start) = fsm_instance(input)?;
   let (input, trns) = many0(alt((fsm_state_transition,fsm_async_transition,fsm_output)))(input)?;
   Ok((input, FsmPipe{start, transitions: trns}))
 }
 
-// fsm_declare := fsm, define_operator, fsm_pipe ;
+// Grammar: docs/design/specification.mec, `fsm-declare`.
 pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   let (input, fsm) = fsm(input)?;
   let (input, _) = define_operator(input)?;
@@ -248,7 +248,7 @@ pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   Ok((input, FsmDeclare{fsm,pipe}))
 }
   
-// fsm := "#", identifier, argument_list?, kind_annotation? ;
+// Grammar: docs/design/specification.mec, `fsm`.
 pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
@@ -257,7 +257,7 @@ pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
   Ok((input, Fsm{ name, args, kind }))
 }
 
-// fsm_instance := "#", identifier, fsm_args? ;
+// Grammar: docs/design/specification.mec, `fsm-instance`.
 pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
   let ((input, _)) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -265,7 +265,7 @@ pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
   Ok((input, FsmInstance{name,args} ))
 }
 
-// fsm_args := "(", list0(list_separator, (call_arg_with_binding | call_arg)), ")" ;
+// Grammar: docs/design/specification.mec, `fsm-args`.
 pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expression)>> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;

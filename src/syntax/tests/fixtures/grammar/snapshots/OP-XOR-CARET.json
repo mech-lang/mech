@@ -1,0 +1,10 @@
+{
+  "ast": "Xor",
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "xor-operator",
+  "rule": "xor"
+}

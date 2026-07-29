@@ -1,0 +1,151 @@
+{
+  "ast": {
+    "FencedMechCode": {
+      "code": [
+        [
+          {
+            "Statement": {
+              "VariableDefine": {
+                "expression": {
+                  "Literal": {
+                    "Number": {
+                      "Real": {
+                        "Integer": {
+                          "chars": [
+                            "1"
+                          ],
+                          "kind": "Number"
+                        }
+                      }
+                    }
+                  }
+                },
+                "mutable": false,
+                "var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "x"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          null
+        ],
+        [
+          {
+            "Statement": {
+              "VariableDefine": {
+                "expression": {
+                  "Formula": {
+                    "Term": {
+                      "lhs": {
+                        "Expression": {
+                          "Var": {
+                            "context": null,
+                            "kind": null,
+                            "name": {
+                              "name": {
+                                "chars": [
+                                  "x"
+                                ],
+                                "kind": "Identifier"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "rhs": [
+                        [
+                          {
+                            "AddSub": "Add"
+                          },
+                          {
+                            "Expression": {
+                              "Literal": {
+                                "Number": {
+                                  "Real": {
+                                    "Integer": {
+                                      "chars": [
+                                        "1"
+                                      ],
+                                      "kind": "Number"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "mutable": false,
+                "var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "y"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          null
+        ]
+      ],
+      "config": {
+        "disabled": false,
+        "hidden": false,
+        "namespace": 0,
+        "namespace_str": "",
+        "output": true
+      },
+      "exports": [],
+      "imports": [],
+      "options": null,
+      "source": {
+        "chars": [
+          "x",
+          " ",
+          ":",
+          "=",
+          " ",
+          "1",
+          "\n",
+          "y",
+          " ",
+          ":",
+          "=",
+          " ",
+          "x",
+          " ",
+          "+",
+          " ",
+          "1",
+          "\n"
+        ],
+        "kind": "CodeBlock"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 29,
+    "remaining_source": "",
+    "source_graphemes": 29
+  },
+  "entry_point": "code-block",
+  "rule": "fenced-mech"
+}

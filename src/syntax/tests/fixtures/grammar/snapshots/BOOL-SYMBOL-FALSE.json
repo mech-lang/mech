@@ -1,0 +1,15 @@
+{
+  "ast": {
+    "chars": [
+      "✗"
+    ],
+    "kind": "False"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": "",
+    "source_graphemes": 1
+  },
+  "entry_point": "boolean",
+  "rule": "boolean"
+}

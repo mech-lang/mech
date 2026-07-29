@@ -1,0 +1,35 @@
+{
+  "ast": {
+    "QuoteBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "Q",
+                "u",
+                "o",
+                "t",
+                "e",
+                "d",
+                " ",
+                "t",
+                "e",
+                "x",
+                "t"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 14,
+    "remaining_source": "",
+    "source_graphemes": 14
+  },
+  "entry_point": "section-element",
+  "rule": "section-element-quote"
+}

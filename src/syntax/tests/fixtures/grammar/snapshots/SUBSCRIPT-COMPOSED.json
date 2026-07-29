@@ -1,0 +1,52 @@
+{
+  "ast": [
+    {
+      "Dot": {
+        "name": {
+          "chars": [
+            "f",
+            "i",
+            "e",
+            "l",
+            "d"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    },
+    {
+      "Bracket": [
+        {
+          "Formula": {
+            "Expression": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "Brace": [
+        "All"
+      ]
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 12,
+    "remaining_source": "",
+    "source_graphemes": 12
+  },
+  "entry_point": "subscript",
+  "rule": "subscript"
+}

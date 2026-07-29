@@ -41,7 +41,7 @@ like literals and variables.
 - `factor`: atomic units (literals, function calls, variables, etc.)
 */
 
-// expression := fsm-pipe | set-comprehension | matrix-comprehension | range-expression | formula ;
+// Grammar: docs/design/specification.mec, `expression`.
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expr) = match fsm_pipe(input.clone()) {
     Ok((input, pipe)) => (input, Expression::FsmPipe(pipe)),
@@ -78,7 +78,7 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
   Ok((input, expr))
 }
 
-// match-expression := expression, "?", whitespace*, match-arm+, period? ;
+// Grammar: docs/design/specification.mec, `match-expression`.
 pub fn match_expression(input: ParseString) -> ParseResult<MatchExpression> {
   let (input, source) = factor(input)?;
   let source = match source {
@@ -92,7 +92,7 @@ pub fn match_expression(input: ParseString) -> ParseResult<MatchExpression> {
   Ok((input, MatchExpression { source, arms }))
 }
 
-// match-arm := guard-operator, pattern, [",", expression], transition-operator, expression, statement-separator? ;
+// Grammar: docs/design/specification.mec, `match-arm`.
 pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
   let (input, _) = crate::state_machines::guard_operator(input)?;
   let (input, pattern) = crate::patterns::pattern(input)?;
@@ -110,13 +110,13 @@ pub fn match_arm(input: ParseString) -> ParseResult<MatchArm> {
   }))
 }
 
-// formula := l1 ;
+// Grammar: docs/design/specification.mec, `formula`.
 pub fn formula(input: ParseString) -> ParseResult<Factor> {
   let (input, factor) = l1(input)?;
   Ok((input, factor))
 }
 
-// l1 := l2, (logic-operator, l2)* ;
+// Grammar: docs/design/specification.mec, `l1`.
 pub fn l1(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l2(input)?;
   let (input, rhs) = many0(pair(logic_operator,cut(l2)))(input)?;
@@ -124,7 +124,7 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l2 := l3, (comparison-operator, l3)* ;
+// Grammar: docs/design/specification.mec, `l2`.
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
   let (input, rhs) = many0(pair(comparison_operator,cut(l3)))(input)?;
@@ -132,7 +132,7 @@ pub fn l2(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l3 := l4, (add-sub-operator, l4)* ;
+// Grammar: docs/design/specification.mec, `l3`.
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
   let (input, rhs) = many0(pair(add_sub_operator,cut(l4)))(input)?;
@@ -140,7 +140,7 @@ pub fn l3(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l4 := l5, (mul-div-operator | matrix-operator, l5)* ;
+// Grammar: docs/design/specification.mec, `l4`.
 pub fn l4(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l5(input)?;
   let (input, rhs) = many0(pair(alt((mul_div_operator, matrix_operator)),cut(l5)))(input)?;
@@ -148,7 +148,7 @@ pub fn l4(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l5 := l6, (power-operator, l6)* ;
+// Grammar: docs/design/specification.mec, `l5`.
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l6(input)?;
   let (input, rhs) = many0(pair(power_operator,cut(l6)))(input)?;
@@ -156,7 +156,7 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l6 := l7, (table-operator, l7)* ;
+// Grammar: docs/design/specification.mec, `l6`.
 pub fn l6(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l7(input)?;
   let (input, rhs) = many0(pair(table_operator,cut(l7)))(input)?;
@@ -164,7 +164,7 @@ pub fn l6(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l7 := factor, (set-operator, factor)* ;
+// Grammar: docs/design/specification.mec, `l7`.
 pub fn l7(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = factor(input)?;
   let (input, rhs) = many0(pair(set_operator,cut(factor)))(input)?;
@@ -172,7 +172,7 @@ pub fn l7(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// factor := parenthetical-term | negate-factor | not-factor | structure | function-call | literal | slice | var ;
+// Grammar: docs/design/specification.mec, `factor`.
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
   let (input, fctr) = if let Ok((input, fctr)) = parenthetical_term(input.clone()) {
     (input, fctr)
@@ -204,7 +204,7 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
   Ok((input, fctr))
 }
 
-// parenthetical-term := left-parenthesis, space-tab0, formula, space-tab0, right-parenthesis ;
+// Grammar: docs/design/specification.mec, `parenthetical-term`.
 pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let msg1 = "parenthetical_term: Expects expression";
   let msg2 = "parenthetical_term: Expects right parenthesis `)`";
@@ -235,7 +235,7 @@ fn prefixed_context_path(input: ParseString) -> ParseResult<(Identifier, Identif
   Ok((input, (context, name)))
 }
 
-// var := ("@", identifier, "/", identifier), kind-annotation? | identifier, kind-annotation? ;
+// Grammar: docs/design/specification.mec, `var`.
 pub fn var(input: ParseString) -> ParseResult<Var> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let ((input, kind)) = opt(kind_annotation)(input)?;
@@ -246,7 +246,7 @@ pub fn var(input: ParseString) -> ParseResult<Var> {
   Ok((input, Var{ name, context: None, kind }))
 }
 
-// statement-separator := ";" ;
+// Grammar: docs/design/specification.mec, `statement-separator`.
 pub fn statement_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,semicolon,whitespace0))(input)?;
   Ok((input, ()))
@@ -255,40 +255,40 @@ pub fn statement_separator(input: ParseString) -> ParseResult<()> {
 // Math Expressions
 // ----------------------------------------------------------------------------
 
-// add-sub-operator := add | subtract ;
+// Grammar: docs/design/specification.mec, `add-sub-operator`.
 pub fn add_sub_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((add, subtract))(input)?;
   Ok((input, FormulaOperator::AddSub(op)))
 }
 
 
-// mul-div-operator := multiply | divide | modulus ;
+// Grammar: docs/design/specification.mec, `mul-div-operator`.
 pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((multiply, divide, modulus))(input)?;
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 
-// power-operator := power ;
+// Grammar: docs/design/specification.mec, `power-operator`.
 pub fn power_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = power(input)?;
   Ok((input, FormulaOperator::Power(op)))
 }
 
-// negate-factor := "-", factor ;
+// Grammar: docs/design/specification.mec, `negate-factor`.
 pub fn negate_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = dash(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, Factor::Negate(Box::new(expr))))
 }
 
-// not-factor := not, factor ;
+// Grammar: docs/design/specification.mec, `not-factor`.
 pub fn not_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = not(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, Factor::Not(Box::new(expr))))
 }
 
-// add := "+" ;
+// Grammar: docs/design/specification.mec, `add`.
 pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("+")(input)?;
@@ -301,7 +301,7 @@ pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
   Ok((input, AddSubOp::Sub))
 }
 
-// subtract := "-" ;
+// Grammar: docs/design/specification.mec, `raw-subtract`.
 pub fn raw_subtract(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = pair(is_not(comment_sigil), tag("-"))(input)?;
   Ok((input, AddSubOp::Sub))
@@ -314,7 +314,7 @@ pub fn spaced_subtract(input: ParseString) -> ParseResult<AddSubOp> {
   Ok((input, AddSubOp::Sub))
 }
 
-// multiply := "*" | "×" ;
+// Grammar: docs/design/specification.mec, `multiply`.
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = pair(is_not(matrix_multiply),alt((tag("*"), tag("×"))))(input)?;
@@ -322,7 +322,7 @@ pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Mul))
 }
 
-// divide := "/" | "÷" ;
+// Grammar: docs/design/specification.mec, `divide`.
 pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = pair(is_not(comment_sigil),alt((tag("/"),tag("÷"))))(input)?;
@@ -330,7 +330,7 @@ pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Div))
 }
 
-// modulus := "%" ;
+// Grammar: docs/design/specification.mec, `modulus`.
 pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("%")(input)?;
@@ -338,7 +338,7 @@ pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Mod))
 }
 
-// power := "^" ;
+// Grammar: docs/design/specification.mec, `power`.
 pub fn power(input: ParseString) -> ParseResult<PowerOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("^")(input)?;
@@ -349,13 +349,13 @@ pub fn power(input: ParseString) -> ParseResult<PowerOp> {
 // Matrix Operations
 // ----------------------------------------------------------------------------
 
-// matrix-operator := matrix-multiply | matrix-solve | dot-product | cross-product ;
+// Grammar: docs/design/specification.mec, `matrix-operator`.
 pub fn matrix_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((matrix_multiply, matrix_solve, dot_product, cross_product))(input)?;
   Ok((input, FormulaOperator::Vec(op)))
 }
 
-// matrix-multiply := "**" ;
+// Grammar: docs/design/specification.mec, `matrix-multiply`.
 pub fn matrix_multiply(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("**")(input)?;
@@ -363,7 +363,7 @@ pub fn matrix_multiply(input: ParseString) -> ParseResult<VecOp> {
   Ok((input, VecOp::MatMul))
 }
 
-// matrix-solve := "\" ;
+// Grammar: docs/design/specification.mec, `matrix-solve`.
 pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("\\")(input)?;
@@ -371,7 +371,7 @@ pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
   Ok((input, VecOp::Solve))
 }
 
-// dot-product := "·" | "•" ;
+// Grammar: docs/design/specification.mec, `dot-product`.
 pub fn dot_product(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("·"),tag("•")))(input)?;
@@ -379,7 +379,7 @@ pub fn dot_product(input: ParseString) -> ParseResult<VecOp> {
   Ok((input, VecOp::Dot))
 }
 
-// cross-product := "⨯" ;
+// Grammar: docs/design/specification.mec, `cross-product`.
 pub fn cross_product(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⨯")(input)?;
@@ -387,7 +387,7 @@ pub fn cross_product(input: ParseString) -> ParseResult<VecOp> {
   Ok((input, VecOp::Cross))
 }
 
-// transpose := "'" ;
+// Grammar: docs/design/specification.mec, `transpose`.
 pub fn transpose(input: ParseString) -> ParseResult<()> {
   let (input, _) = tag("'")(input)?;
   Ok((input, ()))
@@ -396,7 +396,7 @@ pub fn transpose(input: ParseString) -> ParseResult<()> {
 // Range Expressions
 // ----------------------------------------------------------------------------
 
-// range := formula, range-operator, formula, (range-operator, formula)? ;
+// Grammar: docs/design/specification.mec, `range-expression`.
 pub fn range_expression(input: ParseString) -> ParseResult<RangeExpression> {
   let (input, start) = formula(input)?;
   let (input, op) = range_operator(input)?;
@@ -409,19 +409,19 @@ pub fn range_expression(input: ParseString) -> ParseResult<RangeExpression> {
   Ok((input, range))
 }
 
-// range-inclusive := "..=" ;
+// Grammar: docs/design/specification.mec, `range-inclusive`.
 pub fn range_inclusive(input: ParseString) -> ParseResult<RangeOp> {
   let (input, _) = tag("..=")(input)?;
   Ok((input, RangeOp::Inclusive))
 }
 
-// range-exclusive := ".." ;
+// Grammar: docs/design/specification.mec, `range-exclusive`.
 pub fn range_exclusive(input: ParseString) -> ParseResult<RangeOp> {
   let (input, _) = tag("..")(input)?;
   Ok((input, RangeOp::Exclusive))
 }
 
-// range-operator := range-inclusive | range-exclusive ;
+// Grammar: docs/design/specification.mec, `range-operator`.
 pub fn range_operator(input: ParseString) -> ParseResult<RangeOp> {
   let (input, op) = alt((range_inclusive,range_exclusive))(input)?;
   Ok((input, op))
@@ -430,13 +430,13 @@ pub fn range_operator(input: ParseString) -> ParseResult<RangeOp> {
 // Comparison expressions
 // ----------------------------------------------------------------------------
 
-// comparison-operator := strict-equal | strict-not-equal | not-equal | equal-to | greater-than-equal | greater-than | less-than-equal | less-than ;
+// Grammar: docs/design/specification.mec, `comparison-operator`.
 pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((strict_equal, strict_not_equal, not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
   Ok((input, FormulaOperator::Comparison(op)))
 }
 
-// not-equal := "!=" | "¬=" | "≠" ;
+// Grammar: docs/design/specification.mec, `not-equal`.
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
@@ -444,7 +444,7 @@ pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::NotEqual))
 }
 
-// equal-to := "==" ;
+// Grammar: docs/design/specification.mec, `equal-to`.
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("=="),tag("⩵")))(input)?;
@@ -452,7 +452,7 @@ pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::Equal))
 }
 
-// strict-not-equal := "!==" | "!≡" | "¬≡" | "¬==" ;
+// Grammar: docs/design/specification.mec, `strict-not-equal`.
 pub fn strict_not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("!=="),tag("!≡"),tag("¬≡"),tag("¬==")))(input)?;
@@ -460,7 +460,7 @@ pub fn strict_not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::StrictNotEqual))
 }
 
-// strict-equal := "===" | "≡" | "=:=" ;
+// Grammar: docs/design/specification.mec, `strict-equal`.
 pub fn strict_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("==="),tag("≡")))(input)?;
@@ -468,7 +468,7 @@ pub fn strict_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::StrictEqual))
 }
 
-// greater-than := ">" ;
+// Grammar: docs/design/specification.mec, `greater-than`.
 pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag(">")(input)?;
@@ -476,7 +476,7 @@ pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::GreaterThan))
 }
 
-// less_than := "<" ;
+// Grammar: docs/design/specification.mec, `less-than`.
 pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = is_not(tag("<-"))(input)?;
@@ -485,7 +485,7 @@ pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::LessThan))
 }
 
-// greater-than-equal := ">=" | "≥" ;
+// Grammar: docs/design/specification.mec, `greater-than-equal`.
 pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag(">="),tag("≥")))(input)?;
@@ -493,7 +493,7 @@ pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::GreaterThanEqual))
 }
 
-// less-than-equal := "<=" | "≤" ;
+// Grammar: docs/design/specification.mec, `less-than-equal`.
 pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("<="),tag("≤")))(input)?;
@@ -504,13 +504,13 @@ pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
 // Logic expressions
 // ----------------------------------------------------------------------------
 
-// logic-operator := and | or | xor ;
+// Grammar: docs/design/specification.mec, `logic-operator`.
 pub fn logic_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((and, or, xor))(input)?;
   Ok((input, FormulaOperator::Logic(op)))
 }
 
-// or := "|" ;
+// Grammar: docs/design/specification.mec, `or`.
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("||"), tag("∨"), tag("⋁")))(input)?;
@@ -518,7 +518,7 @@ pub fn or(input: ParseString) -> ParseResult<LogicOp> {
   Ok((input, LogicOp::Or))
 }
 
-// and := "&" ;
+// Grammar: docs/design/specification.mec, `and`.
 pub fn and(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("&&"), tag("∧"), tag("⋀")))(input)?;
@@ -526,13 +526,13 @@ pub fn and(input: ParseString) -> ParseResult<LogicOp> {
   Ok((input, LogicOp::And))
 }
 
-// not := "!" | "¬" ;
+// Grammar: docs/design/specification.mec, `not`.
 pub fn not(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = alt((tag("!"), tag("¬")))(input)?;
   Ok((input, LogicOp::Not))
 }
 
-// xor := "xor" | "⊕" | "⊻" ;
+// Grammar: docs/design/specification.mec, `xor`.
 pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("^^"), tag("⊕"), tag("⊻")))(input)?;
@@ -543,13 +543,13 @@ pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
 // Table Operations
 // ----------------------------------------------------------------------------
 
-// table-operator := join | left-join | right-join | full-join | left-semi-join | left-anti-join ;
+// Grammar: docs/design/specification.mec, `table-operator`.
 fn table_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((join,left_join,right_join,full_join,left_semi_join,left_anti_join))(input)?;
   Ok((input, FormulaOperator::Table(op)))
 }
 
-// join := "⋈" ;
+// Grammar: docs/design/specification.mec, `join`.
 fn join(input: ParseString) -> ParseResult<TableOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⋈")(input)?;
@@ -557,7 +557,7 @@ fn join(input: ParseString) -> ParseResult<TableOp> {
   Ok((input, TableOp::InnerJoin))
 }
 
-// left-join := "⟕" ;
+// Grammar: docs/design/specification.mec, `left-join`.
 fn left_join(input: ParseString) -> ParseResult<TableOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⟕")(input)?;
@@ -565,7 +565,7 @@ fn left_join(input: ParseString) -> ParseResult<TableOp> {
   Ok((input, TableOp::LeftOuterJoin))
 }
 
-// right-join := "⟖" ;
+// Grammar: docs/design/specification.mec, `right-join`.
 fn right_join(input: ParseString) -> ParseResult<TableOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⟖")(input)?;
@@ -573,7 +573,7 @@ fn right_join(input: ParseString) -> ParseResult<TableOp> {
   Ok((input, TableOp::RightOuterJoin))
 }
 
-// full-join := "⟗" ;
+// Grammar: docs/design/specification.mec, `full-join`.
 fn full_join(input: ParseString) -> ParseResult<TableOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⟗")(input)?;
@@ -581,7 +581,7 @@ fn full_join(input: ParseString) -> ParseResult<TableOp> {
   Ok((input, TableOp::FullOuterJoin))
 }
 
-// left-semi-join := "⋉" ;
+// Grammar: docs/design/specification.mec, `left-semi-join`.
 fn left_semi_join(input: ParseString) -> ParseResult<TableOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⋉")(input)?;
@@ -589,7 +589,7 @@ fn left_semi_join(input: ParseString) -> ParseResult<TableOp> {
   Ok((input, TableOp::LeftSemiJoin))
 }
 
-// left-anti-join := "▷" ;
+// Grammar: docs/design/specification.mec, `left-anti-join`.
 fn left_anti_join(input: ParseString) -> ParseResult<TableOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("▷")(input)?;
@@ -601,13 +601,13 @@ fn left_anti_join(input: ParseString) -> ParseResult<TableOp> {
 // Set Operations
 // ----------------------------------------------------------------------------
 
-// set-operator := union | intersection | difference | complement | subset | superset | proper-subset | proper-superset | element-of | not-element-of | symmetric-difference ;
+// Grammar: docs/design/specification.mec, `set-operator`.
 pub fn set_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((union_op,intersection,difference,complement,subset,superset,proper_subset,proper_superset,element_of,not_element_of,symmetric_difference))(input)?;
   Ok((input, FormulaOperator::Set(op)))
 }
 
-// union := "∪" ;
+// Grammar: docs/design/specification.mec, `union-op`.
 pub fn union_op(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("∪")(input)?;
@@ -615,7 +615,7 @@ pub fn union_op(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::Union))
 }
 
-// intersection := "∩" ;
+// Grammar: docs/design/specification.mec, `intersection`.
 pub fn intersection(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("∩")(input)?;
@@ -623,7 +623,7 @@ pub fn intersection(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::Intersection))
 }
 
-// difference := "∖" ;
+// Grammar: docs/design/specification.mec, `difference`.
 pub fn difference(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("∖")(input)?;
@@ -631,7 +631,7 @@ pub fn difference(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::Difference))
 }
 
-// complement := "∁" ;
+// Grammar: docs/design/specification.mec, `complement`.
 pub fn complement(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("∁")(input)?;
@@ -639,7 +639,7 @@ pub fn complement(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::Complement))
 }
 
-// subset := "⊆" ;
+// Grammar: docs/design/specification.mec, `subset`.
 pub fn subset(input: ParseString) -> ParseResult<SetOp> { 
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⊆")(input)?;
@@ -647,7 +647,7 @@ pub fn subset(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::Subset))
 }
 
-// superset := "⊇" ;
+// Grammar: docs/design/specification.mec, `superset`.
 pub fn superset(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("⊇")(input)?;
@@ -655,7 +655,7 @@ pub fn superset(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::Superset))
 }
 
-// proper-subset := "⊊" ;
+// Grammar: docs/design/specification.mec, `proper-subset`.
 pub fn proper_subset(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("⊊"), tag("⊂")))(input)?;
@@ -663,7 +663,7 @@ pub fn proper_subset(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::ProperSubset))
 }
 
-// proper-superset := "⊋" ;
+// Grammar: docs/design/specification.mec, `proper-superset`.
 pub fn proper_superset(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = alt((tag("⊋"), tag("⊃")))(input)?;
@@ -671,7 +671,7 @@ pub fn proper_superset(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::ProperSuperset))
 }
 
-// element-of := "∈" ;
+// Grammar: docs/design/specification.mec, `element-of`.
 pub fn element_of(input: ParseString) -> ParseResult<SetOp> { 
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("∈")(input)?;
@@ -679,7 +679,7 @@ pub fn element_of(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::ElementOf))
 }
 
-// not-element-of := "∉" ;
+// Grammar: docs/design/specification.mec, `not-element-of`.
 pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws0e(input)?;
   let (input, _) = tag("∉")(input)?;
@@ -687,7 +687,7 @@ pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
   Ok((input, SetOp::NotElementOf))
 }
 
-// symmetric-difference := "Δ" ;
+// Grammar: docs/design/specification.mec, `symmetric-difference`.
 pub fn symmetric_difference(input: ParseString) -> ParseResult<SetOp> {
   let (input, _) = ws1e(input)?;
   let (input, _) = tag("Δ")(input)?;
@@ -698,7 +698,7 @@ pub fn symmetric_difference(input: ParseString) -> ParseResult<SetOp> {
 // Set Comprehensions
 // ----------------------------------------------------------------------------
 
-// set-comprehension := "{", formula, "|", [set-qualifier, ","], "}" ;
+// Grammar: docs/design/specification.mec, `set-comprehension`.
 pub fn set_comprehension(input: ParseString) -> ParseResult<SetComprehension> {
   let (input, _) = left_brace(input)?;
   let (input, _) = space_tab0(input)?;
@@ -712,7 +712,7 @@ pub fn set_comprehension(input: ParseString) -> ParseResult<SetComprehension> {
   Ok((input, SetComprehension{ expression: expr, qualifiers: quals }))
 }
 
-// matrix-comprehension := "[", expression, "|", [matrix-qualifier, ","], "]" ;
+// Grammar: docs/design/specification.mec, `matrix-comprehension`.
 pub fn matrix_comprehension(input: ParseString) -> ParseResult<MatrixComprehension> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = space_tab0(input)?;
@@ -732,7 +732,7 @@ pub fn matrix_comprehension(input: ParseString) -> ParseResult<MatrixComprehensi
   Ok((input, MatrixComprehension{ expression: expr, qualifiers: quals }))
 }
 
-// set-qualifier := generator | expression | variable-define  ;
+// Grammar: docs/design/specification.mec, `comprehension-qualifier`.
 pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQualifier> {
   match generator(input.clone()) {
     Ok((input, generator)) => Ok((input, generator)),
@@ -746,7 +746,7 @@ pub fn comprehension_qualifier(input: ParseString) -> ParseResult<ComprehensionQ
   }
 }
 
-// generator := pattern, "<-", expression ;
+// Grammar: docs/design/specification.mec, `generator`.
 pub fn generator(input: ParseString) -> ParseResult<ComprehensionQualifier> {
   let (input, ptrn) = pattern(input)?;
   let (input, _) = space_tab0(input)?;
@@ -759,13 +759,13 @@ pub fn generator(input: ParseString) -> ParseResult<ComprehensionQualifier> {
 // Subscript Operations
 // ----------------------------------------------------------------------------
 
-// subscript := (swizzle-subscript | dot-subscript-int | dot-subscript | bracket-subscript | brace-subscript)+ ; 
+// Grammar: docs/design/specification.mec, `subscript`.
 pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   let (input, subscripts) = many1(alt((swizzle_subscript,dot_subscript,dot_subscript_int,bracket_subscript,brace_subscript)))(input)?;
   Ok((input, subscripts))
 }
 
-// slice := ("@", identifier, "/", identifier) | identifier, subscript ;
+// Grammar: docs/design/specification.mec, `slice`.
 pub fn slice(input: ParseString) -> ParseResult<Slice> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let (input, ixes) = subscript(input)?;
@@ -776,7 +776,7 @@ pub fn slice(input: ParseString) -> ParseResult<Slice> {
   Ok((input, Slice{name, context: None, subscript: ixes}))
 }
 
-// slice-ref := ("@", identifier, "/", identifier) | identifier, subscript? ;
+// Grammar: docs/design/specification.mec, `slice-ref`.
 pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
     let (input, ixes) = opt(subscript)(input)?;
@@ -787,7 +787,7 @@ pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   Ok((input, SliceRef{name, context: None, subscript: ixes}))
 }
 
-// swizzle-subscript := ".", identifier, ",", list1(",", identifier) ;
+// Grammar: docs/design/specification.mec, `swizzle-subscript`.
 pub fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, first) = identifier(input)?;
@@ -798,21 +798,21 @@ pub fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Swizzle(subscripts)))
 }
 
-// dot-subscript := ".", identifier ;
+// Grammar: docs/design/specification.mec, `dot-subscript`.
 pub fn dot_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, Subscript::Dot(name)))
 }
 
-// dot-subscript-int := ".", integer-literal ;
+// Grammar: docs/design/specification.mec, `dot-subscript-int`.
 pub fn dot_subscript_int(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, name) = integer_literal(input)?;
   Ok((input, Subscript::DotInt(name)))
 }
 
-// bracket-subscript := "[", list1(",", select-all | range-subscript | formula-subscript), "]" ;
+// Grammar: docs/design/specification.mec, `bracket-subscript`.
 pub fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_bracket(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,range_subscript,formula_subscript)))(input)?;
@@ -820,7 +820,7 @@ pub fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Bracket(subscripts)))
 }
 
-// brace-subscript := "{", list1(",", select-all | range-subscript | formula-subscript), "}" ;
+// Grammar: docs/design/specification.mec, `brace-subscript`.
 pub fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_brace(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,range_subscript,formula_subscript)))(input)?;
@@ -828,19 +828,19 @@ pub fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Brace(subscripts)))
 }
 
-// select-all := ":" ;
+// Grammar: docs/design/specification.mec, `select-all`.
 pub fn select_all(input: ParseString) -> ParseResult<Subscript> {
   let (input, lhs) = colon(input)?;
   Ok((input, Subscript::All))
 }
 
-// formula-subscript := formula ;
+// Grammar: docs/design/specification.mec, `formula-subscript`.
 pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, factor) = formula(input)?;
   Ok((input, Subscript::Formula(factor)))
 }
 
-// range-subscript := range-expression ;
+// Grammar: docs/design/specification.mec, `range-subscript`.
 pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, rng) = range_expression(input)?;
   Ok((input, Subscript::Range(rng)))

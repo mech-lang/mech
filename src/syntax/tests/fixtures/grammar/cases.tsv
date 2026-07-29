@@ -1,0 +1,363 @@
+id	rule	entry-point	feature-set	expected-result	source-file	snapshot-file	notes
+TERMINAL-CONTRACTS	fixed-terminals	terminal-contracts	all	accept	accepted/terminal-contracts.mec	snapshots/TERMINAL-CONTRACTS.json	Every base.rs leaf! and ws0_leaf! parser accepts its declared literal with exact TokenKind and token text.
+ALTERNATIVE-TERMINAL-CONTRACTS	alternative-terminals	alternative-terminal-contracts	all	accept	accepted/alternative-terminal-contracts.mec	snapshots/ALTERNATIVE-TERMINAL-CONTRACTS.json	Every finite alternative of compact terminal wrappers is executed directly with full consumption, exact output, and source-table parity.
+MIKA-ALTERNATIVE-TERMINAL-CONTRACTS	mika-alternative-terminals	mika-alternative-terminal-contracts	mika	accept	accepted/mika-alternative-terminal-contracts.mec	snapshots/MIKA-ALTERNATIVE-TERMINAL-CONTRACTS.json	Every accepted Mika arm tag and every declared eye and nose variant is parsed directly with exact enum-result and source-table parity.
+LEX-DASH-TIGHT	identifier	expression	all	accept	accepted/lex-dash-tight.mec	snapshots/LEX-DASH-TIGHT.json	Tight dash is part of one identifier.
+LEX-DASH-SPACED	expression	expression	all	accept	accepted/lex-dash-spaced.mec	snapshots/LEX-DASH-SPACED.json	Whitespace selects binary subtraction.
+LEX-SLASH-TIGHT	identifier	expression	all	accept	accepted/lex-slash-tight.mec	snapshots/LEX-SLASH-TIGHT.json	Tight slash is part of one identifier.
+LEX-SLASH-SPACED	expression	expression	all	accept	accepted/lex-slash-spaced.mec	snapshots/LEX-SLASH-SPACED.json	Whitespace selects binary division.
+LEX-RATIONAL-TIGHT	number	number	all	accept	accepted/lex-rational-tight.mec	snapshots/LEX-RATIONAL-TIGHT.json	Tight numeric slash selects a rational literal.
+LEX-RATIONAL-SPACED	expression	expression	all	accept	accepted/lex-rational-spaced.mec	snapshots/LEX-RATIONAL-SPACED.json	Spaced numeric slash selects division.
+LEX-DEFINE	statement	statement	all	accept	accepted/lex-define.mec	snapshots/LEX-DEFINE.json	Composite define operator selects a definition.
+PAR-COLON-EQUAL-SEPARATE	paragraph	normalized-paragraph-newline	all	accept	accepted/paragraph-colon-equal.mec	snapshots/PAR-COLON-EQUAL-SEPARATE.json	Explicit normalization appends the newline consumed by the line-paragraph wrapper.
+INCOMPLETE-MECH-CODE	mech-code	mech-code	all	recover-with-error	accepted/incomplete-mech-code.mec	snapshots/INCOMPLETE-MECH-CODE.json	Lower Mech code records an error node and consumes through recovery.
+INCOMPLETE-PARAGRAPH	paragraph	normalized-paragraph-newline	all	recover-with-error	accepted/incomplete-paragraph.mec	snapshots/INCOMPLETE-PARAGRAPH.json	Explicitly normalized line-paragraph recovery preserves the excluded define operator as an error element.
+INCOMPLETE-PUBLIC-PARSE	complete-document	parse	all	reject	rejected/incomplete-public-parse.mec	-	Public parse rejects the recovery diagnostic.
+PAR-EXCLUDE-DEFINE	paragraph	paragraph	all	reject	rejected/paragraph-define.mec	-	Paragraph text excludes the define operator.
+PAR-EXCLUDE-IMAGE	paragraph	paragraph	all	reject	rejected/paragraph-image-prefix.mec	-	Paragraph text excludes the image prefix.
+PAR-EXCLUDE-FOOTNOTE	paragraph	paragraph	all	reject	rejected/paragraph-footnote-prefix.mec	-	Paragraph text excludes the footnote prefix.
+PAR-EXCLUDE-HIGHLIGHT	paragraph	paragraph	all	reject	rejected/paragraph-highlight-prefix.mec	-	Paragraph text excludes the highlight sigil.
+PAR-EXCLUDE-EQUATION	paragraph	paragraph	all	reject	rejected/paragraph-equation-prefix.mec	-	Paragraph text excludes the equation sigil.
+PAR-EXCLUDE-INLINE-MECH	paragraph	paragraph	all	reject	rejected/paragraph-inline-mech-prefix.mec	-	Paragraph text excludes double left brace.
+PAR-EXCLUDE-EVAL-MECH	paragraph	paragraph	all	reject	rejected/paragraph-eval-mech-prefix.mec	-	Paragraph text excludes left brace.
+PAR-EXCLUDE-SECTION	paragraph	paragraph	all	reject	rejected/paragraph-section-prefix.mec	-	Paragraph text excludes the section reference sigil.
+PAR-EXCLUDE-LBRACKET	paragraph	paragraph	all	reject	rejected/paragraph-left-bracket.mec	-	Paragraph text excludes left bracket.
+PAR-EXCLUDE-LANGLE	paragraph	paragraph	all	reject	rejected/paragraph-left-angle.mec	-	Paragraph text excludes left angle.
+PAR-EXCLUDE-RBRACKET	paragraph	paragraph	all	reject	rejected/paragraph-right-bracket.mec	-	Paragraph text excludes right bracket.
+PAR-EXCLUDE-TILDE	paragraph	paragraph	all	reject	rejected/paragraph-tilde.mec	-	Paragraph text excludes tilde.
+PAR-EXCLUDE-ASTERISK	paragraph	paragraph	all	reject	rejected/paragraph-asterisk.mec	-	Paragraph text excludes asterisk.
+PAR-EXCLUDE-UNDERSCORE	paragraph	paragraph	all	reject	rejected/paragraph-underscore.mec	-	Paragraph text excludes underscore.
+PAR-EXCLUDE-GRAVE	paragraph	paragraph	all	reject	rejected/paragraph-grave.mec	-	Paragraph text excludes grave.
+PAR-EXCLUDE-BAR	paragraph	paragraph	all	reject	rejected/paragraph-bar.mec	-	Paragraph text excludes bar.
+PAR-EXCLUDE-MIKA-OPEN	paragraph	paragraph	all	reject	rejected/paragraph-mika-open.mec	-	Paragraph text excludes Mika section open.
+PAR-EXCLUDE-MIKA-CLOSE	paragraph	paragraph	all	reject	rejected/paragraph-mika-close.mec	-	Paragraph text excludes Mika section close.
+NUM-INTEGER	number	number	all	accept	accepted/number-integer.mec	snapshots/NUM-INTEGER.json	Untyped integer literal.
+NUM-TYPED	number	number	all	accept	accepted/number-typed.mec	snapshots/NUM-TYPED.json	Typed integer suffix is syntactic and identifier based.
+NUM-UNDERSCORE	number	number	all	accept	accepted/number-underscore.mec	snapshots/NUM-UNDERSCORE.json	Digit sequence accepts underscore digits.
+NUM-FLOAT	number	number	all	accept	accepted/number-float.mec	snapshots/NUM-FLOAT.json	Full floating point literal.
+NUM-LEADING-DOT	number	number	all	accept	accepted/number-leading-dot.mec	snapshots/NUM-LEADING-DOT.json	Leading-dot floating point literal.
+NUM-SCIENTIFIC	number	number	all	accept	accepted/number-scientific.mec	snapshots/NUM-SCIENTIFIC.json	Scientific notation with signed exponent.
+NUM-HEX	number	number	all	accept	accepted/number-hex.mec	snapshots/NUM-HEX.json	Hexadecimal literal.
+NUM-DECIMAL	number	number	all	accept	accepted/number-decimal.mec	snapshots/NUM-DECIMAL.json	Explicit decimal literal.
+NUM-OCTAL	number	number	all	accept	accepted/number-octal.mec	snapshots/NUM-OCTAL.json	Octal literal syntax.
+NUM-BINARY	number	number	all	accept	accepted/number-binary.mec	snapshots/NUM-BINARY.json	Binary literal syntax.
+NUM-NEGATIVE	number	number	all	accept	accepted/number-negative.mec	snapshots/NUM-NEGATIVE.json	Leading dash negates a real number.
+NUM-COMPLEX	number	number	all	accept	accepted/number-complex.mec	snapshots/NUM-COMPLEX.json	Adjacent real and imaginary components.
+NUM-EMPTY-HEX	number	number	all	reject	rejected/number-empty-hex.mec	-	Hexadecimal prefix requires payload.
+NUM-TRAILING-DOT	number	number	all	accept-prefix	accepted/number-trailing-dot.mec	snapshots/NUM-TRAILING-DOT.json	Number entry accepts the numeric prefix and leaves the trailing period.
+STR-UTF8	string	string	all	accept	accepted/string-utf8.mec	snapshots/STR-UTF8.json	Quoted string preserves Unicode and newline text.
+STR-RAW	string	string	all	accept	accepted/string-raw.mec	snapshots/STR-RAW.json	Triple-quoted raw string.
+STR-UNCLOSED	string	string	all	reject	rejected/string-unclosed.mec	-	Quoted string requires a closing quote.
+BOOL-ENGLISH	boolean	boolean	all	accept	accepted/bool-english.mec	snapshots/BOOL-ENGLISH.json	English boolean literal.
+BOOL-SYMBOL	boolean	boolean	all	accept	accepted/bool-symbol.mec	snapshots/BOOL-SYMBOL.json	Symbolic boolean literal.
+BOOL-ENGLISH-FALSE	boolean	boolean	all	accept	accepted/bool-english-false.mec	snapshots/BOOL-ENGLISH-FALSE.json	English false boolean literal.
+BOOL-SYMBOL-FALSE	boolean	boolean	all	accept	accepted/bool-symbol-false.mec	snapshots/BOOL-SYMBOL-FALSE.json	Symbolic false boolean literal.
+ATOM	atom	literal	all	accept	accepted/atom.mec	snapshots/ATOM.json	Atom literal.
+IDENT-SYMBOLS	identifier	identifier	all	accept	accepted/identifier-symbols.mec	snapshots/IDENT-SYMBOLS.json	Identifier includes every supported ASCII symbol character.
+PREFIX-IDENTIFIER	identifier	identifier	all	accept-prefix	accepted/identifier-prefix.mec	snapshots/PREFIX-IDENTIFIER.json	Lower identifier parser intentionally leaves unsupported underscore input.
+KIND-SCALAR	kind-annotation	kind-annotation	all	accept	accepted/kind-scalar.mec	snapshots/KIND-SCALAR.json	Scalar kind annotation.
+KIND-OPTION	kind-annotation	kind-annotation	all	accept	accepted/kind-option.mec	snapshots/KIND-OPTION.json	Optional kind annotation.
+KIND-COMPOUND	kind-annotation	kind-annotation	all	accept	accepted/kind-compound.mec	snapshots/KIND-COMPOUND.json	Record combines matrix option tuple map set and atom kinds.
+KIND-TABLE	kind-annotation	kind-annotation	all	accept	accepted/kind-table.mec	snapshots/KIND-TABLE.json	Table kind with fields and size literal.
+KIND-UNCLOSED	kind-annotation	kind-annotation	all	reject	rejected/kind-unclosed.mec	-	Kind annotation requires a right angle.
+STMT-DEFINE	statement	statement	all	accept	accepted/statement-define.mec	snapshots/STMT-DEFINE.json	Variable definition.
+STMT-MUTABLE	statement	statement	all	accept	accepted/statement-mutable.mec	snapshots/STMT-MUTABLE.json	Mutable variable definition.
+STMT-ASSIGN	statement	statement	all	accept	accepted/statement-assign.mec	snapshots/STMT-ASSIGN.json	Variable assignment.
+STMT-OP-ASSIGN	statement	statement	all	accept	accepted/statement-op-assign.mec	snapshots/STMT-OP-ASSIGN.json	Compound assignment.
+STMT-SUB-ASSIGN	statement	statement	all	accept	accepted/statement-sub-assign.mec	snapshots/STMT-SUB-ASSIGN.json	Subtraction assignment.
+STMT-MUL-ASSIGN	statement	statement	all	accept	accepted/statement-mul-assign.mec	snapshots/STMT-MUL-ASSIGN.json	Multiplication assignment.
+STMT-DIV-ASSIGN	statement	statement	all	accept	accepted/statement-div-assign.mec	snapshots/STMT-DIV-ASSIGN.json	Division assignment.
+STMT-EXP-ASSIGN	statement	statement	all	accept	accepted/statement-exp-assign.mec	snapshots/STMT-EXP-ASSIGN.json	Exponent assignment.
+STMT-TUPLE-DESTRUCTURE	statement	statement	all	accept	accepted/statement-tuple-destructure.mec	snapshots/STMT-TUPLE-DESTRUCTURE.json	Tuple destructuring definition.
+STMT-KIND-DEFINE	statement	statement	all	accept	accepted/statement-kind-define.mec	snapshots/STMT-KIND-DEFINE.json	Named kind definition.
+STMT-ENUM	statement	statement	all	accept	accepted/statement-enum.mec	snapshots/STMT-ENUM.json	Enum definition with payload kind.
+INVARIANT-DEFINE	statement	statement	invariant-define	accept	accepted/invariant-define.mec	snapshots/INVARIANT-DEFINE.json	Invariant definition when the invariant-define grammar feature is enabled.
+STMT-MISSING-RHS	statement	statement	all	reject	rejected/statement-missing-rhs.mec	-	Definition requires an expression.
+IMPORT-MODULE	module-import	module-import	all	accept	accepted/import-module.mec	snapshots/IMPORT-MODULE.json	Structured module item import.
+IMPORT-ALIAS	module-import	module-import	all	accept	accepted/import-alias.mec	snapshots/IMPORT-ALIAS.json	Context alias import.
+IMPORT-SOURCE	statement	statement	all	accept	accepted/import-source.mec	snapshots/IMPORT-SOURCE.json	Source import declaration.
+EXPORT-DECLARATION	statement	statement	all	accept	accepted/export-declaration.mec	snapshots/EXPORT-DECLARATION.json	Export declaration.
+CONTEXT-DECLARATION	statement	statement	all	accept	accepted/context-declaration.mec	snapshots/CONTEXT-DECLARATION.json	Context resource declaration.
+CONTEXT-SEND	statement	statement	all	accept	accepted/context-send.mec	snapshots/CONTEXT-SEND.json	Addressed context send.
+IMPORT-BAD-SUFFIX	module-import	module-import	all	reject	rejected/import-bad-suffix.mec	-	Module slash requires an item glob or group.
+FUNCTION-STATEMENTS	function-define	function-define	all	accept	accepted/function-statements.mec	snapshots/FUNCTION-STATEMENTS.json	Statement-bodied function form.
+FUNCTION-MULTI-OUTPUT	function-define	function-define	all	accept	accepted/function-multi-output.mec	snapshots/FUNCTION-MULTI-OUTPUT.json	Statement-bodied function with tuple output declaration.
+FUNCTION-MATCH-ARMS	function-match-arm	function-define	all	accept	accepted/function-match-arms.mec	snapshots/FUNCTION-MATCH-ARMS.json	Pattern-arm function form.
+FUNCTION-MISSING-PERIOD	function-define	function-define	all	reject	rejected/function-missing-period.mec	-	Statement-bodied functions require a final period.
+MATCH	match-expression	match-expression	all	accept	accepted/match.mec	snapshots/MATCH.json	Match expression with literal and wildcard arms.
+MATCH-GUARD	match-expression	match-expression	all	accept	accepted/match-guard.mec	snapshots/MATCH-GUARD.json	Match arm with comma guard.
+MATCH-NO-ARMS	match-expression	match-expression	all	reject	rejected/match-no-arms.mec	-	Question marker requires at least one arm.
+STRUCT-MATRIX	structure	structure	all	accept	accepted/structure-matrix.mec	snapshots/STRUCT-MATRIX.json	Matrix structure.
+STRUCT-TUPLE	structure	structure	all	accept	accepted/structure-tuple.mec	snapshots/STRUCT-TUPLE.json	Tuple structure.
+STRUCT-TUPLE-STRUCT	structure	structure	all	accept	accepted/structure-tuple-struct.mec	snapshots/STRUCT-TUPLE-STRUCT.json	Tuple-struct atom payload.
+STRUCT-RECORD	structure	structure	all	accept	accepted/structure-record.mec	snapshots/STRUCT-RECORD.json	Identifier-keyed braces select record before map.
+STRUCT-MAP	structure	structure	all	accept	accepted/structure-map.mec	snapshots/STRUCT-MAP.json	Expression-keyed map.
+STRUCT-SET	structure	structure	all	accept	accepted/structure-set.mec	snapshots/STRUCT-SET.json	Set structure.
+STRUCT-EMPTY-SET	structure	structure	all	accept	accepted/structure-empty-set.mec	snapshots/STRUCT-EMPTY-SET.json	Ambiguous empty braces select empty set first.
+STRUCT-EMPTY-MAP	structure	structure	all	accept	accepted/structure-empty-map.mec	snapshots/STRUCT-EMPTY-MAP.json	Colon distinguishes empty map.
+STRUCT-TABLE	structure	structure	all	accept	accepted/structure-table.mec	snapshots/STRUCT-TABLE.json	Table structure.
+STRUCT-UNCLOSED	structure	structure	all	reject	rejected/structure-unclosed.mec	-	Structure requires a closing delimiter.
+SUBSCRIPT-SWIZZLE	subscript	subscript	all	accept	accepted/subscript-swizzle.mec	snapshots/SUBSCRIPT-SWIZZLE.json	Swizzle subscript.
+SUBSCRIPT-DOT	subscript	subscript	all	accept	accepted/subscript-dot.mec	snapshots/SUBSCRIPT-DOT.json	Dot field subscript.
+SUBSCRIPT-DOT-INT	subscript	subscript	all	accept	accepted/subscript-dot-int.mec	snapshots/SUBSCRIPT-DOT-INT.json	Dot integer subscript.
+SUBSCRIPT-BRACKET-FORMULA	subscript	subscript	all	accept	accepted/subscript-bracket-formula.mec	snapshots/SUBSCRIPT-BRACKET-FORMULA.json	Bracket formula subscript.
+SUBSCRIPT-BRACKET-RANGE	subscript	subscript	all	accept	accepted/subscript-bracket-range.mec	snapshots/SUBSCRIPT-BRACKET-RANGE.json	Bracket range subscript.
+SUBSCRIPT-SELECT-ALL	subscript	subscript	all	accept	accepted/subscript-select-all.mec	snapshots/SUBSCRIPT-SELECT-ALL.json	Select-all subscript.
+SUBSCRIPT-BRACE	subscript	subscript	all	accept	accepted/subscript-brace.mec	snapshots/SUBSCRIPT-BRACE.json	Brace subscript.
+SUBSCRIPT-COMPOSED	subscript	subscript	all	accept	accepted/subscript-composed.mec	snapshots/SUBSCRIPT-COMPOSED.json	Multiple consecutive subscript forms.
+SUBSCRIPT-EMPTY	subscript	subscript	all	reject	rejected/subscript-empty.mec	-	Bracket subscript requires at least one selector.
+PATTERN-WILDCARD	pattern	pattern	all	accept	accepted/pattern-wildcard.mec	snapshots/PATTERN-WILDCARD.json	Wildcard pattern.
+PATTERN-ARRAY	pattern	pattern	all	accept	accepted/pattern-array.mec	snapshots/PATTERN-ARRAY.json	Array spread pattern.
+PATTERN-ARRAY-REST	pattern	pattern	all	accept	accepted/pattern-array-rest.mec	snapshots/PATTERN-ARRAY-REST.json	Array rest-binding pattern.
+PATTERN-TUPLE	pattern	pattern	all	accept	accepted/pattern-tuple.mec	snapshots/PATTERN-TUPLE.json	Tuple pattern.
+PATTERN-TUPLE-STRUCT	pattern	pattern	all	accept	accepted/pattern-tuple-struct.mec	snapshots/PATTERN-TUPLE-STRUCT.json	Grave tuple-struct pattern.
+PATTERN-ATOM-STRUCT	pattern	pattern	all	accept	accepted/pattern-atom-struct.mec	snapshots/PATTERN-ATOM-STRUCT.json	Atom tuple-struct pattern.
+PATTERN-DOUBLE-SPREAD	pattern	pattern	all	reject	rejected/pattern-double-spread.mec	-	Array pattern permits only one spread.
+FSM-SPEC	fsm-specification	fsm-specification	all	accept	accepted/fsm-specification.mec	snapshots/FSM-SPEC.json	State-machine specification and state variables.
+FSM-IMPL	fsm-implementation	fsm-implementation	all	accept	accepted/fsm-implementation.mec	snapshots/FSM-IMPL.json	State-machine implementation.
+FSM-DECLARE	fsm-declare	fsm-declare	all	accept	accepted/fsm-declare.mec	snapshots/FSM-DECLARE.json	State-machine declaration and instance pipe.
+FSM-INSTANCE	fsm-instance	fsm-instance	all	accept	accepted/fsm-instance.mec	snapshots/FSM-INSTANCE.json	State-machine instance with positional and bound arguments.
+FSM-NEXT	fsm-state-transition	fsm-state-transition	all	accept	accepted/fsm-next.mec	snapshots/FSM-NEXT.json	Synchronous state transition.
+FSM-ASYNC	fsm-async-transition	fsm-async-transition	all	accept	accepted/fsm-async.mec	snapshots/FSM-ASYNC.json	Asynchronous transition uses tilde arrow with a value.
+FSM-OUTPUT	fsm-output	fsm-output	all	accept	accepted/fsm-output.mec	snapshots/FSM-OUTPUT.json	Output transition.
+FSM-BLOCK	fsm-block-transition	fsm-block-transition	all	accept	accepted/fsm-block.mec	snapshots/FSM-BLOCK.json	Braced transition code region.
+FSM-ASYNC-BLOCK-VALUE	fsm-async-transition	fsm-async-transition	all	reject	rejected/fsm-async-block.mec	-	Async FSM transition does not treat braces as code.
+FSM-WILDCARD-VALUE	fsm-state-transition	fsm-state-transition	all	reject	rejected/fsm-wildcard-value.mec	-	Semantic value validation rejects wildcard transitions.
+ACTIVATION-BLOCK	activation-scope	activation-scope	all	accept	accepted/activation-block.mec	snapshots/ACTIVATION-BLOCK.json	Reactive activation with fixed braced body.
+ACTIVATION-ARMS	activation-scope	activation-scope	all	accept	accepted/activation-arms.mec	snapshots/ACTIVATION-ARMS.json	Reactive activation with pattern expression and block arms.
+ACTIVATION-EMPTY	activation-scope	activation-scope	all	accept	accepted/activation-empty.mec	snapshots/ACTIVATION-EMPTY.json	Reactive activation accepts an empty fixed body.
+ACTIVATION-NO-TRIGGER	activation-scope	activation-scope	all	reject	rejected/activation-no-trigger.mec	-	Activation tilde arrow requires a trigger expression.
+COMMENT-DASH	comment	comment	all	accept	accepted/comment-dash.mec	snapshots/COMMENT-DASH.json	Dash comment.
+COMMENT-SLASH	comment	comment	all	accept	accepted/comment-slash.mec	snapshots/COMMENT-SLASH.json	Slash comment.
+MECHDOWN-INLINE	paragraph	normalized-paragraph-newline	all	accept	accepted/mechdown-inline.mec	snapshots/MECHDOWN-INLINE.json	Explicitly normalized line paragraph covers inline formatting links references footnotes and equations.
+MECHDOWN-UNORDERED	mechdown-list	mechdown-list	all	accept	accepted/mechdown-unordered.mec	snapshots/MECHDOWN-UNORDERED.json	Unordered list.
+MECHDOWN-ORDERED	mechdown-list	mechdown-list	all	accept	accepted/mechdown-ordered.mec	snapshots/MECHDOWN-ORDERED.json	Ordered list.
+MECHDOWN-CHECK	mechdown-list	mechdown-list	all	accept	accepted/mechdown-check.mec	snapshots/MECHDOWN-CHECK.json	Check list.
+MECHDOWN-TABLE	mechdown-table	mechdown-table	all	accept	accepted/mechdown-table.mec	snapshots/MECHDOWN-TABLE.json	Mechdown table with alignment row.
+IMAGE	image	image	all	accept	accepted/image.mec	snapshots/IMAGE.json	Image with caption and style map.
+FIGURES	image	figures	all	accept	accepted/figures.mec	snapshots/FIGURES.json	Figure grid.
+CODE-FENCE	code-block	code-block	all	accept	accepted/code-fence.mec	snapshots/CODE-FENCE.json	Generic code fence.
+FENCED-MECH	fenced-mech	code-block	all	accept	accepted/fenced-mech.mec	snapshots/FENCED-MECH.json	Fenced Mech code.
+FENCED-MECH-PREFIX	fenced-mech	code-block	all	accept	accepted/fenced-mech-prefix.mec	snapshots/FENCED-MECH-PREFIX.json	Fenced Mech currently keeps a prefix parse of its internal source.
+FENCED-EBNF	grammar	code-block	all	accept	accepted/fenced-ebnf.mec	snapshots/FENCED-EBNF.json	EBNF code fence dispatches to grammar parser.
+FENCE-UNCLOSED	code-block	code-block	all	reject	rejected/fence-unclosed.mec	-	Code fence requires matching closing sigil.
+INLINE-MECH	inline-mech-code	inline-mech-code	all	accept	accepted/inline-mech.mec	snapshots/INLINE-MECH.json	Inline Mech consumes the complete delimited item.
+EVAL-INLINE-MECH	inline-mech-code	eval-inline-mech-code	all	accept	accepted/eval-inline-mech.mec	snapshots/EVAL-INLINE-MECH.json	Evaluated inline Mech expression.
+INLINE-MECH-TRAILING	inline-mech-code	inline-mech-code	all	reject	rejected/inline-mech-trailing.mec	-	Inline Mech rejects source before its closing delimiter.
+CITATION	citation	normalized-citation	all	accept	accepted/citation.mec	snapshots/CITATION.json	Explicitly normalized citation definition.
+FOOTNOTE	citation	normalized-footnote	all	accept	accepted/footnote.mec	snapshots/FOOTNOTE.json	Explicitly normalized footnote definition.
+ADMONITIONS	complete-document	parse	all	accept	accepted/admonitions.mec	snapshots/ADMONITIONS.json	All current admonition and abstract block sigils.
+FLOAT	float	float	all	accept	accepted/float.mec	snapshots/FLOAT.json	Left float containing an image.
+TITLE	title	parse	all	accept	accepted/title.mec	snapshots/TITLE.json	Document title.
+TITLE-FRONT-MATTER	title	parse	all	accept	accepted/title-front-matter.mec	snapshots/TITLE-FRONT-MATTER.json	Title front matter fields and closing separator.
+MIKA	mika	mika	mika	accept	accepted/mika.mec	snapshots/MIKA.json	Mika character with speech section when feature is enabled.
+MIKA-CLOSE-SECTION-ZERO-CONSUMPTION	section	section	mika	accept-prefix	accepted/mika-close-section.mec	snapshots/MIKA-CLOSE-SECTION-ZERO-CONSUMPTION.json	With Mika enabled section succeeds empty without consuming the close delimiter; a repeating public caller can therefore fail to terminate.
+MIKA-DISABLED	mika	mika	mika-disabled	feature-disabled	rejected/mika-disabled.mec	-	Mika parser is absent when the feature is disabled.
+GRAMMAR	grammar	grammar	all	accept	accepted/grammar.mec	snapshots/GRAMMAR.json	EBNF prefixes choice sequence grouping list range and terminals.
+GRAMMAR-MISSING-SEMICOLON	grammar	grammar	all	reject	rejected/grammar-missing-semicolon.mec	-	Grammar rule requires a semicolon.
+REPL-HELP	repl-command	repl	all	accept	accepted/repl-help.txt	snapshots/REPL-HELP.json	Help command.
+REPL-SAVE	repl-command	repl	all	accept	accepted/repl-save.txt	snapshots/REPL-SAVE.json	Save command with path.
+REPL-PROFILE	repl-command	repl	all	accept	accepted/repl-profile.txt	snapshots/REPL-PROFILE.json	Profile command.
+REPL-STEP	repl-command	repl	all	accept	accepted/repl-step.txt	snapshots/REPL-STEP.json	Step command with count and cycles.
+REPL-CODE	repl-command	repl	all	accept	accepted/repl-code.txt	snapshots/REPL-CODE.json	Code command preserves remaining command text.
+REPL-UNKNOWN	repl-command	repl	all	reject	rejected/repl-unknown.txt	-	Unknown command rejects.
+MIXED-DOCUMENT	complete-document	parse	all	accept	accepted/mixed-document.mec	snapshots/MIXED-DOCUMENT.json	Complete title front matter paragraph Mech fence and admonition document.
+FEATURE-DEFAULT	complete-document	parse	default	accept	accepted/feature-default.mec	snapshots/FEATURE-DEFAULT.json	Default-feature sentinel.
+FEATURE-BASE	complete-document	parse	base	accept	accepted/feature-base.mec	snapshots/FEATURE-BASE.json	Base-feature sentinel.
+SLASH-EXPR-AFTER	identifier	expression	all	accept-prefix	accepted/slash-expr-after.mec	snapshots/SLASH-EXPR-AFTER.json	Adjacent slash stays in the greedy left identifier even when followed by space.
+SLASH-EXPR-BEFORE	expression	expression	all	accept	accepted/slash-expr-before.mec	snapshots/SLASH-EXPR-BEFORE.json	Leading operator whitespace is enough for slash to select division.
+SLASH-PAR-TIGHT	paragraph	normalized-paragraph-newline	all	accept	accepted/slash-par-tight.mec	snapshots/SLASH-PAR-TIGHT.json	Explicitly normalized line paragraph treats tight slash as text.
+SLASH-PAR-SPACED	paragraph	normalized-paragraph-newline	all	accept	accepted/slash-par-spaced.mec	snapshots/SLASH-PAR-SPACED.json	Explicitly normalized line paragraph treats spaced slash as text.
+SLASH-PAR-AFTER	paragraph	normalized-paragraph-newline	all	accept	accepted/slash-par-after.mec	snapshots/SLASH-PAR-AFTER.json	Explicitly normalized line paragraph treats trailing slash whitespace as text.
+SLASH-PAR-BEFORE	paragraph	normalized-paragraph-newline	all	accept	accepted/slash-par-before.mec	snapshots/SLASH-PAR-BEFORE.json	Explicitly normalized line paragraph treats leading slash whitespace as text.
+SLASH-PUBLIC-TIGHT	section-selection	parse	all	accept	accepted/slash-public-tight.mec	snapshots/SLASH-PUBLIC-TIGHT.json	Section chooses complete Mech identifier for tight slash.
+SLASH-PUBLIC-SPACED	section-selection	parse	all	accept	accepted/slash-public-spaced.mec	snapshots/SLASH-PUBLIC-SPACED.json	Section chooses complete Mech division for spaced slash.
+SLASH-PUBLIC-AFTER	section-selection	parse	all	accept	accepted/slash-public-after.mec	snapshots/SLASH-PUBLIC-AFTER.json	Incomplete Mech prefix loses to complete paragraph.
+SLASH-PUBLIC-BEFORE	section-selection	parse	all	accept	accepted/slash-public-before.mec	snapshots/SLASH-PUBLIC-BEFORE.json	Section chooses division when only leading operator whitespace is present.
+RATIONAL-AFTER	expression	expression	all	accept	accepted/rational-after.mec	snapshots/RATIONAL-AFTER.json	Whitespace after slash selects division rather than rational.
+RATIONAL-BEFORE	expression	expression	all	accept	accepted/rational-before.mec	snapshots/RATIONAL-BEFORE.json	Whitespace before slash selects division rather than rational.
+OP-ADD-TIGHT	expression	expression	all	accept	accepted/operator-add-tight.mec	snapshots/OP-ADD-TIGHT.json	Addition accepts zero horizontal whitespace.
+OP-ADD-SPACED	expression	expression	all	accept	accepted/operator-add-spaced.mec	snapshots/OP-ADD-SPACED.json	Addition accepts horizontal whitespace.
+OP-ADD-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-add-newline.mec	snapshots/OP-ADD-NEWLINE.json	Addition stops before newline whitespace and leaves the operator tail.
+OP-MUL-TIGHT	expression	expression	all	accept	accepted/operator-mul-tight.mec	snapshots/OP-MUL-TIGHT.json	Multiplication accepts zero horizontal whitespace.
+OP-MUL-SPACED	expression	expression	all	accept	accepted/operator-mul-spaced.mec	snapshots/OP-MUL-SPACED.json	Multiplication accepts horizontal whitespace.
+OP-MUL-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-mul-newline.mec	snapshots/OP-MUL-NEWLINE.json	Multiplication stops before newline whitespace and leaves the operator tail.
+OP-POWER-TIGHT	expression	expression	all	accept	accepted/operator-power-tight.mec	snapshots/OP-POWER-TIGHT.json	Power accepts zero horizontal whitespace.
+OP-POWER-SPACED	expression	expression	all	accept	accepted/operator-power-spaced.mec	snapshots/OP-POWER-SPACED.json	Power accepts horizontal whitespace.
+OP-POWER-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-power-newline.mec	snapshots/OP-POWER-NEWLINE.json	Power stops before newline whitespace and leaves the operator tail.
+OP-MATRIX-TIGHT	expression	expression	all	accept	accepted/operator-matrix-tight.mec	snapshots/OP-MATRIX-TIGHT.json	Matrix multiplication accepts zero horizontal whitespace.
+OP-MATRIX-SPACED	expression	expression	all	accept	accepted/operator-matrix-spaced.mec	snapshots/OP-MATRIX-SPACED.json	Matrix multiplication accepts horizontal whitespace.
+OP-MATRIX-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-matrix-newline.mec	snapshots/OP-MATRIX-NEWLINE.json	Matrix operation stops before newline whitespace and leaves the operator tail.
+OP-COMPARE-TIGHT	expression	expression	all	accept	accepted/operator-compare-tight.mec	snapshots/OP-COMPARE-TIGHT.json	Comparison accepts zero horizontal whitespace.
+OP-COMPARE-SPACED	expression	expression	all	accept	accepted/operator-compare-spaced.mec	snapshots/OP-COMPARE-SPACED.json	Comparison accepts horizontal whitespace.
+OP-COMPARE-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-compare-newline.mec	snapshots/OP-COMPARE-NEWLINE.json	Comparison stops before newline whitespace and leaves the operator tail.
+OP-LOGIC-TIGHT	expression	expression	all	accept	accepted/operator-logic-tight.mec	snapshots/OP-LOGIC-TIGHT.json	Logic accepts zero horizontal whitespace.
+OP-LOGIC-SPACED	expression	expression	all	accept	accepted/operator-logic-spaced.mec	snapshots/OP-LOGIC-SPACED.json	Logic accepts horizontal whitespace.
+OP-LOGIC-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-logic-newline.mec	snapshots/OP-LOGIC-NEWLINE.json	Logic stops before newline whitespace and leaves the operator tail.
+OP-TABLE-TIGHT	expression	expression	all	accept	accepted/operator-table-tight.mec	snapshots/OP-TABLE-TIGHT.json	Table join accepts zero horizontal whitespace.
+OP-TABLE-SPACED	expression	expression	all	accept	accepted/operator-table-spaced.mec	snapshots/OP-TABLE-SPACED.json	Table join accepts horizontal whitespace.
+OP-TABLE-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-table-newline.mec	snapshots/OP-TABLE-NEWLINE.json	Table operation stops before newline whitespace and leaves the operator tail.
+OP-SET-TIGHT	expression	expression	all	accept	accepted/operator-set-tight.mec	snapshots/OP-SET-TIGHT.json	Set union accepts zero horizontal whitespace.
+OP-SET-SPACED	expression	expression	all	accept	accepted/operator-set-spaced.mec	snapshots/OP-SET-SPACED.json	Set union accepts horizontal whitespace.
+OP-SET-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-set-newline.mec	snapshots/OP-SET-NEWLINE.json	Set operation stops before newline whitespace and leaves the operator tail.
+OP-DELTA-TIGHT	expression	expression	all	accept-prefix	accepted/operator-delta-tight.mec	snapshots/OP-DELTA-TIGHT.json	Symmetric difference requires whitespace, so the expression leaves the tight operator tail.
+OP-DELTA-SPACED	expression	expression	all	accept	accepted/operator-delta-spaced.mec	snapshots/OP-DELTA-SPACED.json	Symmetric difference accepts required horizontal whitespace.
+OP-DELTA-NEWLINE	expression	expression	all	accept-prefix	accepted/operator-delta-newline.mec	snapshots/OP-DELTA-NEWLINE.json	Symmetric difference does not cross newline whitespace and leaves the operator tail.
+LOWER-GEN-OPERATOR	gen-operator	gen-operator	all	accept	accepted/lower-gen-operator.mec	snapshots/LOWER-GEN-OPERATOR.json	Separate lower-level root for the otherwise uncalled generation operator.
+LOWER-SYNTH-OPERATOR	synth-operator	synth-operator	all	accept	accepted/lower-synth-operator.mec	snapshots/LOWER-SYNTH-OPERATOR.json	Separate lower-level root for the otherwise uncalled synthesis operator.
+LOWER-STRIKE-SIGIL	strike-sigil	strike-sigil	all	accept	accepted/lower-strike-sigil.mec	snapshots/LOWER-STRIKE-SIGIL.json	Legacy fixed strike sigil remains callable as a lower-level parser.
+LOWER-UNDERLINE-SIGIL	underline-sigil	underline-sigil	all	accept	accepted/lower-underline-sigil.mec	snapshots/LOWER-UNDERLINE-SIGIL.json	Legacy fixed underline sigil remains callable as a lower-level parser.
+LOWER-NEWLINE-INDENT	newline-indent	newline-indent	all	accept	accepted/lower-newline-indent.mec	snapshots/LOWER-NEWLINE-INDENT.json	Legacy newline-indent parser consumes one physical newline.
+LOWER-TABLE-COLUMN	table-column	table-column	all	accept	accepted/lower-table-column.mec	snapshots/LOWER-TABLE-COLUMN.json	Legacy table-column parser accepts an expression with an optional comma.
+LOWER-TABLE-HORZ	table-horz	table-horz	all	accept	accepted/lower-table-horz.mec	snapshots/LOWER-TABLE-HORZ.json	Legacy table horizontal-rule parser accepts a box-drawing dash.
+SOURCE-NO-FINAL-NEWLINE	paragraph	normalized-paragraph-newline	all	accept	accepted/source-no-final-newline.mec	snapshots/SOURCE-NO-FINAL-NEWLINE.json	Explicit init_source normalization appends a synthetic newline that satisfies the line production.
+SOURCE-ONE-FINAL-NEWLINE	paragraph	normalized-paragraph-newline	all	accept-prefix	accepted/source-one-final-newline.mec	snapshots/SOURCE-ONE-FINAL-NEWLINE.json	One physical newline is consumed and the unconditional synthetic newline remains.
+SOURCE-TWO-FINAL-NEWLINES	paragraph	normalized-paragraph-newline	all	accept-prefix	accepted/source-two-final-newlines.mec	snapshots/SOURCE-TWO-FINAL-NEWLINES.json	One physical newline is consumed while another physical newline and the synthetic newline remain.
+PAR-HTTP-ROUTING	paragraph	normalized-paragraph-newline	all	accept	accepted/paragraph-http.mec	snapshots/PAR-HTTP-ROUTING.json	Explicitly normalized line paragraph routes the HTTP exclusion through raw hyperlink rather than paragraph text.
+PERIOD-FUNCTION-MATCH-OPTIONAL	function-define	function-define	all	accept	accepted/function-match-no-period.mec	snapshots/PERIOD-FUNCTION-MATCH-OPTIONAL.json	Match-arm function final period is optional.
+PERIOD-MATCH-OPTIONAL	match-expression	match-expression	all	accept	accepted/match-no-period.mec	snapshots/PERIOD-MATCH-OPTIONAL.json	Match expression final period is optional.
+PERIOD-ACTIVATION-OPTIONAL	activation-scope	activation-scope	all	accept	accepted/activation-arms-no-period.mec	snapshots/PERIOD-ACTIVATION-OPTIONAL.json	Pattern activation final period is optional.
+PERIOD-FSM-SPEC-REQUIRED	fsm-specification	fsm-specification	all	reject	rejected/fsm-specification-no-period.mec	-	FSM specification final period is required.
+PERIOD-FSM-IMPL-REQUIRED	fsm-implementation	fsm-implementation	all	reject	rejected/fsm-implementation-no-period.mec	-	FSM implementation final period is required.
+PERIOD-STATEMENT-NOT-OWNED	statement	statement	all	accept-prefix	accepted/statement-period.mec	snapshots/PERIOD-STATEMENT-NOT-OWNED.json	Ordinary statement parser succeeds while leaving a final period.
+PERIOD-EXPRESSION-NOT-OWNED	expression	expression	all	accept-prefix	accepted/expression-period.mec	snapshots/PERIOD-EXPRESSION-NOT-OWNED.json	Ordinary expression parser succeeds while leaving a final period.
+EXPR-FSM-PIPE	expression	expression	all	accept	accepted/expression-fsm-pipe.mec	snapshots/EXPR-FSM-PIPE.json	Expression order selects FSM pipe first.
+EXPR-SET-COMPREHENSION	expression	expression	all	accept	accepted/expression-set-comprehension.mec	snapshots/EXPR-SET-COMPREHENSION.json	Expression order selects set comprehension.
+EXPR-MATRIX-COMPREHENSION	expression	expression	all	accept	accepted/expression-matrix-comprehension.mec	snapshots/EXPR-MATRIX-COMPREHENSION.json	Expression order selects matrix comprehension.
+EXPR-RANGE	expression	expression	all	accept	accepted/expression-range.mec	snapshots/EXPR-RANGE.json	Expression order selects range before formula.
+EXPR-FORMULA	expression	expression	all	accept	accepted/expression-formula.mec	snapshots/EXPR-FORMULA.json	Expression order falls through to formula.
+PATTERN-EXPRESSION-FALLBACK	pattern	pattern	all	accept	accepted/pattern-expression.mec	snapshots/PATTERN-EXPRESSION-FALLBACK.json	Pattern order falls through to expression.
+PATTERN-MALFORMED-PREFIX	pattern	pattern	all	accept-prefix	accepted/pattern-malformed-prefix.mec	snapshots/PATTERN-MALFORMED-PREFIX.json	Malformed atom-struct prefix falls back to shorter atom expression.
+SECTION-MECH	section-selection	parse	all	accept	accepted/section-mech.mec	snapshots/SECTION-MECH.json	Section prioritizes complete Mech code.
+SECTION-PARAGRAPH	section-selection	parse	all	accept	accepted/section-paragraph.mec	snapshots/SECTION-PARAGRAPH.json	Paragraph fallback wins when Mech cannot complete the line.
+ALT-BEST-MECH-CODE	mech-code	mech-code	all	accept	accepted/alt-best-mech-code.mec	snapshots/ALT-BEST-MECH-CODE.json	Longest mech-code-alt candidate selects statement over identifier expression.
+ALT-BEST-SECTION-ELEMENT	image	section-element	all	accept	accepted/alt-best-section-image.mec	snapshots/ALT-BEST-SECTION-ELEMENT.json	Longest section element selects image over broad paragraph candidates.
+GRAMMAR-WHITESPACE-STRIPPING	grammar	grammar	all	accept	accepted/grammar-whitespace-stripping.mec	snapshots/GRAMMAR-WHITESPACE-STRIPPING.json	Public grammar normalization removes whitespace even inside terminals.
+REPL-HELP-ALIAS	repl-command	repl	all	accept	accepted/repl-help-alias.txt	snapshots/REPL-HELP-ALIAS.json	Short help alias.
+REPL-QUIT-ALIAS	repl-command	repl	all	accept	accepted/repl-quit-alias.txt	snapshots/REPL-QUIT-ALIAS.json	Short quit alias.
+REPL-DOCS	repl-command	repl	all	accept	accepted/repl-docs.txt	snapshots/REPL-DOCS.json	Docs command with subject.
+REPL-DOCS-ALIAS	repl-command	repl	all	accept	accepted/repl-docs-alias.txt	snapshots/REPL-DOCS-ALIAS.json	Short docs alias.
+REPL-SYMBOLS	repl-command	repl	all	accept	accepted/repl-symbols.txt	snapshots/REPL-SYMBOLS.json	Symbols command.
+REPL-WHOS-ALIAS	repl-command	repl	all	accept	accepted/repl-whos-alias.txt	snapshots/REPL-WHOS-ALIAS.json	Short whos alias with names.
+REPL-PLAN-ALIAS	repl-command	repl	all	accept	accepted/repl-plan-alias.txt	snapshots/REPL-PLAN-ALIAS.json	Short plan alias.
+REPL-LS	repl-command	repl	all	accept	accepted/repl-ls.txt	snapshots/REPL-LS.json	List command.
+REPL-CLEAR	repl-command	repl	all	accept	accepted/repl-clear.txt	snapshots/REPL-CLEAR.json	Clear command.
+REPL-CLC	repl-command	repl	all	accept	accepted/repl-clc.txt	snapshots/REPL-CLC.json	Clear console command.
+REPL-SAVE-EMPTY	repl-command	repl	all	accept	accepted/repl-save-empty.txt	snapshots/REPL-SAVE-EMPTY.json	Save accepts an empty path after required space.
+REPL-CODE-ALIAS	repl-command	repl	all	accept	accepted/repl-code-alias.txt	snapshots/REPL-CODE-ALIAS.json	Short code alias consumes the remainder.
+REPL-PREFIX-REJECT	repl-command	repl	all	reject	rejected/repl-prefix.txt	-	Complete REPL root rejects a longer token after a valid command prefix.
+REPL-PROFILE-VALUE	repl-command	repl	all	reject	rejected/repl-profile-value.txt	-	Profile command accepts only on or off.
+BASE-LITERAL-EMPTY	literal	literal	all	accept	accepted/literal-empty.mec	snapshots/BASE-LITERAL-EMPTY.json	Underscore is the empty literal.
+KIND-KIND	kind-annotation	kind-annotation	all	accept	accepted/kind-kind.mec	snapshots/KIND-KIND.json	A kind can itself be annotated as kind.
+KIND-ANY	kind-annotation	kind-annotation	all	accept	accepted/kind-any.mec	snapshots/KIND-ANY.json	Wildcard any-kind annotation.
+KIND-EMPTY	kind-annotation	kind-annotation	all	accept	accepted/kind-empty.mec	snapshots/KIND-EMPTY.json	Empty-kind annotation.
+TABLE-FANCY	fancy-table	fancy-table	all	accept	accepted/table-fancy.mec	snapshots/TABLE-FANCY.json	Box-drawing table with typed header and data row.
+TABLE-REGULAR	regular-table	regular-table	all	accept-prefix	accepted/table-regular.mec	snapshots/TABLE-REGULAR.json	Regular table succeeds through its typed header and data row, then leaves a named boundary sentinel; at bare EOF its whitespace0 separator fails the non-consuming separated-list guard.
+BOX-DRAWING-CHAR	box-drawing-char	box-drawing-char	all	accept	accepted/box-drawing-char.mec	snapshots/BOX-DRAWING-CHAR.json	Successful ordinary box-drawing character parser.
+BOX-DRAWING-EMOJI	box-drawing-emoji	box-drawing-emoji	all	accept	accepted/box-drawing-emoji.mec	snapshots/BOX-DRAWING-EMOJI.json	Successful bold box-drawing emoji parser.
+REPL-CD	repl-command	repl-crlf	all	accept	accepted/repl-cd.txt	snapshots/REPL-CD.json	CD command terminated with an explicit CRLF by the named entry point.
+REPL-LOAD	repl-command	repl-crlf	all	accept	accepted/repl-load.txt	snapshots/REPL-LOAD.json	Load command terminated with an explicit CRLF by the named entry point.
+IMPORT-MODULE-ONLY	module-import	module-import	all	accept	accepted/import-module-only.mec	snapshots/IMPORT-MODULE-ONLY.json	Module-only structured import.
+IMPORT-MODULE-GROUP	module-import	module-import	all	accept	accepted/import-module-group.mec	snapshots/IMPORT-MODULE-GROUP.json	Grouped structured module import.
+IMPORT-MODULE-INTRINSIC	module-import	module-import	all	accept	accepted/import-module-intrinsic.mec	snapshots/IMPORT-MODULE-INTRINSIC.json	Structured import with an intrinsic path segment.
+IMPORT-MODULE-VALUE-ALIAS	module-import	module-import	all	accept	accepted/import-module-value-alias.mec	snapshots/IMPORT-MODULE-VALUE-ALIAS.json	Value alias for a structured module item import.
+IMPORT-SOURCE-BARE	import-declaration	statement	all	accept	accepted/import-source-bare.mec	snapshots/IMPORT-SOURCE-BARE.json	Bare relative Mech source import.
+IMPORT-SOURCE-ABSOLUTE	import-declaration	statement	all	accept	accepted/import-source-absolute.mec	snapshots/IMPORT-SOURCE-ABSOLUTE.json	Absolute filesystem Mech source import.
+IMPORT-SOURCE-URI	import-declaration	statement	all	accept	accepted/import-source-uri.mec	snapshots/IMPORT-SOURCE-URI.json	URI Mech source import.
+IMPORT-SOURCE-WILDCARD	import-declaration	statement	all	accept	accepted/import-source-wildcard.mec	snapshots/IMPORT-SOURCE-WILDCARD.json	Source import with wildcard suffix.
+MECHDOWN-PROMPT	prompt	prompt	all	accept	accepted/mechdown-prompt.mec	snapshots/MECHDOWN-PROMPT.json	Isolated prompt wrapping a complete image section element.
+MECHDOWN-QUOTE	quote-block	quote-block	all	accept	accepted/mechdown-quote.mec	snapshots/MECHDOWN-QUOTE.json	Isolated quote block.
+MECHDOWN-THEMATIC	thematic-break	thematic-break	all	accept	accepted/mechdown-thematic.mec	snapshots/MECHDOWN-THEMATIC.json	Isolated thematic break.
+MECHDOWN-EQUATION	equation	equation	all	accept	accepted/mechdown-equation.mec	snapshots/MECHDOWN-EQUATION.json	Isolated display equation token.
+MECHDOWN-SUBTITLE	subtitle	subtitle	all	accept	accepted/mechdown-subtitle.mec	snapshots/MECHDOWN-SUBTITLE.json	Isolated numbered subtitle.
+MECHDOWN-QUESTION	question-block	question-block	all	accept	accepted/mechdown-question.mec	snapshots/MECHDOWN-QUESTION.json	Isolated question admonition.
+MECHDOWN-INFO	info-block	info-block	all	accept	accepted/mechdown-info.mec	snapshots/MECHDOWN-INFO.json	Isolated info admonition.
+MECHDOWN-WARNING	warning-block	warning-block	all	accept	accepted/mechdown-warning.mec	snapshots/MECHDOWN-WARNING.json	Isolated warning admonition.
+MECHDOWN-SUCCESS	success-block	success-block	all	accept	accepted/mechdown-success.mec	snapshots/MECHDOWN-SUCCESS.json	Isolated success admonition.
+MECHDOWN-ERROR	error-block	error-block	all	accept	accepted/mechdown-error.mec	snapshots/MECHDOWN-ERROR.json	Isolated error admonition.
+MECHDOWN-IDEA	idea-block	idea-block	all	accept	accepted/mechdown-idea.mec	snapshots/MECHDOWN-IDEA.json	Isolated idea admonition.
+MECHDOWN-ABSTRACT	abstract-el	abstract-el	all	accept	accepted/mechdown-abstract.mec	snapshots/MECHDOWN-ABSTRACT.json	Isolated abstract block.
+FSM-COMMENT-ARM	fsm-comment-arm	fsm-comment-arm	all	accept	accepted/fsm-comment-arm.mec	snapshots/FSM-COMMENT-ARM.json	Isolated comment FSM arm.
+FSM-STATEMENT-TRANSITION	fsm-statement-transition	fsm-statement-transition	all	accept	accepted/fsm-statement-transition.mec	snapshots/FSM-STATEMENT-TRANSITION.json	Isolated FSM transition carrying a statement.
+BASE-ESCAPED-CHAR	escaped-char	escaped-char	all	accept	accepted/base-escaped-char.mec	snapshots/BASE-ESCAPED-CHAR.json	Escaped newline character production.
+BASE-GROUPING-SYMBOL	grouping-symbol	grouping-symbol	all	accept	accepted/base-grouping-symbol.mec	snapshots/BASE-GROUPING-SYMBOL.json	Unicode grouping-symbol alternative.
+BASE-EMOJI	emoji	emoji	all	accept	accepted/base-emoji.mec	snapshots/BASE-EMOJI.json	Isolated emoji token.
+IDENT-EMOJI-PATH	identifier	identifier	all	accept	accepted/identifier-emoji-path.mec	snapshots/IDENT-EMOJI-PATH.json	Identifier path with an emoji segment.
+BASE-SPACE-TAB1	space-tab1	space-tab1	all	accept	accepted/base-space-tab1.mec	snapshots/BASE-SPACE-TAB1.json	One-or-more horizontal whitespace production using non-breaking spaces.
+FACTOR-PARENTHETICAL	factor	expression	all	accept	accepted/factor-parenthetical.mec	snapshots/FACTOR-PARENTHETICAL.json	Parenthesized expression factor.
+FACTOR-NEGATE	factor	expression	all	accept	accepted/factor-negate.mec	snapshots/FACTOR-NEGATE.json	Unary dash factor.
+FACTOR-NOT-BANG	factor	expression	all	accept	accepted/factor-not-bang.mec	snapshots/FACTOR-NOT-BANG.json	Exclamation not-factor.
+FACTOR-NOT-NEGATE	factor	expression	all	accept	accepted/factor-not-negate.mec	snapshots/FACTOR-NOT-NEGATE.json	Unicode negate not-factor.
+FACTOR-TRANSPOSE	factor	expression	all	accept	accepted/factor-transpose.mec	snapshots/FACTOR-TRANSPOSE.json	Apostrophe transpose suffix.
+RANGE-INCLUSIVE	range-expression	expression	all	accept	accepted/range-inclusive.mec	snapshots/RANGE-INCLUSIVE.json	Inclusive range operator.
+RANGE-EXCLUSIVE	range-expression	expression	all	accept	accepted/range-exclusive.mec	snapshots/RANGE-EXCLUSIVE.json	Exclusive range operator.
+CONTEXT-CAPABILITIES	context-declaration	statement	all	accept	accepted/context-capabilities.mec	snapshots/CONTEXT-CAPABILITIES.json	Context-base-context with path and wildcard capability scopes.
+OP-MULTIPLY-VARIANTS	multiply	expression	all	accept	accepted/operator-multiply-variants.mec	snapshots/OP-MULTIPLY-VARIANTS.json	ASCII and Unicode multiplication variants.
+OP-DIVIDE-VARIANTS	divide	expression	all	accept	accepted/operator-divide-variants.mec	snapshots/OP-DIVIDE-VARIANTS.json	ASCII and Unicode division variants.
+OP-MODULUS	modulus	expression	all	accept	accepted/operator-modulus.mec	snapshots/OP-MODULUS.json	Modulus operator.
+OP-MATRIX-SOLVE	matrix-solve	expression	all	accept	accepted/operator-matrix-solve.mec	snapshots/OP-MATRIX-SOLVE.json	Matrix solve operator.
+OP-DOT-PRODUCT-VARIANTS	dot-product	expression	all	accept	accepted/operator-dot-product-variants.mec	snapshots/OP-DOT-PRODUCT-VARIANTS.json	Both dot-product glyph variants.
+OP-CROSS-PRODUCT	cross-product	expression	all	accept	accepted/operator-cross-product.mec	snapshots/OP-CROSS-PRODUCT.json	Cross-product operator.
+OP-NOT-EQUAL-VARIANTS	not-equal	expression	all	accept	accepted/operator-not-equal-variants.mec	snapshots/OP-NOT-EQUAL-VARIANTS.json	All not-equal operator variants.
+OP-EQUAL-VARIANTS	equal-to	expression	all	accept	accepted/operator-equal-variants.mec	snapshots/OP-EQUAL-VARIANTS.json	All equality operator variants.
+OP-STRICT-NOT-EQUAL-VARIANTS	strict-not-equal	expression	all	accept	accepted/operator-strict-not-equal-variants.mec	snapshots/OP-STRICT-NOT-EQUAL-VARIANTS.json	All strict-not-equal operator variants.
+OP-STRICT-EQUAL-VARIANTS	strict-equal	expression	all	accept	accepted/operator-strict-equal-variants.mec	snapshots/OP-STRICT-EQUAL-VARIANTS.json	All implemented strict-equality variants.
+OP-GREATER-THAN	greater-than	expression	all	accept	accepted/operator-greater-than.mec	snapshots/OP-GREATER-THAN.json	Greater-than comparison.
+OP-LESS-THAN	less-than	expression	all	accept	accepted/operator-less-than.mec	snapshots/OP-LESS-THAN.json	Less-than comparison.
+OP-GREATER-EQUAL-VARIANTS	greater-than-equal	expression	all	accept	accepted/operator-greater-equal-variants.mec	snapshots/OP-GREATER-EQUAL-VARIANTS.json	ASCII and Unicode greater-than-or-equal variants.
+OP-LESS-EQUAL-VARIANTS	less-than-equal	expression	all	accept	accepted/operator-less-equal-variants.mec	snapshots/OP-LESS-EQUAL-VARIANTS.json	ASCII and Unicode less-than-or-equal variants.
+OP-OR-VARIANTS	or	expression	all	accept	accepted/operator-or-variants.mec	snapshots/OP-OR-VARIANTS.json	All logical OR variants.
+OP-AND-VARIANTS	and	expression	all	accept	accepted/operator-and-variants.mec	snapshots/OP-AND-VARIANTS.json	All logical AND variants.
+OP-XOR-VARIANTS	xor	expression	all	accept	accepted/operator-xor-variants.mec	snapshots/OP-XOR-VARIANTS.json	The Unicode logical XOR variants are reachable through expressions.
+OP-INNER-JOIN	join	expression	all	accept	accepted/operator-inner-join.mec	snapshots/OP-INNER-JOIN.json	Inner table join operator.
+OP-LEFT-JOIN	left-join	expression	all	accept	accepted/operator-left-join.mec	snapshots/OP-LEFT-JOIN.json	Left outer table join operator.
+OP-RIGHT-JOIN	right-join	expression	all	accept	accepted/operator-right-join.mec	snapshots/OP-RIGHT-JOIN.json	Right outer table join operator.
+OP-FULL-JOIN	full-join	expression	all	accept	accepted/operator-full-join.mec	snapshots/OP-FULL-JOIN.json	Full outer table join operator.
+OP-LEFT-SEMI-JOIN	left-semi-join	expression	all	accept	accepted/operator-left-semi-join.mec	snapshots/OP-LEFT-SEMI-JOIN.json	Left semi table join operator.
+OP-LEFT-ANTI-JOIN	left-anti-join	expression	all	accept	accepted/operator-left-anti-join.mec	snapshots/OP-LEFT-ANTI-JOIN.json	Left anti table join operator.
+OP-UNION	union	expression	all	accept	accepted/operator-union.mec	snapshots/OP-UNION.json	Set union operator.
+OP-INTERSECTION	intersection	expression	all	accept	accepted/operator-intersection.mec	snapshots/OP-INTERSECTION.json	Set intersection operator.
+OP-DIFFERENCE	difference	expression	all	accept	accepted/operator-difference.mec	snapshots/OP-DIFFERENCE.json	Set difference operator.
+OP-COMPLEMENT	complement	expression	all	accept	accepted/operator-complement.mec	snapshots/OP-COMPLEMENT.json	Set complement operator.
+OP-SUBSET	subset	expression	all	accept	accepted/operator-subset.mec	snapshots/OP-SUBSET.json	Set subset operator.
+OP-SUPERSET	superset	expression	all	accept	accepted/operator-superset.mec	snapshots/OP-SUPERSET.json	Set superset operator.
+OP-PROPER-SUBSET-VARIANTS	proper-subset	expression	all	accept	accepted/operator-proper-subset-variants.mec	snapshots/OP-PROPER-SUBSET-VARIANTS.json	Both proper-subset glyph variants.
+OP-PROPER-SUPERSET-VARIANTS	proper-superset	expression	all	accept	accepted/operator-proper-superset-variants.mec	snapshots/OP-PROPER-SUPERSET-VARIANTS.json	Both proper-superset glyph variants.
+OP-ELEMENT-OF	element-of	expression	all	accept	accepted/operator-element-of.mec	snapshots/OP-ELEMENT-OF.json	Set element-of operator.
+OP-NOT-ELEMENT-OF	not-element-of	expression	all	accept	accepted/operator-not-element-of.mec	snapshots/OP-NOT-ELEMENT-OF.json	Set not-element-of operator.
+OP-SYMMETRIC-DIFFERENCE	symmetric-difference	expression	all	accept	accepted/operator-symmetric-difference.mec	snapshots/OP-SYMMETRIC-DIFFERENCE.json	Symmetric difference with its required surrounding whitespace.
+OP-XOR-CARET	xor	xor-operator	all	accept	accepted/operator-xor-caret.mec	snapshots/OP-XOR-CARET.json	The caret XOR parser accepts its declared token directly; the expression path commits to power on the first caret.
+SLICE	slice	slice	all	accept	accepted/slice.mec	snapshots/SLICE.json	Direct slice parser with bracket subscript.
+FSM-TRANSITION	fsm-transition	fsm-transition	all	accept	accepted/fsm-transition.mec	snapshots/FSM-TRANSITION.json	Positive full FSM arm with a state transition.
+MIKA-MINI	mini-mika	mini-mika	mika	accept	accepted/mika-mini.mec	snapshots/MIKA-MINI.json	Mini Mika covers the full parent path for expression-inner and left-eye parsing.
+MIKA-EXPRESSION-INNER	mika-expression-inner	mika-expression-inner	mika	accept	accepted/mika-expression-inner.mec	snapshots/MIKA-EXPRESSION-INNER.json	Direct Mika facial-expression parser.
+MIKA-EYE-LEFT	mika-eye-left	mika-eye-left	mika	accept	accepted/mika-eye-left.mec	snapshots/MIKA-EYE-LEFT.json	Direct left-eye parser.
+MIKA-EYE-RIGHT	mika-eye-right	mika-eye-right	mika	accept	accepted/mika-eye-right.mec	snapshots/MIKA-EYE-RIGHT.json	Direct right-eye parser, which is not called by expression-inner.
+BASE-FORBIDDEN-EMOJI	forbidden-emoji	forbidden-emoji	all	accept	accepted/base-forbidden-emoji.mec	snapshots/BASE-FORBIDDEN-EMOJI.json	Direct positive execution of the forbidden-emoji classifier with a box-drawing glyph.
+IMPORT-MODULE-EMOJI-PATH	identifier-path-segment-emoji	module-import	all	accept	accepted/import-module-emoji-path.mec	snapshots/IMPORT-MODULE-EMOJI-PATH.json	A structured module item path executes the emoji path-segment helper positively.
+MECHDOWN-TABLE-NO-ALIGNMENT	no-alignment	mechdown-table	all	accept	accepted/mechdown-table-no-alignment.mec	snapshots/MECHDOWN-TABLE-NO-ALIGNMENT.json	Header alignment row uses plain dashes and selects the no-alignment branch.
+MECHDOWN-TABLE-CENTER-ALIGNMENT	center-alignment	mechdown-table	all	accept	accepted/mechdown-table-center-alignment.mec	snapshots/MECHDOWN-TABLE-CENTER-ALIGNMENT.json	Header alignment row selects center alignment.
+MECHDOWN-TABLE-NO-HEADER	mechdown-table-no-header	mechdown-table	all	accept	accepted/mechdown-table-no-header.mec	snapshots/MECHDOWN-TABLE-NO-HEADER.json	A row without a following alignment row selects the no-header table branch.
+MECHDOWN-TABLE-EMPTY-PARAGRAPH	empty-paragraph	mechdown-table	all	accept	accepted/mechdown-table-empty-paragraph.mec	snapshots/MECHDOWN-TABLE-EMPTY-PARAGRAPH.json	A whitespace-only table cell produces an empty paragraph.
+MECHDOWN-UL-SUBTITLE	ul-subtitle	ul-subtitle	all	accept	accepted/mechdown-ul-subtitle.mec	snapshots/MECHDOWN-UL-SUBTITLE.json	Direct underline-style subtitle with both required physical newlines.
+MECHDOWN-SUBLIST	sublist	mechdown-list	all	accept	accepted/mechdown-sublist.mec	snapshots/MECHDOWN-SUBLIST.json	A nested unordered list positively executes sublist dispatch.
+FACTOR-MATRIX-COMPREHENSION-ORDINARY	factor-matrix-comprehension	expression	all	accept	accepted/factor-matrix-comprehension-ordinary.mec	snapshots/FACTOR-MATRIX-COMPREHENSION-ORDINARY.json	The ordinary expression path selects factor parenthetical and then a nested matrix comprehension.
+FACTOR-SLICE-ORDINARY	factor-slice	expression	all	accept	accepted/factor-slice-ordinary.mec	snapshots/FACTOR-SLICE-ORDINARY.json	The ordinary expression path selects the factor slice branch.
+FACTOR-STRUCTURE-ORDINARY	factor-structure	expression	all	accept	accepted/factor-structure-ordinary.mec	snapshots/FACTOR-STRUCTURE-ORDINARY.json	The ordinary expression path selects a tuple structure from factor.
+STRUCT-SET-WHITESPACE	set-whitespace-separator	structure	all	accept	accepted/structure-set-whitespace.mec	snapshots/STRUCT-SET-WHITESPACE.json	A set selects the whitespace1 item separator rather than the comma separator.
+EXPR-MATCH-SELECTION	expression-match	expression	all	accept	accepted/expression-match-selection.mec	snapshots/EXPR-MATCH-SELECTION.json	The expression umbrella selects a match expression.
+LITERAL-STRING-SELECTION	literal-string	literal	all	accept	accepted/literal-string-selection.mec	snapshots/LITERAL-STRING-SELECTION.json	The literal umbrella selects its string branch.
+LITERAL-BOOLEAN-SELECTION	literal-boolean	literal	all	accept	accepted/literal-boolean-selection.mec	snapshots/LITERAL-BOOLEAN-SELECTION.json	The literal umbrella selects its boolean branch.
+LITERAL-NUMBER-SELECTION	literal-number	literal	all	accept	accepted/literal-number-selection.mec	snapshots/LITERAL-NUMBER-SELECTION.json	The literal umbrella selects its number branch.
+STMT-FSM-DECLARE-SELECTION	statement-fsm-declare	statement	all	accept	accepted/statement-fsm-declare-selection.mec	snapshots/STMT-FSM-DECLARE-SELECTION.json	The statement umbrella selects an FSM declaration.
+MECH-CODE-ACTIVATION	mech-code-activation	mech-code	all	accept	accepted/mech-code-activation.mec	snapshots/MECH-CODE-ACTIVATION.json	The mech_code_alt dispatch selects an activation scope.
+MECH-CODE-FSM-SPEC	mech-code-fsm-specification	mech-code	all	accept	accepted/mech-code-fsm-spec.mec	snapshots/MECH-CODE-FSM-SPEC.json	The mech_code_alt dispatch selects an FSM specification.
+MECH-CODE-FSM-IMPL	mech-code-fsm-implementation	mech-code	all	accept	accepted/mech-code-fsm-impl.mec	snapshots/MECH-CODE-FSM-IMPL.json	The mech_code_alt dispatch selects an FSM implementation.
+MECH-CODE-FUNCTION	mech-code-function	mech-code	all	accept	accepted/mech-code-function.mec	snapshots/MECH-CODE-FUNCTION.json	The mech_code_alt dispatch selects a function definition.
+MECH-CODE-MODULE-IMPORT	mech-code-module-import	mech-code	all	accept	accepted/mech-code-module-import.mec	snapshots/MECH-CODE-MODULE-IMPORT.json	The mech_code_alt dispatch selects a module import.
+MECH-CODE-EXPRESSION	mech-code-expression	mech-code	all	accept	accepted/mech-code-expression.mec	snapshots/MECH-CODE-EXPRESSION.json	The mech_code_alt dispatch selects an expression.
+MECH-CODE-COMMENT	mech-code-comment	mech-code	all	accept	accepted/mech-code-comment.mec	snapshots/MECH-CODE-COMMENT.json	The mech_code_alt dispatch selects a comment.
+SECTION-ELEMENT-PROMPT	section-element-prompt	section-element	all	accept	accepted/section-element-prompt.mec	snapshots/SECTION-ELEMENT-PROMPT.json	The section_element umbrella selects a prompt.
+SECTION-ELEMENT-QUOTE	section-element-quote	section-element	all	accept	accepted/section-element-quote.mec	snapshots/SECTION-ELEMENT-QUOTE.json	The section_element umbrella selects a quote block.
+SECTION-ELEMENT-THEMATIC	section-element-thematic-break	section-element	all	accept	accepted/section-element-thematic.mec	snapshots/SECTION-ELEMENT-THEMATIC.json	The section_element umbrella selects a thematic break.
+SECTION-ELEMENT-EQUATION	section-element-equation	section-element	all	accept	accepted/section-element-equation.mec	snapshots/SECTION-ELEMENT-EQUATION.json	The section_element umbrella selects an equation.

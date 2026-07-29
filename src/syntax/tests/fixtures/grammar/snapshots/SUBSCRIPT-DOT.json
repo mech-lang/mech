@@ -1,0 +1,25 @@
+{
+  "ast": [
+    {
+      "Dot": {
+        "name": {
+          "chars": [
+            "f",
+            "i",
+            "e",
+            "l",
+            "d"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 6,
+    "remaining_source": "",
+    "source_graphemes": 6
+  },
+  "entry_point": "subscript",
+  "rule": "subscript"
+}

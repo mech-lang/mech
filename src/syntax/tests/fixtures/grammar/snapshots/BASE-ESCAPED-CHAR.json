@@ -1,0 +1,15 @@
+{
+  "ast": {
+    "chars": [
+      "\n"
+    ],
+    "kind": "EscapedChar"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "escaped-char",
+  "rule": "escaped-char"
+}

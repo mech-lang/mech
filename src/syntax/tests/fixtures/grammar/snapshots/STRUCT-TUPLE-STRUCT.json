@@ -1,0 +1,38 @@
+{
+  "ast": {
+    "TupleStruct": {
+      "name": {
+        "name": {
+          "chars": [
+            "s",
+            "o",
+            "m",
+            "e"
+          ],
+          "kind": "Identifier"
+        }
+      },
+      "value": {
+        "Literal": {
+          "Number": {
+            "Real": {
+              "Integer": {
+                "chars": [
+                  "1"
+                ],
+                "kind": "Number"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 8,
+    "remaining_source": "",
+    "source_graphemes": 8
+  },
+  "entry_point": "structure",
+  "rule": "structure"
+}

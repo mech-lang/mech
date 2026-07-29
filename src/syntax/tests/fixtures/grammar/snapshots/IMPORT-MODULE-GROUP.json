@@ -1,0 +1,63 @@
+{
+  "ast": {
+    "alias": null,
+    "group_items": [
+      {
+        "item": {
+          "segments": [
+            {
+              "Name": {
+                "name": {
+                  "chars": [
+                    "s",
+                    "i",
+                    "n"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "item": {
+          "segments": [
+            {
+              "Name": {
+                "name": {
+                  "chars": [
+                    "c",
+                    "o",
+                    "s"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "item": null,
+    "kind": "Group",
+    "module": {
+      "name": {
+        "chars": [
+          "m",
+          "a",
+          "t",
+          "h"
+        ],
+        "kind": "Identifier"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 18,
+    "remaining_source": "",
+    "source_graphemes": 18
+  },
+  "entry_point": "module-import",
+  "rule": "module-import"
+}

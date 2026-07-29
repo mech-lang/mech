@@ -1,0 +1,65 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "Expression": {
+            "Formula": {
+              "Term": {
+                "lhs": {
+                  "Expression": {
+                    "Literal": {
+                      "Number": {
+                        "Real": {
+                          "Integer": {
+                            "chars": [
+                              "1"
+                            ],
+                            "kind": "Number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "rhs": [
+                  [
+                    {
+                      "AddSub": "Add"
+                    },
+                    {
+                      "Expression": {
+                        "Literal": {
+                          "Number": {
+                            "Real": {
+                              "Integer": {
+                                "chars": [
+                                  "2"
+                                ],
+                                "kind": "Number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code-expression"
+}

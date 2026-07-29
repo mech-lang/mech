@@ -1,0 +1,4 @@
+#Counter(n<u64>) -> :Count(n)
+:Count(n)
+| n > 0u64 -> :Count(n - 1u64)
+| n == 0u64 -> :Done(n).

@@ -1,0 +1,94 @@
+{
+  "ast": {
+    "code": [
+      [
+        {
+          "ActivationScope": {
+            "body": {
+              "Block": [
+                [
+                  {
+                    "Statement": {
+                      "VariableDefine": {
+                        "expression": {
+                          "Var": {
+                            "context": null,
+                            "kind": null,
+                            "name": {
+                              "name": {
+                                "chars": [
+                                  "t",
+                                  "i",
+                                  "c",
+                                  "k"
+                                ],
+                                "kind": "Identifier"
+                              }
+                            }
+                          }
+                        },
+                        "mutable": false,
+                        "var": {
+                          "context": null,
+                          "kind": null,
+                          "name": {
+                            "name": {
+                              "chars": [
+                                "o",
+                                "u",
+                                "t",
+                                "p",
+                                "u",
+                                "t"
+                              ],
+                              "kind": "Identifier"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  null
+                ]
+              ]
+            },
+            "operator": {
+              "chars": [
+                "~",
+                ">"
+              ],
+              "kind": "AsyncTransitionOperator"
+            },
+            "trigger": {
+              "Var": {
+                "context": null,
+                "kind": null,
+                "name": {
+                  "name": {
+                    "chars": [
+                      "t",
+                      "i",
+                      "c",
+                      "k"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            }
+          }
+        },
+        null
+      ]
+    ],
+    "exports": [],
+    "imports": []
+  },
+  "consumption": {
+    "consumed_source_graphemes": 26,
+    "remaining_source": "",
+    "source_graphemes": 26
+  },
+  "entry_point": "mech-code",
+  "rule": "mech-code-activation"
+}

@@ -1,0 +1,40 @@
+{
+  "ast": {
+    "SuccessBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "s",
+                "u",
+                "c",
+                "c",
+                "e",
+                "s",
+                "s"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 22,
+    "remaining_source": "",
+    "source_graphemes": 22
+  },
+  "entry_point": "success-block",
+  "rule": "success-block"
+}
