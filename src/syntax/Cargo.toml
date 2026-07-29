@@ -76,7 +76,7 @@ baselib = ["bool", "string",
 compiler = ["mech-core/compiler"]
 program = ["mech-core/program"]
 pretty_print = ["mech-core/pretty_print"]
-serde = ["mech-core/serde"]
+serde = ["mech-core/serde", "dep:serde_json"]
 
 statements = ["mech-core/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables"]
@@ -169,6 +169,7 @@ unicode-segmentation = "1.12.0"
 rlibc = { version = "=1.0", optional = true }
 serde = "1.0.228"
 serde_derive = "1.0.228"
+serde_json = { version = "1.0.149", default-features = false, features = ["alloc"], optional = true }
 colored = "3.1.1"
 indexmap = "2.13.0"
 tabled = "0.20.0"

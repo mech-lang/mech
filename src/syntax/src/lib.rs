@@ -7,7 +7,7 @@
 #![allow(warnings)]
 
 extern crate mech_core;
-#[cfg(feature="no-std")] #[macro_use] extern crate alloc;
+#[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;
 extern crate nom;
 extern crate nom_unicode;
@@ -58,6 +58,9 @@ pub mod patterns;
 pub mod state_machines;
 pub mod functions;
 pub mod repl;
+/// Experimental lossless document syntax. Production parsing remains on the
+/// legacy parser during migration.
+pub mod document;
 
 pub use crate::imports::*;
 pub use crate::parser::*;
