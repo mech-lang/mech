@@ -176,6 +176,7 @@ tabled = { version = "0.20.0", default-features = false, features = ["std"] }
 paste = "1.0.15"
 
 [dev-dependencies]
+proptest = { version = "1.7.0", default-features = false, features = ["std"] }
 serde_json = "1.0.149"
 
 [dependencies.num-traits]
@@ -187,6 +188,3 @@ features = ["libm"]
 name = "formatter"
 path = "tests/formatter.rs"
 required-features = ["formatter", "mika", "variable_define"]
-
-[dev-dependencies]
-proptest = { version = "1.7.0", default-features = false, features = ["std"] }

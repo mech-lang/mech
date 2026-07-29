@@ -5,6 +5,7 @@ docs/design/grammar-audit/README.mec	accept	mech_syntax::parser::parse	Raw sourc
 docs/design/grammar-audit/discrepancies.mec	reject	mech_syntax::parser::parse	Raw source is rejected unchanged by the current parser; no preprocessing or exclusion.
 docs/design/history.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/index.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
+docs/design/incremental-syntax-architecture.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/language-design.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/literate-programming.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/mika.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
