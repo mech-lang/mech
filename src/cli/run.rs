@@ -972,3 +972,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "run/tests/resource_aliases.rs"]
+mod resource_alias_tests;

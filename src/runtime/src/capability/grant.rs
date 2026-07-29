@@ -4,7 +4,7 @@ use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::{
   Capability, CapabilityDecision, CapabilityId, CapabilityRequest,
-  RuntimeCapabilityGrantSpec,
+  RuntimeCapabilityGrantSpec, resource_base_matches,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -83,6 +83,7 @@ pub struct ResourcePathCapability {
   id: CapabilityId,
   subject: String,
   base_uri: String,
+  equivalent_base_uris: BTreeSet<String>,
   operations: BTreeSet<String>,
   scopes: Vec<ResourcePathScope>,
   revocable: bool,
@@ -96,10 +97,12 @@ impl ResourcePathCapability {
     operations: impl IntoIterator<Item = impl Into<String>>,
     scopes: impl IntoIterator<Item = ResourcePathScope>,
   ) -> MResult<Self> {
+    let base_uri = normalize_base_uri(&base_uri.into())?;
     let capability = Self {
       id,
       subject: subject.into(),
-      base_uri: normalize_base_uri(&base_uri.into())?,
+      base_uri: base_uri.clone(),
+      equivalent_base_uris: BTreeSet::from([base_uri]),
       operations: operations.into_iter().map(Into::into).collect(),
       scopes: scopes.into_iter().collect(),
       revocable: true,
@@ -181,8 +184,30 @@ impl ResourcePathCapability {
   }
 
   pub fn base_uri(&self) -> &str { &self.base_uri }
+  pub fn equivalent_base_uris(&self) -> &BTreeSet<String> {
+    &self.equivalent_base_uris
+  }
   pub fn operations(&self) -> &BTreeSet<String> { &self.operations }
   pub fn scopes(&self) -> &[ResourcePathScope] { &self.scopes }
+
+  pub fn with_equivalent_base_uris(
+    mut self,
+    base_uris: impl IntoIterator<Item = impl Into<String>>,
+  ) -> MResult<Self> {
+    let primary_scheme = base_uri_scheme(&self.base_uri)?;
+    for base_uri in base_uris {
+      let base_uri = normalize_base_uri(&base_uri.into())?;
+      if base_uri_scheme(&base_uri)? != primary_scheme {
+        return invalid_resource_capability(
+          "equivalent base URI scheme must match the primary base URI",
+        );
+      }
+      self.equivalent_base_uris.insert(base_uri);
+    }
+    self.equivalent_base_uris.insert(self.base_uri.clone());
+    self.validate()?;
+    Ok(self)
+  }
 
   pub fn revocable(mut self, revocable: bool) -> Self {
     self.revocable = revocable;
@@ -204,8 +229,18 @@ impl ResourcePathCapability {
         "operation is not allowed",
       ));
     }
-    let base_prefix = format!("{}/", self.base_uri);
-    let path = if request.resource == self.base_uri {
+    let Some(matching_base) = self
+      .equivalent_base_uris
+      .iter()
+      .filter(|base| resource_base_matches(base, &request.resource))
+      .max_by_key(|base| base.len())
+    else {
+      return Ok(CapabilityDecision::deny(
+        "resource base URI is not allowed",
+      ));
+    };
+    let base_prefix = format!("{matching_base}/");
+    let path = if request.resource == *matching_base {
       ""
     } else if let Some(path) =
       request.resource.strip_prefix(&base_prefix)
@@ -244,6 +279,22 @@ impl Capability for ResourcePathCapability {
     if self.base_uri.trim().is_empty() {
       return invalid_resource_capability(
         "base URI must not be empty",
+      );
+    }
+    if !self.equivalent_base_uris.contains(&self.base_uri) {
+      return invalid_resource_capability(
+        "equivalent base URIs must include the primary base URI",
+      );
+    }
+    let primary_scheme = base_uri_scheme(&self.base_uri)?;
+    if self.equivalent_base_uris.iter().any(|base_uri| {
+      base_uri.trim().is_empty()
+        || base_uri_scheme(base_uri)
+          .map(|scheme| scheme != primary_scheme)
+          .unwrap_or(true)
+    }) {
+      return invalid_resource_capability(
+        "equivalent base URIs must be non-empty and use the primary base URI scheme",
       );
     }
     if self.operations.is_empty()
@@ -294,6 +345,21 @@ fn normalize_base_uri(base_uri: &str) -> MResult<String> {
       )
     },
   )
+}
+
+fn base_uri_scheme(base_uri: &str) -> MResult<&str> {
+  base_uri
+    .split_once("://")
+    .map(|(scheme, _)| scheme)
+    .filter(|scheme| !scheme.is_empty())
+    .ok_or_else(|| {
+      MechError::new(
+        RuntimeCapabilityGrantInvalid {
+          reason: "invalid base URI: resource URI must contain a non-empty scheme".to_string(),
+        },
+        None,
+      )
+    })
 }
 
 fn normalize_resource_path(path: &str) -> MResult<String> {
@@ -413,5 +479,109 @@ mod tests {
     )
     .unwrap_err();
     assert_eq!(error.kind_name(), "RuntimeCapabilityGrantInvalid");
+  }
+
+  #[test]
+  fn resource_path_capability_authorizes_declared_base_aliases() {
+    let capability = ResourcePathCapability::wildcard(
+      CapabilityId(1),
+      "runtime:1",
+      "cli://cli/stdout",
+      ["write"],
+    )
+    .unwrap()
+    .with_equivalent_base_uris([
+      "cli://cli/stdout",
+      "cli://stdout/",
+    ])
+    .unwrap();
+
+    for resource in [
+      "cli://cli/stdout/line",
+      "cli://stdout/line",
+    ] {
+      assert!(capability
+        .preview_check(&CapabilityRequest::from_keys(
+          "runtime:1",
+          "write",
+          resource,
+        ))
+        .unwrap()
+        .allowed);
+    }
+    assert_eq!(
+      capability.equivalent_base_uris(),
+      &BTreeSet::from([
+        "cli://cli/stdout".to_string(),
+        "cli://stdout".to_string(),
+      ]),
+    );
+  }
+
+  #[test]
+  fn resource_path_capability_aliases_preserve_exact_path_scope() {
+    let capability = ResourcePathCapability::exact(
+      CapabilityId(1),
+      "runtime:1",
+      "cli://cli/stdout",
+      ["write"],
+      "line",
+    )
+    .unwrap()
+    .with_equivalent_base_uris(["cli://stdout"])
+    .unwrap();
+
+    assert!(capability
+      .preview_check(&CapabilityRequest::from_keys(
+        "runtime:1",
+        "write",
+        "cli://stdout/line",
+      ))
+      .unwrap()
+      .allowed);
+    assert!(!capability
+      .preview_check(&CapabilityRequest::from_keys(
+        "runtime:1",
+        "write",
+        "cli://stdout/text",
+      ))
+      .unwrap()
+      .allowed);
+    assert!(!capability
+      .preview_check(&CapabilityRequest::from_keys(
+        "runtime:1",
+        "write",
+        "cli://cli/stdout-other/line",
+      ))
+      .unwrap()
+      .allowed);
+  }
+
+  #[test]
+  fn resource_path_capability_does_not_infer_same_scheme_aliases() {
+    let capability = ResourcePathCapability::wildcard(
+      CapabilityId(1),
+      "runtime:1",
+      "cli://cli/stdout",
+      ["write"],
+    )
+    .unwrap()
+    .with_equivalent_base_uris(["cli://stdout"])
+    .unwrap();
+
+    for resource in [
+      "cli://cli/stderr/line",
+      "cli://stderr/line",
+      "cli://terminal/stdout/line",
+    ] {
+      assert!(!capability
+        .preview_check(&CapabilityRequest::from_keys(
+          "runtime:1",
+          "write",
+          resource,
+        ))
+        .unwrap()
+        .allowed);
+    }
   }
 }

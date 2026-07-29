@@ -240,10 +240,14 @@ impl MechRuntime {
       operations,
       paths: grant.paths.clone(),
     };
+    let equivalent_base_uris = self
+      .resources
+      .equivalent_base_uris_for(&interface.base_uri)?;
     let capability = Arc::new(ResourcePathCapability::from_spec(
       self.next_capability_id(),
       &spec,
-    )?);
+    )?
+    .with_equivalent_base_uris(equivalent_base_uris)?);
     self.grant_capability(capability).map(|_| ())
   }
 

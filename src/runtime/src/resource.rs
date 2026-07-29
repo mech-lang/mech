@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, Value};
@@ -49,6 +49,12 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 
   fn base_uris(&self) -> Vec<String> { Vec::new() }
 
+  /// Declares sets of provider base URIs that identify the same protected
+  /// resource. This is compatibility metadata, not general URI rewriting.
+  fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
+    Vec::new()
+  }
+
   fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -81,6 +87,7 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 struct RuntimeResourceProviderEntry {
   scheme: String,
   bases: Vec<String>,
+  equivalent_base_uri_groups: Vec<Vec<String>>,
   provider: Box<dyn RuntimeResourceProvider>,
 }
 
@@ -98,13 +105,14 @@ impl RuntimeResourceRegistry {
     &mut self,
     provider: Box<dyn RuntimeResourceProvider>,
   ) -> MResult<()> {
-    let (scheme, bases) = catch_extension(
+    let (scheme, bases, equivalent_groups) = catch_extension(
       "resource provider",
       "registration metadata",
       || {
         (
           provider.scheme().to_string(),
           provider.base_uris(),
+          provider.equivalent_base_uri_groups(),
         )
       },
     )
@@ -119,18 +127,15 @@ impl RuntimeResourceRegistry {
       ));
     }
 
+    let bases = normalize_provider_bases(&scheme, bases)?;
+    let equivalent_base_uri_groups =
+      normalize_provider_equivalence_groups(
+        &scheme,
+        &bases,
+        equivalent_groups,
+      )?;
+
     for base in &bases {
-      let base_scheme = resource_uri_scheme(base)?;
-      if base_scheme != scheme {
-        return Err(MechError::new(
-          RuntimeResourceInvalidUri {
-            uri: base.clone(),
-            reason: format!("resource provider base URI scheme must be `{scheme}`"),
-          },
-          None,
-        ));
-      }
-      resource_uri_origin(base)?;
       if self.providers.iter().any(|entry| entry.bases.iter().any(|existing| existing == base)) {
         return Err(MechError::new(
           RuntimeResourceProviderConflict { scheme: scheme.clone() },
@@ -146,7 +151,12 @@ impl RuntimeResourceRegistry {
       ));
     }
 
-    self.providers.push(RuntimeResourceProviderEntry { scheme, bases, provider });
+    self.providers.push(RuntimeResourceProviderEntry {
+      scheme,
+      bases,
+      equivalent_base_uri_groups,
+      provider,
+    });
     Ok(())
   }
 
@@ -163,6 +173,26 @@ impl RuntimeResourceRegistry {
       return Ok(Some(base.clone()));
     }
     Ok(Some(resource_uri_origin(candidate)?.to_string()))
+  }
+
+  pub(crate) fn equivalent_base_uris_for(
+    &self,
+    base_uri: &str,
+  ) -> MResult<Vec<String>> {
+    let normalized = canonicalize_resource_base_uri(base_uri)?;
+    let Some(entry) = self
+      .providers
+      .iter()
+      .find(|entry| entry.bases.iter().any(|base| base == &normalized))
+    else {
+      return Ok(vec![normalized]);
+    };
+    Ok(entry
+      .equivalent_base_uri_groups
+      .iter()
+      .find(|group| group.iter().any(|base| base == &normalized))
+      .cloned()
+      .unwrap_or_else(|| vec![normalized]))
   }
 
   fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {
@@ -465,6 +495,119 @@ fn in_memory_docs_lock_error(base_uri: &str) -> MechError {
   )
 }
 
+fn normalize_provider_bases(
+  scheme: &str,
+  bases: Vec<String>,
+) -> MResult<Vec<String>> {
+  let mut normalized = Vec::new();
+  let mut seen = HashSet::new();
+  for base in bases {
+    let canonical = canonicalize_resource_base_uri(&base)?;
+    let base_scheme = resource_uri_scheme(&canonical)?;
+    if base_scheme != scheme {
+      return Err(MechError::new(
+        RuntimeResourceInvalidUri {
+          uri: base,
+          reason: format!(
+            "resource provider base URI scheme must be `{scheme}`",
+          ),
+        },
+        None,
+      ));
+    }
+    if seen.insert(canonical.clone()) {
+      normalized.push(canonical);
+    }
+  }
+  Ok(normalized)
+}
+
+fn normalize_provider_equivalence_groups(
+  scheme: &str,
+  bases: &[String],
+  groups: Vec<Vec<String>>,
+) -> MResult<Vec<Vec<String>>> {
+  if !groups.is_empty() && bases.is_empty() {
+    return Err(MechError::new(
+      RuntimeResourceInvalidUri {
+        uri: format!("{scheme}://"),
+        reason: "resource provider without advertised bases cannot declare equivalent base URIs".to_string(),
+      },
+      None,
+    ));
+  }
+
+  let mut normalized_groups = Vec::new();
+  let mut grouped_bases = HashSet::new();
+  for group in groups {
+    if group.is_empty() {
+      return Err(MechError::new(
+        RuntimeResourceInvalidUri {
+          uri: format!("{scheme}://"),
+          reason: "resource provider equivalent base URI group cannot be empty".to_string(),
+        },
+        None,
+      ));
+    }
+
+    let mut normalized_group = Vec::new();
+    let mut seen_in_group = HashSet::new();
+    for member in group {
+      let canonical = canonicalize_resource_base_uri(&member)?;
+      let member_scheme = resource_uri_scheme(&canonical)?;
+      if member_scheme != scheme {
+        return Err(MechError::new(
+          RuntimeResourceInvalidUri {
+            uri: member,
+            reason: format!(
+              "equivalent resource provider base URI scheme must be `{scheme}`",
+            ),
+          },
+          None,
+        ));
+      }
+      if !bases.iter().any(|base| base == &canonical) {
+        return Err(MechError::new(
+          RuntimeResourceInvalidUri {
+            uri: member,
+            reason: "equivalent resource provider base URI must be advertised by the same provider".to_string(),
+          },
+          None,
+        ));
+      }
+      if seen_in_group.insert(canonical.clone()) {
+        normalized_group.push(canonical);
+      }
+    }
+
+    if normalized_group.len() < 2 {
+      return Err(MechError::new(
+        RuntimeResourceInvalidUri {
+          uri: normalized_group
+            .first()
+            .cloned()
+            .unwrap_or_else(|| format!("{scheme}://")),
+          reason: "resource provider equivalent base URI group must contain at least two distinct members".to_string(),
+        },
+        None,
+      ));
+    }
+    for member in &normalized_group {
+      if !grouped_bases.insert(member.clone()) {
+        return Err(MechError::new(
+          RuntimeResourceInvalidUri {
+            uri: member.clone(),
+            reason: "resource provider base URI may belong to only one equivalence group".to_string(),
+          },
+          None,
+        ));
+      }
+    }
+    normalized_groups.push(normalized_group);
+  }
+  Ok(normalized_groups)
+}
+
 pub fn resource_base_matches(base: &str, candidate: &str) -> bool {
   candidate == base || candidate.strip_prefix(base).is_some_and(|suffix| suffix.starts_with('/'))
 }
@@ -629,6 +772,121 @@ mod tests {
   use super::*;
   use mech_core::Ref;
   use std::sync::Arc;
+
+  #[derive(Debug)]
+  struct EquivalentBaseProvider {
+    scheme: &'static str,
+    bases: Vec<String>,
+    groups: Vec<Vec<String>>,
+  }
+
+  impl RuntimeResourceProvider for EquivalentBaseProvider {
+    fn scheme(&self) -> &str { self.scheme }
+
+    fn base_uris(&self) -> Vec<String> {
+      self.bases.clone()
+    }
+
+    fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
+      self.groups.clone()
+    }
+
+    fn read(
+      &self,
+      _request: RuntimeResourceReadRequest,
+    ) -> MResult<Value> {
+      Ok(Value::Empty)
+    }
+  }
+
+  #[test]
+  fn provider_equivalence_groups_are_normalized_and_captured() {
+    let mut registry = RuntimeResourceRegistry::new();
+    registry
+      .register_provider(Box::new(EquivalentBaseProvider {
+        scheme: "browser",
+        bases: vec![
+          "browser://browser/dom/".to_string(),
+          "browser://dom".to_string(),
+          "browser://dom/".to_string(),
+        ],
+        groups: vec![vec![
+          "browser://browser/dom/".to_string(),
+          "browser://dom".to_string(),
+          "browser://dom/".to_string(),
+        ]],
+      }))
+      .unwrap();
+
+    assert_eq!(
+      registry
+        .equivalent_base_uris_for("browser://dom/")
+        .unwrap(),
+      vec![
+        "browser://browser/dom".to_string(),
+        "browser://dom".to_string(),
+      ],
+    );
+    assert_eq!(
+      registry
+        .equivalent_base_uris_for("browser://browser/dom")
+        .unwrap(),
+      vec![
+        "browser://browser/dom".to_string(),
+        "browser://dom".to_string(),
+      ],
+    );
+  }
+
+  #[test]
+  fn provider_equivalence_rejects_unadvertised_base() {
+    let mut registry = RuntimeResourceRegistry::new();
+    let error = registry
+      .register_provider(Box::new(EquivalentBaseProvider {
+        scheme: "test",
+        bases: vec!["test://canonical".to_string()],
+        groups: vec![vec![
+          "test://canonical".to_string(),
+          "test://undeclared".to_string(),
+        ]],
+      }))
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeResourceInvalidUri");
+    assert!(error
+      .full_chain_message()
+      .contains("must be advertised by the same provider"));
+  }
+
+  #[test]
+  fn provider_equivalence_rejects_duplicate_group_membership() {
+    let mut registry = RuntimeResourceRegistry::new();
+    let error = registry
+      .register_provider(Box::new(EquivalentBaseProvider {
+        scheme: "test",
+        bases: vec![
+          "test://canonical".to_string(),
+          "test://legacy".to_string(),
+          "test://other".to_string(),
+        ],
+        groups: vec![
+          vec![
+            "test://canonical".to_string(),
+            "test://legacy".to_string(),
+          ],
+          vec![
+            "test://canonical/".to_string(),
+            "test://other".to_string(),
+          ],
+        ],
+      }))
+      .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeResourceInvalidUri");
+    assert!(error
+      .full_chain_message()
+      .contains("may belong to only one equivalence group"));
+  }
 
   fn bool_value(value: bool) -> Value {
     Value::Bool(Ref::new(value))
