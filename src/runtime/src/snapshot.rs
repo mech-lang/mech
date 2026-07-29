@@ -11,6 +11,10 @@ use crate::{CapabilityId, ModuleVersionId};
 #[cfg(feature = "invariant_define")]
 use mech_program::IntegrityConstraintReport;
 
+/// A detached snapshot of a runtime value graph.
+///
+/// No reachable `Ref<T>` is shared with the live runtime. Sharing and cycles
+/// within the captured graph are preserved using newly allocated cells.
 #[derive(Clone, PartialEq)]
 pub struct RuntimeValueSnapshot {
   value: Value,

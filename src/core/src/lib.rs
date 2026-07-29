@@ -107,6 +107,7 @@ pub mod reactive_transaction;
 pub mod state_journal;
 pub mod structures;
 pub mod value;
+mod value_snapshot;
 #[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "mika")]
