@@ -72,11 +72,7 @@ impl ParseContext {
   pub const fn for_kind(kind: FragmentKind) -> Self {
     Self {
       mode: kind.mode(),
-      delimiter_depth: if matches!(kind, FragmentKind::ParentheticalTerm) {
-        1
-      } else {
-        0
-      },
+      delimiter_depth: 0,
       line_start: matches!(
         kind,
         FragmentKind::Document
@@ -124,7 +120,14 @@ pub fn parse_fragment(
   config: super::ParseConfig,
   ids: &mut IdGenerator,
 ) -> FragmentSnapshot {
-  let mut parser = Parser::for_range(source, range, kind.syntax_kind(), config, ids);
+  let mut parser = Parser::for_range(
+    source,
+    range,
+    kind.syntax_kind(),
+    u32::from(context.delimiter_depth),
+    config,
+    ids,
+  );
   let context_matches = context_matches(&parser, kind, context);
   let start = parser.offset();
   let matched = context_matches && parse_requested(&mut parser, kind);
@@ -171,9 +174,6 @@ fn context_matches(
   context: ParseContext,
 ) -> bool {
   if context.mode != kind.mode() {
-    return false;
-  }
-  if matches!(kind, FragmentKind::ParentheticalTerm) && context.delimiter_depth == 0 {
     return false;
   }
   if matches!(

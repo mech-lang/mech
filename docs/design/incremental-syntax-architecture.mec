@@ -12,7 +12,11 @@ canonical-grammar merge at
 
 The authoritative canonical inventory is
 `docs/design/grammar-audit/productions.tsv`; it contains exactly 540 canonical
-rules and generates the `RuleId` table used by this module.
+rules. A deterministic developer script generates the checked-in
+`src/syntax/src/document/parser/canonical_rules.rs` registry. Production
+package builds read only that package-local registry; a repository test
+recomputes and verifies every ordered `(name, RuleId)` entry against the
+inventory.
 
 The legacy parser, public `parse` API, existing `Program` AST, formatter,
 interpreter, runtime, and accepted grammar remain unchanged while this
@@ -61,8 +65,18 @@ pub fn parse_document(
 ```
 
 Every valid UTF-8 input produces a snapshot. User syntax errors do not produce a
-top-level `Err`. Resource limits create a diagnostic and an `ERROR` node that
-retains the bounded remainder.
+top-level `Err`. On resource exhaustion, the parser retains every token and
+completed node emitted through `covered_end`, appends one `ERROR` node for only
+`covered_end .. parse_range.end`, and closes open nodes with dynamically
+reserved emergency events. Scanner cursor progress is deliberately not
+coverage: bytes from an unfinished token scanner remain in the error remainder
+until a real source token event has been accepted.
+
+Preserving a document prefix requires at least seven events: the two enclosing
+document starts, a three-event error envelope, and the corresponding enclosing
+finishes. `max_events` below this documented minimum permits an explicit,
+lossless whole-range fallback. At and above the minimum, whole-range fallback
+is not used merely because the parser exhausts its event budget.
 
 Strict validation and lowering are later consumers:
 
@@ -82,6 +96,15 @@ boxed parser closures, a parser generator, or an external tree framework.
 UTF-8 byte offsets are the primary coordinate system. Rows, byte columns,
 UTF-16 positions, grapheme positions, and display widths are derived views.
 Parser cursors store byte offsets only.
+
+A parser cursor has separate consumption and context boundaries. Document
+cursors set both boundaries to the physical source end. Fragment cursors start
+at the requested global range, set `consume_end` to that range's end, and set
+`context_end` to the physical source end. All ordinary peek and bump operations
+remain bounded by `consume_end`. Explicit immutable context-lookahead operations
+may inspect through `context_end` for diagnostic `FoundSyntax` and strong
+heading or fence boundary recognition, but expose no operation that can advance
+the parser or emit a token outside the fragment range.
 
 A `TextSnapshot` identifies a `DocumentId` and `Revision`. Its immutable piece
 list references `Arc<str>` chunks and byte ranges within those chunks. Edits
@@ -170,6 +193,14 @@ headings, matching fence boundaries, and delimiter-aware Mech terminals form
 strong restart points. Recovery never treats a Markdown `#` convention as a
 Mechdown heading.
 
+`ParseContext.delimiter_depth` is the number of delimiter-owning ancestors
+already open before a fragment root begins. A top-level parenthetical fragment
+therefore starts at depth zero; the inner parenthetical in `((1))` starts at
+depth one, and the next nested parenthetical starts at depth two. Restart-index
+construction counts actual delimiter-owning ancestors rather than assigning a
+constant depth. The fragment parser initializes its nesting counter from this
+context before parsing the fragment's own opening delimiter.
+
 8. Incremental reparsing
 -------------------------------------------------------------------------------
 
@@ -182,10 +213,22 @@ A fragment parser operates on a bounded global range of the original
 document identity. `FragmentKind` selects the exact production entry point, and
 `ParseContext` carries mode, delimiter depth, line-start state, indentation, and
 an enclosing fence delimiter. Fragment tokens and diagnostics retain global
-source ranges.
+source ranges. Non-consuming right-context lookahead lets a fragment ending
+immediately before a heading or fence report the same found syntax and recovery
+data as a containing full-document parse without relaxing its consumption
+boundary.
 
 A fragment splice is accepted only when that entry point matches, consumes the
 complete mapped range, preserves the ending boundary, and retains parser mode.
+For a non-section splice, the implementation conservatively reparses the
+containing section after constructing the candidate snapshot and merging
+retained and fragment diagnostics. Acceptance requires both the section tree
+and flags and the complete normalized diagnostics whose primary ranges belong
+to that section to match. Normalization includes code, phase, severity,
+canonical rule, parser context, primary and label ranges, expected and found
+syntax, fixes and edits, related diagnostics, recovery, and tags; related
+indices are rebuilt within the filtered section result.
+
 Otherwise the reparser ascends. Document-root reparsing is the final fallback.
 Snapshots whose diagnostic budget was exhausted also use the document fallback,
 because a local fragment cannot reconstruct diagnostics suppressed outside its
@@ -193,6 +236,16 @@ range.
 
 Unaffected green subtrees are reused with their IDs. Full and incremental parses
 are compared after normalization that ignores minted IDs.
+
+Incremental statistics account for every parser invocation performed by an
+operation. They report selected fragment work, containing-section validation
+work, rejected fragment or parent-root attempts, and document fallback work
+separately. `total_parser_steps` and `total_events_emitted` are their sums;
+the legacy `parser_steps` and `events_emitted` fields are aliases for those
+totals. Because section-envelope validation is intentionally conservative, a
+one-section local edit may perform as much or more parser work than a full
+parse. Multi-section edits should still demonstrate less total work when
+unchanged sections are reused.
 
 9. Annotation substrate and future analysis
 -------------------------------------------------------------------------------
@@ -234,3 +287,17 @@ behind the existing `serde` feature.
 The design remains implementable in Mech: piece arrays, immutable nodes, event
 arrays, typed maps, checkpoints, and explicit recovery are concrete data
 structures rather than a Rust-specific framework.
+
+11. Hosted randomized parser validation
+-------------------------------------------------------------------------------
+
+The `Syntax fuzzing` workflow runs the four Phase 1 targets on pull requests
+targeting `feature/syntax` and on pushes to `feature/syntax`. Pull requests use
+5,000 runs and at most 180 seconds per target; pushes and manual dispatches use
+25,000 runs and at most 900 seconds per target. Superseded pull-request runs are
+cancelled.
+
+The Monday schedule uses the larger budget, but GitHub activates scheduled
+workflows only from the repository default branch. It is therefore not active
+weekly coverage while this workflow exists only on `feature/syntax`; the
+pull-request and push triggers provide the hosted coverage during Phase 1.
