@@ -56,6 +56,9 @@ jobs:
           cargo check -p mech-interpreter --no-default-features --features program
           cargo check -p mech-program --no-default-features --features program
 
+      - name: Run serve executable HTTP suite
+        run: cargo test -p mech --test mech_serve -- --nocapture
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
@@ -466,6 +469,11 @@ jobs:
 
       - name: Run Windows root library tests
         run: cargo test -p mech --lib
+
+      - name: Run Windows serve executable HTTP suites
+        run: |
+          cargo test -p mech --test mech_serve -- --nocapture
+          cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
 
       - name: Run Windows source-tooling process tests
         run: cargo test -p mech --test windows_source_paths -- --nocapture
