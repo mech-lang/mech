@@ -30,6 +30,7 @@ This allows one Mechdown source document to be rendered into different layouts b
 - `{{CONTENTS}}` — Sectioned document body contents.
 - `{{CONTENT}}` — Alias for `{{CONTENTS}}`.
 - `{{CITED}}` — Works Cited markup (when citations are present).
+- `{{FOOTNOTES}}` — Footnote markup (when footnotes are present).
 - `{{SECTION#}}` — Specific numbered section slot (`{{SECTION1}}`, `{{SECTION2}}`, ...).
 
 3. Interactive placeholders
@@ -41,10 +42,28 @@ These placeholders support browser-side Mech runtime integration.
 - `{{REPL}}` — Default REPL mount markup:
 
 ```
-<div class="console-scroll mech-repl hidden" id="mech-output"></div>
+<div class="console-scroll mech-repl hidden" id="mech-output" data-mech-repl-mount aria-live="polite"></div>
 ```
 
-The web runtime expects a mount with id `mech-output` when calling `attach_repl`.
+The shipped document controller attaches the browser REPL to `#mech-output`.
+It is selected by the shim, so a standalone document does not need `mech.mcfg`
+or `project.js`.
+
+### Shipped-controller placeholders
+
+The maintained generic, blog, and documentation shells opt into the shared safe
+browser controller with these two slots:
+
+- `{{DOCUMENT_SCRIPT}}` — The embedded document-controller module. It creates a
+  safe `WasmDocument`, starts document inputs, renders outputs, and attaches the
+  REPL when the shell includes the corresponding mount.
+- `{{SOURCE_URL_KEY}}` — A server-supplied, percent-encoded source transport key.
+  A formatted file leaves this value empty and the controller falls back to the
+  embedded `{{CODE}}` payload.
+
+Custom shims remain authoritative: a shim without `{{DOCUMENT_SCRIPT}}` receives
+no competing browser bootstrap and may use inline code, an external script, the
+shared controller, or no runtime behavior at all.
 
 ### Reactive variable placeholders
 

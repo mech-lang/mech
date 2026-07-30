@@ -82,7 +82,23 @@ A configured project that needs a browser application at `/` supplies
 mech serve main.mec --address 127.0.0.1 --port 3000
 ```
 
-7. Browser host config
+7. Serve a rich document shim
+-------------------------------------------------------------------------------
+
+```sh
+mech serve post.mec \
+  --shim include/blog.html \
+  --stylesheet include/blog.css
+```
+
+`mech serve --shim` and `mech format --html --shim` use the same semantic slot
+contract. The selected shim owns its HTML shell. The shipped generic, blog, and
+documentation shims opt into the shared safe document controller through
+`{{DOCUMENT_SCRIPT}}`; custom shims may instead use their own inline or external
+bootstrap, or remain static. A standalone source document needs neither
+`mech.mcfg` nor `project.js`.
+
+8. Browser host config
 -------------------------------------------------------------------------------
 
 When browser host settings or run grants are present, the server injects host configuration into the served page so the browser runtime can initialize from host-owned settings.

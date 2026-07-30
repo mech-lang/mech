@@ -20,6 +20,31 @@ mech format src/main.mec docs/index.mec --out formatted
 3. HTML docs generation
 -------------------------------------------------------------------------------
 
-Do not use `mech format --html` as the documented path for generating the docs site from `.mec` sources. The current direct formatter path does not emit HTML for plain `.mec` inputs through that command.
+`mech format --html` renders a standalone Mech source document through the
+selected HTML shim. The shim owns the page shell, while known Mech slots are
+expanded from the document in one non-recursive pass.
 
-Use the project documentation build flow for rendered docs output.
+For a blog post:
+
+```sh
+mech format post.mec \
+  --html \
+  --shim include/blog.html \
+  --stylesheet include/blog.css \
+  --out post.html
+```
+
+For a documentation page:
+
+```sh
+mech format docs/page.mec \
+  --html \
+  --shim include/docs.html \
+  --stylesheet include/docs.css \
+  --out page.html
+```
+
+The shipped shims opt into the shared browser controller through
+`{{DOCUMENT_SCRIPT}}`. A custom shim retains authority over inline, external,
+shared-helper, or intentionally static browser behavior. Standalone documents
+require neither `mech.mcfg` nor `project.js`.
