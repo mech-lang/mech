@@ -42,7 +42,7 @@ mod passthrough_transaction_state_tests {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ConvertMatPassthrough {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertMatPassthrough");
         compile_nullop!(
             name,
@@ -101,7 +101,7 @@ where
     FromMat: CompileConst + ConstElem + AsValueKind,
     ToMat: CompileConst + ConstElem + AsValueKind,
 {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!(
             "ConvertMatToMat2<{},{}>",
             FromMat::as_value_kind(),
@@ -152,8 +152,12 @@ where
     Ref<na::RowDVector<TTo>>: ToValue,
     #[cfg(feature = "matrixd")]
     Ref<na::DMatrix<TTo>>: ToValue,
-    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + CompileConst + AsValueKind,
-    TTo: Debug + Scalar + Default + ConstElem + CompileConst + AsValueKind,
+    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
+    TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    TFrom: CompileConst,
+    #[cfg(feature = "compiler")]
+    TTo: CompileConst,
 {
     let zero = TTo::default();
     match v {
@@ -286,8 +290,12 @@ where
     Ref<na::RowDVector<TTo>>: ToValue,
     #[cfg(feature = "matrixd")]
     Ref<na::DMatrix<TTo>>: ToValue,
-    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + CompileConst + AsValueKind,
-    TTo: Debug + Scalar + Default + ConstElem + CompileConst + AsValueKind,
+    TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
+    TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    TFrom: CompileConst,
+    #[cfg(feature = "compiler")]
+    TTo: CompileConst,
 {
     let zero = TTo::default();
     let dims = v.shape();

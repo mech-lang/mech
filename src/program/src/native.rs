@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
+#[cfg(feature = "compiler")]
 use mech_core::{
-  CompileCtx, MResult, MechError, MechErrorKind, MechFunctionCompiler,
-  MechFunctionImpl, NativeFunctionCompiler, Register, Value,
+  BytecodeCompilerContext, MechError, MechFunctionCompiler, Register,
+};
+use mech_core::{
+  MResult, MechErrorKind, MechFunctionImpl, NativeFunctionCompiler, Value,
 };
 
 pub type NativeClosure =
@@ -64,10 +67,11 @@ impl MechFunctionImpl for ClosureNativeFunction {
   }
 }
 
+#[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ClosureNativeFunction {
   fn compile(
     &self,
-    _ctx: &mut CompileCtx,
+    _ctx: &mut dyn BytecodeCompilerContext,
   ) -> MResult<Register> {
     Err(MechError::new(
       ClosureNativeFunctionNotBytecodeCompilableError {

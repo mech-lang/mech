@@ -78,14 +78,14 @@ macro_rules! impl_two_arg_fxn {
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0,0,0];
   
         registers[0] = compile_register_brrw!(self.out,  ctx);
         registers[1] = compile_register_brrw!(self.arg1, ctx);
         registers[2] = compile_register_brrw!(self.arg2, ctx);
 
-        ctx.features.insert(FeatureFlag::Custom(hash_str("math/atan2")));
+        ctx.require(FeatureFlag::Custom(hash_str("math/atan2")));
 
         ctx.emit_binop(
           hash_str(stringify!($struct_name)),

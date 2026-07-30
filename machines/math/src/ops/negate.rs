@@ -16,7 +16,9 @@ struct NegateV<O> {
 impl<O> MechFunctionFactory for NegateV<O>
 where
   O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static +
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  O: CompileConst,
   Ref<O>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -56,7 +58,7 @@ impl<O> MechFunctionCompiler for NegateV<O>
 where
   O: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NegateV<{}>", O::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }
@@ -83,7 +85,9 @@ struct NegateS<O> {
 impl<O> MechFunctionFactory for NegateS<O>
 where
   O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static +
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  O: CompileConst,
   Ref<O>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -123,7 +127,7 @@ impl<O> MechFunctionCompiler for NegateS<O>
 where
   O: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NegateS<{}>", O::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }

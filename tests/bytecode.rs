@@ -37,6 +37,7 @@ bytecode_test!(bytecode_define_string, "x := \"Hello World!\"", Value::String(Re
 bytecode_test!(bytecode_var_def,"x := 10",Value::F64(Ref::new(10.0)));
 bytecode_test!(bytecode_math,"1 + 2",Value::F64(Ref::new(3.0)));
 bytecode_test!(bytecode_math_def,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(7.0)));
+bytecode_test!(bytecode_tuple_access,"tuple := (1, 2); tuple.2",Value::F64(Ref::new(2.0)));
 bytecode_test!(bytecode_math_mul,"x := 2 * 2; y := x * 4",Value::F64(Ref::new(16.0)));
 bytecode_test!(bytecode_math_add_assign,"~x := 10; x += 20",Value::F64(Ref::new(30.0)));
 bytecode_test!(bytecode_math_add_assign_vv, "~x := [1 2 3]; x += [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![11.0,22.0,33.0], 1, 3)));

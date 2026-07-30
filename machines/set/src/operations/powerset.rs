@@ -87,7 +87,7 @@ impl MechFunctionImpl for SetPowersetFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetPowersetFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetPowersetFxn");
     compile_unop!(name, self.out, self.input, ctx, FeatureFlag::Custom(hash_str("set/powerset")));
   }

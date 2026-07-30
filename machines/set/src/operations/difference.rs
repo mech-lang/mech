@@ -58,7 +58,7 @@ impl MechFunctionImpl for SetDifferenceFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetDifferenceFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetDifferenceFxn");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Difference) );
   }

@@ -1,5 +1,6 @@
 #![no_main]
 #![allow(warnings)]
+#![feature(where_clause_attrs)]
 #[macro_use]
 extern crate mech_core;
 extern crate paste;
@@ -99,8 +100,10 @@ macro_rules! impl_compare_binop {
     impl<T> MechFunctionFactory for $struct_name<T>
     where
       T: std::fmt::Debug + Clone + 'static + 
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
       PartialEq + PartialOrd,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -143,7 +146,7 @@ macro_rules! impl_compare_binop {
   where
     T: ConstElem + CompileConst + AsValueKind
   {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }

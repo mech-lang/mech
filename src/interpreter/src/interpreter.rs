@@ -52,8 +52,6 @@ pub struct Interpreter {
   pub stack: Vec<Frame>,
   registers: Vec<Value>,
   constants: Vec<Value>,
-  #[cfg(feature = "compiler")]
-  pub context: Option<CompileCtx>,
   pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
@@ -69,24 +67,6 @@ pub struct Interpreter {
   #[cfg(feature = "state_machines")]
   pub user_state_machine_specs: Ref<HashMap<u64, FsmSpecification>>,
   pub sub_interpreters: Ref<HashMap<u64, InterpreterRef>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InterpreterCheckpointUnsupportedCompilerContext {
-  pub interpreter_id: u64,
-}
-
-impl MechErrorKind for InterpreterCheckpointUnsupportedCompilerContext {
-  fn name(&self) -> &str {
-    "InterpreterCheckpointUnsupportedCompilerContext"
-  }
-
-  fn message(&self) -> String {
-    format!(
-      "Interpreter {} has a retained compiler context that cannot be checkpointed safely.",
-      self.interpreter_id,
-    )
-  }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -609,17 +589,6 @@ impl InterpreterStructureCheckpoint {
     journal: &mut ValueStateJournal,
     seen_children: &mut Vec<InterpreterRef>,
   ) -> MResult<Self> {
-    #[cfg(feature = "compiler")]
-    if interpreter.context.is_some() {
-      return Err(MechError::new(
-        InterpreterCheckpointUnsupportedCompilerContext {
-          interpreter_id: interpreter.id,
-        },
-        None,
-      )
-      .with_compiler_loc());
-    }
-
     let state = ProgramStateCheckpoint::capture(
       &interpreter.state,
       interpreter.id,
@@ -846,10 +815,6 @@ impl InterpreterStructureCheckpoint {
       self.deferred_expression_solve_depth.target.clone();
     interpreter.registers = self.registers.clone();
     interpreter.constants = self.constants.clone();
-    #[cfg(feature = "compiler")]
-    {
-      interpreter.context = None;
-    }
     interpreter.code = self.code.clone();
     interpreter.out = self.out.clone();
     interpreter.out_values = self.out_values.target.clone();
@@ -1061,8 +1026,6 @@ impl Clone for Interpreter {
       stack: self.stack.clone(),
       registers: self.registers.clone(),
       constants: self.constants.clone(),
-      #[cfg(feature = "compiler")]
-      context: None,
       code: self.code.clone(),
       out: self.out.clone(),
       out_values: self.out_values.clone(),
@@ -1326,8 +1289,6 @@ impl Interpreter {
       #[cfg(feature = "state_machines")]
       user_state_machine_specs: Ref::new(HashMap::new()),
       code: Vec::new(),
-      #[cfg(feature = "compiler")]
-      context: None,
     }
   }
 
@@ -1408,12 +1369,6 @@ impl Interpreter {
       output.push_str(&format!("  {}: {}\n", key, value));
     }
     output.push_str(&format!("Code Length: {}\n", self.code.len()));
-    #[cfg(feature = "compiler")]
-    if let Some(context) = &self.context {
-      output.push_str("Context: Exists\n");
-    } else {
-      output.push_str("Context: None\n");
-    }
     output
   }
 
@@ -2015,18 +1970,6 @@ impl Interpreter {
     Ok(self.out.clone())
   }
 
-  #[cfg(all(feature = "compiler", feature = "functions"))]
-  pub fn compile(&mut self) -> MResult<Vec<u8>> {
-    let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
-    let mut ctx = CompileCtx::new();
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
-    }
-    let bytes = ctx.compile()?;
-    self.context = Some(ctx);
-    Ok(bytes)
-  }
 }
 
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]

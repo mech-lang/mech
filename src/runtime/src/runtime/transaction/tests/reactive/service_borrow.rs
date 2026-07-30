@@ -8,7 +8,7 @@ use crate::{
     PreparedRuntimeEffect, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 use mech_core::{
-    CompileCtx, MResult, MechExecutionServices, MechFunctionCompiler, MechFunctionImpl,
+    BytecodeCompilerContext, MResult, MechExecutionServices, MechFunctionCompiler, MechFunctionImpl,
     ReactiveSolveStatus, Ref, Register, Value,
 };
 use mech_program::ExecutionServicesBorrowConflict;
@@ -63,7 +63,7 @@ impl MechFunctionImpl for ReentrantRuntimeServiceFunction {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ReentrantRuntimeServiceFunction {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

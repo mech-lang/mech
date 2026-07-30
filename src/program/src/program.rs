@@ -15,11 +15,14 @@ use web_time::Instant;
 use std::time::Instant;
 
 use mech_core::{
-  hash_str, CompileCtx, MResult, MechError, MechErrorKind, MechSourceCode,
+  hash_str, MResult, MechError, MechErrorKind, MechSourceCode,
   MechFunction, NativeFunctionCompiler, ParsedProgram, ValRef, Value, ValueKind,
   val_ref_reactive_cell_ids, with_reactive_journal_participant,
   ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome,
 };
+
+#[cfg(feature = "compiler")]
+use mech_bytecode::CompileCtx;
 
 use mech_interpreter::{
   Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint,
@@ -27,6 +30,12 @@ use mech_interpreter::{
 use mech_syntax::parser;
 
 use crate::ClosureNativeFunctionCompiler;
+
+#[cfg(feature = "compiler")]
+pub struct BytecodeCompilation {
+  pub bytecode: Vec<u8>,
+  pub requirements: Vec<FeatureFlag>,
+}
 
 #[derive(Debug, Clone)]
 pub struct StableValueUpdateKindMismatch {
@@ -1362,20 +1371,29 @@ impl MechProgram {
   }
 
   #[cfg(feature = "compiler")]
-  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-    let state_brrw = self.interpreter.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
+  pub fn compile_bytecode_artifact(&mut self) -> MResult<BytecodeCompilation> {
+    let state = self.interpreter.state.borrow();
+    let plan = state.plan.borrow();
+    let mut context = CompileCtx::new();
 
-    let mut ctx = CompileCtx::new();
-
-    for step in plan_brrw.iter() {
-      step.compile(&mut ctx)?;
+    for step in plan.iter() {
+      step.compile(&mut context)?;
     }
 
-    let bytes = ctx.compile()?;
-    self.interpreter.context = Some(ctx);
+    let requirements = context.requirements().iter().cloned().collect::<Vec<_>>();
+    let bytecode = context.compile()?;
 
-    Ok(bytes)
+    Ok(BytecodeCompilation {
+      bytecode,
+      requirements,
+    })
+  }
+
+  #[cfg(feature = "compiler")]
+  pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
+    self
+      .compile_bytecode_artifact()
+      .map(|artifact| artifact.bytecode)
   }
 }
 
@@ -2371,7 +2389,7 @@ mod compact_program_reactive_turn_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for ProgramTestFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<mech_core::Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> {
       Ok(0)
     }
   }
@@ -2537,7 +2555,7 @@ mod compact_program_reactive_turn_tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for ProgramRegister {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<mech_core::Register> { Ok(0) }
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> { Ok(0) }
   }
 
   #[test]
@@ -3267,7 +3285,7 @@ mod retained_checkpoint_tests {
 
   #[cfg(feature = "compiler")]
   impl mech_core::MechFunctionCompiler for RestoreProbe {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<mech_core::Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> {
       Ok(0)
     }
   }
@@ -3295,7 +3313,7 @@ mod retained_checkpoint_tests {
 
   #[cfg(feature = "compiler")]
   impl mech_core::MechFunctionCompiler for UnsupportedCheckpointFunction {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<mech_core::Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<mech_core::Register> {
       Ok(0)
     }
   }
@@ -3416,6 +3434,46 @@ mod retained_checkpoint_tests {
     assert_eq!(restored_outer.addr(), x_outer_addr);
     assert_eq!(restored_inner.addr(), x_inner_addr);
     assert_eq!(*restored_inner.borrow(), 1.0);
+  }
+
+  #[cfg(all(
+    feature = "compiler",
+    feature = "functions",
+    feature = "symbol_table",
+    feature = "f64",
+  ))]
+  #[test]
+  fn bytecode_compilation_preserves_checkpointability_and_execution_state() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+    program.run_string("x := 1.0\ny := x + 2.0").unwrap();
+
+    let checkpoint_before_compilation = program.checkpoint().unwrap();
+    let plan = program.interpreter().plan();
+    let plan_address = plan.0.addr();
+    let plan_length = plan.borrow().len();
+    let symbols_address = program.interpreter().symbols().addr();
+    let output_before = program.interpreter().out.to_string();
+    let (_, x_before) = scalar_cell(&program, "x");
+    let (_, y_before) = scalar_cell(&program, "y");
+
+    let bytecode = program.compile_bytecode().unwrap();
+    assert!(!bytecode.is_empty());
+    let _checkpoint_after_compilation = program.checkpoint().unwrap();
+
+    assert_eq!(program.interpreter().plan().0.addr(), plan_address);
+    assert_eq!(program.interpreter().plan_len(), plan_length);
+    assert_eq!(program.interpreter().symbols().addr(), symbols_address);
+    assert_eq!(program.interpreter().out.to_string(), output_before);
+    assert_eq!(*x_before.borrow(), 1.0);
+    assert_eq!(*y_before.borrow(), 3.0);
+
+    program.restore(checkpoint_before_compilation).unwrap();
+    assert_eq!(program.interpreter().plan().0.addr(), plan_address);
+    assert_eq!(program.interpreter().plan_len(), plan_length);
+    let (_, restored_x) = scalar_cell(&program, "x");
+    let (_, restored_y) = scalar_cell(&program, "y");
+    assert_eq!(*restored_x.borrow(), 1.0);
+    assert_eq!(*restored_y.borrow(), 3.0);
   }
 
   #[test]

@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "no_std", no_std)]
 #![allow(warnings)]
 #![allow(dead_code)]
+#![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
 extern crate seahash;

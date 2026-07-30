@@ -255,7 +255,7 @@ impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
 
 #[cfg(feature = "compiler")]
 pub trait MechFunctionCompiler {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register>;
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register>;
 }
 
 #[cfg(feature = "compiler")]
@@ -753,7 +753,7 @@ impl MechFunctionImpl for UserFunction {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for UserFunction {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     todo!();
   }
 }

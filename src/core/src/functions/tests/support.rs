@@ -8,7 +8,7 @@ use super::super::{
 #[cfg(all(feature = "set", feature = "f64"))]
 use crate::MechSet;
 #[cfg(feature = "compiler")]
-use crate::{CompileCtx, Register};
+use crate::{BytecodeCompilerContext, Register};
 use crate::{GenericError, MResult, MechError, ReactiveCellId, Ref, ToValue, Value, ValueKind};
 use std::{cell::RefCell, rc::Rc};
 
@@ -111,7 +111,7 @@ impl MechFunctionImpl for TestFunction {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TestFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }
@@ -210,7 +210,7 @@ impl MechFunctionImpl for TestRegister {
 }
 #[cfg(all(feature = "compiler", feature = "f64"))]
 impl MechFunctionCompiler for TestRegister {
-    fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

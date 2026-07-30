@@ -1,6 +1,6 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use mech_core::{
-  CompileCtx, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
+  BytecodeCompilerContext, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
   GenericError, NoMechExecutionServices,
   ReactiveCellId, ReactiveNodeKind, ReactiveRegisterCommit,
   ReactiveRegisterWrite, ReactiveSolveStatus, Ref, Register, Value, hash_str,
@@ -41,7 +41,7 @@ impl MechFunctionImpl for BenchCombinational {
 }
 
 impl MechFunctionCompiler for BenchCombinational {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> { Ok(0) }
 }
 
 struct BenchRegister {
@@ -68,7 +68,7 @@ impl MechFunctionImpl for BenchRegister {
 }
 
 impl MechFunctionCompiler for BenchRegister {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Ok(0) }
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> { Ok(0) }
 }
 
 fn update(input: ProgramInputId, value: f64) -> ProgramInputUpdate {

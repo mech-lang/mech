@@ -50,7 +50,7 @@ impl MechFunctionImpl for SetNotEqualsFxn {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetNotEqualsFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = "SetNotEqualsFxn".to_string();
     // Custom feature route: set/not_equals
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/not_equals")));

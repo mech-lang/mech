@@ -9,7 +9,7 @@ use super::support::TestFunction;
 #[cfg(feature = "f64")]
 use super::support::reg;
 #[cfg(feature = "compiler")]
-use crate::{CompileCtx, Register};
+use crate::{BytecodeCompilerContext, Register};
 use crate::{MResult, ReactiveCellId, Ref, ToValue, Value};
 
 struct RetainedZstFunction;
@@ -30,7 +30,7 @@ impl MechFunctionImpl for RetainedZstFunction {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RetainedZstFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

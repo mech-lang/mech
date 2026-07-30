@@ -3,7 +3,7 @@ use super::{
 };
 #[cfg(feature = "compiler")]
 use crate::{
-  CompileConst, CompileCtx, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
+  BytecodeCompilerContext, CompileConst, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
 };
 #[cfg(feature = "matrix_comprehensions")]
 use crate::{Matrix, MatrixComprehension, MatrixHorzCat};
@@ -225,7 +225,7 @@ impl MechFunctionFactory for ValueSetComprehension {
 }
 #[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         compile_nullop!(
             "set/comprehension",
             self.out,
@@ -317,7 +317,7 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 }
 #[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         compile_nullop!(
             "matrix/comprehension",
             self.out,

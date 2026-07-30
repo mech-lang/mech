@@ -36,15 +36,12 @@ struct Assign<T> {
 }
 impl<T> MechFunctionFactory for Assign<T>
 where
-  T: Clone
-    + Debug
-    + Sync
-    + Send
-    + 'static
-    + CompileConst
-    + ConstElem
-    + AsValueKind,
+  T: Clone + Debug + Sync + Send + 'static,
   Ref<T>: ToValue,
+  #[cfg(feature = "compiler")]
+  T: ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -100,12 +97,11 @@ impl<T> MechFunctionCompiler for Assign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("Assign<{}>", T::as_value_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
-
 register_fxn_descriptor!(
   Assign,
   u8, "u8",
@@ -162,7 +158,7 @@ impl MechFunctionImpl for AssignEmpty {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for AssignEmpty {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     Err(
       MechError::new(
         EmptyAssignmentNotBytecodeCompilable,
@@ -353,7 +349,6 @@ impl NativeFunctionCompiler for AddAssignValue {
   }
 }
 
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -361,10 +356,15 @@ mod tests {
   #[cfg(feature = "compiler")]
   #[test]
   fn empty_stable_assignment_bytecode_compile_returns_error() {
+    use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+
     let assignment = AssignEmpty;
-    let mut ctx = CompileCtx::new();
-    let error = assignment.compile(&mut ctx).unwrap_err();
+    let mut context = RecordingBytecodeCompilerContext::default();
+    let error = assignment.compile(&mut context).unwrap_err();
     let rendered = format!("{error:?}");
-    assert!(rendered.contains("EmptyAssignmentNotBytecodeCompilable"), "{rendered}");
+    assert!(
+      rendered.contains("EmptyAssignmentNotBytecodeCompilable"),
+      "{rendered}",
+    );
   }
 }

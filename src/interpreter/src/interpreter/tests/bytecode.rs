@@ -12,7 +12,7 @@ mod bytecode_dependency_tests {
     };
 
     #[cfg(feature = "compiler")]
-    use super::super::super::{CompileCtx, MechFunctionCompiler, Register};
+    use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
     struct BytecodeDependencyTestFunction {
         output: Value,
@@ -36,7 +36,7 @@ mod bytecode_dependency_tests {
 
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for BytecodeDependencyTestFunction {
-        fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
         }
     }
@@ -186,50 +186,5 @@ mod bytecode_dependency_tests {
         assert_eq!(node.inputs.len(), 1);
         assert_eq!(node.inputs[0].cell, input_cell);
         assert_eq!(plan.reactive_consumers_for(input_cell), &[0]);
-    }
-}
-
-#[cfg(all(
-    test,
-    feature = "program",
-    feature = "compiler",
-    feature = "functions",
-    feature = "symbol_table",
-    feature = "variable_define",
-    feature = "f64"
-))]
-mod decoded_variable_definition_symbol_metadata_tests {
-    use super::super::super::{Interpreter, ParsedProgram, hash_str};
-
-    #[test]
-    fn decoded_variable_definition_symbol_metadata_round_trips() {
-        let tree = mech_syntax::parser::parse("input := 1.0\n~state := 2.0").unwrap();
-        let mut source = Interpreter::new_with_full_stdlib(1);
-        source.interpret(&tree).unwrap();
-        let bytes = source.compile().unwrap();
-        let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
-        let input_id = hash_str("input");
-        let state_id = hash_str("state");
-        assert!(parsed.symbols.contains_key(&input_id));
-        assert!(parsed.symbols.contains_key(&state_id));
-        assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
-        assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
-        assert!(!parsed.mutable_symbols.contains(&input_id));
-        assert!(parsed.mutable_symbols.contains(&state_id));
-        let mut decoded = Interpreter::new_with_full_stdlib(2);
-        decoded.run_program(&parsed).unwrap();
-        for (name, expected) in [("input", 1.0), ("state", 2.0)] {
-            let value = decoded
-                .symbols()
-                .borrow()
-                .get(hash_str(name))
-                .unwrap()
-                .borrow()
-                .clone();
-            assert_eq!(*value.as_f64().unwrap().borrow(), expected);
-        }
-        let state = decoded.state.borrow();
-        assert!(state.get_mutable_symbol(input_id).is_none());
-        assert!(state.get_mutable_symbol(state_id).is_some());
     }
 }

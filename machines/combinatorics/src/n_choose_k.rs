@@ -23,8 +23,10 @@ where
       Add<Output = T> + AddAssign +
       Sub<Output = T> + Div<Output = T> +
       Zero + One +
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
       PartialEq + PartialOrd,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<T>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -74,7 +76,7 @@ impl<T> MechFunctionCompiler for NChooseK<T>
 where
     T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NChooseK<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
@@ -96,8 +98,10 @@ where
        Add<Output = T> + AddAssign +
        Sub<Output = T> + Div<Output = T> +
        Zero + One +
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
        PartialEq + PartialOrd + ToMatrix,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
     Ref<T>: ToValue,
     Matrix<T>: ToValue,
 {
@@ -167,7 +171,7 @@ impl<T> MechFunctionCompiler for NChooseKMatrix<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }

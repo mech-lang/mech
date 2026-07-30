@@ -1,5 +1,5 @@
 use super::super::{
-    CapabilityId, CompileCtx, MResult, MechFunctionCompiler, MechFunctionImpl, MechRuntime,
+    CapabilityId, BytecodeCompilerContext, MResult, MechFunctionCompiler, MechFunctionImpl, MechRuntime,
     Register, RuntimeConfig, Value,
 };
 use crate::runtime::host::RuntimeHostNativeFunction;
@@ -46,7 +46,7 @@ impl MechFunctionImpl for RuntimeStepProbe {
 
 #[cfg(all(feature = "functions", feature = "compiler"))]
 impl MechFunctionCompiler for RuntimeStepProbe {
-    fn compile(&self, _context: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

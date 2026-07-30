@@ -1126,7 +1126,6 @@ impl Value {
 
   #[cfg(all(
     feature = "matrix",
-    feature = "compiler",
   ))]
   pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>>
   where T: AsValueKind + 'static

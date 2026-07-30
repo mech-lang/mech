@@ -1,6 +1,6 @@
 use super::super::{register_expression_function_batch, register_initialized_expression_function};
 #[cfg(feature = "compiler")]
-use crate::{CompileCtx, MechFunctionCompiler, Register};
+use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
     MResult, MechFunction, MechFunctionImpl, Plan, ReactiveCellId, ReactiveDependencyKind, Ref,
     Value,
@@ -35,7 +35,7 @@ impl MechFunctionImpl for IndexedExpressionTestFunction {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for IndexedExpressionTestFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

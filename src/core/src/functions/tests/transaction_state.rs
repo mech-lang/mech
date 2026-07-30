@@ -6,7 +6,7 @@ use super::super::{
 };
 use super::support::{PureStaticTestCompiler, TestFunction};
 #[cfg(feature = "compiler")]
-use crate::{CompileCtx, Register};
+use crate::{BytecodeCompilerContext, Register};
 use crate::{
     Dictionary, FunctionDefine, MResult, MechError, Ref, ValRef, Value, ValueStateJournal,
     internal_pattern_value_identifier,
@@ -56,7 +56,7 @@ impl MechFunctionImpl for UnsupportedStateFunction {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for UnsupportedStateFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }
@@ -79,7 +79,7 @@ impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for MisleadingRuntimeHostNameFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }
@@ -105,7 +105,7 @@ impl MechFunctionImpl for UnschedulableOutputFunction {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for UnschedulableOutputFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }

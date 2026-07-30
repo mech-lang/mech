@@ -5,7 +5,7 @@ use super::super::{
     ReactiveRegisterCommitOutcome, reactive_register_sealed,
 };
 #[cfg(feature = "compiler")]
-use crate::{CompileCtx, Register};
+use crate::{BytecodeCompilerContext, Register};
 use crate::{GenericError, MResult, MechError, ReactiveCellId, Ref, ToValue, Value};
 use std::{cell::RefCell, rc::Rc};
 
@@ -98,7 +98,7 @@ impl MechFunctionImpl for RegisterStageTestFunction {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RegisterStageTestFunction {
-    fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }
@@ -186,7 +186,7 @@ impl MechFunctionImpl for RegisterWithoutStaging {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RegisterWithoutStaging {
-    fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
 }
@@ -367,7 +367,7 @@ fn reactive_register_commit_rejects_combinational_node_without_staging() {
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for Combinational {
-        fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
         }
     }
@@ -500,7 +500,7 @@ fn reactive_register_commit_does_not_execute_downstream_nodes() {
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for C {
-        fn compile(&self, _: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
         }
     }

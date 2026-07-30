@@ -114,11 +114,11 @@ impl MechFunctionImpl for StringAccessElement {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StringAccessElement {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     match self.compile_mode {
       StringAccessCompileMode::Constant => {
-        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::String));
-        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+        ctx.require(FeatureFlag::Builtin(FeatureKind::String));
+        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         let reg = compile_register!(Value::String(self.out.clone()), ctx);
         Ok(reg)
       }

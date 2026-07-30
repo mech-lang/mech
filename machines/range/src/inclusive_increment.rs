@@ -22,10 +22,14 @@ pub struct RangeIncrementInclusiveScalar<T, MatA> {
 impl<T, R1, C1, S1> MechFunctionFactory for RangeIncrementInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
   T: Copy + Debug + Clone + Sync + Send + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   PartialOrd + 'static + One + Add<Output = T>,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+  naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
+  #[cfg(feature = "compiler")]
+  naMatrix<T, R1, C1, S1>: CompileConst,
   R1: Dim + 'static, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -75,7 +79,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("RangeIncrementInclusiveScalar<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
     compile_ternop!(name, self.out, self.from, self.step, self.to, ctx, FeatureFlag::Builtin(FeatureKind::RangeInclusive) );
   }

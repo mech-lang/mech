@@ -59,8 +59,8 @@ use crate::{
 };
 #[cfg(test)]
 use mech_core::{
+  BytecodeCompilerContext,
   hash_str,
-  CompileCtx,
   MResult,
   MechFunctionCompiler,
   MechFunctionImpl,

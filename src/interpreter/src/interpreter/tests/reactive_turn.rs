@@ -136,7 +136,7 @@ mod reactive_turn_interpreter_state_tests {
 #[cfg(all(test, feature = "functions"))]
 mod compact_reactive_turn_checkpoint_tests {
     #[cfg(feature = "compiler")]
-    use super::super::super::{CompileCtx, MechFunctionCompiler, Register};
+    use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use super::super::super::{
         GenericError, Interpreter, MResult, MechError, MechFunction, MechFunctionImpl,
         NoMechExecutionServices, Plan, ReactiveJournalAutomaticRollbackFailed, ReactiveNodeId,
@@ -221,7 +221,7 @@ mod compact_reactive_turn_checkpoint_tests {
 
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for CompactTestFunction {
-        fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
         }
     }

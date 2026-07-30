@@ -33,7 +33,7 @@ impl<T> MechFunctionCompiler for MapAssign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("MapAssign<{}>", T::as_value_kind());
     compile_unop!(name,self.sink,self.source,ctx,FeatureFlag::Builtin(FeatureKind::Assign));
   }

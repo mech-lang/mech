@@ -46,18 +46,21 @@ use super::{
   MechRuntime,
   RuntimeHostFunctionNotBytecodeCompilableError,
 };
+#[cfg(feature = "compiler")]
 use mech_core::{
-  CompileCtx,
+  BytecodeCompilerContext,
+  MechFunctionCompiler,
+  Register,
+};
+use mech_core::{
   GuardFunctionSafety,
   MResult,
   MechError,
   MechErrorKind,
   MechExecutionServices,
-  MechFunctionCompiler,
   MechFunctionImpl,
   NativeFunctionCompiler,
   Ref,
-  Register,
   Value,
   ValueKind,
 };
@@ -434,10 +437,11 @@ impl MechFunctionImpl for RuntimeHostNativeFunction {
   }
 }
 
+#[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RuntimeHostNativeFunction {
   fn compile(
     &self,
-    _ctx: &mut CompileCtx,
+    _ctx: &mut dyn BytecodeCompilerContext,
   ) -> MResult<Register> {
     Err(MechError::new(
       RuntimeHostFunctionNotBytecodeCompilableError {

@@ -1,8 +1,11 @@
 use super::snapshot_runtime_value;
 use crate::runtime::RuntimeActivationEffectBarrierInvariantError;
+#[cfg(feature = "compiler")]
 use mech_core::{
-  CompileCtx, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
-  NativeFunctionCompiler, Register, Value,
+  BytecodeCompilerContext, MechFunctionCompiler, Register,
+};
+use mech_core::{
+  MResult, MechError, MechFunctionImpl, NativeFunctionCompiler, Value,
 };
 
 // This name deliberately starts with a NUL byte.  It is an identifier we can
@@ -43,8 +46,9 @@ impl MechFunctionImpl for ActivationEffectBarrier {
     Ok(self.reactive_output_values())
   }
 }
+#[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ActivationEffectBarrier {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> { Err(MechError::new(RuntimeActivationEffectBarrierInvariantError { reason: "activation effect barrier cannot be bytecode compiled".into() }, None)) }
 }
 
 #[derive(Clone, Debug)]
@@ -112,8 +116,9 @@ impl MechFunctionImpl for ActivationEffectPayloadCapture {
   }
 }
 
+#[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ActivationEffectPayloadCapture {
-  fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     Err(MechError::new(RuntimeActivationEffectBarrierInvariantError {
       reason: "activation effect payload capture cannot be bytecode compiled".into(),
     }, None))

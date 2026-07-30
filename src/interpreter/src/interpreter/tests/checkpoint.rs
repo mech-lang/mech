@@ -1,14 +1,11 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        Interpreter, InterpreterCheckpointUnsupportedCompilerContext, MechSourceCode,
-        ModuleManifestCatalog, ProgramState, ReactiveCellId, Ref, RuntimeContextBinding, ValRef,
-        Value, ValueStateBorrowConflict, hash_str,
+        Interpreter, MechSourceCode, ModuleManifestCatalog, ProgramState, ReactiveCellId, Ref,
+        RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict, hash_str,
     };
     use std::collections::HashMap;
 
-    #[cfg(feature = "compiler")]
-    use super::super::super::CompileCtx;
     #[cfg(feature = "invariant_define")]
     use super::super::super::{ComparisonOp, FormulaOperator, IntegrityConstraint};
     #[cfg(feature = "state_machines")]
@@ -345,18 +342,4 @@ mod checkpoint_tests {
         assert_eq!(*grandchild_backing.borrow(), 30.0);
     }
 
-    #[cfg(feature = "compiler")]
-    #[test]
-    fn interpreter_checkpoint_rejects_retained_compiler_context() {
-        let mut interpreter = Interpreter::new(41, 100);
-        interpreter.context = Some(CompileCtx::new());
-        let error = match interpreter.checkpoint() {
-            Ok(_) => panic!("retained compiler context checkpoint unexpectedly succeeded"),
-            Err(error) => error,
-        };
-        let unsupported = error
-            .kind_as::<InterpreterCheckpointUnsupportedCompilerContext>()
-            .unwrap();
-        assert_eq!(unsupported.interpreter_id, 41);
-    }
 }

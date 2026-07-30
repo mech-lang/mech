@@ -26,10 +26,14 @@ pub struct VariableDefineMatrix<T, MatA> {
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + CompileConst + ConstElem + AsNaKind + 'static,
+  MatA: Debug + ConstElem + AsNaKind + 'static,
+  #[cfg(feature = "compiler")]
+  MatA: CompileConst,
   Ref<MatA>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -53,7 +57,7 @@ impl<T, MatA> MechFunctionImpl for VariableDefineMatrix<T, MatA>
 where
   Ref<MatA>: ToValue,
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
   MatA: Debug,
 {
   fn solve(&self) {}
@@ -70,7 +74,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   MatA: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let variable_register = compile_register_brrw!(self.var, ctx);
     let variable_name = self.name.borrow().clone();
     let variable_mutable = *self.mutable.borrow();
@@ -120,7 +124,7 @@ macro_rules! impl_variable_define_fxn {
       }
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let variable_register = compile_register_brrw!(self.var, ctx);
           let variable_name = self.name.borrow().clone();
           let variable_mutable = *self.mutable.borrow();
@@ -203,7 +207,7 @@ impl MechFunctionImpl for VariableDefineEmpty {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let variable_register = compile_register_brrw!(self.var, ctx);
     let variable_name = self.name.borrow().clone();
     let variable_mutable = *self.mutable.borrow();

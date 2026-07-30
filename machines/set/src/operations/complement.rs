@@ -58,7 +58,7 @@ impl MechFunctionImpl for SetComplementFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetComplementFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetComplementFxn");
     compile_unrop!(name, self.out, self.input, ctx, FeatureFlag::Builtin(FeatureKind::Complement) );
   }

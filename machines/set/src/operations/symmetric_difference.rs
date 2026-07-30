@@ -61,7 +61,7 @@ impl MechFunctionImpl for SetSymDifferenceFxn {
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetSymDifferenceFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetSymDifferenceFxn");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/symmetric-difference")));
   }

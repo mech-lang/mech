@@ -427,7 +427,7 @@ mod tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for JournalFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       Ok(0)
     }
   }
@@ -521,7 +521,7 @@ mod tests {
 
   #[cfg(feature = "compiler")]
   impl MechFunctionCompiler for JournalRegister {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       Ok(0)
     }
   }

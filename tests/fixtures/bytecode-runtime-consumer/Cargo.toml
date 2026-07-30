@@ -1,0 +1,34 @@
+[package]
+name = "bytecode-runtime-consumer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mech-interpreter = {
+  path = "../../../src/interpreter",
+  default-features = false,
+  features = ["program", "functions", "symbol_table", "f64", "math_add"],
+}
+mech-program = {
+  path = "../../../src/program",
+  default-features = false,
+  features = ["program", "functions", "formulas", "symbol_table", "f64"],
+}
+
+[patch.crates-io]
+mech-core = { path = "../../../src/core" }
+mech-syntax = { path = "../../../src/syntax" }
+mech-interpreter = { path = "../../../src/interpreter" }
+mech-program = { path = "../../../src/program" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-math = { path = "../../../machines/math" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-range = { path = "../../../machines/range" }
+mech-set = { path = "../../../machines/set" }
+mech-stats = { path = "../../../machines/stats" }
+mech-string = { path = "../../../machines/string" }
+
+[workspace]

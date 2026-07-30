@@ -18,13 +18,15 @@ macro_rules! impl_binop2 {
     impl<T> MechFunctionFactory for $struct_name<T>
     where
       T: Copy + Debug + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + CompileConst + ConstElem +
+      PartialEq + PartialOrd + ConstElem +
       Add<Output = T> + AddAssign +
       Sub<Output = T> + SubAssign +
       Mul<Output = T> + MulAssign +
       Div<Output = T> + DivAssign +
       Rem<Output = T> + RemAssign +
       Zero + One + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -73,7 +75,7 @@ macro_rules! impl_binop2 {
   where
     T: CompileConst + ConstElem + AsValueKind
   {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
       let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }

@@ -1,5 +1,6 @@
 #![no_main]
 #![allow(warnings)]
+#![feature(where_clause_attrs)]
 #[macro_use]
 extern crate mech_core;
 extern crate paste;
@@ -65,9 +66,11 @@ macro_rules! impl_stats_unop {
     where
       T: Copy + Debug + Clone + Sync + Send + 'static + 
       Add<Output = T> + AddAssign +
-      CompileConst + ConstElem + AsValueKind +
+      ConstElem + AsValueKind +
       Zero + One +
       PartialEq + PartialOrd,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -110,7 +113,7 @@ macro_rules! impl_stats_unop {
     where
       T: CompileConst + ConstElem + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
         compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Custom(hash_str("stats/sum")) );
       }

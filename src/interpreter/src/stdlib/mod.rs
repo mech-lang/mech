@@ -51,13 +51,23 @@ macro_rules! impl_range_range_fxn_v {
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec1: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix1]>,
-      IxVec2: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix2]>,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec1: ConstElem + AsNaKind + Debug + AsRef<[$ix1]>,
+      #[cfg(feature = "compiler")]
+      IxVec1: CompileConst,
+      IxVec2: ConstElem + AsNaKind + Debug + AsRef<[$ix2]>,
+      #[cfg(feature = "compiler")]
+      IxVec2: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -111,7 +121,7 @@ macro_rules! impl_range_range_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec1::as_na_kind(), IxVec2::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );  
       }
@@ -134,12 +144,20 @@ macro_rules! impl_all_fxn_v {
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -189,7 +207,7 @@ macro_rules! impl_all_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }

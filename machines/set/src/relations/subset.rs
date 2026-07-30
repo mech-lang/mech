@@ -48,7 +48,7 @@ impl MechFunctionImpl for SetSubsetFxn {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetSubsetFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetSubsetFxn");
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Subset) );
   }
