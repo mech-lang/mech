@@ -1,5 +1,6 @@
 pub mod document;
 pub mod grammar;
+pub mod literals;
 pub mod mech;
 pub mod mechdown;
 
@@ -8,4 +9,5 @@ pub use crate::document::red::{
   SectionSyntax, SyntaxElement, SyntaxNode, SyntaxToken, VariableDefineSyntax,
 };
 pub use grammar::*;
+pub use literals::*;
 pub use mechdown::*;
