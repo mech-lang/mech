@@ -4,19 +4,18 @@
 //! Phase 2B. It does not call prototype or legacy production parsers.
 
 use alloc::string::String;
-use alloc::sync::Arc;
-
 use crate::document::{
-    DiagnosticAnchor, DiagnosticLabel, DiagnosticStore, ExpectedSyntax, GreenNode, IdGenerator,
-    NodeIndex, ParseStats, RuleId, SyntaxKind, SyntaxNode, TextRange, TextSnapshot,
+    DiagnosticAnchor, DiagnosticLabel, ExpectedSyntax, RuleId, SyntaxKind, TextRange,
+    TextSnapshot,
 };
 
 use super::super::rule::rules;
-use super::super::{LexicalMode, ParseConfig, Parser, sink};
+use super::super::{ParseConfig, Parser};
 use super::base;
 use super::combinator::{self, Attempt};
 use super::statements;
 use super::terminal_spec::{TerminalSpacing, fixed_terminal_spec};
+use super::test_support::{CanonicalSourceRuleSnapshot, parse_source_rule_prefix};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum CodeblockDelimiter {
@@ -24,28 +23,8 @@ pub(crate) enum CodeblockDelimiter {
     Tilde,
 }
 
-/// A narrow prefix snapshot for deterministic Phase 2B rule-contract tests.
-#[derive(Clone, Debug)]
-pub struct CanonicalMechdownRuleSnapshot {
-    pub source: TextSnapshot,
-    pub rule: RuleId,
-    pub root: Arc<GreenNode>,
-    pub diagnostics: DiagnosticStore,
-    pub nodes: NodeIndex,
-    pub stats: ParseStats,
-    pub matched: bool,
-    pub consumed: TextRange,
-}
-
-impl CanonicalMechdownRuleSnapshot {
-    pub fn syntax(&self) -> SyntaxNode {
-        SyntaxNode::new_root_at(self.root.clone(), self.source.clone(), self.consumed.start)
-    }
-
-    pub fn is_strictly_clean(&self) -> bool {
-        self.matched && self.diagnostics.is_empty()
-    }
-}
+/// Backwards-compatible name for Phase 2B direct-rule snapshots.
+pub type CanonicalMechdownRuleSnapshot = CanonicalSourceRuleSnapshot;
 
 /// Parse one of the exact 13 Phase 2B productions as a deterministic prefix.
 ///
@@ -57,7 +36,28 @@ pub fn parse_canonical_mechdown_rule_for_test(
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalMechdownRuleSnapshot> {
-    is_closed_rule(rule).then(|| parse_rule_prefix(source, rule, config))
+    is_closed_rule(rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| match rule {
+            rules::COMMENT_SIGIL => statements::parse_comment_sigil(parser)
+                .then_some(Attempt::Matched)
+                .unwrap_or(Attempt::NoMatch),
+            rules::COMMENT => statements::parse_comment(parser),
+            rules::CODEBLOCK_SIGIL => parse_codeblock_sigil(parser)
+                .map(|_| Attempt::Matched)
+                .unwrap_or(Attempt::NoMatch),
+            rules::INLINE_CODE => parse_inline_code(parser),
+            rules::INLINE_EQUATION => parse_inline_equation(parser),
+            rules::RAW_HYPERLINK => parse_raw_hyperlink(parser),
+            rules::FOOTNOTE_REFERENCE => parse_footnote_reference(parser),
+            rules::REFERENCE => parse_reference(parser),
+            rules::SECTION_REFERENCE => parse_section_reference(parser),
+            rules::PARAGRAPH_TEXT => parse_paragraph_text(parser),
+            rules::THEMATIC_BREAK => parse_thematic_break(parser),
+            rules::BLANK_LINE => parse_blank_line(parser),
+            rules::EQUATION => parse_equation(parser),
+            _ => unreachable!("closed-rule guard rejects every other RuleId"),
+        })
+    })
 }
 
 /// Parse the transparent `codeblock-sigil` production and return the exact
@@ -557,70 +557,4 @@ fn is_closed_rule(rule: RuleId) -> bool {
             | rules::BLANK_LINE
             | rules::EQUATION
     )
-}
-
-fn parse_rule_prefix(
-    source: TextSnapshot,
-    rule: RuleId,
-    config: ParseConfig,
-) -> CanonicalMechdownRuleSnapshot {
-    let mut ids = IdGenerator::new();
-    let mut parser = Parser::new(
-        &source,
-        LexicalMode::CanonicalSourceFragment,
-        config,
-        &mut ids,
-    );
-    parser.set_resource_rule(rule);
-    let fragment = parser.start();
-    let start = parser.offset();
-    let matched = match rule {
-        rules::COMMENT_SIGIL => statements::parse_comment_sigil(&mut parser),
-        rules::COMMENT => statements::parse_comment(&mut parser).accepted(),
-        rules::CODEBLOCK_SIGIL => parse_codeblock_sigil(&mut parser).is_some(),
-        rules::INLINE_CODE => parse_inline_code(&mut parser).accepted(),
-        rules::INLINE_EQUATION => parse_inline_equation(&mut parser).accepted(),
-        rules::RAW_HYPERLINK => parse_raw_hyperlink(&mut parser).accepted(),
-        rules::FOOTNOTE_REFERENCE => parse_footnote_reference(&mut parser).accepted(),
-        rules::REFERENCE => parse_reference(&mut parser).accepted(),
-        rules::SECTION_REFERENCE => parse_section_reference(&mut parser).accepted(),
-        rules::PARAGRAPH_TEXT => parse_paragraph_text(&mut parser).accepted(),
-        rules::THEMATIC_BREAK => parse_thematic_break(&mut parser).accepted(),
-        rules::BLANK_LINE => parse_blank_line(&mut parser).accepted(),
-        rules::EQUATION => parse_equation(&mut parser).accepted(),
-        _ => unreachable!("closed-rule guard rejects every other RuleId"),
-    };
-    let end = parser.offset();
-    fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
-    let output = parser.finish();
-    let sink_result = sink(&output.events, &source, &mut ids)
-        .expect("canonical Phase 2B rule events must form one root");
-
-    let mut diagnostics = DiagnosticStore::new(source.revision());
-    for mut pending in output.diagnostics {
-        if let Some(event) = pending.event
-            && let Some(node) = sink_result.event_nodes.get(&event)
-        {
-            pending.diagnostic.primary = DiagnosticAnchor::Element {
-                element: crate::document::SyntaxElementId::Node(*node),
-                relative: pending.relative,
-            };
-        }
-        diagnostics.push(pending.diagnostic);
-    }
-
-    let consumed = TextRange::new(start, end);
-    let nodes = NodeIndex::build_at(&sink_result.root, consumed.start);
-    let mut stats = output.stats;
-    stats.new_node_count = nodes.node_count() as u64;
-    CanonicalMechdownRuleSnapshot {
-        source,
-        rule,
-        root: sink_result.root,
-        diagnostics,
-        nodes,
-        stats,
-        matched,
-        consumed,
-    }
 }
