@@ -8,3 +8,4 @@ pub use crate::document::red::{
   SectionSyntax, SyntaxElement, SyntaxNode, SyntaxToken, VariableDefineSyntax,
 };
 pub use grammar::*;
+pub use mechdown::*;
