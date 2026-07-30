@@ -952,6 +952,52 @@ mod tests {
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
 
+    #[test]
+    fn encoded_fizzbuzz_document_retains_fenced_block_output() {
+        let tree = mech_syntax::parser::parse(include_str!(
+            "../../../examples/working/fizzbuzz.mec"
+        ))
+        .unwrap();
+        let output_id = tree
+            .body
+            .sections
+            .iter()
+            .flat_map(|section| &section.elements)
+            .filter_map(|element| match element {
+                mech_core::nodes::SectionElement::FencedMechCode(block)
+                    if block.config.output =>
+                {
+                    block.code.last().map(|(code, _)| {
+                        mech_core::hash_str(&format!("{code:?}"))
+                    })
+                }
+                _ => None,
+            })
+            .last()
+            .expect("FizzBuzz fixture must contain an output block");
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let decoded: mech_core::nodes::Program =
+            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+
+        assert_eq!(
+            output_id, 29_884_140_763_677_669,
+            "the browser runtime key must match the native formatter key",
+        );
+        runtime.run_tree(&decoded).unwrap();
+
+        assert!(
+            runtime
+                .output_value_for_interpreter(
+                    runtime.root_interpreter_id(),
+                    output_id,
+                )
+                .unwrap()
+                .is_some(),
+            "FizzBuzz output must remain queryable by its formatted block id",
+        );
+    }
+
     fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
         match value.into_value() {
             mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
@@ -1410,6 +1456,42 @@ mod browser_tests {
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn encoded_fizzbuzz_document_uses_native_formatter_output_key() {
+        let tree = mech_syntax::parser::parse(include_str!(
+            "../../../examples/working/fizzbuzz.mec"
+        ))
+        .unwrap();
+        let output_id = tree
+            .body
+            .sections
+            .iter()
+            .flat_map(|section| &section.elements)
+            .filter_map(|element| match element {
+                mech_core::nodes::SectionElement::FencedMechCode(block)
+                    if block.config.output =>
+                {
+                    block.code.last().map(|(code, _)| {
+                        mech_core::hash_str(&format!("{code:?}"))
+                    })
+                }
+                _ => None,
+            })
+            .last()
+            .expect("FizzBuzz fixture must contain an output block");
+        assert_eq!(
+            output_id, 29_884_140_763_677_669,
+            "the WASM output key must match the native formatter key",
+        );
+
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        assert!(
+            !document.rendered_output(0, output_id).unwrap().is_null(),
+            "the formatted FizzBuzz output must remain renderable in WASM",
+        );
     }
 
     #[wasm_bindgen_test]
