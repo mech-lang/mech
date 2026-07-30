@@ -61,6 +61,15 @@ impl RunningServer {
         let port = available_port();
         let stdout_path = current_dir.join(format!("serve-{port}.stdout.log"));
         let stderr_path = current_dir.join(format!("serve-{port}.stderr.log"));
+        let wasm_pkg = current_dir.join("test-wasm-pkg");
+        std::fs::create_dir_all(&wasm_pkg).expect("test WASM package directory must be created");
+        std::fs::write(wasm_pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0")
+            .expect("test WASM module must be written");
+        std::fs::write(
+            wasm_pkg.join("mech_wasm.js"),
+            "export default async function init() {}\n",
+        )
+        .expect("test WASM wrapper must be written");
         let stdout = File::create(&stdout_path).expect("server stdout log must be created");
         let stderr = File::create(&stderr_path).expect("server stderr log must be created");
 
@@ -76,6 +85,8 @@ impl RunningServer {
             .arg("127.0.0.1")
             .arg("--port")
             .arg(port.to_string())
+            .arg("--wasm")
+            .arg(&wasm_pkg)
             .stdin(Stdio::null())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr));
