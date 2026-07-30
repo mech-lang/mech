@@ -422,9 +422,9 @@ fn parse_real_number_inner(
 pub(crate) fn parse_rational_literal(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::RATIONAL_LITERAL, |parser| {
         let rational = parser.start();
-        if !parse_rational_integer_literal(parser).accepted()
+        if !parse_integer_literal(parser).accepted()
             || !base::parse_rule(parser, rules::SLASH)
-            || !parse_rational_integer_literal(parser).accepted()
+            || !parse_integer_literal(parser).accepted()
         {
             rational.abandon(parser);
             return Attempt::NoMatch;
@@ -432,72 +432,6 @@ pub(crate) fn parse_rational_literal(parser: &mut Parser<'_>) -> Attempt {
         rational.complete(parser, SyntaxKind::RationalLiteral);
         Attempt::Matched
     })
-}
-
-/// Parse an integer operand for a tight rational literal.
-///
-/// A general typed-integer suffix permits `/` as an identifier symbol. Within
-/// this sequenced production, however, the next slash is the required rational
-/// delimiter, so this local candidate stops the suffix immediately before it.
-fn parse_rational_integer_literal(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::INTEGER_LITERAL, |parser| {
-        let integer = parser.start();
-        let result = if parse_rational_typed_integer(parser).accepted() {
-            Attempt::Matched
-        } else {
-            parse_untyped_integer(parser)
-        };
-        if result == Attempt::NoMatch {
-            integer.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        integer.complete(parser, SyntaxKind::IntegerLiteral);
-        result
-    })
-}
-
-fn parse_rational_typed_integer(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::TYPED_INTEGER, |parser| {
-        let integer = parser.start();
-        if !base::parse_rule(parser, rules::DIGIT_SEQUENCE)
-            || !parse_identifier_before_rational_delimiter(parser)
-        {
-            integer.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        integer.complete(parser, SyntaxKind::TypedInteger);
-        Attempt::Matched
-    })
-}
-
-fn parse_identifier_before_rational_delimiter(parser: &mut Parser<'_>) -> bool {
-    let identifier = parser.start();
-    if !(base::parse_rule(parser, rules::ALPHA_TOKEN) || base::parse_rule(parser, rules::EMOJI)) {
-        identifier.abandon(parser);
-        return false;
-    }
-
-    while base::parse_rule(parser, rules::ALPHA_TOKEN)
-        || base::parse_rule(parser, rules::DIGIT_TOKEN)
-        || base::parse_rule(parser, rules::AMPERSAND)
-        || base::parse_rule(parser, rules::DOLLAR)
-        || base::parse_rule(parser, rules::PERCENT)
-        || base::parse_rule(parser, rules::HASHTAG)
-        || base::parse_rule(parser, rules::BACKSLASH)
-        || base::parse_rule(parser, rules::TILDE)
-        || base::parse_rule(parser, rules::PLUS)
-        || base::parse_rule(parser, rules::DASH)
-        || base::parse_rule(parser, rules::ASTERISK)
-        || base::parse_rule(parser, rules::CARET)
-        || base::parse_rule(parser, rules::EMOJI)
-    {
-        if parser.is_halted() {
-            break;
-        }
-    }
-
-    identifier.complete(parser, SyntaxKind::Identifier);
-    true
 }
 
 /// Parse a canonical scientific literal.
@@ -635,7 +569,12 @@ fn parse_decimal_literal_inner(parser: &mut Parser<'_>, recover: bool) -> Attemp
             decimal.abandon(parser);
             return Attempt::NoMatch;
         }
-        insert_missing_based_payload(parser, "decimal digits", "syntax/missing-decimal-digits");
+        insert_missing_based_payload(
+            parser,
+            "decimal digits",
+            "syntax/missing-decimal-digits",
+            Some(SyntaxKind::Digit),
+        );
         decimal.complete(parser, SyntaxKind::DecimalLiteral);
         return Attempt::Committed;
     }
@@ -687,6 +626,7 @@ fn parse_hexadecimal_literal_inner(parser: &mut Parser<'_>, recover: bool) -> At
             parser,
             "hexadecimal digits",
             "syntax/missing-hexadecimal-digits",
+            None,
         );
         hexadecimal.complete(parser, SyntaxKind::HexadecimalLiteral);
         return Attempt::Committed;
@@ -720,7 +660,12 @@ fn parse_octal_literal_inner(parser: &mut Parser<'_>, recover: bool) -> Attempt 
             octal.abandon(parser);
             return Attempt::NoMatch;
         }
-        insert_missing_based_payload(parser, "octal digits", "syntax/missing-octal-digits");
+        insert_missing_based_payload(
+            parser,
+            "octal digits",
+            "syntax/missing-octal-digits",
+            Some(SyntaxKind::Digit),
+        );
         octal.complete(parser, SyntaxKind::OctalLiteral);
         return Attempt::Committed;
     }
@@ -752,7 +697,12 @@ fn parse_binary_literal_inner(parser: &mut Parser<'_>, recover: bool) -> Attempt
             binary.abandon(parser);
             return Attempt::NoMatch;
         }
-        insert_missing_based_payload(parser, "binary digits", "syntax/missing-binary-digits");
+        insert_missing_based_payload(
+            parser,
+            "binary digits",
+            "syntax/missing-binary-digits",
+            Some(SyntaxKind::Digit),
+        );
         binary.complete(parser, SyntaxKind::BinaryLiteral);
         return Attempt::Committed;
     }
@@ -785,13 +735,18 @@ fn consume_quotes(parser: &mut Parser<'_>, count: usize) -> bool {
     true
 }
 
-fn insert_missing_based_payload(parser: &mut Parser<'_>, payload: &str, code: &str) {
+fn insert_missing_based_payload(
+    parser: &mut Parser<'_>,
+    payload: &str,
+    code: &str,
+    missing_token: Option<SyntaxKind>,
+) {
     combinator::insert_missing(
         parser,
         code,
         &alloc::format!("expected {payload} after based-number prefix"),
         ExpectedSyntax::Production(String::from(payload)),
-        Some(SyntaxKind::Digit),
+        missing_token,
         None,
     );
 }

@@ -3,7 +3,7 @@
 use alloc::vec::Vec;
 
 use crate::document::red::IdentifierSyntax;
-use crate::document::{AstNode, SyntaxKind, SyntaxNode, SyntaxToken};
+use crate::document::{AstNode, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
 fn child<N: AstNode>(syntax: &SyntaxNode) -> Option<N> {
     syntax.children().find_map(N::cast)
@@ -153,15 +153,16 @@ impl ComplexNumberSyntax {
     }
 
     pub fn real(&self) -> Option<UntypedRealNumberSyntax> {
-        nth_child(&self.0, 0)
+        let values = self.components();
+        (values.len() == 2).then(|| values[0].clone())
     }
 
     pub fn imaginary(&self) -> Option<UntypedRealNumberSyntax> {
         let values = self.components();
-        (values.len() == 1)
-            .then(|| values.into_iter().next())
-            .flatten()
-            .or_else(|| nth_child(&self.0, 1))
+        match values.as_slice() {
+            [imaginary] | [_, imaginary] => Some(imaginary.clone()),
+            _ => None,
+        }
     }
 }
 
@@ -171,10 +172,10 @@ impl RealNumberSyntax {
     }
 
     pub fn is_negated(&self) -> bool {
-        self.0
-            .tokens()
-            .into_iter()
-            .any(|token| token.kind() == SyntaxKind::Dash)
+        matches!(
+            self.0.children_with_tokens().first(),
+            Some(SyntaxElement::Token(token)) if token.kind() == SyntaxKind::Dash
+        )
     }
 }
 
@@ -184,10 +185,10 @@ impl UntypedRealNumberSyntax {
     }
 
     pub fn is_negated(&self) -> bool {
-        self.0
-            .tokens()
-            .into_iter()
-            .any(|token| token.kind() == SyntaxKind::Dash)
+        matches!(
+            self.0.children_with_tokens().first(),
+            Some(SyntaxElement::Token(token)) if token.kind() == SyntaxKind::Dash
+        )
     }
 }
 

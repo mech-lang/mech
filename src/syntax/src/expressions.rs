@@ -850,6 +850,8 @@ pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
 mod canonical_phase_2c_context_path_tests {
   use super::*;
 
+  use std::panic::{catch_unwind, AssertUnwindSafe};
+
   use mech_core::{SourceLocation, SourceRange, TokenKind};
 
   use crate::document::ast::paths::{
@@ -861,6 +863,7 @@ mod canonical_phase_2c_context_path_tests {
     AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextRange,
     TextSize, TextSnapshot, lower_legacy_context_address_path,
     lower_legacy_prefixed_context_path,
+    reconstruct_source_range,
   };
 
   #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1025,6 +1028,384 @@ mod canonical_phase_2c_context_path_tests {
   fn incomplete_prefixed_context_paths_remain_noncommitting() {
     for input in ["@", "@ctx", "@ctx/", "@/path"] {
       assert_prefix_contract(input, rules::PREFIXED_CONTEXT_PATH, prefixed_context_path);
+    }
+  }
+
+  #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+  enum LegacyContractOutcome {
+    Matched(LegacyPrefix),
+    NoMatch,
+    Panicked,
+  }
+
+  type LegacyContractParser = fn(&str) -> LegacyContractOutcome;
+
+  #[derive(Clone, Copy)]
+  struct Phase2CContract {
+    rule: RuleId,
+    name: &'static str,
+    legacy: LegacyContractParser,
+    // The five columns are minimal success, representative success, valid
+    // prefix with remainder, boundary failure, and ambiguous alternative.
+    inputs: [&'static str; 5],
+    known_panic_inputs: &'static [&'static str],
+  }
+
+  const BOUNDARY_CASE_KINDS: [&str; 5] = [
+    "minimal success",
+    "representative success",
+    "valid prefix with remainder",
+    "boundary failure",
+    "ambiguous alternative",
+  ];
+
+  fn legacy_contract<Output>(
+    input: &str,
+    parser: for<'source> fn(ParseString<'source>) -> ParseResult<'source, Output>,
+  ) -> LegacyContractOutcome {
+    let result = catch_unwind(AssertUnwindSafe(|| legacy_prefix(input, parser)));
+    match result {
+      Ok(Some(prefix)) => LegacyContractOutcome::Matched(prefix),
+      Ok(None) => LegacyContractOutcome::NoMatch,
+      Err(_) => LegacyContractOutcome::Panicked,
+    }
+  }
+
+  macro_rules! legacy_contract_parser {
+    ($name:ident, $parser:path) => {
+      fn $name(input: &str) -> LegacyContractOutcome {
+        legacy_contract(input, $parser)
+      }
+    };
+  }
+
+  legacy_contract_parser!(legacy_empty_contract, crate::empty);
+  legacy_contract_parser!(legacy_atom_contract, crate::atom);
+  legacy_contract_parser!(legacy_string_contract, crate::string);
+  legacy_contract_parser!(legacy_utf8_string_contract, crate::utf8_string);
+  legacy_contract_parser!(legacy_raw_string_contract, crate::raw_string);
+  legacy_contract_parser!(legacy_boolean_contract, crate::boolean);
+  legacy_contract_parser!(legacy_true_literal_contract, crate::true_literal);
+  legacy_contract_parser!(legacy_false_literal_contract, crate::false_literal);
+  legacy_contract_parser!(legacy_number_contract, crate::number);
+  legacy_contract_parser!(legacy_complex_number_contract, crate::complex_number);
+  legacy_contract_parser!(legacy_real_number_contract, crate::real_number);
+  legacy_contract_parser!(legacy_untyped_real_number_contract, crate::untyped_real_number);
+  legacy_contract_parser!(legacy_rational_literal_contract, crate::rational_literal);
+  legacy_contract_parser!(legacy_scientific_literal_contract, crate::scientific_literal);
+  legacy_contract_parser!(legacy_float_decimal_start_contract, crate::float_decimal_start);
+  legacy_contract_parser!(legacy_float_full_contract, crate::float_full);
+  legacy_contract_parser!(legacy_float_literal_contract, crate::float_literal);
+  legacy_contract_parser!(legacy_integer_literal_contract, crate::integer_literal);
+  legacy_contract_parser!(legacy_typed_integer_contract, crate::typed_integer);
+  legacy_contract_parser!(legacy_untyped_integer_contract, crate::untyped_integer);
+  legacy_contract_parser!(legacy_decimal_literal_contract, crate::decimal_literal);
+  legacy_contract_parser!(legacy_hexadecimal_literal_contract, crate::hexadecimal_literal);
+  legacy_contract_parser!(legacy_octal_literal_contract, crate::octal_literal);
+  legacy_contract_parser!(legacy_binary_literal_contract, crate::binary_literal);
+  legacy_contract_parser!(legacy_context_address_path_token_contract, context_address_path_token);
+  legacy_contract_parser!(legacy_context_address_path_contract, context_address_path);
+  legacy_contract_parser!(legacy_prefixed_context_path_contract, prefixed_context_path);
+  legacy_contract_parser!(legacy_kind_any_contract, crate::kind_any);
+  legacy_contract_parser!(legacy_kind_empty_contract, crate::kind_empty);
+  legacy_contract_parser!(legacy_kind_atom_contract, crate::kind_atom);
+
+  fn phase_2c_contracts() -> [Phase2CContract; 30] {
+    [
+      Phase2CContract {
+        rule: rules::EMPTY,
+        name: "empty",
+        legacy: legacy_empty_contract,
+        inputs: ["_", "___", "___tail", "x", "__"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::ATOM,
+        name: "atom",
+        legacy: legacy_atom_contract,
+        inputs: [":a", ":💡", ":a/tail", ":", ":a-b"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::STRING,
+        name: "string",
+        legacy: legacy_string_contract,
+        inputs: ["\"\"", "\"text\"", "\"text\"tail", "plain", "\"\"\"raw\"\"\""],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::UTF8_STRING,
+        name: "utf8-string",
+        legacy: legacy_utf8_string_contract,
+        inputs: ["\"\"", "\"text\"", "\"text\"tail", "plain", "\"\"\"\""],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::RAW_STRING,
+        name: "raw-string",
+        legacy: legacy_raw_string_contract,
+        inputs: ["\"\"\"\"\"\"", "\"\"\"raw\"\"\"", "\"\"\"raw\"\"\"tail", "plain", "\"\""],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::BOOLEAN,
+        name: "boolean",
+        legacy: legacy_boolean_contract,
+        inputs: ["true", "false", "truex", "x", "✓tail"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::TRUE_LITERAL,
+        name: "true-literal",
+        legacy: legacy_true_literal_contract,
+        inputs: ["true", "✓", "truex", "false", "true-value"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::FALSE_LITERAL,
+        name: "false-literal",
+        legacy: legacy_false_literal_contract,
+        inputs: ["false", "✗", "falsehood", "true", "false-value"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::NUMBER,
+        name: "number",
+        legacy: legacy_number_contract,
+        inputs: ["1", "0xG_", "1tail", ".", "1u8/2u16"],
+        known_panic_inputs: &["1.0e3u8"],
+      },
+      Phase2CContract {
+        rule: rules::COMPLEX_NUMBER,
+        name: "complex-number",
+        legacy: legacy_complex_number_contract,
+        inputs: ["2i", "1+-2i", "2itail", "1", "1+2i"],
+        known_panic_inputs: &["1.0e3u8"],
+      },
+      Phase2CContract {
+        rule: rules::REAL_NUMBER,
+        name: "real-number",
+        legacy: legacy_real_number_contract,
+        inputs: ["1", "-0xFF", "1tail", ".", "1u8/2u16"],
+        known_panic_inputs: &["1.0e3u8"],
+      },
+      Phase2CContract {
+        rule: rules::UNTYPED_REAL_NUMBER,
+        name: "untyped-real-number",
+        legacy: legacy_untyped_real_number_contract,
+        inputs: ["1", "-0o9", "1tail", ".", "1/2"],
+        known_panic_inputs: &["1.0e3u8"],
+      },
+      Phase2CContract {
+        rule: rules::RATIONAL_LITERAL,
+        name: "rational-literal",
+        legacy: legacy_rational_literal_contract,
+        inputs: ["1/2", "1_0/2_0", "1/2tail", "1/", "1u8/2u16"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::SCIENTIFIC_LITERAL,
+        name: "scientific-literal",
+        legacy: legacy_scientific_literal_contract,
+        inputs: ["1.0e3", "1.0e+-3", "1.0e3+tail", "1.0e", "1e3"],
+        known_panic_inputs: &["1.0e3u8"],
+      },
+      Phase2CContract {
+        rule: rules::FLOAT_DECIMAL_START,
+        name: "float-decimal-start",
+        legacy: legacy_float_decimal_start_contract,
+        inputs: [".5", ".٣", ".5tail", ".", ".5.2"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::FLOAT_FULL,
+        name: "float-full",
+        legacy: legacy_float_full_contract,
+        inputs: ["1.0", "1.٣", "1.0tail", "1.", "1.2.3"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::FLOAT_LITERAL,
+        name: "float-literal",
+        legacy: legacy_float_literal_contract,
+        inputs: [".5", "1.0", ".5tail", "1.", "1.2.3"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::INTEGER_LITERAL,
+        name: "integer-literal",
+        legacy: legacy_integer_literal_contract,
+        inputs: ["1", "1u8", "1tail", "x", "1.0"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::TYPED_INTEGER,
+        name: "typed-integer",
+        legacy: legacy_typed_integer_contract,
+        inputs: ["1a", "1u8", "1foo/2", "1", "1e3"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::UNTYPED_INTEGER,
+        name: "untyped-integer",
+        legacy: legacy_untyped_integer_contract,
+        inputs: ["1", "1_000", "1tail", "x", "1u8"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::DECIMAL_LITERAL,
+        name: "decimal-literal",
+        legacy: legacy_decimal_literal_contract,
+        inputs: ["0d1", "0d٣", "0d1tail", "0x1", "0d1_2"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::HEXADECIMAL_LITERAL,
+        name: "hexadecimal-literal",
+        legacy: legacy_hexadecimal_literal_contract,
+        inputs: ["0x0", "0xG_", "0xG_tail", "0d1", "0xF"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::OCTAL_LITERAL,
+        name: "octal-literal",
+        legacy: legacy_octal_literal_contract,
+        inputs: ["0o1", "0o9", "0o9tail", "0d1", "0o1_2"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::BINARY_LITERAL,
+        name: "binary-literal",
+        legacy: legacy_binary_literal_contract,
+        inputs: ["0b1", "0b9", "0b9tail", "0d1", "0b1_2"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::CONTEXT_ADDRESS_PATH_TOKEN,
+        name: "context-address-path-token",
+        legacy: legacy_context_address_path_token_contract,
+        inputs: ["a", "3", "a/", "💡", "-"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::CONTEXT_ADDRESS_PATH,
+        name: "context-address-path",
+        legacy: legacy_context_address_path_contract,
+        inputs: ["a", "path/to.value_1", "path/to!", "💡", "a-b"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::PREFIXED_CONTEXT_PATH,
+        name: "prefixed-context-path",
+        legacy: legacy_prefixed_context_path_contract,
+        inputs: ["@ctx/path", "@💡/x-y", "@ctx/path!", "@ctx/", "@ctx/path/to.value_1"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::KIND_ANY,
+        name: "kind-any",
+        legacy: legacy_kind_any_contract,
+        inputs: ["*", "*", "*tail", "_", "**"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::KIND_EMPTY,
+        name: "kind-empty",
+        legacy: legacy_kind_empty_contract,
+        inputs: ["_", "___", "___tail", "x", "__"],
+        known_panic_inputs: &[],
+      },
+      Phase2CContract {
+        rule: rules::KIND_ATOM,
+        name: "kind-atom",
+        legacy: legacy_kind_atom_contract,
+        inputs: [":a", ":💡", ":a/tail", ":", ":a-b"],
+        known_panic_inputs: &[],
+      },
+    ]
+  }
+
+  fn assert_phase_2c_contract(contract: Phase2CContract, input: &str, case_kind: &str) {
+    let canonical = parse(input, contract.rule);
+    match (contract.legacy)(input) {
+      LegacyContractOutcome::Matched(legacy) => {
+        assert!(canonical.matched, "{} {case_kind} must match {input:?}", contract.name);
+        assert!(canonical.is_strictly_clean(), "{} {case_kind} on {input:?}", contract.name);
+        assert_eq!(canonical.consumed.start, TextSize::ZERO, "{} {case_kind}", contract.name);
+        assert_eq!(
+          canonical.consumed.end,
+          legacy.consumed,
+          "{} {case_kind} consumed extent mismatch for {input:?}",
+          contract.name,
+        );
+        assert_eq!(
+          canonical.source.byte_len().0 - canonical.consumed.end.0,
+          legacy.remaining.0,
+          "{} {case_kind} remaining extent mismatch for {input:?}",
+          contract.name,
+        );
+        assert_eq!(
+          reconstruct_source_range(&canonical.root, &canonical.source, canonical.consumed).unwrap(),
+          &input[..legacy.consumed.0 as usize],
+          "{} {case_kind} must preserve consumed source for {input:?}",
+          contract.name,
+        );
+      }
+      LegacyContractOutcome::NoMatch => {
+        assert!(!canonical.matched, "{} {case_kind} must reject {input:?}", contract.name);
+        assert!(canonical.diagnostics.is_empty(), "{} {case_kind} on {input:?}", contract.name);
+        assert_eq!(
+          canonical.consumed,
+          TextRange::empty(TextSize::ZERO),
+          "{} {case_kind} on {input:?}",
+          contract.name,
+        );
+      }
+      LegacyContractOutcome::Panicked => {
+        assert!(
+          contract.known_panic_inputs.contains(&input),
+          "unexpected legacy panic in {} {case_kind} for {input:?}",
+          contract.name,
+        );
+        let repeat = parse(input, contract.rule);
+        assert_eq!(canonical.matched, repeat.matched, "{} {case_kind} on {input:?}", contract.name);
+        assert_eq!(canonical.consumed, repeat.consumed, "{} {case_kind} on {input:?}", contract.name);
+        assert_eq!(
+          canonical.diagnostics.len(),
+          repeat.diagnostics.len(),
+          "{} {case_kind} on {input:?}",
+          contract.name,
+        );
+      }
+    }
+  }
+
+  #[test]
+  fn all_phase_2c_direct_rules_match_legacy_boundaries() {
+    let contracts = phase_2c_contracts();
+    assert_eq!(contracts.len(), 30);
+    for contract in contracts {
+      for (case_kind, input) in BOUNDARY_CASE_KINDS.into_iter().zip(contract.inputs) {
+        assert_phase_2c_contract(contract, input, case_kind);
+      }
+    }
+  }
+
+  #[test]
+  fn typed_scientific_exponent_legacy_panics_are_explicitly_characterized() {
+    for contract in phase_2c_contracts() {
+      for input in contract.known_panic_inputs {
+        assert_eq!(
+          (contract.legacy)(input),
+          LegacyContractOutcome::Panicked,
+          "{} on {input:?}",
+          contract.name,
+        );
+        let canonical = parse(input, contract.rule);
+        let repeat = parse(input, contract.rule);
+        assert_eq!(canonical.matched, repeat.matched, "{} on {input:?}", contract.name);
+        assert_eq!(canonical.consumed, repeat.consumed, "{} on {input:?}", contract.name);
+      }
     }
   }
 }

@@ -290,20 +290,6 @@ fn direct_numeric_lowerers_match_legacy_on_their_ordinary_domains() {
 }
 
 #[test]
-fn typed_rational_components_discard_kind_annotations() {
-    let input = "1u8/2u16";
-    let node = canonical_node(input, rules::RATIONAL_LITERAL, SyntaxKind::RationalLiteral);
-    let canonical =
-        lower_legacy_rational_literal(&RationalLiteralSyntax::cast(node).unwrap()).unwrap();
-
-    let mech_core::RealNumber::Rational((numerator, denominator)) = canonical else {
-        panic!("expected canonical typed rational components to lower as Rational")
-    };
-    assert_eq!(numerator.to_string(), "1");
-    assert_eq!(denominator.to_string(), "2");
-}
-
-#[test]
 fn typed_scientific_exponent_is_lowered_deterministically_without_a_panic() {
     let input = "1.0e3u8";
     let node = canonical_node(
