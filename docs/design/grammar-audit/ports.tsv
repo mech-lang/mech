@@ -99,7 +99,7 @@ decimal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 define-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 difference	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 digit	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-digit-sequence	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+digit-sequence	base	parity-verified	parity-verified	node:DigitSequence	2A	Phase 2A canonical base closure
 digit-token	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 div-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 divide	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -131,7 +131,7 @@ equation-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical b
 error-alt-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 error-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 error-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-escaped-char	base	parity-verified	parity-verified	token	2A	Phase 2A canonical base closure
+escaped-char	base	parity-verified	parity-verified	node:EscapedCharacter	2A	Phase 2A canonical base closure
 eval-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 exclamation	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 exp-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -224,8 +224,8 @@ http-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base
 hyperlink	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 idea-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 idea-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-identifier	base	parity-verified	not-applicable	node:Identifier	2A	Phase 2A canonical base closure
-identifier-path-segment	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+identifier	base	parity-verified	parity-verified	node:Identifier	2A	Phase 2A canonical base closure
+identifier-path-segment	base	parity-verified	parity-verified	node:IdentifierPathSegment	2A	Phase 2A canonical base closure
 identifier-path-segment-emoji	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 identifier-symbol	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 img	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.

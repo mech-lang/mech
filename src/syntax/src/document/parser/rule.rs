@@ -42,7 +42,7 @@ pub fn canonical_rule_name(rule: RuleId) -> Option<&'static str> {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct RuleFrame {
-  context: ParserContextId,
+  context: Option<ParserContextId>,
   canonical: Option<RuleId>,
 }
 
@@ -53,15 +53,33 @@ pub struct RuleStack {
 
 impl RuleStack {
   pub fn push(&mut self, context: ParserContextId, canonical: Option<RuleId>) {
-    self.rules.push(RuleFrame { context, canonical });
+    if let Some(rule) = canonical {
+      self.push_canonical(rule);
+    } else {
+      self.push_prototype(context);
+    }
+  }
+
+  pub fn push_prototype(&mut self, context: ParserContextId) {
+    self.rules.push(RuleFrame {
+      context: Some(context),
+      canonical: None,
+    });
+  }
+
+  pub fn push_canonical(&mut self, rule: RuleId) {
+    self.rules.push(RuleFrame {
+      context: None,
+      canonical: Some(rule),
+    });
   }
 
   pub fn current_rule(&self) -> Option<RuleId> {
-    self.rules.iter().rev().find_map(|frame| frame.canonical)
+    self.rules.last().and_then(|frame| frame.canonical)
   }
 
   pub fn current_context(&self) -> Option<ParserContextId> {
-    self.rules.last().map(|frame| frame.context)
+    self.rules.last().and_then(|frame| frame.context)
   }
 
   pub fn len(&self) -> usize {
@@ -101,5 +119,24 @@ mod tests {
     let context = parser_context_id("prototype-additive-expression");
     assert!(canonical_rule_id("prototype-additive-expression").is_none());
     assert_ne!(context.0, 0);
+  }
+
+  #[test]
+  fn canonical_and_prototype_frames_have_disjoint_attribution() {
+    let mut stack = RuleStack::default();
+    let prototype = parser_context_id("prototype-test");
+    let canonical = rules::GRAMMAR;
+
+    stack.push_prototype(prototype);
+    assert_eq!(stack.current_context(), Some(prototype));
+    assert_eq!(stack.current_rule(), None);
+
+    stack.push_canonical(canonical);
+    assert_eq!(stack.current_context(), None);
+    assert_eq!(stack.current_rule(), Some(canonical));
+
+    stack.truncate(1);
+    assert_eq!(stack.current_context(), Some(prototype));
+    assert_eq!(stack.current_rule(), None);
   }
 }

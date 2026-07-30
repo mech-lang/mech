@@ -1,5 +1,8 @@
 use core::str;
 
+use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
+
+use crate::document::source::SourceChunk;
 use crate::document::{TextRange, TextSize, TextSnapshot};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -115,6 +118,15 @@ impl<'a> Cursor<'a> {
     self.context_view().peek_char()
   }
 
+  pub fn peek_grapheme_range(&self) -> Option<TextRange> {
+    let range = self.context_peek_grapheme_range()?;
+    (range.end.0 <= self.consume_end.0).then_some(range)
+  }
+
+  pub fn context_peek_grapheme_range(&self) -> Option<TextRange> {
+    next_grapheme_range(self.source, self.offset, self.context_end)
+  }
+
   pub fn context_view(&self) -> ContextView<'a> {
     ContextView {
       source: self.source,
@@ -134,6 +146,12 @@ impl<'a> Cursor<'a> {
         .min(self.consume_end.0),
     );
     Some((character, TextRange::new(start, self.offset)))
+  }
+
+  pub fn bump_grapheme(&mut self) -> Option<TextRange> {
+    let range = self.peek_grapheme_range()?;
+    self.offset = range.end;
+    Some(range)
   }
 
   pub fn bump_bytes(&mut self, count: u32) -> Option<TextRange> {
@@ -233,6 +251,66 @@ fn peek_char(
     *slot = source.byte_at(TextSize(offset.0 + index as u32))?;
   }
   str::from_utf8(&bytes[..width]).ok()?.chars().next()
+}
+
+fn next_grapheme_range(
+  source: &TextSnapshot,
+  offset: TextSize,
+  end: TextSize,
+) -> Option<TextRange> {
+  if offset.0 >= end.0
+    || end.0 > source.byte_len().0
+    || !source.is_char_boundary(offset)
+    || !source.is_char_boundary(end)
+  {
+    return None;
+  }
+
+  let mut cursor = GraphemeCursor::new(
+    offset.to_usize(),
+    end.to_usize(),
+    true,
+  );
+  let mut chunk = forward_chunk(source, offset, end)?;
+  loop {
+    match cursor.next_boundary(chunk.text, chunk.range.start.to_usize()) {
+      Ok(Some(boundary)) => {
+        let boundary = TextSize::checked_from_usize(boundary).ok()?;
+        return Some(TextRange::new(offset, boundary));
+      }
+      Ok(None) => return None,
+      Err(GraphemeIncomplete::NextChunk) => {
+        let at = TextSize::checked_from_usize(cursor.cur_cursor()).ok()?;
+        chunk = forward_chunk(source, at, end)?;
+      }
+      Err(GraphemeIncomplete::PreContext(before)) => {
+        let before = TextSize::checked_from_usize(before).ok()?;
+        let context = source.chunk_before(before)?;
+        cursor.provide_context(
+          context.text,
+          context.range.start.to_usize(),
+        );
+      }
+      Err(
+        GraphemeIncomplete::PrevChunk
+        | GraphemeIncomplete::InvalidOffset,
+      ) => return None,
+    }
+  }
+}
+
+fn forward_chunk(
+  source: &TextSnapshot,
+  offset: TextSize,
+  end: TextSize,
+) -> Option<SourceChunk<'_>> {
+  let chunk = source.chunk_at(offset)?;
+  let chunk_end = TextSize(chunk.range.end.0.min(end.0));
+  let len = (chunk_end - chunk.range.start).to_usize();
+  Some(SourceChunk {
+    text: &chunk.text[..len],
+    range: TextRange::new(chunk.range.start, chunk_end),
+  })
 }
 
 const fn utf8_width(first: u8) -> usize {
