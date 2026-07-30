@@ -72,20 +72,47 @@ fn failed_host_audit_survives_full_context_retention() {
 
     assert_eq!(error.kind_name(), "HostFunctionNotFound");
     for events in [context.events().to_vec(), runtime.list_events(None).unwrap()] {
-        assert!(events.iter().any(|event| {
-            matches!(
-                event.kind,
-                RuntimeEventKind::HostCallStarted { ref name }
-                  if name == "missing/retained-audit"
-            )
-        }));
-        assert!(events.iter().any(|event| {
-            matches!(
-                event.kind,
-                RuntimeEventKind::HostCallFailed { ref name, .. }
-                  if name == "missing/retained-audit"
-            )
-        }));
+        let started = events
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event.kind,
+                    RuntimeEventKind::HostCallStarted { ref name }
+                      if name == "missing/retained-audit"
+                )
+            })
+            .collect::<Vec<_>>();
+        let failed = events
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event.kind,
+                    RuntimeEventKind::HostCallFailed { ref name, .. }
+                      if name == "missing/retained-audit"
+                )
+            })
+            .collect::<Vec<_>>();
+        let aborted = events
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event.kind,
+                    RuntimeEventKind::TransactionAborted { .. }
+                )
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(started.len(), 1, "unexpected started audit: {events:?}");
+        assert_eq!(failed.len(), 1, "unexpected failed audit: {events:?}");
+        assert_eq!(aborted.len(), 1, "unexpected abort audit: {events:?}");
+        assert!(
+            started[0].sequence < failed[0].sequence
+                && failed[0].sequence < aborted[0].sequence,
+            "failed host audit did not precede abort: {:?}",
+            events
+                .iter()
+                .map(|event| (event.sequence, event.kind.name()))
+                .collect::<Vec<_>>(),
+        );
         assert!(!events.iter().any(|event| {
             matches!(
                 event.kind,
@@ -94,8 +121,5 @@ fn failed_host_audit_survives_full_context_retention() {
             )
         }));
     }
-    assert!(context.events().iter().any(|event| {
-        matches!(event.kind, RuntimeEventKind::TransactionAborted { .. })
-    }));
     assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
 }

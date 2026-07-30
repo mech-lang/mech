@@ -243,19 +243,12 @@ impl MechRuntime {
       }
       Err(error) => {
         let original = format!("{error:?}");
-        match self.abort_runtime_transaction(
+        match self.abort_runtime_transaction_with_recovered_events(
           context,
           format!("host call `{}` failed", call.name),
+          failed_host_audit,
         ) {
-          Ok(()) => {
-            for kind in failed_host_audit {
-              let _ = self.emit_event_to_context(
-                context,
-                kind,
-              );
-            }
-            Err(error)
-          }
+          Ok(()) => Err(error),
           Err(cleanup_error) => Err(self.poison_program_operation(
             "call_host_with_context",
             transaction_id,

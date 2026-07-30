@@ -28,6 +28,23 @@ impl MechRuntime {
       context,
       reason.into(),
       true,
+      Vec::new(),
+    )
+  }
+
+  pub(in crate::runtime) fn abort_runtime_transaction_with_recovered_events(
+    &mut self,
+    context: &mut RuntimeContext,
+    reason: impl Into<String>,
+    recovered_events: Vec<RuntimeEventKind>,
+  ) -> MResult<()> {
+    self.reject_effect_reentrancy("abort_runtime_transaction")?;
+    self.reject_program_operation_reentrancy("abort_runtime_transaction")?;
+    self.abort_runtime_transaction_internal(
+      context,
+      reason.into(),
+      true,
+      recovered_events,
     )
   }
 
@@ -36,12 +53,14 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     reason: String,
     restore_program: bool,
+    recovered_events: Vec<RuntimeEventKind>,
   ) -> MResult<()> {
     let (transaction_id, rollback_failures) =
-      self.abort_runtime_transaction_cleanup(
+      self.abort_runtime_transaction_cleanup_with_recovered_events(
         context,
         &reason,
         restore_program,
+        recovered_events,
       )?;
 
     if rollback_failures.is_empty() {
@@ -61,6 +80,21 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     reason: &str,
     restore_program: bool,
+  ) -> MResult<(TransactionId, Vec<String>)> {
+    self.abort_runtime_transaction_cleanup_with_recovered_events(
+      context,
+      reason,
+      restore_program,
+      Vec::new(),
+    )
+  }
+
+  fn abort_runtime_transaction_cleanup_with_recovered_events(
+    &mut self,
+    context: &mut RuntimeContext,
+    reason: &str,
+    restore_program: bool,
+    recovered_events: Vec<RuntimeEventKind>,
   ) -> MResult<(TransactionId, Vec<String>)> {
     self.validate_context_for_runtime(context)?;
 
@@ -129,6 +163,18 @@ impl MechRuntime {
 
     if owns_program {
       self.program_transaction_owner = None;
+    }
+
+    for event in recovered_events {
+      if let Err(error) = self.emit_event_immediate_to_context(
+        context,
+        event,
+      ) {
+        rollback_failures.push(format!(
+          "recovered transaction event publication failed: {:?}",
+          error,
+        ));
+      }
     }
 
     for effect_id in abortable_effects {
