@@ -16,10 +16,12 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "literals.rs",
   "paths.rs",
   "kinds.rs",
+  "operators.rs",
 ];
 
 const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
 const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &["literals.rs", "paths.rs", "kinds.rs"];
+const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &["operators.rs"];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -468,6 +470,91 @@ fn canonical_phase_2c_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
+fn canonical_phase_2d_operator_source_is_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2D_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in ["nom", "CoverageStore", "CoverageGap", "UnportedInline"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not depend on {forbidden}"
+      );
+    }
+    assert!(
+      !contains_token_sequence(&source, &["crate", "::", "parse"]),
+      "{relative} must not invoke the legacy public parser"
+    );
+    for path in [
+      &["super", "::", "super", "::", "document"][..],
+      &["super", "::", "super", "::", "mech"][..],
+      &["super", "::", "super", "::", "mechdown"][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "document",
+      ][..],
+      &["crate", "::", "document", "::", "parser", "::", "mech"][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "mechdown",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "structures",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "patterns",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "functions",
+      ][..],
+      &[
+        "crate",
+        "::",
+        "document",
+        "::",
+        "parser",
+        "::",
+        "state_machines",
+      ][..],
+      &["crate", "::", "expressions"][..],
+      &["crate", "::", "structures"][..],
+      &["crate", "::", "patterns"][..],
+      &["crate", "::", "functions"][..],
+      &["crate", "::", "state_machines"][..],
+      &["crate", "::", "document", "::", "incremental"][..],
+    ] {
+      assert!(
+        !contains_token_sequence(&source, path),
+        "{relative} must not import or call a deferred parser module"
+      );
+    }
+    for forbidden in ["to_contiguous_string", "full_range", "graphemes"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not materialize or globally segment source through {forbidden}"
+      );
+    }
+
+    let tokens = rust_tokens(&mask_comments_and_literals(&source, true));
+    let statement_calls = tokens
+      .windows(3)
+      .filter_map(|window| {
+        (window[0] == "statements" && window[1] == "::").then_some(window[2].as_str())
+      })
+      .collect::<Vec<_>>();
+    assert_eq!(
+      statement_calls,
+      vec!["parse_comment_sigil"],
+      "{relative} may depend on the Phase 2B canonical comment-sigil only"
+    );
+  }
+}
+
+#[test]
 fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
   let canonical = canonical_root();
   let expected = [
@@ -576,6 +663,90 @@ fn phase_2c_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
+fn phase_2d_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    ("operators.rs", "parse_add_sub_operator", "ADD_SUB_OPERATOR"),
+    ("operators.rs", "parse_mul_div_operator", "MUL_DIV_OPERATOR"),
+    ("operators.rs", "parse_power_operator", "POWER_OPERATOR"),
+    ("operators.rs", "parse_matrix_operator", "MATRIX_OPERATOR"),
+    ("operators.rs", "parse_range_operator", "RANGE_OPERATOR"),
+    (
+      "operators.rs",
+      "parse_comparison_operator",
+      "COMPARISON_OPERATOR",
+    ),
+    ("operators.rs", "parse_logic_operator", "LOGIC_OPERATOR"),
+    ("operators.rs", "parse_table_operator", "TABLE_OPERATOR"),
+    ("operators.rs", "parse_set_operator", "SET_OPERATOR"),
+    ("operators.rs", "parse_add", "ADD"),
+    ("operators.rs", "parse_subtract", "SUBTRACT"),
+    ("operators.rs", "parse_raw_subtract", "RAW_SUBTRACT"),
+    ("operators.rs", "parse_spaced_subtract", "SPACED_SUBTRACT"),
+    ("operators.rs", "parse_multiply", "MULTIPLY"),
+    ("operators.rs", "parse_divide", "DIVIDE"),
+    ("operators.rs", "parse_modulus", "MODULUS"),
+    ("operators.rs", "parse_power", "POWER"),
+    ("operators.rs", "parse_matrix_multiply", "MATRIX_MULTIPLY"),
+    ("operators.rs", "parse_matrix_solve", "MATRIX_SOLVE"),
+    ("operators.rs", "parse_dot_product", "DOT_PRODUCT"),
+    ("operators.rs", "parse_cross_product", "CROSS_PRODUCT"),
+    ("operators.rs", "parse_transpose", "TRANSPOSE"),
+    ("operators.rs", "parse_range_inclusive", "RANGE_INCLUSIVE"),
+    ("operators.rs", "parse_range_exclusive", "RANGE_EXCLUSIVE"),
+    ("operators.rs", "parse_not_equal", "NOT_EQUAL"),
+    ("operators.rs", "parse_equal_to", "EQUAL_TO"),
+    ("operators.rs", "parse_strict_not_equal", "STRICT_NOT_EQUAL"),
+    ("operators.rs", "parse_strict_equal", "STRICT_EQUAL"),
+    ("operators.rs", "parse_greater_than", "GREATER_THAN"),
+    ("operators.rs", "parse_less_than", "LESS_THAN"),
+    (
+      "operators.rs",
+      "parse_greater_than_equal",
+      "GREATER_THAN_EQUAL",
+    ),
+    ("operators.rs", "parse_less_than_equal", "LESS_THAN_EQUAL"),
+    ("operators.rs", "parse_or", "OR"),
+    ("operators.rs", "parse_and", "AND"),
+    ("operators.rs", "parse_not", "NOT"),
+    ("operators.rs", "parse_xor", "XOR"),
+    ("operators.rs", "parse_join", "JOIN"),
+    ("operators.rs", "parse_left_join", "LEFT_JOIN"),
+    ("operators.rs", "parse_right_join", "RIGHT_JOIN"),
+    ("operators.rs", "parse_full_join", "FULL_JOIN"),
+    ("operators.rs", "parse_left_semi_join", "LEFT_SEMI_JOIN"),
+    ("operators.rs", "parse_left_anti_join", "LEFT_ANTI_JOIN"),
+    ("operators.rs", "parse_union_op", "UNION_OP"),
+    ("operators.rs", "parse_intersection", "INTERSECTION"),
+    ("operators.rs", "parse_difference", "DIFFERENCE"),
+    ("operators.rs", "parse_complement", "COMPLEMENT"),
+    ("operators.rs", "parse_subset", "SUBSET"),
+    ("operators.rs", "parse_superset", "SUPERSET"),
+    ("operators.rs", "parse_proper_subset", "PROPER_SUBSET"),
+    ("operators.rs", "parse_proper_superset", "PROPER_SUPERSET"),
+    ("operators.rs", "parse_element_of", "ELEMENT_OF"),
+    ("operators.rs", "parse_not_element_of", "NOT_ELEMENT_OF"),
+    (
+      "operators.rs",
+      "parse_symmetric_difference",
+      "SYMMETRIC_DIFFERENCE",
+    ),
+  ];
+  assert_eq!(expected.len(), 53);
+
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
+  }
+}
+
+#[test]
 fn phase_2c_sources_do_not_reference_unported_recursive_parent_rules() {
   let canonical = canonical_root();
   let unported_parents = [
@@ -599,6 +770,45 @@ fn phase_2c_sources_do_not_reference_unported_recursive_parent_rules() {
   ];
 
   for relative in PHASE_2C_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    for rule in unported_parents {
+      assert!(
+        !contains_token_sequence(&source, &["rules", "::", rule]),
+        "{relative} must not claim the unported rules::{rule} parent"
+      );
+    }
+  }
+}
+
+#[test]
+fn phase_2d_sources_do_not_reference_unported_expression_parent_rules() {
+  let canonical = canonical_root();
+  let unported_parents = [
+    "EXPRESSION",
+    "FORMULA",
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5",
+    "L6",
+    "L7",
+    "FACTOR",
+    "RANGE_EXPRESSION",
+    "PARENTHETICAL_TERM",
+    "NEGATE_FACTOR",
+    "NOT_FACTOR",
+    "STRUCTURE",
+    "FUNCTION_CALL",
+    "LITERAL",
+    "SLICE",
+    "VAR",
+  ];
+  assert_eq!(unported_parents.len(), 19);
+
+  for relative in PHASE_2D_PRODUCTION_SOURCES {
     let path = canonical.join(relative);
     let source = fs::read_to_string(&path)
       .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
