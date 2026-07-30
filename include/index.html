@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mech-document-status="loading">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,10 @@
   <title>{{TITLE}}</title>
 </head>
 <body>
-  <main class="mech-document">
+  <main
+    class="mech-document mech-root"
+    mech-interpreter-id="0"
+    data-mech-source-url-key="{{SOURCE_URL_KEY}}">
     {{HERO}}
     {{TOC}}
     {{ABSTRACT}}
@@ -17,5 +20,161 @@
     {{FOOTNOTES}}
     {{REPL}}
   </main>
+  <script>
+    window.addEventListener("error", event => {
+      document.documentElement.dataset.mechWindowError =
+        event.message || String(event.error);
+    });
+    window.addEventListener("unhandledrejection", event => {
+      document.documentElement.dataset.mechUnhandledRejection =
+        String(event.reason);
+    });
+  </script>
+  <script type="module">
+    import init, { WasmDocument } from "/_mech/pkg/mech_wasm.js";
+
+    const embeddedCode = `{{CODE}}`;
+    let mechDocument;
+    let running = false;
+
+    function outputAddress(element) {
+      const separator = element.id.lastIndexOf(":");
+      if (separator <= 0 || separator === element.id.length - 1) {
+        throw new Error(`invalid Mech output address \`${element.id}\``);
+      }
+      return {
+        outputId: BigInt(element.id.slice(0, separator)),
+        interpreterId: BigInt(element.id.slice(separator + 1)),
+      };
+    }
+
+    function prepareVarPlaceholders() {
+      const pattern = /\{\{VAR:([^@}\s]+)(?:@(\d+))?\}\}/g;
+      const walker = document.createTreeWalker(
+        document.querySelector(".mech-document"),
+        NodeFilter.SHOW_TEXT,
+      );
+      const candidates = [];
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (
+          node.nodeValue.includes("{{VAR:") &&
+          !node.parentElement.closest("script, style, code, pre, textarea")
+        ) {
+          candidates.push(node);
+        }
+      }
+      for (const node of candidates) {
+        const fragment = document.createDocumentFragment();
+        let cursor = 0;
+        let match;
+        while ((match = pattern.exec(node.nodeValue)) !== null) {
+          fragment.append(node.nodeValue.slice(cursor, match.index));
+          const placeholder = document.createElement("span");
+          placeholder.className = "mech-var-placeholder";
+          placeholder.dataset.mechVarName = match[1];
+          placeholder.dataset.mechInterpreterId = match[2] || "0";
+          fragment.append(placeholder);
+          cursor = pattern.lastIndex;
+        }
+        fragment.append(node.nodeValue.slice(cursor));
+        node.replaceWith(fragment);
+      }
+    }
+
+    function renderValues() {
+      for (const output of document.querySelectorAll(".mech-block-output[id]")) {
+        const { interpreterId, outputId } = outputAddress(output);
+        const rendered = mechDocument.renderedOutput(interpreterId, outputId);
+        if (rendered !== null) {
+          output.innerHTML = rendered.blockHtml;
+        }
+      }
+      for (const output of document.querySelectorAll(".mech-inline-mech-code[id]")) {
+        const { interpreterId, outputId } = outputAddress(output);
+        const rendered = mechDocument.renderedOutput(interpreterId, outputId);
+        if (rendered !== null) {
+          output.innerHTML = rendered.inlineHtml;
+        }
+      }
+      for (const output of document.querySelectorAll(".mech-var-placeholder")) {
+        const rendered = mechDocument.renderedSymbol(
+          BigInt(output.dataset.mechInterpreterId || "0"),
+          output.dataset.mechVarName,
+        );
+        if (rendered !== null) {
+          output.innerHTML = rendered.inlineHtml;
+        }
+      }
+    }
+
+    function showError(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      document.documentElement.dataset.mechDocumentStatus = "error";
+      document.documentElement.dataset.mechDocumentError = message;
+      const output = document.createElement("pre");
+      output.id = "mech-document-error";
+      output.setAttribute("role", "alert");
+      output.textContent = `Mech document failed to run: ${message}`;
+      document.body.prepend(output);
+      console.error(error);
+    }
+
+    async function loadCode() {
+      const sourceUrlKey =
+        document.querySelector(".mech-document").dataset.mechSourceUrlKey;
+      const response = await fetch(`/code/${sourceUrlKey}`);
+      if (response.ok) {
+        return await response.text();
+      }
+      if (embeddedCode) {
+        return embeddedCode;
+      }
+      throw new Error(
+        `failed to fetch compiled Mech document: ` +
+          `${response.status} ${response.statusText}`,
+      );
+    }
+
+    function frame() {
+      if (!running) {
+        return;
+      }
+      try {
+        const result = mechDocument.frame(8);
+        if (result.processed > 0) {
+          renderValues();
+        }
+        requestAnimationFrame(frame);
+      } catch (error) {
+        running = false;
+        showError(error);
+      }
+    }
+
+    async function main() {
+      await init();
+      mechDocument = WasmDocument.fromEncoded(await loadCode());
+      prepareVarPlaceholders();
+      renderValues();
+      mechDocument.start();
+      running = true;
+      document.documentElement.dataset.mechDocumentStatus = "ready";
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener("beforeunload", () => {
+      running = false;
+      if (mechDocument) {
+        try {
+          mechDocument.stop();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    });
+
+    main().catch(showError);
+  </script>
 </body>
 </html>

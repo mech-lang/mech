@@ -1,9 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::future::Future;
 use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
-use std::time::Instant;
+use std::pin::Pin;
+use std::sync::{
+  Arc, Mutex, RwLock,
+  atomic::{AtomicBool, Ordering},
+};
+use std::time::{Duration, Instant};
 
 use colored::*;
 use ignore::WalkBuilder;
@@ -18,6 +23,8 @@ use mech_runtime::{
 use warp::Filter;
 
 use crate::*;
+
+const SERVER_SHUTDOWN_GRACE: Duration = Duration::from_secs(2);
 
 #[derive(Clone, Debug)]
 struct ServerAsset {
@@ -303,7 +310,9 @@ impl ServerSourceRegistry {
       match parser::parse(&source) {
         Ok(tree) => {
           let mut formatter = Formatter::new();
-          let html = formatter.format_html(&tree, stylesheet.to_string(), shim.to_string());
+          let html = formatter
+            .format_html(&tree, stylesheet.to_string(), shim.to_string())
+            .replace("{{SOURCE_URL_KEY}}", &escape_html(&key));
           let mut backing_paths = vec![path.clone()];
           backing_paths.extend_from_slice(generated_html_backing_paths);
           self.html_sources.insert(key.clone(), ServerAsset {
@@ -440,9 +449,49 @@ pub struct MechServer {
   runtime_config: RuntimeConfig,
 }
 
+struct ServerShutdown {
+  requested: AtomicBool,
+  sender: tokio::sync::watch::Sender<bool>,
+}
+
+impl ServerShutdown {
+  fn new() -> (Self, tokio::sync::watch::Receiver<bool>) {
+    let (sender, receiver) = tokio::sync::watch::channel(false);
+    (
+      Self {
+        requested: AtomicBool::new(false),
+        sender,
+      },
+      receiver,
+    )
+  }
+
+  fn request(&self) -> bool {
+    if self
+      .requested
+      .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+      .is_err()
+    {
+      return false;
+    }
+    let _ = self.sender.send(true);
+    true
+  }
+}
+
+async fn graceful_server_timed_out<F>(
+  server: Pin<&mut F>,
+  grace: Duration,
+) -> bool
+where
+  F: Future<Output = ()>,
+{
+  tokio::time::timeout(grace, server).await.is_err()
+}
+
 impl MechServer {
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority) -> Self {
-    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, String::new(), wasm, js, authority, RuntimeConfig::default())
+    Self::new_with_runtime_config(name, full_address, stylesheet, html_shim, include_str!("../include/project.js").to_string(), wasm, js, authority, RuntimeConfig::default())
   }
 
   pub fn new_with_runtime_config(name: String, full_address: String, stylesheet: String, html_shim: String, project_js: String, wasm: Vec<u8>, js: Vec<u8>, authority: HostFilesystemAuthority, runtime_config: RuntimeConfig) -> Self {
@@ -560,6 +609,21 @@ impl MechServer {
   }
 
   pub async fn init(&mut self) -> MResult<()> {
+    if self.js.is_empty() {
+      return Err(MechError::new(
+        GenericError { msg: "browser JavaScript wrapper is missing".to_string() },
+        None,
+      ).with_compiler_loc());
+    }
+    if !self.wasm.starts_with(b"\0asm") {
+      return Err(MechError::new(
+        GenericError {
+          msg: "browser WASM asset is not a raw WebAssembly module (missing \\0asm magic)"
+            .to_string(),
+        },
+        None,
+      ).with_compiler_loc());
+    }
     let configured_paths = self.configured_resource_backing_paths();
     let mut ids = DefaultIdGenerator::new();
     for path in configured_paths {
@@ -584,7 +648,9 @@ impl MechServer {
     registry.insert_asset("_mech/index.html", html);
     registry.insert_asset("_mech/project.html", project_html);
     registry.insert_asset("_mech/style.css", css);
-    registry.insert_asset("_mech/project.js", project_js);
+    if !self.project_js.is_empty() {
+      registry.insert_asset("_mech/project.js", project_js);
+    }
     registry.insert_asset("_mech/pkg/mech_wasm.js", js.clone());
     registry.insert_asset("_mech/pkg/mech_wasm_bg.wasm", wasm.clone());
     self.init = true;
@@ -716,7 +782,9 @@ impl MechServer {
       return Err(MechError::new(ServerNotInitializedError, None).with_compiler_loc());
     }
 
-    let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+    let (shutdown, shutdown_rx) = ServerShutdown::new();
+    let shutdown = Arc::new(shutdown);
+    let signal_shutdown = shutdown.clone();
     let server_name = self.name.clone();
 
     ctrlc::set_handler(move || {
@@ -726,8 +794,9 @@ impl MechServer {
         format!("[{}] Server", server_name).truecolor(34, 204, 187)
       };
 
-      let _ = shutdown_tx.send(true);
-      println!("{} Server received shutdown signal.", badge);
+      if signal_shutdown.request() {
+        println!("{} Server received shutdown signal.", badge);
+      }
     })
     .map_err(|error| {
       MechError::new(
@@ -791,7 +860,7 @@ impl MechServer {
       let generated_html_backing_paths = self.generated_html_backing_paths();
       let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
       tokio::pin!(server);
-      loop {
+      let requested = loop {
         tokio::select! {
           _ = interval.tick() => {
             if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim, &generated_html_backing_paths, project_overlay.as_ref(), server_event_retention(&self.runtime_config)) {
@@ -799,19 +868,32 @@ impl MechServer {
             }
           }
           _ = shutdown_rx.changed() => {
-            let _ = (&mut server).await;
-            break;
+            break true;
           }
-          _ = &mut server => break,
+          _ = &mut server => break false,
         }
+      };
+      if requested
+        && graceful_server_timed_out(server.as_mut(), SERVER_SHUTDOWN_GRACE).await
+      {
+        eprintln!(
+          "{} Graceful shutdown timed out; forcing server close.",
+          self.badge(),
+        );
       }
     } else {
       tokio::pin!(server);
-      tokio::select! {
-        _ = &mut server => {}
-        _ = shutdown_rx.changed() => {
-          let _ = (&mut server).await;
-        }
+      let requested = tokio::select! {
+        _ = &mut server => false,
+        _ = shutdown_rx.changed() => true,
+      };
+      if requested
+        && graceful_server_timed_out(server.as_mut(), SERVER_SHUTDOWN_GRACE).await
+      {
+        eprintln!(
+          "{} Graceful shutdown timed out; forcing server close.",
+          self.badge(),
+        );
       }
     }
     println!("{} Closing server.", self.badge());
@@ -1334,6 +1416,47 @@ mod tests {
   }
 
   #[test]
+  fn server_shutdown_request_is_idempotent() {
+    let (shutdown, mut receiver) = ServerShutdown::new();
+    assert!(shutdown.request());
+    assert!(!shutdown.request());
+    tokio::runtime::Runtime::new()
+      .unwrap()
+      .block_on(async {
+        receiver.changed().await.unwrap();
+      });
+    assert!(*receiver.borrow());
+  }
+
+  #[test]
+  fn immediately_completed_server_exits_without_timeout() {
+    tokio::runtime::Runtime::new()
+      .unwrap()
+      .block_on(async {
+        let server = async {};
+        tokio::pin!(server);
+        assert!(!graceful_server_timed_out(
+          server.as_mut(),
+          Duration::from_millis(25),
+        ).await);
+      });
+  }
+
+  #[test]
+  fn permanently_pending_server_is_cut_off_by_timeout() {
+    tokio::runtime::Runtime::new()
+      .unwrap()
+      .block_on(async {
+        let server = std::future::pending::<()>();
+        tokio::pin!(server);
+        assert!(graceful_server_timed_out(
+          server.as_mut(),
+          Duration::from_millis(10),
+        ).await);
+      });
+  }
+
+  #[test]
   fn configured_serve_plan_preserves_declared_target_and_folder_order() {
     let root = temp_root("source-inventory");
     std::fs::create_dir_all(root.join("app")).unwrap();
@@ -1511,6 +1634,92 @@ mod tests {
   }
 
   #[test]
+  fn default_shim_owns_standalone_document_execution() {
+    let root = temp_root("default-document-shim");
+    std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+    let snapshot = snapshot(&root, "main.mec");
+    let mut registry = ServerSourceRegistry::default();
+    registry
+      .sync_workspace_snapshot(
+        &root,
+        &snapshot,
+        "",
+        include_str!("../include/index.html"),
+        &[],
+      )
+      .unwrap();
+
+    let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+    assert!(html.contains("WasmDocument"));
+    assert!(html.contains("/_mech/pkg/mech_wasm.js"));
+    assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"));
+    assert!(html.contains("data-mech-source-url-key=\"main.mec\""));
+    assert!(!html.contains("{{CODE}}"));
+    assert!(!html.contains("{{SOURCE_URL_KEY}}"));
+    assert!(!html.contains("/_mech/project.js"));
+    assert_eq!(
+      registry.get_route("/code/main.mec").unwrap().content_type,
+      "text/plain",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn custom_inline_and_external_shims_remain_authoritative() {
+    let root = temp_root("custom-document-shims");
+    std::fs::write(root.join("main.mec"), "  answer := 42\n").unwrap();
+    let snapshot = snapshot(&root, "main.mec");
+    for (shim, expected) in [
+      (
+        "<html><body>{{CONTENT}}<script type=\"module\">window.inlineShimRan = true; const code = `{{CODE}}`;</script></body></html>",
+        "window.inlineShimRan = true",
+      ),
+      (
+        "<html><body>{{CONTENT}}<script type=\"module\" src=\"/custom-bootstrap.js\"></script></body></html>",
+        "src=\"/custom-bootstrap.js\"",
+      ),
+    ] {
+      let mut registry = ServerSourceRegistry::default();
+      registry
+        .sync_workspace_snapshot(&root, &snapshot, "", shim, &[])
+        .unwrap();
+      let html =
+        String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+      assert!(html.contains(expected));
+      assert!(!html.contains("WasmDocument"));
+      assert!(!html.contains("/_mech/project.js"));
+    }
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn static_custom_shim_does_not_receive_browser_bootstrap() {
+    let root = temp_root("static-document-shim");
+    std::fs::write(
+      root.join("main.mec"),
+      "Static document\n===============\n\n~~~mech\n  answer := 42\n~~~\n",
+    )
+    .unwrap();
+    let snapshot = snapshot(&root, "main.mec");
+    let mut registry = ServerSourceRegistry::default();
+    registry
+      .sync_workspace_snapshot(
+        &root,
+        &snapshot,
+        "",
+        "<html><body>{{CONTENT}}</body></html>",
+        &[],
+      )
+      .unwrap();
+    let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+    assert!(html.starts_with("<html><body>"), "{html}");
+    assert!(!html.contains("{{CONTENT}}"), "{html}");
+    assert!(!html.contains("<script"));
+    assert!(!html.contains("mech_wasm"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn configured_project_composes_formatted_and_browser_routes() {
     let root = temp_root("configured-composition");
     std::fs::create_dir_all(root.join("lib")).unwrap();
@@ -1555,7 +1764,9 @@ mod tests {
     assert!(registry.get_route("/_mech/project.js").is_some());
     assert!(registry.get_route("/_mech/project-sources.json").is_some());
     assert!(registry.get_route("/_mech/pkg/mech_wasm.js").is_some());
-    assert!(registry.get_route("/_mech/pkg/mech_wasm_bg.wasm").is_some());
+    let wasm = registry.get_route("/_mech/pkg/mech_wasm_bg.wasm").unwrap();
+    assert_eq!(wasm.content_type, "application/wasm");
+    assert!(wasm.bytes.starts_with(b"\0asm"));
 
     drop(registry);
     drop(guard);
@@ -1595,7 +1806,11 @@ mod tests {
   fn configured_project_user_index_wins_without_hiding_source_routes() {
     let root = temp_root("configured-user-index");
     std::fs::write(root.join("main.mec"), "answer := 42\n").unwrap();
-    std::fs::write(root.join("index.html"), "<!doctype html><p>user root</p>").unwrap();
+    std::fs::write(
+      root.join("index.html"),
+      "<!doctype html><p>user root</p><script type=\"module\">window.configuredInline = true;</script>",
+    )
+    .unwrap();
     std::fs::write(
       root.join("mech.mcfg"),
       "config := { hosts: [] run: { paths: [\"main.mec\"] grants: [] } }\n",
@@ -1612,7 +1827,10 @@ mod tests {
     let (root_asset, trace) = registry.get_route_with_trace("/").unwrap();
 
     assert_eq!(trace, "user asset `index.html`");
-    assert!(String::from_utf8(root_asset.bytes).unwrap().contains("user root"));
+    let root_html = String::from_utf8(root_asset.bytes).unwrap();
+    assert!(root_html.contains("user root"));
+    assert!(root_html.contains("window.configuredInline = true"));
+    assert!(!root_html.contains("/_mech/project.js"));
     assert_eq!(registry.get_route("/main.mec").unwrap().content_type, "text/html");
     assert_eq!(registry.get_route("/main.html").unwrap().content_type, "text/html");
     assert_eq!(registry.get_route("/main").unwrap().content_type, "text/html");
@@ -1645,8 +1863,8 @@ mod tests {
       "127.0.0.1:0".to_string(),
       "style".to_string(),
       "shim".to_string(),
-      vec![1, 2, 3],
-      vec![4, 5, 6],
+      b"\0asm\x01\0\0\0".to_vec(),
+      b"export default async function init() {}".to_vec(),
       authority,
     )
   }
@@ -2553,7 +2771,7 @@ mod tests {
     let mut ids = DefaultIdGenerator::new();
     let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
     authority.grant_path(&mut ids, &shim, false, [FS_READ]).unwrap();
-    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), vec![], vec![], authority);
+    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), b"\0asm\x01\0\0\0".to_vec(), b"js".to_vec(), authority);
     server.set_resource_backing_paths(vec![shim.clone()], Vec::new(), Vec::new(), Vec::new());
     assert!(tokio::runtime::Runtime::new().unwrap().block_on(server.init()).is_err());
     std::fs::remove_dir_all(root).unwrap();
@@ -2567,7 +2785,7 @@ mod tests {
     let mut ids = DefaultIdGenerator::new();
     let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, mech_runtime::SharedCapabilityKernel::new());
     authority.grant_path(&mut ids, &shim, false, [FS_READ, FS_SERVE]).unwrap();
-    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), vec![], vec![], authority);
+    let mut server = MechServer::new("test".into(), "127.0.0.1:0".into(), "".into(), "".into(), b"\0asm\x01\0\0\0".to_vec(), b"js".to_vec(), authority);
     server.set_resource_backing_paths(vec![shim.clone()], Vec::new(), Vec::new(), Vec::new());
     assert!(tokio::runtime::Runtime::new().unwrap().block_on(server.init()).is_ok());
     std::fs::remove_dir_all(root).unwrap();

@@ -315,7 +315,7 @@ pub(crate) fn prepare(
 
 #[derive(Debug)]
 struct LoadedBrowserAssets {
-    project_js: &'static str,
+    project_js: Option<&'static str>,
     wasm: LoadedResource,
     js: LoadedResource,
 }
@@ -325,11 +325,17 @@ async fn load_browser_assets(
     wasm_pkg: &str,
     resources: &WebResourceDefaults,
 ) -> MResult<LoadedBrowserAssets> {
-    let project_js = resources.project_js.ok_or_else(|| MechError::new(GenericError { msg: "browser project.js asset is missing; run scripts/build-mech-browser.sh before mech serve".to_string() }, None).with_compiler_loc())?;
+    let project_js = resources.project_js;
     let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
     let js_path = format!("{}/mech_wasm.js", wasm_pkg);
     let wasm = load_resource(authority, &wasm_path, &resources.wasm_backup_url, resources.mech_wasm).await?;
     let js = load_resource(authority, &js_path, &resources.js_backup_url, resources.mech_js).await?;
+    if !wasm.bytes.starts_with(b"\0asm") {
+        return Err(MechError::new(GenericError { msg: "browser WASM asset is not a raw WebAssembly module (missing \\0asm magic)".to_string() }, None).with_compiler_loc());
+    }
+    if js.bytes.is_empty() {
+        return Err(MechError::new(GenericError { msg: "browser JavaScript wrapper is empty".to_string() }, None).with_compiler_loc());
+    }
     Ok(LoadedBrowserAssets { project_js, wasm, js })
 }
 
@@ -407,7 +413,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
-        project_js.to_string(),
+        project_js.unwrap_or_default().to_string(),
         wasm.bytes,
         js.bytes,
         options.authority,
@@ -526,12 +532,12 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let pkg = root.path().join("pkg");
         std::fs::create_dir_all(&pkg).unwrap();
-        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"local-wasm").unwrap();
+        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0").unwrap();
         std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
         let authority = authority_for(root.path());
         let assets = tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(Some("project"), None, None))).unwrap();
-        assert_eq!(assets.project_js, "project");
-        assert_eq!(assets.wasm.bytes, b"local-wasm");
+        assert_eq!(assets.project_js, Some("project"));
+        assert_eq!(assets.wasm.bytes, b"\0asm\x01\0\0\0");
         assert_eq!(assets.js.bytes, b"local-js");
     }
 
@@ -544,14 +550,22 @@ mod tests {
     }
 
     #[test]
-    fn missing_project_js_fails_independently() {
+    fn missing_project_js_does_not_block_standalone_browser_assets() {
         let root = tempfile::tempdir().unwrap();
         let pkg = root.path().join("pkg");
         std::fs::create_dir_all(&pkg).unwrap();
-        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"local-wasm").unwrap();
+        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0").unwrap();
         std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
         let authority = authority_for(root.path());
-        let error = format!("{:?}", tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(None, None, None))).unwrap_err());
-        assert!(error.contains("project.js"), "{error}");
+        let assets = tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(None, None, None))).unwrap();
+        assert_eq!(assets.project_js, None);
+    }
+
+    #[test]
+    fn compressed_or_invalid_wasm_is_rejected() {
+        let root = tempfile::tempdir().unwrap();
+        let authority = authority_for(root.path());
+        let error = format!("{:?}", tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, "", &defaults(Some("project"), Some(b"not-wasm"), Some(b"js")))).unwrap_err());
+        assert!(error.contains("raw WebAssembly"), "{error}");
     }
 }
