@@ -83,23 +83,13 @@
     }
 
     function renderValues() {
-      let blockLookups = 0;
-      let blockRendered = 0;
       for (const output of document.querySelectorAll(".mech-block-output[id]")) {
-        blockLookups += 1;
         const { interpreterId, outputId } = outputAddress(output);
         const rendered = mechDocument.renderedOutput(interpreterId, outputId);
-        output.dataset.mechOutputStatus =
-          rendered === null ? "missing" : "rendered";
         if (rendered !== null) {
           output.innerHTML = rendered.blockHtml;
-          blockRendered += 1;
         }
       }
-      document.documentElement.dataset.mechBlockOutputLookups =
-        String(blockLookups);
-      document.documentElement.dataset.mechBlockOutputsRendered =
-        String(blockRendered);
       for (const output of document.querySelectorAll(".mech-inline-mech-code[id]")) {
         const { interpreterId, outputId } = outputAddress(output);
         const rendered = mechDocument.renderedOutput(interpreterId, outputId);
