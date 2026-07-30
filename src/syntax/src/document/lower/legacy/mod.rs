@@ -1,8 +1,10 @@
 mod base;
 mod common;
 mod grammar;
+mod kinds;
 mod literals;
 mod mechdown;
+mod paths;
 mod source;
 
 pub use base::{
@@ -10,6 +12,7 @@ pub use base::{
     lower_legacy_identifier_path_segment,
 };
 pub use grammar::lower_legacy_grammar;
+pub use kinds::{lower_legacy_kind_any, lower_legacy_kind_atom, lower_legacy_kind_empty};
 pub use literals::{
     lower_legacy_atom, lower_legacy_binary_literal, lower_legacy_complex_number,
     lower_legacy_decimal_literal, lower_legacy_empty, lower_legacy_float_decimal_start,
@@ -24,3 +27,4 @@ pub use mechdown::{
     lower_legacy_inline_equation, lower_legacy_paragraph_text, lower_legacy_raw_hyperlink,
     lower_legacy_reference, lower_legacy_section_reference, lower_legacy_thematic_break,
 };
+pub use paths::{lower_legacy_context_address_path, lower_legacy_prefixed_context_path};
