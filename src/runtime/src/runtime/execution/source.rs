@@ -44,6 +44,7 @@ impl MechRuntime {
     let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
     let mut result = Value::Empty;
     let mut pending = Vec::new();
+    let mut document_inline_nodes = Vec::new();
 
     for section in &tree.body.sections {
       for element in &section.elements {
@@ -93,6 +94,17 @@ impl MechRuntime {
           mech_core::SectionElement::FencedMechCode(fenced) if direct_document_run => {
             pending.push(mech_core::SectionElement::FencedMechCode(fenced.clone()));
           }
+          // Evaluate these presentation nodes after direct document code. This
+          // preserves the source operation's result while making inline Mech
+          // output available to document renderers once declarations are ready.
+          inline @ (
+            mech_core::SectionElement::Comment(_)
+            | mech_core::SectionElement::FigureTable(_)
+            | mech_core::SectionElement::Paragraph(_)
+            | mech_core::SectionElement::Table(_)
+          ) if direct_document_run => {
+            document_inline_nodes.push(inline.clone());
+          }
           _ => {}
         }
       }
@@ -103,6 +115,16 @@ impl MechRuntime {
       target,
       &mut pending,
       &mut result,
+    )?;
+    // Inline presentation evaluation produces output records, not the source
+    // operation result. Keep it separate so trailing prose cannot replace the
+    // final value from executable Mech source.
+    let mut inline_result = Value::Empty;
+    self.flush_direct_execution(
+      context,
+      target,
+      &mut document_inline_nodes,
+      &mut inline_result,
     )?;
     Ok(result)
   }

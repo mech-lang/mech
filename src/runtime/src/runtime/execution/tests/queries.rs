@@ -1,4 +1,6 @@
 use super::super::{MechRuntime, RuntimeConfig, Value};
+use mech_core::hash_str;
+use mech_syntax::parser;
 
 fn f64_value(value: &Value) -> f64 {
     match value {
@@ -26,6 +28,25 @@ fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
         .output_value_for_interpreter(root_id, output_id)
         .expect("output snapshot should succeed");
     assert!(output.is_some());
+}
+
+#[test]
+fn runtime_run_tree_defers_inline_document_expression_until_document_code_completes() {
+    let tree = parser::parse(
+        "The document evaluates {answer + 1} inline.\n\nanswer := 41",
+    )
+    .unwrap();
+    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+
+    runtime.run_tree(&tree).unwrap();
+
+    let root_id = runtime.program().interpreter().id;
+    let output_id = hash_str(&format!("inline-eval:{root_id}:0"));
+    let output = runtime
+        .output_value_for_interpreter(root_id, output_id)
+        .unwrap()
+        .expect("expected inline document output");
+    assert_eq!(f64_value(&output.to_value()), 42.0);
 }
 
 #[test]
