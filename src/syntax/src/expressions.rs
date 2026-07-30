@@ -847,6 +847,10 @@ pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
 }
 
 #[cfg(test)]
+#[path = "expressions/operator_parity.rs"]
+mod canonical_phase_2d_operator_parity;
+
+#[cfg(test)]
 mod canonical_phase_2c_context_path_tests {
   use super::*;
 

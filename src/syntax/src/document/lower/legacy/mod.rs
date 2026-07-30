@@ -4,6 +4,7 @@ mod grammar;
 mod kinds;
 mod literals;
 mod mechdown;
+mod operators;
 mod paths;
 mod source;
 
@@ -27,4 +28,11 @@ pub use mechdown::{
     lower_legacy_inline_equation, lower_legacy_paragraph_text, lower_legacy_raw_hyperlink,
     lower_legacy_reference, lower_legacy_section_reference, lower_legacy_thematic_break,
 };
+pub use operators::{
+    lower_legacy_add_sub_operator, lower_legacy_comparison_operator,
+    lower_legacy_logic_operator, lower_legacy_matrix_operator, lower_legacy_mul_div_operator,
+    lower_legacy_power_operator, lower_legacy_range_operator, lower_legacy_set_operator,
+    lower_legacy_table_operator,
+};
+pub(crate) use operators::{lower_phase_2d_operator_value, LegacyOperatorValue};
 pub use paths::{lower_legacy_context_address_path, lower_legacy_prefixed_context_path};
