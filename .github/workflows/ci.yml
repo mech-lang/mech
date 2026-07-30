@@ -403,6 +403,9 @@ jobs:
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-served-analog-clock-browser.sh
 
+      - name: Rebuild browser package for static bundling
+        run: bash scripts/build-mech-browser.sh
+
       - name: Smoke test documented static browser bundle
         run: |
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
