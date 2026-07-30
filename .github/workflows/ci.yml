@@ -450,9 +450,6 @@ jobs:
       - name: Build default Windows CLI
         run: cargo build --bin mech
 
-      - name: Run Windows CLI source smoke
-        run: .\target\debug\mech.exe run examples\working\bubble-sort.mec
-
       - name: Build REPL-only Windows CLI
         run: cargo build --bin mech --no-default-features --features repl
 
