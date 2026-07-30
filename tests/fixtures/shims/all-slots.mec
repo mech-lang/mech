@@ -12,10 +12,10 @@ previous: [Previous page](previous.html)
 
 %% This abstract is deliberately separate from the document introduction.
 
+answer := 41
+
 This is an unsectioned introduction. It keeps literal `{{TITLE}}` text intact
 inside the rendered document body and evaluates {answer + 1} inline.
-
-answer := 41
 
 ~~~mech
 answer
