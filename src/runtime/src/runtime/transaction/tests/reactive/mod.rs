@@ -20,6 +20,11 @@ struct ReactiveTransactionTestFunction {
     fail_on_call: Option<usize>,
 }
 
+struct PanickingReactiveFunction {
+    output: Ref<usize>,
+    message: &'static str,
+}
+
 #[derive(Debug)]
 struct ReactiveTransactionalProbe {
     log: Arc<Mutex<Vec<&'static str>>>,
@@ -116,8 +121,40 @@ impl MechFunctionImpl for ReactiveTransactionTestFunction {
     }
 }
 
+impl MechFunctionImpl for PanickingReactiveFunction {
+    fn solve(&self) {}
+
+    fn solve_result(&self) -> MResult<()> {
+        self.solve_reactive().map(|_| ())
+    }
+
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+        *self.output.borrow_mut() += 1;
+        panic!("{}", self.message);
+    }
+
+    fn out(&self) -> Value {
+        Value::Index(self.output.clone())
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(vec![Value::Index(self.output.clone())])
+    }
+
+    fn to_string(&self) -> String {
+        "PanickingReactiveFunction".to_string()
+    }
+}
+
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ReactiveTransactionTestFunction {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for PanickingReactiveFunction {
     fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
     }
@@ -139,4 +176,20 @@ fn add_test_function(
             fail_on_call,
         }));
     (output, calls)
+}
+
+fn add_panicking_test_function(
+    runtime: &mut MechRuntime,
+    message: &'static str,
+) -> Ref<usize> {
+    let output = Ref::new(0usize);
+    runtime
+        .program
+        .interpreter()
+        .plan()
+        .add_function(Box::new(PanickingReactiveFunction {
+            output: output.clone(),
+            message,
+        }));
+    output
 }

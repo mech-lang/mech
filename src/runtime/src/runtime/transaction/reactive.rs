@@ -64,6 +64,20 @@ fn execution_services_borrow_conflict(
   .with_compiler_loc()
 }
 
+fn reactive_panic_message(
+  panic: &(dyn std::any::Any + Send),
+) -> String {
+  if let Some(message) = panic.downcast_ref::<&'static str>() {
+    return (*message).to_string();
+  }
+
+  if let Some(message) = panic.downcast_ref::<String>() {
+    return message.clone();
+  }
+
+  "non-string reactive panic payload".to_string()
+}
+
 struct RuntimeCoordinatedTurn<'a> {
   runtime: &'a mut MechRuntime,
   context: &'a mut RuntimeContext,
@@ -439,18 +453,36 @@ impl MechRuntime {
       let mut turn = turn.borrow_mut();
       turn.runtime.program = program;
     }
+    drop(services);
     drop(_operation_guard);
 
     let execution_result = match execution_result {
       Ok(result) => result,
       Err(panic) => {
+        let message = reactive_panic_message(&*panic);
+        {
+          let mut turn = turn.borrow_mut();
+          let RuntimeCoordinatedTurn {
+            runtime,
+            context,
+            ..
+          } = &mut *turn;
+          runtime.finish_panicked_reactive_runtime_turn(
+            context,
+            operation,
+            transaction_id,
+            &runtime_savepoint,
+            implicit,
+            message,
+          );
+        }
+        drop(turn);
         std::panic::resume_unwind(panic);
       }
     };
     let finalization = {
       turn.borrow().finalization
     };
-    drop(services);
     drop(turn);
 
     match finalization {
@@ -548,6 +580,94 @@ impl MechRuntime {
       original_error_text,
       rollback_failures,
     ))
+  }
+
+  fn finish_panicked_reactive_runtime_turn(
+    &mut self,
+    context: &mut RuntimeContext,
+    operation: &'static str,
+    transaction_id: TransactionId,
+    runtime_savepoint: &RuntimeOperationSavepoint,
+    implicit: bool,
+    panic_message: String,
+  ) {
+    let reason = format!(
+      "reactive operation `{}` panicked: {}",
+      operation,
+      panic_message,
+    );
+    let mut cleanup_failures = if implicit {
+      let mut failures = self.rollback_runtime_operation(
+        context,
+        transaction_id,
+        runtime_savepoint,
+      );
+      failures.extend(self.cleanup_failed_implicit_operation(
+        context,
+        operation,
+        transaction_id,
+        &reason,
+      ));
+      failures
+    } else {
+      let mut failures = Vec::new();
+      match self.abort_runtime_transaction_cleanup(
+        context,
+        &reason,
+        true,
+      ) {
+        Ok((cleaned_transaction_id, abort_failures)) => {
+          if cleaned_transaction_id != transaction_id {
+            failures.push(format!(
+              "panic cleanup targeted transaction {}, expected {}",
+              cleaned_transaction_id,
+              transaction_id,
+            ));
+          }
+          failures.extend(abort_failures);
+        }
+        Err(error) => failures.push(format!(
+          "transaction cleanup for panicked reactive operation `{}` transaction {} could not start: {:?}",
+          operation,
+          transaction_id,
+          error,
+        )),
+      }
+      failures
+    };
+
+    cleanup_failures.extend(
+      self.finish_transaction_cleanup_best_effort(
+        context,
+        transaction_id,
+        &reason,
+      ),
+    );
+    cleanup_failures.extend(
+      self
+        .validate_transaction_cleanup_complete(
+          context,
+          transaction_id,
+        )
+        .into_iter()
+        .map(|failure| {
+          format!(
+            "panic cleanup invariant remained unsatisfied: {}",
+            failure,
+          )
+        }),
+    );
+    cleanup_failures.push(
+      "retained program state is not trusted after panic unwound through the compact reactive journal"
+        .to_string(),
+    );
+
+    let _ = self.poison_program_operation(
+      operation,
+      Some(transaction_id),
+      reason,
+      cleanup_failures,
+    );
   }
 
   #[cfg(test)]

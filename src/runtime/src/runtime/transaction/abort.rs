@@ -198,7 +198,7 @@ impl MechRuntime {
     Ok((transaction_id, rollback_failures))
   }
 
-  fn validate_implicit_cleanup_complete(
+  pub(in crate::runtime) fn validate_transaction_cleanup_complete(
     &self,
     context: &RuntimeContext,
     transaction_id: TransactionId,
@@ -207,19 +207,19 @@ impl MechRuntime {
 
     if self.active_transactions.contains_key(&transaction_id) {
       failures.push(format!(
-        "active implicit transaction envelope {} still exists after cleanup",
+        "active transaction envelope {} still exists after cleanup",
         transaction_id,
       ));
     }
     if self.program_transaction_owner == Some(transaction_id) {
       failures.push(format!(
-        "program owner still references implicit transaction {} after cleanup",
+        "program owner still references transaction {} after cleanup",
         transaction_id,
       ));
     }
     if context.transaction == Some(transaction_id) {
       failures.push(format!(
-        "runtime context still references implicit transaction {} after cleanup",
+        "runtime context still references transaction {} after cleanup",
         transaction_id,
       ));
     }
@@ -229,7 +229,7 @@ impl MechRuntime {
       .is_some_and(|active| active.transaction_id == transaction_id)
     {
       failures.push(format!(
-        "active program operation still references implicit transaction {} after cleanup",
+        "active program operation still references transaction {} after cleanup",
         transaction_id,
       ));
     }
@@ -237,7 +237,7 @@ impl MechRuntime {
     failures
   }
 
-  fn finish_implicit_cleanup_best_effort(
+  pub(in crate::runtime) fn finish_transaction_cleanup_best_effort(
     &mut self,
     context: &mut RuntimeContext,
     transaction_id: TransactionId,
@@ -317,17 +317,17 @@ impl MechRuntime {
     }
 
     let invariant_failures =
-      self.validate_implicit_cleanup_complete(context, transaction_id);
+      self.validate_transaction_cleanup_complete(context, transaction_id);
     if !invariant_failures.is_empty() {
       failures.extend(invariant_failures);
-      failures.extend(self.finish_implicit_cleanup_best_effort(
+      failures.extend(self.finish_transaction_cleanup_best_effort(
         context,
         transaction_id,
         reason,
       ));
       failures.extend(
         self
-          .validate_implicit_cleanup_complete(context, transaction_id)
+          .validate_transaction_cleanup_complete(context, transaction_id)
           .into_iter()
           .map(|failure| {
             format!(

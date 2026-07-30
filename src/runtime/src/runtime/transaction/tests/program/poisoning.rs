@@ -90,10 +90,10 @@ fn missing_implicit_envelope_during_cleanup_is_not_hidden() {
         failure.contains("implicit transaction cleanup") && failure.contains("could not start")
     }));
     assert!(poison.rollback_failures.iter().any(|failure| {
-        failure.contains("program owner still references implicit transaction")
+        failure.contains("program owner still references transaction")
     }));
     assert!(poison.rollback_failures.iter().any(|failure| {
-        failure.contains("runtime context still references implicit transaction")
+        failure.contains("runtime context still references transaction")
     }));
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(runtime.program_transaction_owner, None);

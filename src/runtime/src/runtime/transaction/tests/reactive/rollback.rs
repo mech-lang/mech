@@ -1,10 +1,32 @@
 use super::super::super::program::{
     reset_runtime_program_checkpoint_count, runtime_program_checkpoint_count,
 };
-use super::{ReactiveTransactionalProbe, add_test_function};
-use crate::{MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, ResourceBudget, RuntimeHealth};
+use super::{
+    ReactiveTransactionalProbe, add_panicking_test_function, add_test_function,
+};
+use crate::runtime::test_support::{
+    capabilities::grant_read,
+    providers::{test_provider_with, test_runtime},
+    values::source_cell,
+};
+use crate::{
+    MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, ResourceBudget, RuntimeEventKind,
+    RuntimeHealth, RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
+};
 use mech_core::{GenericError, MResult, MechError};
+use std::any::Any;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};
+
+fn panic_message(panic: Box<dyn Any + Send>) -> String {
+    if let Some(message) = panic.downcast_ref::<String>() {
+        return message.clone();
+    }
+    if let Some(message) = panic.downcast_ref::<&'static str>() {
+        return (*message).to_string();
+    }
+    "non-string reactive panic payload".to_string()
+}
 
 #[test]
 fn reactive_step_budget_failure_cleans_up_without_poisoning() {
@@ -43,6 +65,164 @@ fn failed_implicit_turn_restores_program_and_removes_envelope() {
     assert!(runtime.active_transactions.is_empty());
     assert_eq!(runtime.program_transaction_owner, None);
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+}
+
+#[test]
+fn implicit_reactive_panic_cleans_transaction_before_unwind() {
+    const PANIC_MESSAGE: &str = "deliberate implicit reactive panic";
+
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let _output = add_panicking_test_function(&mut runtime, PANIC_MESSAGE);
+    let mut context = runtime.runtime_context().unwrap();
+
+    let panic = catch_unwind(AssertUnwindSafe(|| {
+        runtime.step_with_context(&mut context, 1).unwrap();
+    }))
+    .expect_err("reactive panic must escape");
+
+    assert_eq!(panic_message(panic), PANIC_MESSAGE);
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.runtime_health(), RuntimeHealth::Poisoned(_)));
+
+    let error = runtime.run_string("after-panic := 1").unwrap_err();
+    assert_eq!(error.kind_name(), "RuntimePoisoned");
+    assert_ne!(error.kind_name(), "RuntimeProgramBusy");
+}
+
+#[test]
+fn explicit_reactive_panic_aborts_transaction_before_unwind() {
+    const PANIC_MESSAGE: &str = "deliberate explicit reactive panic";
+
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let _output = add_panicking_test_function(&mut runtime, PANIC_MESSAGE);
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+        .stage_runtime_effect_with_context(
+            &mut context,
+            PreparedRuntimeEffect::Transactional(Box::new(ReactiveTransactionalProbe {
+                log: log.clone(),
+                fail_prepare: false,
+                fail_commit: false,
+                fail_abort: false,
+            })),
+        )
+        .unwrap();
+
+    let panic = catch_unwind(AssertUnwindSafe(|| {
+        runtime.step_with_context(&mut context, 1).unwrap();
+    }))
+    .expect_err("reactive panic must escape");
+
+    assert_eq!(panic_message(panic), PANIC_MESSAGE);
+    assert!(runtime.active_transactions.is_empty());
+    assert!(runtime.get_transaction(transaction_id).unwrap().is_none());
+    assert_eq!(context.transaction, None);
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(*log.lock().unwrap(), vec!["abort"]);
+    assert!(matches!(runtime.runtime_health(), RuntimeHealth::Poisoned(_)));
+}
+
+#[test]
+fn host_input_reactive_panic_cleans_transaction_before_unwind() {
+    const PANIC_MESSAGE: &str = "deliberate host-input reactive panic";
+    const CLOCK_URI: &str = "test://clock/ticks";
+
+    let mut runtime = test_runtime(test_provider_with(CLOCK_URI, "value", 1.0));
+    grant_read(&mut runtime, CLOCK_URI, "value");
+    let mut context = runtime.runtime_context().unwrap();
+    runtime
+        .run_string_with_context(
+            &mut context,
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+        )
+        .unwrap();
+    let source = RuntimeHostInputSource::new(CLOCK_URI, "value").unwrap();
+    let _output = add_panicking_test_function(&mut runtime, PANIC_MESSAGE);
+    let input_cell = source_cell(&runtime, &source);
+    let plan = runtime.program.interpreter().plan();
+    let panic_node = plan.borrow().len() - 1;
+    assert!(plan
+        .borrow_mut()
+        .add_reactive_dependency(panic_node, input_cell));
+    let events_before = runtime.list_events(None).unwrap().len();
+
+    let panic = catch_unwind(AssertUnwindSafe(|| {
+        runtime
+            .apply_host_input_with_context(
+                &mut context,
+                RuntimeHostInput::single(source, RuntimeHostInputValue::F64(9.0)),
+            )
+            .unwrap();
+    }))
+    .expect_err("reactive panic must escape from the host-input turn");
+
+    assert_eq!(panic_message(panic), PANIC_MESSAGE);
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.runtime_health(), RuntimeHealth::Poisoned(_)));
+    let operation_events = &runtime.list_events(None).unwrap()[events_before..];
+    assert!(operation_events
+        .iter()
+        .any(|event| matches!(event.kind, RuntimeEventKind::TransactionAborted { .. })));
+    assert!(!operation_events
+        .iter()
+        .any(|event| matches!(event.kind, RuntimeEventKind::TransactionCommitted { .. })));
+    assert!(!operation_events.iter().any(|event| matches!(
+        event.kind,
+        RuntimeEventKind::TransactionalEffectCommitted { .. }
+            | RuntimeEventKind::EffectDelivered { .. }
+    )));
+}
+
+#[test]
+fn reactive_panic_cleanup_failure_poisons_before_unwind() {
+    const PANIC_MESSAGE: &str = "deliberate cleanup-failure reactive panic";
+
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    let _output = add_panicking_test_function(&mut runtime, PANIC_MESSAGE);
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+        .stage_runtime_effect_with_context(
+            &mut context,
+            PreparedRuntimeEffect::Transactional(Box::new(ReactiveTransactionalProbe {
+                log: log.clone(),
+                fail_prepare: false,
+                fail_commit: false,
+                fail_abort: true,
+            })),
+        )
+        .unwrap();
+
+    let panic = catch_unwind(AssertUnwindSafe(|| {
+        runtime.step_with_context(&mut context, 1).unwrap();
+    }))
+    .expect_err("reactive panic must escape despite cleanup failure");
+
+    assert_eq!(panic_message(panic), PANIC_MESSAGE);
+    assert_eq!(*log.lock().unwrap(), vec!["abort"]);
+    assert!(runtime.get_transaction(transaction_id).unwrap().is_none());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    let RuntimeHealth::Poisoned(poison) = runtime.runtime_health() else {
+        panic!("runtime must be poisoned after panic cleanup failure");
+    };
+    assert!(poison.original_error.contains(PANIC_MESSAGE));
+    assert!(poison
+        .rollback_failures
+        .iter()
+        .any(|failure| failure.contains("deliberate reactive abort failure")));
+    assert!(poison.rollback_failures.iter().any(|failure| failure.contains(
+        "retained program state is not trusted after panic unwound through the compact reactive journal",
+    )));
 }
 
 #[test]
