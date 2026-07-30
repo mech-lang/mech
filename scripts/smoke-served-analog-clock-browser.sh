@@ -208,8 +208,8 @@ for source in sources:
     pairs.add((specifier, url))
 
 expected_pairs = {
-    ("app/clock.mec", "app/clock.mec"),
-    ("app/support.mec", "app/support.mec"),
+    ("app/clock.mec", "source/app/clock.mec"),
+    ("app/support.mec", "source/app/support.mec"),
 }
 if pairs != expected_pairs:
     fail("project source manifest has unexpected source pairs")
