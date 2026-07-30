@@ -185,8 +185,8 @@ define_syntax_kinds! {
   BlankLine => node,
   Equation => node,
 
-  // Phase 2C closed literal values. Keep this append-only: persisted green-tree
-  // discriminants depend on the prior order.
+  // Phase 2C closed literal, path, and primitive-kind values. Keep this
+  // append-only: persisted green-tree discriminants depend on the prior order.
   EmptyLiteral => node,
   AtomLiteral => node,
   StringLiteral => node,
@@ -207,6 +207,11 @@ define_syntax_kinds! {
   HexadecimalLiteral => node,
   OctalLiteral => node,
   BinaryLiteral => node,
+  ContextAddressPath => node,
+  PrefixedContextPath => node,
+  KindAny => node,
+  KindEmpty => node,
+  KindAtom => node,
 }
 
 #[cfg(test)]
@@ -246,7 +251,7 @@ mod tests {
   }
 
   #[test]
-  fn phase_2c_literal_kinds_are_append_only() {
+  fn phase_2c_kinds_are_append_only() {
     let appended = [
       SyntaxKind::EmptyLiteral,
       SyntaxKind::AtomLiteral,
@@ -268,10 +273,15 @@ mod tests {
       SyntaxKind::HexadecimalLiteral,
       SyntaxKind::OctalLiteral,
       SyntaxKind::BinaryLiteral,
+      SyntaxKind::ContextAddressPath,
+      SyntaxKind::PrefixedContextPath,
+      SyntaxKind::KindAny,
+      SyntaxKind::KindEmpty,
+      SyntaxKind::KindAtom,
     ];
     // `IntegerLiteral` already exists at its Phase 1 discriminant and is the
-    // canonical node reused by this closed island. Every genuinely new literal
-    // kind follows the existing Phase 2B tail in the specified order.
+    // canonical node reused by this closed island. Every genuinely new Phase
+    // 2C kind follows the existing Phase 2B tail in the specified order.
     assert_eq!(SyntaxKind::IntegerLiteral as u16, 19);
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 143 + offset as u16);
