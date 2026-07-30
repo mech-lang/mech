@@ -9,6 +9,9 @@ use mech_syntax::document::parser::{
 
 const EXPECTED_RULES: usize = 540;
 const EXPECTED_PHASE_2A: usize = 167;
+const EXPECTED_PHASE_2B: usize = 13;
+const EXPECTED_PORTED: usize = 180;
+const EXPECTED_UNPORTED: usize = 360;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -68,6 +71,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
     match phase {
         None => "",
         Some(PortPhase::Phase2A) => "2A",
+        Some(PortPhase::Phase2B) => "2B",
     }
 }
 
@@ -116,28 +120,21 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
 
 #[test]
 fn phase_2a_is_the_exact_mechanically_closed_167_rule_set() {
-    let ported = CANONICAL_PORTS
-        .iter()
-        .filter(|port| port.syntax != SyntaxPortStatus::Unported)
-        .collect::<Vec<_>>();
     let phase_2a = CANONICAL_PORTS
         .iter()
         .filter(|port| port.phase == Some(PortPhase::Phase2A))
         .collect::<Vec<_>>();
-    let parity = CANONICAL_PORTS
-        .iter()
-        .filter(|port| port.syntax == SyntaxPortStatus::ParityVerified)
-        .count();
-    assert_eq!(ported.len(), EXPECTED_PHASE_2A);
     assert_eq!(phase_2a.len(), EXPECTED_PHASE_2A);
-    assert_eq!(parity, EXPECTED_PHASE_2A);
     assert!(
-        ported
+        phase_2a
             .iter()
-            .all(|port| port.phase == Some(PortPhase::Phase2A))
+            .all(|port| port.syntax == SyntaxPortStatus::ParityVerified)
     );
 
-    let names = ported.iter().map(|port| port.name).collect::<BTreeSet<_>>();
+    let names = phase_2a
+        .iter()
+        .map(|port| port.name)
+        .collect::<BTreeSet<_>>();
 
     let inventory =
         fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
@@ -193,7 +190,7 @@ fn phase_2a_is_the_exact_mechanically_closed_167_rule_set() {
 }
 
 #[test]
-fn every_ported_rule_has_closed_declared_children_and_conformance_evidence() {
+fn every_phase_2a_rule_has_closed_declared_children_and_conformance_evidence() {
     let inventory =
         fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
             .expect("read productions.tsv");
@@ -245,12 +242,12 @@ fn every_ported_rule_has_closed_declared_children_and_conformance_evidence() {
         .map(|row| row[case_id])
         .collect::<BTreeSet<_>>();
 
-    let ported = CANONICAL_PORTS
+    let phase_2a = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.syntax != SyntaxPortStatus::Unported)
+        .filter(|port| port.phase == Some(PortPhase::Phase2A))
         .map(|port| port.name)
         .collect::<BTreeSet<_>>();
-    for name in &ported {
+    for name in &phase_2a {
         let row = &rows[name];
         assert!(
             !row[conformance].is_empty() && row[conformance] != "none",
@@ -273,7 +270,7 @@ fn every_ported_rule_has_closed_declared_children_and_conformance_evidence() {
             }
             if rows.contains_key(child) {
                 assert!(
-                    ported.contains(child),
+                    phase_2a.contains(child),
                     "{name} has unported canonical child {child}"
                 );
             }
@@ -320,15 +317,13 @@ fn phase_2a_node_and_lowering_policies_are_exact() {
     ]);
 
     let mut counts = BTreeMap::new();
-    for port in CANONICAL_PORTS {
+    for port in CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2A))
+    {
         *counts
             .entry(policy_name(port.node_policy))
             .or_insert(0_usize) += 1;
-        if port.phase != Some(PortPhase::Phase2A) {
-            assert_eq!(port.node_policy, NodePolicy::Undecided);
-            assert_eq!(port.lowering, LoweringPortStatus::Pending);
-            continue;
-        }
         if let Some(expected) = structural.get(port.name) {
             assert_eq!(policy_name(port.node_policy), *expected);
             assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
@@ -343,7 +338,6 @@ fn phase_2a_node_and_lowering_policies_are_exact() {
 
     assert_eq!(structural.len(), 22);
     assert_eq!(transparent.len(), 9);
-    assert_eq!(counts["undecided"], 373);
     assert_eq!(counts["token"], 136);
     assert_eq!(counts["transparent"], 9);
     assert_eq!(
@@ -362,4 +356,162 @@ fn phase_2a_node_and_lowering_policies_are_exact() {
             .sum::<usize>(),
         1
     );
+
+    for port in CANONICAL_PORTS.iter().filter(|port| port.phase.is_none()) {
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported);
+        assert_eq!(port.node_policy, NodePolicy::Undecided);
+        assert_eq!(port.lowering, LoweringPortStatus::Pending);
+    }
+}
+
+#[test]
+fn phase_2b_registry_accounting_and_policies_are_exact() {
+    let expected = BTreeMap::from([
+        (
+            "blank-line",
+            (LoweringPortStatus::NotApplicable, "node:BlankLine"),
+        ),
+        (
+            "codeblock-sigil",
+            (LoweringPortStatus::NotApplicable, "transparent"),
+        ),
+        (
+            "comment",
+            (LoweringPortStatus::Pending, "node:Comment"),
+        ),
+        (
+            "comment-sigil",
+            (LoweringPortStatus::NotApplicable, "transparent"),
+        ),
+        (
+            "equation",
+            (LoweringPortStatus::ParityVerified, "node:Equation"),
+        ),
+        (
+            "footnote-reference",
+            (
+                LoweringPortStatus::ParityVerified,
+                "node:FootnoteReference",
+            ),
+        ),
+        (
+            "inline-code",
+            (LoweringPortStatus::ParityVerified, "node:InlineCode"),
+        ),
+        (
+            "inline-equation",
+            (
+                LoweringPortStatus::ParityVerified,
+                "node:InlineEquation",
+            ),
+        ),
+        (
+            "paragraph-text",
+            (LoweringPortStatus::ParityVerified, "node:ParagraphText"),
+        ),
+        (
+            "raw-hyperlink",
+            (LoweringPortStatus::ParityVerified, "node:RawHyperlink"),
+        ),
+        (
+            "reference",
+            (LoweringPortStatus::ParityVerified, "node:Reference"),
+        ),
+        (
+            "section-reference",
+            (
+                LoweringPortStatus::ParityVerified,
+                "node:SectionReference",
+            ),
+        ),
+        (
+            "thematic-break",
+            (LoweringPortStatus::ParityVerified, "node:ThematicBreak"),
+        ),
+    ]);
+    assert_eq!(expected.len(), EXPECTED_PHASE_2B);
+
+    let phase_2b = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2B))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2b.len(), EXPECTED_PHASE_2B);
+    for port in phase_2b {
+        let (lowering, policy) = expected
+            .get(port.name)
+            .unwrap_or_else(|| panic!("unexpected Phase 2B rule {}", port.name));
+        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified);
+        assert_eq!(port.lowering, *lowering);
+        assert_eq!(policy_name(port.node_policy), *policy);
+    }
+
+    let ported = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.syntax != SyntaxPortStatus::Unported)
+        .collect::<Vec<_>>();
+    assert_eq!(ported.len(), EXPECTED_PORTED);
+    assert_eq!(CANONICAL_PORTS.len() - ported.len(), EXPECTED_UNPORTED);
+    assert_eq!(
+        ported
+            .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2A))
+            .count(),
+        EXPECTED_PHASE_2A
+    );
+    assert_eq!(
+        ported
+            .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2B))
+            .count(),
+        EXPECTED_PHASE_2B
+    );
+    assert_eq!(
+        ported
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
+            .count(),
+        31
+    );
+    assert_eq!(
+        ported
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::Pending)
+            .count(),
+        1
+    );
+    assert_eq!(
+        ported
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
+            .count(),
+        148
+    );
+}
+
+#[test]
+fn phase_2b_parent_and_rich_document_rules_remain_unported() {
+    for name in [
+        "inline-paragraph",
+        "paragraph-element",
+        "paragraph",
+        "paragraph-newline",
+        "title",
+        "title-front-matter",
+        "subtitle",
+        "ul-subtitle",
+        "code-block",
+        "section-element",
+        "section",
+        "body",
+        "program",
+        "parse-mech",
+        "parse",
+    ] {
+        let port = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
+        assert_eq!(port.phase, None, "{name}");
+    }
 }
