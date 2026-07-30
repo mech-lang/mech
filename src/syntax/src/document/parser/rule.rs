@@ -5,6 +5,11 @@ use crate::document::{ParserContextId, RuleId};
 pub use super::canonical_rules::{
   CANONICAL_RULE_COUNT, CANONICAL_RULES,
 };
+pub use super::canonical_rules::rules;
+pub use super::canonical_ports::{
+  CANONICAL_PORT_COUNT, CANONICAL_PORTS, LoweringPortStatus, NodePolicy, PortPhase, RuleFamily,
+  RulePort, SyntaxPortStatus,
+};
 
 const fn stable_hash(name: &str) -> u32 {
   let bytes = name.as_bytes();

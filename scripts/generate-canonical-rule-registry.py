@@ -50,7 +50,15 @@ def canonical_rules() -> list[tuple[str, int]]:
     return ordered
 
 
+def rust_constant(name: str) -> str:
+    return name.replace("-", "_").upper()
+
+
 def render() -> str:
+    rules = canonical_rules()
+    constants = [rust_constant(name) for name, _ in rules]
+    if len(constants) != len(set(constants)):
+        raise SystemExit("canonical rule names collide as Rust constants")
     lines = [
         "// Generated from docs/design/grammar-audit/productions.tsv.",
         "// Do not edit by hand.",
@@ -63,9 +71,22 @@ def render() -> str:
     ]
     lines.extend(
         f'  ("{name}", RuleId(0x{rule_id:08x})),'
-        for name, rule_id in canonical_rules()
+        for name, rule_id in rules
     )
-    lines.extend(["];", ""])
+    lines.extend(
+        [
+            "];",
+            "",
+            "pub mod rules {",
+            "  use crate::document::RuleId;",
+            "",
+        ]
+    )
+    lines.extend(
+        f"  pub const {rust_constant(name)}: RuleId = RuleId(0x{rule_id:08x});"
+        for name, rule_id in rules
+    )
+    lines.extend(["}", ""])
     return "\n".join(lines)
 
 
