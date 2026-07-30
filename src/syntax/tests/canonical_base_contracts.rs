@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -23,47 +24,196 @@ fn parse(text: &str, rule: mech_syntax::document::RuleId) -> mech_syntax::docume
     .expect("Phase 2A base rule must have a canonical port")
 }
 
+fn legacy_extent<Output>(
+  input: &str,
+  parser: for<'source> fn(
+    mech_syntax::ParseString<'source>,
+  ) -> mech_syntax::ParseResult<'source, Output>,
+) -> Option<TextSize> {
+  let graphemes = mech_syntax::graphemes::init_tag(input);
+  parser(mech_syntax::ParseString::new(&graphemes))
+    .ok()
+    .map(|(remaining, _)| {
+      TextSize(
+        graphemes[..remaining.cursor]
+          .iter()
+          .map(|grapheme| grapheme.len() as u32)
+          .sum(),
+      )
+    })
+}
+
+fn assert_legacy_boundary_parity<Output>(
+  rule: mech_syntax::document::RuleId,
+  parser: for<'source> fn(
+    mech_syntax::ParseString<'source>,
+  ) -> mech_syntax::ParseResult<'source, Output>,
+  inputs: &[&str],
+) {
+  for input in inputs {
+    let canonical = parse(input, rule);
+    let canonical_extent = canonical.matched.then_some(canonical.consumed.end);
+    assert_eq!(
+      canonical_extent,
+      legacy_extent(input, parser),
+      "{} boundary mismatch for {input:?}",
+      canonical_rule_name(rule).unwrap_or("<unknown>")
+    );
+  }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct LegacyFixedTerminalContract {
+  literal: String,
+  legacy_kind: String,
+  spacing: TerminalSpacing,
+}
+
+fn split_macro_arguments(arguments: &str) -> Vec<&str> {
+  let mut result = Vec::new();
+  let mut start = 0;
+  let mut in_string = false;
+  let mut escaped = false;
+  for (index, character) in arguments.char_indices() {
+    if in_string {
+      if escaped {
+        escaped = false;
+      } else if character == '\\' {
+        escaped = true;
+      } else if character == '"' {
+        in_string = false;
+      }
+    } else if character == '"' {
+      in_string = true;
+    } else if character == ',' {
+      result.push(arguments[start..index].trim());
+      start = index + character.len_utf8();
+    }
+  }
+  result.push(arguments[start..].trim());
+  result
+}
+
+fn decode_rust_string_literal(literal: &str) -> String {
+  let body = literal
+    .strip_prefix('"')
+    .and_then(|literal| literal.strip_suffix('"'))
+    .unwrap_or_else(|| panic!("expected a Rust string literal, found {literal:?}"));
+  let mut decoded = String::new();
+  let mut characters = body.chars();
+  while let Some(character) = characters.next() {
+    if character != '\\' {
+      decoded.push(character);
+      continue;
+    }
+    match characters.next().expect("unterminated string escape") {
+      '\\' => decoded.push('\\'),
+      '"' => decoded.push('"'),
+      'n' => decoded.push('\n'),
+      'r' => decoded.push('\r'),
+      't' => decoded.push('\t'),
+      'u' => {
+        assert_eq!(characters.next(), Some('{'), "malformed Unicode escape");
+        let mut digits = String::new();
+        loop {
+          let character = characters.next().expect("unterminated Unicode escape");
+          if character == '}' {
+            break;
+          }
+          digits.push(character);
+        }
+        let value = u32::from_str_radix(&digits, 16)
+          .unwrap_or_else(|error| panic!("invalid Unicode escape {digits:?}: {error}"));
+        decoded.push(char::from_u32(value).expect("Unicode escape must be a scalar"));
+      }
+      escape => panic!("unsupported string escape \\{escape}"),
+    }
+  }
+  decoded
+}
+
+fn legacy_fixed_terminal_contracts() -> BTreeMap<String, LegacyFixedTerminalContract> {
+  let source = fs::read_to_string(
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/base.rs"),
+  )
+  .expect("read legacy base terminal declarations");
+  let mut contracts = BTreeMap::new();
+  for line in source.lines() {
+    let line = line.trim();
+    let (spacing, invocation) = if let Some(invocation) = line.strip_prefix("leaf!") {
+      (TerminalSpacing::Exact, invocation)
+    } else if let Some(invocation) = line.strip_prefix("ws0_leaf!") {
+      (TerminalSpacing::Whitespace0Both, invocation)
+    } else {
+      continue;
+    };
+    let open = invocation
+      .find(['{', '('])
+      .unwrap_or_else(|| panic!("malformed fixed-terminal declaration: {line}"));
+    let close_delimiter = match invocation.as_bytes()[open] {
+      b'{' => '}',
+      b'(' => ')',
+      _ => unreachable!(),
+    };
+    let close = invocation
+      .rfind(close_delimiter)
+      .unwrap_or_else(|| panic!("unclosed fixed-terminal declaration: {line}"));
+    let fields = split_macro_arguments(&invocation[open + 1..close]);
+    assert_eq!(fields.len(), 3, "malformed fixed-terminal declaration: {line}");
+    let rule = fields[0].replace('_', "-");
+    let contract = LegacyFixedTerminalContract {
+      literal: decode_rust_string_literal(fields[1]),
+      legacy_kind: fields[2]
+        .strip_prefix("TokenKind::")
+        .unwrap_or_else(|| panic!("missing legacy TokenKind in {line}"))
+        .to_owned(),
+      spacing,
+    };
+    assert!(
+      contracts.insert(rule.clone(), contract).is_none(),
+      "duplicate legacy fixed-terminal rule {rule}"
+    );
+  }
+  contracts
+}
+
 #[test]
 fn every_fixed_terminal_executes_its_exact_phase_0_contract() {
   assert_eq!(FIXED_TERMINAL_COUNT, 108);
   assert_eq!(FIXED_TERMINALS.len(), FIXED_TERMINAL_COUNT);
 
-  let phase_0 = fs::read_to_string(
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/grammar_conformance.rs"),
-  )
-  .expect("read Phase 0 terminal contracts");
-  let table = phase_0
-    .split_once("const FIXED_TERMINAL_CONTRACTS")
-    .expect("Phase 0 fixed-terminal table")
-    .1
-    .split_once("];")
-    .expect("end of Phase 0 fixed-terminal table")
-    .0;
+  let mut legacy = legacy_fixed_terminal_contracts();
   assert_eq!(
-    table.matches("terminal_contract!(").count(),
+    legacy.len(),
     FIXED_TERMINAL_COUNT,
-    "canonical table must not weaken the existing Phase 0 contract count"
+    "legacy source must declare the complete Phase 0 fixed-terminal set"
   );
 
   for spec in FIXED_TERMINALS {
     let name = canonical_rule_name(spec.rule).expect("registered terminal RuleId");
-    assert!(
-      table.contains(&format!("\"base.{name}\"")),
-      "canonical terminal {name} is absent from the Phase 0 contract table"
+    let contract = legacy
+      .remove(name)
+      .unwrap_or_else(|| panic!("canonical terminal {name} has no legacy declaration"));
+    assert_eq!(
+      spec.literal, contract.literal,
+      "fixed-terminal literal drift for {name}"
     );
-    let contract_start = table
-      .find(&format!("\"base.{name}\""))
-      .expect("Phase 0 terminal contract");
-    let contract_tail = &table[contract_start..];
-    let contract_end = contract_tail[1..]
-      .find("terminal_contract!(")
-      .map_or(contract_tail.len(), |offset| offset + 1);
-    assert!(
-      contract_tail[..contract_end].contains(expected_legacy_kind(spec.kind)),
-      "canonical terminal {name} does not retain its Phase 0 token kind"
+    assert_eq!(
+      expected_legacy_kind(spec.kind),
+      contract.legacy_kind,
+      "fixed-terminal legacy TokenKind drift for {name}"
+    );
+    assert_eq!(
+      spec.spacing, contract.spacing,
+      "fixed-terminal spacing drift for {name}"
     );
     assert_fixed_terminal(spec);
   }
+  assert!(
+    legacy.is_empty(),
+    "legacy fixed terminals lack canonical rules: {:?}",
+    legacy.keys().collect::<Vec<_>>()
+  );
 }
 
 #[test]
@@ -311,6 +461,217 @@ fn every_non_fixed_lexical_port_executes_a_canonical_contract() {
     assert_eq!(
       reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
       *input
+    );
+  }
+}
+
+#[test]
+fn all_41_non_fixed_lexical_contracts_match_legacy_boundaries() {
+  assert_legacy_boundary_parity(
+    rules::TRANSITION_OPERATOR,
+    mech_syntax::transition_operator,
+    &[" -> ", "\t→\n", "~>"],
+  );
+  assert_legacy_boundary_parity(
+    rules::OUTPUT_OPERATOR,
+    mech_syntax::output_operator,
+    &[" => ", "⇒", "->"],
+  );
+  assert_legacy_boundary_parity(
+    rules::EMOJI_GRAPHEME,
+    mech_syntax::emoji_grapheme,
+    &["💡", "┌", "a"],
+  );
+  assert_legacy_boundary_parity(
+    rules::ALPHA,
+    mech_syntax::alpha,
+    &["e\u{301}", "Δ", "1"],
+  );
+  assert_legacy_boundary_parity(
+    rules::DIGIT,
+    mech_syntax::digit,
+    &["1\u{20e3}", "٣", "a"],
+  );
+  assert_legacy_boundary_parity(rules::ANY, mech_syntax::any, &["\r\n", "λ", ""]);
+  assert_legacy_boundary_parity(
+    rules::ANY_TOKEN,
+    mech_syntax::any_token,
+    &["\r\n", "λ", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::FORBIDDEN_EMOJI,
+    mech_syntax::forbidden_emoji,
+    &["┌", "⟨", "💡"],
+  );
+  assert_legacy_boundary_parity(rules::EMOJI, mech_syntax::emoji, &["💡", "┌", "a"]);
+  assert_legacy_boundary_parity(
+    rules::ALPHA_TOKEN,
+    mech_syntax::alpha_token,
+    &["e\u{301}", "Δ", "1"],
+  );
+  assert_legacy_boundary_parity(
+    rules::DIGIT_TOKEN,
+    mech_syntax::digit_token,
+    &["1\u{20e3}", "٣", "a"],
+  );
+  assert_legacy_boundary_parity(
+    rules::ALPHANUMERIC,
+    mech_syntax::alphanumeric,
+    &["A", "٣", "💡"],
+  );
+  assert_legacy_boundary_parity(
+    rules::UNDERSCORE_DIGIT,
+    mech_syntax::underscore_digit,
+    &["_٣", "_a", "٣"],
+  );
+  assert_legacy_boundary_parity(
+    rules::DIGIT_SEQUENCE,
+    mech_syntax::digit_sequence,
+    &["1_024", "٣_٤", "1_", "a"],
+  );
+  assert_legacy_boundary_parity(
+    rules::GROUPING_SYMBOL,
+    mech_syntax::grouping_symbol,
+    &["(", "⟩", "x"],
+  );
+  assert_legacy_boundary_parity(
+    rules::PUNCTUATION,
+    mech_syntax::punctuation,
+    &[".", "\"", "&"],
+  );
+  assert_legacy_boundary_parity(
+    rules::ESCAPED_CHAR,
+    mech_syntax::escaped_char,
+    &["\\n", "\\e\u{301}", "\\.\u{301}"],
+  );
+  assert_legacy_boundary_parity(rules::SYMBOL, mech_syntax::symbol, &["&", "\\", "!"]);
+  assert_legacy_boundary_parity(
+    rules::IDENTIFIER_SYMBOL,
+    mech_syntax::identifier_symbol,
+    &["-", "/", "_"],
+  );
+  assert_legacy_boundary_parity(rules::TEXT, mech_syntax::text, &["\\n", "💡", "\n"]);
+  assert_legacy_boundary_parity(
+    rules::RAW_TEXT,
+    mech_syntax::raw_text,
+    &["\\n", "(", "\n"],
+  );
+  assert_legacy_boundary_parity(
+    rules::NEW_LINE,
+    mech_syntax::new_line,
+    &["\r\n", "\r", "x"],
+  );
+  assert_legacy_boundary_parity(
+    rules::WHITESPACE,
+    mech_syntax::whitespace,
+    &[" ", "\r\n", "\u{00a0}"],
+  );
+  assert_legacy_boundary_parity(
+    rules::WHITESPACE0,
+    mech_syntax::whitespace0,
+    &[" \t\r\nx", "\u{00a0}", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::WHITESPACE1,
+    mech_syntax::whitespace1,
+    &[" \n", "\u{00a0}", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::NEWLINE_INDENT,
+    mech_syntax::newline_indent,
+    &["\r\n \tX", "\n\u{00a0}X", "X"],
+  );
+  assert_legacy_boundary_parity(
+    rules::WS1E,
+    mech_syntax::ws1e,
+    &["\u{00a0}\u{2009}\tX", "\n", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::WS0E,
+    mech_syntax::ws0e,
+    &["\u{00a0}\u{2009}\tX", "\n", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::SPACE_TAB,
+    mech_syntax::space_tab,
+    &["\u{00a0}", "\u{2009}", "\n"],
+  );
+  assert_legacy_boundary_parity(
+    rules::SPACE_TAB0,
+    mech_syntax::space_tab0,
+    &[" \t\u{00a0}X", "\n", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::SPACE_TAB1,
+    mech_syntax::space_tab1,
+    &[" \t\u{00a0}X", "\n", ""],
+  );
+  assert_legacy_boundary_parity(
+    rules::LIST_SEPARATOR,
+    mech_syntax::list_separator,
+    &[" \n,\t", ",", "|"],
+  );
+  assert_legacy_boundary_parity(
+    rules::ENUM_SEPARATOR,
+    mech_syntax::enum_separator,
+    &[" \n|\t", "|", ","],
+  );
+  assert_legacy_boundary_parity(
+    rules::IDENTIFIER,
+    mech_syntax::identifier,
+    &["a-b", "a/b", "Δx^2", "1a", "a:b"],
+  );
+  // The legacy helper is private, so isolate its behavior through the public
+  // path-segment wrapper with a delimiter immediately after the emoji.
+  assert_legacy_boundary_parity(
+    rules::IDENTIFIER_PATH_SEGMENT_EMOJI,
+    mech_syntax::identifier_path_segment,
+    &["💡/", "💡,", "┌/"],
+  );
+  assert_legacy_boundary_parity(
+    rules::IDENTIFIER_PATH_SEGMENT,
+    mech_syntax::identifier_path_segment,
+    &["a-b", "Δ2", "💡x", "a/b", "1a"],
+  );
+  assert_legacy_boundary_parity(
+    rules::LEFT_ANGLE,
+    mech_syntax::left_angle,
+    &["<", "⟨", "("],
+  );
+  assert_legacy_boundary_parity(
+    rules::RIGHT_ANGLE,
+    mech_syntax::right_angle,
+    &[">", "⟩", ")"],
+  );
+  assert_legacy_boundary_parity(
+    rules::BOX_DRAWING_CHAR,
+    mech_syntax::box_drawing_char,
+    &["┌", "┛", "a"],
+  );
+  assert_legacy_boundary_parity(
+    rules::BOX_DRAWING_EMOJI,
+    mech_syntax::box_drawing_emoji,
+    &["┃", "╯", "a"],
+  );
+
+  for input in ["λ", "λx", "x", "λ\u{301}"] {
+    let canonical =
+      parse_canonical_tag_for_test(source(input), "λ", ParseConfig::default());
+    let graphemes = mech_syntax::graphemes::init_tag(input);
+    let legacy = mech_syntax::tag("λ")(mech_syntax::ParseString::new(&graphemes))
+      .ok()
+      .map(|(remaining, _)| {
+        TextSize(
+          graphemes[..remaining.cursor]
+            .iter()
+            .map(|grapheme| grapheme.len() as u32)
+            .sum(),
+        )
+      });
+    assert_eq!(
+      canonical.matched.then_some(canonical.consumed.end),
+      legacy,
+      "tag boundary mismatch for {input:?}"
     );
   }
 }

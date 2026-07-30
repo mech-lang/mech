@@ -771,13 +771,7 @@ fn cursor_consume_logical_literal(
 }
 
 fn first_found(parser: &Parser<'_>, at: TextSize) -> FoundSyntax {
-    let mut cursor = parser.cursor().clone();
-    cursor.rewind(super::super::CursorCheckpoint { offset: at });
-    let character = cursor.peek_char();
-    FoundSyntax {
-        kind: character.map(super::super::terminal::token_kind_for_char),
-        text: character.map(|character| character.to_string()),
-    }
+    super::found::found_syntax(parser, at)
 }
 
 fn push_grammar_diagnostic(
