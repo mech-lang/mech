@@ -40,10 +40,10 @@ impl Drop for TestDirectory {
 
 fn mech_command(current_dir: &Path, command: &str) -> Command {
     let mut process = Command::new(env!("CARGO_BIN_EXE_mech"));
-    process
-        .current_dir(current_dir)
-        .arg("--no-config")
-        .arg(command);
+    process.current_dir(current_dir);
+    #[cfg(feature = "run")]
+    process.arg("--no-config");
+    process.arg(command);
     process
 }
 
