@@ -72,8 +72,8 @@ const SELECTION_BEHAVIORS: &[&str] = &[
     "caller-controlled",
 ];
 
-const EXPECTED_INVENTORY_ROWS: usize = 563;
-const EXPECTED_GRAMMAR_ROWS: usize = 540;
+const EXPECTED_INVENTORY_ROWS: usize = 562;
+const EXPECTED_GRAMMAR_ROWS: usize = 539;
 const EXPECTED_MECHANICS_ROWS: usize = 23;
 const CANONICAL_SPECIFICATION: &str = "docs/design/specification.mec";
 

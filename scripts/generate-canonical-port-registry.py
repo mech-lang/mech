@@ -7,7 +7,7 @@ import argparse
 import csv
 from pathlib import Path
 
-EXPECTED_RULES = 540
+EXPECTED_RULES = 539
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PORTS = REPOSITORY_ROOT / "docs/design/grammar-audit/ports.tsv"
 OUTPUT = (
@@ -57,6 +57,7 @@ PHASES = {
     "2B": "Some(PortPhase::Phase2B)",
     "2C": "Some(PortPhase::Phase2C)",
     "2D": "Some(PortPhase::Phase2D)",
+    "2E": "Some(PortPhase::Phase2E)",
 }
 
 
@@ -178,6 +179,7 @@ def render() -> str:
             "  Phase2B,",
             "  Phase2C,",
             "  Phase2D,",
+            "  Phase2E,",
             "}",
             "",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",

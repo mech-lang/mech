@@ -76,6 +76,10 @@ STMT-MISSING-RHS	statement	statement	all	reject	rejected/statement-missing-rhs.m
 IMPORT-MODULE	module-import	module-import	all	accept	accepted/import-module.mec	snapshots/IMPORT-MODULE.json	Structured module item import.
 IMPORT-ALIAS	module-import	module-import	all	accept	accepted/import-alias.mec	snapshots/IMPORT-ALIAS.json	Context alias import.
 IMPORT-SOURCE	statement	statement	all	accept	accepted/import-source.mec	snapshots/IMPORT-SOURCE.json	Source import declaration.
+IMPORT-001-EXACT-SIGIL	module-import	module-import	all	reject	rejected/import-001-exact-sigil.mec	-	IMPORT-001 rejects the non-ASCII right-angle spelling for imports.
+IMPORT-001-MODULE-SPACING	module-import	module-import	all	accept	accepted/import-001-module-spacing.mec	snapshots/IMPORT-001-MODULE-SPACING.json	IMPORT-001 accepts NBSP as horizontal module-import spacing.
+IMPORT-001-SOURCE-SPACING	import-declaration	statement	all	accept	accepted/import-001-source-spacing.mec	snapshots/IMPORT-001-SOURCE-SPACING.json	IMPORT-001 accepts thin space as horizontal source-import spacing.
+IMPORT-001-RANGE	module-import	module-import	all	accept-prefix	accepted/import-001-range.mec	snapshots/IMPORT-001-RANGE.json	IMPORT-001 leaves trailing horizontal space and newline outside the module import.
 EXPORT-DECLARATION	statement	statement	all	accept	accepted/export-declaration.mec	snapshots/EXPORT-DECLARATION.json	Export declaration.
 CONTEXT-DECLARATION	statement	statement	all	accept	accepted/context-declaration.mec	snapshots/CONTEXT-DECLARATION.json	Context resource declaration.
 CONTEXT-SEND	statement	statement	all	accept	accepted/context-send.mec	snapshots/CONTEXT-SEND.json	Addressed context send.

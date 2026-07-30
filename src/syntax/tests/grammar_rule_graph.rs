@@ -10,7 +10,7 @@ const SPECIFICATION_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/design/specification.mec"
 );
-const EXPECTED_CANONICAL_RULES: usize = 540;
+const EXPECTED_CANONICAL_RULES: usize = 539;
 const EXPECTED_NESTED_EBNF_EXAMPLES: usize = 2;
 
 // Public, independently useful lower-level parsers which are not called by

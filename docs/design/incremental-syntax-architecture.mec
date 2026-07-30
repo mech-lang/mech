@@ -11,7 +11,7 @@ canonical-grammar merge at
 `9511d4d0c9af7893d7230aa98c792f705d504565`.
 
 The authoritative canonical inventory is
-`docs/design/grammar-audit/productions.tsv`; it contains exactly 540 canonical
+`docs/design/grammar-audit/productions.tsv`; it contains exactly 539 canonical
 rules. A deterministic developer script generates the checked-in
 `src/syntax/src/document/parser/canonical_rules.rs` registry. Production
 package builds read only that package-local registry; a repository test

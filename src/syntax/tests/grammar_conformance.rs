@@ -406,8 +406,8 @@ const FIXED_TERMINAL_CONTRACTS: &[FixedTerminalContract] = &[
     ),
     terminal_contract!("base.prompt-sigil", prompt_sigil, ">:", PromptSigil, leaf),
     terminal_contract!(
-        "base.module-import-sigil",
-        module_import_sigil,
+        "base.import-sigil",
+        import_sigil,
         "+>",
         ModuleImportSigil,
         leaf
@@ -3516,6 +3516,16 @@ fn fixed_terminal_contracts_match_source_and_inventory() {
             let (kind, spacing) = kind_and_spacing
                 .split_once("; ")
                 .unwrap_or_else(|| panic!("{} has a malformed terminal note", fields[id]));
+            let (spacing, correction) = spacing
+                .split_once(" Corrected by ")
+                .unwrap_or((spacing, ""));
+            if !correction.is_empty() {
+                assert_eq!(
+                    fields[id], "base.import-sigil",
+                    "only the corrected import sigil may carry a terminal correction note"
+                );
+                assert_eq!(correction, "IMPORT-001.");
+            }
             let parser_macro = match spacing {
                 "no implicit whitespace." => "leaf",
                 "whitespace0 on both sides." => "ws0_leaf",

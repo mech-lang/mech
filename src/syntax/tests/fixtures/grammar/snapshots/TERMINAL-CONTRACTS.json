@@ -1169,8 +1169,8 @@
       }
     },
     {
-      "function": "module_import_sigil",
-      "inventory_id": "base.module-import-sigil",
+      "function": "import_sigil",
+      "inventory_id": "base.import-sigil",
       "parser_macro": "leaf",
       "text": "+>",
       "token": {

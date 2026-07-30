@@ -7,7 +7,7 @@ import argparse
 import csv
 from pathlib import Path
 
-EXPECTED_RULES = 540
+EXPECTED_RULES = 539
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = REPOSITORY_ROOT / "docs/design/grammar-audit/productions.tsv"
 OUTPUT = (
