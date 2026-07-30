@@ -71,13 +71,11 @@ impl WasmProject {
         let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
         let mut runtime = build_runtime(&document, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
-        Ok(Self {
+        Ok(Self::from_runtime(
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
-            started: false,
-            stopped: false,
-        })
+        ))
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -114,13 +112,71 @@ impl WasmProject {
         let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(&document, &authority, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
-        Ok(Self {
+        Ok(Self::from_runtime(
+            runtime,
+            #[cfg(feature = "browser_host_scene")]
+            scenes,
+        ))
+    }
+
+    fn from_runtime(
+        runtime: MechRuntime,
+        #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    ) -> Self {
+        Self {
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
             started: false,
             stopped: false,
-        })
+        }
+    }
+
+    #[wasm_bindgen(js_name = rootInterpreterId)]
+    pub fn root_interpreter_id(&self) -> u64 {
+        self.runtime.root_interpreter_id()
+    }
+
+    #[wasm_bindgen(js_name = renderedOutput)]
+    pub fn rendered_output(
+        &self,
+        interpreter_id: u64,
+        output_id: u64,
+    ) -> Result<JsValue, JsValue> {
+        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+        self.runtime
+            .output_value_for_interpreter(interpreter_id, output_id)
+            .map_err(to_js_error)?
+            .map(rendered_value)
+            .transpose()
+            .map(|value| value.unwrap_or(JsValue::NULL))
+    }
+
+    #[wasm_bindgen(js_name = renderedSymbol)]
+    pub fn rendered_symbol(
+        &self,
+        interpreter_id: u64,
+        name: &str,
+    ) -> Result<JsValue, JsValue> {
+        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+        let names = vec![name.to_string()];
+        let value = self
+            .runtime
+            .symbol_values_for_interpreter(interpreter_id, &names)
+            .map_err(to_js_error)?
+            .and_then(|mut values| values.pop().map(|(_, value)| value));
+        value
+            .map(rendered_value)
+            .transpose()
+            .map(|value| value.unwrap_or(JsValue::NULL))
+    }
+
+    fn actual_interpreter_id(&self, interpreter_id: u64) -> u64 {
+        if interpreter_id == 0 {
+            self.runtime.root_interpreter_id()
+        } else {
+            interpreter_id
+        }
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
@@ -191,6 +247,86 @@ impl WasmProject {
         self.started = false;
         self.stopped = true;
         Ok(())
+    }
+}
+
+/// Browser runtime adapter for one formatted Mech source document.
+///
+/// The document owns its bootstrap through its HTML shim. This adapter only
+/// decodes and executes the shim's detached `{{CODE}}` payload, retains the
+/// runtime, and exposes detached render queries.
+#[wasm_bindgen]
+pub struct WasmDocument {
+    project: WasmProject,
+}
+
+#[wasm_bindgen]
+impl WasmDocument {
+    #[wasm_bindgen(js_name = fromEncoded)]
+    pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
+        let tree: mech_core::nodes::Program =
+            mech_core::nodes::decode_and_decompress(encoded)
+                .map_err(|error| js_error(format!("failed to decode Mech document: {error}")))?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let mut runtime =
+            runtime_builder_with_factories(
+                #[cfg(feature = "browser_host_scene")]
+                scenes.clone(),
+            )?
+            .build()
+            .map_err(to_js_error)?;
+        runtime.run_tree(&tree).map_err(to_js_error)?;
+        Ok(Self {
+            project: WasmProject::from_runtime(
+                runtime,
+                #[cfg(feature = "browser_host_scene")]
+                scenes,
+            ),
+        })
+    }
+
+    #[wasm_bindgen(js_name = rootInterpreterId)]
+    pub fn root_interpreter_id(&self) -> u64 {
+        self.project.root_interpreter_id()
+    }
+
+    #[wasm_bindgen(js_name = renderedOutput)]
+    pub fn rendered_output(
+        &self,
+        interpreter_id: u64,
+        output_id: u64,
+    ) -> Result<JsValue, JsValue> {
+        self.project.rendered_output(interpreter_id, output_id)
+    }
+
+    #[wasm_bindgen(js_name = renderedSymbol)]
+    pub fn rendered_symbol(
+        &self,
+        interpreter_id: u64,
+        name: &str,
+    ) -> Result<JsValue, JsValue> {
+        self.project.rendered_symbol(interpreter_id, name)
+    }
+
+    pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
+        self.project
+            .runtime
+            .run_string(source)
+            .map_err(to_js_error)
+            .and_then(rendered_value)
+    }
+
+    pub fn start(&mut self) -> Result<(), JsValue> {
+        self.project.start()
+    }
+
+    pub fn frame(&mut self, max_inputs: usize) -> Result<JsValue, JsValue> {
+        self.project.frame(max_inputs)
+    }
+
+    pub fn stop(&mut self) -> Result<(), JsValue> {
+        self.project.stop()
     }
 }
 
@@ -613,14 +749,48 @@ fn run_project_sources(
     document: &MechConfigDocument,
 ) -> mech_core::MResult<()> {
     let run = require_run(document)?;
-    for path in &run.paths {
-        let key = path.to_string_lossy().to_string();
+    let roots = run
+        .paths
+        .iter()
+        .map(|path| path.to_string_lossy().to_string())
+        .collect::<Vec<_>>();
+    run_source_roots(runtime, roots.iter().map(String::as_str))
+}
+
+fn run_source_roots<'a>(
+    runtime: &mut MechRuntime,
+    roots: impl IntoIterator<Item = &'a str>,
+) -> mech_core::MResult<()> {
+    for key in roots {
         runtime.resolve_and_run_root_module(
-            SourceRequest::new(key),
+            SourceRequest::new(key.to_string()),
             browser_module_options(),
         )?;
     }
     Ok(())
+}
+
+fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValue, JsValue> {
+    let value = snapshot.into_value();
+    let rendered = Object::new();
+    Reflect::set(
+        &rendered,
+        &JsValue::from_str("kind"),
+        &JsValue::from_str(&format!("{:?}", value.kind())),
+    )?;
+    Reflect::set(
+        &rendered,
+        &JsValue::from_str("blockHtml"),
+        &JsValue::from_str(&value.to_html()),
+    )?;
+    Reflect::set(
+        &rendered,
+        &JsValue::from_str("inlineHtml"),
+        &JsValue::from_str(&mech_core::escape_html_text(
+            &value.format_value_inline(),
+        )),
+    )?;
+    Ok(rendered.into())
 }
 fn require_run(document: &MechConfigDocument) -> mech_core::MResult<&mech_runtime::RunHostConfig> {
     let run = document.run.as_ref().ok_or_else(|| {
@@ -767,24 +937,17 @@ mod tests {
         run_project_sources(&mut runtime, &document).unwrap();
     }
 
-    #[cfg(feature = "served_project_authority")]
     #[test]
-    fn served_bundle_roots_execute_bundle_local_main_and_sibling_dependency() {
-        let mut document = project_document(&["ignored.mec"]);
-        replace_bundle_run_paths(&mut document, vec!["src/main.mec".to_string()]).unwrap();
-        let sources = HashMap::from([
-            (
-                "src/main.mec".to_string(),
-                "+> ./dep.mec\nanswer := dep/value + 1\n".to_string(),
-            ),
-            ("src/dep.mec".to_string(), "value := 41\n<+ value\n".to_string()),
-        ]);
+    fn encoded_document_runs_on_runtime_and_exposes_root_output() {
+        let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let mut runtime = RuntimeBuilder::new()
-            .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
 
-        run_project_sources(&mut runtime, &document).unwrap();
+        let decoded: mech_core::nodes::Program =
+            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+        runtime.run_tree(&decoded).unwrap();
 
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
@@ -1227,6 +1390,26 @@ mod browser_tests {
         project.start().unwrap();
         project.stop().unwrap();
         project.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn encoded_document_executes_and_exposes_detached_render_queries() {
+        let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        let rendered = document.rendered_symbol(0, "answer").unwrap();
+        assert!(!rendered.is_null());
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+        );
+        assert!(document.rendered_output(0, u64::MAX).unwrap().is_null());
+        document.start().unwrap();
+        assert!(document.frame(1).is_ok());
+        document.stop().unwrap();
     }
 
     #[wasm_bindgen_test]

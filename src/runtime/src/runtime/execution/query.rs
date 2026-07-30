@@ -26,6 +26,10 @@ impl MechRuntime {
     self.program.has_interpreter(interpreter_id)
   }
 
+  pub fn root_interpreter_id(&self) -> u64 {
+    self.program.interpreter().id
+  }
+
   pub fn root_plan_len(&self) -> usize {
     self.program.interpreter().plan_len()
   }

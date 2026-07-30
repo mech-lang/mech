@@ -2810,6 +2810,7 @@ impl PrettyPrint for Value {
       Value::MatrixR64(x) => x.pretty_print(),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(x) => x.pretty_print(),
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x) => x.pretty_print(),
       Value::Index(x)  => format!("{}",x.borrow()),
       Value::MutableReference(x) => x.borrow().pretty_print(),
