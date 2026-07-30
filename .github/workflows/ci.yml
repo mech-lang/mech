@@ -351,6 +351,9 @@ jobs:
       - name: Show Chrome version
         run: google-chrome --version
 
+      - name: Remove old browser package
+        run: rm -rf src/wasm/pkg
+
       - name: Check browser project feature boundaries
         run: |
           cargo check \
@@ -367,6 +370,15 @@ jobs:
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
 
+      - name: Build embedded browser server in dedicated target
+        run: |
+          cargo build \
+            --bin mech \
+            --no-default-features \
+            --features "serve,bundle_web"
+          cp "$CARGO_TARGET_DIR/debug/mech" \
+            "$CARGO_TARGET_DIR/embedded-browser-mech"
+
       - name: Remove browser release intermediates
         run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
 
@@ -381,25 +393,30 @@ jobs:
             -- \
             --nocapture
 
+      - name: Smoke test standalone and inline-shim FizzBuzz in Chrome
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            bash scripts/smoke-served-fizzbuzz-browser.sh
+
       - name: Smoke test served analog clock in Chrome
         run: |
-          cargo build \
-            --bin mech \
-            --no-default-features \
-            --features serve
-
-          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-served-analog-clock-browser.sh
 
       - name: Smoke test documented static browser bundle
         run: |
-          cargo build \
-            --bin mech \
-            --no-default-features \
-            --features bundle_web
-
-          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-bundle-web.sh
+
+      - name: Smoke test bounded server shutdown
+        run: |
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features serve \
+            --test mech_serve \
+            mech_serve_interrupt_closes_keep_alive_server_once \
+            -- --exact --nocapture
 
       - name: Remove generated browser package
         if: always()

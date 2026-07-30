@@ -2122,6 +2122,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "warp",
+ "windows-sys 0.61.2",
  "winres",
  "zip",
 ]

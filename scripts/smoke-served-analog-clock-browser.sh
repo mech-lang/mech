@@ -146,7 +146,6 @@ PY
 "$MECH_BIN" serve \
   --address 127.0.0.1 \
   --port "$port" \
-  --wasm "$repo_root/src/wasm/pkg" \
   "$project_dir" >"$server_log" 2>&1 &
 server_pid="$!"
 

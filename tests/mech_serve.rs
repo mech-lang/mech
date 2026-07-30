@@ -75,6 +75,7 @@ impl RunningServer {
 
         let mut command = Command::new(env!("CARGO_BIN_EXE_mech"));
         command.current_dir(current_dir);
+        configure_child_process_group(&mut command);
         if no_config {
             command.arg("--no-config");
         }
@@ -176,6 +177,32 @@ impl RunningServer {
         self.stopped = true;
     }
 
+    fn interrupt_and_wait(&mut self, timeout: Duration) {
+        if self.stopped {
+            return;
+        }
+        send_interrupt(&self.child).unwrap_or_else(|error| {
+            self.fail(&format!("failed to interrupt server: {error}"));
+        });
+        let deadline = Instant::now() + timeout;
+        loop {
+            match self.child.try_wait() {
+                Ok(Some(status)) => {
+                    self.stopped = true;
+                    if !status.success() {
+                        self.fail(&format!("interrupted server exited unsuccessfully: {status}"));
+                    }
+                    return;
+                }
+                Ok(None) if Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(25));
+                }
+                Ok(None) => self.fail("interrupted server did not exit before the deadline"),
+                Err(error) => self.fail(&format!("failed to wait for interrupted server: {error}")),
+            }
+        }
+    }
+
     fn logs(&self) -> String {
         format!(
             "stdout:\n{}\nstderr:\n{}",
@@ -187,6 +214,40 @@ impl RunningServer {
     fn fail(&mut self, message: &str) -> ! {
         self.stop();
         panic!("{message}\n{}", self.logs());
+    }
+}
+
+#[cfg(unix)]
+fn configure_child_process_group(_command: &mut Command) {}
+
+#[cfg(windows)]
+fn configure_child_process_group(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    command.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
+}
+
+#[cfg(unix)]
+fn send_interrupt(child: &Child) -> std::io::Result<()> {
+    let result = unsafe { libc::kill(child.id() as libc::pid_t, libc::SIGINT) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(std::io::Error::last_os_error())
+    }
+}
+
+#[cfg(windows)]
+fn send_interrupt(child: &Child) -> std::io::Result<()> {
+    let result = unsafe {
+        windows_sys::Win32::System::Console::GenerateConsoleCtrlEvent(
+            windows_sys::Win32::System::Console::CTRL_BREAK_EVENT,
+            child.id(),
+        )
+    };
+    if result != 0 {
+        Ok(())
+    } else {
+        Err(std::io::Error::last_os_error())
     }
 }
 
@@ -297,12 +358,27 @@ fn mech_serve_process_routes_work_for_sources_directories_and_projects() {
                 server.fail("public .mec route returned raw source");
             }
         }
+        let root = server.assert_route("/", 200, "text/html");
+        server.assert_body_contains("/", &root, "WasmDocument");
+        server.assert_body_contains("/", &root, "/_mech/pkg/mech_wasm.js");
+        if String::from_utf8_lossy(&root.body).contains("/_mech/project.js") {
+            server.fail("standalone default shim unexpectedly required project.js");
+        }
         let raw_route = format!("/source/{encoded}.mec");
         let raw_response = server.assert_route(&raw_route, 200, "text/x-mech");
         if raw_response.body != raw.as_bytes() {
             server.fail("raw source route did not return the source bytes");
         }
         server.assert_route(&format!("/code/{encoded}.mec"), 200, "text/plain");
+        server.assert_route("/_mech/pkg/mech_wasm.js", 200, "application/javascript");
+        let wasm = server.assert_route(
+            "/_mech/pkg/mech_wasm_bg.wasm",
+            200,
+            "application/wasm",
+        );
+        if !wasm.body.starts_with(b"\0asm") {
+            server.fail("served WASM body did not begin with raw WebAssembly magic");
+        }
         server.assert_route("/mech.mcfg", 404, "text/html");
     }
 
@@ -378,4 +454,36 @@ fn mech_serve_process_routes_work_for_sources_directories_and_projects() {
             server.fail("configured WASM route did not return a successful WASM response");
         }
     }
+}
+
+#[test]
+fn mech_serve_interrupt_closes_keep_alive_server_once() {
+    let fixture = TestDirectory::new("shutdown");
+    let source = fixture.path().join("main.mec");
+    std::fs::write(&source, "answer := 42\n").unwrap();
+    let mut server = RunningServer::spawn(fixture.path(), &source, true);
+
+    let mut keep_alive =
+        TcpStream::connect(("127.0.0.1", server.port)).expect("keep-alive connection must open");
+    write!(
+        keep_alive,
+        "GET / HTTP/1.1\r\nHost: 127.0.0.1:{}\r\nConnection: keep-alive\r\n\r\n",
+        server.port,
+    )
+    .unwrap();
+    keep_alive.flush().unwrap();
+
+    server.interrupt_and_wait(Duration::from_secs(5));
+    drop(keep_alive);
+    let logs = server.logs();
+    assert_eq!(
+        logs.matches("Server received shutdown signal.").count(),
+        1,
+        "{logs}",
+    );
+    assert!(
+        logs.matches("Graceful shutdown timed out; forcing server close.").count() <= 1,
+        "{logs}",
+    );
+    assert_eq!(logs.matches("Closing server.").count(), 1, "{logs}");
 }
