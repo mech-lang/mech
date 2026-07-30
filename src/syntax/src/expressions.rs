@@ -845,3 +845,186 @@ pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, rng) = range_expression(input)?;
   Ok((input, Subscript::Range(rng)))
 }
+
+#[cfg(test)]
+mod canonical_phase_2c_context_path_tests {
+  use super::*;
+
+  use mech_core::{SourceLocation, SourceRange, TokenKind};
+
+  use crate::document::ast::paths::{
+    ContextAddressPathSyntax, PrefixedContextPathSyntax,
+  };
+  use crate::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
+  use crate::document::parser::rules;
+  use crate::document::{
+    AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextRange,
+    TextSize, TextSnapshot, lower_legacy_context_address_path,
+    lower_legacy_prefixed_context_path,
+  };
+
+  #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+  struct LegacyPrefix {
+    consumed: TextSize,
+    remaining: TextSize,
+  }
+
+  fn source(text: &str) -> TextSnapshot {
+    TextSnapshot::new(DocumentId(925), Revision(0), text).unwrap()
+  }
+
+  fn parse(
+    text: &str,
+    rule: RuleId,
+  ) -> crate::document::parser::canonical::CanonicalSourceRuleSnapshot {
+    parse_canonical_phase_2c_rule_for_test(source(text), rule, ParseConfig::default())
+      .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2C direct rule"))
+  }
+
+  fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
+    if root.kind() == kind {
+      return Some(root.clone());
+    }
+    root.children().find_map(|child| find_node(&child, kind))
+  }
+
+  fn legacy_prefix<Output>(
+    input: &str,
+    parser: for<'source> fn(ParseString<'source>) -> ParseResult<'source, Output>,
+  ) -> Option<LegacyPrefix> {
+    let graphemes = crate::graphemes::init_tag(input);
+    parser(ParseString::new(&graphemes)).ok().map(|(remaining, _)| {
+      let consumed = graphemes[..remaining.cursor]
+        .iter()
+        .map(|grapheme| grapheme.len())
+        .sum::<usize>();
+      let remaining = graphemes[remaining.cursor..]
+        .iter()
+        .map(|grapheme| grapheme.len())
+        .sum::<usize>();
+      LegacyPrefix {
+        consumed: TextSize(consumed as u32),
+        remaining: TextSize(remaining as u32),
+      }
+    })
+  }
+
+  fn legacy_value<Output>(
+    input: &str,
+    parser: for<'source> fn(ParseString<'source>) -> ParseResult<'source, Output>,
+  ) -> Output {
+    let graphemes = crate::graphemes::init_tag(input);
+    let (remaining, value) = parser(ParseString::new(&graphemes)).unwrap();
+    assert_eq!(remaining.cursor, graphemes.len(), "{input:?}");
+    assert!(remaining.error_log.is_empty(), "{input:?}");
+    value
+  }
+
+  fn assert_prefix_contract<Output>(
+    input: &str,
+    rule: RuleId,
+    parser: for<'source> fn(ParseString<'source>) -> ParseResult<'source, Output>,
+  ) {
+    let canonical = parse(input, rule);
+    let legacy = legacy_prefix(input, parser);
+    assert_eq!(canonical.matched, legacy.is_some(), "{rule:?} on {input:?}");
+
+    if let Some(legacy) = legacy {
+      assert!(canonical.is_strictly_clean(), "{rule:?} on {input:?}");
+      assert_eq!(canonical.consumed.start, TextSize::ZERO, "{input:?}");
+      assert_eq!(canonical.consumed.end, legacy.consumed, "{input:?}");
+      assert_eq!(
+        canonical.source.byte_len().0 - canonical.consumed.end.0,
+        legacy.remaining.0,
+        "{input:?}",
+      );
+    } else {
+      assert!(canonical.diagnostics.is_empty(), "{rule:?} on {input:?}");
+      assert_eq!(
+        canonical.consumed,
+        TextRange::empty(TextSize::ZERO),
+        "{input:?}",
+      );
+    }
+  }
+
+  fn legacy_token_kind(kind: SyntaxKind) -> TokenKind {
+    match kind {
+      SyntaxKind::Alpha => TokenKind::Alpha,
+      SyntaxKind::Digit => TokenKind::Digit,
+      SyntaxKind::Dash => TokenKind::Dash,
+      SyntaxKind::Slash => TokenKind::Slash,
+      SyntaxKind::Underscore => TokenKind::Underscore,
+      SyntaxKind::Period => TokenKind::Period,
+      other => panic!("unexpected context-address-path token {other:?}"),
+    }
+  }
+
+  #[test]
+  fn private_context_address_path_tokens_match_canonical_values_and_extents() {
+    for input in ["a", "3", "-", "/", "_", "."] {
+      assert_prefix_contract(input, rules::CONTEXT_ADDRESS_PATH_TOKEN, context_address_path_token);
+
+      let canonical = parse(input, rules::CONTEXT_ADDRESS_PATH_TOKEN);
+      let token = canonical.syntax().tokens().into_iter().next().unwrap();
+      let legacy = legacy_value(input, context_address_path_token);
+      assert_eq!(legacy.kind, legacy_token_kind(token.kind()), "{input:?}");
+      assert_eq!(
+        legacy.chars,
+        token.text().unwrap().chars().collect::<Vec<_>>(),
+        "{input:?}",
+      );
+      assert_eq!(
+        legacy.src_range,
+        SourceRange {
+          start: SourceLocation { row: 1, col: 1 },
+          end: SourceLocation { row: 1, col: 2 },
+        },
+        "{input:?}",
+      );
+    }
+  }
+
+  #[test]
+  fn private_context_address_paths_match_canonical_lowering_and_extents() {
+    for input in ["path", "path/to.value_1", "x-y"] {
+      assert_prefix_contract(input, rules::CONTEXT_ADDRESS_PATH, context_address_path);
+
+      let canonical = parse(input, rules::CONTEXT_ADDRESS_PATH);
+      let node = find_node(&canonical.syntax(), SyntaxKind::ContextAddressPath).unwrap();
+      let canonical_value = lower_legacy_context_address_path(
+        &ContextAddressPathSyntax::cast(node).unwrap(),
+      )
+      .unwrap();
+      let legacy = legacy_value(input, context_address_path);
+      assert_eq!(canonical_value, legacy, "{input:?}");
+    }
+  }
+
+  #[test]
+  fn private_prefixed_context_paths_match_canonical_lowering_and_extents() {
+    for input in [
+      "@context/path",
+      "@ctx/path/to.value_1",
+      "@💡/x-y",
+    ] {
+      assert_prefix_contract(input, rules::PREFIXED_CONTEXT_PATH, prefixed_context_path);
+
+      let canonical = parse(input, rules::PREFIXED_CONTEXT_PATH);
+      let node = find_node(&canonical.syntax(), SyntaxKind::PrefixedContextPath).unwrap();
+      let canonical_value = lower_legacy_prefixed_context_path(
+        &PrefixedContextPathSyntax::cast(node).unwrap(),
+      )
+      .unwrap();
+      let legacy = legacy_value(input, prefixed_context_path);
+      assert_eq!(canonical_value, legacy, "{input:?}");
+    }
+  }
+
+  #[test]
+  fn incomplete_prefixed_context_paths_remain_noncommitting() {
+    for input in ["@", "@ctx", "@ctx/", "@/path"] {
+      assert_prefix_contract(input, rules::PREFIXED_CONTEXT_PATH, prefixed_context_path);
+    }
+  }
+}
