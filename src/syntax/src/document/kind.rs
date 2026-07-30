@@ -267,6 +267,26 @@ define_syntax_kinds! {
   ElementOfOperation => node,
   NotElementOfOperation => node,
   SymmetricDifferenceOperation => node,
+
+  // Phase 2E closed module-import values. Keep this append-only: persisted
+  // green-tree discriminants depend on every preceding kind.
+  ModuleImportNameSegment => node,
+  ModuleImportIntrinsicSegment => node,
+  ModuleImportPathSegment => node,
+  ModuleImportPath => node,
+  ModuleImportAliasSegment => node,
+  ModuleImportAliasPath => node,
+  ModuleImportValueAlias => node,
+  ContextImportAliasSegment => node,
+  ModuleImportContextAlias => node,
+  ModuleImportAlias => node,
+  ModuleRoot => node,
+  ImportGroupItem => node,
+  ImportGroupItems => node,
+  AliasedItemImport => node,
+  ModuleSuffixImport => node,
+  ModuleOnlyImport => node,
+  ModuleImport => node,
 }
 
 #[cfg(test)]
@@ -402,6 +422,33 @@ mod tests {
     ];
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 168 + offset as u16);
+      assert!(!kind.is_token());
+    }
+  }
+
+  #[test]
+  fn phase_2e_kinds_are_append_only() {
+    let appended = [
+      SyntaxKind::ModuleImportNameSegment,
+      SyntaxKind::ModuleImportIntrinsicSegment,
+      SyntaxKind::ModuleImportPathSegment,
+      SyntaxKind::ModuleImportPath,
+      SyntaxKind::ModuleImportAliasSegment,
+      SyntaxKind::ModuleImportAliasPath,
+      SyntaxKind::ModuleImportValueAlias,
+      SyntaxKind::ContextImportAliasSegment,
+      SyntaxKind::ModuleImportContextAlias,
+      SyntaxKind::ModuleImportAlias,
+      SyntaxKind::ModuleRoot,
+      SyntaxKind::ImportGroupItem,
+      SyntaxKind::ImportGroupItems,
+      SyntaxKind::AliasedItemImport,
+      SyntaxKind::ModuleSuffixImport,
+      SyntaxKind::ModuleOnlyImport,
+      SyntaxKind::ModuleImport,
+    ];
+    for (offset, kind) in appended.into_iter().enumerate() {
+      assert_eq!(kind as u16, 220 + offset as u16);
       assert!(!kind.is_token());
     }
   }
