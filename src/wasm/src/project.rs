@@ -1601,6 +1601,23 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn wasm_document_evaluate_refreshes_mutable_root_symbol() {
+        let encoded = encoded_document("~answer := 41\nanswer");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        document.evaluate("answer = 7").unwrap();
+
+        let answer = document.rendered_symbol(0, "answer").unwrap();
+        assert_eq!(
+            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("7"),
+        );
+    }
+
+    #[wasm_bindgen_test]
     fn wasm_document_reset_restores_initial_program() {
         let initial = encoded_document("answer := 1\nanswer");
         let mut document = WasmDocument::from_encoded(&initial).unwrap();

@@ -607,7 +607,7 @@ def assert_console_contract():
     )
     submit(":help")
     wait_for("Boolean(document.querySelector('.mech-repl-help'))", "the browser console help table")
-    submit("answer := 7")
+    submit("answer = 7")
     wait_for(
         "/7/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
         "the updated browser variable before :clear",
