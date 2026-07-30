@@ -206,3 +206,7 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
 
     Ok((input, import))
 }
+
+#[cfg(test)]
+#[path = "imports/module_import_parity.rs"]
+mod canonical_phase_2e_module_import_parity;
