@@ -266,10 +266,11 @@ fn runtime_repl_load_denies_ungranted_dependency_without_partial_state() {
 
     assert_eq!(error.kind_name(), "CapabilityDenied");
     let requests = requests.lock().unwrap();
+    let expected_main_request = SourceRequest::from_filesystem_path(&main).unwrap();
     assert!(
         requests
             .iter()
-            .any(|request| request.specifier == main.to_string_lossy())
+            .any(|request| request.specifier == expected_main_request.specifier)
     );
     assert!(
         requests
