@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use mech_core::*;
 
@@ -45,6 +46,8 @@ pub(crate) struct EffectiveServeOptions {
   pub stylesheet_paths: Vec<String>,
   pub shim_path: String,
   pub wasm_pkg: String,
+  pub project_root: Option<PathBuf>,
+  pub uses_configured_paths: bool,
 }
 
 pub(crate) fn effective_serve_options(
@@ -141,34 +144,50 @@ pub(crate) fn effective_serve_options(
     })
     .unwrap_or(false);
 
-  let config_serve_paths = || {
-    config
-      .and_then(|loaded| {
-        loaded.document.serve.as_ref().map(|serve| {
-          serve
-            .paths
+  let project_root = config
+    .map(|loaded| {
+      loaded
+        .discovered_project_dir
+        .clone()
+        .unwrap_or_else(|| loaded.base_dir.clone())
+    })
+    .map(|path| path.canonicalize().unwrap_or(path));
+
+  let config_workspace_paths = || {
+    let mut paths = Vec::new();
+    let mut seen = HashSet::new();
+    if let Some(loaded) = config {
+      for path in loaded
+        .document
+        .run
+        .iter()
+        .flat_map(|run| &run.paths)
+        .chain(
+          loaded
+            .document
+            .serve
             .iter()
-            .map(|path| config_path_to_string(loaded, path))
-            .collect::<Vec<_>>()
-        })
-      })
-      .filter(|paths| !paths.is_empty())
-      .unwrap_or_default()
+            .flat_map(|serve| &serve.paths),
+        )
+      {
+        let path = config_path_to_string(loaded, path);
+        if seen.insert(path.clone()) {
+          paths.push(path);
+        }
+      }
+    }
+    paths
   };
 
-  let paths = if !cli_paths.is_empty() && !sole_discovery_selector {
-    cli_paths
+  let configured_paths = config_workspace_paths();
+  let (paths, uses_configured_paths) = if !cli_paths.is_empty() && !sole_discovery_selector {
+    (cli_paths, false)
   } else if sole_discovery_selector {
-    let has_run_paths = config
-      .and_then(|loaded| loaded.document.run.as_ref())
-      .is_some_and(|run| !run.paths.is_empty());
-    if has_run_paths {
-      cli_paths
-    } else {
-      config_serve_paths()
-    }
+    (configured_paths, true)
+  } else if config.is_some() {
+    (configured_paths, true)
   } else {
-    config_serve_paths()
+    (Vec::new(), false)
   };
 
   Ok(EffectiveServeOptions {
@@ -178,5 +197,7 @@ pub(crate) fn effective_serve_options(
     stylesheet_paths,
     shim_path,
     wasm_pkg,
+    project_root,
+    uses_configured_paths,
   })
 }

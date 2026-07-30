@@ -8,7 +8,10 @@ use crate::cli::resources::{
     Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
 };
 use crate::cli::{capabilities, config, serve_options};
-use crate::{MechError, MechServer};
+use crate::{
+    ConfiguredProjectOverlay, MechError, MechServer, ServeInputPlan,
+    plan_cli_serve_inputs,
+};
 
 fn render_capability_events(badge: &str, events: &[capabilities::FilesystemCapabilityEvent]) {
     for event in events {
@@ -173,7 +176,9 @@ fn host_delegation_args() -> Vec<Arg> {
 }
 
 pub(crate) struct ServePlan {
-    pub paths: Vec<String>,
+    pub project_root: Option<std::path::PathBuf>,
+    pub project_overlay: Option<ConfiguredProjectOverlay>,
+    pub workspace_plan: ServeInputPlan,
     pub address: String,
     pub port: String,
     pub stylesheet_paths: Vec<String>,
@@ -198,6 +203,52 @@ pub(crate) fn prepare(
     let loaded = config::load_cli_config_report_with_inputs(matches, &args.paths)?;
     let loaded_config = loaded.config;
     let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
+    let project_root = effective.project_root.clone();
+    let project_overlay = if effective.uses_configured_paths {
+        let loaded = loaded_config.as_ref().ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "configured serve paths require a loaded configuration".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let root = project_root.clone().ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "configured serve paths require a project root".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let config_path = loaded.path.canonicalize()?;
+        if !config_path.starts_with(&root) {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!(
+                        "configured project file `{}` escapes project root `{}`",
+                        config_path.display(),
+                        root.display(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Some(ConfiguredProjectOverlay {
+            root,
+            config_source: std::fs::read_to_string(&config_path)?,
+            config_path,
+        })
+    } else {
+        None
+    };
+    let workspace_plan = plan_cli_serve_inputs(
+        &effective.paths,
+        project_overlay.as_ref().map(|project| project.root.as_path()),
+    )?;
 
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
     let runtime_config = crate::apply_runtime_config_patch(
@@ -241,7 +292,9 @@ pub(crate) fn prepare(
         capabilities::build_mech_filesystem_authority(&capability_args, loaded_config.as_ref())?;
 
     Ok(ServePlan {
-        paths: effective.paths,
+        project_root,
+        project_overlay,
+        workspace_plan,
         address: effective.address,
         port: effective.port,
         stylesheet_paths: effective.stylesheet_paths,
@@ -297,6 +350,9 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     render_capability_events(&badge.to_string(), &options.capability_events);
 
     let full_address = format!("{}:{}", options.address, options.port);
+    if let Some(project_root) = &options.project_root {
+        println!("{badge} Project root: {}", project_root.display());
+    }
 
     println!("{badge} Loading resources…");
 
@@ -369,7 +425,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     );
     server.init().await?;
 
-    server.load_workspace(&options.paths)?;
+    server.load_serve_plan(options.workspace_plan, options.project_overlay)?;
 
     println!("{badge} Sources loaded.");
 

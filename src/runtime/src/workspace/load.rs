@@ -218,46 +218,15 @@ fn source_snapshot(
 }
 
 pub(super) fn file_uri_path(canonical_uri: &str) -> Option<PathBuf> {
-  let rest = canonical_uri.strip_prefix("file://")?;
-
   #[cfg(windows)]
   {
-    file_uri_path_windows(rest)
+    if let Some(path) = canonical_uri.strip_prefix("file:////?/") {
+      return Some(PathBuf::from(format!(
+        r"\\?\{}",
+        path.replace('/', r"\"),
+      )));
+    }
   }
 
-  #[cfg(not(windows))]
-  {
-    file_uri_path_unix(rest)
-  }
-}
-
-#[cfg(not(windows))]
-pub(super) fn file_uri_path_unix(rest: &str) -> Option<PathBuf> {
-  if rest.is_empty() {
-    return None;
-  }
-  Some(PathBuf::from(rest))
-}
-
-#[cfg(windows)]
-pub(super) fn file_uri_path_windows(rest: &str) -> Option<PathBuf> {
-  if rest.is_empty() {
-    return None;
-  }
-
-  if let Some(path) = rest.strip_prefix("//?/") {
-    return Some(PathBuf::from(format!(
-      r"\\?\{}",
-      path.replace('/', r"\"),
-    )));
-  }
-
-  if rest.len() >= 3
-    && rest.as_bytes()[0] == b'/'
-    && rest.as_bytes()[2] == b':'
-  {
-    return Some(PathBuf::from(rest[1..].replace('/', r"\")));
-  }
-
-  Some(PathBuf::from(rest.replace('/', r"\")))
+  crate::resolver::file_uri_to_path(canonical_uri).ok()
 }

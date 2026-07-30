@@ -370,8 +370,8 @@ mod config_tests {
 
     #[cfg(feature = "serve")]
     #[test]
-    fn runnable_project_directory_preserves_project_selector() {
-        let root = temp_root("runnable-project-preserves-selector");
+    fn runnable_project_directory_uses_run_then_serve_paths() {
+        let root = temp_root("runnable-project-uses-config-paths");
         let project = root.join("project");
         std::fs::create_dir_all(&project).unwrap();
         std::fs::write(project.join("index.html"), "<html></html>").unwrap();
@@ -393,7 +393,14 @@ mod config_tests {
                 .unwrap()
                 .unwrap();
             let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
-            assert_eq!(options.paths, vec!["project".to_string()]);
+            assert_eq!(
+                options.paths,
+                vec![
+                    project.join("main.mec").to_string_lossy().to_string(),
+                    project.join("served.mec").to_string_lossy().to_string(),
+                ],
+            );
+            assert!(options.uses_configured_paths);
         }
         std::fs::remove_dir_all(root).unwrap();
     }

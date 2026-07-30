@@ -332,7 +332,7 @@ fn looks_like_windows_drive_path(text: &str) -> bool {
   bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
-fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
+pub(crate) fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
   let Some(rest) = uri.strip_prefix("file://") else {
     return Err(filesystem_specifier_error(uri, "file URI must start with file://"));
   };

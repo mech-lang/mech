@@ -52,6 +52,15 @@ mod tests {
     );
   }
 
+  #[cfg(not(windows))]
+  #[test]
+  fn file_uri_path_decodes_escaped_unix_file_uri() {
+    assert_eq!(
+      file_uri_path("file:///tmp/project/a%23b%20caf%C3%A9%25.mec").unwrap(),
+      PathBuf::from("/tmp/project/a#b café%.mec"),
+    );
+  }
+
   #[cfg(windows)]
   #[test]
   fn file_uri_path_converts_windows_drive_file_uri() {
@@ -67,6 +76,15 @@ mod tests {
     assert_eq!(
       file_uri_path("file:////?/C:/Users/cmont/project/main.mec").unwrap(),
       PathBuf::from(r"\\?\C:\Users\cmont\project\main.mec"),
+    );
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn file_uri_path_decodes_escaped_windows_file_uri() {
+    assert_eq!(
+      file_uri_path("file:///C:/Users/cmont/project/a%23b%20caf%C3%A9%25.mec").unwrap(),
+      PathBuf::from(r"C:\Users\cmont\project\a#b café%.mec"),
     );
   }
 
