@@ -53,3 +53,16 @@ fn runtime_delegates_root_symbol_values() {
     assert_eq!(rows[1].0, "a");
     assert_eq!(f64_value(&rows[1].1.to_value()), 1.0);
 }
+
+#[test]
+fn runtime_named_interpreter_lookup_uses_retained_document_metadata() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime
+        .run_string("~~~mech:foo\nanswer := 7\n~~~")
+        .unwrap();
+
+    let id = runtime.interpreter_id_by_name("foo").unwrap();
+    assert_eq!(id, Some(mech_core::hash_str("foo")));
+    assert!(runtime.has_interpreter(id.unwrap()));
+    assert_eq!(runtime.interpreter_id_by_name("missing").unwrap(), None);
+}

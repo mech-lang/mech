@@ -309,6 +309,69 @@ impl WasmDocument {
         self.project.rendered_symbol(interpreter_id, name)
     }
 
+    #[wasm_bindgen(js_name = reset)]
+    pub fn reset(&mut self, encoded: &str) -> Result<(), JsValue> {
+        // Construct before touching the live project. A malformed replacement
+        // must leave the current document usable.
+        let replacement = Self::from_encoded(encoded)?;
+        let was_started = self.project.started && !self.project.stopped;
+
+        self.project.stop()?;
+        self.project = replacement.project;
+        if was_started {
+            self.project.start()?;
+        }
+        Ok(())
+    }
+
+    #[wasm_bindgen(js_name = step)]
+    pub fn step(&mut self, count: u64) -> Result<(), JsValue> {
+        if count == 0 {
+            return Err(js_error("count must be greater than zero"));
+        }
+        #[cfg(feature = "functions")]
+        {
+            for _ in 0..count {
+                self.project.runtime.step(0).map_err(to_js_error)?;
+            }
+            Ok(())
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            let _ = count;
+            Err(js_error("this WASM artifact was built without reactive step support"))
+        }
+    }
+
+    #[wasm_bindgen(js_name = renderedSymbols)]
+    pub fn rendered_symbols(&self, names: JsValue) -> Result<JsValue, JsValue> {
+        let names = rendered_symbol_names_from_js(names)?;
+        let values = match names {
+            Some(names) => {
+                let names = names.iter().map(String::as_str).collect::<Vec<_>>();
+                self.project.runtime.root_symbol_values(&names).map_err(to_js_error)?
+            }
+            None => self.project.runtime.root_symbol_values_all().map_err(to_js_error)?,
+        };
+        let rows = Array::new();
+        for (name, value) in values {
+            rows.push(&rendered_symbol_row(&name, value)?);
+        }
+        Ok(rows.into())
+    }
+
+    #[wasm_bindgen(js_name = interpreterIdByName)]
+    pub fn interpreter_id_by_name(&self, name: &str) -> Result<JsValue, JsValue> {
+        self.project
+            .runtime
+            .interpreter_id_by_name(name)
+            .map_err(to_js_error)
+            .map(|id| {
+                id.map(|id| js_sys::BigInt::from(id).into())
+                    .unwrap_or(JsValue::NULL)
+            })
+    }
+
     pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
         self.project
             .runtime
@@ -791,6 +854,45 @@ fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValu
         )),
     )?;
     Ok(rendered.into())
+}
+
+fn rendered_symbol_names_from_js(names: JsValue) -> Result<Option<Vec<String>>, JsValue> {
+    if names.is_null() || names.is_undefined() {
+        return Ok(None);
+    }
+    if !Array::is_array(&names) {
+        return Err(js_error("renderedSymbols names must be null, undefined, or an array of strings"));
+    }
+    Array::from(&names)
+        .iter()
+        .map(|name| {
+            name.as_string().ok_or_else(|| {
+                js_error("renderedSymbols names must contain only strings")
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some)
+}
+
+fn rendered_symbol_row(
+    name: &str,
+    snapshot: mech_runtime::RuntimeValueSnapshot,
+) -> Result<JsValue, JsValue> {
+    let rendered_value = rendered_value(snapshot)?;
+    let row = Object::new();
+    Reflect::set(
+        &row,
+        &JsValue::from_str("name"),
+        &JsValue::from_str(name),
+    )?;
+    for property in ["kind", "inlineHtml", "blockHtml"] {
+        Reflect::set(
+            &row,
+            &JsValue::from_str(property),
+            &Reflect::get(&rendered_value, &JsValue::from_str(property))?,
+        )?;
+    }
+    Ok(row.into())
 }
 fn require_run(document: &MechConfigDocument) -> mech_core::MResult<&mech_runtime::RunHostConfig> {
     let run = document.run.as_ref().ok_or_else(|| {
@@ -1410,10 +1512,15 @@ rows := |id<string> x<f64>|
 #[cfg(all(test, target_arch = "wasm32"))]
 mod browser_tests {
     use super::*;
-    use js_sys::Object;
+    use js_sys::{Array, Object};
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+    fn encoded_document(source: &str) -> String {
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        mech_core::nodes::compress_and_encode(&tree).unwrap()
+    }
 
 
     #[wasm_bindgen_test]
@@ -1456,6 +1563,97 @@ mod browser_tests {
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_evaluate_returns_rendered_value() {
+        let encoded = encoded_document("answer := 41 + 1\nanswer");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        let rendered = document.evaluate("answer + 1").unwrap();
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("43"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_restores_initial_program() {
+        let initial = encoded_document("answer := 1\nanswer");
+        let mut document = WasmDocument::from_encoded(&initial).unwrap();
+        document.evaluate("temporary := 9\ntemporary").unwrap();
+        assert!(!document.rendered_symbol(0, "temporary").unwrap().is_null());
+
+        document.reset(&initial).unwrap();
+
+        assert!(document.rendered_symbol(0, "temporary").unwrap().is_null());
+        let answer = document.rendered_symbol(0, "answer").unwrap();
+        assert_eq!(
+            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("1"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_step_rejects_zero() {
+        let encoded = encoded_document("answer := 1\nanswer");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        assert!(document.step(0).is_err());
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_rendered_symbols_returns_detached_rows() {
+        let initial = encoded_document("answer := 42\nanswer");
+        let replacement = encoded_document("answer := 7\nanswer");
+        let mut document = WasmDocument::from_encoded(&initial).unwrap();
+        let requested = Array::new();
+        requested.push(&JsValue::from_str("answer"));
+        let rows = Array::from(&document.rendered_symbols(requested.into()).unwrap());
+        assert_eq!(rows.length(), 1);
+        let row = rows.get(0);
+        assert_eq!(
+            Reflect::get(&row, &JsValue::from_str("name"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("answer"),
+        );
+        assert_eq!(
+            Reflect::get(&row, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+        );
+
+        document.reset(&replacement).unwrap();
+        assert_eq!(
+            Reflect::get(&row, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+            "rendered symbol rows must not retain a live runtime value",
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_named_interpreter_lookup_is_stable() {
+        let encoded = encoded_document("~~~mech:foo\nanswer := 7\n~~~");
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let id = document.interpreter_id_by_name("foo").unwrap();
+        assert!(id.is_bigint());
+        assert_eq!(
+            id,
+            JsValue::from(js_sys::BigInt::from(mech_core::hash_str("foo"))),
+        );
+        assert!(document.interpreter_id_by_name("missing").unwrap().is_null());
     }
 
     #[wasm_bindgen_test]

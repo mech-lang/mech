@@ -14,6 +14,9 @@ pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.j
 #[cfg(has_file_project_js)]
 pub(crate) static PROJECTJS: &str = include_str!("../../include/project.js");
 
+#[cfg(has_file_document_js)]
+pub(crate) static DOCUMENTJS: &str = include_str!("../../include/document.js");
+
 #[cfg(has_file_shim)]
 pub(crate) static SHIMHTML: &str = include_str!("../../include/index.html");
 #[cfg(not(has_file_shim))]
@@ -39,6 +42,11 @@ fn embedded_project_js() -> Option<&'static str> { Some(PROJECTJS) }
 #[cfg(not(has_file_project_js))]
 fn embedded_project_js() -> Option<&'static str> { None }
 
+#[cfg(has_file_document_js)]
+fn embedded_document_js() -> Option<&'static str> { Some(DOCUMENTJS) }
+#[cfg(not(has_file_document_js))]
+fn embedded_document_js() -> Option<&'static str> { None }
+
 #[derive(Clone, Debug)]
 pub(crate) struct WebResourceDefaults {
     pub stylesheet_backup_url: String,
@@ -49,6 +57,7 @@ pub(crate) struct WebResourceDefaults {
     pub mech_wasm: Option<&'static [u8]>,
     pub mech_js: Option<&'static [u8]>,
     pub project_js: Option<&'static str>,
+    pub document_js: Option<&'static str>,
 }
 
 impl WebResourceDefaults {
@@ -70,6 +79,7 @@ impl WebResourceDefaults {
             mech_wasm: embedded_wasm(),
             mech_js: embedded_js(),
             project_js: embedded_project_js(),
+            document_js: embedded_document_js(),
         }
     }
 }
@@ -414,4 +424,15 @@ mod tests {
         assert_eq!(loaded.local_paths, vec![css.canonicalize().unwrap()]);
         std::fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn embedded_document_controller_is_safe_to_inline_in_a_script_element() {
+        let controller = embedded_document_js()
+            .expect("the shipped document controller must be embedded");
+        assert!(
+            !controller.to_ascii_lowercase().contains("</script"),
+            "the controller is inserted into a script element and must not close it",
+        );
+    }
+
 }

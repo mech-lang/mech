@@ -7,6 +7,9 @@ use crate::RuntimeValueSnapshot;
 use mech_core::{
   MResult,
   MechError,
+  MechSourceCode,
+  Program,
+  SectionElement,
   Value,
 };
 
@@ -32,6 +35,23 @@ impl MechRuntime {
 
   pub fn root_plan_len(&self) -> usize {
     self.program.interpreter().plan_len()
+  }
+
+  /// Resolves a named fenced-document interpreter to its stable runtime ID.
+  ///
+  /// The source metadata is retained by the root interpreter, while the
+  /// hierarchy confirms that the corresponding interpreter still exists.
+  /// Callers receive only an ID; no live interpreter or borrow escapes this
+  /// query boundary.
+  pub fn interpreter_id_by_name(
+    &self,
+    name: &str,
+  ) -> MResult<Option<u64>> {
+    let mut candidate = None;
+    for source in &self.program.interpreter().code {
+      collect_interpreter_id_from_source(source, name, &mut candidate);
+    }
+    Ok(candidate.filter(|id| self.program.has_interpreter(*id)))
   }
 
   pub fn output_value_for_interpreter(
@@ -152,5 +172,53 @@ impl MechRuntime {
       },
       None,
     ))
+  }
+}
+
+fn collect_interpreter_id_from_source(
+  source: &MechSourceCode,
+  name: &str,
+  candidate: &mut Option<u64>,
+) {
+  match source {
+    MechSourceCode::Tree(tree) => {
+      collect_interpreter_id_from_program(tree, name, candidate);
+    }
+    MechSourceCode::Program(sources) => {
+      for source in sources {
+        collect_interpreter_id_from_source(source, name, candidate);
+      }
+    }
+    _ => {}
+  }
+}
+
+fn collect_interpreter_id_from_program(
+  program: &Program,
+  name: &str,
+  candidate: &mut Option<u64>,
+) {
+  for section in &program.body.sections {
+    for element in &section.elements {
+      collect_interpreter_id_from_element(element, name, candidate);
+    }
+  }
+}
+
+fn collect_interpreter_id_from_element(
+  element: &SectionElement,
+  name: &str,
+  candidate: &mut Option<u64>,
+) {
+  match element {
+    SectionElement::FencedMechCode(block)
+      if !block.config.disabled && block.config.namespace_str == name =>
+    {
+      *candidate = Some(block.config.namespace);
+    }
+    SectionElement::Float((element, _)) => {
+      collect_interpreter_id_from_element(element, name, candidate);
+    }
+    _ => {}
   }
 }
