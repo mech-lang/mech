@@ -122,7 +122,10 @@ fn windows_run_resolves_relative_and_absolute_source_paths() {
         .join("main # %.mec");
 
     let mut relative_command = mech_command(&working_dir, "run");
-    relative_command.arg(&relative);
+    relative_command
+        .arg("--allow-read")
+        .arg(&source_dir)
+        .arg(&relative);
     let relative_output = run_command(relative_command, "relative Windows run");
     assert_command_success("relative Windows run", &relative_output);
     assert_no_missing_root_diagnostic("relative Windows run", &relative_output);
@@ -131,7 +134,10 @@ fn windows_run_resolves_relative_and_absolute_source_paths() {
 
     let absolute = source.canonicalize().unwrap();
     let mut absolute_command = mech_command(&working_dir, "run");
-    absolute_command.arg(&absolute);
+    absolute_command
+        .arg("--allow-read")
+        .arg(&source_dir)
+        .arg(&absolute);
     let absolute_output = run_command(absolute_command, "absolute Windows run");
     assert_command_success("absolute Windows run", &absolute_output);
     assert_no_missing_root_diagnostic("absolute Windows run", &absolute_output);
