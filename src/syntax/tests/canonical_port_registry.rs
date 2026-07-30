@@ -11,8 +11,9 @@ const EXPECTED_RULES: usize = 540;
 const EXPECTED_PHASE_2A: usize = 167;
 const EXPECTED_PHASE_2B: usize = 13;
 const EXPECTED_PHASE_2C: usize = 30;
-const EXPECTED_PORTED: usize = 210;
-const EXPECTED_UNPORTED: usize = 330;
+const EXPECTED_PHASE_2D: usize = 53;
+const EXPECTED_PORTED: usize = 263;
+const EXPECTED_UNPORTED: usize = 277;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -74,6 +75,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
         Some(PortPhase::Phase2A) => "2A",
         Some(PortPhase::Phase2B) => "2B",
         Some(PortPhase::Phase2C) => "2C",
+        Some(PortPhase::Phase2D) => "2D",
     }
 }
 
@@ -454,6 +456,20 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(ported.len(), EXPECTED_PORTED);
     assert_eq!(CANONICAL_PORTS.len() - ported.len(), EXPECTED_UNPORTED);
     assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| port.syntax == SyntaxPortStatus::ParityVerified)
+            .count(),
+        258
+    );
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| port.syntax == SyntaxPortStatus::SyntaxPorted)
+            .count(),
+        5
+    );
+    assert_eq!(
         ported
             .iter()
             .filter(|port| port.phase == Some(PortPhase::Phase2A))
@@ -477,9 +493,16 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         ported
             .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2D))
+            .count(),
+        EXPECTED_PHASE_2D
+    );
+    assert_eq!(
+        ported
+            .iter()
             .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
             .count(),
-        52
+        104
     );
     assert_eq!(
         ported
@@ -493,7 +516,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
             .count(),
-        152
+        153
     );
 }
 
@@ -606,6 +629,124 @@ fn phase_2c_registry_accounting_and_policies_are_exact() {
             })
             .count(),
         25
+    );
+}
+
+#[test]
+fn phase_2d_registry_accounting_and_policies_are_exact() {
+    let node_policies = [
+        ("add-sub-operator", "AddSubOperator"),
+        ("mul-div-operator", "MulDivOperator"),
+        ("power-operator", "PowerOperator"),
+        ("matrix-operator", "MatrixOperator"),
+        ("range-operator", "RangeOperator"),
+        ("comparison-operator", "ComparisonOperator"),
+        ("logic-operator", "LogicOperator"),
+        ("table-operator", "TableOperator"),
+        ("set-operator", "SetOperator"),
+        ("add", "AddOperation"),
+        ("subtract", "SubtractOperation"),
+        ("raw-subtract", "RawSubtractOperation"),
+        ("spaced-subtract", "SpacedSubtractOperation"),
+        ("multiply", "MultiplyOperation"),
+        ("divide", "DivideOperation"),
+        ("modulus", "ModulusOperation"),
+        ("power", "PowerOperation"),
+        ("matrix-multiply", "MatrixMultiplyOperation"),
+        ("matrix-solve", "MatrixSolveOperation"),
+        ("dot-product", "DotProductOperation"),
+        ("cross-product", "CrossProductOperation"),
+        ("range-inclusive", "RangeInclusiveOperation"),
+        ("range-exclusive", "RangeExclusiveOperation"),
+        ("not-equal", "NotEqualOperation"),
+        ("equal-to", "EqualToOperation"),
+        ("strict-not-equal", "StrictNotEqualOperation"),
+        ("strict-equal", "StrictEqualOperation"),
+        ("greater-than", "GreaterThanOperation"),
+        ("less-than", "LessThanOperation"),
+        ("greater-than-equal", "GreaterThanEqualOperation"),
+        ("less-than-equal", "LessThanEqualOperation"),
+        ("or", "OrOperation"),
+        ("and", "AndOperation"),
+        ("not", "NotOperation"),
+        ("xor", "XorOperation"),
+        ("join", "JoinOperation"),
+        ("left-join", "LeftJoinOperation"),
+        ("right-join", "RightJoinOperation"),
+        ("full-join", "FullJoinOperation"),
+        ("left-semi-join", "LeftSemiJoinOperation"),
+        ("left-anti-join", "LeftAntiJoinOperation"),
+        ("union-op", "UnionOperation"),
+        ("intersection", "IntersectionOperation"),
+        ("difference", "DifferenceOperation"),
+        ("complement", "ComplementOperation"),
+        ("subset", "SubsetOperation"),
+        ("superset", "SupersetOperation"),
+        ("proper-subset", "ProperSubsetOperation"),
+        ("proper-superset", "ProperSupersetOperation"),
+        ("element-of", "ElementOfOperation"),
+        ("not-element-of", "NotElementOfOperation"),
+        ("symmetric-difference", "SymmetricDifferenceOperation"),
+    ];
+    let expected_names = node_policies
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(["transpose"])
+        .collect::<BTreeSet<_>>();
+    assert_eq!(node_policies.len(), 52);
+    assert_eq!(expected_names.len(), EXPECTED_PHASE_2D);
+
+    let phase_2d = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2D))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2d.len(), EXPECTED_PHASE_2D);
+    assert_eq!(
+        phase_2d.iter().map(|port| port.name).collect::<BTreeSet<_>>(),
+        expected_names
+    );
+
+    for port in phase_2d {
+        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
+            assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
+            assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
+        } else {
+            assert_eq!(port.name, "transpose");
+            assert_eq!(port.node_policy, NodePolicy::Transparent);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        }
+    }
+
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| {
+                port.phase == Some(PortPhase::Phase2D)
+                    && port.lowering == LoweringPortStatus::ParityVerified
+            })
+            .count(),
+        52
+    );
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| {
+                port.phase == Some(PortPhase::Phase2D)
+                    && port.lowering == LoweringPortStatus::Pending
+            })
+            .count(),
+        0
+    );
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| {
+                port.phase == Some(PortPhase::Phase2D)
+                    && port.lowering == LoweringPortStatus::NotApplicable
+            })
+            .count(),
+        1
     );
 }
 
@@ -770,6 +911,80 @@ fn phase_2c_recursive_parent_rules_remain_unported() {
         "factor",
         "expression",
     ] {
+        let port = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
+        assert_eq!(port.phase, None, "{name}");
+        assert_eq!(port.node_policy, NodePolicy::Undecided, "{name}");
+        assert_eq!(port.lowering, LoweringPortStatus::Pending, "{name}");
+    }
+}
+
+#[test]
+fn phase_2d_expression_and_related_parent_rules_remain_unported() {
+    let deferred = [
+        "expression",
+        "match-expression",
+        "match-arm",
+        "formula",
+        "l1",
+        "l2",
+        "l3",
+        "l4",
+        "l5",
+        "l6",
+        "l7",
+        "factor",
+        "parenthetical-term",
+        "negate-factor",
+        "not-factor",
+        "range-expression",
+        "literal",
+        "kind",
+        "kind-annotation",
+        "kind-with-option",
+        "var",
+        "structure",
+        "matrix",
+        "table",
+        "tuple",
+        "tuple-struct",
+        "record",
+        "map",
+        "set",
+        "empty-map",
+        "empty-set",
+        "function-call",
+        "argument-list",
+        "call-arg",
+        "call-arg-with-binding",
+        "set-comprehension",
+        "matrix-comprehension",
+        "comprehension-qualifier",
+        "generator",
+        "pattern",
+        "pattern-array",
+        "pattern-tuple",
+        "pattern-atom-struct",
+        "pattern-tuple-struct",
+        "subscript",
+        "slice",
+        "slice-ref",
+        "formula-subscript",
+        "range-subscript",
+        "fsm-pipe",
+        "fsm-instance",
+        "statement-separator",
+        "select-all",
+        "guard-operator",
+        "op-assign-operator",
+        "send-operator",
+    ];
+    assert_eq!(deferred.len(), 56);
+
+    for name in deferred {
         let port = CANONICAL_PORTS
             .iter()
             .find(|port| port.name == name)
