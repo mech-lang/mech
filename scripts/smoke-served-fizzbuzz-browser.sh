@@ -276,7 +276,18 @@ PY
     sed -n '1,420p' "$dom_file" >&2 || true
     exit 1
   fi
-  assert_fizzbuzz_dom "$dom_file"
+  if ! assert_fizzbuzz_dom "$dom_file"; then
+    echo "FizzBuzz DOM assertion failed: $label" >&2
+    sed -n '1,260p' "$server_log" >&2 || true
+    sed -n '1,260p' "$chrome_log" >&2 || true
+    grep -nE \
+      'data-mech-document|data-mech-block|mech-block-output|mech-document-error' \
+      "$dom_file" \
+      | tail -40 \
+      | cut -c1-2000 >&2 || true
+    sed -n '1,420p' "$dom_file" >&2 || true
+    exit 1
+  fi
 
   for route in \
     "/" \
