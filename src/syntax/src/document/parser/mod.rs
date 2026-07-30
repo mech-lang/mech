@@ -10,6 +10,7 @@ use crate::document::{
   RuleId, Severity, SyntaxKind, SyntaxSnapshot, TextRange, TextSize, TextSnapshot, TokenFlags,
 };
 
+mod canonical_ports;
 mod canonical_rules;
 pub mod checkpoint;
 pub mod cursor;
