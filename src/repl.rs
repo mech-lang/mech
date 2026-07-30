@@ -145,15 +145,6 @@ impl MechRepl {
   }
 
   #[cfg(feature = "run")]
-  pub(crate) fn runtime_has_driven_live_input_bindings(&self) -> MResult<bool> {
-    self
-      .runtime
-      .as_ref()
-      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
-      .has_driven_live_input_bindings()
-  }
-
-  #[cfg(feature = "run")]
   pub(crate) fn start_runtime_input_drivers(&mut self) -> MResult<()> {
     self
       .runtime

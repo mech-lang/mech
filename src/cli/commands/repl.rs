@@ -1,5 +1,4 @@
 use std::io;
-#[cfg(feature = "run")]
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 #[cfg(any(feature = "mika", feature = "run"))]
@@ -100,13 +99,55 @@ enum ReplLoopControl {
     Quit,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReplInterruptDisposition {
+    Continue,
+    GracefulRuntimeExit,
+    ImmediateProcessExit,
+}
+
+fn repl_interrupt_disposition(
+    runtime_backed: bool,
+    interrupt_count: usize,
+) -> ReplInterruptDisposition {
+    if interrupt_count < 3 {
+        ReplInterruptDisposition::Continue
+    } else if runtime_backed {
+        ReplInterruptDisposition::GracefulRuntimeExit
+    } else {
+        ReplInterruptDisposition::ImmediateProcessExit
+    }
+}
+
+#[cfg(feature = "mika")]
+fn print_repl_farewell() {
+    play_mika_farewell(
+        ProgressDrawTarget::stderr(),
+        format!("{}Okay cya!{}\n", "⸢".bright_yellow(), "⸥".bright_yellow(),),
+        Duration::from_millis(100),
+    );
+}
+
+#[cfg(not(feature = "mika"))]
+fn print_repl_farewell() {
+    println!("Okay cya!");
+}
+
 fn process_repl_input(
     repl: &mut MechRepl,
     input: String,
     output: &mut dyn FnMut(String),
 ) -> ReplLoopControl {
     if input.chars().next() == Some(':') {
-        match parse_repl_command(input.as_str()) {
+        // Path-oriented REPL commands use a CRLF delimiter in the syntax
+        // parser. Normalize terminal input so Unix LF input follows the same
+        // command path as Windows console input.
+        let command_input = input
+            .strip_suffix("\r\n")
+            .or_else(|| input.strip_suffix('\n'))
+            .unwrap_or(input.as_str());
+        let command_input = format!("{command_input}\r\n");
+        match parse_repl_command(command_input.as_str()) {
             Ok((_, repl_command)) => match repl.execute_repl_command_control(repl_command) {
                 Ok(ReplExecution::Output(value)) => output(value),
                 Ok(ReplExecution::Quit) => return ReplLoopControl::Quit,
@@ -211,27 +252,34 @@ fn run_runtime_repl_event_loop(
     repl: &mut MechRepl,
     input: &Receiver<RuntimeReplInput>,
     poll_interval: Duration,
+    exit_requested: &AtomicBool,
     before_input: &mut dyn FnMut(),
     output: &mut dyn FnMut(String),
     after_command: &mut dyn FnMut(),
     after_idle_drain: &mut dyn FnMut(),
 ) -> MResult<CliOutcome> {
     let loop_result = (|| {
-        if repl.runtime_has_driven_live_input_bindings()? {
-            repl.start_runtime_input_drivers()?;
+        if exit_requested.load(Ordering::Acquire) {
+            return Ok(CliOutcome::exit(0));
         }
+
+        repl.start_runtime_input_drivers()?;
 
         before_input();
         loop {
+            if exit_requested.load(Ordering::Acquire) {
+                return Ok(CliOutcome::exit(0));
+            }
+
             match input.recv_timeout(poll_interval) {
                 Ok(RuntimeReplInput::Line(line)) => {
                     repl.drain_all_pending_runtime_host_inputs()?;
-                    if matches!(
-                        process_repl_input(repl, line, output),
-                        ReplLoopControl::Quit
-                    ) {
+                    let control = process_repl_input(repl, line, output);
+                    if matches!(control, ReplLoopControl::Quit) {
                         return Ok(CliOutcome::exit(0));
                     }
+
+                    repl.start_runtime_input_drivers()?;
                     before_input();
                     after_command();
                 }
@@ -286,37 +334,52 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     );
     println!("{} {}", micromika, intro_message);
 
+    let runtime_backed_startup = {
+        #[cfg(feature = "run")]
+        {
+            startup.runtime.is_some()
+        }
+
+        #[cfg(not(feature = "run"))]
+        {
+            false
+        }
+    };
+    let runtime_exit_requested = Arc::new(AtomicBool::new(false));
     let caught_interrupts = Arc::new(Mutex::new(0));
     let ci = caught_interrupts.clone();
+    let handler_exit_requested = runtime_exit_requested.clone();
     ctrlc::set_handler(move || {
         println!("{}", ctrlc_cmd);
-        let should_exit = {
+        let interrupt_count = {
             let mut caught_interrupts = match ci.lock() {
                 Ok(guard) => guard,
                 Err(poisoned) => poisoned.into_inner(),
             };
 
             *caught_interrupts += 1;
-            *caught_interrupts >= 3
+            *caught_interrupts
         };
-        if should_exit {
-            #[cfg(feature = "mika")]
-            play_mika_farewell(
-                ProgressDrawTarget::stderr(),
-                format!("{}Okay cya!{}\n", mika_open, mika_close),
-                Duration::from_millis(100),
-            );
 
-            #[cfg(not(feature = "mika"))]
-            println!("Okay cya!");
-
-            std::process::exit(0);
+        match repl_interrupt_disposition(runtime_backed_startup, interrupt_count) {
+            ReplInterruptDisposition::Continue => {
+                println!(
+                    "\n{} {}Enter {} to terminate this REPL session.{}\n",
+                    micromika_point, mika_open, quit_cmd, mika_close
+                );
+                print_prompt();
+            }
+            ReplInterruptDisposition::GracefulRuntimeExit => {
+                if handler_exit_requested.swap(true, Ordering::AcqRel) {
+                    return;
+                }
+                print_repl_farewell();
+            }
+            ReplInterruptDisposition::ImmediateProcessExit => {
+                print_repl_farewell();
+                std::process::exit(0);
+            }
         }
-        println!(
-            "\n{} {}Enter {} to terminate this REPL session.{}\n",
-            micromika_point, mika_open, quit_cmd, mika_close
-        );
-        print_prompt();
     })
     .map_err(|error| {
         MechError::new(
@@ -367,6 +430,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
                 &mut repl,
                 &input,
                 RUNTIME_REPL_INPUT_POLL,
+                runtime_exit_requested.as_ref(),
                 &mut before_input,
                 &mut output,
                 &mut after_command,

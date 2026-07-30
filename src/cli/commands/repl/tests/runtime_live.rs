@@ -6,13 +6,17 @@ use std::time::Duration;
 use mech_core::{GenericError, MResult, MechError, Ref, Value};
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, MechRuntime,
-    RunResourceGrantConfig, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput,
-    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue, RuntimeHostInstallation,
-    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, materialize_host_manifest,
+    InMemorySourceResolver, RunResourceGrantConfig, RuntimeBuilder, RuntimeHostFactory,
+    RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue,
+    RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    materialize_host_manifest,
 };
 use mech_syntax::ReplCommand;
 
-use super::{CliOutcome, MechRepl, RuntimeReplInput, run_runtime_repl_event_loop};
+use super::{
+    CliOutcome, MechRepl, ReplInterruptDisposition, RuntimeReplInput,
+    repl_interrupt_disposition, run_runtime_repl_event_loop,
+};
 
 const TEST_PROVIDER: &str = "replinput";
 const TEST_INSTANCE: &str = "clock";
@@ -156,10 +160,10 @@ impl RuntimeHostFactory for TestFactory {
     }
 }
 
-fn runtime_with_driver(
+fn runtime_builder_with_driver(
     state: Arc<Mutex<TestDriverState>>,
     submitted: RuntimeHostInputValue,
-) -> MechRuntime {
+) -> RuntimeBuilder {
     RuntimeBuilder::new()
         .host_factory(Box::new(TestFactory::new(state, submitted)))
         .unwrap()
@@ -173,6 +177,24 @@ fn runtime_with_driver(
             operations: vec!["read".to_string()],
             paths: vec![TEST_PATH.to_string()],
         })
+}
+
+fn runtime_with_driver(
+    state: Arc<Mutex<TestDriverState>>,
+    submitted: RuntimeHostInputValue,
+) -> MechRuntime {
+    runtime_builder_with_driver(state, submitted)
+        .build()
+        .unwrap()
+}
+
+fn runtime_with_driver_and_resolver(
+    state: Arc<Mutex<TestDriverState>>,
+    submitted: RuntimeHostInputValue,
+    resolver: InMemorySourceResolver,
+) -> MechRuntime {
+    runtime_builder_with_driver(state, submitted)
+        .source_resolver(resolver)
         .build()
         .unwrap()
 }
@@ -194,6 +216,7 @@ fn runtime_repl_drains_live_inputs_while_idle_and_stops_driver_once() {
     bind_live_input(&mut runtime);
     let mut repl = MechRepl::from_runtime(runtime);
     let (sender, input) = crossbeam_channel::unbounded();
+    let exit_requested = AtomicBool::new(false);
     let idle_drain_completed = Arc::new(AtomicBool::new(false));
     let idle_for_sender = idle_drain_completed.clone();
     let sender_thread = thread::spawn(move || {
@@ -223,6 +246,7 @@ fn runtime_repl_drains_live_inputs_while_idle_and_stops_driver_once() {
         &mut repl,
         &input,
         Duration::from_millis(1),
+        &exit_requested,
         &mut before_input,
         &mut output,
         &mut after_command,
@@ -259,6 +283,7 @@ fn runtime_repl_drain_failure_still_stops_driver() {
     bind_live_input(&mut runtime);
     let mut repl = MechRepl::from_runtime(runtime);
     let (_sender, input) = crossbeam_channel::unbounded();
+    let exit_requested = AtomicBool::new(false);
     let mut before_input = || {};
     let mut output = |_value| {};
     let mut after_command = || {};
@@ -268,6 +293,7 @@ fn runtime_repl_drain_failure_still_stops_driver() {
         &mut repl,
         &input,
         Duration::from_millis(1),
+        &exit_requested,
         &mut before_input,
         &mut output,
         &mut after_command,
@@ -294,6 +320,7 @@ fn non_live_runtime_repl_does_not_start_input_drivers() {
     assert!(!runtime.has_driven_live_input_bindings().unwrap());
     let mut repl = MechRepl::from_runtime(runtime);
     let (sender, input) = crossbeam_channel::unbounded();
+    let exit_requested = AtomicBool::new(false);
     sender
         .send(RuntimeReplInput::Line(":quit\n".to_string()))
         .unwrap();
@@ -306,6 +333,7 @@ fn non_live_runtime_repl_does_not_start_input_drivers() {
         &mut repl,
         &input,
         Duration::from_millis(1),
+        &exit_requested,
         &mut before_input,
         &mut output,
         &mut after_command,
@@ -317,6 +345,207 @@ fn non_live_runtime_repl_does_not_start_input_drivers() {
     let state = state.lock().unwrap();
     assert_eq!(state.attach_count, 1);
     assert_eq!(state.start_count, 0);
+    assert_eq!(state.stop_count, 1);
+    assert!(!state.live);
+}
+
+#[test]
+fn runtime_repl_starts_driver_after_code_adds_live_binding() {
+    let state = Arc::new(Mutex::new(TestDriverState::default()));
+    let runtime = runtime_with_driver(state.clone(), RuntimeHostInputValue::F64(9.0));
+    let mut repl = MechRepl::from_runtime(runtime);
+    let (sender, input) = crossbeam_channel::unbounded();
+    let exit_requested = AtomicBool::new(false);
+    sender
+        .send(RuntimeReplInput::Line(
+            "@pulse := replinput://clock/ticks{:read(value)}\noutput := @pulse/value\n".to_string(),
+        ))
+        .unwrap();
+    sender
+        .send(RuntimeReplInput::Line("observed := output\n".to_string()))
+        .unwrap();
+    sender
+        .send(RuntimeReplInput::Line(":quit\n".to_string()))
+        .unwrap();
+
+    let prompt_start_counts = Arc::new(Mutex::new(Vec::new()));
+    let prompt_state = state.clone();
+    let prompt_start_counts_for_callback = prompt_start_counts.clone();
+    let mut before_input = move || {
+        prompt_start_counts_for_callback
+            .lock()
+            .unwrap()
+            .push(prompt_state.lock().unwrap().start_count);
+    };
+    let mut output = |_value| {};
+    let mut after_command = || {};
+    let mut after_idle_drain = || {};
+
+    let outcome = run_runtime_repl_event_loop(
+        &mut repl,
+        &input,
+        Duration::from_millis(1),
+        &exit_requested,
+        &mut before_input,
+        &mut output,
+        &mut after_command,
+        &mut after_idle_drain,
+    )
+    .unwrap();
+
+    assert!(matches!(outcome, CliOutcome::Exit(0)));
+    assert_eq!(
+        prompt_start_counts.lock().unwrap().as_slice(),
+        [0, 1, 1],
+        "the driver must remain stopped before the first Code command and start once afterward",
+    );
+    assert!(
+        repl.execute_repl_command(ReplCommand::Whos(vec!["observed".to_string()]))
+            .unwrap()
+            .contains('9'),
+        "the queued live input was not applied before the second Code command",
+    );
+    let state = state.lock().unwrap();
+    assert_eq!(state.start_count, 1);
+    assert_eq!(state.stop_count, 1);
+    assert!(!state.live);
+}
+
+#[test]
+fn runtime_repl_starts_driver_after_load_adds_live_binding() {
+    let state = Arc::new(Mutex::new(TestDriverState::default()));
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "memory:live-binding",
+            "@pulse := replinput://clock/ticks{:read(value)}\noutput := @pulse/value\n",
+        )
+        .unwrap();
+    let runtime =
+        runtime_with_driver_and_resolver(state.clone(), RuntimeHostInputValue::F64(9.0), resolver);
+    let mut repl = MechRepl::from_runtime(runtime);
+    let (sender, input) = crossbeam_channel::unbounded();
+    let exit_requested = AtomicBool::new(false);
+    sender
+        .send(RuntimeReplInput::Line(
+            ":load memory:live-binding\n".to_string(),
+        ))
+        .unwrap();
+    sender
+        .send(RuntimeReplInput::Line("observed := output\n".to_string()))
+        .unwrap();
+    sender
+        .send(RuntimeReplInput::Line(":quit\n".to_string()))
+        .unwrap();
+
+    let prompt_start_counts = Arc::new(Mutex::new(Vec::new()));
+    let prompt_state = state.clone();
+    let prompt_start_counts_for_callback = prompt_start_counts.clone();
+    let mut before_input = move || {
+        prompt_start_counts_for_callback
+            .lock()
+            .unwrap()
+            .push(prompt_state.lock().unwrap().start_count);
+    };
+    let mut output = |_value| {};
+    let mut after_command = || {};
+    let mut after_idle_drain = || {};
+
+    let outcome = run_runtime_repl_event_loop(
+        &mut repl,
+        &input,
+        Duration::from_millis(1),
+        &exit_requested,
+        &mut before_input,
+        &mut output,
+        &mut after_command,
+        &mut after_idle_drain,
+    )
+    .unwrap();
+
+    assert!(matches!(outcome, CliOutcome::Exit(0)));
+    assert_eq!(
+        prompt_start_counts.lock().unwrap().as_slice(),
+        [0, 1, 1],
+        "the driver must remain stopped before :load and start once afterward",
+    );
+    assert!(
+        repl.execute_repl_command(ReplCommand::Whos(vec!["observed".to_string()]))
+            .unwrap()
+            .contains('9'),
+        "the queued live input was not applied before the second command",
+    );
+    let state = state.lock().unwrap();
+    assert_eq!(state.start_count, 1);
+    assert_eq!(state.stop_count, 1);
+    assert!(!state.live);
+}
+
+#[test]
+fn runtime_backed_third_interrupt_requests_graceful_exit() {
+    assert_eq!(
+        repl_interrupt_disposition(true, 1),
+        ReplInterruptDisposition::Continue,
+    );
+    assert_eq!(
+        repl_interrupt_disposition(true, 2),
+        ReplInterruptDisposition::Continue,
+    );
+    assert_eq!(
+        repl_interrupt_disposition(true, 3),
+        ReplInterruptDisposition::GracefulRuntimeExit,
+    );
+}
+
+#[test]
+fn program_backed_third_interrupt_retains_immediate_exit_policy() {
+    assert_eq!(
+        repl_interrupt_disposition(false, 3),
+        ReplInterruptDisposition::ImmediateProcessExit,
+    );
+}
+
+#[test]
+fn runtime_repl_graceful_interrupt_stops_driver_once() {
+    let state = Arc::new(Mutex::new(TestDriverState::default()));
+    let mut runtime = runtime_with_driver(state.clone(), RuntimeHostInputValue::F64(9.0));
+    bind_live_input(&mut runtime);
+    let mut repl = MechRepl::from_runtime(runtime);
+    let (_sender, input) = crossbeam_channel::unbounded();
+    let exit_requested = Arc::new(AtomicBool::new(false));
+    let exit_for_thread = exit_requested.clone();
+    let state_for_thread = state.clone();
+    let signal_thread = thread::spawn(move || {
+        for _ in 0..1_000 {
+            if state_for_thread.lock().unwrap().start_count == 1 {
+                exit_for_thread.store(true, Ordering::Release);
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("runtime REPL did not start the attached driver");
+    });
+    let mut before_input = || {};
+    let mut output = |_value| {};
+    let mut after_command = || {};
+    let mut after_idle_drain = || {};
+
+    let outcome = run_runtime_repl_event_loop(
+        &mut repl,
+        &input,
+        Duration::from_millis(1),
+        exit_requested.as_ref(),
+        &mut before_input,
+        &mut output,
+        &mut after_command,
+        &mut after_idle_drain,
+    )
+    .unwrap();
+
+    signal_thread.join().unwrap();
+    assert!(matches!(outcome, CliOutcome::Exit(0)));
+    let state = state.lock().unwrap();
+    assert_eq!(state.start_count, 1);
     assert_eq!(state.stop_count, 1);
     assert!(!state.live);
 }
