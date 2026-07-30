@@ -1,5 +1,8 @@
 #![cfg(feature = "serve")]
 
+#[path = "support/shim_contract.rs"]
+mod shim_contract;
+
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -58,6 +61,26 @@ struct RunningServer {
 
 impl RunningServer {
     fn spawn(current_dir: &Path, input: &Path, no_config: bool) -> Self {
+        Self::spawn_with_web_resources(current_dir, input, no_config, None, None)
+    }
+
+    fn spawn_with_web_resources(
+        current_dir: &Path,
+        input: &Path,
+        no_config: bool,
+        shim: Option<&Path>,
+        stylesheet: Option<&Path>,
+    ) -> Self {
+        Self::spawn_inputs_with_web_resources(current_dir, &[input], no_config, shim, stylesheet)
+    }
+
+    fn spawn_inputs_with_web_resources(
+        current_dir: &Path,
+        inputs: &[&Path],
+        no_config: bool,
+        shim: Option<&Path>,
+        stylesheet: Option<&Path>,
+    ) -> Self {
         let port = available_port();
         let stdout_path = current_dir.join(format!("serve-{port}.stdout.log"));
         let stderr_path = current_dir.join(format!("serve-{port}.stderr.log"));
@@ -81,7 +104,7 @@ impl RunningServer {
         }
         command
             .arg("serve")
-            .arg(input)
+            .args(inputs)
             .arg("--address")
             .arg("127.0.0.1")
             .arg("--port")
@@ -91,6 +114,12 @@ impl RunningServer {
             .stdin(Stdio::null())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr));
+        if let Some(shim) = shim {
+            command.arg("--shim").arg(shim);
+        }
+        if let Some(stylesheet) = stylesheet {
+            command.arg("--stylesheet").arg(stylesheet);
+        }
         let child = command.spawn().expect("Cargo-built mech server must start");
         let mut server = Self {
             child,
@@ -190,7 +219,9 @@ impl RunningServer {
                 Ok(Some(status)) => {
                     self.stopped = true;
                     if !status.success() {
-                        self.fail(&format!("interrupted server exited unsuccessfully: {status}"));
+                        self.fail(&format!(
+                            "interrupted server exited unsuccessfully: {status}"
+                        ));
                     }
                     return;
                 }
@@ -361,6 +392,83 @@ fn parse_response(bytes: Vec<u8>, header_end: usize) -> std::io::Result<HttpResp
     })
 }
 
+fn shim_fixture_path(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("shims")
+        .join(name)
+}
+
+fn shipped_include_path(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("include")
+        .join(name)
+}
+
+fn copy_resource(directory: &TestDirectory, resource: &Path) -> PathBuf {
+    let file_name = resource
+        .file_name()
+        .expect("web resource must have a file name");
+    let destination = directory.path().join(file_name);
+    std::fs::copy(resource, &destination).expect("web resource fixture must be copied");
+    destination
+}
+
+fn copy_slot_fixture(directory: &TestDirectory, name: &str) -> PathBuf {
+    let source = directory.path().join(name);
+    std::fs::copy(shim_fixture_path("all-slots.mec"), &source)
+        .expect("slot-contract source fixture must be copied");
+    std::fs::copy(
+        shim_fixture_path("hero.svg"),
+        directory.path().join("hero.svg"),
+    )
+    .expect("slot-contract hero fixture must be copied");
+    source
+}
+
+fn format_rich_fixture(
+    directory: &TestDirectory,
+    source: &Path,
+    shim: &Path,
+    stylesheet: &Path,
+    output: &Path,
+) {
+    let output_result = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(directory.path())
+        .arg("format")
+        .arg(source)
+        .arg("--html")
+        .arg("--shim")
+        .arg(shim)
+        .arg("--stylesheet")
+        .arg(stylesheet)
+        .arg("--out")
+        .arg(output)
+        .output()
+        .expect("Cargo-built mech formatter must start");
+    assert!(
+        output_result.status.success(),
+        "mech format failed:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output_result.stdout),
+        String::from_utf8_lossy(&output_result.stderr),
+    );
+}
+
+fn assert_served_rich_shell(server: &mut RunningServer, selectors: &[&str]) {
+    let root = server.assert_route("/", 200, "text/html");
+    let html = String::from_utf8_lossy(&root.body);
+    shim_contract::assert_rich_shell(&html, selectors);
+    assert!(
+        html.contains("data-mech-document-status=\"loading\""),
+        "rich shell did not retain its deterministic startup state"
+    );
+    assert!(
+        html.contains("data-mech-source-url-key="),
+        "served document does not identify its source route"
+    );
+}
+
 #[test]
 fn mech_serve_process_routes_work_for_sources_directories_and_projects() {
     let fixture = TestDirectory::new("real HTTP");
@@ -399,11 +507,7 @@ fn mech_serve_process_routes_work_for_sources_directories_and_projects() {
         }
         server.assert_route(&format!("/code/{encoded}.mec"), 200, "text/plain");
         server.assert_route("/_mech/pkg/mech_wasm.js", 200, "application/javascript");
-        let wasm = server.assert_route(
-            "/_mech/pkg/mech_wasm_bg.wasm",
-            200,
-            "application/wasm",
-        );
+        let wasm = server.assert_route("/_mech/pkg/mech_wasm_bg.wasm", 200, "application/wasm");
         if !wasm.body.starts_with(b"\0asm") {
             server.fail("served WASM body did not begin with raw WebAssembly magic");
         }
@@ -485,6 +589,155 @@ fn mech_serve_process_routes_work_for_sources_directories_and_projects() {
 }
 
 #[test]
+fn mech_serve_custom_shim_renders_all_supported_slots() {
+    let fixture = TestDirectory::new("all slots custom shim");
+    let source = copy_slot_fixture(&fixture, "all slots # %.mec");
+    let source_key = "all%20slots%20%23%20%25.mec";
+    let shim = copy_resource(&fixture, &shim_fixture_path("all-slots.html"));
+    let stylesheet = copy_resource(&fixture, &shim_fixture_path("all-slots.css"));
+    let mut server = RunningServer::spawn_with_web_resources(
+        fixture.path(),
+        &source,
+        true,
+        Some(&shim),
+        Some(&stylesheet),
+    );
+
+    let root = server.assert_route("/", 200, "text/html");
+    let html = String::from_utf8_lossy(&root.body);
+    shim_contract::assert_complete_slot_contract(&html, source_key);
+    assert!(
+        html.contains(&format!("data-mech-source-url-key=\"{source_key}\"")),
+        "served page did not point its controller at the encoded source route"
+    );
+    server.assert_route(&format!("/code/{source_key}"), 200, "text/plain");
+}
+
+#[test]
+fn mech_serve_default_shim_restores_rich_shell() {
+    let fixture = TestDirectory::new("default rich shell");
+    let source = copy_slot_fixture(&fixture, "default source.mec");
+    let mut server = RunningServer::spawn(fixture.path(), &source, true);
+
+    assert_served_rich_shell(
+        &mut server,
+        &[
+            "id=\"header\"",
+            "id=\"logo\"",
+            "id=\"nav\"",
+            "id=\"github\"",
+            "class=\"mech-toc\"",
+            "id=\"resizer\"",
+            "id=\"toggle-repl\"",
+        ],
+    );
+}
+
+#[test]
+fn mech_serve_blog_shim_restores_rich_shell() {
+    let fixture = TestDirectory::new("blog rich shell");
+    let source = copy_slot_fixture(&fixture, "blog source.mec");
+    let shim = copy_resource(&fixture, &shipped_include_path("blog.html"));
+    let stylesheet = copy_resource(&fixture, &shipped_include_path("blog.css"));
+    let mut server = RunningServer::spawn_with_web_resources(
+        fixture.path(),
+        &source,
+        true,
+        Some(&shim),
+        Some(&stylesheet),
+    );
+
+    assert_served_rich_shell(
+        &mut server,
+        &[
+            "site-header",
+            "contentShell",
+            "articleIntro",
+            "articleLayout",
+            "hero-panel",
+            "console-pane",
+            "footer",
+        ],
+    );
+}
+
+#[test]
+fn mech_serve_docs_shim_restores_rich_shell() {
+    let fixture = TestDirectory::new("docs rich shell");
+    let source = copy_slot_fixture(&fixture, "docs source.mec");
+    let shim = copy_resource(&fixture, &shipped_include_path("docs.html"));
+    let stylesheet = copy_resource(&fixture, &shipped_include_path("docs.css"));
+    let mut server = RunningServer::spawn_with_web_resources(
+        fixture.path(),
+        &source,
+        true,
+        Some(&shim),
+        Some(&stylesheet),
+    );
+
+    assert_served_rich_shell(
+        &mut server,
+        &[
+            "site-header",
+            "contentShell",
+            "articleIntro",
+            "articleLayout",
+            "docs-content",
+            "console-pane",
+            "footer",
+        ],
+    );
+}
+
+fn assert_formatted_rich_page_is_served(shim: &str, stylesheet: &str) {
+    let fixture = TestDirectory::new(&format!("formatted {shim}"));
+    let source = copy_slot_fixture(&fixture, "all-slots.mec");
+    let output = fixture.path().join("index.html");
+    let shim = copy_resource(&fixture, &shipped_include_path(shim));
+    let stylesheet = copy_resource(&fixture, &shipped_include_path(stylesheet));
+    format_rich_fixture(&fixture, &source, &shim, &stylesheet, &output);
+
+    let mut server = RunningServer::spawn_inputs_with_web_resources(
+        fixture.path(),
+        &[&output, &source],
+        true,
+        None,
+        None,
+    );
+    let root = server.assert_route("/", 200, "text/html");
+    let html = String::from_utf8_lossy(&root.body);
+    shim_contract::assert_rich_shell(
+        &html,
+        &[
+            "site-header",
+            "contentShell",
+            "articleLayout",
+            "console-pane",
+        ],
+    );
+    assert!(
+        html.contains("data-mech-source-url-key=\"\""),
+        "formatted static root should use its embedded document code"
+    );
+    assert!(
+        html.contains("data-mech-document-code"),
+        "formatted static root did not retain its executable document code"
+    );
+    assert!(!html.contains("{{CODE}}"));
+    server.assert_route("/code/all-slots.mec", 200, "text/plain");
+}
+
+#[test]
+fn formatted_blog_page_executes_when_served() {
+    assert_formatted_rich_page_is_served("blog.html", "blog.css");
+}
+
+#[test]
+fn formatted_docs_page_executes_when_served() {
+    assert_formatted_rich_page_is_served("docs.html", "docs.css");
+}
+
+#[test]
 fn mech_serve_interrupt_closes_keep_alive_server_once() {
     let fixture = TestDirectory::new("shutdown");
     let source = fixture.path().join("main.mec");
@@ -510,7 +763,9 @@ fn mech_serve_interrupt_closes_keep_alive_server_once() {
         "{logs}",
     );
     assert!(
-        logs.matches("Graceful shutdown timed out; forcing server close.").count() <= 1,
+        logs.matches("Graceful shutdown timed out; forcing server close.")
+            .count()
+            <= 1,
         "{logs}",
     );
     assert_eq!(logs.matches("Closing server.").count(), 1, "{logs}");

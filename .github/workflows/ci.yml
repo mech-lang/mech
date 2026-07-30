@@ -119,6 +119,14 @@ jobs:
             cli::commands::run::command_outcome_tests::run_command_preserves_non_utf8_source_path \
             -- --exact --nocapture
 
+      - name: Run HTML shim formatter contracts
+        run: |
+          cargo test \
+            --no-default-features \
+            --features formatter \
+            --test mech_format_shims \
+            -- --nocapture
+
       - name: Check isolated interpreter feature boundaries
         run: |
           cargo check -p mech-interpreter \
@@ -294,13 +302,12 @@ jobs:
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 
-      - name: Confirm browser examples are generic
+      - name: Confirm obsolete browser mechanisms are absent
         run: |
           test ! -e examples/common
           test ! -e examples/pkg
           test ! -e examples/analog-clock/clock.js
           test ! -e mech-app
-          test ! -e include/blog.html
           ! rg -n \
             "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\.js" \
             src include examples
@@ -375,9 +382,15 @@ jobs:
           cargo build \
             --bin mech \
             --no-default-features \
-            --features "serve,bundle_web"
+            --features "serve,bundle_web,formatter"
           cp "$CARGO_TARGET_DIR/debug/mech" \
             "$CARGO_TARGET_DIR/embedded-browser-mech"
+
+      - name: Remove generated browser package before served browser acceptance
+        run: rm -rf src/wasm/pkg
+
+      - name: Check shipped rich document shell contracts
+        run: bash scripts/check-shipped-document-shims.sh
 
       - name: Remove browser release intermediates
         run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
@@ -397,6 +410,11 @@ jobs:
         run: |
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-served-fizzbuzz-browser.sh
+
+      - name: Smoke test rich standalone documents in Chrome
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            bash scripts/smoke-served-rich-document-browser.sh
 
       - name: Smoke test served analog clock in Chrome
         run: |
@@ -497,6 +515,16 @@ jobs:
 
       - name: Run Windows source-tooling process tests
         run: cargo test -p mech --test windows_source_paths -- --nocapture
+
+      - name: Run Windows formatter and serve HTML shim contracts
+        run: |
+          cargo test -p mech --no-default-features --features formatter --test mech_format_shims -- --nocapture
+          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_custom_shim_renders_all_supported_slots -- --exact --nocapture
+          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_default_shim_restores_rich_shell -- --exact --nocapture
+          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_blog_shim_restores_rich_shell -- --exact --nocapture
+          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_docs_shim_restores_rich_shell -- --exact --nocapture
+          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve formatted_blog_page_executes_when_served -- --exact --nocapture
+          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve formatted_docs_page_executes_when_served -- --exact --nocapture
 
       - name: Run reduced-feature Windows source-tooling tests
         run: |
