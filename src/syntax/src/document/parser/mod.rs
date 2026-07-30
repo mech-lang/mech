@@ -462,6 +462,9 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn found_syntax(&self) -> FoundSyntax {
+    if self.resource_rule.is_some() {
+      return canonical::found::found_syntax(self, self.offset());
+    }
     let character = self.cursor.context_peek_char();
     if character.is_none() {
       return FoundSyntax {
@@ -541,6 +544,14 @@ impl<'a> Parser<'a> {
       self.resource_diagnostic_emitted = true;
       let rule = self.current_rule().or(self.resource_rule);
       let context = rule.is_none().then(|| self.current_context()).flatten();
+      let found = if self.resource_rule.is_some() {
+        canonical::found::found_syntax(self, range.start)
+      } else {
+        FoundSyntax {
+          kind: Some(SyntaxKind::Unknown),
+          text: None,
+        }
+      };
       let diagnostic = Diagnostic {
         id: self.next_diagnostic_id(),
         code: DiagnosticCode::syntax("recovery-limit"),
@@ -554,10 +565,7 @@ impl<'a> Parser<'a> {
         },
         labels: Vec::new(),
         expected: Vec::new(),
-        found: Some(FoundSyntax {
-          kind: Some(SyntaxKind::Unknown),
-          text: None,
-        }),
+        found: Some(found),
         fixes: Vec::new(),
         related: Vec::new(),
         recovery: Some(RecoveryAction::ResourceLimit { range }),

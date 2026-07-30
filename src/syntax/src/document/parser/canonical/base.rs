@@ -508,14 +508,12 @@ fn consume_escaped_value(parser: &mut Parser<'_>) -> bool {
   let Some(first) = parser.cursor().peek_char() else {
     return false;
   };
-  let accepted = first.is_alphabetic()
-    || matches!(
-      first,
-      '&' | '`' | '$' | '|' | '%' | '@' | '/' | '#' | '=' | '\\'
-        | '~' | '+' | '-' | '*' | '^' | '_' | '.' | '!' | '?' | ','
-        | ':' | ';' | '"' | '\''
-    );
-  if !accepted {
+  let accepted_nonalphabetic = SYMBOL_RULES
+    .iter()
+    .chain(PUNCTUATION_RULES)
+    .filter_map(|rule| fixed_terminal_spec(*rule))
+    .any(|spec| parser.cursor().grapheme_literal_end(spec.literal).is_some());
+  if !first.is_alphabetic() && !accepted_nonalphabetic {
     return false;
   }
   let Some(range) = parser.bump_grapheme_raw() else {

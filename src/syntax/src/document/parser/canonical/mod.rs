@@ -1,5 +1,6 @@
 pub(crate) mod base;
 pub(crate) mod combinator;
+pub(crate) mod found;
 pub(crate) mod grammar;
 mod ports;
 pub(crate) mod roots;
