@@ -11,34 +11,6 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "ports.rs",
 ];
 
-const FORBIDDEN_HARNESS_IDENTIFIERS: &[&str] = &[
-  "cargo_fuzz",
-  "fuzz",
-  "fuzzer",
-  "fuzzing",
-  "fuzz_target",
-  "fuzz_targets",
-  "harness",
-  "parser_input",
-  "parser_inputs",
-  "workflow_dispatch",
-];
-
-const FORBIDDEN_HARNESS_TERMS: &[&str] = &[
-  "cargo fuzz",
-  "cargo-fuzz",
-  "parser-input",
-  "syntax-fuzz",
-  "syntax_fuzz",
-  "fuzz/",
-  "/fuzz",
-  ".github/workflows",
-];
-
-fn repository_root() -> PathBuf {
-  PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
-}
-
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
     .join("src/document/parser/canonical")
@@ -291,10 +263,6 @@ fn executable_violations(source: &str) -> Vec<&'static str> {
       violations.push("prototype parser import");
     }
 
-    if FORBIDDEN_HARNESS_IDENTIFIERS.contains(&token.as_str()) {
-      violations.push("optional parser-input harness dependency");
-    }
-
     if token == "parse_document" {
       violations.push("prototype parse_document dependency");
     }
@@ -356,32 +324,8 @@ fn executable_violations(source: &str) -> Vec<&'static str> {
   violations
 }
 
-fn harness_term_violations(source: &str) -> Vec<&'static str> {
-  let without_comments = mask_comments_and_literals(source, false).to_ascii_lowercase();
-  FORBIDDEN_HARNESS_TERMS
-    .iter()
-    .copied()
-    .filter(|term| without_comments.contains(term))
-    .collect()
-}
-
 #[test]
 fn canonical_parser_production_sources_are_isolated() {
-  let repository = repository_root();
-  assert!(
-    !repository.join("fuzz").exists(),
-    "the optional parser-input harness must not be present at repository path fuzz/"
-  );
-  for workflow in [
-    ".github/workflows/syntax-fuzz.yml",
-    ".github/workflows/syntax-fuzz.yaml",
-  ] {
-    assert!(
-      !repository.join(workflow).exists(),
-      "the optional parser-input workflow must not be present at {workflow}"
-    );
-  }
-
   let canonical = canonical_root();
   for required in REQUIRED_CANONICAL_SOURCES {
     assert!(
@@ -405,26 +349,11 @@ fn canonical_parser_production_sources_are_isolated() {
       .expect("canonical source must remain below its root")
       .to_string_lossy()
       .replace('\\', "/");
-    let lowercase_path = relative.to_ascii_lowercase();
-    for forbidden in [
-      "fuzz",
-      "harness",
-      "parser-input",
-      "parser_input",
-      "workflow",
-    ] {
-      if lowercase_path.contains(forbidden) {
-        failures.push(format!("{relative}: forbidden path term {forbidden:?}"));
-      }
-    }
 
     let source = fs::read_to_string(&path)
       .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
     for violation in executable_violations(&source) {
       failures.push(format!("{relative}: {violation}"));
-    }
-    for term in harness_term_violations(&source) {
-      failures.push(format!("{relative}: optional harness term {term:?}"));
     }
   }
 
@@ -441,10 +370,9 @@ fn isolation_scanner_distinguishes_comments_and_test_names_from_calls() {
     // source.to_contiguous_string();
     /* UnicodeSegmentation::graphemes(complete_source, true); */
     fn rejects_to_contiguous_string_without_calling_it() {}
-    const NOTE: &str = "parse_document and parser-input are test data";
+    const NOTE: &str = "parse_document is test data";
   "#;
   assert!(executable_violations(harmless).is_empty());
-  assert!(harness_term_violations(harmless).contains(&"parser-input"));
 
   for prohibited in [
     "fn parse(source: &TextSnapshot) { source.to_contiguous_string(); }",

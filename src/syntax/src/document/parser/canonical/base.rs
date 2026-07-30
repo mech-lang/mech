@@ -387,7 +387,7 @@ fn consume_exact_token(
   let Ok(len) = u32::try_from(literal.len()) else {
     return false;
   };
-  if len == 0 || !parser.cursor().starts_with(literal) {
+  if len == 0 || parser.cursor().grapheme_literal_end(literal).is_none() {
     return false;
   }
   parser.bump_bytes_token(len, kind).is_some()

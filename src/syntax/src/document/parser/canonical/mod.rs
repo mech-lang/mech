@@ -1,5 +1,8 @@
 pub(crate) mod base;
+pub(crate) mod combinator;
+pub(crate) mod grammar;
 mod ports;
+pub(crate) mod roots;
 pub mod terminal_spec;
 
 pub use ports::{

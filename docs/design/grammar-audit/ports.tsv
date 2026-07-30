@@ -191,23 +191,23 @@ gen-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical bas
 generator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 generator-arrow	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 generator-arrow-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-grammar	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-definition	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-expression	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-factor	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-group	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-identifier	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-list	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-not	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-optional	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-peek	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-range	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-repeat0	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-repeat1	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-rule	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-term	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-terminal	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
-grammar-terminal-token	grammar	parity-verified	parity-verified	transparent	2A	Phase 2A grammar metalanguage
+grammar	grammar	parity-verified	parity-verified	node:Grammar	2A	Phase 2A grammar metalanguage
+grammar-definition	grammar	parity-verified	parity-verified	node:GrammarDefinition	2A	Phase 2A grammar metalanguage
+grammar-expression	grammar	parity-verified	parity-verified	node:GrammarExpression	2A	Phase 2A grammar metalanguage
+grammar-factor	grammar	parity-verified	parity-verified	node:GrammarFactor	2A	Phase 2A grammar metalanguage
+grammar-group	grammar	parity-verified	parity-verified	node:GrammarGroup	2A	Phase 2A grammar metalanguage
+grammar-identifier	grammar	parity-verified	parity-verified	node:GrammarIdentifier	2A	Phase 2A grammar metalanguage
+grammar-list	grammar	parity-verified	parity-verified	node:GrammarList	2A	Phase 2A grammar metalanguage
+grammar-not	grammar	parity-verified	parity-verified	node:GrammarNot	2A	Phase 2A grammar metalanguage
+grammar-optional	grammar	parity-verified	parity-verified	node:GrammarOptional	2A	Phase 2A grammar metalanguage
+grammar-peek	grammar	parity-verified	parity-verified	node:GrammarPeek	2A	Phase 2A grammar metalanguage
+grammar-range	grammar	parity-verified	parity-verified	node:GrammarRange	2A	Phase 2A grammar metalanguage
+grammar-repeat0	grammar	parity-verified	parity-verified	node:GrammarRepeat0	2A	Phase 2A grammar metalanguage
+grammar-repeat1	grammar	parity-verified	parity-verified	node:GrammarRepeat1	2A	Phase 2A grammar metalanguage
+grammar-rule	grammar	parity-verified	parity-verified	node:GrammarRule	2A	Phase 2A grammar metalanguage
+grammar-term	grammar	parity-verified	parity-verified	node:GrammarTerm	2A	Phase 2A grammar metalanguage
+grammar-terminal	grammar	parity-verified	parity-verified	node:GrammarTerminal	2A	Phase 2A grammar metalanguage
+grammar-terminal-token	grammar	parity-verified	parity-verified	node:GrammarTerminalToken	2A	Phase 2A grammar metalanguage
 grave	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 grave-codeblock-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 greater-than	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -371,7 +371,7 @@ paragraph-newline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 paragraph-text	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 parenthetical-term	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 parse	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-parse-grammar	parser	parity-verified	parity-verified	transparent	2A	Phase 2A explicit dependency closure
+parse-grammar	parser	parity-verified	parity-verified	root:GrammarDocument	2A	Phase 2A explicit dependency closure
 parse-mech	parser	unported	pending	undecided		Deferred beyond Phase 2A.
 parse-repl-command	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 pattern	patterns	unported	pending	undecided		Deferred beyond Phase 2A.

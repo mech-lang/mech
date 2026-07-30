@@ -47,6 +47,26 @@ struct ParserOutput {
   stats: ParseStats,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParserImplementation {
+  Prototype,
+  Canonical,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParseRoot {
+  Document,
+  Grammar,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParseRequestError {
+  Unsupported {
+    implementation: ParserImplementation,
+    root: ParseRoot,
+  },
+}
+
 pub(crate) struct Parser<'a> {
   source: &'a TextSnapshot,
   parse_range: TextRange,
@@ -62,6 +82,7 @@ pub(crate) struct Parser<'a> {
   halted: bool,
   resource_diagnostic_emitted: bool,
   resource_finalizing: bool,
+  resource_rule: Option<RuleId>,
   ids: &'a mut IdGenerator,
   stats: ParseStats,
 }
@@ -87,6 +108,7 @@ impl<'a> Parser<'a> {
       halted: false,
       resource_diagnostic_emitted: false,
       resource_finalizing: false,
+      resource_rule: None,
       ids,
       stats: ParseStats {
         source_bytes: u64::from(source.byte_len().0),
@@ -98,7 +120,7 @@ impl<'a> Parser<'a> {
   fn for_range(
     source: &'a TextSnapshot,
     range: TextRange,
-    _root_kind: SyntaxKind,
+    root_kind: SyntaxKind,
     initial_nesting: u32,
     config: ParseConfig,
     ids: &'a mut IdGenerator,
@@ -118,6 +140,7 @@ impl<'a> Parser<'a> {
       halted: false,
       resource_diagnostic_emitted: false,
       resource_finalizing: false,
+      resource_rule: canonical_fragment_rule(root_kind),
       ids,
       stats: ParseStats {
         source_bytes: u64::from(range.len().0),
@@ -132,6 +155,10 @@ impl<'a> Parser<'a> {
 
   pub(crate) fn source(&self) -> &TextSnapshot {
     self.source
+  }
+
+  pub(crate) fn set_resource_rule(&mut self, rule: RuleId) {
+    self.resource_rule = Some(rule);
   }
 
   pub(crate) fn cursor(&self) -> &Cursor<'a> {
@@ -512,13 +539,15 @@ impl<'a> Parser<'a> {
     }
     if !self.resource_diagnostic_emitted {
       self.resource_diagnostic_emitted = true;
+      let rule = self.current_rule().or(self.resource_rule);
+      let context = rule.is_none().then(|| self.current_context()).flatten();
       let diagnostic = Diagnostic {
         id: self.next_diagnostic_id(),
         code: DiagnosticCode::syntax("recovery-limit"),
         phase: DiagnosticPhase::Syntax,
         severity: Severity::Error,
-        rule: self.current_rule(),
-        context: self.current_context(),
+        rule,
+        context,
         primary: DiagnosticAnchor::Absolute {
           revision: self.source.revision(),
           range,
@@ -616,9 +645,48 @@ impl<'a> Parser<'a> {
   }
 }
 
-pub fn parse_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
+pub fn parse_syntax(
+  source: TextSnapshot,
+  root: ParseRoot,
+  implementation: ParserImplementation,
+  config: ParseConfig,
+) -> Result<SyntaxSnapshot, ParseRequestError> {
   let mut ids = IdGenerator::new();
-  parse_document_with_ids(source, config, &mut ids)
+  match (implementation, root) {
+    (ParserImplementation::Prototype, ParseRoot::Document) => {
+      Ok(parse_document_with_ids(source, config, &mut ids))
+    }
+    (ParserImplementation::Canonical, ParseRoot::Grammar) => {
+      Ok(parse_canonical_grammar_with_ids(source, config, &mut ids))
+    }
+    _ => Err(ParseRequestError::Unsupported {
+      implementation,
+      root,
+    }),
+  }
+}
+
+pub fn parse_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
+  parse_syntax(
+    source,
+    ParseRoot::Document,
+    ParserImplementation::Prototype,
+    config,
+  )
+  .expect("prototype document parsing is a supported configuration")
+}
+
+pub fn parse_canonical_grammar(
+  source: TextSnapshot,
+  config: ParseConfig,
+) -> SyntaxSnapshot {
+  parse_syntax(
+    source,
+    ParseRoot::Grammar,
+    ParserImplementation::Canonical,
+    config,
+  )
+  .expect("canonical grammar parsing is a supported configuration")
 }
 
 pub(crate) fn parse_document_with_ids(
@@ -629,8 +697,41 @@ pub(crate) fn parse_document_with_ids(
   let mut parser = Parser::new(&source, config, ids);
   document::parse_document_root(&mut parser);
   let output = parser.finish();
+  finish_snapshot(source, output, ids, SyntaxKind::Document)
+}
+
+fn parse_canonical_grammar_with_ids(
+  source: TextSnapshot,
+  config: ParseConfig,
+  ids: &mut IdGenerator,
+) -> SyntaxSnapshot {
+  let mut parser = Parser::new(&source, config, ids);
+  parser.set_resource_rule(rules::PARSE_GRAMMAR);
+  canonical::roots::parse_grammar_root(&mut parser);
+  let output = parser.finish();
+  finish_snapshot(source, output, ids, SyntaxKind::GrammarDocument)
+}
+
+fn canonical_fragment_rule(kind: SyntaxKind) -> Option<RuleId> {
+  match kind {
+    SyntaxKind::Grammar => Some(rules::GRAMMAR),
+    SyntaxKind::GrammarRule => Some(rules::GRAMMAR_RULE),
+    SyntaxKind::GrammarExpression => Some(rules::GRAMMAR_EXPRESSION),
+    SyntaxKind::GrammarTerm => Some(rules::GRAMMAR_TERM),
+    SyntaxKind::GrammarFactor => Some(rules::GRAMMAR_FACTOR),
+    SyntaxKind::GrammarTerminalToken => Some(rules::GRAMMAR_TERMINAL_TOKEN),
+    _ => None,
+  }
+}
+
+fn finish_snapshot(
+  source: TextSnapshot,
+  output: ParserOutput,
+  ids: &mut IdGenerator,
+  fallback_kind: SyntaxKind,
+) -> SyntaxSnapshot {
   let sink_result = sink(&output.events, &source, ids)
-    .unwrap_or_else(|_| fallback_tree(&source, ids));
+    .unwrap_or_else(|_| fallback_tree(&source, ids, fallback_kind));
 
   let mut diagnostics = DiagnosticStore::new(source.revision());
   for mut pending in output.diagnostics {
@@ -653,24 +754,25 @@ pub(crate) fn parse_document_with_ids(
   snapshot
 }
 
-fn fallback_tree(source: &TextSnapshot, ids: &mut IdGenerator) -> SinkResult {
+fn fallback_tree(
+  source: &TextSnapshot,
+  ids: &mut IdGenerator,
+  root_kind: SyntaxKind,
+) -> SinkResult {
   let mut builder = GreenBuilder::new(ids);
-  builder.start_node(SyntaxKind::Document);
+  builder.start_node(root_kind);
   if !source.is_empty() {
     builder.start_node_with_flags(SyntaxKind::Error, NodeFlags::ERROR);
-    let text = source.to_contiguous_string();
-    let _ = builder.token_with_flags(
-      SyntaxKind::Unknown,
-      &text,
-      TokenFlags::ERROR,
-    );
+    for chunk in source.chunks() {
+      let _ = builder.token_with_flags(SyntaxKind::Unknown, chunk, TokenFlags::ERROR);
+    }
     let _ = builder.finish_node();
   }
   let _ = builder.finish_node();
   let root = builder.finish().unwrap_or_else(|_| {
     Arc::new(GreenNode {
       id: ids.node(),
-      kind: SyntaxKind::Document,
+      kind: root_kind,
       text_len: TextSize::ZERO,
       children: Arc::from([]),
       flags: NodeFlags::ERROR,
@@ -697,6 +799,9 @@ pub(crate) fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
       | SyntaxKind::SectionElement
       | SyntaxKind::Subtitle
       | SyntaxKind::UlSubtitle => RestartMode::Document,
+      SyntaxKind::GrammarDocument | SyntaxKind::Grammar | SyntaxKind::GrammarRule => {
+        RestartMode::Grammar
+      }
       _ => continue,
     };
     restarts.push(RestartEntry {
@@ -839,6 +944,33 @@ mod tests {
     assert_eq!(output.diagnostics.len(), 1);
     assert_eq!(output.diagnostics[0].diagnostic.rule, Some(rule));
     assert_eq!(output.diagnostics[0].diagnostic.context, None);
+  }
+
+  #[test]
+  fn canonical_tiny_event_budgets_keep_root_rule_attribution() {
+    for max_events in 0..=4 {
+      let source =
+        TextSnapshot::new(DocumentId(1), Revision(0), "x := \"a\";").unwrap();
+      let config = ParseConfig {
+        limits: ParseLimits {
+          max_events,
+          ..ParseLimits::default()
+        },
+      };
+      let snapshot = parse_canonical_grammar(source, config);
+
+      assert!(snapshot.stats.events_emitted <= u64::from(max_events));
+      crate::document::validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+      assert!(!snapshot.diagnostics.is_empty());
+      for diagnostic in snapshot.diagnostics.iter() {
+        assert_eq!(diagnostic.rule, Some(rules::PARSE_GRAMMAR));
+        assert_eq!(
+          diagnostic.rule.and_then(canonical_rule_name),
+          Some("parse-grammar")
+        );
+        assert_eq!(diagnostic.context, None);
+      }
+    }
   }
 
   #[test]

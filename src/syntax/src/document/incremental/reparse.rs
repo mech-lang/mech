@@ -281,6 +281,12 @@ fn fragment_kind(kind: SyntaxKind) -> Option<FragmentKind> {
     SyntaxKind::Expression | SyntaxKind::AdditiveExpression => Some(FragmentKind::Expression),
     SyntaxKind::ParentheticalExpression => Some(FragmentKind::ParentheticalTerm),
     SyntaxKind::GenericFence => Some(FragmentKind::CodeBlock),
+    SyntaxKind::Grammar => Some(FragmentKind::Grammar),
+    SyntaxKind::GrammarRule => Some(FragmentKind::GrammarRule),
+    SyntaxKind::GrammarExpression => Some(FragmentKind::GrammarExpression),
+    SyntaxKind::GrammarTerm => Some(FragmentKind::GrammarTerm),
+    SyntaxKind::GrammarFactor => Some(FragmentKind::GrammarFactor),
+    SyntaxKind::GrammarTerminalToken => Some(FragmentKind::GrammarTerminalToken),
     _ => None,
   }
 }
@@ -299,6 +305,7 @@ fn fragment_context(
       crate::document::RestartMode::Paragraph => ParseMode::Paragraph,
       crate::document::RestartMode::Mech => ParseMode::Mech,
       crate::document::RestartMode::Fence => ParseMode::Fence,
+      crate::document::RestartMode::Grammar => ParseMode::Grammar,
     })
     .unwrap_or_else(|| kind.mode());
   let enclosing_fence = (kind == FragmentKind::CodeBlock)

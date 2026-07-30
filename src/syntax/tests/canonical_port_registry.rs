@@ -282,18 +282,84 @@ fn every_ported_rule_has_closed_declared_children_and_conformance_evidence() {
 }
 
 #[test]
-fn every_phase_2a_ast_rule_has_lowering_parity() {
+fn phase_2a_node_and_lowering_policies_are_exact() {
+    let structural = BTreeMap::from([
+        ("digit-sequence", "node:DigitSequence"),
+        ("escaped-char", "node:EscapedCharacter"),
+        ("identifier", "node:Identifier"),
+        ("identifier-path-segment", "node:IdentifierPathSegment"),
+        ("grammar", "node:Grammar"),
+        ("grammar-definition", "node:GrammarDefinition"),
+        ("grammar-expression", "node:GrammarExpression"),
+        ("grammar-factor", "node:GrammarFactor"),
+        ("grammar-group", "node:GrammarGroup"),
+        ("grammar-identifier", "node:GrammarIdentifier"),
+        ("grammar-list", "node:GrammarList"),
+        ("grammar-not", "node:GrammarNot"),
+        ("grammar-optional", "node:GrammarOptional"),
+        ("grammar-peek", "node:GrammarPeek"),
+        ("grammar-range", "node:GrammarRange"),
+        ("grammar-repeat0", "node:GrammarRepeat0"),
+        ("grammar-repeat1", "node:GrammarRepeat1"),
+        ("grammar-rule", "node:GrammarRule"),
+        ("grammar-term", "node:GrammarTerm"),
+        ("grammar-terminal", "node:GrammarTerminal"),
+        ("grammar-terminal-token", "node:GrammarTerminalToken"),
+        ("parse-grammar", "root:GrammarDocument"),
+    ]);
+    let transparent = BTreeSet::from([
+        "enum-separator",
+        "list-separator",
+        "newline-indent",
+        "space-tab0",
+        "space-tab1",
+        "whitespace0",
+        "whitespace1",
+        "ws0e",
+        "ws1e",
+    ]);
+
+    let mut counts = BTreeMap::new();
     for port in CANONICAL_PORTS {
+        *counts
+            .entry(policy_name(port.node_policy))
+            .or_insert(0_usize) += 1;
         if port.phase != Some(PortPhase::Phase2A) {
+            assert_eq!(port.node_policy, NodePolicy::Undecided);
+            assert_eq!(port.lowering, LoweringPortStatus::Pending);
             continue;
         }
-        if port.family == RuleFamily::Grammar || port.name == "parse-grammar" {
-            assert_eq!(
-                port.lowering,
-                LoweringPortStatus::ParityVerified,
-                "{} lacks lowering parity",
-                port.name
-            );
+        if let Some(expected) = structural.get(port.name) {
+            assert_eq!(policy_name(port.node_policy), *expected);
+            assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
+        } else if transparent.contains(port.name) {
+            assert_eq!(port.node_policy, NodePolicy::Transparent);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        } else {
+            assert_eq!(port.node_policy, NodePolicy::Token);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
         }
     }
+
+    assert_eq!(structural.len(), 22);
+    assert_eq!(transparent.len(), 9);
+    assert_eq!(counts["undecided"], 373);
+    assert_eq!(counts["token"], 136);
+    assert_eq!(counts["transparent"], 9);
+    assert_eq!(
+        counts
+            .iter()
+            .filter(|(policy, _)| policy.starts_with("node:"))
+            .map(|(_, count)| count)
+            .sum::<usize>(),
+        21
+    );
+    assert_eq!(
+        counts
+            .iter()
+            .filter(|(policy, _)| policy.starts_with("root:"))
+            .map(|(_, count)| count)
+            .sum::<usize>(),
+        1
+    );
 }
