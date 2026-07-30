@@ -22,15 +22,15 @@ assign-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical 
 asterisk	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 async-transition-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 at	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-atom	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+atom	literals	parity-verified	parity-verified	node:AtomLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 backslash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 bar	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 bare-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-binary-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+binary-literal	literals	parity-verified	parity-verified	node:BinaryLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 binding	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 blank-line	mechdown	parity-verified	not-applicable	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
 body	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-boolean	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+boolean	literals	parity-verified	not-applicable	token	2C	Phase 2C closed literal, path, and primitive kind island
 box-bl	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 box-bl-bold	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 box-bl-round	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -79,10 +79,10 @@ comment	statements	parity-verified	pending	node:Comment	2B	rich comment lowering
 comment-sigil	statements	parity-verified	not-applicable	transparent	2B	Phase 2B closed Mechdown grammar island
 comparison-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 complement	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-complex-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+complex-number	literals	syntax-ported	pending	node:ComplexNumber	2C	Phase 2C syntax port; lowering pending for the documented typed scientific-exponent legacy exception.
 comprehension-qualifier	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-context-address-path	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-context-address-path-token	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+context-address-path	expressions	parity-verified	parity-verified	node:ContextAddressPath	2C	Phase 2C closed literal, path, and primitive kind island
+context-address-path-token	expressions	parity-verified	not-applicable	token	2C	Phase 2C closed literal, path, and primitive kind island
 context-base-context	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 context-base-resource-uri	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 context-capability-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -95,7 +95,7 @@ context-send	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 cross	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 cross-product	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 dash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-decimal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+decimal-literal	literals	parity-verified	parity-verified	node:DecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 define-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 difference	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 digit	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -113,7 +113,7 @@ emoji	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closu
 emoji-grapheme	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 emphasis	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 emphasis-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-empty	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+empty	literals	parity-verified	parity-verified	node:EmptyLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 empty-map	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 empty-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 empty-set	structures	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -138,7 +138,7 @@ exp-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase
 export-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 factor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-false-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+false-literal	literals	parity-verified	not-applicable	token	2C	Phase 2C closed literal, path, and primitive kind island
 fancy-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 fancy-table-header	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 field	structures	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -146,10 +146,10 @@ figure-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 figures	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 figures-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 float	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-float-decimal-start	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-float-full	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+float-decimal-start	literals	parity-verified	parity-verified	node:FloatDecimalStart	2C	Phase 2C closed literal, path, and primitive kind island
+float-full	literals	parity-verified	parity-verified	node:FloatFull	2C	Phase 2C closed literal, path, and primitive kind island
 float-left	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-float-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+float-literal	literals	parity-verified	parity-verified	node:FloatLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 float-right	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 float-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 footnote	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -217,7 +217,7 @@ guard-operator	state_machines	unported	pending	undecided		Deferred beyond Phase 
 hashtag	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 header-field	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 help-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-hexadecimal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+hexadecimal-literal	literals	parity-verified	parity-verified	node:HexadecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 highlight	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 highlight-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 http-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -244,21 +244,21 @@ inline-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 inline-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 inline-table-header	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 inline-table-row	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-integer-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+integer-literal	literals	parity-verified	parity-verified	node:IntegerLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 intersection	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 invariant-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-kind	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-kind-annotation	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-kind-any	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-kind-atom	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind	literals	unported	pending	undecided		Deferred with the recursive expression/kind closure: kind-scalar → range-expression → formula/factor → literal → kind-annotation → kind.
+kind-annotation	literals	unported	pending	undecided		Deferred with the recursive expression/kind closure: kind-scalar → range-expression → formula/factor → literal → kind-annotation → kind.
+kind-any	literals	parity-verified	parity-verified	node:KindAny	2C	Phase 2C closed literal, path, and primitive kind island
+kind-atom	literals	parity-verified	parity-verified	node:KindAtom	2C	Phase 2C closed literal, path, and primitive kind island
 kind-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-kind-empty	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-empty	literals	parity-verified	parity-verified	node:KindEmpty	2C	Phase 2C closed literal, path, and primitive kind island
 kind-kind	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 kind-map	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 kind-matrix	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 kind-record	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-kind-scalar	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-scalar	literals	unported	pending	undecided		Deferred with the recursive expression/kind closure: kind-scalar → range-expression → formula/factor → literal → kind-annotation → kind.
 kind-set	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 kind-table	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 kind-tuple	literals	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -283,7 +283,7 @@ left-semi-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 less-than	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 less-than-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 list-separator	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+literal	literals	unported	pending	undecided		Deferred with the recursive expression/kind closure: kind-scalar → range-expression → formula/factor → literal → kind-annotation → kind.
 load-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 logic-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 ls-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -352,8 +352,8 @@ not-element-of	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 not-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 not-factor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 not-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-octal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+number	literals	syntax-ported	pending	node:Number	2C	Phase 2C syntax port; lowering pending for the documented typed scientific-exponent legacy exception.
+octal-literal	literals	parity-verified	parity-verified	node:OctalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 op-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 op-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 option-map	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -387,7 +387,7 @@ plan-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 plus	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 power	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 power-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-prefixed-context-path	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+prefixed-context-path	expressions	parity-verified	parity-verified	node:PrefixedContextPath	2C	Phase 2C closed literal, path, and primitive kind island
 profile-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 program	parser	unported	pending	undecided		Deferred beyond Phase 2A.
 prompt	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -407,12 +407,12 @@ range-expression	expressions	unported	pending	undecided		Deferred beyond Phase 2
 range-inclusive	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 range-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 range-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-rational-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+rational-literal	literals	parity-verified	parity-verified	node:RationalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 raw-hyperlink	mechdown	parity-verified	parity-verified	node:RawHyperlink	2B	Phase 2B closed Mechdown grammar island
-raw-string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+raw-string	literals	parity-verified	parity-verified	node:RawString	2C	Phase 2C closed literal, path, and primitive kind island
 raw-subtract	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 raw-text	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-real-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+real-number	literals	syntax-ported	pending	node:RealNumber	2C	Phase 2C syntax port; lowering pending for the documented typed scientific-exponent legacy exception.
 record	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 reference	mechdown	parity-verified	parity-verified	node:Reference	2B	Phase 2B closed Mechdown grammar island
 regular-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -428,7 +428,7 @@ right-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 right-parenthesis	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 row-separator	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 save-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-scientific-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+scientific-literal	literals	syntax-ported	pending	node:ScientificLiteral	2C	Phase 2C syntax port; typed scientific exponents preserve their suffix and lower deterministically while the legacy exponent branch crashes.
 section	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 section-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 section-reference	mechdown	parity-verified	parity-verified	node:SectionReference	2B	Phase 2B closed Mechdown grammar island
@@ -464,7 +464,7 @@ strict-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 strict-not-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 strike-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 strikethrough	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+string	literals	parity-verified	parity-verified	node:StringLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 strong	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 strong-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 structure	structures	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -507,11 +507,11 @@ transition-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canoni
 transition-operator-a	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 transition-operator-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 transpose	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-true-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+true-literal	literals	parity-verified	not-applicable	token	2C	Phase 2C closed literal, path, and primitive kind island
 tuple	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 tuple-destructure	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 tuple-struct	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-typed-integer	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+typed-integer	literals	parity-verified	parity-verified	node:TypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
 ul-subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 unchecked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 underline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -521,12 +521,12 @@ underscore-digit	base	parity-verified	not-applicable	token	2A	Phase 2A canonical
 union-op	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 unordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 unordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-untyped-integer	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-untyped-real-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+untyped-integer	literals	parity-verified	parity-verified	node:UntypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
+untyped-real-number	literals	syntax-ported	pending	node:UntypedRealNumber	2C	Phase 2C syntax port; lowering pending for the documented typed scientific-exponent legacy exception.
 uri-scheme-part	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 uri-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-utf8-string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-var	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+utf8-string	literals	parity-verified	parity-verified	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
+var	expressions	unported	pending	undecided		Deferred with the recursive expression/kind closure: kind-scalar → range-expression → formula/factor → literal → kind-annotation → kind.
 variable-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 variable-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 warning-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
