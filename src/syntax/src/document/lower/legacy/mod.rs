@@ -1,5 +1,7 @@
 mod base;
+mod common;
 mod grammar;
+mod literals;
 mod mechdown;
 mod source;
 
@@ -8,6 +10,15 @@ pub use base::{
     lower_legacy_identifier_path_segment,
 };
 pub use grammar::lower_legacy_grammar;
+pub use literals::{
+    lower_legacy_atom, lower_legacy_binary_literal, lower_legacy_complex_number,
+    lower_legacy_decimal_literal, lower_legacy_empty, lower_legacy_float_decimal_start,
+    lower_legacy_float_full, lower_legacy_float_literal, lower_legacy_hexadecimal_literal,
+    lower_legacy_integer_literal, lower_legacy_number, lower_legacy_octal_literal,
+    lower_legacy_rational_literal, lower_legacy_raw_string, lower_legacy_real_number,
+    lower_legacy_scientific_literal, lower_legacy_string, lower_legacy_typed_integer,
+    lower_legacy_untyped_integer, lower_legacy_untyped_real_number, lower_legacy_utf8_string,
+};
 pub use mechdown::{
     lower_legacy_equation, lower_legacy_footnote_reference, lower_legacy_inline_code,
     lower_legacy_inline_equation, lower_legacy_paragraph_text, lower_legacy_raw_hyperlink,

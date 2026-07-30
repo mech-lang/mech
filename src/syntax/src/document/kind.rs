@@ -184,6 +184,29 @@ define_syntax_kinds! {
   ThematicBreak => node,
   BlankLine => node,
   Equation => node,
+
+  // Phase 2C closed literal values. Keep this append-only: persisted green-tree
+  // discriminants depend on the prior order.
+  EmptyLiteral => node,
+  AtomLiteral => node,
+  StringLiteral => node,
+  Utf8String => node,
+  RawString => node,
+  Number => node,
+  ComplexNumber => node,
+  RealNumber => node,
+  UntypedRealNumber => node,
+  RationalLiteral => node,
+  ScientificLiteral => node,
+  FloatDecimalStart => node,
+  FloatFull => node,
+  FloatLiteral => node,
+  TypedInteger => node,
+  UntypedInteger => node,
+  DecimalLiteral => node,
+  HexadecimalLiteral => node,
+  OctalLiteral => node,
+  BinaryLiteral => node,
 }
 
 #[cfg(test)]
@@ -218,6 +241,40 @@ mod tests {
     ];
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 134 + offset as u16);
+      assert!(!kind.is_token());
+    }
+  }
+
+  #[test]
+  fn phase_2c_literal_kinds_are_append_only() {
+    let appended = [
+      SyntaxKind::EmptyLiteral,
+      SyntaxKind::AtomLiteral,
+      SyntaxKind::StringLiteral,
+      SyntaxKind::Utf8String,
+      SyntaxKind::RawString,
+      SyntaxKind::Number,
+      SyntaxKind::ComplexNumber,
+      SyntaxKind::RealNumber,
+      SyntaxKind::UntypedRealNumber,
+      SyntaxKind::RationalLiteral,
+      SyntaxKind::ScientificLiteral,
+      SyntaxKind::FloatDecimalStart,
+      SyntaxKind::FloatFull,
+      SyntaxKind::FloatLiteral,
+      SyntaxKind::TypedInteger,
+      SyntaxKind::UntypedInteger,
+      SyntaxKind::DecimalLiteral,
+      SyntaxKind::HexadecimalLiteral,
+      SyntaxKind::OctalLiteral,
+      SyntaxKind::BinaryLiteral,
+    ];
+    // `IntegerLiteral` already exists at its Phase 1 discriminant and is the
+    // canonical node reused by this closed island. Every genuinely new literal
+    // kind follows the existing Phase 2B tail in the specified order.
+    assert_eq!(SyntaxKind::IntegerLiteral as u16, 19);
+    for (offset, kind) in appended.into_iter().enumerate() {
+      assert_eq!(kind as u16, 143 + offset as u16);
       assert!(!kind.is_token());
     }
   }
