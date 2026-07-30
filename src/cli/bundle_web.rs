@@ -550,7 +550,6 @@ fn require_file(field: &str, path: &Path) -> MResult<()> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::cli::CURRENT_DIR_LOCK;
   use std::time::{SystemTime, UNIX_EPOCH};
 
   const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
@@ -567,7 +566,7 @@ export default async function init() {}
 
   impl CurrentDirGuard {
     fn enter(path: &Path) -> Self {
-      let lock = CURRENT_DIR_LOCK.lock().unwrap();
+      let lock = crate::cli::lock_current_dir();
       let previous = std::env::current_dir().unwrap();
       std::env::set_current_dir(path).unwrap();
       Self {

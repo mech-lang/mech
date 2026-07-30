@@ -99,20 +99,9 @@ fn file_resolver_without_grants(root: &Path) -> FileSourceResolver {
 }
 
 fn file_uri(path: &Path) -> String {
-    let text = path.to_string_lossy().replace('\\', "/");
-    #[cfg(windows)]
-    {
-        let path = if text.starts_with('/') {
-            text
-        } else {
-            format!("/{text}")
-        };
-        return format!("file://{path}");
-    }
-    #[cfg(not(windows))]
-    {
-        format!("file://{text}")
-    }
+    SourceRequest::from_filesystem_path(path)
+        .expect("test filesystem path must have a canonical file URI")
+        .specifier
 }
 
 fn runtime(repl: &MechRepl) -> &MechRuntime {
@@ -391,7 +380,7 @@ fn runtime_repl_load_preserves_non_utf8_current_directory_bytes() {
 
     impl CurrentDirGuard {
         fn enter(path: &Path) -> Self {
-            let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+            let lock = crate::cli::lock_current_dir();
             let previous = std::env::current_dir().unwrap();
             std::env::set_current_dir(path).unwrap();
             Self {
@@ -455,7 +444,7 @@ fn runtime_repl_load_preserves_non_utf8_current_directory_bytes() {
 
 #[test]
 fn runtime_repl_directory_commands_require_filesystem_list_authority() {
-    let _current_dir_lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+    let _current_dir_lock = crate::cli::lock_current_dir();
     let initial_dir = std::env::current_dir().unwrap();
     let denied_dir = TestRoot::new("directory-authority-denied");
     let mut denied = MechRepl::from_runtime(

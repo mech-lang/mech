@@ -104,7 +104,7 @@ mod config_tests {
 
     impl CurrentDirGuard {
         fn enter(path: &std::path::Path) -> Self {
-            let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+            let lock = crate::cli::lock_current_dir();
             let previous = std::env::current_dir().unwrap();
             std::env::set_current_dir(path).unwrap();
             Self {

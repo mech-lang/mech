@@ -36,3 +36,10 @@ pub(crate) fn rounds_per_step_value_parser() -> clap::builder::RangedU64ValuePar
 
 #[cfg(all(test, any(feature = "serve", feature = "bundle_web", feature = "run")))]
 pub(crate) static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(all(test, any(feature = "serve", feature = "bundle_web", feature = "run")))]
+pub(crate) fn lock_current_dir() -> std::sync::MutexGuard<'static, ()> {
+    CURRENT_DIR_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}

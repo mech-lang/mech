@@ -254,6 +254,7 @@ impl ServerSourceRegistry {
     shim: &str,
     generated_html_backing_paths: &[PathBuf],
   ) -> MResult<()> {
+    let root = root.canonicalize()?;
     for key in self.workspace_keys.drain() {
       self.raw_sources.remove(&key);
       self.html_sources.remove(&key);
@@ -267,7 +268,7 @@ impl ServerSourceRegistry {
       if !is_renderable_mech_text_source(path) {
         continue;
       }
-      let relative = path.strip_prefix(root).map_err(|error| {
+      let relative = path.strip_prefix(&root).map_err(|error| {
         Error::new(ErrorKind::InvalidInput, format!("workspace source is outside workspace root: {}", error))
       })?;
       let Some(key) = url_key(relative) else { continue; };
@@ -1288,7 +1289,7 @@ mod tests {
 
   impl CurrentDirGuard {
     fn enter(path: &Path) -> Self {
-      let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+      let lock = crate::cli::lock_current_dir();
       let previous = std::env::current_dir().unwrap();
       std::env::set_current_dir(path).unwrap();
       Self { previous, _lock: lock }
