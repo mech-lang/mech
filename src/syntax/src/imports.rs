@@ -2,7 +2,7 @@
 use crate::*;
 use nom::{
     branch::alt,
-    combinator::{cut, map, opt},
+    combinator::{cut, map},
     multi::many0,
     sequence::{delimited, preceded, tuple as nom_tuple},
 };
@@ -125,12 +125,6 @@ fn import_group_items(input: ParseString) -> ParseResult<Vec<ModuleImportGroupIt
     Ok((input, items))
 }
 
-fn module_import_end(input: ParseString) -> ParseResult<()> {
-    let (input, _) = space_tab0(input)?;
-    let (input, _) = opt(new_line)(input)?;
-    Ok((input, ()))
-}
-
 fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, alias) = module_import_alias(input)?;
     let (input, _) = import_alias_operator(input)?;
@@ -197,11 +191,10 @@ fn module_only_import(input: ParseString) -> ParseResult<ModuleImport> {
 
 pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, _) = whitespace0(input)?;
-    let (input, _) = plus(input)?;
-    let (input, _) = right_angle(input)?;
+    let (input, _) = import_sigil(input)?;
     let (input, _) = space_tab0(input)?;
 
-    let (input, mut import) = if at(input.clone()).is_ok() {
+    let (input, import) = if at(input.clone()).is_ok() {
         cut(aliased_item_import)(input)?
     } else {
         alt((
@@ -210,9 +203,6 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
             module_only_import,
         ))(input)?
     };
-
-    let (next_input, _) = module_import_end(input.clone())?;
-    import.module.name.src_range.end = next_input.loc();
 
     Ok((input, import))
 }

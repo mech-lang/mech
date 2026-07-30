@@ -1,5 +1,5 @@
 use mech_core::nodes::*;
-use mech_syntax::parser;
+use mech_syntax::{ParseString, graphemes, module_import, parser};
 
 fn imports(src: &str) -> Vec<ModuleImport> {
     let program = parser::parse(src).expect("parse failed");
@@ -101,10 +101,14 @@ fn arbitrary_module_roots_parse_as_module_imports() {
 
 #[test]
 fn rejects_invalid_stdlib_import_paths() {
-    assert!(parser::parse("+> ").is_err());
-    assert!(parser::parse("+> */x").is_err());
-    assert!(parser::parse("+> math/").is_err());
-    assert!(parser::parse("+> math/*/x").is_err());
+    for source in ["+> ", "+> */x", "+> math/", "+> math/*/x"] {
+        let graphemes = graphemes::init_tag(source);
+        let parsed = module_import(ParseString::new(&graphemes));
+        assert!(
+            !matches!(parsed, Ok((remaining, _)) if remaining.cursor == graphemes.len()),
+            "{source:?} must not be a complete module import"
+        );
+    }
 }
 
 #[test]

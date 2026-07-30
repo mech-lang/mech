@@ -322,8 +322,8 @@ fn source_import_specifier(input: ParseString) -> ParseResult<MechString> {
 // Grammar: docs/design/specification.mec, `import-declaration`.
 pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
   let (input, _) = whitespace0(input)?;
-  let (input, _) = module_import_sigil(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = import_sigil(input)?;
+  let (input, _) = space_tab1(input)?;
   let (input, specifier) = source_import_specifier(input)?;
   if !source_wildcard_specifier_is_valid(&specifier.to_string()) {
     return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
