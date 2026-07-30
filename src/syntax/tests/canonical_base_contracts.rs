@@ -11,7 +11,7 @@ use mech_syntax::document::parser::{
 };
 use mech_syntax::document::{
   DocumentId, ParseConfig, Revision, SyntaxKind, TextRange, TextSize, TextSnapshot,
-  reconstruct_source_range, validate_lossless_range,
+  lower_legacy_escaped_character, reconstruct_source_range, validate_lossless_range,
 };
 
 fn source(text: &str) -> TextSnapshot {
@@ -51,7 +51,116 @@ fn every_fixed_terminal_executes_its_exact_phase_0_contract() {
       table.contains(&format!("\"base.{name}\"")),
       "canonical terminal {name} is absent from the Phase 0 contract table"
     );
+    let contract_start = table
+      .find(&format!("\"base.{name}\""))
+      .expect("Phase 0 terminal contract");
+    let contract_tail = &table[contract_start..];
+    let contract_end = contract_tail[1..]
+      .find("terminal_contract!(")
+      .map_or(contract_tail.len(), |offset| offset + 1);
+    assert!(
+      contract_tail[..contract_end].contains(expected_legacy_kind(spec.kind)),
+      "canonical terminal {name} does not retain its Phase 0 token kind"
+    );
     assert_fixed_terminal(spec);
+  }
+}
+
+#[test]
+fn fixed_terminals_do_not_match_inside_an_extended_grapheme() {
+  let input = ".\u{301}";
+  let parsed = parse(input, rules::PERIOD);
+  assert!(!parsed.matched);
+  assert_eq!(parsed.consumed, TextRange::empty(TextSize::ZERO));
+  assert!(parsed.syntax().tokens().is_empty());
+
+  let graphemes = mech_syntax::graphemes::init_source(input);
+  assert!(mech_syntax::period(mech_syntax::ParseString::new(&graphemes)).is_err());
+}
+
+fn expected_legacy_kind(kind: SyntaxKind) -> &'static str {
+  match kind {
+    SyntaxKind::AbstractSigil => "AbstractSigil",
+    SyntaxKind::Alpha => "Alpha",
+    SyntaxKind::Ampersand => "Ampersand",
+    SyntaxKind::Apostrophe => "Apostrophe",
+    SyntaxKind::AssignOperator => "AssignOperator",
+    SyntaxKind::Asterisk => "Asterisk",
+    SyntaxKind::AsyncTransitionOperator => "AsyncTransitionOperator",
+    SyntaxKind::At => "At",
+    SyntaxKind::Backslash => "Backslash",
+    SyntaxKind::Bar => "Bar",
+    SyntaxKind::BoxDrawing => "BoxDrawing",
+    SyntaxKind::Caret => "Caret",
+    SyntaxKind::CarriageReturn => "CarriageReturn",
+    SyntaxKind::Colon => "Colon",
+    SyntaxKind::Comma => "Comma",
+    SyntaxKind::Dash => "Dash",
+    SyntaxKind::DefineOperatorToken => "DefineOperator",
+    SyntaxKind::Digit => "Digit",
+    SyntaxKind::Dollar => "Dollar",
+    SyntaxKind::Emoji => "Emoji",
+    SyntaxKind::EmphasisSigil => "EmphasisSigil",
+    SyntaxKind::EquationSigil => "EquationSigil",
+    SyntaxKind::Equal => "Equal",
+    SyntaxKind::ErrorSigil => "ErrorSigil",
+    SyntaxKind::EscapedChar => "EscapedChar",
+    SyntaxKind::Exclamation => "Exclamation",
+    SyntaxKind::False => "False",
+    SyntaxKind::FloatLeft => "FloatLeft",
+    SyntaxKind::FloatRight => "FloatRight",
+    SyntaxKind::FootnotePrefix => "FootnotePrefix",
+    SyntaxKind::GenOperator => "GenOperator",
+    SyntaxKind::GeneratorArrow => "GeneratorArrow",
+    SyntaxKind::Grave => "Grave",
+    SyntaxKind::GraveCodeBlockSigil => "GraveCodeBlockSigil",
+    SyntaxKind::HashTag => "HashTag",
+    SyntaxKind::HighlightSigil => "HighlightSigil",
+    SyntaxKind::HttpPrefix => "HttpPrefix",
+    SyntaxKind::IdeaSigil => "IdeaSigil",
+    SyntaxKind::ImgPrefix => "ImgPrefix",
+    SyntaxKind::InfoSigil => "InfoSigil",
+    SyntaxKind::LeftAngle => "LeftAngle",
+    SyntaxKind::LeftBrace => "LeftBrace",
+    SyntaxKind::LeftBracket => "LeftBracket",
+    SyntaxKind::LeftParen => "LeftParenthesis",
+    SyntaxKind::MikaSectionClose => "MikaSectionClose",
+    SyntaxKind::MikaSectionOpen => "MikaSectionOpen",
+    SyntaxKind::ModuleExportSigil => "ModuleExportSigil",
+    SyntaxKind::ModuleImportSigil => "ModuleImportSigil",
+    SyntaxKind::Newline => "Newline",
+    SyntaxKind::Not => "Not",
+    SyntaxKind::OutputOperator => "OutputOperator",
+    SyntaxKind::Percent => "Percent",
+    SyntaxKind::Period => "Period",
+    SyntaxKind::Plus => "Plus",
+    SyntaxKind::PromptSigil => "PromptSigil",
+    SyntaxKind::Question => "Question",
+    SyntaxKind::QuestionSigil => "QuestionSigil",
+    SyntaxKind::Quote => "Quote",
+    SyntaxKind::QuoteSigil => "QuoteSigil",
+    SyntaxKind::RightAngle => "RightAngle",
+    SyntaxKind::RightBrace => "RightBrace",
+    SyntaxKind::RightBracket => "RightBracket",
+    SyntaxKind::RightParen => "RightParenthesis",
+    SyntaxKind::SectionSigil => "SectionSigil",
+    SyntaxKind::Semicolon => "Semicolon",
+    SyntaxKind::Slash => "Slash",
+    SyntaxKind::SpreadOperator => "SpreadOperator",
+    SyntaxKind::StrikeSigil => "StrikeSigil",
+    SyntaxKind::StrongSigil => "StrongSigil",
+    SyntaxKind::SuccessSigil => "SuccessSigil",
+    SyntaxKind::SynthOperator => "SynthOperator",
+    SyntaxKind::Tab => "Tab",
+    SyntaxKind::Tilde => "Tilde",
+    SyntaxKind::TildeCodeBlockSigil => "TildeCodeBlockSigil",
+    SyntaxKind::TransitionOperator => "TransitionOperator",
+    SyntaxKind::True => "True",
+    SyntaxKind::UnderlineSigil => "UnderlineSigil",
+    SyntaxKind::Underscore => "Underscore",
+    SyntaxKind::WarningSigil => "WarningSigil",
+    SyntaxKind::Whitespace => "Space",
+    other => panic!("no fixed-terminal legacy mapping for {other:?}"),
   }
 }
 
@@ -136,6 +245,100 @@ fn the_complete_149_rule_lexical_selection_has_a_canonical_entry() {
   assert!(tag.matched);
   assert_eq!(tag.consumed, TextRange::new(TextSize::ZERO, TextSize(2)));
   assert_eq!(tag.syntax().tokens()[0].kind(), SyntaxKind::Text);
+}
+
+#[test]
+fn every_non_fixed_lexical_port_executes_a_canonical_contract() {
+  let cases = [
+    (rules::TRANSITION_OPERATOR, " -> "),
+    (rules::OUTPUT_OPERATOR, "\n=>\t"),
+    (rules::EMOJI_GRAPHEME, "💡"),
+    (rules::ALPHA, "e\u{301}"),
+    (rules::DIGIT, "1\u{20e3}"),
+    (rules::ANY, "\r\n"),
+    (rules::ANY_TOKEN, "λ"),
+    (rules::FORBIDDEN_EMOJI, "┌"),
+    (rules::EMOJI, "💡"),
+    (rules::ALPHA_TOKEN, "Δ"),
+    (rules::DIGIT_TOKEN, "٣"),
+    (rules::ALPHANUMERIC, "9"),
+    (rules::UNDERSCORE_DIGIT, "_9"),
+    (rules::DIGIT_SEQUENCE, "1_2"),
+    (rules::GROUPING_SYMBOL, "("),
+    (rules::PUNCTUATION, "."),
+    (rules::ESCAPED_CHAR, "\\n"),
+    (rules::SYMBOL, "&"),
+    (rules::IDENTIFIER_SYMBOL, "-"),
+    (rules::TEXT, "\\n"),
+    (rules::RAW_TEXT, "x"),
+    (rules::NEW_LINE, "\r\n"),
+    (rules::WHITESPACE, "\n"),
+    (rules::WHITESPACE0, " \n"),
+    (rules::WHITESPACE1, "\n"),
+    (rules::NEWLINE_INDENT, "\n \t"),
+    (rules::WS1E, "\u{00a0}"),
+    (rules::WS0E, "\u{2009}"),
+    (rules::SPACE_TAB, "\u{00a0}"),
+    (rules::SPACE_TAB0, " \t"),
+    (rules::SPACE_TAB1, "\u{2009}"),
+    (rules::LIST_SEPARATOR, " \n,\t"),
+    (rules::ENUM_SEPARATOR, "\n| \r"),
+    (rules::IDENTIFIER, "a-b"),
+    (rules::IDENTIFIER_PATH_SEGMENT_EMOJI, "💡"),
+    (rules::IDENTIFIER_PATH_SEGMENT, "a-b"),
+    (rules::LEFT_ANGLE, "⟨"),
+    (rules::RIGHT_ANGLE, "⟩"),
+    (rules::BOX_DRAWING_CHAR, "┌"),
+    (rules::BOX_DRAWING_EMOJI, "┃"),
+  ];
+  assert_eq!(cases.len() + FIXED_TERMINAL_COUNT + 1, 149);
+  for (index, (rule, input)) in cases.iter().enumerate() {
+    assert!(
+      cases[..index].iter().all(|(earlier, _)| earlier != rule),
+      "duplicate non-fixed contract for {:?}",
+      rule
+    );
+    let parsed = parse(input, *rule);
+    assert!(parsed.matched, "{:?} did not match {input:?}", rule);
+    assert_eq!(
+      parsed.consumed,
+      parsed.source.full_range(),
+      "{:?} did not completely consume {input:?}",
+      rule
+    );
+    assert!(parsed.diagnostics.is_empty(), "{:?}", rule);
+    validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+    assert_eq!(
+      reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+      *input
+    );
+  }
+}
+
+#[test]
+fn paired_lexical_boundaries_remain_distinct() {
+  for (tight, spaced) in [("a-b", "a - b"), ("a/b", "a / b")] {
+    assert_eq!(
+      parse(tight, rules::IDENTIFIER).consumed,
+      source(tight).full_range()
+    );
+    assert_eq!(parse(spaced, rules::IDENTIFIER).consumed.end, TextSize(1));
+  }
+
+  for source_text in ["1/2", "1 / 2"] {
+    assert_eq!(
+      parse(source_text, rules::DIGIT_SEQUENCE).consumed.end,
+      TextSize(1)
+    );
+  }
+
+  for (input, rule) in [
+    (":", rules::COLON),
+    ("=", rules::EQUAL),
+    (":=", rules::DEFINE_OPERATOR),
+  ] {
+    assert_eq!(parse(input, rule).consumed, source(input).full_range());
+  }
 }
 
 #[test]
@@ -249,4 +452,31 @@ fn structural_base_rules_retain_lossless_children() {
 
   assert_eq!(parse("\\n", rules::TEXT).consumed.end, TextSize(2));
   assert_eq!(parse("\\n", rules::RAW_TEXT).consumed.end, TextSize(1));
+}
+
+#[test]
+fn escaped_character_compatibility_values_match_the_legacy_parser() {
+  for input in ["\\n", "\\t", "\\r", "\\a", "\\!", "\\\\", "\\e\u{301}"] {
+    let parsed = parse(input, rules::ESCAPED_CHAR);
+    assert!(parsed.matched, "{input:?}");
+    assert_eq!(parsed.consumed.end, TextSize(input.len() as u32));
+    validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+    assert_eq!(
+      reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+      input
+    );
+    let syntax = parsed
+      .syntax()
+      .first_child(SyntaxKind::EscapedCharacter)
+      .expect("escaped-char node");
+    assert_eq!(syntax.text().unwrap(), input);
+    let canonical = lower_legacy_escaped_character(&syntax).unwrap();
+
+    let graphemes = mech_syntax::graphemes::init_tag(input);
+    let (remaining, legacy) =
+      mech_syntax::escaped_char(mech_syntax::ParseString::new(&graphemes)).unwrap();
+    assert_eq!(remaining.cursor, graphemes.len(), "{input:?}");
+    assert!(remaining.error_log.is_empty(), "{input:?}");
+    assert_eq!(canonical, legacy, "{input:?}");
+  }
 }

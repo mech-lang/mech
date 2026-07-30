@@ -1,0 +1,39 @@
+GrammarDocument
+  Grammar
+    GrammarRule
+      GrammarIdentifier
+        Alpha "t"
+        Alpha "e"
+        Alpha "r"
+        Alpha "m"
+        Alpha "i"
+        Alpha "n"
+        Alpha "a"
+        Alpha "l"
+        Dash "-"
+        Alpha "w"
+        Alpha "i"
+        Alpha "t"
+        Alpha "h"
+        Dash "-"
+        Alpha "s"
+        Alpha "p"
+        Alpha "a"
+        Alpha "c"
+        Alpha "e"
+        Whitespace " "
+      DefineOperatorToken ":="
+      Whitespace " "
+      GrammarExpression
+        GrammarTerm
+          GrammarFactor
+            GrammarTerminal
+              GrammarTerminalToken
+                Quote "\""
+                Any "a"
+                Whitespace " "
+                Any "b"
+                Quote "\""
+      Semicolon ";"
+    Newline "\n"
+    Newline ""

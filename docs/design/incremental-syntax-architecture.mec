@@ -287,17 +287,3 @@ behind the existing `serde` feature.
 The design remains implementable in Mech: piece arrays, immutable nodes, event
 arrays, typed maps, checkpoints, and explicit recovery are concrete data
 structures rather than a Rust-specific framework.
-
-11. Optional manual randomized parser-input harness
--------------------------------------------------------------------------------
-
-The optional randomized parser-input harness remains outside the main
-workspace for deliberate manual investigation. It is not a Phase 1 completion
-criterion, required agent validation, ordinary CI check, or scheduled task.
-Agents must not invoke it unless explicitly instructed.
-
-The `Manual syntax parser-input validation` workflow is available only through
-`workflow_dispatch`; it has no pull-request, push, or scheduled trigger.
-Durable ordinary coverage comes from the deterministic property tests,
-mutation tests, and eight promoted regression fixtures in the syntax test
-suite.

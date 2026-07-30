@@ -21,6 +21,12 @@ pub enum FragmentKind {
   Expression,
   ParentheticalTerm,
   CodeBlock,
+  Grammar,
+  GrammarRule,
+  GrammarExpression,
+  GrammarTerm,
+  GrammarFactor,
+  GrammarTerminalToken,
 }
 
 impl FragmentKind {
@@ -35,6 +41,12 @@ impl FragmentKind {
       Self::Expression => SyntaxKind::Expression,
       Self::ParentheticalTerm => SyntaxKind::ParentheticalExpression,
       Self::CodeBlock => SyntaxKind::GenericFence,
+      Self::Grammar => SyntaxKind::Grammar,
+      Self::GrammarRule => SyntaxKind::GrammarRule,
+      Self::GrammarExpression => SyntaxKind::GrammarExpression,
+      Self::GrammarTerm => SyntaxKind::GrammarTerm,
+      Self::GrammarFactor => SyntaxKind::GrammarFactor,
+      Self::GrammarTerminalToken => SyntaxKind::GrammarTerminalToken,
     }
   }
 
@@ -47,6 +59,12 @@ impl FragmentKind {
       | Self::Expression
       | Self::ParentheticalTerm => ParseMode::Mech,
       Self::CodeBlock => ParseMode::Fence,
+      Self::Grammar
+      | Self::GrammarRule
+      | Self::GrammarExpression
+      | Self::GrammarTerm
+      | Self::GrammarFactor
+      | Self::GrammarTerminalToken => ParseMode::Grammar,
     }
   }
 }
@@ -57,6 +75,7 @@ pub enum ParseMode {
   Paragraph,
   Mech,
   Fence,
+  Grammar,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -261,6 +280,14 @@ fn parse_requested(parser: &mut Parser<'_>, kind: FragmentKind) -> bool {
       mechdown::parse_generic_fence(parser);
       true
     }
+    FragmentKind::Grammar
+    | FragmentKind::GrammarRule
+    | FragmentKind::GrammarExpression
+    | FragmentKind::GrammarTerm
+    | FragmentKind::GrammarFactor
+    | FragmentKind::GrammarTerminalToken => {
+      super::canonical::roots::parse_grammar_fragment(parser, kind.syntax_kind())
+    }
   }
 }
 
@@ -274,9 +301,9 @@ fn fallback_fragment(
   builder.start_node_with_flags(kind, NodeFlags::ERROR | NodeFlags::CONTAINS_ERROR);
   if !range.is_empty() {
     builder.start_node_with_flags(SyntaxKind::Error, NodeFlags::ERROR);
-    if let Ok(text) = source.text(range) {
-      let _ = builder.token_with_flags(SyntaxKind::Unknown, &text, TokenFlags::ERROR);
-    }
+    source.for_each_slice(range, |text| {
+      let _ = builder.token_with_flags(SyntaxKind::Unknown, text, TokenFlags::ERROR);
+    });
     let _ = builder.finish_node();
   }
   let _ = builder.finish_node();
