@@ -7,7 +7,7 @@ activation-scope	activation	unported	pending	undecided		Deferred beyond Phase 2A
 add	expressions	parity-verified	parity-verified	node:AddOperation	2D	Phase 2D closed expression-operator layer
 add-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 add-sub-operator	expressions	parity-verified	parity-verified	node:AddSubOperator	2D	Phase 2D closed expression-operator layer
-aliased-item-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+aliased-item-import	imports	parity-verified	parity-verified	node:AliasedItemImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
 alignment-separator	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 alpha	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 alpha-token	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -90,7 +90,7 @@ context-capability-path	statements	unported	pending	undecided		Deferred beyond P
 context-capability-path-token	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 context-capability-scope	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 context-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-import-alias-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+context-import-alias-segment	imports	parity-verified	parity-verified	node:ContextImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
 context-send	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 cross	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 cross-product	expressions	parity-verified	parity-verified	node:CrossProductOperation	2D	Phase 2D closed expression-operator layer
@@ -230,11 +230,12 @@ identifier-path-segment-emoji	base	parity-verified	not-applicable	token	2A	Phase
 identifier-symbol	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 img	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 img-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-import-alias-operator	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+import-alias-operator	imports	parity-verified	not-applicable	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
 import-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-import-group-item	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-import-group-items	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-import-group-separator	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+import-group-item	imports	parity-verified	parity-verified	node:ImportGroupItem	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-group-items	imports	parity-verified	parity-verified	node:ImportGroupItems	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-group-separator	imports	parity-verified	not-applicable	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure; renamed by IMPORT-001
 info-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 info-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 inline-code	mechdown	parity-verified	parity-verified	node:InlineCode	2B	Phase 2B closed Mechdown grammar island
@@ -321,21 +322,19 @@ mika-section-close	base	parity-verified	not-applicable	token	2A	Phase 2A canonic
 mika-section-open	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 mini-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
 module-export-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-module-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-alias	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-alias-path	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-alias-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-context-alias	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-end	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-intrinsic-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-name-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-path	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-path-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-import-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-module-import-value-alias	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-only-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-root	imports	unported	pending	undecided		Deferred beyond Phase 2A.
-module-suffix-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import	imports	parity-verified	parity-verified	node:ModuleImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-alias	imports	parity-verified	parity-verified	node:ModuleImportAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-alias-path	imports	parity-verified	parity-verified	node:ModuleImportAliasPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-alias-segment	imports	parity-verified	parity-verified	node:ModuleImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-context-alias	imports	parity-verified	parity-verified	node:ModuleImportContextAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-intrinsic-segment	imports	parity-verified	parity-verified	node:ModuleImportIntrinsicSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-name-segment	imports	parity-verified	parity-verified	node:ModuleImportNameSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-path	imports	parity-verified	parity-verified	node:ModuleImportPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-path-segment	imports	parity-verified	parity-verified	node:ModuleImportPathSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-value-alias	imports	parity-verified	parity-verified	node:ModuleImportValueAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-only-import	imports	parity-verified	parity-verified	node:ModuleOnlyImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-root	imports	parity-verified	parity-verified	node:ModuleRoot	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-suffix-import	imports	parity-verified	parity-verified	node:ModuleSuffixImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
 modulus	expressions	parity-verified	parity-verified	node:ModulusOperation	2D	Phase 2D closed expression-operator layer
 mul-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 mul-div-operator	expressions	parity-verified	parity-verified	node:MulDivOperator	2D	Phase 2D closed expression-operator layer
