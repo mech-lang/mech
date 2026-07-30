@@ -228,26 +228,54 @@ fn configure_child_process_group(command: &mut Command) {
 
 #[cfg(unix)]
 fn send_interrupt(child: &Child) -> std::io::Result<()> {
-    let result = unsafe { libc::kill(child.id() as libc::pid_t, libc::SIGINT) };
-    if result == 0 {
+    let status = Command::new("kill")
+        .arg("-INT")
+        .arg(child.id().to_string())
+        .status()?;
+    if status.success() {
         Ok(())
     } else {
-        Err(std::io::Error::last_os_error())
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("kill -INT exited with {status}"),
+        ))
     }
 }
 
 #[cfg(windows)]
 fn send_interrupt(child: &Child) -> std::io::Result<()> {
-    let result = unsafe {
-        windows_sys::Win32::System::Console::GenerateConsoleCtrlEvent(
-            windows_sys::Win32::System::Console::CTRL_BREAK_EVENT,
-            child.id(),
-        )
-    };
-    if result != 0 {
+    let script = format!(
+        r#"
+$source = @'
+using System;
+using System.Runtime.InteropServices;
+public static class ConsoleSignal {{
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool GenerateConsoleCtrlEvent(
+        uint ctrlEvent,
+        uint processGroupId
+    );
+}}
+'@
+Add-Type -TypeDefinition $source
+if (-not [ConsoleSignal]::GenerateConsoleCtrlEvent(1, {})) {{
+    exit 1
+}}
+"#,
+        child.id(),
+    );
+    let status = Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+    if status.success() {
         Ok(())
     } else {
-        Err(std::io::Error::last_os_error())
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("GenerateConsoleCtrlEvent helper exited with {status}"),
+        ))
     }
 }
 
