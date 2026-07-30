@@ -55,6 +55,7 @@ PHASES = {
     "": "None",
     "2A": "Some(PortPhase::Phase2A)",
     "2B": "Some(PortPhase::Phase2B)",
+    "2C": "Some(PortPhase::Phase2C)",
 }
 
 
@@ -174,6 +175,7 @@ def render() -> str:
             "pub enum PortPhase {",
             "  Phase2A,",
             "  Phase2B,",
+            "  Phase2C,",
             "}",
             "",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",

@@ -10,8 +10,9 @@ use mech_syntax::document::parser::{
 const EXPECTED_RULES: usize = 540;
 const EXPECTED_PHASE_2A: usize = 167;
 const EXPECTED_PHASE_2B: usize = 13;
-const EXPECTED_PORTED: usize = 180;
-const EXPECTED_UNPORTED: usize = 360;
+const EXPECTED_PHASE_2C: usize = 30;
+const EXPECTED_PORTED: usize = 210;
+const EXPECTED_UNPORTED: usize = 330;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -72,6 +73,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
         None => "",
         Some(PortPhase::Phase2A) => "2A",
         Some(PortPhase::Phase2B) => "2B",
+        Some(PortPhase::Phase2C) => "2C",
     }
 }
 
@@ -468,24 +470,255 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         ported
             .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2C))
+            .count(),
+        EXPECTED_PHASE_2C
+    );
+    assert_eq!(
+        ported
+            .iter()
             .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
             .count(),
-        31
+        52
     );
     assert_eq!(
         ported
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::Pending)
             .count(),
-        1
+        6
     );
     assert_eq!(
         ported
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
             .count(),
-        148
+        152
     );
+}
+
+#[test]
+fn phase_2c_registry_accounting_and_policies_are_exact() {
+    let node_policies = [
+        ("empty", "EmptyLiteral"),
+        ("atom", "AtomLiteral"),
+        ("string", "StringLiteral"),
+        ("utf8-string", "Utf8String"),
+        ("raw-string", "RawString"),
+        ("number", "Number"),
+        ("complex-number", "ComplexNumber"),
+        ("real-number", "RealNumber"),
+        ("untyped-real-number", "UntypedRealNumber"),
+        ("rational-literal", "RationalLiteral"),
+        ("scientific-literal", "ScientificLiteral"),
+        ("float-decimal-start", "FloatDecimalStart"),
+        ("float-full", "FloatFull"),
+        ("float-literal", "FloatLiteral"),
+        ("integer-literal", "IntegerLiteral"),
+        ("typed-integer", "TypedInteger"),
+        ("untyped-integer", "UntypedInteger"),
+        ("decimal-literal", "DecimalLiteral"),
+        ("hexadecimal-literal", "HexadecimalLiteral"),
+        ("octal-literal", "OctalLiteral"),
+        ("binary-literal", "BinaryLiteral"),
+        ("context-address-path", "ContextAddressPath"),
+        ("prefixed-context-path", "PrefixedContextPath"),
+        ("kind-any", "KindAny"),
+        ("kind-empty", "KindEmpty"),
+        ("kind-atom", "KindAtom"),
+    ];
+    let token_rules = [
+        "boolean",
+        "true-literal",
+        "false-literal",
+        "context-address-path-token",
+    ];
+    let exceptions = BTreeSet::from([
+        "number",
+        "complex-number",
+        "real-number",
+        "untyped-real-number",
+        "scientific-literal",
+    ]);
+    let expected_names = node_policies
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(token_rules)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(expected_names.len(), EXPECTED_PHASE_2C);
+    assert_eq!(node_policies.len(), 26);
+    assert_eq!(token_rules.len(), 4);
+    assert_eq!(exceptions.len(), 5);
+
+    let phase_2c = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2C))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2c.len(), EXPECTED_PHASE_2C);
+    assert_eq!(
+        phase_2c.iter().map(|port| port.name).collect::<BTreeSet<_>>(),
+        expected_names
+    );
+
+    for port in phase_2c {
+        if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
+            assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
+            if exceptions.contains(port.name) {
+                assert_eq!(port.syntax, SyntaxPortStatus::SyntaxPorted, "{}", port.name);
+                assert_eq!(port.lowering, LoweringPortStatus::Pending, "{}", port.name);
+            } else {
+                assert_eq!(
+                    port.syntax,
+                    SyntaxPortStatus::ParityVerified,
+                    "{}",
+                    port.name
+                );
+                assert_eq!(
+                    port.lowering,
+                    LoweringPortStatus::ParityVerified,
+                    "{}",
+                    port.name
+                );
+            }
+        } else {
+            assert!(token_rules.contains(&port.name), "{}", port.name);
+            assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable, "{}", port.name);
+            assert_eq!(port.node_policy, NodePolicy::Token, "{}", port.name);
+        }
+    }
+
+    let syntax_ported = CANONICAL_PORTS
+        .iter()
+        .filter(|port| {
+            port.phase == Some(PortPhase::Phase2C)
+                && port.syntax == SyntaxPortStatus::SyntaxPorted
+        })
+        .map(|port| port.name)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(syntax_ported, exceptions);
+    assert_eq!(
+        CANONICAL_PORTS
+            .iter()
+            .filter(|port| {
+                port.phase == Some(PortPhase::Phase2C)
+                    && port.syntax == SyntaxPortStatus::ParityVerified
+            })
+            .count(),
+        25
+    );
+}
+
+#[test]
+fn phase_2c_closed_dependencies_are_all_already_ported() {
+    let dependencies: &[(&str, &[&str])] = &[
+        ("empty", &["underscore"]),
+        ("atom", &["colon", "identifier"]),
+        ("string", &["raw-string", "utf8-string"]),
+        ("utf8-string", &["quote", "text", "new-line"]),
+        ("raw-string", &["quote", "raw-text", "new-line"]),
+        ("boolean", &["true-literal", "false-literal"]),
+        ("true-literal", &["english-true-literal", "check-mark"]),
+        ("false-literal", &["english-false-literal", "cross"]),
+        ("number", &["complex-number", "real-number"]),
+        ("complex-number", &["untyped-real-number", "tag"]),
+        (
+            "real-number",
+            &[
+                "dash",
+                "hexadecimal-literal",
+                "decimal-literal",
+                "octal-literal",
+                "binary-literal",
+                "scientific-literal",
+                "rational-literal",
+                "float-literal",
+                "integer-literal",
+            ],
+        ),
+        (
+            "untyped-real-number",
+            &[
+                "dash",
+                "hexadecimal-literal",
+                "decimal-literal",
+                "octal-literal",
+                "binary-literal",
+                "scientific-literal",
+                "rational-literal",
+                "float-literal",
+                "untyped-integer",
+            ],
+        ),
+        ("rational-literal", &["integer-literal", "slash"]),
+        (
+            "scientific-literal",
+            &["float-literal", "integer-literal", "tag"],
+        ),
+        ("float-decimal-start", &["period", "digit-sequence"]),
+        ("float-full", &["digit-sequence", "period"]),
+        (
+            "float-literal",
+            &["float-decimal-start", "float-full"],
+        ),
+        ("integer-literal", &["typed-integer", "untyped-integer"]),
+        ("typed-integer", &["digit-sequence", "identifier"]),
+        ("untyped-integer", &["digit-sequence"]),
+        ("decimal-literal", &["tag", "digit-sequence"]),
+        (
+            "hexadecimal-literal",
+            &["tag", "digit-token", "underscore", "alpha-token"],
+        ),
+        ("octal-literal", &["tag", "digit-sequence"]),
+        ("binary-literal", &["tag", "digit-sequence"]),
+        (
+            "context-address-path-token",
+            &[
+                "alpha-token",
+                "digit-token",
+                "dash",
+                "slash",
+                "underscore",
+                "period",
+            ],
+        ),
+        (
+            "context-address-path",
+            &["context-address-path-token"],
+        ),
+        (
+            "prefixed-context-path",
+            &[
+                "at",
+                "identifier-path-segment",
+                "slash",
+                "context-address-path",
+            ],
+        ),
+        ("kind-any", &["asterisk"]),
+        ("kind-empty", &["underscore"]),
+        ("kind-atom", &["colon", "identifier"]),
+    ];
+    assert_eq!(dependencies.len(), EXPECTED_PHASE_2C);
+
+    for (name, children) in dependencies {
+        let parent = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == *name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(parent.phase, Some(PortPhase::Phase2C), "{name}");
+        for child in *children {
+            let child_port = CANONICAL_PORTS
+                .iter()
+                .find(|port| port.name == *child)
+                .unwrap_or_else(|| panic!("{name} has unknown canonical child {child}"));
+            assert_ne!(
+                child_port.syntax,
+                SyntaxPortStatus::Unported,
+                "{name} has unported canonical child {child}"
+            );
+        }
+    }
 }
 
 #[test]
@@ -513,5 +746,37 @@ fn phase_2b_parent_and_rich_document_rules_remain_unported() {
             .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
         assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
         assert_eq!(port.phase, None, "{name}");
+    }
+}
+
+#[test]
+fn phase_2c_recursive_parent_rules_remain_unported() {
+    for name in [
+        "literal",
+        "var",
+        "kind",
+        "kind-annotation",
+        "kind-with-option",
+        "kind-kind",
+        "kind-table",
+        "kind-set",
+        "kind-map",
+        "kind-record",
+        "kind-matrix",
+        "kind-tuple",
+        "kind-scalar",
+        "range-expression",
+        "formula",
+        "factor",
+        "expression",
+    ] {
+        let port = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
+        assert_eq!(port.phase, None, "{name}");
+        assert_eq!(port.node_policy, NodePolicy::Undecided, "{name}");
+        assert_eq!(port.lowering, LoweringPortStatus::Pending, "{name}");
     }
 }
