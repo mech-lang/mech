@@ -23,6 +23,12 @@ impl Piece {
   }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct SourceChunk<'a> {
+  pub text: &'a str,
+  pub range: TextRange,
+}
+
 #[derive(Clone, Debug)]
 pub struct TextSnapshot {
   document: DocumentId,
@@ -115,6 +121,52 @@ impl TextSnapshot {
       if offset.0 < end {
         let local = piece.range_in_chunk.start.0 + (offset.0 - absolute);
         return piece.chunk.as_bytes().get(local as usize).copied();
+      }
+      absolute = end;
+    }
+    None
+  }
+
+  pub(crate) fn chunk_at(&self, offset: TextSize) -> Option<SourceChunk<'_>> {
+    if offset.0 >= self.byte_len.0 {
+      return None;
+    }
+    let mut absolute = TextSize::ZERO;
+    for piece in self.pieces.iter() {
+      let end = absolute + piece.len();
+      if offset.0 < end.0 {
+        return Some(SourceChunk {
+          text: piece.text(),
+          range: TextRange::new(absolute, end),
+        });
+      }
+      absolute = end;
+    }
+    None
+  }
+
+  pub(crate) fn chunk_before(
+    &self,
+    offset: TextSize,
+  ) -> Option<SourceChunk<'_>> {
+    if offset.0 == 0
+      || offset.0 > self.byte_len.0
+      || !self.is_char_boundary(offset)
+    {
+      return None;
+    }
+    let mut absolute = TextSize::ZERO;
+    for piece in self.pieces.iter() {
+      let end = absolute + piece.len();
+      if offset.0 <= end.0 {
+        let prefix_len = (offset - absolute).to_usize();
+        if prefix_len == 0 {
+          return None;
+        }
+        return Some(SourceChunk {
+          text: &piece.text()[..prefix_len],
+          range: TextRange::new(absolute, offset),
+        });
       }
       absolute = end;
     }

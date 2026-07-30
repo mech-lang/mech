@@ -1,0 +1,541 @@
+grammar-name	family	syntax-status	lowering-status	node-policy	phase	notes
+absolute-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+abstract-el	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+abstract-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+activation-arm	activation	unported	pending	undecided		Deferred beyond Phase 2A.
+activation-scope	activation	unported	pending	undecided		Deferred beyond Phase 2A.
+add	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+add-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+add-sub-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+aliased-item-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+alignment-separator	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+alpha	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+alpha-token	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+alphanumeric	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+ampersand	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+and	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+any	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+any-token	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+apostrophe	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+argument-list	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+assign-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+asterisk	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+async-transition-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+at	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+atom	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+backslash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+bar	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+bare-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+binary-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+binding	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+blank-line	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+body	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+boolean	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+box-bl	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-bl-bold	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-bl-round	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-br	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-br-bold	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-br-round	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-cross	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-drawing-char	structures	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
+box-drawing-emoji	structures	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
+box-horz	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-t-bottom	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-t-left	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-t-right	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-t-top	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-tl	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-tl-bold	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-tl-round	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-tr	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-tr-bold	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-tr-round	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-vert	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+box-vert-bold	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+brace-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+bracket-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+call-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+call-arg-with-binding	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+caret	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+carriage-return	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+carriage-return-new-line	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+cd-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+center-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+check-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+check-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+check-mark	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+checked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+citation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+clc-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+clear-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+code-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+code-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+code-terminal	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+codeblock-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+colon	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+comma	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+comment	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+comment-sigil	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+comparison-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+complement	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+complex-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+comprehension-qualifier	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+context-address-path	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+context-address-path-token	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+context-base-context	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-base-resource-uri	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-capability-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-capability-path	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-capability-path-token	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-capability-scope	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-import-alias-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+context-send	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+cross	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+cross-product	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+dash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+decimal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+define-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+difference	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+digit	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+digit-sequence	base	parity-verified	parity-verified	node:DigitSequence	2A	Phase 2A canonical base closure
+digit-token	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+div-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+divide	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+docs-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+dollar	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+dot-product	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+dot-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+dot-subscript-int	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+element-of	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+emoji	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+emoji-grapheme	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+emphasis	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+emphasis-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+empty	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+empty-map	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+empty-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+empty-set	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+english-false-literal	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+english-true-literal	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+enum-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+enum-separator	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+enum-variant	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+enum-variant-inline-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+enum-variant-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+equal	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+equal-to	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+equation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+equation-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+error-alt-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+error-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+error-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+escaped-char	base	parity-verified	parity-verified	node:EscapedCharacter	2A	Phase 2A canonical base closure
+eval-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+exclamation	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+exp-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+export-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+factor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+false-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+fancy-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+fancy-table-header	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+field	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+figure-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+figures	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+figures-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+float	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+float-decimal-start	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+float-full	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+float-left	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+float-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+float-right	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+float-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+footnote	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+footnote-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+footnote-reference	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+forbidden-emoji	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+formula	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+formula-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-args	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-async-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-block-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-comment-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-declare	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-guard	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-guard-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-implementation	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-instance	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-output	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-pipe	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-specification	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-state-definition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-state-definition-variables	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-state-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-statement-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+fsm-value	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+full-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-call	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-define	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-define-match-arms	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-define-statements	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-match-arm	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-out-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+function-out-args	functions	unported	pending	undecided		Deferred beyond Phase 2A.
+gen-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+generator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+generator-arrow	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+generator-arrow-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+grammar	grammar	parity-verified	parity-verified	node:Grammar	2A	Phase 2A grammar metalanguage
+grammar-definition	grammar	parity-verified	parity-verified	node:GrammarDefinition	2A	Phase 2A grammar metalanguage
+grammar-expression	grammar	parity-verified	parity-verified	node:GrammarExpression	2A	Phase 2A grammar metalanguage
+grammar-factor	grammar	parity-verified	parity-verified	node:GrammarFactor	2A	Phase 2A grammar metalanguage
+grammar-group	grammar	parity-verified	parity-verified	node:GrammarGroup	2A	Phase 2A grammar metalanguage
+grammar-identifier	grammar	parity-verified	parity-verified	node:GrammarIdentifier	2A	Phase 2A grammar metalanguage
+grammar-list	grammar	parity-verified	parity-verified	node:GrammarList	2A	Phase 2A grammar metalanguage
+grammar-not	grammar	parity-verified	parity-verified	node:GrammarNot	2A	Phase 2A grammar metalanguage
+grammar-optional	grammar	parity-verified	parity-verified	node:GrammarOptional	2A	Phase 2A grammar metalanguage
+grammar-peek	grammar	parity-verified	parity-verified	node:GrammarPeek	2A	Phase 2A grammar metalanguage
+grammar-range	grammar	parity-verified	parity-verified	node:GrammarRange	2A	Phase 2A grammar metalanguage
+grammar-repeat0	grammar	parity-verified	parity-verified	node:GrammarRepeat0	2A	Phase 2A grammar metalanguage
+grammar-repeat1	grammar	parity-verified	parity-verified	node:GrammarRepeat1	2A	Phase 2A grammar metalanguage
+grammar-rule	grammar	parity-verified	parity-verified	node:GrammarRule	2A	Phase 2A grammar metalanguage
+grammar-term	grammar	parity-verified	parity-verified	node:GrammarTerm	2A	Phase 2A grammar metalanguage
+grammar-terminal	grammar	parity-verified	parity-verified	node:GrammarTerminal	2A	Phase 2A grammar metalanguage
+grammar-terminal-token	grammar	parity-verified	parity-verified	node:GrammarTerminalToken	2A	Phase 2A grammar metalanguage
+grave	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+grave-codeblock-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+greater-than	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+greater-than-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+grouping-symbol	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+guard-operator	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
+hashtag	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+header-field	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+help-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+hexadecimal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+highlight	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+highlight-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+http-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+hyperlink	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+idea-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+idea-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+identifier	base	parity-verified	parity-verified	node:Identifier	2A	Phase 2A canonical base closure
+identifier-path-segment	base	parity-verified	parity-verified	node:IdentifierPathSegment	2A	Phase 2A canonical base closure
+identifier-path-segment-emoji	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+identifier-symbol	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+img	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+img-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+import-alias-operator	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+import-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+import-group-item	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+import-group-items	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+import-group-separator	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+info-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+info-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+inline-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-equation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-table-header	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-table-row	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+integer-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+intersection	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+invariant-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+kind	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-annotation	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-any	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-atom	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-empty	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-kind	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-map	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-matrix	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-record	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-scalar	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-set	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-table	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-tuple	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+kind-with-option	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+l1	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+l2	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+l3	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+l4	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+l5	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+l6	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+l7	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+left-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+left-angle	literals	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
+left-angle1	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+left-angle2	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+left-anti-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+left-brace	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+left-bracket	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+left-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+left-parenthesis	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+left-semi-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+less-than	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+less-than-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+list-separator	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+load-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+logic-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+ls-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+map	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+mapping	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+match-arm	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+match-expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-column	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-comprehension	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-end	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-multiply	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-row	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-solve	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-start	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+mech-code	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+mech-code-alt	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+mechdown-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+mechdown-table	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+mechdown-table-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+mechdown-table-no-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+mechdown-table-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+mechdown-table-with-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+micro-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-arm-left	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-arm-right	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-expression-inner	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-eye-left	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-eye-right	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-nose	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-section	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+mika-section-close	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+mika-section-open	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+mini-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
+module-export-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+module-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-alias	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-alias-path	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-alias-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-context-alias	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-end	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-intrinsic-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-name-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-path	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-path-segment	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-import-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+module-import-value-alias	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-only-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-root	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+module-suffix-import	imports	unported	pending	undecided		Deferred beyond Phase 2A.
+modulus	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+mul-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+mul-div-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+multiply	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+nbsp	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+negate	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+negate-factor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+new-line	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+new-line-char	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+newline-indent	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+no-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+not	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+not-element-of	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+not-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+not-factor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+not-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+octal-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+op-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+op-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+option-map	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+option-mapping	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+option-value	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+or	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+ordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+ordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+output-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+output-operator-a	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+output-operator-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+paragraph-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+paragraph-newline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+paragraph-text	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+parenthetical-term	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+parse	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+parse-grammar	parser	parity-verified	parity-verified	root:GrammarDocument	2A	Phase 2A explicit dependency closure
+parse-mech	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+parse-repl-command	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern-array	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern-array-item	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern-array-token	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern-atom-struct	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern-tuple	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+pattern-tuple-struct	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+percent	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+period	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+plan-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+plus	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+power	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+power-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+prefixed-context-path	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+profile-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+program	parser	unported	pending	undecided		Deferred beyond Phase 2A.
+prompt	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+prompt-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+proper-subset	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+proper-superset	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+punctuation	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+question	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+question-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+question-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+quit-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+quote	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+quote-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+quote-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+range-exclusive	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+range-expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+range-inclusive	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+range-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+range-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+rational-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+raw-hyperlink	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+raw-string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+raw-subtract	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+raw-text	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+real-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+record	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+reference	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+regular-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+relative-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+repl-identifier	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+right-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+right-angle	literals	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
+right-angle1	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+right-angle2	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+right-brace	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+right-bracket	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+right-join	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+right-parenthesis	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+row-separator	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+save-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+scientific-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+section	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+section-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+section-reference	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+section-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+select-all	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+semicolon	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+send-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+set	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+set-comprehension	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+set-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+slash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+slice	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+slice-ref	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-import-tail	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-import-uri-scheme	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-mec-path	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-mec-path-wildcard-suffix	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-path-component	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-path-component-token	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+space	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+space-tab	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+space-tab0	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+space-tab1	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+spaced-subtract	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+spread-operator	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+spread-operator-a	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+spread-operator-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+statement	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+statement-separator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+step-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+strict-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+strict-not-equal	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+strike-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+strikethrough	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+strong	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+strong-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+structure	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+sub-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+sublist	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+subset	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+subtract	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+success-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+success-check-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+success-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+superset	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+swizzle-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+symbol	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+symbols-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+symmetric-difference	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+synth-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+tab	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-column	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-end	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-header	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-horz	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+table-row	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-row2	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-separator	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-start	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-top	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+tag	parser	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
+text	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+thematic-break	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+thin-space	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+tilde	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+tilde-codeblock-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+title	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+title-front-matter	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+transition-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+transition-operator-a	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+transition-operator-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+transpose	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+true-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+tuple	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+tuple-destructure	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+tuple-struct	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+typed-integer	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+ul-subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+unchecked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+underline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+underline-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+underscore	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+underscore-digit	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+union-op	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+unordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+unordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+untyped-integer	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+untyped-real-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+uri-scheme-part	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+uri-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+utf8-string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
+var	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
+variable-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+variable-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+warning-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+warning-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+whitespace	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
+whitespace0	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+whitespace1	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+whos-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
+wildcard	patterns	unported	pending	undecided		Deferred beyond Phase 2A.
+ws0e	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+ws1e	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
+xor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.

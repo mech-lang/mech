@@ -19,6 +19,7 @@ pub mod incremental;
 pub mod index;
 pub mod kind;
 pub mod line_index;
+pub mod lower;
 pub mod pointer;
 pub mod parser;
 pub mod red;
@@ -39,10 +40,12 @@ pub use incremental::*;
 pub use index::*;
 pub use kind::*;
 pub use line_index::*;
+pub use lower::*;
 pub use pointer::*;
 pub use parser::{
   FenceDelimiter, FragmentKind, FragmentSnapshot, ParseConfig, ParseContext, ParseLimits,
-  ParseMode, parse_document, parse_fragment,
+  ParseMode, ParseRequestError, ParseRoot, ParserImplementation, parse_canonical_grammar,
+  parse_document, parse_fragment, parse_syntax,
 };
 pub use red::*;
 pub use source::*;
@@ -53,6 +56,7 @@ pub enum RestartMode {
   Paragraph,
   Mech,
   Fence,
+  Grammar,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
