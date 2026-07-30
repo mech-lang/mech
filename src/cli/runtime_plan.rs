@@ -96,8 +96,6 @@ mod tests {
     use mech_runtime::{FS_IMPORT, FS_READ, FS_RESOLVE, MECH_TOOL_SUBJECT, check_fs_capability};
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
     struct CurrentDirGuard {
         previous: std::path::PathBuf,
         _lock: std::sync::MutexGuard<'static, ()>,
@@ -105,7 +103,7 @@ mod tests {
 
     impl CurrentDirGuard {
         fn enter(path: &std::path::Path) -> Self {
-            let lock = CURRENT_DIR_LOCK.lock().unwrap();
+            let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
             let previous = std::env::current_dir().unwrap();
             std::env::set_current_dir(path).unwrap();
             Self {

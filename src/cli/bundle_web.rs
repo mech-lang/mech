@@ -657,6 +657,7 @@ export default async function init() {}
 
     assert_eq!(loaded.path, explicit.join("demo.mcfg").canonicalize().unwrap());
     assert_ne!(loaded.path, discovered.join("demo.mcfg").canonicalize().unwrap());
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -670,6 +671,7 @@ export default async function init() {}
     let error = format!("{:?}", load_bundle_web_config(&matches).unwrap_err());
 
     assert!(error.contains("bundle-web requires a config"));
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -683,6 +685,7 @@ export default async function init() {}
     let error = format!("{:?}", load_bundle_web_config(&matches).unwrap_err());
 
     assert!(error.contains("bundle-web requires a project config"));
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -716,6 +719,7 @@ export default async function init() {}
     assert_eq!(options.shim_path, root.join("override.html"));
     assert!(options.stylesheet_paths.contains(&root.join("override.css")));
     assert_eq!(options.wasm_pkg, root.join("override-pkg"));
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -810,6 +814,7 @@ export default async function init() {}
     assert!(root.join("out/code/demo.mec").is_file());
     assert!(root.join("out/html/demo.html").is_file());
     assert!(!root.join("out/source/../app/demo.mec").exists());
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -852,6 +857,7 @@ export default async function init() {}
     assert!(root.join("out/code/src/demo.mec").is_file());
     assert!(root.join("out/html/src/demo.html").is_file());
     assert!(!root.join("out/source/../app/src/demo.mec").exists());
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 

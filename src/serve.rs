@@ -1281,8 +1281,6 @@ mod tests {
   use mech_runtime::MECH_TOOL_SUBJECT;
   use std::time::{SystemTime, UNIX_EPOCH};
 
-  static CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
-
   struct CurrentDirGuard {
     previous: PathBuf,
     _lock: std::sync::MutexGuard<'static, ()>,
@@ -1290,7 +1288,7 @@ mod tests {
 
   impl CurrentDirGuard {
     fn enter(path: &Path) -> Self {
-      let lock = CURRENT_DIR_LOCK.lock().unwrap();
+      let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
       let previous = std::env::current_dir().unwrap();
       std::env::set_current_dir(path).unwrap();
       Self { previous, _lock: lock }
