@@ -147,6 +147,22 @@ fn based_prefixes_commit_missing_payload_recovery_with_physical_found_syntax() {
 }
 
 #[test]
+fn missing_hexadecimal_payload_is_a_production_without_a_synthetic_digit() {
+    let parsed = parse("0x", rules::HEXADECIMAL_LITERAL);
+    let missing = find_node(&parsed.syntax(), SyntaxKind::Missing)
+        .expect("the missing hexadecimal payload has a MISSING node");
+
+    assert!(
+        missing.children_with_tokens().is_empty(),
+        "a hexadecimal payload is a production, so recovery must not invent a digit token",
+    );
+    assert!(
+        missing.tokens().is_empty(),
+        "the MISSING node must contain no synthetic tokens",
+    );
+}
+
+#[test]
 fn incomplete_losing_candidates_restore_without_diagnostics() {
     for (rule, input) in [
         (rules::ATOM, ":"),

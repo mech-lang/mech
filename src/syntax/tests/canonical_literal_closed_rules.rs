@@ -2,11 +2,30 @@ use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     reconstruct_source_range, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode,
-    TextSnapshot,
+    TextRange, TextSize, TextSnapshot,
 };
 
 fn source(text: &str) -> TextSnapshot {
     TextSnapshot::new(DocumentId(920), Revision(0), text).unwrap()
+}
+
+fn legacy_extent<Output>(
+    input: &str,
+    parser: for<'source> fn(
+        mech_syntax::ParseString<'source>,
+    ) -> mech_syntax::ParseResult<'source, Output>,
+) -> Option<TextSize> {
+    let graphemes = mech_syntax::graphemes::init_tag(input);
+    parser(mech_syntax::ParseString::new(&graphemes))
+        .ok()
+        .map(|(remaining, _)| {
+            TextSize(
+                graphemes[..remaining.cursor]
+                    .iter()
+                    .map(|grapheme| grapheme.len() as u32)
+                    .sum(),
+            )
+        })
 }
 
 fn parse(
@@ -98,10 +117,48 @@ fn ordered_number_selection_retains_the_required_syntax_shapes() {
     assert!(integer_prefix.is_strictly_clean());
     assert_eq!(integer_prefix.consumed.end.0, 1);
     assert!(find_node(&integer_prefix.syntax(), SyntaxKind::IntegerLiteral).is_some());
+}
 
-    let rational = parse("1u8/2u16", rules::RATIONAL_LITERAL);
-    assert!(rational.is_strictly_clean());
-    assert!(find_node(&rational.syntax(), SyntaxKind::RationalLiteral).is_some());
+#[test]
+fn rational_selection_matches_legacy_greedy_typed_integer_behavior() {
+    let plain = parse("1/2", rules::RATIONAL_LITERAL);
+    assert!(plain.is_strictly_clean());
+    assert_eq!(plain.consumed.end, plain.source.byte_len());
+    assert!(find_node(&plain.syntax(), SyntaxKind::RationalLiteral).is_some());
+    assert_eq!(
+        plain.matched.then_some(plain.consumed.end),
+        legacy_extent("1/2", mech_syntax::rational_literal),
+    );
+
+    let typed_components = parse("1u8/2u16", rules::RATIONAL_LITERAL);
+    assert!(!typed_components.matched);
+    assert!(typed_components.diagnostics.is_empty());
+    assert_eq!(typed_components.consumed, TextRange::empty(TextSize::ZERO),);
+    assert_eq!(
+        typed_components
+            .matched
+            .then_some(typed_components.consumed.end),
+        legacy_extent("1u8/2u16", mech_syntax::rational_literal),
+    );
+
+    for input in ["1u8/2u16", "1foo/2"] {
+        let number = parse(input, rules::NUMBER);
+        assert!(number.is_strictly_clean(), "{input:?}");
+        assert_eq!(number.consumed.end, number.source.byte_len(), "{input:?}");
+        assert!(
+            find_node(&number.syntax(), SyntaxKind::TypedInteger).is_some(),
+            "{input:?} must choose typed-integer",
+        );
+        assert!(
+            find_node(&number.syntax(), SyntaxKind::RationalLiteral).is_none(),
+            "{input:?} must not choose rational-literal",
+        );
+        assert_eq!(
+            number.matched.then_some(number.consumed.end),
+            legacy_extent(input, mech_syntax::number),
+            "{input:?}",
+        );
+    }
 }
 
 #[test]
