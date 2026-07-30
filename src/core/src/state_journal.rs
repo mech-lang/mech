@@ -445,8 +445,13 @@ impl ValueStateJournal {
             )
             .with_compiler_loc()
         })?;
-        let snapshot = snapshot(&payload, side.phase())?;
-        descend(self, &snapshot, seen)
+
+        // Map/set snapshot construction invokes Value equality and hashing. Every
+        // nested Ref must be preflighted before those operations can run.
+        descend(self, &payload, seen)?;
+
+        let _ = snapshot(&payload, side.phase())?;
+        Ok(())
     }
 
     fn visit_ref<T, F>(
