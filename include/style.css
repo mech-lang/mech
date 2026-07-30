@@ -2913,3 +2913,392 @@ mark {
 .mech-matrix-kind-close {
     color: var(--kind-annotation-color-dark);
 }
+
+/* ========================================================================
+   Shipped document shell
+   ======================================================================== */
+
+:root {
+    --mech-shell-header-height: 60px;
+    --mech-console-size: clamp(320px, 38vw, 620px);
+    --mech-shell-border: #35393d;
+    --mech-shell-surface: #090d11;
+    --mech-shell-surface-raised: #171c26;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    overflow: hidden;
+}
+
+#header {
+    align-items: center;
+    background: linear-gradient(90deg, #090d11, #171c26);
+    border-bottom: 1px solid var(--mech-shell-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.65);
+    color: var(--text-color);
+    display: flex;
+    font-family: 'FiraCodeLight', monospace;
+    gap: 2rem;
+    height: var(--mech-shell-header-height);
+    padding: 0 3rem;
+    position: relative;
+    z-index: 10;
+}
+
+#logo {
+    flex: 0 0 auto;
+}
+
+#logo img {
+    display: block;
+    height: 35px;
+    width: auto;
+}
+
+#nav {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    gap: 1.5rem;
+    text-transform: uppercase;
+}
+
+#nav a {
+    color: inherit;
+    text-decoration: none;
+}
+
+#nav a:hover,
+#nav .active a {
+    color: var(--main-color-high);
+}
+
+#nav span::before {
+    color: var(--main-color-high);
+    content: ':';
+    font-weight: 700;
+    margin-right: 0.2rem;
+}
+
+#nav .active::before {
+    content: '>:';
+}
+
+#github {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.container.mech-root {
+    display: grid;
+    grid-template-columns: minmax(205px, 270px) minmax(0, 1fr) 8px var(--mech-console-size);
+    height: calc(100vh - var(--mech-shell-header-height));
+    min-height: 0;
+    overflow: hidden;
+    width: 100%;
+}
+
+.container.mech-root[data-mech-console-open="false"] {
+    grid-template-columns: minmax(205px, 270px) minmax(0, 1fr) 0 0;
+}
+
+.container.mech-root > .mech-toc {
+    background: var(--mech-shell-surface);
+    border-right: 1px solid var(--mech-shell-border);
+    grid-column: 1;
+    height: 100%;
+    margin: 0;
+    max-height: none;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 24px 18px;
+    position: relative;
+}
+
+.container.mech-root > .mech-toc .mech-toc {
+    background: transparent;
+    border: 0;
+    height: auto;
+    margin: 0;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    position: static;
+}
+
+#left-pane {
+    background: var(--body-background-color);
+    color: var(--text-color);
+    grid-column: 2;
+    min-width: 0;
+    overflow-y: auto;
+    padding: clamp(24px, 5vw, 64px);
+}
+
+.mech-document-content {
+    margin: 0 auto;
+    max-width: 900px;
+    min-width: 0;
+}
+
+#breadcrumb {
+    color: var(--contrast-color-mid);
+    font-family: 'FiraCodeLight', monospace;
+    margin: 0 auto 24px;
+    max-width: 900px;
+    min-height: 1.5rem;
+}
+
+#breadcrumb a {
+    color: var(--main-color-high);
+    text-decoration: none;
+}
+
+.resizer {
+    align-items: center;
+    background: var(--mech-shell-border);
+    cursor: col-resize;
+    display: flex;
+    grid-column: 3;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+.container.mech-root[data-mech-console-open="false"] #resizer {
+    overflow: visible;
+}
+
+.toggle-button {
+    background: rgb(246, 192, 78);
+    border: 2px solid rgb(195, 146, 39);
+    border-radius: 3px;
+    color: #35393d;
+    cursor: pointer;
+    font-size: 1.3rem;
+    font-weight: 700;
+    height: 50px;
+    line-height: 1;
+    padding: 0;
+    position: absolute;
+    width: 16px;
+}
+
+.console-pane {
+    background: var(--code-output-background-color);
+    border-left: 1px solid var(--mech-shell-border);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    grid-column: 4;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.console-pane.hidden,
+.console-pane.is-collapsed {
+    display: none;
+}
+
+.console-pane.is-fullscreen {
+    bottom: 0;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: var(--mech-shell-header-height);
+    z-index: 30;
+}
+
+.console-topbar {
+    align-items: center;
+    background: var(--mech-shell-surface-raised);
+    border-bottom: 1px solid var(--mech-shell-border);
+    display: flex;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 0 14px;
+}
+
+.console-tabs {
+    align-items: stretch;
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+}
+
+.console-tab {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--contrast-color-mid);
+    cursor: pointer;
+    font: inherit;
+    padding: 14px 2px 10px;
+    text-transform: uppercase;
+}
+
+.console-tab:hover,
+.console-tab.active {
+    border-bottom-color: var(--main-color-high);
+    color: var(--main-color-high);
+}
+
+.console-fullscreen-toggle {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px 7px;
+}
+
+.console-fullscreen-toggle:hover {
+    border-color: var(--mech-shell-border);
+}
+
+.console-panels {
+    flex: 1;
+    min-height: 0;
+}
+
+.console-panel {
+    display: none;
+    height: 100%;
+    min-height: 0;
+}
+
+.console-panel.is-active {
+    display: block;
+}
+
+.console-scroll,
+.mech-repl {
+    height: 100%;
+    min-height: 0;
+}
+
+.console-scroll {
+    font-family: 'FiraCodeLight', monospace;
+    overflow: auto;
+    padding: 18px;
+}
+
+.mech-repl {
+    display: flex;
+    flex-direction: column;
+    font-family: 'FiraCodeLight', monospace;
+}
+
+.mech-repl.hidden {
+    display: none;
+}
+
+.mech-repl-transcript {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 18px;
+}
+
+.mech-repl-input-row {
+    align-items: flex-start;
+    border-top: 1px solid var(--mech-shell-border);
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+}
+
+.repl-prompt {
+    color: var(--main-color-high);
+    line-height: 1.5;
+}
+
+.repl-input {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    flex: 1;
+    font: inherit;
+    min-height: 1.5rem;
+    outline: 0;
+    resize: vertical;
+}
+
+#edgeHandle {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    body {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    #header {
+        gap: 1rem;
+        min-height: var(--mech-shell-header-height);
+        padding: 8px 16px;
+    }
+
+    #nav {
+        gap: 0.75rem;
+    }
+
+    #github {
+        display: none;
+    }
+
+    .container.mech-root {
+        display: block;
+        height: auto;
+        min-height: calc(100vh - var(--mech-shell-header-height));
+        overflow: visible;
+    }
+
+    .container.mech-root > .mech-toc {
+        border-bottom: 1px solid var(--mech-shell-border);
+        border-right: 0;
+        height: auto;
+        max-height: 32vh;
+    }
+
+    #left-pane {
+        min-height: calc(100vh - var(--mech-shell-header-height));
+        overflow: visible;
+        padding: 24px 18px 72px;
+    }
+
+    .resizer {
+        bottom: 20px;
+        height: 48px;
+        position: fixed;
+        right: 0;
+        width: 20px;
+        z-index: 35;
+    }
+
+    .console-pane {
+        bottom: 0;
+        box-shadow: -8px 0 28px rgba(0, 0, 0, 0.45);
+        height: min(70vh, 620px);
+        position: fixed;
+        right: 0;
+        top: auto;
+        width: min(94vw, 520px);
+        z-index: 34;
+    }
+
+    .container.mech-root[data-mech-console-open="false"] .console-pane,
+    .console-pane.hidden,
+    .console-pane.is-collapsed {
+        display: none;
+    }
+}

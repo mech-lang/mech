@@ -3,25 +3,107 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>{{STYLESHEET}}</style>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
   <title>{{TITLE}}</title>
+  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <style>
+{{STYLESHEET}}
+  </style>
 </head>
 <body>
+  <header id="header">
+    <div id="logo">
+      <a href="https://mech-lang.org" aria-label="Mech home">
+        <img src="https://mech-lang.org/img/logo.png" alt="Mech">
+      </a>
+    </div>
+    <nav id="nav" aria-label="Primary">
+      <span><a href="https://about.mech-lang.org">About</a></span>
+      <span><a href="https://mech-lang.org/blog">Blog</a></span>
+      <span><a href="https://mech-lang.org/community">Community</a></span>
+      <span class="active"><a href="https://docs.mech-lang.org">Docs</a></span>
+      <span><a href="https://try.mech-lang.org">Explore</a></span>
+    </nav>
+    <div id="github">
+      <a class="github-button" href="https://github.com/mech-lang/mech" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
+    </div>
+  </header>
+
   <main
-    class="mech-document mech-root"
+    class="container mech-root"
+    data-mech-document-status="loading"
     mech-interpreter-id="0"
-    data-mech-source-url-key="{{SOURCE_URL_KEY}}">
-    {{HERO}}
-    {{TOC}}
-    {{ABSTRACT}}
-    {{INTRO}}
-    {{CONTENT}}
-    {{CITED}}
-    {{FOOTNOTES}}
-    {{REPL}}
+    data-mech-source-url-key="{{SOURCE_URL_KEY}}"
+    aria-label="Mech document">
+    <div class="mech-toc" data-mech-toc-shell aria-label="Table of contents">
+      {{TOC}}
+    </div>
+
+    <section class="content" id="left-pane" aria-label="Document content">
+      <nav id="breadcrumb" class="mech-breadcrumb" aria-label="Breadcrumb"></nav>
+      <article class="mech-document-content">
+        <h1>{{TITLE}}</h1>
+        {{ABSTRACT}}
+        {{INTRO}}
+        {{CONTENTS}}
+        {{CITED}}
+        {{FOOTNOTES}}
+      </article>
+    </section>
+
+    <div
+      class="resizer"
+      id="resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize console"
+      data-mech-console-resizer>
+      <button
+        class="toggle-button"
+        id="toggle-repl"
+        type="button"
+        aria-controls="mech-console"
+        aria-expanded="true"
+        aria-label="Toggle document console"
+        data-mech-console-toggle>‹</button>
+    </div>
+
+    <aside class="console-pane" id="mech-console" aria-label="Document console">
+      <div class="console-topbar">
+        <div class="console-tabs" role="tablist" aria-label="Console sections">
+          <button class="console-tab active" id="console-tab" type="button" role="tab" aria-selected="true" aria-controls="console-panel" data-tab="console">Console</button>
+          <button class="console-tab" id="output-tab" type="button" role="tab" aria-selected="false" aria-controls="output-panel" data-tab="output">Output</button>
+          <button class="console-tab" id="errors-tab" type="button" role="tab" aria-selected="false" aria-controls="errors-panel" data-tab="errors">Errors</button>
+        </div>
+        <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen" data-mech-console-fullscreen>
+          <span aria-hidden="true">⛶</span>
+        </button>
+      </div>
+      <div class="console-panels">
+        <section class="console-panel is-active" id="console-panel" role="tabpanel" aria-labelledby="console-tab" data-panel="console">
+          {{REPL}}
+        </section>
+        <section class="console-panel" id="output-panel" role="tabpanel" aria-labelledby="output-tab" data-panel="output">
+          <div class="console-scroll" id="mech-document-output" data-mech-output-panel></div>
+        </section>
+        <section class="console-panel" id="errors-panel" role="tabpanel" aria-labelledby="errors-tab" data-panel="errors">
+          <div class="console-scroll" id="mech-document-errors" data-mech-errors-panel aria-live="polite"></div>
+        </section>
+      </div>
+    </aside>
+    <div class="edge-handle" id="edgeHandle" aria-hidden="true" data-mech-console-edge-handle></div>
   </main>
+
+  <script type="application/x-mech-code" id="mech-document-code" data-mech-document-code>
+{{CODE}}
+  </script>
   <script>
     window.addEventListener("error", event => {
+      if (!event.error) return;
       document.documentElement.dataset.mechWindowError =
         event.message || String(event.error);
     });
@@ -30,151 +112,10 @@
         String(event.reason);
     });
   </script>
-  <script type="module">
-    import init, { WasmDocument } from "/_mech/pkg/mech_wasm.js";
-
-    const embeddedCode = `{{CODE}}`;
-    let mechDocument;
-    let running = false;
-
-    function outputAddress(element) {
-      const separator = element.id.lastIndexOf(":");
-      if (separator <= 0 || separator === element.id.length - 1) {
-        throw new Error(`invalid Mech output address \`${element.id}\``);
-      }
-      return {
-        outputId: BigInt(element.id.slice(0, separator)),
-        interpreterId: BigInt(element.id.slice(separator + 1)),
-      };
-    }
-
-    function prepareVarPlaceholders() {
-      const pattern = /\{\{VAR:([^@}\s]+)(?:@(\d+))?\}\}/g;
-      const walker = document.createTreeWalker(
-        document.querySelector(".mech-document"),
-        NodeFilter.SHOW_TEXT,
-      );
-      const candidates = [];
-      while (walker.nextNode()) {
-        const node = walker.currentNode;
-        if (
-          node.nodeValue.includes("{{VAR:") &&
-          !node.parentElement.closest("script, style, code, pre, textarea")
-        ) {
-          candidates.push(node);
-        }
-      }
-      for (const node of candidates) {
-        const fragment = document.createDocumentFragment();
-        let cursor = 0;
-        let match;
-        while ((match = pattern.exec(node.nodeValue)) !== null) {
-          fragment.append(node.nodeValue.slice(cursor, match.index));
-          const placeholder = document.createElement("span");
-          placeholder.className = "mech-var-placeholder";
-          placeholder.dataset.mechVarName = match[1];
-          placeholder.dataset.mechInterpreterId = match[2] || "0";
-          fragment.append(placeholder);
-          cursor = pattern.lastIndex;
-        }
-        fragment.append(node.nodeValue.slice(cursor));
-        node.replaceWith(fragment);
-      }
-    }
-
-    function renderValues() {
-      for (const output of document.querySelectorAll(".mech-block-output[id]")) {
-        const { interpreterId, outputId } = outputAddress(output);
-        const rendered = mechDocument.renderedOutput(interpreterId, outputId);
-        if (rendered !== null) {
-          output.innerHTML = rendered.blockHtml;
-        }
-      }
-      for (const output of document.querySelectorAll(".mech-inline-mech-code[id]")) {
-        const { interpreterId, outputId } = outputAddress(output);
-        const rendered = mechDocument.renderedOutput(interpreterId, outputId);
-        if (rendered !== null) {
-          output.innerHTML = rendered.inlineHtml;
-        }
-      }
-      for (const output of document.querySelectorAll(".mech-var-placeholder")) {
-        const rendered = mechDocument.renderedSymbol(
-          BigInt(output.dataset.mechInterpreterId || "0"),
-          output.dataset.mechVarName,
-        );
-        if (rendered !== null) {
-          output.innerHTML = rendered.inlineHtml;
-        }
-      }
-    }
-
-    function showError(error) {
-      const message = error instanceof Error ? error.message : String(error);
-      document.documentElement.dataset.mechDocumentStatus = "error";
-      document.documentElement.dataset.mechDocumentError = message;
-      const output = document.createElement("pre");
-      output.id = "mech-document-error";
-      output.setAttribute("role", "alert");
-      output.textContent = `Mech document failed to run: ${message}`;
-      document.body.prepend(output);
-      console.error(error);
-    }
-
-    async function loadCode() {
-      const sourceUrlKey =
-        document.querySelector(".mech-document").dataset.mechSourceUrlKey;
-      const response = await fetch(`/code/${sourceUrlKey}`);
-      if (response.ok) {
-        return await response.text();
-      }
-      if (embeddedCode) {
-        return embeddedCode;
-      }
-      throw new Error(
-        `failed to fetch compiled Mech document: ` +
-          `${response.status} ${response.statusText}`,
-      );
-    }
-
-    function frame() {
-      if (!running) {
-        return;
-      }
-      try {
-        const result = mechDocument.frame(8);
-        if (result.processed > 0) {
-          renderValues();
-        }
-        requestAnimationFrame(frame);
-      } catch (error) {
-        running = false;
-        showError(error);
-      }
-    }
-
-    async function main() {
-      await init();
-      mechDocument = WasmDocument.fromEncoded(await loadCode());
-      prepareVarPlaceholders();
-      renderValues();
-      mechDocument.start();
-      running = true;
-      document.documentElement.dataset.mechDocumentStatus = "ready";
-      requestAnimationFrame(frame);
-    }
-
-    window.addEventListener("beforeunload", () => {
-      running = false;
-      if (mechDocument) {
-        try {
-          mechDocument.stop();
-        } catch (error) {
-          console.error(error);
-        }
-      }
-    });
-
-    main().catch(showError);
+  <script
+    type="module"
+    data-mech-document-controller>
+{{DOCUMENT_SCRIPT}}
   </script>
 </body>
 </html>
