@@ -80,19 +80,18 @@ fn runtime_repl_load_request(
     return Err(repl_error("runtime REPL load path cannot be empty"));
   }
 
+  if has_explicit_source_scheme(source_path) {
+    return Ok(mech_runtime::SourceRequest::new(source_path));
+  }
+
   let path = std::path::Path::new(source_path);
-  let specifier = if has_explicit_source_scheme(source_path)
-    || path.is_absolute()
-  {
-    source_path.to_string()
+  let path = if path.is_absolute() {
+    path.to_path_buf()
   } else {
-    std::env::current_dir()?
-      .join(path)
-      .to_string_lossy()
-      .into_owned()
+    std::env::current_dir()?.join(path)
   };
 
-  Ok(mech_runtime::SourceRequest::new(specifier))
+  mech_runtime::SourceRequest::from_filesystem_path(path)
 }
 
 impl MechRepl {

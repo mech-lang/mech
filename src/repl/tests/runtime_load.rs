@@ -361,10 +361,9 @@ fn runtime_repl_load_request_preserves_explicit_source_schemes() {
         runtime_repl_load_request(&relative.to_string_lossy(),)
             .unwrap()
             .specifier,
-        std::env::current_dir()
+        SourceRequest::from_filesystem_path(std::env::current_dir().unwrap().join(relative),)
             .unwrap()
-            .join(relative)
-            .to_string_lossy(),
+            .specifier,
     );
 
     #[cfg(windows)]
@@ -372,8 +371,85 @@ fn runtime_repl_load_request_preserves_explicit_source_schemes() {
         runtime_repl_load_request(r"C:\project\main.mec")
             .unwrap()
             .specifier,
-        r"C:\project\main.mec",
+        SourceRequest::from_filesystem_path(r"C:\project\main.mec")
+            .unwrap()
+            .specifier,
     );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn runtime_repl_load_preserves_non_utf8_current_directory_bytes() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    struct CurrentDirGuard {
+        previous: PathBuf,
+        _lock: std::sync::MutexGuard<'static, ()>,
+    }
+
+    impl CurrentDirGuard {
+        fn enter(path: &Path) -> Self {
+            let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+            let previous = std::env::current_dir().unwrap();
+            std::env::set_current_dir(path).unwrap();
+            Self {
+                previous,
+                _lock: lock,
+            }
+        }
+    }
+
+    impl Drop for CurrentDirGuard {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.previous).unwrap();
+        }
+    }
+
+    let root = TestRoot::new("non-utf8-current-directory");
+    let raw_directory = root.path().join(OsString::from_vec(b"cwd-\xff".to_vec()));
+    std::fs::create_dir(&raw_directory).unwrap();
+    std::fs::write(
+        raw_directory.join("main.mec"),
+        "raw-cwd-value := 42\nraw-cwd-value\n",
+    )
+    .unwrap();
+    let resolver = file_resolver_with_grant(
+        &raw_directory,
+        &raw_directory,
+        true,
+        [FS_RESOLVE, FS_READ, FS_IMPORT],
+    );
+    let (resolver, requests) = RecordingResolver::new(resolver);
+    let mut repl = MechRepl::from_runtime(runtime_with_resolver(resolver));
+    let _current_dir = CurrentDirGuard::enter(&raw_directory);
+
+    let output = repl
+        .execute_repl_command(ReplCommand::Load(vec!["main.mec".to_string()]))
+        .unwrap();
+
+    assert!(output.contains("42"));
+    assert_f64(
+        runtime(&repl).root_symbol_value("raw-cwd-value").unwrap(),
+        42.0,
+        "non-UTF-8 cwd retained symbol",
+    );
+    let requests = requests.lock().unwrap();
+    let request = requests
+        .iter()
+        .find(|request| request.referrer.is_none())
+        .expect("root request must reach the configured resolver");
+    assert!(
+        !request.specifier.contains('\u{fffd}'),
+        "request replaced raw cwd bytes: {}",
+        request.specifier,
+    );
+    assert!(
+        request.specifier.to_ascii_uppercase().contains("%FF"),
+        "request did not retain the raw cwd byte: {}",
+        request.specifier,
+    );
+    assert_eq!(runtime(&repl).runtime_health(), RuntimeHealth::Healthy);
 }
 
 #[test]
