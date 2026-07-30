@@ -121,6 +121,53 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
     }
 }
 
+fn document_controller_slots(
+    shim: &str,
+    document_js: Option<&str>,
+    source_url_key: &str,
+) -> MResult<HtmlShimExtraSlots> {
+    let mut slots = HtmlShimExtraSlots::default();
+    slots.insert("SOURCE_URL_KEY", source_url_key);
+    if shim.contains("{{DOCUMENT_SCRIPT}}") {
+        let document_js = document_js.ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        slots.insert("DOCUMENT_SCRIPT", document_js);
+    }
+    Ok(slots)
+}
+
+fn shipped_shim_name(
+    source: &crate::cli::resources::ResourceSource,
+) -> Option<&'static str> {
+    match source {
+        crate::cli::resources::ResourceSource::EmbeddedDefault
+        | crate::cli::resources::ResourceSource::EmptyPathFallback => {
+            return Some("include/index.html");
+        }
+        crate::cli::resources::ResourceSource::LocalPath(path) => {
+            let include = Path::new(env!("CARGO_MANIFEST_DIR")).join("include");
+            for (file, label) in [
+                ("index.html", "include/index.html"),
+                ("blog.html", "include/blog.html"),
+                ("docs.html", "include/docs.html"),
+            ] {
+                if include.join(file).canonicalize().ok().as_ref() == Some(path) {
+                    return Some(label);
+                }
+            }
+            None
+        }
+        crate::cli::resources::ResourceSource::RemoteUrl(_) => None,
+    }
+}
+
 
 const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
@@ -624,6 +671,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     )
     .await?;
     render_resource_events(&badge.to_string(), "HTML shim", &shim.events);
+    let shim_source = shim.source.clone();
     let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
@@ -678,6 +726,12 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
 
     // HTML mode
     if html_flag {
+        let document_slots = document_controller_slots(
+            &shim_str,
+            options.resources.document_js,
+            "",
+        )?;
+        let shipped_shim = shipped_shim_name(&shim_source);
         let mut html_items: Vec<(CollectedSourceTarget, String)> = Vec::new();
         for (target, src) in &loaded_sources {
             let html = match src {
@@ -685,7 +739,16 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                 MechSourceCode::String(source) => {
                     let tree = parser::parse(source.trim())?;
                     let mut formatter = Formatter::new();
-                    formatter.format_html(&tree, stylesheet_str.clone(), shim_str.clone())
+                    let render = formatter.format_html_with_slots(
+                        &tree,
+                        stylesheet_str.clone(),
+                        shim_str.clone(),
+                        &document_slots,
+                    );
+                    if let Some(shim_name) = shipped_shim {
+                        validate_shipped_shim_render(shim_name, &render)?;
+                    }
+                    render.html
                 }
                 other => {
                     return Err(MechError::new(

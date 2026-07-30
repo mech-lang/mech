@@ -67,11 +67,22 @@ struct ServerSourceRegistry {
   index_source: Option<String>,
   preferred_index_source: Option<String>,
   listing_asset: Option<ServerAsset>,
+  document_controller: Option<String>,
+  shipped_document_shim: Option<String>,
   capability_kernel: Option<mech_runtime::SharedCapabilityKernel>,
   capability_subject: Option<String>,
 }
 
 impl ServerSourceRegistry {
+  fn set_document_controller(
+    &mut self,
+    document_controller: Option<String>,
+    shipped_document_shim: Option<String>,
+  ) {
+    self.document_controller = document_controller;
+    self.shipped_document_shim = shipped_document_shim;
+  }
+
   fn with_capabilities(&mut self, kernel: mech_runtime::SharedCapabilityKernel, subject: impl Into<String>) { self.capability_kernel = Some(kernel); self.capability_subject = Some(subject.into()); }
 
   fn check(&self, operation: &str, path: &Path) -> MResult<()> {
@@ -309,10 +320,31 @@ impl ServerSourceRegistry {
       });
       match parser::parse(&source) {
         Ok(tree) => {
+          let mut extra_slots = HtmlShimExtraSlots::default();
+          extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
+          if shim.contains("{{DOCUMENT_SCRIPT}}") {
+            let document_controller = self.document_controller.as_deref().ok_or_else(|| {
+              MechError::new(
+                GenericError {
+                  msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
+                },
+                None,
+              )
+              .with_compiler_loc()
+            })?;
+            extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
+          }
           let mut formatter = Formatter::new();
-          let html = formatter
-            .format_html(&tree, stylesheet.to_string(), shim.to_string())
-            .replace("{{SOURCE_URL_KEY}}", &escape_html(&key));
+          let render = formatter.format_html_with_slots(
+            &tree,
+            stylesheet.to_string(),
+            shim.to_string(),
+            &extra_slots,
+          );
+          if let Some(shim_name) = self.shipped_document_shim.as_deref() {
+            validate_shipped_shim_render(shim_name, &render)?;
+          }
+          let html = render.html;
           let mut backing_paths = vec![path.clone()];
           backing_paths.extend_from_slice(generated_html_backing_paths);
           self.html_sources.insert(key.clone(), ServerAsset {
@@ -578,6 +610,23 @@ impl MechServer {
     self.stylesheet_backing_paths = dedupe_paths(stylesheets);
     self.wasm_backing_paths = dedupe_paths(wasm);
     self.js_backing_paths = dedupe_paths(js);
+  }
+
+  /// Installs the optional controller requested by a source-document shim.
+  ///
+  /// Custom shims that omit `{{DOCUMENT_SCRIPT}}` receive no injected runtime
+  /// code. The shipped-shim name is only used to enforce the maintained shell
+  /// slot contract during generated-page rendering.
+  pub fn set_document_controller(
+    &mut self,
+    document_controller: Option<String>,
+    shipped_document_shim: Option<String>,
+  ) {
+    self
+      .registry
+      .write()
+      .unwrap()
+      .set_document_controller(document_controller, shipped_document_shim);
   }
 
   fn generated_html_backing_paths(&self) -> Vec<PathBuf> {
@@ -1639,6 +1688,10 @@ mod tests {
     std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
     let snapshot = snapshot(&root, "main.mec");
     let mut registry = ServerSourceRegistry::default();
+    registry.set_document_controller(
+      Some(include_str!("../include/document.js").to_string()),
+      Some("include/index.html".to_string()),
+    );
     registry
       .sync_workspace_snapshot(
         &root,

@@ -86,6 +86,47 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
     }
 }
 
+fn document_controller_for_shim(
+    shim: &str,
+    document_js: Option<&str>,
+) -> MResult<Option<String>> {
+    if !shim.contains("{{DOCUMENT_SCRIPT}}") {
+        return Ok(None);
+    }
+    let document_js = document_js.ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    Ok(Some(document_js.to_string()))
+}
+
+fn shipped_document_shim_name(source: &ResourceSource) -> Option<String> {
+    match source {
+        ResourceSource::EmbeddedDefault | ResourceSource::EmptyPathFallback => {
+            Some("include/index.html".to_string())
+        }
+        ResourceSource::LocalPath(path) => {
+            let include = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("include");
+            for (file, label) in [
+                ("index.html", "include/index.html"),
+                ("blog.html", "include/blog.html"),
+                ("docs.html", "include/docs.html"),
+            ] {
+                if include.join(file).canonicalize().ok().as_ref() == Some(path) {
+                    return Some(label.to_string());
+                }
+            }
+            None
+        }
+        ResourceSource::RemoteUrl(_) => None,
+    }
+}
+
 
 pub(crate) fn command() -> Command {
     Command::new("serve")
@@ -379,6 +420,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     )
     .await?;
     render_resource_events(&badge.to_string(), "HTML shim", &shim.events);
+    let shipped_document_shim = shipped_document_shim_name(&shim.source);
     let html_shim_backing_paths = match &shim.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
         _ => Vec::new(),
@@ -392,6 +434,10 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         )
         .with_compiler_loc()
     })?;
+    let document_controller = document_controller_for_shim(
+        &shim_str,
+        resources.document_js,
+    )?;
 
     print!("{badge} Loading WASM…");
     let LoadedBrowserAssets { project_js, wasm, js } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
@@ -429,6 +475,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         wasm_backing_paths,
         js_backing_paths,
     );
+    server.set_document_controller(document_controller, shipped_document_shim);
     server.init().await?;
 
     server.load_serve_plan(options.workspace_plan, options.project_overlay)?;
@@ -524,6 +571,7 @@ mod tests {
             mech_wasm,
             mech_js,
             project_js,
+            document_js: Some("document-controller"),
         }
     }
 

@@ -64,7 +64,7 @@ impl WebResourceDefaults {
     pub(crate) fn new(version: &str) -> Self {
         Self {
             shim_backup_url:
-                "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/shim.html"
+                "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html"
                     .to_string(),
             stylesheet_backup_url:
                 "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css"
@@ -435,4 +435,12 @@ mod tests {
         );
     }
 
+    #[test]
+    fn default_shim_fallback_points_at_the_shipped_index_shell() {
+        let defaults = WebResourceDefaults::new("0.0.0");
+        assert_eq!(
+            defaults.shim_backup_url,
+            "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html",
+        );
+    }
 }

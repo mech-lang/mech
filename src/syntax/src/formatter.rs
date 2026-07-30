@@ -1,6 +1,6 @@
 use mech_core::*;
 use mech_core::nodes::{Kind, Matrix};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 use crate::*;
@@ -15,6 +15,134 @@ struct TitleSlots {
   summary: String,
   next: String,
   previous: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct HtmlShimExtraSlots {
+  slots: BTreeMap<String, String>,
+}
+
+impl HtmlShimExtraSlots {
+  pub fn insert(&mut self, name: impl Into<String>, value: impl Into<String>) {
+    self.slots.insert(name.into(), value.into());
+  }
+
+  pub fn get(&self, name: &str) -> Option<&str> {
+    self.slots.get(name).map(String::as_str)
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct HtmlShimRender {
+  pub html: String,
+  pub consumed_slots: BTreeSet<String>,
+  pub unresolved_mech_slots: BTreeSet<String>,
+}
+
+fn is_mech_slot_name(name: &str) -> bool {
+  let mut bytes = name.bytes();
+  matches!(bytes.next(), Some(b'A'..=b'Z'))
+    && bytes.all(|byte| matches!(byte, b'A'..=b'Z' | b'0'..=b'9' | b'_'))
+}
+
+fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRender {
+  let mut html = String::with_capacity(shim.len());
+  let mut consumed_slots = BTreeSet::new();
+  let mut unresolved_mech_slots = BTreeSet::new();
+  let mut cursor = 0;
+
+  while let Some(relative_open) = shim[cursor..].find("{{") {
+    let open = cursor + relative_open;
+    html.push_str(&shim[cursor..open]);
+
+    let name_start = open + "{{".len();
+    let Some(relative_close) = shim[name_start..].find("}}") else {
+      html.push_str(&shim[open..]);
+      cursor = shim.len();
+      break;
+    };
+    let name_end = name_start + relative_close;
+    let token_end = name_end + "}}".len();
+    let name = &shim[name_start..name_end];
+
+    if name.starts_with("VAR:") {
+      html.push_str(&shim[open..token_end]);
+    } else if let Some(value) = slots.get(name) {
+      html.push_str(value);
+      consumed_slots.insert(name.to_string());
+    } else {
+      if is_mech_slot_name(name) {
+        unresolved_mech_slots.insert(name.to_string());
+      }
+      html.push_str(&shim[open..token_end]);
+    }
+
+    cursor = token_end;
+  }
+
+  html.push_str(&shim[cursor..]);
+  HtmlShimRender {
+    html,
+    consumed_slots,
+    unresolved_mech_slots,
+  }
+}
+
+/// Validates the slot contract carried by the maintained document shims.
+///
+/// Custom shims intentionally retain complete control over their markup, so
+/// callers must invoke this only after identifying a shipped shim.
+pub fn validate_shipped_shim_render(
+  shim_name: &str,
+  render: &HtmlShimRender,
+) -> MResult<()> {
+  if !render.unresolved_mech_slots.is_empty() {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "shipped HTML shim `{shim_name}` contains unresolved Mech slots: {}",
+          render
+            .unresolved_mech_slots
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", "),
+        ),
+      },
+      None,
+    )
+    .with_compiler_loc());
+  }
+
+  for slot in ["DOCUMENT_SCRIPT", "TITLE", "CODE", "REPL"] {
+    if !render.consumed_slots.contains(slot) {
+      return Err(MechError::new(
+        GenericError {
+          msg: format!(
+            "shipped HTML shim `{shim_name}` did not consume required slot `{slot}`",
+          ),
+        },
+        None,
+      )
+      .with_compiler_loc());
+    }
+  }
+
+  if !render.consumed_slots.contains("CONTENT")
+    && !render.consumed_slots.contains("CONTENTS")
+  {
+    return Err(MechError::new(
+      GenericError {
+        msg: format!(
+          "shipped HTML shim `{shim_name}` did not consume CONTENT or CONTENTS",
+        ),
+      },
+      None,
+    )
+    .with_compiler_loc());
+  }
+
+  Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -171,6 +299,16 @@ impl Formatter {
   }
 
   pub fn format_html(&mut self, tree: &Program, style: String, shim: String) -> String {
+    self.format_html_with_slots(tree, style, shim, &HtmlShimExtraSlots::default()).html
+  }
+
+  pub fn format_html_with_slots(
+    &mut self,
+    tree: &Program,
+    style: String,
+    shim: String,
+    extra_slots: &HtmlShimExtraSlots,
+  ) -> HtmlShimRender {
     self.html = true;
     self.inline_eval_counters.clear();
 
@@ -193,34 +331,44 @@ impl Formatter {
     };
     #[cfg(not(feature = "serde"))]
     let encoded_tree = String::new();
-    let repl_html = "<div class=\"console-scroll mech-repl hidden\" id=\"mech-output\"></div>";
+    let repl_html = r#"<div
+  class="console-scroll mech-repl hidden"
+  id="mech-output"
+  data-mech-repl-mount
+  aria-live="polite">
+</div>"#;
 
-    let mut rendered = shim.replace("{{STYLESHEET}}", &style)
-        .replace("{{TOC}}", &formatted_toc)
-        .replace("{{AUTHOR}}", &title_slots.author)
-        .replace("{{DATE}}", &title_slots.date)
-        .replace("{{KICKER}}", &title_slots.kicker)
-        .replace("{{SECTION}}", &title_slots.section)
-        .replace("{{VERSION}}", env!("CARGO_PKG_VERSION"))
-        .replace("{{NEXT}}", &title_slots.next)
-        .replace("{{PREVIOUS}}", &title_slots.previous)
-        .replace("{{HERO}}", &title_slots.hero)
-        .replace("{{SUMMARY}}", &title_slots.summary)
-        .replace("{{ABSTRACT}}", &formatted_abstract)
-        .replace("{{INTRO}}", &formatted_intro)
-        .replace("{{CITED}}", &formatted_cited)
-        .replace("{{FOOTNOTES}}", &formatted_footnotes)
-        .replace("{{CODE}}", &encoded_tree)
-        .replace("{{REPL}}", repl_html)
-        .replace("{{TITLE}}", &title);
+    let mut slots = BTreeMap::new();
+    slots.insert("STYLESHEET".to_string(), style);
+    slots.insert("TITLE".to_string(), title);
+    slots.insert("AUTHOR".to_string(), title_slots.author);
+    slots.insert("DATE".to_string(), title_slots.date);
+    slots.insert("KICKER".to_string(), title_slots.kicker);
+    slots.insert("SECTION".to_string(), title_slots.section);
+    slots.insert("VERSION".to_string(), env!("CARGO_PKG_VERSION").to_string());
+    slots.insert("NEXT".to_string(), title_slots.next);
+    slots.insert("PREVIOUS".to_string(), title_slots.previous);
+    slots.insert("HERO".to_string(), title_slots.hero);
+    slots.insert("SUMMARY".to_string(), title_slots.summary);
+    slots.insert("TOC".to_string(), formatted_toc);
+    slots.insert("ABSTRACT".to_string(), formatted_abstract);
+    slots.insert("INTRO".to_string(), formatted_intro);
+    slots.insert("CONTENTS".to_string(), formatted_contents);
+    slots.insert("CONTENT".to_string(), formatted_src);
+    slots.insert("CITED".to_string(), formatted_cited);
+    slots.insert("FOOTNOTES".to_string(), formatted_footnotes);
+    slots.insert("CODE".to_string(), encoded_tree);
+    slots.insert("REPL".to_string(), repl_html.to_string());
 
-    for (ix, section_html) in self.section_slots(tree).iter().enumerate() {
-      rendered = rendered.replace(&format!("{{{{SECTION{}}}}}", ix + 1), section_html);
+    for (ix, section_html) in self.section_slots(tree).into_iter().enumerate() {
+      slots.insert(format!("SECTION{}", ix + 1), section_html);
     }
 
-    rendered
-      .replace("{{CONTENT}}", &formatted_src)
-      .replace("{{CONTENTS}}", &formatted_contents)
+    for (name, value) in &extra_slots.slots {
+      slots.insert(name.clone(), value.clone());
+    }
+
+    render_html_shim(&shim, &slots)
   }
 
   fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
