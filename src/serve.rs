@@ -268,12 +268,13 @@ impl ServerSourceRegistry {
       if !is_renderable_mech_text_source(path) {
         continue;
       }
+      let path = path.canonicalize()?;
       let relative = path.strip_prefix(&root).map_err(|error| {
         Error::new(ErrorKind::InvalidInput, format!("workspace source is outside workspace root: {}", error))
       })?;
       let Some(key) = url_key(relative) else { continue; };
-      self.check(FS_READ, path)?;
-      let source = std::fs::read_to_string(path)?;
+      self.check(FS_READ, &path)?;
+      let source = std::fs::read_to_string(&path)?;
       self.raw_sources.insert(key.clone(), ServerAsset {
         bytes: source.as_bytes().to_vec(),
         content_type: "text/x-mech",
