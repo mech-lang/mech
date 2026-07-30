@@ -245,7 +245,7 @@ fn inline_eval_id(p: &InterpreterExecution<'_>) -> u64 {
     *counter += 1;
     current
   };
-  hash_str(&format!("inline-eval:{}:{}", p.id, next_ix))
+  hash_str(&format!("inline-eval:{}:{}", p.presentation_namespace(), next_ix))
 }
 
 #[cfg(feature = "mika")]

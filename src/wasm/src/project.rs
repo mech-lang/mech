@@ -1566,6 +1566,26 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn encoded_document_uses_the_formatter_root_namespace_for_inline_output() {
+        let encoded = encoded_document(
+            "The document evaluates {answer + 1} inline.\n\nanswer := 41",
+        );
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let output_id = mech_core::hash_str("inline-eval:0:0");
+        let rendered = document
+            .rendered_output(0, output_id)
+            .unwrap();
+
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+        );
+    }
+
+    #[wasm_bindgen_test]
     fn wasm_document_evaluate_returns_rendered_value() {
         let encoded = encoded_document("answer := 41 + 1\nanswer");
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();

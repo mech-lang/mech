@@ -1,6 +1,6 @@
 #![cfg(feature = "formatter")]
 
-use mech_core::nodes::*;
+use mech_core::{hash_str, nodes::*};
 use mech_syntax::{Formatter, HtmlShimExtraSlots};
 
 fn token(kind: TokenKind, text: &str) -> Token {
@@ -107,6 +107,21 @@ fn formatter_renders_context_qualified_assignment_target_with_prefix_context() {
     };
 
     assert_eq!(formatter.variable_assign(&assign), "@browser/body/content/output/_value = \"hello\"");
+}
+
+#[test]
+fn formatter_uses_the_stable_root_namespace_for_inline_output_addresses() {
+    let tree = mech_syntax::parser::parse(
+        "The document evaluates {answer + 1} inline.\n\nanswer := 41",
+    )
+    .unwrap();
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    let expected = format!(
+        "id=\"{}:0\" class=\"mech-inline-mech-code\"",
+        hash_str("inline-eval:0:0"),
+    );
+
+    assert!(html.contains(&expected), "missing formatter inline address: {html}");
 }
 
 fn first_statement(src: &str) -> Statement {

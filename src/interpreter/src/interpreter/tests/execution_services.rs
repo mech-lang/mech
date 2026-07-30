@@ -3,6 +3,22 @@ mod execution_services_borrow_tests {
     use super::super::super::{Interpreter, InterpreterExecution, NoMechExecutionServices};
 
     #[test]
+    fn direct_execution_uses_the_root_presentation_namespace() {
+        let interpreter = Interpreter::new(7001, 100);
+        let nested = Interpreter::new(7002, 100);
+        let mut services = NoMechExecutionServices;
+        let execution = InterpreterExecution::new(&interpreter, &mut services);
+
+        assert_eq!(execution.presentation_namespace(), 0);
+        execution
+            .with_interpreter(&nested, |nested_execution| {
+                assert_eq!(nested_execution.presentation_namespace(), nested.id);
+                Ok(())
+            })
+            .unwrap();
+    }
+
+    #[test]
     fn nested_execution_service_access_returns_a_structured_error() {
         let interpreter = Interpreter::new(7001, 100);
         let mut services = NoMechExecutionServices;

@@ -31,7 +31,7 @@ fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
 }
 
 #[test]
-fn runtime_run_tree_defers_inline_document_expression_until_document_code_completes() {
+fn runtime_run_tree_defers_inline_document_expression_in_the_formatter_root_namespace() {
     let tree = parser::parse(
         "The document evaluates {answer + 1} inline.\n\nanswer := 41",
     )
@@ -41,7 +41,8 @@ fn runtime_run_tree_defers_inline_document_expression_until_document_code_comple
     runtime.run_tree(&tree).unwrap();
 
     let root_id = runtime.program().interpreter().id;
-    let output_id = hash_str(&format!("inline-eval:{root_id}:0"));
+    assert_ne!(root_id, 0, "the runtime root has a physical ID");
+    let output_id = hash_str("inline-eval:0:0");
     let output = runtime
         .output_value_for_interpreter(root_id, output_id)
         .unwrap()
