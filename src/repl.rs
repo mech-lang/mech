@@ -139,6 +139,63 @@ impl MechRepl {
     }
   }
 
+  #[cfg(feature = "run")]
+  pub(crate) fn is_runtime_backed(&self) -> bool {
+    self.runtime.is_some()
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn runtime_has_driven_live_input_bindings(&self) -> MResult<bool> {
+    self
+      .runtime
+      .as_ref()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .has_driven_live_input_bindings()
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn start_runtime_input_drivers(&mut self) -> MResult<()> {
+    self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .start_input_drivers()
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn drain_runtime_host_inputs(
+    &mut self,
+    max_inputs: usize,
+  ) -> MResult<usize> {
+    self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .drain_host_inputs(max_inputs)
+      .map(|outcomes| outcomes.len())
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn drain_all_pending_runtime_host_inputs(&mut self) -> MResult<usize> {
+    let runtime = self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+    let pending = runtime.pending_host_input_count()?;
+    runtime
+      .drain_host_inputs(pending)
+      .map(|outcomes| outcomes.len())
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn shutdown_runtime(&mut self) -> MResult<()> {
+    self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .shutdown()
+  }
+
   pub fn execute_repl_command_control(&mut self, repl_cmd: ReplCommand) -> MResult<ReplExecution> {
     if matches!(repl_cmd, ReplCommand::Quit) {
       return Ok(ReplExecution::Quit);
