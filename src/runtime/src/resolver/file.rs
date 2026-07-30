@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
+#[cfg(windows)]
+use std::path::Prefix;
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
@@ -20,7 +22,9 @@ impl SourceRequest {
   /// Creates a source request from a filesystem path.
   ///
   /// Unix path bytes are percent-encoded without UTF-8 conversion. The
-  /// returned request is suitable for `FileSourceResolver`.
+  /// Windows drive, UNC, verbatim-drive, and verbatim-UNC paths are normalized
+  /// to standard local or UNC file URIs. The returned request is suitable for
+  /// `FileSourceResolver`.
   pub fn from_filesystem_path(
     path: impl AsRef<Path>,
   ) -> MResult<Self> {
@@ -431,20 +435,7 @@ fn hex_value(byte: u8) -> Option<u8> {
 fn path_to_file_uri(path: &Path) -> MResult<String> {
   #[cfg(windows)]
   {
-    if !path.is_absolute() {
-      return Err(filesystem_specifier_error(path.display().to_string(), "file URI source path must be absolute"));
-    }
-    let text = path.to_str().ok_or_else(|| {
-      filesystem_specifier_error(
-        path.display().to_string(),
-        "file URI source path must be valid UTF-8 on this target",
-      )
-    })?.replace('\\', "/");
-    if let Some(unc) = text.strip_prefix("//") {
-      return Ok(format!("file://{}", percent_encode_path(unc.as_bytes())));
-    }
-    let path_text = if text.starts_with('/') { text } else { format!("/{}", text) };
-    return Ok(format!("file://{}", percent_encode_path(path_text.as_bytes())));
+    return windows_path_to_file_uri(path);
   }
 
   #[cfg(unix)]
@@ -471,10 +462,110 @@ fn path_to_file_uri(path: &Path) -> MResult<String> {
   }
 }
 
+#[cfg(windows)]
+fn windows_path_to_file_uri(path: &Path) -> MResult<String> {
+  let path_label = format!("{path:?}");
+  let mut components = path.components();
+  let prefix = match components.next() {
+    Some(Component::Prefix(prefix)) => prefix.kind(),
+    _ => {
+      return Err(filesystem_specifier_error(
+        path_label,
+        "Windows file URI source path must include a supported absolute prefix",
+      ));
+    }
+  };
+
+  let mut uri = match prefix {
+    Prefix::Disk(drive) | Prefix::VerbatimDisk(drive) => {
+      if !path.is_absolute() {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "file URI source path must be absolute",
+        ));
+      }
+      format!("file:///{}:", (drive as char).to_ascii_uppercase())
+    }
+    Prefix::UNC(server, share) | Prefix::VerbatimUNC(server, share) => {
+      if !path.is_absolute() {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "file URI source path must be absolute",
+        ));
+      }
+      let server = windows_file_uri_component(path, server)?;
+      let share = windows_file_uri_component(path, share)?;
+      if server.is_empty() || share.is_empty() {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "UNC file URI source path must include server and share names",
+        ));
+      }
+      format!("file://{server}/{share}")
+    }
+    Prefix::DeviceNS(_) => {
+      return Err(filesystem_specifier_error(
+        path_label,
+        "Windows device namespace paths are not supported as file URI sources",
+      ));
+    }
+    Prefix::Verbatim(_) => {
+      return Err(filesystem_specifier_error(
+        path_label,
+        "unsupported Windows verbatim namespace path",
+      ));
+    }
+  };
+
+  for component in components {
+    match component {
+      Component::Prefix(_) => {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "Windows source path contained more than one prefix",
+        ));
+      }
+      Component::RootDir | Component::CurDir => {}
+      Component::ParentDir => uri.push_str("/.."),
+      Component::Normal(part) => {
+        uri.push('/');
+        uri.push_str(&windows_file_uri_component(path, part)?);
+      }
+    }
+  }
+  Ok(uri)
+}
+
+#[cfg(windows)]
+fn windows_file_uri_component(path: &Path, component: &std::ffi::OsStr) -> MResult<String> {
+  let text = component.to_str().ok_or_else(|| {
+    filesystem_specifier_error(
+      format!("{path:?}"),
+      "file URI source path must be valid UTF-8 on this target",
+    )
+  })?;
+  Ok(percent_encode_path_segment(text.as_bytes()))
+}
+
 fn percent_encode_path(bytes: &[u8]) -> String {
   let mut out = String::new();
   for &byte in bytes {
     if is_file_uri_path_byte_unreserved(byte) {
+      out.push(byte as char);
+    } else {
+      out.push('%');
+      out.push(hex_char(byte >> 4));
+      out.push(hex_char(byte & 0x0f));
+    }
+  }
+  out
+}
+
+#[cfg(windows)]
+fn percent_encode_path_segment(bytes: &[u8]) -> String {
+  let mut out = String::new();
+  for &byte in bytes {
+    if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
       out.push(byte as char);
     } else {
       out.push('%');
@@ -990,7 +1081,10 @@ mod tests {
     std::fs::write(&path, "value := 1").unwrap();
     let canonical = path.canonicalize().unwrap();
     let uri = path_to_file_uri(&canonical).unwrap();
-    assert_eq!(file_uri_to_path(&uri).unwrap(), canonical);
+    assert_eq!(
+      file_uri_to_path(&uri).unwrap().canonicalize().unwrap(),
+      canonical.canonicalize().unwrap(),
+    );
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -1053,6 +1147,79 @@ mod tests {
   fn supports_windows_drive_and_unc_file_uri_forms() {
     assert_eq!(file_uri_to_path("file:///C:/project/main.mec").unwrap(), PathBuf::from("C:\\project\\main.mec"));
     assert_eq!(file_uri_to_path("file://server/share/project/main.mec").unwrap(), PathBuf::from("\\\\server\\share\\project\\main.mec"));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_path_codec_normalizes_drive_and_verbatim_drive_prefixes() {
+    let disk = path_to_file_uri(Path::new(r"C:\project dir\main.mec")).unwrap();
+    let verbatim =
+      path_to_file_uri(Path::new(r"\\?\C:\project dir\main.mec")).unwrap();
+
+    assert_eq!(disk, "file:///C:/project%20dir/main.mec");
+    assert_eq!(verbatim, disk);
+    assert!(disk.starts_with("file:///"));
+    assert!(!disk.contains("%3F"));
+    assert!(!verbatim.contains("%3F"));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_path_codec_normalizes_unc_and_verbatim_unc_prefixes() {
+    let unc =
+      path_to_file_uri(Path::new(r"\\server\share\project dir\main.mec")).unwrap();
+    let verbatim = path_to_file_uri(Path::new(
+      r"\\?\UNC\server\share\project dir\main.mec",
+    ))
+    .unwrap();
+
+    assert_eq!(unc, "file://server/share/project%20dir/main.mec");
+    assert_eq!(verbatim, unc);
+    assert!(!unc.contains("%3F"));
+    assert!(!verbatim.contains("%3F"));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_path_codec_rejects_unsupported_namespaces() {
+    for path in [Path::new(r"\\.\COM1"), Path::new(r"\\?\pictures")] {
+      let error = path_to_file_uri(path).unwrap_err();
+      assert_eq!(error.kind_name(), "SourceFilesystemSpecifierInvalid");
+    }
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_canonicalized_source_request_resolves_real_file() {
+    let root = temp_root("windows-canonical-source");
+    let source_dir = root
+      .join("Mech Windows ü source path # % spaces")
+      .join("nested source");
+    std::fs::create_dir_all(&source_dir).unwrap();
+    let source_path = source_dir.join("main # %.mec");
+    std::fs::write(&source_path, "answer := 42\n").unwrap();
+    let canonical = source_path.canonicalize().unwrap();
+
+    let request = SourceRequest::from_filesystem_path(&canonical).unwrap();
+    assert!(!request.specifier.contains("%3F"));
+    assert!(request.specifier.contains("%20"));
+    assert!(request.specifier.contains("%C3%BC"));
+    assert!(request.specifier.contains("%23"));
+    assert!(request.specifier.contains("%25"));
+
+    let resolved = FileSourceResolver::empty()
+      .resolve(&request)
+      .unwrap()
+      .unwrap();
+    assert_eq!(resolved.kind, SourceKind::Mech);
+    assert_eq!(
+      file_uri_to_path(&resolved.canonical_uri)
+        .unwrap()
+        .canonicalize()
+        .unwrap(),
+      canonical.canonicalize().unwrap(),
+    );
+    std::fs::remove_dir_all(root).unwrap();
   }
 
 

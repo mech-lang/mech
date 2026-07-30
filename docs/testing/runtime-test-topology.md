@@ -55,6 +55,18 @@ that owns the invariant. Internal orchestration acceptance tests belong under
 Runnable demo scripts may select a focused test, but should not duplicate its
 scenario implementation.
 
+### Filesystem portability
+
+Filesystem portability changes require three layers of coverage:
+
+1. codec tests for each platform-specific path form;
+2. real temporary-filesystem resolver tests using canonicalized paths;
+3. subprocess tests through the Cargo-built CLI for every affected command.
+
+A platform job that only compiles a binary proves a feature boundary; it does
+not prove runtime filesystem portability. Platform CI must execute the shared
+resolver suite and the affected command-level subprocess tests.
+
 ## Placement rules
 
 - Keep local algorithms inline only when the complete test module is small and

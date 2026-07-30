@@ -450,6 +450,9 @@ jobs:
       - name: Build default Windows CLI
         run: cargo build --bin mech
 
+      - name: Run Windows CLI source smoke
+        run: .\target\debug\mech.exe run examples\working\bubble-sort.mec
+
       - name: Build REPL-only Windows CLI
         run: cargo build --bin mech --no-default-features --features repl
 
@@ -458,6 +461,21 @@ jobs:
 
       - name: Test REPL Mika finalization
         run: cargo test --lib --no-default-features --features "repl mika" mika_farewell_remains_visible_after_drop
+
+      - name: Run Windows runtime library tests
+        run: cargo test -p mech-runtime --lib
+
+      - name: Run Windows root library tests
+        run: cargo test -p mech --lib
+
+      - name: Run Windows source-tooling process tests
+        run: cargo test -p mech --test windows_source_paths -- --nocapture
+
+      - name: Run reduced-feature Windows source-tooling tests
+        run: |
+          cargo test -p mech --no-default-features --features run --test windows_source_paths windows_run -- --nocapture
+          cargo test -p mech --no-default-features --features build --test windows_source_paths windows_build -- --nocapture
+          cargo test -p mech --no-default-features --features test --test windows_source_paths windows_test -- --nocapture
 
   dynamic-modules:
     name: Dynamic modules
