@@ -398,6 +398,20 @@ def assert_desktop_contract():
   const console = document.querySelector(".console-pane");
   const title = first(["#document-title", ".mech-document-content h1", ".main-content h1"]);
   const root = document.querySelector(".mech-root");
+  const numericTocLink = [...document.querySelectorAll(".mech-toc a[href^='#'], .toc a[href^='#'], [data-mech-toc] a[href^='#']")]
+    .find((link) => /^#\\d/.test(link.getAttribute("href") || ""));
+  const numericToc = (() => {
+    if (!numericTocLink) return null;
+    const fragment = (numericTocLink.getAttribute("href") || "").slice(1);
+    const target = document.getElementById(fragment);
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    numericTocLink.dispatchEvent(event);
+    return {
+      fragment,
+      targetExists: Boolean(target),
+      clickPrevented: event.defaultPrevented,
+    };
+  })();
   const rectangle = (element) => {
     if (!element) return null;
     const rect = element.getBoundingClientRect();
@@ -427,6 +441,7 @@ def assert_desktop_contract():
     resizerVisible: visible("#resizer"),
     fullscreenVisible: visible("#consoleFullscreenToggle"),
     tocLinks: document.querySelectorAll(".mech-toc a[href], .toc a[href], [data-mech-toc] a[href]").length,
+    numericToc,
     citationsVisible: visible(".mech-works-cited"),
     footnotesVisible: visible(".mech-footnotes"),
     blockOutput: [...document.querySelectorAll(".mech-block-output")]
@@ -461,6 +476,8 @@ def assert_desktop_contract():
         fail(f"rich console still contains an unfinished placeholder: {desktop!r}")
     if desktop["tocLinks"] < 2:
         fail(f"table of contents is missing fixture section links: {desktop!r}")
+    if not desktop["numericToc"] or not desktop["numericToc"]["targetExists"] or not desktop["numericToc"]["clickPrevented"]:
+        fail(f"numeric table-of-contents fragments did not resolve through the document controller: {desktop!r}")
     if desktop["console"] is None or desktop["console"]["width"] < 300:
         fail(f"desktop console is too narrow: {desktop!r}")
     content = evaluate_json("""

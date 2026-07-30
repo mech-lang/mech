@@ -720,7 +720,13 @@ function initializeToc() {
     return;
   }
   const sections = links
-    .map((link) => ({ link, target: document.querySelector(link.getAttribute("href")) }))
+    .map((link) => ({
+      link,
+      // Heading IDs are generated from Mech source and may begin with a
+      // digit. That is a valid HTML ID, but not a valid unescaped CSS
+      // selector, so resolve the hash as an ID rather than a selector.
+      target: document.getElementById((link.getAttribute("href") || "").slice(1)),
+    }))
     .filter(({ target }) => target);
   for (const { link, target } of sections) {
     link.addEventListener("click", (event) => {
