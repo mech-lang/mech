@@ -6,10 +6,15 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "base.rs",
   "terminal_spec.rs",
   "combinator.rs",
+  "found.rs",
   "grammar.rs",
   "roots.rs",
   "ports.rs",
+  "mechdown.rs",
+  "statements.rs",
 ];
+
+const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -225,6 +230,50 @@ fn invocation(tokens: &[String], index: usize) -> Option<(usize, usize)> {
   Some((index + 2, close))
 }
 
+fn named_function_body<'a>(source: &'a str, name: &str) -> &'a str {
+  let masked = mask_comments_and_literals(source, true);
+  let signature = format!("fn {name}(");
+  let function = masked
+    .find(&signature)
+    .unwrap_or_else(|| panic!("missing function {name}"));
+  let open = masked[function..]
+    .find('{')
+    .map(|relative| function + relative)
+    .unwrap_or_else(|| panic!("missing body for function {name}"));
+  let mut depth = 0_usize;
+  for (relative, byte) in masked.as_bytes()[open..].iter().enumerate() {
+    match byte {
+      b'{' => depth = depth.saturating_add(1),
+      b'}' => {
+        depth = depth
+          .checked_sub(1)
+          .unwrap_or_else(|| panic!("unbalanced body for function {name}"));
+        if depth == 0 {
+          return &source[open + 1..open + relative];
+        }
+      }
+      _ => {}
+    }
+  }
+  panic!("unterminated body for function {name}")
+}
+
+fn contains_token(source: &str, expected: &str) -> bool {
+  rust_tokens(&mask_comments_and_literals(source, true))
+    .iter()
+    .any(|token| token == expected)
+}
+
+fn contains_token_sequence(source: &str, expected: &[&str]) -> bool {
+  let tokens = rust_tokens(&mask_comments_and_literals(source, true));
+  tokens.windows(expected.len()).any(|window| {
+    window
+      .iter()
+      .map(String::as_str)
+      .eq(expected.iter().copied())
+  })
+}
+
 fn use_statement_imports_prototype(tokens: &[String], start: usize) -> bool {
   let end = tokens[start..]
     .iter()
@@ -233,24 +282,23 @@ fn use_statement_imports_prototype(tokens: &[String], start: usize) -> bool {
     .unwrap_or(tokens.len());
   let statement = &tokens[start..end];
 
-  if statement
-    .iter()
-    .any(|token| matches!(token.as_str(), "mech" | "mechdown" | "parse_document"))
-  {
+  if statement.iter().any(|token| token == "parse_document") {
     return true;
   }
 
+  let prototype_target =
+    |token: &str| matches!(token, "document" | "mech" | "mechdown" | "statements");
   let parser = statement.iter().position(|token| token == "parser");
   parser.is_some_and(|parser| {
     statement[parser + 1..]
       .iter()
-      .any(|token| token == "document")
+      .any(|token| prototype_target(token))
   }) || (statement
     .iter()
     .filter(|token| token.as_str() == "super")
     .count()
     >= 2
-    && statement.iter().any(|token| token == "document"))
+    && statement.iter().any(|token| prototype_target(token)))
 }
 
 fn executable_violations(source: &str) -> Vec<&'static str> {
@@ -267,12 +315,17 @@ fn executable_violations(source: &str) -> Vec<&'static str> {
       violations.push("prototype parse_document dependency");
     }
 
-    if matches!(token.as_str(), "mech" | "mechdown")
-      && (tokens.get(index.wrapping_sub(1)).map(String::as_str) == Some("::")
-        || tokens.get(index + 1).map(String::as_str) == Some("::")
-        || tokens.get(index.wrapping_sub(1)).map(String::as_str) == Some("mod"))
-    {
-      violations.push("prototype parser module dependency");
+    if matches!(token.as_str(), "mech" | "mechdown" | "statements") {
+      let follows_parser =
+        index >= 2 && tokens[index - 1] == "::" && tokens[index - 2] == "parser";
+      let follows_two_supers = index >= 4
+        && tokens[index - 1] == "::"
+        && tokens[index - 2] == "super"
+        && tokens[index - 3] == "::"
+        && tokens[index - 4] == "super";
+      if follows_parser || follows_two_supers {
+        violations.push("prototype parser module dependency");
+      }
     }
 
     if token == "document" {
@@ -322,6 +375,232 @@ fn executable_violations(source: &str) -> Vec<&'static str> {
   violations.sort_unstable();
   violations.dedup();
   violations
+}
+
+#[test]
+fn canonical_phase_2b_sources_are_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2B_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in ["nom", "parse", "CoverageStore", "CoverageGap", "UnportedInline"] {
+      if forbidden == "parse" {
+        assert!(
+          !contains_token_sequence(&source, &["crate", "::", "parse"]),
+          "{relative} must not invoke the legacy public parser"
+        );
+      } else {
+        assert!(
+          !contains_token(&source, forbidden),
+          "{relative} must not depend on {forbidden}"
+        );
+      }
+    }
+    for path in [
+      &["super", "::", "super", "::", "document"][..],
+      &["super", "::", "super", "::", "mech"][..],
+      &["super", "::", "super", "::", "mechdown"][..],
+    ] {
+      assert!(
+        !contains_token_sequence(&source, path),
+        "{relative} must not import a prototype production module"
+      );
+    }
+  }
+}
+
+#[test]
+fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    ("statements.rs", "parse_comment_sigil", "COMMENT_SIGIL"),
+    ("statements.rs", "parse_comment", "COMMENT"),
+    ("mechdown.rs", "parse_codeblock_sigil", "CODEBLOCK_SIGIL"),
+    ("mechdown.rs", "parse_inline_code", "INLINE_CODE"),
+    ("mechdown.rs", "parse_inline_equation", "INLINE_EQUATION"),
+    ("mechdown.rs", "parse_raw_hyperlink", "RAW_HYPERLINK"),
+    ("mechdown.rs", "parse_footnote_reference", "FOOTNOTE_REFERENCE"),
+    ("mechdown.rs", "parse_reference", "REFERENCE"),
+    ("mechdown.rs", "parse_section_reference", "SECTION_REFERENCE"),
+    ("mechdown.rs", "parse_paragraph_text", "PARAGRAPH_TEXT"),
+    ("mechdown.rs", "parse_thematic_break", "THEMATIC_BREAK"),
+    ("mechdown.rs", "parse_blank_line", "BLANK_LINE"),
+    ("mechdown.rs", "parse_equation", "EQUATION"),
+  ];
+
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
+  }
+}
+
+#[test]
+fn parser_surface_has_only_the_two_phase_2a_root_pairs() {
+  use mech_syntax::document::{
+    DocumentId, ParseConfig, ParseRequestError, ParseRoot, ParserImplementation, Revision,
+    TextSnapshot, parse_syntax,
+  };
+
+  let source = || TextSnapshot::new(DocumentId(205), Revision(0), "").unwrap();
+  assert!(parse_syntax(
+    source(),
+    ParseRoot::Document,
+    ParserImplementation::Prototype,
+    ParseConfig::default(),
+  )
+  .is_ok());
+  assert!(parse_syntax(
+    source(),
+    ParseRoot::Grammar,
+    ParserImplementation::Canonical,
+    ParseConfig::default(),
+  )
+  .is_ok());
+  assert!(matches!(
+    parse_syntax(
+      source(),
+      ParseRoot::Document,
+      ParserImplementation::Canonical,
+      ParseConfig::default(),
+    ),
+    Err(ParseRequestError::Unsupported {
+      implementation: ParserImplementation::Canonical,
+      root: ParseRoot::Document,
+    })
+  ));
+  assert!(matches!(
+    parse_syntax(
+      source(),
+      ParseRoot::Grammar,
+      ParserImplementation::Prototype,
+      ParseConfig::default(),
+    ),
+    Err(ParseRequestError::Unsupported {
+      implementation: ParserImplementation::Prototype,
+      root: ParseRoot::Grammar,
+    })
+  ));
+
+  let parser_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/document/parser/mod.rs");
+  let parser = fs::read_to_string(&parser_path)
+    .unwrap_or_else(|error| panic!("failed to read {}: {error}", parser_path.display()));
+  let variants = parser
+    .split("pub enum ParseRoot")
+    .nth(1)
+    .and_then(|tail| tail.split('}').next())
+    .map(|body| {
+      rust_tokens(body)
+        .into_iter()
+        .filter(|token| {
+            token
+                .chars()
+                .next()
+                .is_some_and(|character| character.is_ascii_alphabetic())
+        })
+        .collect::<Vec<_>>()
+    })
+    .expect("ParseRoot declaration");
+  assert_eq!(variants, vec!["Document", "Grammar"]);
+}
+
+#[test]
+fn migration_state_and_document_skeleton_sources_are_absent() {
+  let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+  for relative in [
+    "src/document/coverage.rs",
+    "src/document/parser/canonical/document.rs",
+    "src/document/parser/canonical/migration.rs",
+    "src/document/parser/physical.rs",
+  ] {
+    assert!(
+      !manifest.join(relative).exists(),
+      "Phase 2B must not retain {relative}"
+    );
+  }
+
+  for relative in [
+    "src/document/mod.rs",
+    "src/document/parser/mod.rs",
+    "src/document/parser/canonical/mechdown.rs",
+    "src/document/parser/canonical/statements.rs",
+  ] {
+    let path = manifest.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    for forbidden in [
+      "parse_canonical_document_skeleton",
+      "DocumentSkeleton",
+      "DocumentRegion",
+      "DocumentItem",
+      "UnresolvedDocumentItem",
+      "CoverageStore",
+      "CoverageGap",
+      "UNPORTED",
+      "CONTAINS_UNPORTED",
+      "consume_document_newline",
+      "synthetic_document_newline_emitted",
+      "KNOWN_BLOCK_PREFIXES",
+      "HeadingBoundary",
+      "TitleBoundary",
+      "UnportedMechItem",
+      "UnportedBlock",
+      "UnportedInline",
+      "ParseRequest",
+    ] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} retains forbidden parser state {forbidden}"
+      );
+    }
+  }
+
+  let document_mod = manifest.join("src/document/mod.rs");
+  let document_mod = fs::read_to_string(&document_mod).unwrap();
+  assert!(
+    !contains_token(&document_mod, "LexicalMode"),
+    "LexicalMode must remain parser-internal"
+  );
+}
+
+#[test]
+fn direct_leaf_parsers_do_not_materialize_source_root_newlines() {
+  let path = canonical_root().join("mechdown.rs");
+  let source = fs::read_to_string(&path)
+    .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+  for function in ["parse_blank_line", "parse_thematic_break"] {
+    let body = named_function_body(&source, function);
+    for forbidden in ["consume_document_newline", "synthetic", "SYNTHETIC"] {
+      assert!(
+        !contains_token(body, forbidden),
+        "{function} must require a physical new-line rather than materializing one"
+      );
+    }
+  }
+}
+
+#[test]
+fn lexical_classification_depends_on_mode_not_resource_rule() {
+  let parser_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/document/parser/mod.rs");
+  let parser = fs::read_to_string(&parser_path)
+    .unwrap_or_else(|error| panic!("failed to read {}: {error}", parser_path.display()));
+  let body = named_function_body(&parser, "found_syntax");
+  assert!(contains_token(body, "lexical_mode"));
+  assert!(
+    !contains_token(body, "resource_rule"),
+    "resource-rule attribution must not select lexical classification"
+  );
 }
 
 #[test]

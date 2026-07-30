@@ -173,6 +173,17 @@ define_syntax_kinds! {
   DigitSequence => node,
   IdentifierPathSegment => node,
   EscapedCharacter => node,
+
+  // Phase 2B canonical Mechdown values.
+  InlineCode => node,
+  InlineEquation => node,
+  RawHyperlink => node,
+  FootnoteReference => node,
+  Reference => node,
+  SectionReference => node,
+  ThematicBreak => node,
+  BlankLine => node,
+  Equation => node,
 }
 
 #[cfg(test)]
@@ -189,6 +200,26 @@ mod tests {
     assert!(
       SyntaxKind::GrammarDocument as u16 > SyntaxKind::WarningSigil as u16
     );
+    assert_eq!(SyntaxKind::EscapedCharacter as u16, 133);
+  }
+
+  #[test]
+  fn phase_2b_kinds_are_append_only() {
+    let appended = [
+      SyntaxKind::InlineCode,
+      SyntaxKind::InlineEquation,
+      SyntaxKind::RawHyperlink,
+      SyntaxKind::FootnoteReference,
+      SyntaxKind::Reference,
+      SyntaxKind::SectionReference,
+      SyntaxKind::ThematicBreak,
+      SyntaxKind::BlankLine,
+      SyntaxKind::Equation,
+    ];
+    for (offset, kind) in appended.into_iter().enumerate() {
+      assert_eq!(kind as u16, 134 + offset as u16);
+      assert!(!kind.is_token());
+    }
   }
 
   #[test]

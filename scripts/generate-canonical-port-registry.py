@@ -51,7 +51,11 @@ FAMILIES = {
     "statements": "Statements",
     "structures": "Structures",
 }
-PHASES = {"": "None", "2A": "Some(PortPhase::Phase2A)"}
+PHASES = {
+    "": "None",
+    "2A": "Some(PortPhase::Phase2A)",
+    "2B": "Some(PortPhase::Phase2B)",
+}
 
 
 def rust_constant(name: str) -> str:
@@ -169,6 +173,7 @@ def render() -> str:
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
             "pub enum PortPhase {",
             "  Phase2A,",
+            "  Phase2B,",
             "}",
             "",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",

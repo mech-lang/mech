@@ -84,7 +84,12 @@ fn parse_rule_prefix(
   parse: impl FnOnce(&mut Parser<'_>) -> bool,
 ) -> CanonicalRuleSnapshot {
   let mut ids = IdGenerator::new();
-  let mut parser = Parser::new(&source, config, &mut ids);
+  let mut parser = Parser::new(
+    &source,
+    super::super::LexicalMode::CanonicalGrammar,
+    config,
+    &mut ids,
+  );
   let fragment = parser.start();
   let start = parser.offset();
   let matched = parse(&mut parser);
