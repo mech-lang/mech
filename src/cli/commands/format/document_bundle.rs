@@ -3,7 +3,10 @@ use std::path::Path;
 
 use base64::Engine as _;
 use mech_core::{MResult, MechSourceCode};
-use mech_runtime::{FileSourceResolver, SourceRequest, SourceResolver};
+use mech_runtime::{
+    FileSourceResolver, SourceRequest, SourceResolutionEntry, SourceResolver,
+    validate_source_resolution_entries,
+};
 
 use super::{absolute_path, format_error};
 
@@ -13,7 +16,7 @@ struct DocumentSourceBundle {
     #[serde(rename = "rootSpecifier")]
     root_specifier: String,
     sources: Vec<DocumentSourceBundleEntry>,
-    resolutions: Vec<DocumentSourceBundleResolution>,
+    resolutions: Vec<SourceResolutionEntry>,
 }
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -22,17 +25,16 @@ struct DocumentSourceBundleEntry {
     source: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
-struct DocumentSourceBundleResolution {
-    referrer: String,
-    specifier: String,
-    target: String,
-}
-
 #[derive(Debug)]
 struct PendingSourceRequest {
     request: SourceRequest,
     referrer_bundle_key: Option<String>,
+}
+
+#[derive(Debug)]
+pub(super) struct ResolvedDocumentBundle {
+    pub encoded_bundle: String,
+    pub root_source: String,
 }
 
 fn standalone_dependency_error(request: &SourceRequest) -> mech_core::MechError {
@@ -68,7 +70,7 @@ fn record_resolution(
     Ok(())
 }
 
-pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<String> {
+pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDocumentBundle> {
     let root = absolute_path(root)?;
     let root_request = SourceRequest::from_filesystem_path(root)?;
     let resolver = FileSourceResolver::empty();
@@ -143,14 +145,18 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<String> {
     }
     let resolutions = resolutions
         .into_iter()
-        .map(
-            |((referrer, specifier), target)| DocumentSourceBundleResolution {
-                referrer,
-                specifier,
-                target,
-            },
-        )
-        .collect();
+        .map(|((referrer, specifier), target)| {
+            SourceResolutionEntry::new(referrer, specifier, target)
+        })
+        .collect::<Vec<_>>();
+    validate_source_resolution_entries(
+        sources.keys().map(String::as_str),
+        &resolutions,
+    )?;
+    let root_source = sources
+        .get(&root_specifier)
+        .map(|entry| entry.source.clone())
+        .ok_or_else(|| format_error("document source bundle root was not resolved"))?;
     let encoded = serde_json::to_vec(&DocumentSourceBundle {
         version: 2,
         root_specifier,
@@ -158,7 +164,10 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<String> {
         resolutions,
     })
     .map_err(|error| format_error(format!("failed to encode document source bundle: {error}")))?;
-    Ok(base64::engine::general_purpose::STANDARD.encode(encoded))
+    Ok(ResolvedDocumentBundle {
+        encoded_bundle: base64::engine::general_purpose::STANDARD.encode(encoded),
+        root_source,
+    })
 }
 
 #[cfg(test)]

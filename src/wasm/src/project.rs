@@ -29,7 +29,7 @@ use mech_host_timer::BrowserTimerHostFactory;
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
     ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest,
-    parse_config_document,
+    SourceResolutionEntry, parse_config_document, validate_source_resolution_entries,
 };
 
 #[cfg(feature = "browser_host_dom")]
@@ -66,10 +66,33 @@ impl WasmProject {
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
+        Self::from_project_sources(document, source_map, Vec::new())
+    }
+
+    #[wasm_bindgen(js_name = fromSourcesWithResolutions)]
+    pub fn from_sources_with_resolutions(
+        config_source: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmProject, JsValue> {
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        Self::from_project_sources(document, source_map, resolutions)
+    }
+
+    fn from_project_sources(
+        document: MechConfigDocument,
+        source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
+    ) -> Result<WasmProject, JsValue> {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions(
+            &source_map,
+            &resolutions,
+        ).map_err(to_js_error)?;
         let mut runtime = build_runtime(&document, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self::from_runtime(
@@ -84,7 +107,20 @@ impl WasmProject {
     pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_served_project(document, source_map)
+        Self::from_served_project(document, source_map, Vec::new())
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedSourcesWithResolutions)]
+    pub fn from_served_sources_with_resolutions(
+        config_source: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmProject, JsValue> {
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        Self::from_served_project(document, source_map, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -97,20 +133,24 @@ impl WasmProject {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         replace_bundle_run_paths(&mut document, bundle_roots_from_js(roots)?)?;
-        Self::from_served_project(document, source_map)
+        Self::from_served_project(document, source_map, Vec::new())
     }
 
     #[cfg(feature = "served_project_authority")]
     fn from_served_project(
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
     ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions(
+            &source_map,
+            &resolutions,
+        ).map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(&document, &authority, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self::from_runtime(
@@ -271,14 +311,7 @@ enum WasmDocumentBootstrap {
 struct SourceBackedDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
-    resolutions: Vec<DocumentSourceResolution>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct DocumentSourceResolution {
-    referrer: String,
-    specifier: String,
-    target: String,
+    resolutions: Vec<SourceResolutionEntry>,
 }
 
 #[cfg(feature = "served_project_authority")]
@@ -351,7 +384,7 @@ impl WasmDocument {
         tree: mech_core::nodes::Program,
         root_specifier: &str,
         source_map: HashMap<String, String>,
-        resolutions: Vec<DocumentSourceResolution>,
+        resolutions: Vec<SourceResolutionEntry>,
     ) -> Result<WasmDocument, JsValue> {
         let bootstrap = SourceBackedDocumentBootstrap {
             root_specifier: root_specifier.to_string(),
@@ -405,6 +438,35 @@ impl WasmDocument {
             document,
             config_source,
             source_map,
+            Vec::new(),
+            authority,
+        )
+    }
+
+    /// Builds a served document with the resolver's authoritative dependency
+    /// edges. This keeps browser resolution identical to the native workspace
+    /// for extension, index, alias, and other resolver-specific matches.
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedEncodedWithBundle)]
+    pub fn from_served_encoded_with_bundle(
+        encoded: &str,
+        root_specifier: &str,
+        config_source: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        let authority = served_browser_authority()?;
+        Self::from_served_tree(
+            tree,
+            root_specifier,
+            document,
+            config_source,
+            source_map,
+            resolutions,
             authority,
         )
     }
@@ -416,12 +478,13 @@ impl WasmDocument {
         document: MechConfigDocument,
         config_source: &str,
         source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
         authority: BrowserRuntimeInjectionConfig,
     ) -> Result<WasmDocument, JsValue> {
         let source = SourceBackedDocumentBootstrap {
             root_specifier: root_specifier.to_string(),
             source_map,
-            resolutions: Vec::new(),
+            resolutions,
         };
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
@@ -503,6 +566,7 @@ impl WasmDocument {
                     document,
                     &bootstrap.config_source,
                     bootstrap.source.source_map.clone(),
+                    bootstrap.source.resolutions.clone(),
                     bootstrap.authority.clone(),
                 )?
             }
@@ -1011,11 +1075,11 @@ fn required_resolution_field(
 fn document_resolutions_from_js(
     value: JsValue,
     sources: &HashMap<String, String>,
-) -> Result<Vec<DocumentSourceResolution>, JsValue> {
+) -> Result<Vec<SourceResolutionEntry>, JsValue> {
     if !Array::is_array(&value) {
         return Err(js_error("document source resolutions must be an array"));
     }
-    let mut unique = BTreeMap::<(String, String), String>::new();
+    let mut resolutions = Vec::new();
     for entry in Array::from(&value).iter() {
         if !entry.is_object() || entry.is_null() {
             return Err(js_error("document source resolution entries must be objects"));
@@ -1023,31 +1087,16 @@ fn document_resolutions_from_js(
         let referrer = required_resolution_field(&entry, "referrer")?;
         let specifier = required_resolution_field(&entry, "specifier")?;
         let target = required_resolution_field(&entry, "target")?;
-        if !sources.contains_key(&referrer) {
-            return Err(js_error(format!(
-                "document source resolution referrer `{referrer}` is missing from the source map",
-            )));
-        }
-        if !sources.contains_key(&target) {
-            return Err(js_error(format!(
-                "document source resolution target `{target}` is missing from the source map",
-            )));
-        }
-        let key = (referrer, specifier);
-        if let Some(existing) = unique.get(&key) {
-            if existing != &target {
-                return Err(js_error(format!(
-                    "document source resolution `{}` from `{}` conflicts: `{existing}` and `{target}`",
-                    key.1, key.0,
-                )));
-            }
-            continue;
-        }
-        unique.insert(key, target);
+        resolutions.push(SourceResolutionEntry::new(referrer, specifier, target));
     }
-    Ok(unique.into_iter().map(|((referrer, specifier), target)| {
-        DocumentSourceResolution { referrer, specifier, target }
-    }).collect())
+    validate_source_resolution_entries(
+        sources.keys().map(String::as_str),
+        &resolutions,
+    )
+    .map_err(to_js_error)?;
+    resolutions.sort();
+    resolutions.dedup();
+    Ok(resolutions)
 }
 
 fn project_source_resolver(
@@ -1056,6 +1105,21 @@ fn project_source_resolver(
     let mut resolver = InMemorySourceResolver::new();
     for (specifier, source) in sources {
         resolver.insert_string(specifier, source)?;
+    }
+    Ok(resolver)
+}
+
+fn project_source_resolver_with_resolutions(
+    sources: &HashMap<String, String>,
+    resolutions: &[SourceResolutionEntry],
+) -> mech_core::MResult<InMemorySourceResolver> {
+    validate_source_resolution_entries(
+        sources.keys().map(String::as_str),
+        resolutions,
+    )?;
+    let mut resolver = project_source_resolver(sources)?;
+    for resolution in resolutions {
+        resolver.insert_resolution_entry(resolution)?;
     }
     Ok(resolver)
 }
@@ -1076,11 +1140,7 @@ fn document_source_resolver(
 
     let mut resolver = project_source_resolver(&source.source_map).map_err(to_js_error)?;
     for resolution in &source.resolutions {
-        resolver.insert_resolution(
-            &resolution.referrer,
-            resolution.specifier.clone(),
-            &resolution.target,
-        ).map_err(to_js_error)?;
+        resolver.insert_resolution_entry(resolution).map_err(to_js_error)?;
     }
     resolver
         .insert_source(
@@ -1489,11 +1549,11 @@ mod tests {
                 "value := 41\n<+ value\n".to_string(),
             ),
         ]);
-        let resolutions = vec![DocumentSourceResolution {
-            referrer: "bundle/000000.mec".to_string(),
-            specifier: "./math.mec".to_string(),
-            target: "bundle/000001.mec".to_string(),
-        }];
+        let resolutions = vec![SourceResolutionEntry::new(
+            "bundle/000000.mec",
+            "./math.mec",
+            "bundle/000001.mec",
+        )];
 
         let mut document = WasmDocument::from_tree_with_sources(
             tree,

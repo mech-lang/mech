@@ -17,7 +17,7 @@ fn temp_root(label: &str) -> PathBuf {
 }
 
 fn decode_bundle(root: &Path) -> serde_json::Value {
-    let encoded = resolve_document_source_bundle(root).unwrap();
+    let encoded = resolve_document_source_bundle(root).unwrap().encoded_bundle;
     let decoded = base64::engine::general_purpose::STANDARD
         .decode(encoded)
         .unwrap();
@@ -171,7 +171,9 @@ fn standalone_bundle_contains_no_absolute_filesystem_paths() {
     std::fs::write(root.join("main.mec"), "+> ./dep.mec\nanswer := dep/value\n").unwrap();
     std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
 
-    let encoded = resolve_document_source_bundle(&root.join("main.mec")).unwrap();
+    let encoded = resolve_document_source_bundle(&root.join("main.mec"))
+        .unwrap()
+        .encoded_bundle;
     let decoded = base64::engine::general_purpose::STANDARD
         .decode(encoded)
         .unwrap();
@@ -186,14 +188,14 @@ fn standalone_bundle_contains_no_absolute_filesystem_paths() {
 #[test]
 fn standalone_bundle_preserves_extension_fallback_resolution() {
     let root = temp_root("extension");
-    std::fs::write(root.join("main.mec"), "+> ./dep.mec\nanswer := dep/value\n").unwrap();
-    std::fs::write(root.join("dep.mec.mec"), "value := 41\n<+ value\n").unwrap();
+    std::fs::write(root.join("main.mec"), "+> ./dep\nanswer := dep/value\n").unwrap();
+    std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
 
     let bundle = decode_bundle(&root.join("main.mec"));
 
     assert_eq!(
         resolutions(&bundle),
-        vec![("bundle/000000.mec", "./dep.mec", "bundle/000001.mec",)],
+        vec![("bundle/000000.mec", "./dep", "bundle/000001.mec",)],
     );
     std::fs::remove_dir_all(root).unwrap();
 }
@@ -201,15 +203,15 @@ fn standalone_bundle_preserves_extension_fallback_resolution() {
 #[test]
 fn standalone_bundle_preserves_index_fallback_resolution() {
     let root = temp_root("index");
-    std::fs::create_dir_all(root.join("dep.mec")).unwrap();
-    std::fs::write(root.join("main.mec"), "+> ./dep.mec\nanswer := dep/value\n").unwrap();
-    std::fs::write(root.join("dep.mec/index.mec"), "value := 41\n<+ value\n").unwrap();
+    std::fs::create_dir_all(root.join("package")).unwrap();
+    std::fs::write(root.join("main.mec"), "+> ./package\nanswer := package/value\n").unwrap();
+    std::fs::write(root.join("package/index.mec"), "value := 41\n<+ value\n").unwrap();
 
     let bundle = decode_bundle(&root.join("main.mec"));
 
     assert_eq!(
         resolutions(&bundle),
-        vec![("bundle/000000.mec", "./dep.mec", "bundle/000001.mec",)],
+        vec![("bundle/000000.mec", "./package", "bundle/000001.mec",)],
     );
     std::fs::remove_dir_all(root).unwrap();
 }
@@ -231,19 +233,52 @@ fn standalone_bundle_preserves_unicode_request_spelling() {
 
 #[test]
 fn standalone_bundle_preserves_literal_percent_request_spelling() {
-    let mut edges = BTreeMap::new();
-    record_resolution(
-        &mut edges,
-        "bundle/000000.mec".to_string(),
-        "./rate%25.mec".to_string(),
-        "bundle/000001.mec".to_string(),
+    let root = temp_root("literal-percent");
+    std::fs::write(
+        root.join("main.mec"),
+        "+> ./rate%.mec\nanswer := 1\n",
     )
     .unwrap();
+    std::fs::write(root.join("rate%.mec"), "value := 41\n<+ value\n").unwrap();
 
+    let bundle = decode_bundle(&root.join("main.mec"));
     assert_eq!(
-        edges.get(&("bundle/000000.mec".to_string(), "./rate%25.mec".to_string(),)),
-        Some(&"bundle/000001.mec".to_string()),
+        resolutions(&bundle),
+        vec![("bundle/000000.mec", "./rate%.mec", "bundle/000001.mec",)],
     );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn standalone_bundle_returns_include_expanded_root_source() {
+    let root = temp_root("nested-includes");
+    std::fs::write(
+        root.join("main.mec"),
+        "{child.mec}\nanswer := child-value + nested-value\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("child.mec"),
+        "{nested.mec}\nchild-value := 17\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("nested.mec"), "nested-value := 25\n").unwrap();
+
+    let resolved = resolve_document_source_bundle(&root.join("main.mec")).unwrap();
+    assert!(resolved.root_source.contains("child-value := 17"));
+    assert!(resolved.root_source.contains("nested-value := 25"));
+    assert!(!resolved.root_source.contains("{child.mec}"));
+    assert!(!resolved.root_source.contains("{nested.mec}"));
+
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(resolved.encoded_bundle)
+        .unwrap();
+    let bundle: serde_json::Value = serde_json::from_slice(&decoded).unwrap();
+    assert_eq!(
+        bundle["sources"][0]["source"].as_str().unwrap(),
+        resolved.root_source,
+    );
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[cfg(unix)]

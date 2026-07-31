@@ -867,11 +867,19 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             let html = match src {
                 MechSourceCode::Html(content) => content.clone(),
                 MechSourceCode::String(source) => {
-                    let document_sources = if uses_document_controller {
-                        resolve_document_source_bundle(&target.path)?
+                    let resolved_document = if uses_document_controller {
+                        Some(resolve_document_source_bundle(&target.path)?)
                     } else {
-                        String::new()
+                        None
                     };
+                    let document_sources = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.encoded_bundle.as_str())
+                        .unwrap_or("");
+                    let authoritative_source = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.root_source.as_str())
+                        .unwrap_or(source);
                     let wasm_module_url = runtime_assets
                         .as_ref()
                         .map(|(js, _)| relative_asset_url(&output_file, js))
@@ -884,7 +892,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         &wasm_module_url,
                         &document_sources,
                     )?;
-                    let tree = parser::parse(source.trim())?;
+                    let tree = parser::parse(authoritative_source.trim())?;
                     let mut formatter = Formatter::new();
                     let render = formatter.format_html_with_slots(
                         &tree,

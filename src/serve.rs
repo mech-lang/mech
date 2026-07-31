@@ -19,6 +19,7 @@ use mech_runtime::{
   RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget, RuntimeWorkspaceWatchEvent,
   ServerWorkspaceSession, HostFilesystemAuthority, DefaultIdGenerator, SERVE_HOST_SUBJECT,
   FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE, FS_WATCH, SourceKind, check_fs_capability,
+  SourceResolutionEntry, validate_source_resolution_entries,
 };
 use warp::Filter;
 
@@ -60,6 +61,8 @@ struct ServerSourceRegistry {
   code_sources: HashMap<String, ServerAsset>,
   source_specifiers: HashMap<String, String>,
   source_paths: HashMap<String, PathBuf>,
+  source_roots: Vec<String>,
+  source_resolutions: Vec<SourceResolutionEntry>,
   workspace_keys: HashSet<String>,
   static_asset_paths: HashMap<String, PathBuf>,
   user_assets: HashSet<String>,
@@ -311,6 +314,9 @@ impl ServerSourceRegistry {
       self.source_paths.remove(&key);
     }
     self.index_source = None;
+    self.source_roots.clear();
+    self.source_resolutions.clear();
+    let mut module_specifiers = BTreeMap::new();
 
     for source in snapshot.sources.values() {
       let Some(path) = source.path.as_ref() else { continue; };
@@ -324,14 +330,35 @@ impl ServerSourceRegistry {
       let Some(logical_specifier) = url_key(relative) else { continue; };
       let key = percent_encode_url_path(&logical_specifier);
       self.check(FS_READ, &path)?;
-      let source = std::fs::read_to_string(&path)?;
+      let source_text = match source.source.as_ref() {
+        Some(MechSourceCode::String(source)) => source.clone(),
+        Some(other) => return Err(MechError::new(
+          GenericError {
+            msg: format!(
+              "workspace source `{}` is not resolved Mech text: {:?}",
+              path.display(),
+              other,
+            ),
+          },
+          None,
+        ).with_compiler_loc()),
+        None => return Err(MechError::new(
+          GenericError {
+            msg: format!(
+              "workspace source `{}` has no resolver-authoritative source text",
+              path.display(),
+            ),
+          },
+          None,
+        ).with_compiler_loc()),
+      };
       self.raw_sources.insert(key.clone(), ServerAsset {
-        bytes: source.as_bytes().to_vec(),
+        bytes: source_text.as_bytes().to_vec(),
         content_type: "text/x-mech",
         content_encoding: None,
         backing_paths: vec![path.clone()],
       });
-      match parser::parse(&source) {
+      match parser::parse(&source_text) {
         Ok(tree) => {
           let mut extra_slots = HtmlShimExtraSlots::default();
           extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
@@ -390,12 +417,50 @@ impl ServerSourceRegistry {
         }
       }
       self.source_paths.insert(key.clone(), path.clone());
-      self.source_specifiers.insert(key.clone(), logical_specifier);
+      self.source_specifiers.insert(key.clone(), logical_specifier.clone());
+      if let Some(module_version) = source.module_version {
+        module_specifiers.insert(module_version, logical_specifier);
+      }
       self.workspace_keys.insert(key.clone());
       if is_index_source_key(&key) { 
         self.index_source = Some(key); 
       }
     }
+    let mut resolution_set = BTreeSet::new();
+    for edge in &snapshot.import_edges {
+      let Some(referrer) = module_specifiers.get(&edge.importer) else { continue };
+      let target = module_specifiers.get(&edge.dependency).ok_or_else(|| {
+        MechError::new(
+          GenericError {
+            msg: format!(
+              "served source resolution `{}` from `{referrer}` targets a source outside the served manifest",
+              edge.specifier,
+            ),
+          },
+          None,
+        ).with_compiler_loc()
+      })?;
+      resolution_set.insert(SourceResolutionEntry::new(
+        referrer.clone(),
+        edge.specifier.clone(),
+        target.clone(),
+      ));
+    }
+    let mut source_resolutions = resolution_set.into_iter().collect::<Vec<_>>();
+    source_resolutions.sort();
+    validate_source_resolution_entries(
+      self.source_specifiers.values().map(String::as_str),
+      &source_resolutions,
+    )?;
+    let mut source_roots = snapshot
+      .targets
+      .values()
+      .filter_map(|target| module_specifiers.get(&target.module_version).cloned())
+      .collect::<Vec<_>>();
+    source_roots.sort();
+    source_roots.dedup();
+    self.source_roots = source_roots;
+    self.source_resolutions = source_resolutions;
     self.sync_source_manifest()?;
     self.rebuild_listing();
     Ok(())
@@ -418,8 +483,10 @@ impl ServerSourceRegistry {
         .cmp(&right.get("specifier").and_then(serde_json::Value::as_str))
     });
     let manifest = serde_json::to_vec(&serde_json::json!({
-      "version": 1,
+      "version": 2,
+      "roots": self.source_roots,
       "sources": source_entries,
+      "resolutions": self.source_resolutions,
     }))
     .map_err(|error| Error::new(
       ErrorKind::InvalidData,
@@ -1666,7 +1733,7 @@ mod tests {
     );
 
     let manifest: serde_json::Value = serde_json::from_slice(&manifest_asset.bytes).unwrap();
-    assert_eq!(manifest.get("version").and_then(serde_json::Value::as_u64), Some(1));
+    assert_eq!(manifest.get("version").and_then(serde_json::Value::as_u64), Some(2));
     let sources = manifest
       .get("sources")
       .and_then(serde_json::Value::as_array)
@@ -1703,6 +1770,8 @@ mod tests {
       source.get("url").and_then(serde_json::Value::as_str) != Some("app")
     }));
     assert_eq!(manifest_asset.backing_paths.len(), 3);
+    assert_eq!(manifest["roots"], serde_json::json!(["app/clock.mec"]));
+    assert_eq!(manifest["resolutions"], serde_json::json!([]));
 
     drop(registry);
     drop(guard);
@@ -1775,7 +1844,7 @@ mod tests {
       .unwrap();
 
     let html = String::from_utf8(registry.get_route("/docs/main.mec").unwrap().bytes).unwrap();
-    assert!(html.contains("fromEncodedWithSources"));
+    assert!(html.contains("fromEncodedWithBundle"));
     let manifest: serde_json::Value = serde_json::from_slice(
       &registry
         .get_route("/_mech/project-sources.json")
@@ -1796,7 +1865,107 @@ mod tests {
       .collect::<BTreeSet<_>>();
     assert!(source_pairs.contains(&("docs/main.mec", "source/docs/main.mec")));
     assert!(source_pairs.contains(&("docs/math.mec", "source/docs/math.mec")));
+    assert_eq!(manifest["version"], 2);
+    assert!(manifest["roots"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|root| root.as_str() == Some("docs/main.mec")));
+    assert_eq!(
+      manifest["resolutions"],
+      serde_json::json!([{
+        "referrer": "docs/main.mec",
+        "specifier": "./math.mec",
+        "target": "docs/math.mec",
+      }]),
+    );
     assert!(registry.get_route("/mech.mcfg").is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn served_document_manifest_records_extension_and_index_resolution_edges() {
+    let root = temp_root("served-resolution-fallbacks");
+    std::fs::create_dir_all(root.join("package")).unwrap();
+    std::fs::write(
+      root.join("main.mec"),
+      "+> ./dep\n+> ./package\nanswer := dep/value + package/value\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("dep.mec"), "value := 19\n<+ value\n").unwrap();
+    std::fs::write(root.join("package/index.mec"), "value := 23\n<+ value\n").unwrap();
+
+    let snapshot = snapshot(&root, "main.mec");
+    let mut registry = ServerSourceRegistry::default();
+    registry.set_document_controller(
+      Some(include_str!("../include/document.js").to_string()),
+      Some("include/index.html".to_string()),
+    );
+    registry
+      .sync_workspace_snapshot(&root, &snapshot, "", include_str!("../include/index.html"), &[])
+      .unwrap();
+
+    let manifest: serde_json::Value = serde_json::from_slice(
+      &registry
+        .get_route("/_mech/project-sources.json")
+        .unwrap()
+        .bytes,
+    )
+    .unwrap();
+    let resolutions = manifest["resolutions"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .map(|entry| (
+        entry["referrer"].as_str().unwrap(),
+        entry["specifier"].as_str().unwrap(),
+        entry["target"].as_str().unwrap(),
+      ))
+      .collect::<BTreeSet<_>>();
+    assert_eq!(
+      resolutions,
+      BTreeSet::from([
+        ("main.mec", "./dep", "dep.mec"),
+        ("main.mec", "./package", "package/index.mec"),
+      ]),
+    );
+    assert_eq!(manifest["roots"], serde_json::json!(["main.mec"]));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn served_document_formats_resolver_expanded_nested_includes() {
+    let root = temp_root("served-nested-includes");
+    std::fs::write(
+      root.join("main.mec"),
+      "{child.mec}\nanswer := child-value + nested-value\nanswer\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("child.mec"),
+      "{nested.mec}\nchild-value := 17\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("nested.mec"), "nested-value := 25\n").unwrap();
+
+    let snapshot = snapshot(&root, "main.mec");
+    let mut registry = ServerSourceRegistry::default();
+    registry.set_document_controller(
+      Some(include_str!("../include/document.js").to_string()),
+      Some("include/index.html".to_string()),
+    );
+    registry
+      .sync_workspace_snapshot(&root, &snapshot, "", include_str!("../include/index.html"), &[])
+      .unwrap();
+
+    let raw = String::from_utf8(registry.get_route("/source/main.mec").unwrap().bytes).unwrap();
+    assert!(raw.contains("child-value := 17"));
+    assert!(raw.contains("nested-value := 25"));
+    assert!(!raw.contains("{child.mec}"));
+    assert!(!raw.contains("{nested.mec}"));
+    let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+    assert!(html.contains("child-value"));
+    assert!(html.contains("nested-value"));
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -3037,7 +3206,7 @@ mod tests {
     let bad_snapshot = RuntimeWorkspaceSnapshot {
       root: root.clone(),
       sources: std::iter::once(("missing".to_string(), mech_runtime::RuntimeWorkspaceSourceSnapshot {
-        canonical_uri: "missing".to_string(), path: Some(root.join("missing.mec")), module_version: None, content_hash: 0, modified_time: None,
+        canonical_uri: "missing".to_string(), path: Some(root.join("missing.mec")), source: None, module_version: None, content_hash: 0, modified_time: None,
       })).collect(),
       ..RuntimeWorkspaceSnapshot::default()
     };

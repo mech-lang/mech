@@ -12,7 +12,7 @@
 //! It does not read from the filesystem, package manager, database, or network.
 //! It only resolves sources explicitly inserted into it.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
@@ -25,6 +25,122 @@ use super::{
 struct InMemoryResolutionKey {
   referrer_canonical_uri: String,
   requested_specifier: String,
+}
+
+/// One authoritative source-resolution edge for a detached source graph.
+///
+/// The edge records the exact request spelling used by `referrer` and the
+/// registered source identity selected by the resolver. Consumers should not
+/// reconstruct extension, index, symlink, or other resolver behavior from the
+/// three source names.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SourceResolutionEntry {
+  pub referrer: String,
+  pub specifier: String,
+  pub target: String,
+}
+
+impl SourceResolutionEntry {
+  pub fn new(
+    referrer: impl Into<String>,
+    specifier: impl Into<String>,
+    target: impl Into<String>,
+  ) -> Self {
+    Self {
+      referrer: referrer.into(),
+      specifier: specifier.into(),
+      target: target.into(),
+    }
+  }
+
+  pub fn validate(&self) -> MResult<()> {
+    for (field, value) in [
+      ("referrer", self.referrer.as_str()),
+      ("specifier", self.specifier.as_str()),
+      ("target", self.target.as_str()),
+    ] {
+      if value.trim().is_empty() {
+        return Err(MechError::new(
+          SourceResolutionGraphInvalid {
+            reason: format!("resolution `{field}` must not be empty"),
+          },
+          None,
+        ));
+      }
+    }
+    Ok(())
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct SourceResolutionGraphInvalid {
+  pub reason: String,
+}
+
+impl MechErrorKind for SourceResolutionGraphInvalid {
+  fn name(&self) -> &str { "SourceResolutionGraphInvalid" }
+
+  fn message(&self) -> String {
+    format!("source resolution graph is invalid: {}", self.reason)
+  }
+}
+
+/// Validates detached source identities and their authoritative resolution
+/// edges before they cross a transport boundary.
+pub fn validate_source_resolution_entries<'a>(
+  sources: impl IntoIterator<Item = &'a str>,
+  resolutions: &[SourceResolutionEntry],
+) -> MResult<()> {
+  let sources = sources.into_iter().collect::<BTreeSet<_>>();
+  let mut unique = BTreeMap::<(&str, &str), &str>::new();
+
+  for resolution in resolutions {
+    resolution.validate()?;
+    if !sources.contains(resolution.referrer.as_str()) {
+      return Err(MechError::new(
+        SourceResolutionGraphInvalid {
+          reason: format!(
+            "resolution referrer `{}` is not a registered source",
+            resolution.referrer,
+          ),
+        },
+        None,
+      ));
+    }
+    if !sources.contains(resolution.target.as_str()) {
+      return Err(MechError::new(
+        SourceResolutionGraphInvalid {
+          reason: format!(
+            "resolution target `{}` is not a registered source",
+            resolution.target,
+          ),
+        },
+        None,
+      ));
+    }
+
+    let key = (resolution.referrer.as_str(), resolution.specifier.as_str());
+    if let Some(existing) = unique.get(&key) {
+      if *existing != resolution.target {
+        return Err(MechError::new(
+          SourceResolutionGraphInvalid {
+            reason: format!(
+              "resolution `{}` from `{}` conflicts: `{existing}` and `{}`",
+              resolution.specifier,
+              resolution.referrer,
+              resolution.target,
+            ),
+          },
+          None,
+        ));
+      }
+      continue;
+    }
+    unique.insert(key, resolution.target.as_str());
+  }
+
+  Ok(())
 }
 
 #[derive(Clone, Debug)]
@@ -194,6 +310,18 @@ impl InMemorySourceResolver {
     }
     self.resolutions.insert(key, target_source);
     Ok(())
+  }
+
+  pub fn insert_resolution_entry(
+    &mut self,
+    resolution: &SourceResolutionEntry,
+  ) -> MResult<()> {
+    resolution.validate()?;
+    self.insert_resolution(
+      &resolution.referrer,
+      resolution.specifier.clone(),
+      &resolution.target,
+    )
   }
 
   pub fn contains(&self, specifier: &str) -> bool {

@@ -1,4 +1,5 @@
 use super::*;
+use mech_core::MechSourceCode;
 
 pub(super) fn load_target(
   root: &Path,
@@ -164,7 +165,7 @@ fn collect_loaded_modules(
 
     snapshot.sources.insert(
       module.name.clone(),
-      source_snapshot(module.name, module_version),
+      source_snapshot(module.name, module_version, version.source.clone()),
     );
 
     for edge in &version.import_edges {
@@ -196,6 +197,7 @@ fn target_diagnostic(
 fn source_snapshot(
   canonical_uri: String,
   module_version: ModuleVersionId,
+  source: Option<MechSourceCode>,
 ) -> RuntimeWorkspaceSourceSnapshot {
   let path = file_uri_path(&canonical_uri);
   let content_hash = path
@@ -211,6 +213,7 @@ fn source_snapshot(
   RuntimeWorkspaceSourceSnapshot {
     canonical_uri,
     path,
+    source,
     module_version: Some(module_version),
     content_hash,
     modified_time,

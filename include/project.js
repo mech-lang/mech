@@ -58,8 +58,11 @@ async function readProjectSourceManifest(moduleUrl) {
   }
 
   if (
-    manifest?.version !== 1 ||
+    (manifest?.version !== 1 && manifest?.version !== 2) ||
     !Array.isArray(manifest.sources) ||
+    (manifest.version === 2 &&
+      (!Array.isArray(manifest.roots) ||
+        !Array.isArray(manifest.resolutions))) ||
     manifest.sources.some(
       source =>
         typeof source?.specifier !== 'string' ||
@@ -69,17 +72,31 @@ async function readProjectSourceManifest(moduleUrl) {
     throw new Error('invalid project source manifest');
   }
 
-  return manifest.sources;
+  if (manifest.version === 2) {
+    const sourceSpecifiers = new Set(
+      manifest.sources.map(source => source.specifier),
+    );
+    if (manifest.roots.some(
+      specifier =>
+        typeof specifier !== 'string' ||
+        !specifier.trim() ||
+        !sourceSpecifiers.has(specifier)
+    )) {
+      throw new Error('invalid project root source identity');
+    }
+  }
+
+  return manifest;
 }
 
 async function main() {
   await init();
   const config = await fetchText('mech.mcfg');
-  const manifestSources =
+  const manifest =
     await readProjectSourceManifest(import.meta.url);
 
   const sourceEntries =
-    manifestSources ??
+    manifest?.sources ??
     Array.from(WasmProject.requiredPaths(config), path => ({
       specifier: path,
       url: path,
@@ -94,12 +111,31 @@ async function main() {
   const hasServedAuthority = Object.prototype.hasOwnProperty.call(window, '__MECH_HOST_CONFIG');
   if (hasServedAuthority) {
     const supported = typeof WasmProject.supportsServedAuthority === 'function' && WasmProject.supportsServedAuthority() === true;
-    if (!supported || typeof WasmProject.fromServedSources !== 'function') {
+    const hasGraphConstructor =
+      manifest?.version === 2 &&
+      typeof WasmProject.fromServedSourcesWithResolutions === 'function';
+    if (!supported || (manifest?.version === 2
+      ? !hasGraphConstructor
+      : typeof WasmProject.fromServedSources !== 'function')) {
       throw new Error('WASM build-profile mismatch: served project authority was injected by the server, but this mech_wasm artifact was not compiled with served_project_authority support');
     }
-    project = WasmProject.fromServedSources(config, sources);
+    project = manifest?.version === 2
+      ? WasmProject.fromServedSourcesWithResolutions(
+          config,
+          sources,
+          manifest.resolutions,
+        )
+      : WasmProject.fromServedSources(config, sources);
   } else {
-    project = WasmProject.fromSources(config, sources);
+    if (
+      manifest?.version === 2 &&
+      typeof WasmProject.fromSourcesWithResolutions !== 'function'
+    ) {
+      throw new Error('WASM build-profile mismatch: source resolution graph support is unavailable');
+    }
+    project = manifest?.version === 2
+      ? WasmProject.fromSourcesWithResolutions(config, sources, manifest.resolutions)
+      : WasmProject.fromSources(config, sources);
   }
   project.start();
   running = true;

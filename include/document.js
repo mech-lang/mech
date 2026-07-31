@@ -179,8 +179,11 @@ async function loadDocumentSourceMap() {
     throw new Error("invalid served project source manifest");
   }
   if (
-    manifest?.version !== 1 ||
+    (manifest?.version !== 1 && manifest?.version !== 2) ||
     !Array.isArray(manifest.sources) ||
+    (manifest.version === 2 &&
+      (!Array.isArray(manifest.roots) ||
+        !Array.isArray(manifest.resolutions))) ||
     manifest.sources.some(
       source =>
         typeof source?.specifier !== "string" ||
@@ -198,6 +201,50 @@ async function loadDocumentSourceMap() {
     throw new Error(
       `served document source \`${sourceUrlKey}\` is missing from the project source manifest`,
     );
+  }
+
+  const sourceSpecifiers = new Set(
+    manifest.sources.map(source => source.specifier),
+  );
+  if (
+    manifest.version === 2 &&
+    manifest.roots.some(
+      specifier =>
+        typeof specifier !== "string" ||
+        !specifier.trim() ||
+        !sourceSpecifiers.has(specifier),
+    )
+  ) {
+    throw new Error("invalid served project root source identity");
+  }
+  const resolutions = [];
+  const resolutionTargets = new Map();
+  for (const resolution of manifest.version === 2 ? manifest.resolutions : []) {
+    if (
+      typeof resolution?.referrer !== "string" ||
+      !resolution.referrer.trim() ||
+      typeof resolution?.specifier !== "string" ||
+      !resolution.specifier.trim() ||
+      typeof resolution?.target !== "string" ||
+      !resolution.target.trim() ||
+      !sourceSpecifiers.has(resolution.referrer) ||
+      !sourceSpecifiers.has(resolution.target)
+    ) {
+      throw new Error("invalid served project source resolution");
+    }
+    const key = JSON.stringify([resolution.referrer, resolution.specifier]);
+    const existing = resolutionTargets.get(key);
+    if (existing !== undefined && existing !== resolution.target) {
+      throw new Error("conflicting served project source resolution");
+    }
+    if (existing === undefined) {
+      resolutionTargets.set(key, resolution.target);
+      resolutions.push({
+        referrer: resolution.referrer,
+        specifier: resolution.specifier,
+        target: resolution.target,
+      });
+    }
   }
 
   const hasServedAuthority = Object.prototype.hasOwnProperty.call(
@@ -234,9 +281,11 @@ async function loadDocumentSourceMap() {
   ]);
 
   return {
+    version: manifest.version,
     config,
     rootSpecifier: root.specifier,
     sources: Object.fromEntries(sourceEntries),
+    resolutions,
   };
 }
 
@@ -1045,18 +1094,28 @@ async function main() {
   if (documentSources?.config) {
     if (
       !Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG") ||
-      typeof WasmDocument.fromServedEncoded !== "function"
+      (documentSources.version === 2
+        ? typeof WasmDocument.fromServedEncodedWithBundle !== "function"
+        : typeof WasmDocument.fromServedEncoded !== "function")
     ) {
       throw new Error(
         "configured source documents require a browser WASM build with served project authority",
       );
     }
-    state.document = WasmDocument.fromServedEncoded(
-      state.initialEncoded,
-      documentSources.rootSpecifier,
-      documentSources.config,
-      documentSources.sources,
-    );
+    state.document = documentSources.version === 2
+      ? WasmDocument.fromServedEncodedWithBundle(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.config,
+          documentSources.sources,
+          documentSources.resolutions,
+        )
+      : WasmDocument.fromServedEncoded(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.config,
+          documentSources.sources,
+        );
   } else if (documentSources) {
     if (
       documentSources.version === 2 &&

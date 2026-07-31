@@ -1,4 +1,5 @@
 use super::*;
+use mech_core::MechSourceCode;
 
 #[derive(Clone, Debug)]
 pub struct RuntimeWorkspaceTargetSnapshot {
@@ -12,6 +13,10 @@ pub struct RuntimeWorkspaceTargetSnapshot {
 pub struct RuntimeWorkspaceSourceSnapshot {
   pub canonical_uri: String,
   pub path: Option<PathBuf>,
+  /// Resolver-authoritative source used to build the stored module version.
+  /// Filesystem-backed Mech text already contains recursively expanded
+  /// Mechdown includes.
+  pub source: Option<MechSourceCode>,
   pub module_version: Option<ModuleVersionId>,
   pub content_hash: u64,
   pub modified_time: Option<SystemTime>,

@@ -92,6 +92,15 @@ fn preserves_source_import_declarations() {
 }
 
 #[test]
+fn parses_extensionless_and_literal_percent_source_imports() {
+    for source in ["+> ./dep", "+> ./package", "+> ./rate%.mec"] {
+        parser::parse(source).unwrap_or_else(|error| {
+            panic!("failed to parse `{source}`: {error:?}")
+        });
+    }
+}
+
+#[test]
 fn arbitrary_module_roots_parse_as_module_imports() {
     let parsed = imports("+> userlib\n+> userlib/tool");
     assert_eq!(parsed.len(), 2);

@@ -48,27 +48,40 @@ PY
 
 mkdir -p \
   "$work_dir/project/vendor" \
-  "$work_dir/project/indexdep.mec" \
+  "$work_dir/project/package" \
   "$work_dir/shared"
 cat > "$work_dir/project/main.mec" <<'MEC'
 +> ./café.mec
-+> ./extdep.mec
-+> ./indexdep.mec
++> ./extdep
++> ./package
 +> ./vendor/support.mec
 +> ./vendor/percent.mec
-answer := café/value + extdep/value + indexdep/value + support/value + percent/value
++> ./rate%.mec
+{included.mec}
+answer := café/value + extdep/value + package/value + support/value + percent/value + included-value + nested-included-value
 answer
 MEC
 cat > "$work_dir/project/café.mec" <<'MEC'
 value := 2
 <+ value
 MEC
-cat > "$work_dir/project/extdep.mec.mec" <<'MEC'
+cat > "$work_dir/project/extdep.mec" <<'MEC'
 value := 3
 <+ value
 MEC
-cat > "$work_dir/project/indexdep.mec/index.mec" <<'MEC'
+cat > "$work_dir/project/package/index.mec" <<'MEC'
 value := 5
+<+ value
+MEC
+cat > "$work_dir/project/included.mec" <<'MEC'
+{nested-included.mec}
+included-value := 13
+MEC
+cat > "$work_dir/project/nested-included.mec" <<'MEC'
+nested-included-value := 17
+MEC
+cat > "$work_dir/project/rate%.mec" <<'MEC'
+value := 29
 <+ value
 MEC
 cat > "$work_dir/shared/support.mec" <<'MEC'
@@ -314,7 +327,7 @@ try:
         ):
             fail(f"could not submit browser REPL command: {command}")
 
-    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '28'; })()"
+    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '87'; })()"
     submit("answer")
     wait_for(exact_answer, "the imported source value")
     submit(":clear")

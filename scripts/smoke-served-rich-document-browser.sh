@@ -128,12 +128,23 @@ prepare_formatted_case() {
 # resolver or host/grant authority used by `mech serve`.
 prepare_configured_case() {
   local case_dir="$work_dir/configured"
-  mkdir -p "$case_dir"
+  mkdir -p "$case_dir/package"
   cp "$fixture" "$case_dir/main.mec"
   cp "$repo_root/tests/fixtures/shims/hero.svg" "$case_dir/hero.svg"
   cat > "$case_dir/support.mec" <<'EOF'
-value := 41
+value := 11
 <+ value
+EOF
+  cat > "$case_dir/package/index.mec" <<'EOF'
+value := 13
+<+ value
+EOF
+  cat > "$case_dir/included.mec" <<'EOF'
+{nested-included.mec}
+included-value := 7
+EOF
+  cat > "$case_dir/nested-included.mec" <<'EOF'
+nested-included-value := 10
 EOF
   cat > "$case_dir/mech.mcfg" <<'EOF'
 config := {
@@ -146,7 +157,7 @@ config := {
   ]
 
   serve: {
-    paths: ["main.mec" "support.mec"]
+    paths: ["main.mec"]
   }
 
   run: {
@@ -172,9 +183,11 @@ original = "~answer := 41"
 # A clock tick legitimately recomputes its dependents between browser frames;
 # making `answer` depend on it would race the later `answer = 7` console
 # assertion and test the scheduler rather than document-console mutation.
-replacement = """+> ./support.mec
+replacement = """+> ./support
++> ./package
+{included.mec}
 @clock := time://clock/clock{:read(second)}
-configured-answer := support/value + @clock/second * 0
+configured-answer := support/value + package/value + included-value + nested-included-value + @clock/second * 0
 ~answer := 41"""
 if source.count(original) != 1:
     raise SystemExit("configured rich fixture did not contain exactly one answer declaration")
@@ -1108,6 +1121,7 @@ run_configured_case() {
     "/code/main.mec" \
     "/source/main.mec" \
     "/source/support.mec" \
+    "/source/package/index.mec" \
     "/mech.mcfg" \
     "/_mech/project-sources.json" \
     "/_mech/pkg/mech_wasm.js" \

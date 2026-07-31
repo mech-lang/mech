@@ -185,8 +185,14 @@ def fail(message):
 
 if not isinstance(manifest, dict):
     fail("project source manifest top-level value is not an object")
-if manifest.get("version") != 1:
-    fail("project source manifest version is not 1")
+if manifest.get("version") != 2:
+    fail("project source manifest version is not 2")
+
+if manifest.get("roots") != ["app/clock.mec"]:
+    fail("project source manifest has unexpected root source identities")
+
+if not isinstance(manifest.get("resolutions"), list):
+    fail("project source manifest resolutions is not a list")
 
 sources = manifest.get("sources")
 if not isinstance(sources, list):
