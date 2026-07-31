@@ -60,6 +60,7 @@ PHASES = {
     "2E": "Some(PortPhase::Phase2E)",
     "2F": "Some(PortPhase::Phase2F)",
     "2G": "Some(PortPhase::Phase2G)",
+    "2H": "Some(PortPhase::Phase2H)",
 }
 
 
@@ -184,6 +185,7 @@ def render() -> str:
             "  Phase2E,",
             "  Phase2F,",
             "  Phase2G,",
+            "  Phase2H,",
             "}",
             "",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
