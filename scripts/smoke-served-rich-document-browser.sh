@@ -580,7 +580,7 @@ def assert_desktop_contract():
     if "docs" in label:
         if not evaluate(visible_expression(".version-badge")):
             fail("docs shell did not render visible version metadata")
-    if label != "default":
+    if label in ("blog", "docs", "formatted-blog", "formatted-docs"):
         if not evaluate(visible_expression(".footer")):
             fail("rich blog/docs shell did not render a visible footer")
         pagination = evaluate_json("""
