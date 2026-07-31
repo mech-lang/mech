@@ -168,10 +168,15 @@ import sys
 path = Path(sys.argv[1])
 source = path.read_text()
 original = "~answer := 41"
+# Keep the live clock read independent from the mutable console fixture below.
+# A clock tick legitimately recomputes its dependents between browser frames;
+# making `answer` depend on it would race the later `answer = 7` console
+# assertion and test the scheduler rather than document-console mutation.
 replacement = """+> ./support.mec
 @clock := time://clock/clock{:read(second)}
 clock-second := @clock/second
-~answer := support/value + clock-second * 0"""
+configured-answer := support/value + clock-second * 0
+~answer := 41"""
 if source.count(original) != 1:
     raise SystemExit("configured rich fixture did not contain exactly one answer declaration")
 path.write_text(source.replace(original, replacement, 1))
@@ -673,6 +678,17 @@ def submit(command):
 
 
 def assert_console_contract():
+    if label == "configured":
+        # This value is deliberately distinct from the mutable `answer`
+        # fixture. It proves the configured page resolved its sibling module
+        # and can read its granted live clock host without making the generic
+        # console-mutation contract depend on clock timing.
+        submit("configured-answer")
+        wait_for(
+            "(() => { const rows = [...document.querySelectorAll('.mech-repl-result')]; "
+            "return /(?:^|\\D)41(?:\\D|$)/.test(rows.at(-1)?.textContent || ''); })()",
+            "the configured document's imported and host-backed value",
+        )
     submit("answer + 1")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-result')].some((row) => /42/.test(row.textContent))",
