@@ -48,7 +48,7 @@ pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruc
 }
 
 // Grammar: docs/design/specification.mec, `spread-operator`.
-fn spread_operator(input: ParseString) -> ParseResult<()> {
+pub(crate) fn spread_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = alt((spread_operator_a, spread_operator_u))(input)?;
   Ok((input, ()))
 }
