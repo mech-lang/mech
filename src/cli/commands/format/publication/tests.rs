@@ -200,6 +200,76 @@ fn publication_rejects_symlink_destination_before_staging() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
+#[cfg(unix)]
+#[test]
+fn publication_rejects_two_parent_symlinks_to_one_physical_destination() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_root("physical-alias");
+    let physical = root.join("physical");
+    let first_parent = root.join("a");
+    let second_parent = root.join("b");
+    std::fs::create_dir(&physical).unwrap();
+    symlink(&physical, &first_parent).unwrap();
+    symlink(&physical, &second_parent).unwrap();
+    let existing = physical.join("page.html");
+    std::fs::write(&existing, b"existing").unwrap();
+
+    let error = publish_outputs_recoverably(vec![
+        output(first_parent.join("page.html"), b"first"),
+        output(second_parent.join("page.html"), b"second"),
+    ])
+    .unwrap_err();
+
+    let error = format!("{error:?}");
+    assert!(error.contains("duplicate physical destination"), "{error}");
+    assert_contents(&existing, b"existing");
+    assert!(publication_artifacts(&root).is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn publication_supports_an_output_root_that_is_a_symlink() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_root("symlinked-output-root");
+    let physical = root.join("physical");
+    let output_root = root.join("output");
+    std::fs::create_dir(&physical).unwrap();
+    symlink(&physical, &output_root).unwrap();
+
+    publish_outputs_recoverably(vec![
+        output(output_root.join("main.html"), b"html"),
+        output(output_root.join("_mech/pkg/mech_wasm.js"), b"js"),
+    ])
+    .unwrap();
+
+    assert_contents(&physical.join("main.html"), b"html");
+    assert_contents(&physical.join("_mech/pkg/mech_wasm.js"), b"js");
+    assert!(publication_artifacts(&root).is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(windows)]
+#[test]
+fn publication_rejects_case_aliases_on_windows() {
+    let root = temp_root("windows-case-alias");
+    let existing = root.join("page.html");
+    std::fs::write(&existing, b"existing").unwrap();
+
+    let error = publish_outputs_recoverably(vec![
+        output(root.join("PAGE.HTML"), b"first"),
+        output(root.join("page.html"), b"second"),
+    ])
+    .unwrap_err();
+
+    assert!(format!("{error:?}").contains("duplicate physical destination"));
+    assert_contents(&existing, b"existing");
+    assert!(publication_artifacts(&root).is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn publication_rollback_removes_created_directories() {
     let root = temp_root("remove-directories");

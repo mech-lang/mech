@@ -39,6 +39,81 @@ fn normalized_destination(path: &Path) -> MResult<PathBuf> {
     Ok(normalized)
 }
 
+#[cfg(not(windows))]
+fn normalized_physical_key(path: PathBuf) -> PathBuf {
+    path
+}
+
+#[cfg(windows)]
+fn normalized_physical_key(path: PathBuf) -> PathBuf {
+    use std::os::windows::ffi::{OsStrExt, OsStringExt};
+
+    // Fold ordinary ASCII Windows output names while preserving every UTF-16
+    // code unit. Do not use to_string_lossy: unpaired surrogates must not
+    // collapse to replacement characters in the duplicate-detection key.
+    let folded = path
+        .as_os_str()
+        .encode_wide()
+        .map(|unit| {
+            if unit >= u16::from(b'A') && unit <= u16::from(b'Z') {
+                unit + u16::from(b'a' - b'A')
+            } else {
+                unit
+            }
+        })
+        .collect::<Vec<_>>();
+    PathBuf::from(OsString::from_wide(&folded))
+}
+
+fn physical_destination_identity(path: &Path) -> MResult<PathBuf> {
+    let mut existing_ancestor = path.to_path_buf();
+    let mut unresolved_components = Vec::<OsString>::new();
+
+    loop {
+        match fs::canonicalize(&existing_ancestor) {
+            Ok(mut physical) => {
+                for component in unresolved_components.iter().rev() {
+                    physical.push(component);
+                }
+                return Ok(normalized_physical_key(physical));
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                let component = existing_ancestor.file_name().ok_or_else(|| {
+                    format_error(format!(
+                        "formatter output `{}` has no existing ancestor",
+                        path.display(),
+                    ))
+                })?;
+                unresolved_components.push(component.to_os_string());
+                existing_ancestor = existing_ancestor
+                    .parent()
+                    .ok_or_else(|| format_error(format!(
+                        "formatter output `{}` has no existing ancestor",
+                        path.display(),
+                    )))?
+                    .to_path_buf();
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
+
+fn ensure_unique_physical_destinations<'a>(
+    destinations: impl IntoIterator<Item = &'a PathBuf>,
+) -> MResult<()> {
+    let mut physical_destinations = BTreeSet::new();
+    for destination in destinations {
+        let physical = physical_destination_identity(destination)?;
+        if !physical_destinations.insert(physical.clone()) {
+            return Err(format_error(format!(
+                "formatter publication contains duplicate physical destination `{}`",
+                physical.display(),
+            )));
+        }
+    }
+    Ok(())
+}
+
 fn publication_artifact_path(path: &Path, suffix: &str) -> MResult<PathBuf> {
     let parent = path.parent().ok_or_else(|| format_error(format!(
         "formatter output `{}` has no parent directory",
@@ -225,6 +300,9 @@ pub(super) fn publish_outputs_recoverably(
         };
         prepared.push((destination, output.bytes, staging, backup));
     }
+    ensure_unique_physical_destinations(
+        prepared.iter().map(|(destination, _, _, _)| destination),
+    )?;
 
     let mut required_directories = required_directories.into_iter().collect::<Vec<_>>();
     required_directories.sort_by_key(|path| path.components().count());
@@ -244,6 +322,17 @@ pub(super) fn publish_outputs_recoverably(
             ));
         }
         created_directories.push(directory);
+    }
+
+    if let Err(error) = ensure_unique_physical_destinations(
+        prepared.iter().map(|(destination, _, _, _)| destination),
+    ) {
+        let mut rollback_failures = Vec::new();
+        remove_created_directories(&created_directories, &mut rollback_failures);
+        return Err(publication_failure(
+            format!("failed to validate formatter output destinations: {error:?}"),
+            rollback_failures,
+        ));
     }
 
     let mut outputs = Vec::with_capacity(prepared.len());
