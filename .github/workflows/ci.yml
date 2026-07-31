@@ -543,6 +543,15 @@ jobs:
 
       - name: Run Windows formatter and serve HTML shim contracts
         run: |
+          New-Item -ItemType Directory -Force src/wasm/pkg | Out-Null
+          [IO.File]::WriteAllText(
+            (Join-Path $PWD "src/wasm/pkg/mech_wasm.js"),
+            "export default async function init() {}"
+          )
+          [IO.File]::WriteAllBytes(
+            (Join-Path $PWD "src/wasm/pkg/mech_wasm_bg.wasm"),
+            [byte[]](0, 97, 115, 109, 1, 0, 0, 0)
+          )
           cargo test -p mech --no-default-features --features formatter --test mech_format_shims -- --nocapture
           cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_custom_shim_renders_all_supported_slots -- --exact --nocapture
           cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_default_shim_restores_rich_shell -- --exact --nocapture

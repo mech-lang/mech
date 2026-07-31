@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" data-mech-document-status="loading">
+<head>
+  <meta charset="utf-8">
+  <title>{{TITLE}}</title>
+</head>
+<body>
+  <main class="mech-root" data-mech-document-status="loading">
+    {{CONTENT}}
+  </main>
+  <script type="application/x-mech-code" data-mech-document-code>
+{{CODE}}
+  </script>
+  <script
+    type="module"
+    data-mech-document-controller
+    data-mech-wasm-module="https://cdn.example.test/mech_wasm.js">
+{{DOCUMENT_SCRIPT}}
+  </script>
+  <script type="application/x-mech-source-bundle" data-mech-document-sources>
+{{DOCUMENT_SOURCES}}
+  </script>
+</body>
+</html>

@@ -46,8 +46,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 PY
 }
 
-cp tests/fixtures/format_static/main.mec "$work_dir/main.mec"
-cp tests/fixtures/format_static/support.mec "$work_dir/support.mec"
+cp tests/fixtures/format_static/unicode-main.mec "$work_dir/main.mec"
+cp tests/fixtures/format_static/support.mec "$work_dir/café.mec"
 output_dir="$work_dir/static"
 format_log="$work_dir/format.log"
 if ! "$MECH_BIN" --no-config format "$work_dir/main.mec" --html --out "$output_dir" >"$format_log" 2>&1; then

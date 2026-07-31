@@ -94,6 +94,66 @@ fn mech_format_static_custom_shim_emits_no_runtime_assets() {
     assert!(!directory.path().join("_mech/pkg/mech_wasm_bg.wasm").exists());
 }
 
+#[test]
+fn mech_format_custom_controller_literal_module_owns_runtime_assets() {
+    let directory = TestDirectory::new("literal-module");
+    let output = directory.path().join("literal.html");
+    let html = format_fixture(
+        Some(&fixture_path("controller-literal-module.html")),
+        None,
+        &output,
+    );
+
+    assert!(html.contains(
+        "data-mech-wasm-module=\"https://cdn.example.test/mech_wasm.js\"",
+    ));
+    assert!(html.contains("data-mech-document-sources"));
+    assert!(!directory.path().join("_mech/pkg").exists());
+}
+
+#[test]
+fn mech_format_controller_without_module_location_fails() {
+    let directory = TestDirectory::new("missing-module-location");
+    let output = directory.path().join("missing.html");
+    let result = format_fixture_output(
+        Some(&fixture_path("controller-missing-module.html")),
+        None,
+        &output,
+    );
+
+    assert!(!result.status.success());
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains(
+            "does not provide {{WASM_MODULE_URL}} or an explicit data-mech-wasm-module",
+        ),
+    );
+    assert!(!output.exists());
+    assert!(!directory.path().join("_mech").exists());
+}
+
+#[cfg(all(has_file_wasm, has_file_js))]
+#[test]
+fn mech_format_placeholder_module_emits_both_runtime_assets() {
+    let directory = TestDirectory::new("placeholder-module");
+    let output = directory.path().join("placeholder.html");
+    let html = format_fixture(
+        Some(&fixture_path("all-slots.html")),
+        None,
+        &output,
+    );
+
+    assert!(html.contains(
+        "data-mech-wasm-module=\"./_mech/pkg/mech_wasm.js\"",
+    ));
+    assert!(directory.path().join("_mech/pkg/mech_wasm.js").is_file());
+    assert!(
+        directory
+            .path()
+            .join("_mech/pkg/mech_wasm_bg.wasm")
+            .is_file(),
+    );
+}
+
 #[cfg(has_file_wasm)]
 #[test]
 fn mech_format_custom_shim_renders_all_supported_slots() {
@@ -228,8 +288,81 @@ fn mech_format_missing_dependency_writes_no_partial_bundle() {
         .output()
         .expect("Cargo-built mech formatter must start");
     assert!(!output_result.status.success());
+    let error = String::from_utf8_lossy(&output_result.stderr);
+    assert!(
+        error.contains(
+            "standalone HTML cannot bundle dependency `./missing.mec`",
+        ),
+        "got {error}",
+    );
+    assert!(error.contains("requested by `file://"), "got {error}");
     assert!(!output.exists());
     assert!(!directory.path().join("formatted/_mech").exists());
+}
+
+#[test]
+fn mech_format_unresolvable_standalone_dependencies_publish_nothing() {
+    for (label, specifier) in [
+        ("https", "https://example.com/dep.mec"),
+        ("mech", "mech://stdlib/dep.mec"),
+    ] {
+        let directory = TestDirectory::new(label);
+        let main = directory.path().join("main.mec");
+        let output = directory.path().join("formatted/main.html");
+        std::fs::write(
+            &main,
+            format!("+> {specifier}\nanswer := 1\n"),
+        )
+        .expect("main fixture must be written");
+
+        let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .arg("format")
+            .arg(&main)
+            .arg("--html")
+            .arg("--out")
+            .arg(&output)
+            .output()
+            .expect("Cargo-built mech formatter must start");
+        let error = String::from_utf8_lossy(&result.stderr);
+
+        assert!(!result.status.success());
+        assert!(
+            error.contains(&format!(
+                "standalone HTML cannot bundle dependency `{specifier}`",
+            )),
+            "got {error}",
+        );
+        assert!(error.contains("requested by `file://"), "got {error}");
+        assert!(!output.exists());
+        assert!(!directory.path().join("formatted/_mech").exists());
+    }
+}
+
+#[cfg(all(windows, has_file_wasm, has_file_js))]
+#[test]
+fn mech_format_replaces_existing_runtime_assets_on_windows() {
+    let directory = TestDirectory::new("windows-runtime-replacement");
+    let output = directory.path().join("formatted/main.html");
+
+    format_fixture(None, None, &output);
+    let package = directory.path().join("formatted/_mech/pkg");
+    let js = package.join("mech_wasm.js");
+    let wasm = package.join("mech_wasm_bg.wasm");
+    let expected_js = std::fs::read(&js).expect("first JavaScript asset");
+    let expected_wasm = std::fs::read(&wasm).expect("first WASM asset");
+    std::fs::write(&js, b"stale-js").expect("stale JavaScript fixture");
+    std::fs::write(&wasm, b"stale-wasm").expect("stale WASM fixture");
+
+    format_fixture(None, None, &output);
+
+    assert_eq!(std::fs::read(&js).unwrap(), expected_js);
+    assert_eq!(std::fs::read(&wasm).unwrap(), expected_wasm);
+    let artifacts = std::fs::read_dir(&package)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|name| name.ends_with(".tmp") || name.ends_with(".backup"))
+        .collect::<Vec<_>>();
+    assert!(artifacts.is_empty(), "left runtime asset artifacts: {artifacts:?}");
 }
 
 #[cfg(not(has_file_wasm))]

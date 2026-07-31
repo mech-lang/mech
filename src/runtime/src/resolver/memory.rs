@@ -16,7 +16,11 @@ use std::collections::HashMap;
 
 use mech_core::{MResult, MechSourceCode};
 
-use super::{MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest, SourceResolver};
+use super::{
+  MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest,
+  SourceResolver,
+  file::portable_relative_source_specifier_candidate,
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct InMemorySourceResolver {
@@ -174,7 +178,25 @@ impl SourceResolver for InMemorySourceResolver {
       return Ok(None);
     };
 
-    Ok(self.sources.get(self.resolve_alias(&candidate)).cloned())
+    if let Some(source) = self
+      .sources
+      .get(self.resolve_alias(&candidate))
+    {
+      return Ok(Some(source.clone()));
+    }
+
+    let portable_candidate =
+      portable_relative_source_specifier_candidate(&candidate);
+    if portable_candidate == candidate {
+      return Ok(None);
+    }
+
+    Ok(
+      self
+        .sources
+        .get(self.resolve_alias(&portable_candidate))
+        .cloned(),
+    )
   }
 }
 
@@ -268,6 +290,75 @@ mod tests {
       assert_eq!(resolver.resolve(&request).unwrap().unwrap().name, expected);
     }
   }
+
+  #[test]
+  fn resolves_literal_unicode_import_against_portable_source_key() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("caf%C3%A9.mec", "value := 41");
+
+    let request = SourceRequest::new("./café.mec")
+      .with_referrer("memory:main.mec");
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+
+    assert_eq!(resolved.name, "caf%C3%A9.mec");
+  }
+
+  #[test]
+  fn resolves_nested_literal_unicode_import_against_portable_source_key() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string(
+        "donn%C3%A9es/%C3%A9t%C3%A9/dep.mec",
+        "value := 41",
+      );
+
+    let request = SourceRequest::new("../données/été/dep.mec")
+      .with_referrer("memory:app/main.mec");
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+
+    assert_eq!(
+      resolved.name,
+      "donn%C3%A9es/%C3%A9t%C3%A9/dep.mec",
+    );
+  }
+
+  #[test]
+  fn resolves_already_percent_encoded_relative_import_without_double_encoding() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("caf%C3%A9.mec", "value := 41");
+
+    let request = SourceRequest::new("./caf%C3%A9.mec")
+      .with_referrer("memory:main.mec");
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+
+    assert_eq!(resolved.name, "caf%C3%A9.mec");
+    assert!(!resolver.contains("caf%25C3%25A9.mec"));
+  }
+
+  #[test]
+  fn literal_relative_source_key_retains_priority_over_portable_fallback() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("café.mec", "value := 1")
+      .with_string("caf%C3%A9.mec", "value := 2");
+
+    let request = SourceRequest::new("./café.mec")
+      .with_referrer("memory:main.mec");
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+
+    assert_eq!(resolved.name, "café.mec");
+  }
+
+  #[test]
+  fn ascii_relative_import_behavior_is_unchanged() {
+    let resolver = InMemorySourceResolver::new()
+      .with_string("app/dep.mec", "value := 41");
+
+    let request = SourceRequest::new("./dep.mec")
+      .with_referrer("memory:app/main.mec");
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+
+    assert_eq!(resolved.name, "app/dep.mec");
+  }
+
   #[test]
   fn memory_relative_imports_do_not_escape_or_rebase_other_requests() {
     let resolver = InMemorySourceResolver::new()

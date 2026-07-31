@@ -579,6 +579,48 @@ fn percent_encode_path_segment(bytes: &[u8]) -> String {
   out
 }
 
+fn percent_encode_path_segment_preserving_escapes(bytes: &[u8]) -> String {
+  let mut out = String::new();
+  let mut index = 0;
+  while index < bytes.len() {
+    let byte = bytes[index];
+    if byte == b'%'
+      && index + 2 < bytes.len()
+      && bytes[index + 1].is_ascii_hexdigit()
+      && bytes[index + 2].is_ascii_hexdigit()
+    {
+      out.push('%');
+      out.push((bytes[index + 1] as char).to_ascii_uppercase());
+      out.push((bytes[index + 2] as char).to_ascii_uppercase());
+      index += 3;
+      continue;
+    }
+    if byte.is_ascii_alphanumeric()
+      || matches!(byte, b'-' | b'.' | b'_' | b'~')
+    {
+      out.push(byte as char);
+    } else {
+      out.push('%');
+      out.push(hex_char(byte >> 4));
+      out.push(hex_char(byte & 0x0f));
+    }
+    index += 1;
+  }
+  out
+}
+
+pub(super) fn portable_relative_source_specifier_candidate(
+  specifier: &str,
+) -> String {
+  specifier
+    .split('/')
+    .map(|component| {
+      percent_encode_path_segment_preserving_escapes(component.as_bytes())
+    })
+    .collect::<Vec<_>>()
+    .join("/")
+}
+
 /// Encodes a normalized relative filesystem path for an in-memory source map.
 ///
 /// Each component uses the same percent encoding as filesystem source

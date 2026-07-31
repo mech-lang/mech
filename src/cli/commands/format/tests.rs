@@ -700,3 +700,157 @@ fn formatter_assets_use_the_explicit_output_directory_root() {
     );
     std::fs::remove_dir_all(root).unwrap();
 }
+
+fn standalone_bundle_error(
+    label: &str,
+    source: &str,
+) -> (PathBuf, String) {
+    let root = temp_root(label);
+    let main = root.join("main.mec");
+    std::fs::write(&main, source).unwrap();
+    let error = format!(
+        "{:?}",
+        resolve_document_source_bundle(&main).unwrap_err(),
+    );
+    (root, error)
+}
+
+#[test]
+fn standalone_bundle_rejects_unresolved_https_dependency_with_referrer() {
+    let (root, error) = standalone_bundle_error(
+        "unresolved-https",
+        "+> https://example.com/dep.mec\nanswer := 1\n",
+    );
+    assert!(
+        error.contains(
+            "standalone HTML cannot bundle dependency `https://example.com/dep.mec`",
+        ),
+        "got {error}",
+    );
+    assert!(error.contains("requested by `file://"), "got {error}");
+    assert!(
+        error.contains(
+            "only dependencies resolvable and packaged at format time are supported",
+        ),
+        "got {error}",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn standalone_bundle_rejects_unresolved_mech_dependency_with_referrer() {
+    let (root, error) = standalone_bundle_error(
+        "unresolved-mech",
+        "+> mech://stdlib/dep.mec\nanswer := 1\n",
+    );
+    assert!(
+        error.contains(
+            "standalone HTML cannot bundle dependency `mech://stdlib/dep.mec`",
+        ),
+        "got {error}",
+    );
+    assert!(error.contains("requested by `file://"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn standalone_bundle_rejects_missing_relative_dependency_with_referrer() {
+    let (root, error) = standalone_bundle_error(
+        "missing-relative",
+        "+> ./missing.mec\nanswer := 1\n",
+    );
+    assert!(
+        error.contains(
+            "standalone HTML cannot bundle dependency `./missing.mec`",
+        ),
+        "got {error}",
+    );
+    assert!(error.contains("requested by `file://"), "got {error}");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn standalone_bundle_includes_resolved_relative_dependency() {
+    use base64::Engine as _;
+
+    let root = temp_root("resolved-relative");
+    let main = root.join("main.mec");
+    std::fs::write(
+        &main,
+        "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n")
+        .unwrap();
+
+    let encoded = resolve_document_source_bundle(&main).unwrap();
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .unwrap();
+    let bundle: serde_json::Value = serde_json::from_slice(&decoded).unwrap();
+    assert_eq!(bundle["rootSpecifier"], "main.mec");
+    assert_eq!(
+        bundle["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|source| source["specifier"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["dep.mec", "main.mec"],
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+fn assert_no_runtime_asset_artifacts(directory: &Path) {
+    let artifacts = std::fs::read_dir(directory)
+        .unwrap()
+        .map(|entry| {
+            entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .filter(|name| name.ends_with(".tmp") || name.ends_with(".backup"))
+        .collect::<Vec<_>>();
+    assert!(artifacts.is_empty(), "left runtime asset artifacts: {artifacts:?}");
+}
+
+#[test]
+fn runtime_asset_replacement_overwrites_js_and_wasm_without_residue() {
+    let root = temp_root("asset-replacement");
+    let package = root.join("_mech/pkg");
+    std::fs::create_dir_all(&package).unwrap();
+    let js = package.join("mech_wasm.js");
+    let wasm = package.join("mech_wasm_bg.wasm");
+    std::fs::write(&js, b"old-js").unwrap();
+    std::fs::write(&wasm, b"old-wasm").unwrap();
+
+    write_runtime_asset_with_replacement(&js, b"first-js").unwrap();
+    write_runtime_asset_with_replacement(&wasm, b"first-wasm").unwrap();
+    write_runtime_asset_with_replacement(&js, b"second-js").unwrap();
+    write_runtime_asset_with_replacement(&wasm, b"second-wasm").unwrap();
+
+    assert_eq!(std::fs::read(&js).unwrap(), b"second-js");
+    assert_eq!(std::fs::read(&wasm).unwrap(), b"second-wasm");
+    assert_no_runtime_asset_artifacts(&package);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn runtime_asset_replacement_refuses_directory_destination_without_residue() {
+    let root = temp_root("asset-directory");
+    let package = root.join("_mech/pkg");
+    let destination = package.join("mech_wasm.js");
+    std::fs::create_dir_all(&destination).unwrap();
+
+    let error = format!(
+        "{:?}",
+        write_runtime_asset_with_replacement(&destination, b"new-js")
+            .unwrap_err(),
+    );
+
+    assert!(error.contains("destination is not a regular file"), "got {error}");
+    assert_no_runtime_asset_artifacts(&package);
+    std::fs::remove_dir_all(root).unwrap();
+}

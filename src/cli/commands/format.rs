@@ -1,7 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use base64::Engine as _;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -190,13 +192,13 @@ struct ResolvedDocumentSource {
     source: String,
 }
 
-fn is_non_filesystem_source_request(request: &SourceRequest) -> bool {
-    let specifier = request.specifier.as_str();
-    specifier.starts_with("mech:")
-        || specifier.starts_with("pkg:")
-        || specifier.starts_with("http:")
-        || specifier.starts_with("https:")
-        || specifier.starts_with("memory:")
+fn standalone_dependency_error(request: &SourceRequest) -> MechError {
+    let referrer = request.referrer.as_deref().unwrap_or("<unknown>");
+    format_error(format!(
+        "standalone HTML cannot bundle dependency `{}` requested by `{referrer}`; \
+         only dependencies resolvable and packaged at format time are supported",
+        request.specifier,
+    ))
 }
 
 fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
@@ -232,13 +234,7 @@ fn resolve_document_source_bundle(root: &Path) -> MResult<String> {
 
     while let Some(request) = pending.pop_front() {
         let Some(resolved) = resolver.resolve(&request)? else {
-            if is_non_filesystem_source_request(&request) {
-                continue;
-            }
-            return Err(format_error(format!(
-                "cannot resolve document source dependency `{}`",
-                request.specifier,
-            )));
+            return Err(standalone_dependency_error(&request));
         };
         if sources.contains_key(&resolved.canonical_uri) {
             continue;
@@ -335,12 +331,16 @@ fn formatter_asset_package_directory(
     Ok(root.join("_mech").join("pkg"))
 }
 
-fn write_asset_atomically(path: &Path, bytes: &[u8]) -> MResult<()> {
+static NEXT_RUNTIME_ASSET_ARTIFACT: AtomicU64 = AtomicU64::new(0);
+
+fn runtime_asset_sibling_path(
+    path: &Path,
+    suffix: &str,
+) -> MResult<PathBuf> {
     let parent = path.parent().ok_or_else(|| format_error(format!(
         "runtime asset `{}` has no parent directory",
         path.display(),
     )))?;
-    fs::create_dir_all(parent)?;
     let file_name = path.file_name().and_then(|name| name.to_str()).ok_or_else(|| format_error(
         "runtime asset file name must be valid UTF-8",
     ))?;
@@ -348,9 +348,106 @@ fn write_asset_atomically(path: &Path, bytes: &[u8]) -> MResult<()> {
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|error| format_error(format!("system clock error while writing runtime assets: {error}")))?
         .as_nanos();
-    let temporary = parent.join(format!(".{file_name}.{}.{}.tmp", std::process::id(), stamp));
-    fs::write(&temporary, bytes)?;
-    fs::rename(&temporary, path)?;
+    let sequence = NEXT_RUNTIME_ASSET_ARTIFACT.fetch_add(1, Ordering::Relaxed);
+    Ok(parent.join(format!(
+        ".{file_name}.{}.{}.{}.{}",
+        std::process::id(),
+        stamp,
+        sequence,
+        suffix,
+    )))
+}
+
+fn remove_runtime_asset_artifact(path: &Path) {
+    match fs::remove_file(path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => {}
+    }
+}
+
+fn runtime_asset_destination_exists(path: &Path) -> MResult<bool> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_file() => Ok(true),
+        Ok(_) => Err(format_error(format!(
+            "refusing to replace runtime asset `{}` because the destination is not a regular file",
+            path.display(),
+        ))),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn write_runtime_asset_with_replacement(
+    path: &Path,
+    bytes: &[u8],
+) -> MResult<()> {
+    let parent = path.parent().ok_or_else(|| format_error(format!(
+        "runtime asset `{}` has no parent directory",
+        path.display(),
+    )))?;
+    fs::create_dir_all(parent)?;
+    runtime_asset_destination_exists(path)?;
+
+    let temporary = runtime_asset_sibling_path(path, "tmp")?;
+    let mut temporary_file = fs::OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&temporary)?;
+    if let Err(error) = temporary_file
+        .write_all(bytes)
+        .and_then(|()| temporary_file.sync_all())
+    {
+        drop(temporary_file);
+        remove_runtime_asset_artifact(&temporary);
+        return Err(error.into());
+    }
+    drop(temporary_file);
+
+    let replacement_error = match fs::rename(&temporary, path) {
+        Ok(()) => return Ok(()),
+        Err(error) => error,
+    };
+    let destination_exists = match runtime_asset_destination_exists(path) {
+        Ok(exists) => exists,
+        Err(error) => {
+            remove_runtime_asset_artifact(&temporary);
+            return Err(error);
+        }
+    };
+    if !destination_exists {
+        remove_runtime_asset_artifact(&temporary);
+        return Err(replacement_error.into());
+    }
+
+    let backup = runtime_asset_sibling_path(path, "backup")?;
+    if let Err(error) = fs::rename(path, &backup) {
+        remove_runtime_asset_artifact(&temporary);
+        remove_runtime_asset_artifact(&backup);
+        return Err(error.into());
+    }
+
+    if let Err(error) = fs::rename(&temporary, path) {
+        remove_runtime_asset_artifact(&temporary);
+        if let Err(restore_error) = fs::rename(&backup, path) {
+            return Err(format_error(format!(
+                "failed to replace runtime asset `{}`: {error}; \
+                 failed to restore the original asset from `{}`: {restore_error}",
+                path.display(),
+                backup.display(),
+            )));
+        }
+        remove_runtime_asset_artifact(&backup);
+        return Err(error.into());
+    }
+
+    if let Err(error) = fs::remove_file(&backup) {
+        return Err(format_error(format!(
+            "replaced runtime asset `{}` but could not remove backup `{}`: {error}",
+            path.display(),
+            backup.display(),
+        )));
+    }
     Ok(())
 }
 
@@ -929,6 +1026,8 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     if html_flag {
         let shipped_shim = shipped_shim_name(&shim_source);
         let uses_document_controller = shim_str.contains("{{DOCUMENT_SCRIPT}}");
+        let needs_bundled_wasm =
+            uses_document_controller && shim_str.contains("{{WASM_MODULE_URL}}");
         let controller_outputs = loaded_sources
             .iter()
             .filter_map(|(target, source)| matches!(source, MechSourceCode::String(_)).then(|| {
@@ -941,7 +1040,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                 )
             }))
             .collect::<Vec<_>>();
-        let runtime_assets = if uses_document_controller && !controller_outputs.is_empty() {
+        let runtime_assets = if needs_bundled_wasm && !controller_outputs.is_empty() {
             let package = formatter_asset_package_directory(
                 &output_path,
                 is_output_file,
@@ -1027,8 +1126,8 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             if !wasm.starts_with(b"\0asm") {
                 return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
             }
-            write_asset_atomically(&js_path, js)?;
-            write_asset_atomically(&wasm_path, wasm)?;
+            write_runtime_asset_with_replacement(&js_path, js)?;
+            write_runtime_asset_with_replacement(&wasm_path, wasm)?;
         }
         for (output_file, content) in html_items {
             save_to_file(output_file, &content)?;
