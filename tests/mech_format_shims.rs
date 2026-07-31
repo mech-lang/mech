@@ -368,7 +368,11 @@ fn mech_format_replaces_existing_runtime_assets_on_windows() {
     let artifacts = std::fs::read_dir(&package)
         .unwrap()
         .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
-        .filter(|name| name.ends_with(".tmp") || name.ends_with(".backup"))
+        .filter(|name| {
+            name.ends_with(".tmp")
+                || name.ends_with(".stage")
+                || name.ends_with(".backup")
+        })
         .collect::<Vec<_>>();
     assert!(artifacts.is_empty(), "left runtime asset artifacts: {artifacts:?}");
 }

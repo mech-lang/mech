@@ -1,9 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::io::Write;
 use std::ops::{Deref, DerefMut};
-use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
@@ -16,8 +13,10 @@ use mech_runtime::{
 };
 
 mod document_bundle;
+mod publication;
 
 use document_bundle::resolve_document_source_bundle;
+use publication::{PlannedOutput, publish_outputs_recoverably};
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
@@ -250,126 +249,6 @@ fn formatter_asset_package_directory(
         absolute_path(output_path)?
     };
     Ok(root.join("_mech").join("pkg"))
-}
-
-static NEXT_RUNTIME_ASSET_ARTIFACT: AtomicU64 = AtomicU64::new(0);
-
-fn runtime_asset_sibling_path(
-    path: &Path,
-    suffix: &str,
-) -> MResult<PathBuf> {
-    let parent = path.parent().ok_or_else(|| format_error(format!(
-        "runtime asset `{}` has no parent directory",
-        path.display(),
-    )))?;
-    let file_name = path.file_name().and_then(|name| name.to_str()).ok_or_else(|| format_error(
-        "runtime asset file name must be valid UTF-8",
-    ))?;
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_err(|error| format_error(format!("system clock error while writing runtime assets: {error}")))?
-        .as_nanos();
-    let sequence = NEXT_RUNTIME_ASSET_ARTIFACT.fetch_add(1, Ordering::Relaxed);
-    Ok(parent.join(format!(
-        ".{file_name}.{}.{}.{}.{}",
-        std::process::id(),
-        stamp,
-        sequence,
-        suffix,
-    )))
-}
-
-fn remove_runtime_asset_artifact(path: &Path) {
-    match fs::remove_file(path) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(_) => {}
-    }
-}
-
-fn runtime_asset_destination_exists(path: &Path) -> MResult<bool> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_file() => Ok(true),
-        Ok(_) => Err(format_error(format!(
-            "refusing to replace runtime asset `{}` because the destination is not a regular file",
-            path.display(),
-        ))),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(error) => Err(error.into()),
-    }
-}
-
-fn write_runtime_asset_with_replacement(
-    path: &Path,
-    bytes: &[u8],
-) -> MResult<()> {
-    let parent = path.parent().ok_or_else(|| format_error(format!(
-        "runtime asset `{}` has no parent directory",
-        path.display(),
-    )))?;
-    fs::create_dir_all(parent)?;
-    runtime_asset_destination_exists(path)?;
-
-    let temporary = runtime_asset_sibling_path(path, "tmp")?;
-    let mut temporary_file = fs::OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .open(&temporary)?;
-    if let Err(error) = temporary_file
-        .write_all(bytes)
-        .and_then(|()| temporary_file.sync_all())
-    {
-        drop(temporary_file);
-        remove_runtime_asset_artifact(&temporary);
-        return Err(error.into());
-    }
-    drop(temporary_file);
-
-    let replacement_error = match fs::rename(&temporary, path) {
-        Ok(()) => return Ok(()),
-        Err(error) => error,
-    };
-    let destination_exists = match runtime_asset_destination_exists(path) {
-        Ok(exists) => exists,
-        Err(error) => {
-            remove_runtime_asset_artifact(&temporary);
-            return Err(error);
-        }
-    };
-    if !destination_exists {
-        remove_runtime_asset_artifact(&temporary);
-        return Err(replacement_error.into());
-    }
-
-    let backup = runtime_asset_sibling_path(path, "backup")?;
-    if let Err(error) = fs::rename(path, &backup) {
-        remove_runtime_asset_artifact(&temporary);
-        remove_runtime_asset_artifact(&backup);
-        return Err(error.into());
-    }
-
-    if let Err(error) = fs::rename(&temporary, path) {
-        remove_runtime_asset_artifact(&temporary);
-        if let Err(restore_error) = fs::rename(&backup, path) {
-            return Err(format_error(format!(
-                "failed to replace runtime asset `{}`: {error}; \
-                 failed to restore the original asset from `{}`: {restore_error}",
-                path.display(),
-                backup.display(),
-            )));
-        }
-        remove_runtime_asset_artifact(&backup);
-        return Err(error.into());
-    }
-
-    if let Err(error) = fs::remove_file(&backup) {
-        return Err(format_error(format!(
-            "replaced runtime asset `{}` but could not remove backup `{}`: {error}",
-            path.display(),
-            backup.display(),
-        )));
-    }
-    Ok(())
 }
 
 fn shipped_shim_name(
@@ -1034,6 +913,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             };
             html_items.push((output_file, html));
         }
+        let mut planned_outputs = Vec::new();
         if let Some((js_path, wasm_path)) = runtime_assets {
             let wasm = options.resources.mech_wasm.ok_or_else(|| format_error(
                 "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm_bg.wasm is unavailable; rebuild with bundle_web enabled",
@@ -1047,11 +927,32 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             if !wasm.starts_with(b"\0asm") {
                 return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
             }
-            write_runtime_asset_with_replacement(&js_path, js)?;
-            write_runtime_asset_with_replacement(&wasm_path, wasm)?;
+            planned_outputs.push(PlannedOutput {
+                path: js_path,
+                bytes: js.to_vec(),
+            });
+            planned_outputs.push(PlannedOutput {
+                path: wasm_path,
+                bytes: wasm.to_vec(),
+            });
         }
-        for (output_file, content) in html_items {
-            save_to_file(output_file, &content)?;
+        let html_output_paths = html_items
+            .iter()
+            .map(|(path, _)| path.clone())
+            .collect::<Vec<_>>();
+        planned_outputs.extend(html_items.into_iter().map(|(path, content)| {
+            PlannedOutput {
+                path,
+                bytes: content.into_bytes(),
+            }
+        }));
+        publish_outputs_recoverably(planned_outputs)?;
+        for output_file in html_output_paths {
+            println!(
+                "{} Saving file to {}…Done.",
+                "[Save]".truecolor(153,221,85),
+                output_file.display(),
+            );
         }
     } else {
         // Raw source mode
