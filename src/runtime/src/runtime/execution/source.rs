@@ -37,8 +37,9 @@ impl MechRuntime {
     target: &mut RuntimeProgramTarget<'_>,
     tree: &mech_core::Program,
     scope_hint: Option<&SourceScope>,
+    render_document_presentation: bool,
   ) -> MResult<Value> {
-    let direct_document_run = scope_hint.is_none();
+    let direct_document_run = render_document_presentation;
     let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
     let skip_non_context_imports = scope_hint.is_some();
     let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
@@ -279,6 +280,7 @@ impl MechRuntime {
             &mut RuntimeProgramTarget::Retained,
             &tree,
             None,
+            true,
           )
         }
         Err(error) => Err(error),
@@ -650,6 +652,7 @@ impl MechRuntime {
           &mut RuntimeProgramTarget::Retained,
           tree,
           None,
+          true,
         )
       }
       Err(error) => Err(error),

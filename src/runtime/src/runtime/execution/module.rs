@@ -618,7 +618,13 @@ impl MechRuntime {
             &execution_scope,
             AddressedReadPreflight::AllowModuleAddressTargets,
           ) {
-            Ok(()) => runtime.run_tree_on_program(context, target, &tree, Some(&execution_scope)),
+            Ok(()) => runtime.run_tree_on_program(
+              context,
+              target,
+              &tree,
+              Some(&execution_scope),
+              false,
+            ),
             Err(error) => Err(error),
           }
         },
@@ -633,7 +639,16 @@ impl MechRuntime {
           &execution_scope,
           AddressedReadPreflight::AllowModuleAddressTargets,
         ) {
-          Ok(()) => runtime.run_tree_on_program(context, target, tree, Some(&execution_scope)),
+          // A resolved tree is a formatted source document. It still uses the
+          // module scope for imports, while retaining the document's inline
+          // presentation outputs for its renderer.
+          Ok(()) => runtime.run_tree_on_program(
+            context,
+            target,
+            tree,
+            Some(&execution_scope),
+            true,
+          ),
           Err(error) => Err(error),
         }
       },

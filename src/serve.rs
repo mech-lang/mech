@@ -142,6 +142,29 @@ impl ServerSourceRegistry {
 
   fn set_preferred_index_source(&mut self, source: impl Into<String>) { self.preferred_index_source = Some(source.into()); }
 
+  /// Resolves a generated document alias without assuming that every renderable
+  /// source uses the historical `.mec` extension. Keep `.mec` first when both
+  /// source spellings exist so existing aliases retain their established target.
+  fn generated_html_alias(
+    &self,
+    stem: &Path,
+    trace: &str,
+  ) -> Option<(ServerAsset, String)> {
+    let mec_key = stem.with_extension("mec").to_string_lossy().into_owned();
+    if let Some(asset) = self.html_sources.get(&mec_key) {
+      return Some((asset.clone(), format!("{} `{}`", trace, mec_key)));
+    }
+
+    let mut candidates = self
+      .html_sources
+      .iter()
+      .filter(|(key, _)| Path::new(key).with_extension("").as_path() == stem)
+      .collect::<Vec<_>>();
+    candidates.sort_by(|(left, _), (right, _)| left.cmp(right));
+    let (key, asset) = candidates.first()?;
+    Some(((*asset).clone(), format!("{} `{}`", trace, key)))
+  }
+
   fn rebuild_listing(&mut self) {
     let mut keys = self.raw_sources.keys().cloned().collect::<Vec<_>>(); keys.sort();
     if keys.is_empty() { self.listing_asset = None; return; }
@@ -209,31 +232,21 @@ impl ServerSourceRegistry {
             .map(|asset| (asset, "bundled asset `index.html`".to_string()))
         });
     }
-    if normalized.ends_with(".mec") || normalized.ends_with(".🤖") {
-      return self.html_sources
-        .get(&normalized)
-        .cloned()
-        .map(|asset| (asset, format!("generated html `{}`", normalized)));
+    if let Some(asset) = self.html_sources.get(&normalized) {
+      return Some((asset.clone(), format!("generated html `{}`", normalized)));
     }
     if let Some(asset) = self.assets.get(&normalized) {
       return Some((asset.clone(), format!("asset `{}`", normalized)));
     }
     if normalized.ends_with(".html") || normalized.ends_with(".htm") {
-      let source = Path::new(&normalized).with_extension("mec");
-      let key = normalize_url_path(source.to_str()?)?;
-      return self.html_sources
-        .get(&key)
-        .cloned()
-        .map(|asset| (asset, format!("generated html fallback `{}`", key)));
+      let stem = Path::new(&normalized).with_extension("");
+      return self.generated_html_alias(&stem, "generated html fallback");
     }
     if !normalized.starts_with("_mech/")
       && !normalized.starts_with("source/")
       && !normalized.starts_with("code/")
     {
-      let source = format!("{normalized}.mec");
-      if let Some(asset) = self.html_sources.get(&source) {
-        return Some((asset.clone(), format!("generated extensionless html `{}`", source)));
-      }
+      return self.generated_html_alias(Path::new(&normalized), "generated extensionless html");
     }
     None
   }
@@ -378,18 +391,12 @@ impl ServerSourceRegistry {
         self.index_source = Some(key); 
       }
     }
+    self.sync_source_manifest()?;
     self.rebuild_listing();
     Ok(())
   }
 
-  fn sync_project_overlay(&mut self, project: &ConfiguredProjectOverlay) -> MResult<()> {
-    self.insert_generated_asset("mech.mcfg", ServerAsset {
-      bytes: project.config_source.as_bytes().to_vec(),
-      content_type: "text/x-mech",
-      content_encoding: None,
-      backing_paths: vec![project.config_path.clone()],
-    });
-
+  fn sync_source_manifest(&mut self) -> MResult<()> {
     let mut source_entries = self
       .source_specifiers
       .iter()
@@ -424,9 +431,24 @@ impl ServerSourceRegistry {
     );
     Ok(())
   }
+
+  fn sync_project_overlay(&mut self, project: &ConfiguredProjectOverlay) -> MResult<()> {
+    self.insert_generated_asset("mech.mcfg", ServerAsset {
+      bytes: project.config_source.as_bytes().to_vec(),
+      content_type: "text/x-mech",
+      content_encoding: None,
+      backing_paths: vec![project.config_path.clone()],
+    });
+    self.sync_source_manifest()
+  }
 }
 
-fn is_index_source_key(key: &str) -> bool { key == "index.mec" || key.ends_with("/index.mec") }
+fn is_index_source_key(key: &str) -> bool {
+  Path::new(key)
+    .file_stem()
+    .and_then(|stem| stem.to_str())
+    == Some("index")
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct DelegationKey { path: PathBuf, recursive: bool }
@@ -1718,6 +1740,62 @@ mod tests {
   }
 
   #[test]
+  fn standalone_document_manifest_includes_relative_import_dependencies() {
+    let root = temp_root("standalone-document-imports");
+    std::fs::create_dir_all(root.join("docs")).unwrap();
+    std::fs::write(
+      root.join("docs/main.mec"),
+      "+> ./math.mec\nanswer := math/value + 1\nanswer\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("docs/math.mec"),
+      "value := 41\n<+ value\n",
+    )
+    .unwrap();
+    let snapshot = snapshot_for_sources(&root, &["docs/main.mec", "docs/math.mec"]);
+    let mut registry = ServerSourceRegistry::default();
+    registry.set_document_controller(
+      Some(include_str!("../include/document.js").to_string()),
+      Some("include/index.html".to_string()),
+    );
+    registry
+      .sync_workspace_snapshot(
+        &root,
+        &snapshot,
+        "",
+        include_str!("../include/index.html"),
+        &[],
+      )
+      .unwrap();
+
+    let html = String::from_utf8(registry.get_route("/docs/main.mec").unwrap().bytes).unwrap();
+    assert!(html.contains("fromEncodedWithSources"));
+    let manifest: serde_json::Value = serde_json::from_slice(
+      &registry
+        .get_route("/_mech/project-sources.json")
+        .expect("standalone documents need a source manifest for relative imports")
+        .bytes,
+    )
+    .unwrap();
+    let source_pairs = manifest["sources"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .map(|source| {
+        (
+          source["specifier"].as_str().unwrap(),
+          source["url"].as_str().unwrap(),
+        )
+      })
+      .collect::<BTreeSet<_>>();
+    assert!(source_pairs.contains(&("docs/main.mec", "source/docs/main.mec")));
+    assert!(source_pairs.contains(&("docs/math.mec", "source/docs/math.mec")));
+    assert!(registry.get_route("/mech.mcfg").is_none());
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
   fn custom_inline_and_external_shims_remain_authoritative() {
     let root = temp_root("custom-document-shims");
     std::fs::write(root.join("main.mec"), "  answer := 42\n").unwrap();
@@ -2524,6 +2602,25 @@ mod tests {
     let registry = server.registry.read().unwrap();
 
     let canonical = registry.get_route("/report.mec").unwrap();
+    assert_eq!(registry.get_route("/report.html").unwrap().bytes, canonical.bytes);
+    assert_eq!(registry.get_route("/report").unwrap().bytes, canonical.bytes);
+    assert_eq!(registry.get_route("/").unwrap().bytes, canonical.bytes);
+
+    drop(registry);
+    drop(guard);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn emoji_source_supports_html_and_extensionless_aliases() {
+    let root = temp_root("emoji-source-aliases");
+    std::fs::write(root.join("report.🤖"), "value := 7\n").unwrap();
+    let guard = CurrentDirGuard::enter(&root);
+    let mut server = initialized_server();
+    server.load_workspace(&vec!["report.🤖".to_string()]).unwrap();
+    let registry = server.registry.read().unwrap();
+
+    let canonical = registry.get_route("/report.🤖").unwrap();
     assert_eq!(registry.get_route("/report.html").unwrap().bytes, canonical.bytes);
     assert_eq!(registry.get_route("/report").unwrap().bytes, canonical.bytes);
     assert_eq!(registry.get_route("/").unwrap().bytes, canonical.bytes);

@@ -121,7 +121,7 @@ function embeddedDocumentCode() {
 async function loadEncodedDocument() {
   const sourceUrlKey =
     state.root?.dataset.mechSourceUrlKey ||
-    document.documentElement.dataset.mechSourceUrlKey ||
+    document.documentElement?.dataset.mechSourceUrlKey ||
     "";
   let fetchFailure = null;
 
@@ -147,6 +147,93 @@ async function loadEncodedDocument() {
     throw fetchFailure;
   }
   throw new Error("the document has no embedded encoded Mech payload");
+}
+
+async function loadDocumentSourceMap() {
+  const sourceUrlKey =
+    state.root?.dataset.mechSourceUrlKey ||
+    document.documentElement?.dataset.mechSourceUrlKey ||
+    "";
+  if (!sourceUrlKey.trim()) {
+    return null;
+  }
+
+  const response = await fetch("/_mech/project-sources.json");
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(
+      `failed to fetch served project source manifest: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  let manifest;
+  try {
+    manifest = await response.json();
+  } catch {
+    throw new Error("invalid served project source manifest");
+  }
+  if (
+    manifest?.version !== 1 ||
+    !Array.isArray(manifest.sources) ||
+    manifest.sources.some(
+      source =>
+        typeof source?.specifier !== "string" ||
+        typeof source?.url !== "string" ||
+        !source.url.startsWith("source/"),
+    )
+  ) {
+    throw new Error("invalid served project source manifest");
+  }
+
+  const root = manifest.sources.find(
+    source => source.url === `source/${sourceUrlKey}`,
+  );
+  if (!root) {
+    throw new Error(
+      `served document source \`${sourceUrlKey}\` is missing from the project source manifest`,
+    );
+  }
+
+  const hasServedAuthority = Object.prototype.hasOwnProperty.call(
+    window,
+    "__MECH_HOST_CONFIG",
+  );
+  const [config, sourceEntries] = await Promise.all([
+    hasServedAuthority
+      ? (async () => {
+          const configResponse = await fetch("/mech.mcfg");
+          if (configResponse.status === 404) {
+            return null;
+          }
+          if (!configResponse.ok) {
+            throw new Error(
+              `failed to fetch served project configuration: ${configResponse.status} ${configResponse.statusText}`,
+            );
+          }
+          return configResponse.text();
+        })()
+      : Promise.resolve(null),
+    Promise.all(
+      manifest.sources.map(async source => {
+        const sourceResponse = await fetch(`/${source.url}`);
+        if (!sourceResponse.ok) {
+          throw new Error(
+            `failed to fetch served project source \`${source.specifier}\`: ` +
+              `${sourceResponse.status} ${sourceResponse.statusText}`,
+          );
+        }
+        return [source.specifier, await sourceResponse.text()];
+      }),
+    ),
+  ]);
+
+  return {
+    config,
+    rootSpecifier: root.specifier,
+    sources: Object.fromEntries(sourceEntries),
+  };
 }
 
 function outputAddress(element) {
@@ -519,7 +606,11 @@ function attachConsole() {
 }
 
 function consolePane() {
-  return document.querySelector(".console-pane, [data-mech-console-pane]");
+  if (!state.root) {
+    return null;
+  }
+  return state.root.querySelector("#mech-console, [data-mech-console-pane]") ||
+    state.root.querySelector(".console-pane");
 }
 
 function setConsoleOpen(open) {
@@ -551,24 +642,27 @@ function initializeConsoleState() {
   setConsoleOpen(Boolean(visible));
 }
 
-function panelFor(name) {
+function panelFor(name, pane = consolePane()) {
+  if (!pane) {
+    return null;
+  }
   const known = {
     console: "#mech-output",
     output: "#mech-document-output",
     errors: "#mech-document-errors",
   };
-  const target = document.querySelector(
+  const target = pane.querySelector(
     `[data-mech-console-panel="${name}"], [data-panel="${name}"], ${known[name] || "[data-mech-console-panel]"}`,
   );
   return target?.closest(".console-panel, [data-mech-console-panel], [data-panel]") || target;
 }
 
-function activateConsolePanel(name) {
-  const panel = panelFor(name);
-  if (!panel) {
+function activateConsolePanel(name, pane = consolePane()) {
+  const panel = panelFor(name, pane);
+  if (!pane || !panel) {
     return;
   }
-  for (const candidate of document.querySelectorAll(
+  for (const candidate of pane.querySelectorAll(
     ".console-panel, [data-mech-console-panel], [data-panel]",
   )) {
     const selected = candidate === panel;
@@ -576,7 +670,7 @@ function activateConsolePanel(name) {
     candidate.classList.toggle("active", selected);
     candidate.classList.toggle("is-active", selected);
   }
-  for (const tab of document.querySelectorAll(
+  for (const tab of pane.querySelectorAll(
     ".console-tab, [data-mech-console-tab], [data-tab]",
   )) {
     const selected = (tab.dataset.mechConsoleTab || tab.dataset.tab) === name;
@@ -586,13 +680,17 @@ function activateConsolePanel(name) {
 }
 
 function initializeConsoleTabs() {
-  for (const tab of document.querySelectorAll(
+  const pane = consolePane();
+  if (!pane) {
+    return;
+  }
+  for (const tab of pane.querySelectorAll(
     ".console-tab, [data-mech-console-tab], [data-tab]",
   )) {
     tab.addEventListener("click", () => {
       const name = tab.dataset.mechConsoleTab || tab.dataset.tab;
       if (name) {
-        activateConsolePanel(name);
+        activateConsolePanel(name, pane);
       }
     });
   }
@@ -630,7 +728,12 @@ function initializeResizeHandles() {
       const move = (moveEvent) => {
         moved = true;
         const delta = (horizontal ? moveEvent.clientX : moveEvent.clientY) - start;
-        const size = Math.max(160, Math.min(900, initial + delta));
+        // The document console is anchored to the right edge, so moving its
+        // left resize handle left must make the pane wider.
+        const size = Math.max(
+          160,
+          Math.min(900, initial + (horizontal ? -delta : delta)),
+        );
         state.root.style.setProperty("--mech-console-size", `${size}px`);
         pane.style[horizontal ? "width" : "height"] = `${size}px`;
       };
@@ -816,7 +919,36 @@ async function main() {
   const { default: initializeWasm, WasmDocument } = await import(wasmModule);
   await initializeWasm();
   state.initialEncoded = await loadEncodedDocument();
-  state.document = WasmDocument.fromEncoded(state.initialEncoded);
+  const documentSources = await loadDocumentSourceMap();
+  if (documentSources?.config) {
+    if (
+      !Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG") ||
+      typeof WasmDocument.fromServedEncoded !== "function"
+    ) {
+      throw new Error(
+        "configured source documents require a browser WASM build with served project authority",
+      );
+    }
+    state.document = WasmDocument.fromServedEncoded(
+      state.initialEncoded,
+      documentSources.rootSpecifier,
+      documentSources.config,
+      documentSources.sources,
+    );
+  } else if (documentSources) {
+    if (typeof WasmDocument.fromEncodedWithSources !== "function") {
+      throw new Error(
+        "source documents with imports require a browser WASM build with document source resolution",
+      );
+    }
+    state.document = WasmDocument.fromEncodedWithSources(
+      state.initialEncoded,
+      documentSources.rootSpecifier,
+      documentSources.sources,
+    );
+  } else {
+    state.document = WasmDocument.fromEncoded(state.initialEncoded);
+  }
   attachConsole();
   initializeLayout();
   prepareVarPlaceholders();

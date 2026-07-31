@@ -122,6 +122,62 @@ prepare_formatted_case() {
   fi
 }
 
+# Exercise the same formatted-document controller through a configured project
+# route. The document imports a sibling source and reads an injected browser
+# host, so this catches a regression where source pages bypass the projected
+# resolver or host/grant authority used by `mech serve`.
+prepare_configured_case() {
+  local case_dir="$work_dir/configured"
+  mkdir -p "$case_dir"
+  cp "$fixture" "$case_dir/main.mec"
+  cp "$repo_root/tests/fixtures/shims/hero.svg" "$case_dir/hero.svg"
+  cat > "$case_dir/support.mec" <<'EOF'
+value := 41
+<+ value
+EOF
+  cat > "$case_dir/mech.mcfg" <<'EOF'
+config := {
+  hosts: [
+    {
+      name: "clock"
+      provider: "time"
+      settings: {}
+    }
+  ]
+
+  serve: {
+    paths: ["main.mec" "support.mec"]
+  }
+
+  run: {
+    paths: ["main.mec"]
+    grants: [
+      {
+        target: "clock/clock"
+        operations: ["read"]
+        paths: ["second"]
+      }
+    ]
+  }
+}
+EOF
+  python3 - "$case_dir/main.mec" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+source = path.read_text()
+original = "~answer := 41"
+replacement = """+> ./support.mec
+@clock := time://clock/clock{:read(second)}
+clock-second := @clock/second
+~answer := support/value + clock-second * 0"""
+if source.count(original) != 1:
+    raise SystemExit("configured rich fixture did not contain exactly one answer declaration")
+path.write_text(source.replace(original, replacement, 1))
+PY
+}
+
 run_browser_case() {
   local label="$1"
   local page_url="$2"
@@ -660,6 +716,70 @@ def assert_console_contract():
     )
 
 
+def assert_console_tab_isolation():
+    state = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const outputTab = document.querySelector('#output-tab');
+  if (!root || !outputTab) return null;
+
+  const foreign = document.createElement('section');
+  foreign.id = 'mech-smoke-unrelated-tabs';
+  foreign.innerHTML = `
+    <button class="console-tab foreign-tab-active" data-tab="output" aria-selected="true">Unrelated tab</button>
+    <section class="console-panel foreign-panel-active" data-panel="output">Unrelated panel</section>
+  `;
+  root.prepend(foreign);
+  const foreignTab = foreign.querySelector('[data-tab="output"]');
+  const foreignPanel = foreign.querySelector('[data-panel="output"]');
+  outputTab.click();
+
+  return {
+    foreignHidden: foreignPanel.hidden,
+    foreignPanelActive: foreignPanel.classList.contains('foreign-panel-active'),
+    foreignTabActive: foreignTab.classList.contains('foreign-tab-active'),
+    foreignAria: foreignTab.getAttribute('aria-selected'),
+    outputActive: document.querySelector('#output-panel')?.classList.contains('is-active'),
+  };
+})()
+""")
+    if state is None or not state["outputActive"]:
+        fail(f"document console Output tab did not activate: {state!r}")
+    if (
+        state["foreignHidden"] or
+        not state["foreignPanelActive"] or
+        not state["foreignTabActive"] or
+        state["foreignAria"] != "true"
+    ):
+        fail(f"document console rewrote an unrelated custom-shim tab widget: {state!r}")
+
+
+def assert_right_console_resize_direction():
+    state = evaluate_json("""
+(() => {
+  const pane = document.querySelector('#mech-console, .console-pane');
+  const handle = document.querySelector('#resizer, [data-mech-console-resizer], #edgeHandle');
+  if (!pane || !handle) return null;
+  const rect = handle.getBoundingClientRect();
+  const startX = rect.left + Math.max(1, rect.width / 2);
+  const startY = rect.top + Math.max(1, rect.height / 2);
+  const before = pane.getBoundingClientRect().width;
+  handle.dispatchEvent(new PointerEvent('pointerdown', {
+    bubbles: true, cancelable: true, pointerId: 73, clientX: startX, clientY: startY,
+  }));
+  window.dispatchEvent(new PointerEvent('pointermove', {
+    bubbles: true, pointerId: 73, clientX: startX - 48, clientY: startY,
+  }));
+  window.dispatchEvent(new PointerEvent('pointerup', {
+    bubbles: true, pointerId: 73, clientX: startX - 48, clientY: startY,
+  }));
+  return { before, after: pane.getBoundingClientRect().width };
+})()
+""")
+    if state is None or state["after"] <= state["before"]:
+        fail(f"dragging the right console's left handle left did not widen it: {state!r}")
+
+
 def assert_mobile_contract():
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
@@ -843,6 +963,8 @@ try:
     assert_desktop_contract()
     assert_desktop_console_controls()
     assert_fullscreen_accessibility()
+    assert_console_tab_isolation()
+    assert_right_console_resize_direction()
     assert_console_contract()
     assert_mobile_contract()
     capture_artifacts()
@@ -900,6 +1022,42 @@ run_case() {
   stop_server
 }
 
+run_configured_case() {
+  local label="configured"
+  local case_dir="$work_dir/$label"
+  local server_log="$case_dir/server.log"
+  local port
+  port="$(port_for_test)"
+  local page_url="http://127.0.0.1:${port}/main.mec"
+
+  "$MECH_BIN" serve \
+    --address 127.0.0.1 \
+    --port "$port" \
+    "$case_dir" >"$server_log" 2>&1 &
+  server_pid="$!"
+
+  wait_for_server "$page_url" "$server_log"
+  run_browser_case "$label" "$page_url" "$case_dir"
+
+  for route in \
+    "/main.mec" \
+    "/code/main.mec" \
+    "/source/main.mec" \
+    "/source/support.mec" \
+    "/mech.mcfg" \
+    "/_mech/project-sources.json" \
+    "/_mech/pkg/mech_wasm.js" \
+    "/_mech/pkg/mech_wasm_bg.wasm"; do
+    if ! grep -F "GET $route ->" "$server_log" >/dev/null; then
+      echo "Configured rich document did not request $route" >&2
+      sed -n '1,320p' "$server_log" >&2 || true
+      return 1
+    fi
+  done
+
+  stop_server
+}
+
 prepare_formatted_case \
   formatted-blog \
   "$repo_root/include/blog.html" \
@@ -908,6 +1066,7 @@ prepare_formatted_case \
   formatted-docs \
   "$repo_root/include/docs.html" \
   "$repo_root/include/docs.css"
+prepare_configured_case
 
 run_case default "$fixture"
 run_case blog \
@@ -924,3 +1083,4 @@ run_case formatted-blog \
 run_case formatted-docs \
   "$work_dir/formatted-docs/index.html" \
   "$work_dir/formatted-docs/all-slots.mec"
+run_configured_case

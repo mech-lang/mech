@@ -5,7 +5,7 @@ use std::path::Path;
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
-use mech_core::{MechError, MechErrorKind};
+use mech_core::{MechError, MechErrorKind, MechSourceCode};
 #[cfg(feature = "served_project_authority")]
 use base64::Engine as _;
 #[cfg(feature = "served_project_authority")]
@@ -28,7 +28,8 @@ use mech_host_time::BrowserTimeHostFactory;
 use mech_host_timer::BrowserTimerHostFactory;
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
-    ModuleBuildOptions, RuntimeBuilder, SourceKind, SourceRequest, parse_config_document,
+    ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest,
+    parse_config_document,
 };
 
 #[cfg(feature = "browser_host_dom")]
@@ -255,18 +256,37 @@ impl WasmProject {
 /// The document owns its bootstrap through its HTML shim. This adapter only
 /// decodes and executes the shim's detached `{{CODE}}` payload, retains the
 /// runtime, and exposes detached render queries.
+enum WasmDocumentBootstrap {
+    Detached,
+    SourceBacked(SourceBackedDocumentBootstrap),
+    #[cfg(feature = "served_project_authority")]
+    Served(ServedDocumentBootstrap),
+}
+
+#[derive(Clone)]
+struct SourceBackedDocumentBootstrap {
+    root_specifier: String,
+    source_map: HashMap<String, String>,
+}
+
+#[cfg(feature = "served_project_authority")]
+#[derive(Clone)]
+struct ServedDocumentBootstrap {
+    source: SourceBackedDocumentBootstrap,
+    config_source: String,
+}
+
 #[wasm_bindgen]
 pub struct WasmDocument {
     project: WasmProject,
+    bootstrap: WasmDocumentBootstrap,
 }
 
 #[wasm_bindgen]
 impl WasmDocument {
     #[wasm_bindgen(js_name = fromEncoded)]
     pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
-        let tree: mech_core::nodes::Program =
-            mech_core::nodes::decode_and_decompress(encoded)
-                .map_err(|error| js_error(format!("failed to decode Mech document: {error}")))?;
+        let tree = decode_document_tree(encoded)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
         let mut runtime =
@@ -283,6 +303,126 @@ impl WasmDocument {
                 #[cfg(feature = "browser_host_scene")]
                 scenes,
             ),
+            bootstrap: WasmDocumentBootstrap::Detached,
+        })
+    }
+
+    /// Builds a formatted source document with a resolver rooted at its
+    /// logical source specifier. This keeps relative imports available without
+    /// requiring a configured project.
+    #[wasm_bindgen(js_name = fromEncodedWithSources)]
+    pub fn from_encoded_with_sources(
+        encoded: &str,
+        root_specifier: &str,
+        sources: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let source_map = source_map_from_js(sources)?;
+        Self::from_tree_with_sources(tree, root_specifier, source_map)
+    }
+
+    fn from_tree_with_sources(
+        tree: mech_core::nodes::Program,
+        root_specifier: &str,
+        source_map: HashMap<String, String>,
+    ) -> Result<WasmDocument, JsValue> {
+        let bootstrap = SourceBackedDocumentBootstrap {
+            root_specifier: root_specifier.to_string(),
+            source_map,
+        };
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let source_resolver = document_source_resolver(tree, &bootstrap)?;
+        let mut runtime = runtime_builder_with_factories(
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?
+        .source_resolver(source_resolver)
+        .build()
+        .map_err(to_js_error)?;
+        runtime
+            .resolve_and_run_root_module(
+                SourceRequest::new(&bootstrap.root_specifier),
+                browser_module_options(),
+            )
+            .map_err(to_js_error)?;
+
+        Ok(Self {
+            project: WasmProject::from_runtime(
+                runtime,
+                #[cfg(feature = "browser_host_scene")]
+                scenes,
+            ),
+            bootstrap: WasmDocumentBootstrap::SourceBacked(bootstrap),
+        })
+    }
+
+    /// Builds a formatted source document with the configured project's
+    /// server-projected host authority and complete source resolver.
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedEncoded)]
+    pub fn from_served_encoded(
+        encoded: &str,
+        root_specifier: &str,
+        config_source: &str,
+        sources: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let authority = served_browser_authority()?;
+        Self::from_served_tree(
+            tree,
+            root_specifier,
+            document,
+            config_source,
+            source_map,
+            authority,
+        )
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn from_served_tree(
+        tree: mech_core::nodes::Program,
+        root_specifier: &str,
+        document: MechConfigDocument,
+        config_source: &str,
+        source_map: HashMap<String, String>,
+        authority: BrowserRuntimeInjectionConfig,
+    ) -> Result<WasmDocument, JsValue> {
+        let source = SourceBackedDocumentBootstrap {
+            root_specifier: root_specifier.to_string(),
+            source_map,
+        };
+        validate_served_authority(&document, &authority).map_err(to_js_error)?;
+        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let source_resolver = document_source_resolver(tree, &source)?;
+        let mut runtime = build_runtime_from_authority(
+            &document,
+            &authority,
+            source_resolver,
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?;
+        runtime
+            .resolve_and_run_root_module(
+                SourceRequest::new(&source.root_specifier),
+                browser_module_options(),
+            )
+            .map_err(to_js_error)?;
+
+        Ok(Self {
+            project: WasmProject::from_runtime(
+                runtime,
+                #[cfg(feature = "browser_host_scene")]
+                scenes,
+            ),
+            bootstrap: WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
+                source,
+                config_source: config_source.to_string(),
+            }),
         })
     }
 
@@ -313,11 +453,34 @@ impl WasmDocument {
     pub fn reset(&mut self, encoded: &str) -> Result<(), JsValue> {
         // Construct before touching the live project. A malformed replacement
         // must leave the current document usable.
-        let replacement = Self::from_encoded(encoded)?;
+        let replacement = match &self.bootstrap {
+            WasmDocumentBootstrap::Detached => Self::from_encoded(encoded)?,
+            WasmDocumentBootstrap::SourceBacked(bootstrap) => {
+                Self::from_tree_with_sources(
+                    decode_document_tree(encoded)?,
+                    &bootstrap.root_specifier,
+                    bootstrap.source_map.clone(),
+                )?
+            }
+            #[cfg(feature = "served_project_authority")]
+            WasmDocumentBootstrap::Served(bootstrap) => {
+                let tree = decode_document_tree(encoded)?;
+                let document = parse_project_config(&bootstrap.config_source)?;
+                Self::from_served_tree(
+                    tree,
+                    &bootstrap.source.root_specifier,
+                    document,
+                    &bootstrap.config_source,
+                    bootstrap.source.source_map.clone(),
+                    served_browser_authority()?,
+                )?
+            }
+        };
         let was_started = self.project.started && !self.project.stopped;
 
         self.project.stop()?;
         self.project = replacement.project;
+        self.bootstrap = replacement.bootstrap;
         if was_started {
             self.project.start()?;
         }
@@ -450,6 +613,12 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
     )
     .map_err(to_js_error)
 }
+
+fn decode_document_tree(encoded: &str) -> Result<mech_core::nodes::Program, JsValue> {
+    mech_core::nodes::decode_and_decompress(encoded)
+        .map_err(|error| js_error(format!("failed to decode Mech document: {error}")))
+}
+
 fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
     let document = parse_config_document(
         "browser-project/mech.mcfg",
@@ -797,6 +966,35 @@ fn project_source_resolver(
     Ok(resolver)
 }
 
+fn document_source_resolver(
+    tree: mech_core::nodes::Program,
+    source: &SourceBackedDocumentBootstrap,
+) -> Result<InMemorySourceResolver, JsValue> {
+    if source.root_specifier.trim().is_empty() {
+        return Err(js_error("document root specifier must not be empty"));
+    }
+    if !source.source_map.contains_key(&source.root_specifier) {
+        return Err(js_error(format!(
+            "document root `{}` is missing from the source map",
+            source.root_specifier,
+        )));
+    }
+
+    let mut resolver = project_source_resolver(&source.source_map).map_err(to_js_error)?;
+    resolver
+        .insert_source(
+            &source.root_specifier,
+            ResolvedSource::new(
+                &source.root_specifier,
+                format!("memory:{}", source.root_specifier),
+                MechSourceCode::Tree(tree),
+            )
+            .with_kind(SourceKind::Mech),
+        )
+        .map_err(to_js_error)?;
+    Ok(resolver)
+}
+
 fn browser_module_options() -> ModuleBuildOptions<'static> {
     ModuleBuildOptions::new(
         env!("CARGO_PKG_VERSION"),
@@ -1135,6 +1333,46 @@ mod tests {
 
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
         assert_f64(runtime.root_symbol_value("parent-answer").unwrap(), 42.0);
+    }
+
+    #[test]
+    fn source_backed_document_resolves_relative_imports_from_its_root_specifier() {
+        let source = "The imported answer is {math/value + 1}.\n\n+> ./math.mec\nanswer := math/value + 1\nanswer\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let source_map = HashMap::from([
+            (
+                "docs/main.mec".to_string(),
+                source.to_string(),
+            ),
+            (
+                "docs/math.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
+        ]);
+
+        let document = WasmDocument::from_tree_with_sources(
+            tree,
+            "docs/main.mec",
+            source_map,
+        )
+        .unwrap();
+
+        assert_f64(
+            document.project.runtime.root_symbol_value("answer").unwrap(),
+            42.0,
+        );
+        assert_f64(
+            document
+                .project
+                .runtime
+                .output_value_for_interpreter(
+                    document.project.runtime.root_interpreter_id(),
+                    mech_core::hash_str("inline-eval:0:0"),
+                )
+                .unwrap()
+                .expect("formatted source root must retain inline output"),
+            42.0,
+        );
     }
 
     #[test]
@@ -1526,6 +1764,74 @@ mod browser_tests {
     #[wasm_bindgen_test]
     fn wasm_project_reports_served_authority_capability() {
         assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn served_document_projects_host_authority_and_resolves_relative_imports() {
+        let window = web_sys::window().unwrap();
+        let authority = BrowserRuntimeInjectionConfig {
+            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "clock".to_string(),
+                provider: "time".to_string(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            }],
+            run_grants: vec![mech_runtime::RunResourceGrantConfig {
+                target: "clock/clock".to_string(),
+                operations: vec!["read".to_string()],
+                paths: vec!["second".to_string()],
+            }],
+        };
+        Reflect::set(
+            &window,
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+            &serde_wasm_bindgen::to_value(&authority).unwrap(),
+        )
+        .unwrap();
+
+        let config = r#"config := {
+  hosts: [{ name: "clock" provider: "time" settings: {} }]
+  run: {
+    paths: ["docs/main.mec"]
+    grants: [{ target: "clock/clock" operations: ["read"] paths: ["second"] }]
+  }
+}"#;
+        let source = "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nanswer := math/value + @clock/second * 0\nanswer\n";
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("docs/main.mec"),
+            &JsValue::from_str(source),
+        )
+        .unwrap();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("docs/math.mec"),
+            &JsValue::from_str("value := 41\n<+ value\n"),
+        )
+        .unwrap();
+
+        let result = WasmDocument::from_served_encoded(
+            &encoded_document(source),
+            "docs/main.mec",
+            config,
+            sources.into(),
+        );
+        Reflect::delete_property(&window, &JsValue::from_str("__MECH_HOST_CONFIG"))
+            .unwrap();
+
+        let document = result.unwrap();
+        let answer = document.rendered_symbol(0, "answer").unwrap();
+        assert_eq!(
+            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("41"),
+        );
     }
 
     #[wasm_bindgen_test]
