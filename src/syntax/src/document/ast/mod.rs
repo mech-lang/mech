@@ -12,6 +12,7 @@ pub mod paths;
 pub mod pattern_primitives;
 pub mod source_imports;
 pub mod subscript_primitives;
+pub mod structure_shell;
 
 pub use crate::document::red::{
   AstNode, DocumentSyntax, ExpressionSyntax, IdentifierSyntax, MechItemSyntax, ParagraphSyntax,
@@ -29,3 +30,4 @@ pub use paths::*;
 pub use pattern_primitives::*;
 pub use source_imports::*;
 pub use subscript_primitives::*;
+pub use structure_shell::*;

@@ -291,3 +291,17 @@ behind the existing `serde` feature.
 The design remains implementable in Mech: piece arrays, immutable nodes, event
 arrays, typed maps, checkpoints, and explicit recovery are concrete data
 structures rather than a Rust-specific framework.
+
+11. Structural presentation retention
+-------------------------------------------------------------------------------
+
+Concrete syntax retains presentation exactly: delimiters, border spellings,
+horizontal trivia, and physical newlines remain ordinary syntax tokens. Semantic
+structures intentionally discard that presentation when compatibility lowering
+constructs values such as matrices, maps, sets, and table rows.
+
+Format preservation is therefore syntax-driven. A formatter may preserve the
+retained structure or apply an explicitly selected normalization policy, but it
+must not infer an original presentation from semantic dimensions, row counts,
+estimated width, or similar heuristics. Detached presentation metadata is not
+used because it could become stale after an incremental edit.
