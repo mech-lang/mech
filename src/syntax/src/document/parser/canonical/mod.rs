@@ -10,6 +10,7 @@ pub(crate) mod operators;
 pub(crate) mod paths;
 mod ports;
 pub(crate) mod roots;
+pub(crate) mod source_imports;
 pub(crate) mod statements;
 mod test_support;
 pub mod terminal_spec;

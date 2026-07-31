@@ -7,6 +7,7 @@ pub mod mech;
 pub mod mechdown;
 pub mod operators;
 pub mod paths;
+pub mod source_imports;
 
 pub use crate::document::red::{
   AstNode, DocumentSyntax, ExpressionSyntax, IdentifierSyntax, MechItemSyntax, ParagraphSyntax,
@@ -19,3 +20,4 @@ pub use literals::*;
 pub use mechdown::*;
 pub use operators::*;
 pub use paths::*;
+pub use source_imports::*;
