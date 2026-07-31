@@ -8,6 +8,7 @@ use std::thread::JoinHandle;
 #[cfg(any(feature = "mika", feature = "run"))]
 use std::time::Duration;
 
+use chrono::{Datelike, Local, NaiveDateTime, Timelike};
 use colored::*;
 #[cfg(feature = "run")]
 use crossbeam_channel::{Receiver, RecvTimeoutError, Sender};
@@ -306,9 +307,40 @@ fn run_runtime_repl_event_loop(
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ReplGreetingVariant {
+    Standard,
+    Halloween,
+}
+
+impl ReplGreetingVariant {
+    const fn mika(self) -> &'static str {
+        match self {
+            Self::Standard => "╭◉╮",
+            Self::Halloween => "ᗑ◉ᗑ",
+        }
+    }
+
+    const fn interjection(self) -> Option<&'static str> {
+        match self {
+            Self::Standard => None,
+            Self::Halloween => Some("Boo!"),
+        }
+    }
+}
+
+fn repl_greeting_at(now: NaiveDateTime) -> ReplGreetingVariant {
+    if now.month() == 10 && now.day() == 31 && now.hour() == 0 {
+        ReplGreetingVariant::Halloween
+    } else {
+        ReplGreetingVariant::Standard
+    }
+}
+
 pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     let text_logo = TEXT_LOGO.truecolor(246, 192, 78);
-    let micromika = "╭◉╮".truecolor(246, 192, 78);
+    let greeting = repl_greeting_at(Local::now().naive_local());
+    let micromika = greeting.mika().truecolor(246, 192, 78);
     let micromika_point = "╭◉─".truecolor(246, 192, 78);
     let help_cmd = ":help".bright_yellow();
     let quit_cmd = ":quit".bright_yellow();
@@ -328,9 +360,13 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         format!("v{}", env!("CARGO_PKG_VERSION")).truecolor(246, 192, 78)
     );
     println!("           {}           \n", "www.mech-lang.org");
+    let interjection = greeting
+        .interjection()
+        .map(|text| format!("{} ", text.bright_magenta()))
+        .unwrap_or_default();
     let intro_message = format!(
-        "{}Enter {} for a list of all commands.{}\n",
-        mika_open, help_cmd, mika_close
+        "{}{}Enter {} for a list of all commands.{}\n",
+        mika_open, interjection, help_cmd, mika_close
     );
     println!("{} {}", micromika, intro_message);
 
