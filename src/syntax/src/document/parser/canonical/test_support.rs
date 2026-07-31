@@ -57,7 +57,7 @@ impl CanonicalSourceRuleSnapshot {
     }
 
     pub fn is_strictly_clean(&self) -> bool {
-        self.matched
+        self.outcome == CanonicalRuleOutcome::Matched
             && self.diagnostics.is_empty()
             && !self.root.flags.intersects(
                 NodeFlags::ERROR

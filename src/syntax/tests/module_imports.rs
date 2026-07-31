@@ -102,6 +102,8 @@ fn arbitrary_module_roots_parse_as_module_imports() {
 #[test]
 fn rejects_invalid_stdlib_import_paths() {
     for source in ["+> ", "+> */x", "+> math/", "+> math/*/x"] {
+        assert!(parser::parse(source).is_err(), "{source:?} must be rejected");
+
         let graphemes = graphemes::init_tag(source);
         let parsed = module_import(ParseString::new(&graphemes));
         assert!(

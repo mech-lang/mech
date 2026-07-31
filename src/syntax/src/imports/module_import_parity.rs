@@ -548,6 +548,16 @@ fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
     root.children().find_map(|child| find_node(&child, kind))
 }
 
+fn assert_direct_parity_probe(contract: Contract, input: &str) {
+    let legacy = legacy_outcome(input, contract.parser);
+    let canonical = canonical_snapshot(input, contract.rule);
+    match legacy {
+        LegacyOutcome::Matched(legacy) => assert_matched(contract, input, legacy, canonical),
+        LegacyOutcome::Error { reached } => assert_error(contract, input, reached, canonical),
+        LegacyOutcome::Failure { reached } => assert_failure(contract, input, reached, canonical),
+    }
+}
+
 #[test]
 fn phase_2e_direct_module_import_rules_match_legacy_across_ninety_five_probes() {
     let contracts = phase_2e_contracts();
@@ -568,20 +578,31 @@ fn phase_2e_direct_module_import_rules_match_legacy_across_ninety_five_probes() 
     for contract in contracts {
         for input in contract.probes {
             probe_count += 1;
-            let legacy = legacy_outcome(input, contract.parser);
-            let canonical = canonical_snapshot(input, contract.rule);
-            match legacy {
-                LegacyOutcome::Matched(legacy) => {
-                    assert_matched(contract, input, legacy, canonical)
-                }
-                LegacyOutcome::Error { reached } => {
-                    assert_error(contract, input, reached, canonical)
-                }
-                LegacyOutcome::Failure { reached } => {
-                    assert_failure(contract, input, reached, canonical)
-                }
-            }
+            assert_direct_parity_probe(contract, input);
         }
     }
     assert_eq!(probe_count, 95);
+}
+
+#[test]
+fn phase_2e_boundary_regressions_match_legacy_failure_locations() {
+    let contracts = phase_2e_contracts();
+    let cases = [
+        (rules::IMPORT_GROUP_ITEMS, "sin,"),
+        (rules::MODULE_IMPORT, "+> math/{sin,"),
+        (rules::MODULE_IMPORT_PATH, "math/_/x"),
+        (rules::MODULE_IMPORT, "+> math/_/x"),
+        (rules::IMPORT_GROUP_ITEMS, "math/_,cos"),
+        (rules::MODULE_IMPORT, "+> math/{math/_,cos}"),
+    ];
+    assert_eq!(cases.len(), 6);
+
+    for (rule, input) in cases {
+        let contract = contracts
+            .iter()
+            .find(|contract| contract.rule == rule)
+            .copied()
+            .unwrap_or_else(|| panic!("missing direct parity contract for {rule}"));
+        assert_direct_parity_probe(contract, input);
+    }
 }
