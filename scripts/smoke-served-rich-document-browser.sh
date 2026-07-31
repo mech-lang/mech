@@ -157,7 +157,7 @@ config := {
   ]
 
   serve: {
-    paths: ["main.mec"]
+    paths: ["."]
   }
 
   run: {
