@@ -427,7 +427,7 @@ fn copy_slot_fixture(directory: &TestDirectory, name: &str) -> PathBuf {
     source
 }
 
-#[cfg(feature = "formatter")]
+#[cfg(all(feature = "formatter", has_file_wasm))]
 fn format_rich_fixture(
     directory: &TestDirectory,
     source: &Path,
@@ -690,7 +690,7 @@ fn mech_serve_docs_shim_restores_rich_shell() {
     );
 }
 
-#[cfg(feature = "formatter")]
+#[cfg(all(feature = "formatter", has_file_wasm))]
 fn assert_formatted_rich_page_is_served(shim: &str, stylesheet: &str) {
     let fixture = TestDirectory::new(&format!("formatted {shim}"));
     let source = copy_slot_fixture(&fixture, "all-slots.mec");
@@ -729,13 +729,13 @@ fn assert_formatted_rich_page_is_served(shim: &str, stylesheet: &str) {
     server.assert_route("/code/all-slots.mec", 200, "text/plain");
 }
 
-#[cfg(feature = "formatter")]
+#[cfg(all(feature = "formatter", has_file_wasm))]
 #[test]
 fn formatted_blog_page_executes_when_served() {
     assert_formatted_rich_page_is_served("blog.html", "blog.css");
 }
 
-#[cfg(feature = "formatter")]
+#[cfg(all(feature = "formatter", has_file_wasm))]
 #[test]
 fn formatted_docs_page_executes_when_served() {
     assert_formatted_rich_page_is_served("docs.html", "docs.css");

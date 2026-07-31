@@ -397,6 +397,20 @@ jobs:
             --features "serve,bundle_web,formatter" \
             --test mech_format_shims \
             -- --nocapture
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_serve \
+            formatted_blog_page_executes_when_served \
+            -- --exact --nocapture
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_serve \
+            formatted_docs_page_executes_when_served \
+            -- --exact --nocapture
 
       - name: Remove browser release intermediates
         run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
@@ -534,8 +548,6 @@ jobs:
           cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_default_shim_restores_rich_shell -- --exact --nocapture
           cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_blog_shim_restores_rich_shell -- --exact --nocapture
           cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_docs_shim_restores_rich_shell -- --exact --nocapture
-          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve formatted_blog_page_executes_when_served -- --exact --nocapture
-          cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve formatted_docs_page_executes_when_served -- --exact --nocapture
 
       - name: Run reduced-feature Windows source-tooling tests
         run: |

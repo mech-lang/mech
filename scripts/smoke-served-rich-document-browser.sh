@@ -513,7 +513,7 @@ def assert_desktop_contract():
     contentVisible: Boolean(content && visible("#left-pane, .content-shell, .main-content")),
     console: rectangle(console),
     consoleVisible: visible(".console-pane"),
-    tabs: document.querySelectorAll(".console-tab").length,
+    tabs: console?.querySelectorAll(".console-tab").length || 0,
     consoleTabActive: Boolean(document.querySelector("#console-tab.console-tab.active[aria-selected='true']")),
     consoleToggleVisible: visible("#toggle-repl, [data-mech-console-toggle]"),
     promptVisible: visible(".repl-prompt"),
