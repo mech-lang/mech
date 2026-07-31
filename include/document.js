@@ -48,13 +48,17 @@ function errorMessage(error) {
 }
 
 function errorPanel() {
-  return document.querySelector(
+  return state.root?.querySelector(
+    "#mech-document-errors, [data-mech-document-errors], [data-mech-errors-panel]",
+  ) || document.querySelector(
     "#mech-document-errors, [data-mech-document-errors], [data-mech-errors-panel]",
   );
 }
 
 function outputPanel() {
-  return document.querySelector(
+  return state.root?.querySelector(
+    "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]",
+  ) || document.querySelector(
     "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]",
   );
 }
@@ -72,12 +76,12 @@ function appendError(error) {
     return message;
   }
 
-  let alert = document.getElementById("mech-document-error");
+  let alert = state.root?.querySelector("#mech-document-error") || null;
   if (!alert) {
     alert = document.createElement("pre");
     alert.id = "mech-document-error";
     alert.setAttribute("role", "alert");
-    document.body.prepend(alert);
+    (state.root || document.body).prepend(alert);
   }
   alert.textContent = `Mech document failed to run: ${message}`;
   return message;
@@ -334,7 +338,7 @@ function renderValues() {
     return;
   }
   const outputEntries = [];
-  for (const output of document.querySelectorAll(".mech-block-output[id]")) {
+  for (const output of state.root?.querySelectorAll(".mech-block-output[id]") || []) {
     try {
       const address = outputAddress(output);
       const rendered = state.document.renderedOutput(
@@ -349,7 +353,7 @@ function renderValues() {
       appendError(error);
     }
   }
-  for (const output of document.querySelectorAll(".mech-inline-mech-code[id]")) {
+  for (const output of state.root?.querySelectorAll(".mech-inline-mech-code[id]") || []) {
     try {
       const address = outputAddress(output);
       const rendered = state.document.renderedOutput(
@@ -363,7 +367,7 @@ function renderValues() {
       appendError(error);
     }
   }
-  for (const placeholder of document.querySelectorAll(".mech-var-placeholder")) {
+  for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
     if (placeholder.dataset.mechInterpreterError) {
       continue;
     }
@@ -561,7 +565,7 @@ function submitConsoleInput(value) {
 }
 
 function attachConsole() {
-  const mount = document.querySelector("#mech-output");
+  const mount = state.root?.querySelector("#mech-output");
   if (!mount || state.console) {
     return;
   }
@@ -605,25 +609,57 @@ function attachConsole() {
   dispatch("mech:console-ready");
 }
 
-function consolePane() {
+function documentConsolePane() {
   if (!state.root) {
     return null;
   }
-  return state.root.querySelector("#mech-console, [data-mech-console-pane]") ||
+  return state.root.querySelector("[data-mech-console-pane], #mech-console") ||
     state.root.querySelector(".console-pane");
 }
 
+function documentConsoleResizers() {
+  const root = state.root;
+  const pane = documentConsolePane();
+  if (!root) {
+    return [];
+  }
+  return [...new Set([
+    ...root.querySelectorAll("[data-mech-console-resizer]"),
+    ...root.querySelectorAll("#resizer, #edgeHandle"),
+    ...(pane ? pane.querySelectorAll(".resize-handle") : []),
+  ])];
+}
+
+function documentConsoleToggles() {
+  if (!state.root) {
+    return [];
+  }
+  return [...new Set(state.root.querySelectorAll(
+    "[data-mech-console-toggle], #toggle-repl",
+  ))];
+}
+
+function documentConsoleFullscreenControls() {
+  const root = state.root;
+  const pane = documentConsolePane();
+  if (!root) {
+    return [];
+  }
+  return [...new Set([
+    ...root.querySelectorAll("[data-mech-console-fullscreen], #consoleFullscreenToggle"),
+    ...(pane ? pane.querySelectorAll("[data-mech-console-fullscreen]") : []),
+  ])];
+}
+
 function setConsoleOpen(open) {
-  const pane = consolePane();
+  const pane = documentConsolePane();
   if (pane) {
     pane.hidden = !open;
     pane.classList.toggle("hidden", !open);
     pane.classList.toggle("is-collapsed", !open);
   }
   state.root?.setAttribute("data-mech-console-open", String(open));
-  for (const toggle of document.querySelectorAll(
-    "#toggle-repl, [data-mech-console-toggle]",
-  )) {
+  for (const toggle of documentConsoleToggles()) {
     toggle.setAttribute("aria-expanded", String(open));
   }
 }
@@ -637,12 +673,12 @@ function initializeConsoleState() {
     setConsoleOpen(requested !== "false");
     return;
   }
-  const pane = consolePane();
+  const pane = documentConsolePane();
   const visible = pane && getComputedStyle(pane).display !== "none";
   setConsoleOpen(Boolean(visible));
 }
 
-function panelFor(name, pane = consolePane()) {
+function panelFor(name, pane = documentConsolePane()) {
   if (!pane) {
     return null;
   }
@@ -657,7 +693,7 @@ function panelFor(name, pane = consolePane()) {
   return target?.closest(".console-panel, [data-mech-console-panel], [data-panel]") || target;
 }
 
-function activateConsolePanel(name, pane = consolePane()) {
+function activateConsolePanel(name, pane = documentConsolePane()) {
   const panel = panelFor(name, pane);
   if (!pane || !panel) {
     return;
@@ -680,7 +716,7 @@ function activateConsolePanel(name, pane = consolePane()) {
 }
 
 function initializeConsoleTabs() {
-  const pane = consolePane();
+  const pane = documentConsolePane();
   if (!pane) {
     return;
   }
@@ -697,9 +733,7 @@ function initializeConsoleTabs() {
 }
 
 function initializeConsoleToggle() {
-  for (const toggle of document.querySelectorAll(
-    "#toggle-repl, [data-mech-console-toggle]",
-  )) {
+  for (const toggle of documentConsoleToggles()) {
     toggle.addEventListener("click", () => {
       const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
       setConsoleOpen(!isOpen);
@@ -708,13 +742,11 @@ function initializeConsoleToggle() {
 }
 
 function initializeResizeHandles() {
-  const pane = consolePane();
+  const pane = documentConsolePane();
   if (!pane || !state.root) {
     return;
   }
-  for (const handle of document.querySelectorAll(
-    "#resizer, #edgeHandle, [data-mech-console-resizer], .resize-handle",
-  )) {
+  for (const handle of documentConsoleResizers()) {
     handle.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       let moved = false;
@@ -767,10 +799,8 @@ function setFullscreenState(pane, toggle, active) {
 }
 
 function initializeFullscreen() {
-  const pane = consolePane();
-  const toggle = document.querySelector(
-    "#consoleFullscreenToggle, [data-mech-console-fullscreen]",
-  );
+  const pane = documentConsolePane();
+  const [toggle] = documentConsoleFullscreenControls();
   if (!pane || !toggle) {
     return;
   }

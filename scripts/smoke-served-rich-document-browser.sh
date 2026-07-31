@@ -738,22 +738,45 @@ def assert_console_tab_isolation():
   const outputTab = document.querySelector('#output-tab');
   if (!root || !outputTab) return null;
 
-  const foreign = document.createElement('section');
-  foreign.id = 'mech-smoke-unrelated-tabs';
-  foreign.innerHTML = `
-    <button class="console-tab foreign-tab-active" data-tab="output" aria-selected="true">Unrelated tab</button>
-    <section class="console-panel foreign-panel-active" data-panel="output">Unrelated panel</section>
-  `;
-  root.prepend(foreign);
+  const foreign = document.querySelector('#mech-smoke-unrelated-controls');
+  if (!foreign) return null;
   const foreignTab = foreign.querySelector('[data-tab="output"]');
   const foreignPanel = foreign.querySelector('[data-panel="output"]');
+  const foreignResize = foreign.querySelector('.resize-handle');
+  const foreignButton = foreign.querySelector('[data-mech-like-but-not-owned-control]');
+  const pane = document.querySelector('#mech-console, .console-pane');
+  if (!foreignTab || !foreignPanel || !foreignResize || !foreignButton || !pane) return null;
+
   outputTab.click();
+  const before = {
+    consoleSize: root.style.getPropertyValue('--mech-console-size'),
+    consoleOpen: root.dataset.mechConsoleOpen,
+    outputAria: outputTab.getAttribute('aria-selected'),
+  };
+  const rect = foreignResize.getBoundingClientRect();
+  const startX = rect.left + Math.max(1, rect.width / 2);
+  const startY = rect.top + Math.max(1, rect.height / 2);
+  foreignResize.dispatchEvent(new PointerEvent('pointerdown', {
+    bubbles: true, cancelable: true, pointerId: 74, clientX: startX, clientY: startY,
+  }));
+  window.dispatchEvent(new PointerEvent('pointermove', {
+    bubbles: true, pointerId: 74, clientX: startX - 48, clientY: startY,
+  }));
+  window.dispatchEvent(new PointerEvent('pointerup', {
+    bubbles: true, pointerId: 74, clientX: startX - 48, clientY: startY,
+  }));
+  foreignButton.click();
 
   return {
     foreignHidden: foreignPanel.hidden,
     foreignPanelActive: foreignPanel.classList.contains('foreign-panel-active'),
     foreignTabActive: foreignTab.classList.contains('foreign-tab-active'),
     foreignAria: foreignTab.getAttribute('aria-selected'),
+    foreignPointerEvents: Number(foreign.dataset.mechSmokePointerEvents || '0'),
+    foreignButtonEvents: Number(foreign.dataset.mechSmokeButtonEvents || '0'),
+    consoleSizeUnchanged: root.style.getPropertyValue('--mech-console-size') === before.consoleSize,
+    consoleOpenUnchanged: root.dataset.mechConsoleOpen === before.consoleOpen,
+    consoleTabAriaUnchanged: outputTab.getAttribute('aria-selected') === before.outputAria,
     outputActive: document.querySelector('#output-panel')?.classList.contains('is-active'),
   };
 })()
@@ -764,9 +787,14 @@ def assert_console_tab_isolation():
         state["foreignHidden"] or
         not state["foreignPanelActive"] or
         not state["foreignTabActive"] or
-        state["foreignAria"] != "true"
+        state["foreignAria"] != "true" or
+        state["foreignPointerEvents"] != 1 or
+        state["foreignButtonEvents"] != 1 or
+        not state["consoleSizeUnchanged"] or
+        not state["consoleOpenUnchanged"] or
+        not state["consoleTabAriaUnchanged"]
     ):
-        fail(f"document console rewrote an unrelated custom-shim tab widget: {state!r}")
+        fail(f"document console captured an unrelated custom-shim control: {state!r}")
 
 
 def assert_right_console_resize_direction():
@@ -941,6 +969,27 @@ try:
       marker.id = 'mech-smoke-var-named';
       marker.textContent = '{{VAR:foo-value@foo}}';
       root.append(marker);
+    }
+    if (!document.getElementById('mech-smoke-unrelated-controls')) {
+      const foreign = document.createElement('section');
+      foreign.id = 'mech-smoke-unrelated-controls';
+      foreign.innerHTML = `
+        <div class="resize-handle" aria-label="Unrelated resize handle"></div>
+        <button data-mech-like-but-not-owned-control type="button">Unrelated control</button>
+        <button class="console-tab foreign-tab-active" data-tab="output" aria-selected="true">Unrelated tab</button>
+        <section class="console-panel foreign-panel-active" data-panel="output">Unrelated panel</section>
+      `;
+      foreign.querySelector('.resize-handle').addEventListener('pointerdown', () => {
+        foreign.dataset.mechSmokePointerEvents = String(
+          Number(foreign.dataset.mechSmokePointerEvents || '0') + 1,
+        );
+      });
+      foreign.querySelector('[data-mech-like-but-not-owned-control]').addEventListener('click', () => {
+        foreign.dataset.mechSmokeButtonEvents = String(
+          Number(foreign.dataset.mechSmokeButtonEvents || '0') + 1,
+        );
+      });
+      root.prepend(foreign);
     }
   };
   new MutationObserver(install).observe(document, { childList: true, subtree: true });
