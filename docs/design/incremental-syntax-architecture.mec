@@ -18,6 +18,10 @@ package builds read only that package-local registry; a repository test
 recomputes and verifies every ordered `(name, RuleId)` entry against the
 inventory.
 
+Current canonical parity progress is 303 / 539 productions. The closed
+Phase 2F source-import, export, and context-declaration layer contributes 21
+of those productions without adding a statement or document parser root.
+
 The legacy parser, public `parse` API, existing `Program` AST, formatter,
 interpreter, runtime, and accepted grammar remain unchanged while this
 architecture is introduced.

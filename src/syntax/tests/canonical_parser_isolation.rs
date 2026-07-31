@@ -18,12 +18,15 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "kinds.rs",
   "operators.rs",
   "imports.rs",
+  "source_imports.rs",
+  "declarations.rs",
 ];
 
 const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
 const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &["literals.rs", "paths.rs", "kinds.rs"];
 const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &["operators.rs"];
 const PHASE_2E_PRODUCTION_SOURCES: &[&str] = &["imports.rs"];
+const PHASE_2F_PRODUCTION_SOURCES: &[&str] = &["source_imports.rs", "declarations.rs"];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -649,6 +652,99 @@ fn canonical_phase_2e_import_source_is_present_and_directly_isolated() {
         "{relative} must not claim deferred rules::{rule}"
       );
     }
+  }
+}
+
+#[test]
+fn canonical_phase_2f_sources_are_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2F_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in ["nom", "CoverageStore", "CoverageGap", "UnportedInline"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not depend on {forbidden}"
+      );
+    }
+    assert!(
+      !contains_token_sequence(&source, &["crate", "::", "parse"]),
+      "{relative} must not invoke the legacy public parser"
+    );
+    for forbidden in ["to_contiguous_string", "full_range", "graphemes"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not materialize or globally segment source through {forbidden}"
+      );
+    }
+    for rule in [
+      "STATEMENT",
+      "MECH_CODE_ALT",
+      "MECH_CODE",
+      "CODE_TERMINAL",
+      "EXPRESSION",
+      "DOCUMENT",
+      "BODY",
+      "PROGRAM",
+      "PARSE",
+      "CONTEXT_SEND",
+      "VARIABLE_DEFINE",
+      "VARIABLE_ASSIGN",
+      "OP_ASSIGN",
+      "ENUM_DEFINE",
+      "KIND_DEFINE",
+      "FSM_DECLARE",
+    ] {
+      assert!(
+        !contains_token_sequence(&source, &["rules", "::", rule]),
+        "{relative} must not claim deferred rules::{rule}"
+      );
+    }
+  }
+}
+
+#[test]
+fn phase_2f_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    ("source_imports.rs", "parse_source_import_tail", "SOURCE_IMPORT_TAIL"),
+    ("source_imports.rs", "parse_source_path_component_token", "SOURCE_PATH_COMPONENT_TOKEN"),
+    ("source_imports.rs", "parse_source_path_component", "SOURCE_PATH_COMPONENT"),
+    ("source_imports.rs", "parse_source_mec_path", "SOURCE_MEC_PATH"),
+    ("source_imports.rs", "parse_source_mec_path_wildcard_suffix", "SOURCE_MEC_PATH_WILDCARD_SUFFIX"),
+    ("source_imports.rs", "parse_relative_source_import_specifier", "RELATIVE_SOURCE_IMPORT_SPECIFIER"),
+    ("source_imports.rs", "parse_absolute_source_import_specifier", "ABSOLUTE_SOURCE_IMPORT_SPECIFIER"),
+    ("source_imports.rs", "parse_bare_source_import_specifier", "BARE_SOURCE_IMPORT_SPECIFIER"),
+    ("source_imports.rs", "parse_uri_scheme_part", "URI_SCHEME_PART"),
+    ("source_imports.rs", "parse_source_import_uri_scheme", "SOURCE_IMPORT_URI_SCHEME"),
+    ("source_imports.rs", "parse_uri_source_import_specifier", "URI_SOURCE_IMPORT_SPECIFIER"),
+    ("source_imports.rs", "parse_source_import_specifier", "SOURCE_IMPORT_SPECIFIER"),
+    ("source_imports.rs", "parse_import_declaration", "IMPORT_DECLARATION"),
+    ("declarations.rs", "parse_export_declaration", "EXPORT_DECLARATION"),
+    ("declarations.rs", "parse_context_declaration", "CONTEXT_DECLARATION"),
+    ("declarations.rs", "parse_context_base_context", "CONTEXT_BASE_CONTEXT"),
+    ("declarations.rs", "parse_context_base_resource_uri", "CONTEXT_BASE_RESOURCE_URI"),
+    ("declarations.rs", "parse_context_capability_declaration", "CONTEXT_CAPABILITY_DECLARATION"),
+    ("declarations.rs", "parse_context_capability_path_token", "CONTEXT_CAPABILITY_PATH_TOKEN"),
+    ("declarations.rs", "parse_context_capability_path", "CONTEXT_CAPABILITY_PATH"),
+    ("declarations.rs", "parse_context_capability_scope", "CONTEXT_CAPABILITY_SCOPE"),
+  ];
+  assert_eq!(expected.len(), 21);
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
   }
 }
 
