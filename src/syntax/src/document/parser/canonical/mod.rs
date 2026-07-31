@@ -24,6 +24,7 @@ pub use ports::{
 pub use test_support::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2c_rule_for_test,
     parse_canonical_phase_2d_rule_for_test, parse_canonical_phase_2e_rule_for_test,
+    parse_canonical_phase_2f_rule_for_test,
 };
 pub use terminal_spec::{
     FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,

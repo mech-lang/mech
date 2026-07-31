@@ -488,3 +488,7 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))
 }
+
+#[cfg(test)]
+#[path = "statements/phase_2f_parity.rs"]
+mod canonical_phase_2f_parity;

@@ -431,9 +431,7 @@ fn lower_import_declaration_node(syntax: &SyntaxNode) -> LowerResult<ImportDecla
                 require_token(&token, SyntaxKind::ModuleImportSigil, "+>")?;
                 sigil_count = sigil_count.saturating_add(1);
             }
-            SyntaxElement::Token(token)
-                if token.kind() == SyntaxKind::Whitespace || token.kind() == SyntaxKind::Tab =>
-            {
+            SyntaxElement::Token(token) if is_whitespace_token(&token) => {
                 common::validate_token(&token)?;
             }
             SyntaxElement::Node(node)
@@ -459,6 +457,13 @@ fn lower_import_declaration_node(syntax: &SyntaxNode) -> LowerResult<ImportDecla
         ));
     }
     Ok(ImportDeclaration { specifier })
+}
+
+fn is_whitespace_token(token: &SyntaxToken) -> bool {
+    matches!(
+        token.kind(),
+        SyntaxKind::Whitespace | SyntaxKind::Tab | SyntaxKind::Newline | SyntaxKind::CarriageReturn
+    )
 }
 
 fn lower_file_token(syntax: &SyntaxNode, token: &SyntaxToken) -> LowerResult<LegacyToken> {

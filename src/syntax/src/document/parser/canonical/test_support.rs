@@ -13,7 +13,32 @@ use crate::document::{
 use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::super::rule::rules;
 use super::combinator::Attempt;
-use super::{imports, kinds, literals, operators, paths};
+use super::{declarations, imports, kinds, literals, operators, paths, source_imports};
+
+/// The exact combined Phase 2F direct-rule surface.
+pub(crate) const PHASE_2F_RULES: &[RuleId; 21] = &[
+    rules::SOURCE_IMPORT_TAIL,
+    rules::SOURCE_PATH_COMPONENT_TOKEN,
+    rules::SOURCE_PATH_COMPONENT,
+    rules::SOURCE_MEC_PATH,
+    rules::SOURCE_MEC_PATH_WILDCARD_SUFFIX,
+    rules::RELATIVE_SOURCE_IMPORT_SPECIFIER,
+    rules::ABSOLUTE_SOURCE_IMPORT_SPECIFIER,
+    rules::BARE_SOURCE_IMPORT_SPECIFIER,
+    rules::URI_SCHEME_PART,
+    rules::SOURCE_IMPORT_URI_SCHEME,
+    rules::URI_SOURCE_IMPORT_SPECIFIER,
+    rules::SOURCE_IMPORT_SPECIFIER,
+    rules::IMPORT_DECLARATION,
+    rules::EXPORT_DECLARATION,
+    rules::CONTEXT_DECLARATION,
+    rules::CONTEXT_BASE_CONTEXT,
+    rules::CONTEXT_BASE_RESOURCE_URI,
+    rules::CONTEXT_CAPABILITY_DECLARATION,
+    rules::CONTEXT_CAPABILITY_PATH_TOKEN,
+    rules::CONTEXT_CAPABILITY_PATH,
+    rules::CONTEXT_CAPABILITY_SCOPE,
+];
 
 /// The exact direct-rule outcome, including local committed recovery.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -205,6 +230,24 @@ pub fn parse_canonical_phase_2e_rule_for_test(
         parse_source_rule_prefix(source, rule, config, |parser| {
             imports::parse_rule(parser, rule)
                 .expect("Phase 2E support guard accepts this RuleId")
+        })
+    })
+}
+
+/// Parse one exact Phase 2F declaration or source-import production as a
+/// deterministic source prefix. This hidden surface stays within the closed
+/// island and does not introduce a statement or document parser root.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2f_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    PHASE_2F_RULES.contains(&rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            source_imports::parse_rule(parser, rule)
+                .or_else(|| declarations::parse_rule(parser, rule))
+                .expect("Phase 2F support guard accepts this RuleId")
         })
     })
 }
