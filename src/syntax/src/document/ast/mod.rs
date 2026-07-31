@@ -1,4 +1,5 @@
 pub mod document;
+pub mod declarations;
 pub mod grammar;
 pub mod imports;
 pub mod kinds;
@@ -14,6 +15,7 @@ pub use crate::document::red::{
   SectionSyntax, SyntaxElement, SyntaxNode, SyntaxToken, VariableDefineSyntax,
 };
 pub use grammar::*;
+pub use declarations::*;
 pub use imports::*;
 pub use kinds::*;
 pub use literals::*;
