@@ -100,6 +100,8 @@ pub fn assert_complete_slot_contract(html: &str, source_key: &str) {
         "REPL",
         "CODE",
         "DOCUMENT_SCRIPT",
+        "DOCUMENT_SOURCES",
+        "WASM_MODULE_URL",
         "SOURCE_URL_KEY",
     ] {
         assert!(

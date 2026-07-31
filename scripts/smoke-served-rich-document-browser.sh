@@ -684,8 +684,8 @@ def assert_console_contract():
         # console-mutation contract depend on clock timing.
         submit("configured-answer")
         wait_for(
-            "(() => { const rows = [...document.querySelectorAll('.mech-repl-result')]; "
-            "return /41/.test(rows.at(-1)?.textContent || ''); })()",
+            "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; "
+            "return values.at(-1)?.textContent.trim() === '41'; })()",
             "the configured document's imported and host-backed value",
         )
     submit("answer + 1")

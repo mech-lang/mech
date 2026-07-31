@@ -109,6 +109,9 @@ jobs:
       - name: Run non-UTF-8 source-root regressions
         run: |
           cargo test -p mech \
+            mech_tests_preserve_discovered_non_utf8_filename \
+            -- --exact --nocapture
+          cargo test -p mech \
             cli::module_execution::tests::build_module_execution_preserves_non_utf8_root_path \
             -- --exact --nocapture
           cargo test -p mech \
@@ -358,6 +361,9 @@ jobs:
       - name: Show Chrome version
         run: google-chrome --version
 
+      - name: Check shipped rich document shell contracts
+        run: bash scripts/check-shipped-document-shims.sh
+
       - name: Remove old browser package
         run: rm -rf src/wasm/pkg
 
@@ -385,12 +391,12 @@ jobs:
             --features "serve,bundle_web,formatter"
           cp "$CARGO_TARGET_DIR/debug/mech" \
             "$CARGO_TARGET_DIR/embedded-browser-mech"
-
-      - name: Remove generated browser package before served browser acceptance
-        run: rm -rf src/wasm/pkg
-
-      - name: Check shipped rich document shell contracts
-        run: bash scripts/check-shipped-document-shims.sh
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_format_shims \
+            -- --nocapture
 
       - name: Remove browser release intermediates
         run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
@@ -405,6 +411,11 @@ jobs:
             --features browser_project \
             -- \
             --nocapture
+
+      - name: Smoke test formatted static document in Chrome
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            bash scripts/smoke-formatted-document-browser.sh
 
       - name: Smoke test standalone and inline-shim FizzBuzz in Chrome
         run: |

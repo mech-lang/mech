@@ -23,6 +23,8 @@ for file in include/index.html include/blog.html include/docs.html include/docum
   require_file "$file"
 done
 
+command -v grep >/dev/null 2>&1 || fail "grep is required to scan shipped document shims"
+
 for selector in \
   'id="header"' \
   'id="logo"' \
@@ -71,18 +73,24 @@ for selector in \
 done
 
 for file in include/index.html include/blog.html include/docs.html; do
-  for slot in '{{DOCUMENT_SCRIPT}}' '{{REPL}}' '{{TITLE}}' '{{CODE}}'; do
+  for slot in \
+    '{{DOCUMENT_SCRIPT}}' \
+    '{{DOCUMENT_SOURCES}}' \
+    '{{WASM_MODULE_URL}}' \
+    '{{REPL}}' \
+    '{{TITLE}}' \
+    '{{CODE}}'; do
     require_literal "$file" "$slot"
   done
 done
 
-if rg -n -i -- \
+if grep -Ein -- \
   'WasmMech|CURRENT_MECH|attach_repl|/pkg/mech_wasm\.js|under construction' \
   include/index.html include/blog.html include/docs.html; then
   fail "a shipped document shim references a removed browser mechanism"
 fi
 
-if rg -n -i -- '</script' include/document.js; then
+if grep -Ein -- '</script' include/document.js; then
   fail "include/document.js cannot be safely embedded inside a script element"
 fi
 

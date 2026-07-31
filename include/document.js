@@ -1000,13 +1000,14 @@ async function main() {
     throw new Error("the document controller requires a .mech-root element");
   }
   setDocumentStatus("loading");
+  const embeddedDocumentSources = loadEmbeddedDocumentSourceBundle();
   const wasmModule =
     state.controllerElement?.dataset.mechWasmModule || "/_mech/pkg/mech_wasm.js";
   const { default: initializeWasm, WasmDocument } = await import(wasmModule);
   await initializeWasm();
   state.initialEncoded = await loadEncodedDocument();
   const documentSources =
-    loadEmbeddedDocumentSourceBundle() || await loadDocumentSourceMap();
+    embeddedDocumentSources || await loadDocumentSourceMap();
   if (documentSources?.config) {
     if (
       !Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG") ||

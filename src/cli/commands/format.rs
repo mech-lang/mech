@@ -313,6 +313,28 @@ fn relative_asset_url(output_file: &Path, asset_file: &Path) -> MResult<String> 
     Ok(if url.starts_with("../") { url } else { format!("./{url}") })
 }
 
+fn formatter_asset_package_directory(
+    output_path: &Path,
+    is_output_file: bool,
+    writes_in_place: bool,
+    outputs: &[PathBuf],
+) -> MResult<PathBuf> {
+    let root = if is_output_file {
+        absolute_path(output_path)?
+            .parent()
+            .ok_or_else(|| format_error(format!(
+                "formatted output `{}` has no parent directory",
+                output_path.display(),
+            )))?
+            .to_path_buf()
+    } else if writes_in_place {
+        common_parent_directory(outputs)?
+    } else {
+        absolute_path(output_path)?
+    };
+    Ok(root.join("_mech").join("pkg"))
+}
+
 fn write_asset_atomically(path: &Path, bytes: &[u8]) -> MResult<()> {
     let parent = path.parent().ok_or_else(|| format_error(format!(
         "runtime asset `{}` has no parent directory",
@@ -920,24 +942,15 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             }))
             .collect::<Vec<_>>();
         let runtime_assets = if uses_document_controller && !controller_outputs.is_empty() {
-            let wasm = options.resources.mech_wasm.ok_or_else(|| format_error(
-                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm_bg.wasm is unavailable; rebuild with bundle_web enabled",
-            ))?;
-            let js = options.resources.mech_js.ok_or_else(|| format_error(
-                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm.js is unavailable; rebuild with bundle_web enabled",
-            ))?;
-            if js.is_empty() {
-                return Err(format_error("embedded mech_wasm.js is empty"));
-            }
-            if !wasm.starts_with(b"\0asm") {
-                return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
-            }
-            let package = common_parent_directory(&controller_outputs)?.join("_mech").join("pkg");
+            let package = formatter_asset_package_directory(
+                &output_path,
+                is_output_file,
+                writes_in_place,
+                &controller_outputs,
+            )?;
             Some((
                 package.join("mech_wasm.js"),
                 package.join("mech_wasm_bg.wasm"),
-                js,
-                wasm,
             ))
         } else {
             None
@@ -962,7 +975,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                     };
                     let wasm_module_url = runtime_assets
                         .as_ref()
-                        .map(|(js, _, _, _)| relative_asset_url(&output_file, js))
+                        .map(|(js, _)| relative_asset_url(&output_file, js))
                         .transpose()?
                         .unwrap_or_default();
                     let document_slots = document_controller_slots(
@@ -1001,7 +1014,19 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             };
             html_items.push((output_file, html));
         }
-        if let Some((js_path, wasm_path, js, wasm)) = runtime_assets {
+        if let Some((js_path, wasm_path)) = runtime_assets {
+            let wasm = options.resources.mech_wasm.ok_or_else(|| format_error(
+                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm_bg.wasm is unavailable; rebuild with bundle_web enabled",
+            ))?;
+            let js = options.resources.mech_js.ok_or_else(|| format_error(
+                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm.js is unavailable; rebuild with bundle_web enabled",
+            ))?;
+            if js.is_empty() {
+                return Err(format_error("embedded mech_wasm.js is empty"));
+            }
+            if !wasm.starts_with(b"\0asm") {
+                return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
+            }
             write_asset_atomically(&js_path, js)?;
             write_asset_atomically(&wasm_path, wasm)?;
         }

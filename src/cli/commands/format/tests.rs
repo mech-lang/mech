@@ -687,3 +687,16 @@ fn formatted_document_runtime_urls_are_relative_to_each_page() {
     );
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn formatter_assets_use_the_explicit_output_directory_root() {
+    let _guard = format_test_lock();
+    let root = temp_root("asset-root");
+    let output = root.join("formatted");
+    let nested_page = output.join("docs/reference/page.html");
+    assert_eq!(
+        formatter_asset_package_directory(&output, false, false, &[nested_page]).unwrap(),
+        output.join("_mech/pkg"),
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}

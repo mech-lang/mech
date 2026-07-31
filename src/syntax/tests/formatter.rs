@@ -323,6 +323,8 @@ fn shipped_document_shims_consume_required_slots() {
     for shim_name in ["index", "blog", "docs"] {
         let mut extra_slots = HtmlShimExtraSlots::default();
         extra_slots.insert("DOCUMENT_SCRIPT", "window.mechDocumentController = true;");
+        extra_slots.insert("DOCUMENT_SOURCES", "eyJ2ZXJzaW9uIjoxLCJzb3VyY2VzIjpbXX0=");
+        extra_slots.insert("WASM_MODULE_URL", "./_mech/pkg/mech_wasm.js");
         extra_slots.insert("SOURCE_URL_KEY", "encoded-source-key");
         let mut formatter = Formatter::new();
         let render = formatter.format_html_with_slots(
@@ -337,7 +339,15 @@ fn shipped_document_shims_consume_required_slots() {
             "{shim_name} has unresolved slots: {:?}",
             render.unresolved_mech_slots
         );
-        for slot in ["DOCUMENT_SCRIPT", "SOURCE_URL_KEY", "TITLE", "CODE", "REPL"] {
+        for slot in [
+            "DOCUMENT_SCRIPT",
+            "DOCUMENT_SOURCES",
+            "WASM_MODULE_URL",
+            "SOURCE_URL_KEY",
+            "TITLE",
+            "CODE",
+            "REPL",
+        ] {
             assert!(
                 render.consumed_slots.contains(slot),
                 "{shim_name} did not consume {slot}"
