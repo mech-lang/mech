@@ -15,8 +15,9 @@ const EXPECTED_PHASE_2D: usize = 53;
 const EXPECTED_PHASE_2E: usize = 19;
 const EXPECTED_PHASE_2F: usize = 21;
 const EXPECTED_PHASE_2G: usize = 15;
-const EXPECTED_PORTED: usize = 318;
-const EXPECTED_UNPORTED: usize = 221;
+const EXPECTED_PHASE_2H: usize = 10;
+const EXPECTED_PORTED: usize = 328;
+const EXPECTED_UNPORTED: usize = 211;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -82,6 +83,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
         Some(PortPhase::Phase2E) => "2E",
         Some(PortPhase::Phase2F) => "2F",
         Some(PortPhase::Phase2G) => "2G",
+        Some(PortPhase::Phase2H) => "2H",
     }
 }
 
@@ -466,7 +468,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.syntax == SyntaxPortStatus::ParityVerified)
             .count(),
-        313
+        323
     );
     assert_eq!(
         CANONICAL_PORTS
@@ -527,9 +529,16 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         ported
             .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2H))
+            .count(),
+        EXPECTED_PHASE_2H
+    );
+    assert_eq!(
+        ported
+            .iter()
             .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
             .count(),
-        149
+        152
     );
     assert_eq!(
         ported
@@ -543,7 +552,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
             .count(),
-        163
+        170
     );
 }
 
@@ -1086,6 +1095,61 @@ fn phase_2g_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
+fn phase_2h_registry_accounting_and_policies_are_exact() {
+    let node_policies = [
+        ("row-separator", "TableRowSeparator"),
+        ("empty-map", "EmptyMap"),
+        ("empty-set", "EmptySet"),
+    ];
+    let token = BTreeSet::from([
+        "matrix-start",
+        "matrix-end",
+        "table-start",
+        "table-end",
+        "table-separator",
+        "table-horz",
+    ]);
+    let transparent = BTreeSet::from(["table-top"]);
+    let expected_names = node_policies
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(token.iter().copied())
+        .chain(transparent.iter().copied())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(node_policies.len(), 3);
+    assert_eq!(token.len(), 6);
+    assert_eq!(transparent.len(), 1);
+    assert_eq!(expected_names.len(), EXPECTED_PHASE_2H);
+
+    let phase_2h = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2H))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2h.len(), EXPECTED_PHASE_2H);
+    assert_eq!(
+        phase_2h
+            .iter()
+            .map(|port| port.name)
+            .collect::<BTreeSet<_>>(),
+        expected_names,
+    );
+    for port in phase_2h {
+        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
+            assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
+            assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
+        } else if token.contains(port.name) {
+            assert_eq!(port.node_policy, NodePolicy::Token);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        } else {
+            assert!(transparent.contains(port.name), "{}", port.name);
+            assert_eq!(port.node_policy, NodePolicy::Transparent);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        }
+    }
+}
+
+#[test]
 fn phase_2c_closed_dependencies_are_all_already_ported() {
     let dependencies: &[(&str, &[&str])] = &[
         ("empty", &["underscore"]),
@@ -1289,8 +1353,6 @@ fn phase_2d_expression_and_related_parent_rules_remain_unported() {
         "record",
         "map",
         "set",
-        "empty-map",
-        "empty-set",
         "function-call",
         "argument-list",
         "call-arg",
@@ -1312,7 +1374,7 @@ fn phase_2d_expression_and_related_parent_rules_remain_unported() {
         "fsm-pipe",
         "fsm-instance",
     ];
-    assert_eq!(deferred.len(), 51);
+    assert_eq!(deferred.len(), 49);
 
     for name in deferred {
         let port = CANONICAL_PORTS
@@ -1358,6 +1420,40 @@ fn phase_2g_parent_rules_remain_unported() {
         "formula",
         "factor",
         "expression",
+    ] {
+        let port = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
+        assert_eq!(port.phase, None, "{name}");
+        assert_eq!(port.node_policy, NodePolicy::Undecided, "{name}");
+        assert_eq!(port.lowering, LoweringPortStatus::Pending, "{name}");
+    }
+}
+
+#[test]
+fn phase_2h_complete_structure_parents_remain_unported() {
+    for name in [
+        "structure",
+        "matrix",
+        "matrix-row",
+        "matrix-column",
+        "table",
+        "inline-table",
+        "regular-table",
+        "fancy-table",
+        "table-header",
+        "inline-table-header",
+        "fancy-table-header",
+        "table-row",
+        "table-row2",
+        "table-column",
+        "header-field",
+        "field",
+        "map",
+        "mapping",
+        "set",
     ] {
         let port = CANONICAL_PORTS
             .iter()
