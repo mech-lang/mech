@@ -795,10 +795,10 @@ try:
     )
     devtools.call("Page.navigate", {"url": page_url}, session_id)
     wait_for(
-        "document.documentElement.dataset.mechDocumentStatus === 'ready' && "
+        "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
         "document.querySelector('.mech-root')?.dataset.mechDocumentStatus === 'ready' && "
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
-        "document.documentElement.dataset.mechSmokeConsoleReady === 'true' && "
+        "document.documentElement?.dataset.mechSmokeConsoleReady === 'true' && "
         "Boolean(document.querySelector('.repl-input'))",
         "the rich document controller and console",
         timeout=45,
