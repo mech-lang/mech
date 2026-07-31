@@ -1835,6 +1835,23 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--console-width));
 }
 
+/* Keep the rich document's three direct grid children in their intended
+   tracks when a formatted document is served alongside its source file. */
+.workspace > .content-shell {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.workspace > .resize-handle {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.workspace > .console-pane {
+  grid-column: 3;
+  grid-row: 1;
+}
+
 .workspace[data-mech-console-open="false"] {
   grid-template-columns: minmax(0, 1fr) 0 0;
 }
