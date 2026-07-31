@@ -300,6 +300,16 @@ define_syntax_kinds! {
   UriSourceImportSpecifier => node,
   SourceImportSpecifier => node,
   ImportDeclaration => node,
+
+  // Phase 2F declaration values follow the source-import tail. Keep this
+  // append-only: persisted green-tree discriminants depend on every prior kind.
+  ExportDeclaration => node,
+  ContextDeclaration => node,
+  ContextBaseContext => node,
+  ContextBaseResourceUri => node,
+  ContextCapabilityDeclaration => node,
+  ContextCapabilityPath => node,
+  ContextCapabilityScope => node,
 }
 
 #[cfg(test)]
@@ -479,6 +489,13 @@ mod tests {
       SyntaxKind::UriSourceImportSpecifier,
       SyntaxKind::SourceImportSpecifier,
       SyntaxKind::ImportDeclaration,
+      SyntaxKind::ExportDeclaration,
+      SyntaxKind::ContextDeclaration,
+      SyntaxKind::ContextBaseContext,
+      SyntaxKind::ContextBaseResourceUri,
+      SyntaxKind::ContextCapabilityDeclaration,
+      SyntaxKind::ContextCapabilityPath,
+      SyntaxKind::ContextCapabilityScope,
     ];
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 237 + offset as u16);

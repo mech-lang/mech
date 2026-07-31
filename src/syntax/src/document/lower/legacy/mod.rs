@@ -1,5 +1,6 @@
 mod base;
 mod common;
+mod declarations;
 mod grammar;
 mod imports;
 mod kinds;
@@ -14,6 +15,12 @@ pub use base::{
     lower_legacy_digit_sequence, lower_legacy_escaped_character, lower_legacy_identifier,
     lower_legacy_identifier_path_segment,
 };
+pub use declarations::{
+    lower_legacy_context_base, lower_legacy_context_capability_declaration,
+    lower_legacy_context_capability_scope, lower_legacy_context_declaration,
+    lower_legacy_export_declaration,
+};
+pub(crate) use declarations::{lower_phase_2f_declaration_value, LegacyDeclarationValue};
 pub use grammar::lower_legacy_grammar;
 pub use imports::{
     lower_legacy_module_import, lower_legacy_module_import_alias, lower_legacy_module_import_path,
