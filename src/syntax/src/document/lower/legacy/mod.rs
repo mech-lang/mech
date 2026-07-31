@@ -8,6 +8,7 @@ mod mechdown;
 mod operators;
 mod paths;
 mod source;
+mod source_imports;
 
 pub use base::{
     lower_legacy_digit_sequence, lower_legacy_escaped_character, lower_legacy_identifier,
@@ -41,3 +42,5 @@ pub use operators::{
 pub(crate) use operators::{lower_phase_2d_operator_value, LegacyOperatorValue};
 pub(crate) use imports::{lower_phase_2e_module_import_value, LegacyModuleImportValue};
 pub use paths::{lower_legacy_context_address_path, lower_legacy_prefixed_context_path};
+pub use source_imports::{lower_legacy_import_declaration, lower_legacy_source_import_specifier};
+pub(crate) use source_imports::{lower_phase_2f_source_import_value, LegacySourceImportValue};
