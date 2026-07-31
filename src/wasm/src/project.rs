@@ -1799,7 +1799,7 @@ mod browser_tests {
     grants: [{ target: "clock/clock" operations: ["read"] paths: ["second"] }]
   }
 }"#;
-        let source = "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nanswer := math/value + @clock/second * 0\nanswer\n";
+        let source = "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nconfigured-answer := math/value + @clock/second * 0\n~answer := 41\nanswer\n";
         let sources = Object::new();
         Reflect::set(
             &sources,
@@ -1824,9 +1824,11 @@ mod browser_tests {
             .unwrap();
 
         let document = result.unwrap();
-        let answer = document.rendered_symbol(0, "answer").unwrap();
+        let configured_answer = document
+            .rendered_symbol(0, "configured-answer")
+            .unwrap();
         assert_eq!(
-            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+            Reflect::get(&configured_answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()
                 .as_string()
                 .as_deref(),
