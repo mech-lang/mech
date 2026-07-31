@@ -1079,8 +1079,9 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         new_input = input;
         continue;
       }
-      Err(Failure(e)) => return Err(Failure(e)),
-      Err(_) => {}
+      Err(_) => {
+        // Try a section element.
+      }
     }
 
     match section_element(new_input.clone()) {

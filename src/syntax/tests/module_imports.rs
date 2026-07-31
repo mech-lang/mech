@@ -134,6 +134,7 @@ fn import_sigil_text_remains_a_paragraph() {
     for source in [
         "+>",
         "+> is the notation used for imports.",
+        "+> math/sin is an item import example.",
         "This paragraph mentions +> as ordinary text.",
     ] {
         assert_single_paragraph(source);
