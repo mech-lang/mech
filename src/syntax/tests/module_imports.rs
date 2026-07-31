@@ -1,5 +1,5 @@
 use mech_core::nodes::*;
-use mech_syntax::parser;
+use mech_syntax::{ParseString, graphemes, module_import, parser};
 
 fn imports(src: &str) -> Vec<ModuleImport> {
     let program = parser::parse(src).expect("parse failed");
@@ -52,6 +52,24 @@ fn assert_no_mech_code_errors(program: &Program) {
     }
 }
 
+fn assert_single_paragraph(src: &str) {
+    let program = parser::parse(src).expect("paragraph should parse");
+    assert_no_mech_code_errors(&program);
+
+    let elements = program
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .collect::<Vec<_>>();
+    assert_eq!(elements.len(), 1, "expected one section element for {src:?}");
+    assert!(
+        matches!(elements[0], SectionElement::Paragraph(_)),
+        "expected a paragraph for {src:?}, got {:?}",
+        elements[0]
+    );
+}
+
 fn item_path(import: &ModuleImport) -> Vec<String> {
     import
         .item
@@ -100,11 +118,34 @@ fn arbitrary_module_roots_parse_as_module_imports() {
 }
 
 #[test]
-fn rejects_invalid_stdlib_import_paths() {
-    assert!(parser::parse("+> ").is_err());
-    assert!(parser::parse("+> */x").is_err());
-    assert!(parser::parse("+> math/").is_err());
-    assert!(parser::parse("+> math/*/x").is_err());
+fn incomplete_module_import_prefixes_do_not_parse_as_complete_imports() {
+    for source in ["+> ", "+> */x", "+> math/", "+> math/*/x"] {
+        let graphemes = graphemes::init_tag(source);
+        let parsed = module_import(ParseString::new(&graphemes));
+        assert!(
+            !matches!(parsed, Ok((remaining, _)) if remaining.cursor == graphemes.len()),
+            "{source:?} must not be a complete module import"
+        );
+    }
+}
+
+#[test]
+fn import_sigil_text_remains_a_paragraph() {
+    for source in [
+        "+>",
+        "+> is the notation used for imports.",
+        "+> math/sin is an item import example.",
+        "This paragraph mentions +> as ordinary text.",
+    ] {
+        assert_single_paragraph(source);
+    }
+}
+
+#[test]
+fn committed_module_import_errors_do_not_fall_back_to_paragraphs() {
+    for source in ["+> math/", "+> math/*/x"] {
+        assert!(parser::parse(source).is_err(), "{source:?} must be rejected");
+    }
 }
 
 #[test]

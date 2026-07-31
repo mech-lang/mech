@@ -3,7 +3,7 @@
 
 use crate::document::RuleId;
 
-pub const CANONICAL_RULE_COUNT: usize = 540;
+pub const CANONICAL_RULE_COUNT: usize = 539;
 
 pub static CANONICAL_RULES: &[(&str, RuleId)] = &[
   ("absolute-source-import-specifier", RuleId(0x37410b35)),
@@ -242,6 +242,7 @@ pub static CANONICAL_RULES: &[(&str, RuleId)] = &[
   ("import-group-item", RuleId(0x583a450e)),
   ("import-group-items", RuleId(0x60bb63c7)),
   ("import-group-separator", RuleId(0xcdfd49c4)),
+  ("import-sigil", RuleId(0x1733e229)),
   ("info-block", RuleId(0x36c95509)),
   ("info-sigil", RuleId(0x227e4790)),
   ("inline-code", RuleId(0xcced3fa2)),
@@ -333,12 +334,10 @@ pub static CANONICAL_RULES: &[(&str, RuleId)] = &[
   ("module-import-alias-path", RuleId(0x218cf9f4)),
   ("module-import-alias-segment", RuleId(0xf439127c)),
   ("module-import-context-alias", RuleId(0xd8c35316)),
-  ("module-import-end", RuleId(0xa7907a45)),
   ("module-import-intrinsic-segment", RuleId(0xdfd1abcf)),
   ("module-import-name-segment", RuleId(0xf485996b)),
   ("module-import-path", RuleId(0xb14e9f87)),
   ("module-import-path-segment", RuleId(0x8be71fc7)),
-  ("module-import-sigil", RuleId(0x8ec63758)),
   ("module-import-value-alias", RuleId(0x00ac2d10)),
   ("module-only-import", RuleId(0x0017367c)),
   ("module-root", RuleId(0x7361f448)),
@@ -787,6 +786,7 @@ pub mod rules {
   pub const IMPORT_GROUP_ITEM: RuleId = RuleId(0x583a450e);
   pub const IMPORT_GROUP_ITEMS: RuleId = RuleId(0x60bb63c7);
   pub const IMPORT_GROUP_SEPARATOR: RuleId = RuleId(0xcdfd49c4);
+  pub const IMPORT_SIGIL: RuleId = RuleId(0x1733e229);
   pub const INFO_BLOCK: RuleId = RuleId(0x36c95509);
   pub const INFO_SIGIL: RuleId = RuleId(0x227e4790);
   pub const INLINE_CODE: RuleId = RuleId(0xcced3fa2);
@@ -878,12 +878,10 @@ pub mod rules {
   pub const MODULE_IMPORT_ALIAS_PATH: RuleId = RuleId(0x218cf9f4);
   pub const MODULE_IMPORT_ALIAS_SEGMENT: RuleId = RuleId(0xf439127c);
   pub const MODULE_IMPORT_CONTEXT_ALIAS: RuleId = RuleId(0xd8c35316);
-  pub const MODULE_IMPORT_END: RuleId = RuleId(0xa7907a45);
   pub const MODULE_IMPORT_INTRINSIC_SEGMENT: RuleId = RuleId(0xdfd1abcf);
   pub const MODULE_IMPORT_NAME_SEGMENT: RuleId = RuleId(0xf485996b);
   pub const MODULE_IMPORT_PATH: RuleId = RuleId(0xb14e9f87);
   pub const MODULE_IMPORT_PATH_SEGMENT: RuleId = RuleId(0x8be71fc7);
-  pub const MODULE_IMPORT_SIGIL: RuleId = RuleId(0x8ec63758);
   pub const MODULE_IMPORT_VALUE_ALIAS: RuleId = RuleId(0x00ac2d10);
   pub const MODULE_ONLY_IMPORT: RuleId = RuleId(0x0017367c);
   pub const MODULE_ROOT: RuleId = RuleId(0x7361f448);

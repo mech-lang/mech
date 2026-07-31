@@ -2379,11 +2379,14 @@ terminal := quote, +any-token, quote ;
 -------------------------------------------------------------------------------
 
 The chapter-level `ebnf:historical` snippets above are explanatory records of
-earlier designs. They are inert and non-normative. The following 540-rule
-block is the single canonical concrete grammar mechanically extracted from the
-parser at `75bb213f42a0f8116ca1299d1d39a5cf14fc0303`, the merge commit for PR 680.
+earlier designs. They are inert and non-normative. The canonical grammar was
+initially mechanically extracted from the parser at
+`75bb213f42a0f8116ca1299d1d39a5cf14fc0303`, the merge commit for PR 680. It is
+now the normative corrected grammar. The original extraction contained 540
+productions. Deliberate post-extraction language corrections are recorded in
+`docs/design/grammar-audit/corrections.tsv`.
 
-The parser implementation at that baseline is authoritative. The notation is
+The current canonical inventory contains 539 productions. The notation is
 defined in section 12; descriptive primitive terms name implementation-level
 operations that are not expressible by the grammar meta-parser itself.
 
@@ -2528,7 +2531,7 @@ section-sigil := "§" ;
 mika-section-open := "⸢" ;
 mika-section-close := "⸥" ;
 prompt-sigil := ">:" ;
-module-import-sigil := "+>" ;
+import-sigil := "+>" ;
 module-export-sigil := "<+" ;
 
 assign-operator := whitespace0, "=", whitespace0 ;
@@ -3108,7 +3111,7 @@ source-import-specifier := relative-source-import-specifier
                          | absolute-source-import-specifier
                          | uri-source-import-specifier
                          | bare-source-import-specifier ;
-import-declaration := whitespace0, module-import-sigil, whitespace1,
+import-declaration := whitespace0, import-sigil, space-tab1,
                       source-import-specifier ;
 export-declaration := whitespace0, module-export-sigil, whitespace1,
                       identifier ;
@@ -3182,7 +3185,6 @@ import-group-item := module-import-path ;
 import-group-items := whitespace0, import-group-item,
                       *(import-group-separator, import-group-item),
                       whitespace0 ;
-module-import-end := space-tab0, ?new-line ;
 aliased-item-import := module-import-alias, import-alias-operator,
                        module-root, slash, module-import-path ;
 module-suffix-import :=
@@ -3191,11 +3193,10 @@ module-suffix-import :=
    | (left-brace, import-group-items, right-brace)
    | module-import-path) ;
 module-only-import := module-root ;
-module-import := whitespace0, plus, right-angle, space-tab0,
+module-import := whitespace0, import-sigil, space-tab0,
                  (aliased-item-import
                   | module-suffix-import
-                  | module-only-import),
-                 >module-import-end ;
+                  | module-only-import) ;
 
 function-define := identifier, left-parenthesis,
                    ?[list-separator, function-arg],
@@ -4069,11 +4070,10 @@ parser leaves the synthetic newline next; otherwise the raw captured token is
 retained. Diagnostic side effects are outside the concrete grammar.
 
 Completion rule:
-`module-import` invokes `module-import-end` on a clone only to extend the
-module token range, then returns the input from before that call. Trailing
-horizontal space and optional newline therefore are not consumed by
-`module-import` itself. The canonical rule records the consumed language;
-`module-import-end` is an implemented lookahead-like helper.
+`module-import` consumes through the module root and any structured suffix
+only. It does not inspect trailing horizontal space or a newline. The module
+identifier range ends at the actual identifier; later grammar owns any
+trailing source.
 
 Completion rule:
 Statement-body function definitions require a final period. Match-arm

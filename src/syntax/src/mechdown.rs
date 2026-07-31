@@ -1079,9 +1079,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         new_input = input;
         continue;
       }
-      Err(e) => {
-        // not mech code, try section_element
-        //return Err(e);
+      Err(_) => {
+        // Try a section element.
       }
     }
 
