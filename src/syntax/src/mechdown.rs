@@ -1079,15 +1079,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         new_input = input;
         continue;
       }
-      Err(e) => {
-        // The shared import sigil starts a code-level import construct. If
-        // that construct is malformed, it must not fall through and become a
-        // paragraph element.
-        if import_sigil(new_input.clone()).is_ok() {
-          return Err(e);
-        }
-        // Not mech code; try a section element.
-      }
+      Err(Failure(e)) => return Err(Failure(e)),
+      Err(_) => {}
     }
 
     match section_element(new_input.clone()) {

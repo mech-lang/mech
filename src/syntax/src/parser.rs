@@ -431,6 +431,11 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
     };
     let (input, cmmt) = match code_terminal(input) {
       Ok((input, cmmt)) => (input, cmmt),
+      // A complete alias or suffixed import has crossed a real commit point;
+      // a module-only prefix remains eligible for paragraph parsing.
+      Err(Err::Error(e)) if matches!(&code, MechCode::Import(import) if import.alias.is_some() || import.kind != ModuleImportKind::Module) => {
+        return Err(Err::Failure(e));
+      }
       Err(e) => {
         // if we didn't parse a terminal, just return what we've got so far.
         if lines.len() > 0 {
