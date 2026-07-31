@@ -10,6 +10,7 @@ use alloc::string::String;
 use crate::document::{ExpectedSyntax, RuleId, SyntaxKind};
 
 use super::super::Parser;
+use super::super::recovery::{self, RecoveryClass};
 use super::super::rule::rules;
 use super::base;
 use super::combinator::{self, Attempt};
@@ -132,10 +133,14 @@ pub(crate) fn parse_module_import_path_segment(parser: &mut Parser<'_>) -> Attem
 pub(crate) fn parse_module_import_path(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::MODULE_IMPORT_PATH, |parser| {
         let path = parser.start();
-        let mut result = parse_module_import_path_segment(parser);
+        let result = parse_module_import_path_segment(parser);
         if result == Attempt::NoMatch {
             path.abandon(parser);
             return Attempt::NoMatch;
+        }
+        if result == Attempt::Committed {
+            path.complete(parser, SyntaxKind::ModuleImportPath);
+            return Attempt::Committed;
         }
 
         loop {
@@ -154,7 +159,10 @@ pub(crate) fn parse_module_import_path(parser: &mut Parser<'_>) -> Attempt {
                     break;
                 }
                 Attempt::Matched => {}
-                Attempt::Committed => result = Attempt::Committed,
+                Attempt::Committed => {
+                    path.complete(parser, SyntaxKind::ModuleImportPath);
+                    return Attempt::Committed;
+                }
             }
             if parser.is_halted() {
                 break;
@@ -162,7 +170,7 @@ pub(crate) fn parse_module_import_path(parser: &mut Parser<'_>) -> Attempt {
         }
 
         path.complete(parser, SyntaxKind::ModuleImportPath);
-        result
+        Attempt::Matched
     })
 }
 
@@ -360,15 +368,18 @@ pub(crate) fn parse_import_group_items(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::IMPORT_GROUP_ITEMS, |parser| {
         let items = parser.start();
         let _ = base::parse_rule(parser, rules::WHITESPACE0);
-        let mut result = parse_import_group_item(parser);
+        let result = parse_import_group_item(parser);
         if result == Attempt::NoMatch {
             items.abandon(parser);
             return Attempt::NoMatch;
         }
+        if result == Attempt::Committed {
+            items.complete(parser, SyntaxKind::ImportGroupItems);
+            return Attempt::Committed;
+        }
 
         loop {
             let checkpoint = parser.checkpoint();
-            let explicit_list_separator = starts_rule(parser, rules::LIST_SEPARATOR);
             let separator = parse_import_group_separator(parser);
             if separator == Attempt::NoMatch {
                 parser.rewind(checkpoint);
@@ -376,26 +387,18 @@ pub(crate) fn parse_import_group_items(parser: &mut Parser<'_>) -> Attempt {
             }
             match parse_import_group_item(parser) {
                 Attempt::NoMatch => {
+                    // The repeated separator/item pair is transactional. An
+                    // ordinary failed item leaves both pieces for the
+                    // enclosing braced group to recover, exactly like the
+                    // legacy `many0(preceded(..))` production.
                     parser.rewind(checkpoint);
-                    // A comma explicitly introduces another item. Preserve
-                    // the transactional separator rewind, but retain a local
-                    // missing item so `{sin,` reports both the absent item
-                    // and the enclosing missing right brace. Whitespace-only
-                    // separators remain trailing whitespace for the final
-                    // `whitespace0` below.
-                    if explicit_list_separator {
-                        insert_missing_production(
-                            parser,
-                            "syntax/missing-module-import-group-item",
-                            "expected an item after the module import group separator",
-                            "import-group-item",
-                        );
-                        result = Attempt::Committed;
-                    }
                     break;
                 }
                 Attempt::Matched => {}
-                Attempt::Committed => result = Attempt::Committed,
+                Attempt::Committed => {
+                    items.complete(parser, SyntaxKind::ImportGroupItems);
+                    return Attempt::Committed;
+                }
             }
             if parser.is_halted() {
                 break;
@@ -404,7 +407,7 @@ pub(crate) fn parse_import_group_items(parser: &mut Parser<'_>) -> Attempt {
 
         let _ = base::parse_rule(parser, rules::WHITESPACE0);
         items.complete(parser, SyntaxKind::ImportGroupItems);
-        result
+        Attempt::Matched
     })
 }
 
@@ -519,6 +522,16 @@ fn parse_braced_group_suffix(parser: &mut Parser<'_>) -> Attempt {
             "import-group-item",
         );
         result = Attempt::Committed;
+    } else if result == Attempt::Matched && starts_rule(parser, rules::LIST_SEPARATOR) {
+        // `import-group-items` left the incomplete repeated separator/item
+        // pair untouched. The braced parent owns recovery at this boundary.
+        insert_missing_production(
+            parser,
+            "syntax/missing-module-import-group-item",
+            "expected an item after the module import group separator",
+            "import-group-item",
+        );
+        result = Attempt::Committed;
     }
 
     if !base::parse_rule(parser, rules::RIGHT_BRACE) {
@@ -602,9 +615,88 @@ fn recover_context_alias_prefix(parser: &mut Parser<'_>) -> Attempt {
             "expected a context import alias after `@`",
             "context-import-alias-segment",
         );
+        context.complete(parser, SyntaxKind::ModuleImportContextAlias);
+        alias.complete(parser, SyntaxKind::ModuleImportAlias);
+        import.complete(parser, SyntaxKind::AliasedItemImport);
+        return Attempt::Committed;
     }
+
+    if starts_rule(parser, rules::SLASH) {
+        let _ = recovery::skip_error(
+            parser,
+            RecoveryClass::MechItem,
+            "syntax/invalid-module-import-context-alias",
+            "context import aliases cannot continue with `/`",
+        );
+        context.complete(parser, SyntaxKind::ModuleImportContextAlias);
+        alias.complete(parser, SyntaxKind::ModuleImportAlias);
+        import.complete(parser, SyntaxKind::AliasedItemImport);
+        return Attempt::Committed;
+    }
+
     context.complete(parser, SyntaxKind::ModuleImportContextAlias);
     alias.complete(parser, SyntaxKind::ModuleImportAlias);
+
+    if parse_import_alias_operator(parser) == Attempt::NoMatch {
+        let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+        if !base::parse_rule(parser, rules::COLON) {
+            insert_missing_production(
+                parser,
+                "syntax/missing-module-import-alias-operator",
+                "expected `:=` after the context import alias",
+                "import-alias-operator",
+            );
+            import.complete(parser, SyntaxKind::AliasedItemImport);
+            return Attempt::Committed;
+        }
+        if !base::parse_rule(parser, rules::EQUAL) {
+            insert_missing_token(
+                parser,
+                "syntax/missing-module-import-alias-equal",
+                "expected `=` after `:` in the import alias operator",
+                SyntaxKind::Equal,
+                "=",
+            );
+            import.complete(parser, SyntaxKind::AliasedItemImport);
+            return Attempt::Committed;
+        }
+        let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+    }
+
+    let module = parse_module_root(parser);
+    if module == Attempt::NoMatch {
+        insert_missing_production(
+            parser,
+            "syntax/missing-module-import-alias-target",
+            "expected a module root after the import alias operator",
+            "module-root",
+        );
+        import.complete(parser, SyntaxKind::AliasedItemImport);
+        return Attempt::Committed;
+    }
+    if !base::parse_rule(parser, rules::SLASH) {
+        insert_missing_token(
+            parser,
+            "syntax/missing-module-import-aliased-item-separator",
+            "expected `/` between the imported module and item",
+            SyntaxKind::Slash,
+            "/",
+        );
+        import.complete(parser, SyntaxKind::AliasedItemImport);
+        return Attempt::Committed;
+    }
+    let item = parse_module_import_path(parser);
+    if item == Attempt::NoMatch {
+        insert_missing_production(
+            parser,
+            "syntax/missing-module-import-aliased-item",
+            "expected an imported item path after `/`",
+            "module-import-path",
+        );
+        import.complete(parser, SyntaxKind::AliasedItemImport);
+        return Attempt::Committed;
+    }
+
     import.complete(parser, SyntaxKind::AliasedItemImport);
     Attempt::Committed
 }

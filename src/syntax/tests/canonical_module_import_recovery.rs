@@ -83,12 +83,6 @@ fn intrinsic_segments_commit_to_a_local_missing_name() {
 fn context_alias_and_completed_alias_operator_have_local_recovery() {
     assert_committed(
         rules::MODULE_IMPORT,
-        "+> @",
-        &["syntax/missing-module-import-context-alias"],
-    );
-
-    assert_committed(
-        rules::MODULE_IMPORT,
         "+> alias :=",
         &["syntax/missing-module-import-alias-target"],
     );
@@ -115,16 +109,67 @@ fn context_alias_and_completed_alias_operator_have_local_recovery() {
 }
 
 #[test]
-fn context_alias_prefixes_commit_without_inventing_a_pre_operator_diagnostic() {
-    let bare_context = parse("+> @ctx", rules::MODULE_IMPORT);
-    assert!(bare_context.matched);
-    assert_eq!(bare_context.outcome, CanonicalRuleOutcome::Committed);
-    assert!(bare_context.diagnostics.is_empty());
+fn context_alias_prefixes_commit_with_required_structure() {
+    assert_committed(
+        rules::MODULE_IMPORT,
+        "+> @",
+        &["syntax/missing-module-import-context-alias"],
+    );
+    assert_committed(
+        rules::MODULE_IMPORT,
+        "+> @ctx",
+        &["syntax/missing-module-import-alias-operator"],
+    );
+
+    let missing_equal = parse("+> @ctx :", rules::MODULE_IMPORT);
+    assert_eq!(missing_equal.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(
+        diagnostic_codes(&missing_equal),
+        ["syntax/missing-module-import-alias-equal"]
+    );
+    assert!(
+        missing_equal
+            .syntax()
+            .tokens()
+            .into_iter()
+            .any(|token| token.kind() == SyntaxKind::Colon
+                && !token.flags().contains(TokenFlags::MISSING))
+    );
+    assert!(
+        missing_equal
+            .syntax()
+            .tokens()
+            .into_iter()
+            .any(|token| token.kind() == SyntaxKind::Equal
+                && token.flags().contains(TokenFlags::MISSING))
+    );
+
+    assert_committed(
+        rules::MODULE_IMPORT,
+        "+> @ctx :=",
+        &["syntax/missing-module-import-alias-target"],
+    );
+    assert_committed(
+        rules::MODULE_IMPORT,
+        "+> @ctx := math",
+        &["syntax/missing-module-import-aliased-item-separator"],
+    );
 
     let slash_context = parse("+> @ctx/path := math/sin", rules::MODULE_IMPORT);
-    assert!(slash_context.matched);
     assert_eq!(slash_context.outcome, CanonicalRuleOutcome::Committed);
-    assert_eq!(slash_context.consumed.end, TextSize(7));
+    assert_eq!(
+        diagnostic_codes(&slash_context),
+        ["syntax/invalid-module-import-context-alias"]
+    );
+    let primary = slash_context
+        .diagnostics
+        .iter()
+        .next()
+        .unwrap()
+        .primary
+        .resolve(slash_context.source.revision(), &slash_context.nodes)
+        .unwrap();
+    assert_eq!(primary.start, TextSize(7));
     let node = find_node(&slash_context.syntax(), SyntaxKind::ModuleImport).unwrap();
     let syntax = ModuleImportSyntax::cast(node).unwrap();
     assert!(

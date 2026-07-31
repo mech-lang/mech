@@ -4,8 +4,8 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, ParseConfig, ParseLimits, RecoveryAction, Revision, RuleId, SyntaxKind,
-    SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags, compact_debug_tree,
+    AstNode, DocumentId, NodeFlags, ParseConfig, ParseLimits, RecoveryAction, Revision, RuleId,
+    SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags, compact_debug_tree,
     lower_legacy_module_import, normalize_diagnostics, reconstruct_source_range, validate_lossless,
     validate_lossless_range,
 };
@@ -128,6 +128,20 @@ fn assert_snapshot_invariants(
         CanonicalRuleOutcome::Matched | CanonicalRuleOutcome::Committed => {
             assert!(parsed.matched, "{rule:?}");
         }
+    }
+
+    if parsed.outcome == CanonicalRuleOutcome::Committed {
+        assert!(!parsed.is_strictly_clean(), "{rule:?}");
+        assert!(
+            !parsed.diagnostics.is_empty()
+                || parsed.root.flags.intersects(
+                    NodeFlags::ERROR
+                        | NodeFlags::MISSING
+                        | NodeFlags::CONTAINS_ERROR
+                        | NodeFlags::CONTAINS_MISSING,
+                ),
+            "{rule:?} committed without a diagnostic or structural error marker"
+        );
     }
 
     if parsed.root.text_len == parsed.consumed.len() {

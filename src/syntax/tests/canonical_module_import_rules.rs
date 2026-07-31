@@ -205,18 +205,16 @@ fn shared_import_sigil_has_only_the_module_import_prefix_behavior_here() {
 }
 
 #[test]
-fn direct_repetition_rewinds_incomplete_pairs_before_local_recovery() {
+fn direct_repetition_rewinds_incomplete_pairs_without_local_recovery() {
     let path = parse("math/", rules::MODULE_IMPORT_PATH);
     assert!(path.is_strictly_clean());
     assert_eq!(path.consumed.end, TextSize(4));
     assert_eq!(path.source.text(path.consumed).unwrap(), "math");
 
     let group = parse("sin,", rules::IMPORT_GROUP_ITEMS);
-    assert_eq!(group.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(group.outcome, CanonicalRuleOutcome::Matched);
+    assert!(group.is_strictly_clean());
     assert_eq!(group.consumed.end, TextSize(3));
     assert_eq!(group.source.text(group.consumed).unwrap(), "sin");
-    assert_eq!(
-        group.diagnostics.iter().next().unwrap().code.as_str(),
-        "syntax/missing-module-import-group-item"
-    );
+    assert!(group.diagnostics.is_empty());
 }
