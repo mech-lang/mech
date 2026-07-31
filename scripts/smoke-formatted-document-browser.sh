@@ -82,6 +82,7 @@ nested-included-value := 17
 MEC
 cat > "$work_dir/project/rate%.mec" <<'MEC'
 value := 29
+literal-percent-pass! := value == 29
 <+ value
 MEC
 cat > "$work_dir/shared/support.mec" <<'MEC'
@@ -327,7 +328,7 @@ try:
         ):
             fail(f"could not submit browser REPL command: {command}")
 
-    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '87'; })()"
+    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '58'; })()"
     submit("answer")
     wait_for(exact_answer, "the imported source value")
     submit(":clear")
