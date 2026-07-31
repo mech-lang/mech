@@ -181,12 +181,17 @@ impl WasmProject {
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
-        if self.started {
-            return Ok(());
-        }
-        self.runtime.start_input_drivers().map_err(to_js_error)?;
+        self.refresh_relevant_input_drivers()?;
         self.started = true;
         self.stopped = false;
+        Ok(())
+    }
+
+    /// Reconciles drivers against the retained runtime's current live input
+    /// bindings. The runtime operation is idempotent: active drivers remain
+    /// active and newly relevant drivers are started exactly once.
+    fn refresh_relevant_input_drivers(&mut self) -> Result<(), JsValue> {
+        self.runtime.start_input_drivers().map_err(to_js_error)?;
         Ok(())
     }
 
@@ -243,7 +248,6 @@ impl WasmProject {
         if self.stopped {
             return Ok(());
         }
-        self.runtime.stop_input_drivers().map_err(to_js_error)?;
         self.runtime.shutdown().map_err(to_js_error)?;
         self.started = false;
         self.stopped = true;
@@ -274,6 +278,7 @@ struct SourceBackedDocumentBootstrap {
 struct ServedDocumentBootstrap {
     source: SourceBackedDocumentBootstrap,
     config_source: String,
+    authority: BrowserRuntimeInjectionConfig,
 }
 
 #[wasm_bindgen]
@@ -422,6 +427,7 @@ impl WasmDocument {
             bootstrap: WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
                 source,
                 config_source: config_source.to_string(),
+                authority,
             }),
         })
     }
@@ -472,7 +478,7 @@ impl WasmDocument {
                     document,
                     &bootstrap.config_source,
                     bootstrap.source.source_map.clone(),
-                    served_browser_authority()?,
+                    bootstrap.authority.clone(),
                 )?
             }
         };
@@ -536,11 +542,15 @@ impl WasmDocument {
     }
 
     pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
-        self.project
+        let rendered = self.project
             .runtime
             .run_string(source)
             .map_err(to_js_error)
-            .and_then(rendered_value)
+            .and_then(rendered_value)?;
+        if self.project.started && !self.project.stopped {
+            self.project.refresh_relevant_input_drivers()?;
+        }
+        Ok(rendered)
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
@@ -1751,6 +1761,8 @@ rows := |id<string> x<f64>|
 mod browser_tests {
     use super::*;
     use js_sys::{Array, Object};
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
@@ -1760,17 +1772,9 @@ mod browser_tests {
         mech_core::nodes::compress_and_encode(&tree).unwrap()
     }
 
-
-    #[wasm_bindgen_test]
-    fn wasm_project_reports_served_authority_capability() {
-        assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
-    }
-
     #[cfg(feature = "served_project_authority")]
-    #[wasm_bindgen_test]
-    fn served_document_projects_host_authority_and_resolves_relative_imports() {
-        let window = web_sys::window().unwrap();
-        let authority = BrowserRuntimeInjectionConfig {
+    fn served_document_authority() -> BrowserRuntimeInjectionConfig {
+        BrowserRuntimeInjectionConfig {
             runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
                 &mech_runtime::RuntimeConfig::default(),
             ),
@@ -1784,27 +1788,32 @@ mod browser_tests {
                 operations: vec!["read".to_string()],
                 paths: vec!["second".to_string()],
             }],
-        };
-        Reflect::set(
-            &window,
-            &JsValue::from_str("__MECH_HOST_CONFIG"),
-            &serde_wasm_bindgen::to_value(&authority).unwrap(),
-        )
-        .unwrap();
+        }
+    }
 
-        let config = r#"config := {
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_config() -> &'static str {
+        r#"config := {
   hosts: [{ name: "clock" provider: "time" settings: {} }]
   run: {
     paths: ["docs/main.mec"]
     grants: [{ target: "clock/clock" operations: ["read"] paths: ["second"] }]
   }
-}"#;
-        let source = "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nconfigured-answer := math/value + @clock/second * 0\n~answer := 41\nanswer\n";
+}"#
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_source() -> &'static str {
+        "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nconfigured-answer := math/value + @clock/second * 0\n~answer := 41\nanswer\n"
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_sources() -> JsValue {
         let sources = Object::new();
         Reflect::set(
             &sources,
             &JsValue::from_str("docs/main.mec"),
-            &JsValue::from_str(source),
+            &JsValue::from_str(served_document_source()),
         )
         .unwrap();
         Reflect::set(
@@ -1813,17 +1822,21 @@ mod browser_tests {
             &JsValue::from_str("value := 41\n<+ value\n"),
         )
         .unwrap();
+        sources.into()
+    }
 
-        let result = WasmDocument::from_served_encoded(
-            &encoded_document(source),
-            "docs/main.mec",
-            config,
-            sources.into(),
-        );
-        Reflect::delete_property(&window, &JsValue::from_str("__MECH_HOST_CONFIG"))
-            .unwrap();
+    #[cfg(feature = "served_project_authority")]
+    fn install_served_authority(authority: &BrowserRuntimeInjectionConfig) {
+        Reflect::set(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+            &serde_wasm_bindgen::to_value(authority).unwrap(),
+        )
+        .unwrap();
+    }
 
-        let document = result.unwrap();
+    #[cfg(feature = "served_project_authority")]
+    fn assert_configured_answer(document: &WasmDocument) {
         let configured_answer = document
             .rendered_symbol(0, "configured-answer")
             .unwrap();
@@ -1834,6 +1847,246 @@ mod browser_tests {
                 .as_deref(),
             Some("41"),
         );
+    }
+
+    const DOCUMENT_TEST_INPUT_BASE_URI: &str = "test://clock/ticks";
+
+    #[derive(Debug, Default)]
+    struct DocumentInputDriverState {
+        starts: usize,
+        stops: usize,
+        live: bool,
+        ingress: Option<mech_runtime::RuntimeIngress>,
+    }
+
+    #[derive(Clone, Debug)]
+    struct DocumentInputDriver {
+        state: Rc<RefCell<DocumentInputDriverState>>,
+    }
+
+    impl mech_runtime::RuntimeHostInputDriver for DocumentInputDriver {
+        fn drives(&self, source: &mech_runtime::RuntimeHostInputSource) -> bool {
+            source.base_uri() == DOCUMENT_TEST_INPUT_BASE_URI && source.path() == "value"
+        }
+
+        fn attach(&mut self, ingress: mech_runtime::RuntimeIngress) -> mech_core::MResult<()> {
+            self.state.borrow_mut().ingress = Some(ingress);
+            Ok(())
+        }
+
+        fn start(&mut self) -> mech_core::MResult<()> {
+            let mut state = self.state.borrow_mut();
+            state.starts += 1;
+            state.live = true;
+            Ok(())
+        }
+
+        fn stop(&mut self) -> mech_core::MResult<()> {
+            let mut state = self.state.borrow_mut();
+            state.stops += 1;
+            state.live = false;
+            Ok(())
+        }
+
+        fn is_live(&self) -> bool {
+            self.state.borrow().live
+        }
+    }
+
+    #[derive(Debug)]
+    struct DocumentInputProvider;
+
+    impl mech_runtime::RuntimeResourceProvider for DocumentInputProvider {
+        fn scheme(&self) -> &str {
+            "test"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            vec![DOCUMENT_TEST_INPUT_BASE_URI.to_string()]
+        }
+
+        fn read(
+            &self,
+            request: mech_runtime::RuntimeResourceReadRequest,
+        ) -> mech_core::MResult<mech_core::Value> {
+            if request.base_uri == DOCUMENT_TEST_INPUT_BASE_URI && request.path == "value" {
+                return Ok(mech_core::Value::F64(mech_core::Ref::new(0.0)));
+            }
+            Err(MechError::new(
+                ProjectError {
+                    message: "missing document test resource".to_string(),
+                },
+                None,
+            ))
+        }
+    }
+
+    #[derive(Debug)]
+    struct DocumentInputHostFactory {
+        manifest: mech_runtime::HostManifestConfig,
+        state: Rc<RefCell<DocumentInputDriverState>>,
+    }
+
+    impl DocumentInputHostFactory {
+        fn new(state: Rc<RefCell<DocumentInputDriverState>>) -> Self {
+            Self {
+                manifest: mech_runtime::HostManifestConfig {
+                    provider: "document-test-input".to_string(),
+                    contexts: vec![mech_runtime::HostContextManifest {
+                        name: "ticks".to_string(),
+                        base_uri_template: "test://{instance}/ticks".to_string(),
+                        operations: vec!["read".to_string()],
+                    }],
+                },
+                state,
+            }
+        }
+    }
+
+    impl mech_runtime::RuntimeHostFactory for DocumentInputHostFactory {
+        fn provider_name(&self) -> &str {
+            "document-test-input"
+        }
+
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+            &self.manifest
+        }
+
+        fn validate_settings(
+            &self,
+            _instance_name: &str,
+            _settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<()> {
+            Ok(())
+        }
+
+        fn instantiate(
+            &self,
+            _instance_name: &str,
+            _settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
+            Ok(mech_runtime::RuntimeHostInstallation {
+                interface: mech_runtime::materialize_host_manifest("clock", &self.manifest)?,
+                resource_providers: vec![Box::new(DocumentInputProvider)],
+                input_drivers: vec![Box::new(DocumentInputDriver {
+                    state: self.state.clone(),
+                })],
+            })
+        }
+    }
+
+    fn document_with_manual_input_driver(
+    ) -> (WasmDocument, Rc<RefCell<DocumentInputDriverState>>) {
+        let state = Rc::new(RefCell::new(DocumentInputDriverState::default()));
+        let runtime = RuntimeBuilder::new()
+            .host_factory(Box::new(DocumentInputHostFactory::new(state.clone())))
+            .unwrap()
+            .host_instance(mech_runtime::HostInstanceConfig {
+                name: "clock".to_string(),
+                provider: "document-test-input".to_string(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            })
+            .run_resource_grant(mech_runtime::RunResourceGrantConfig {
+                target: "clock/ticks".to_string(),
+                operations: vec!["read".to_string()],
+                paths: vec!["value".to_string()],
+            })
+            .build()
+            .unwrap();
+        (
+            WasmDocument {
+                project: WasmProject::from_runtime(
+                    runtime,
+                    #[cfg(feature = "browser_host_scene")]
+                    BrowserSceneRegistry::new(),
+                ),
+                bootstrap: WasmDocumentBootstrap::Detached,
+            },
+            state,
+        )
+    }
+
+
+    #[wasm_bindgen_test]
+    fn wasm_project_reports_served_authority_capability() {
+        assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_reuses_validated_served_authority() {
+        let authority = served_document_authority();
+        install_served_authority(&authority);
+        let encoded = encoded_document(served_document_source());
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded,
+            "docs/main.mec",
+            served_document_config(),
+            served_document_sources(),
+        )
+        .unwrap();
+
+        document.reset(&encoded).unwrap();
+        assert_configured_answer(&document);
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_does_not_adopt_replaced_global_authority() {
+        let authority = served_document_authority();
+        install_served_authority(&authority);
+        let encoded = encoded_document(served_document_source());
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded,
+            "docs/main.mec",
+            served_document_config(),
+            served_document_sources(),
+        )
+        .unwrap();
+
+        let replacement = BrowserRuntimeInjectionConfig {
+            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        };
+        install_served_authority(&replacement);
+        document.reset(&encoded).unwrap();
+        assert_configured_answer(&document);
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_survives_removed_global_authority() {
+        let authority = served_document_authority();
+        install_served_authority(&authority);
+        let encoded = encoded_document(served_document_source());
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded,
+            "docs/main.mec",
+            served_document_config(),
+            served_document_sources(),
+        )
+        .unwrap();
+
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
+        document.reset(&encoded).unwrap();
+        assert_configured_answer(&document);
     }
 
     #[wasm_bindgen_test]
@@ -1923,6 +2176,59 @@ mod browser_tests {
                 .as_deref(),
             Some("7"),
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_evaluate_starts_newly_relevant_input_driver() {
+        let (mut document, state) = document_with_manual_input_driver();
+        document.start().unwrap();
+        assert_eq!(state.borrow().starts, 0);
+
+        document
+            .evaluate(
+                "@tick := test://clock/ticks{:read(value)}\ncurrent := @tick/value\ncurrent",
+            )
+            .unwrap();
+        assert_eq!(state.borrow().starts, 1);
+
+        document
+            .project
+            .runtime
+            .ingress()
+            .submit(mech_runtime::RuntimeHostInput::single(
+                mech_runtime::RuntimeHostInputSource::new(
+                    DOCUMENT_TEST_INPUT_BASE_URI,
+                    "value",
+                )
+                .unwrap(),
+                mech_runtime::RuntimeHostInputValue::F64(7.0),
+            ))
+            .unwrap();
+        document.frame(1).unwrap();
+        let current = document.rendered_symbol(0, "current").unwrap();
+        assert_eq!(
+            Reflect::get(&current, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("7"),
+        );
+
+        document.evaluate("unrelated := 1\nunrelated").unwrap();
+        assert_eq!(state.borrow().starts, 1);
+        document.stop().unwrap();
+        assert_eq!(state.borrow().stops, 1);
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_failed_evaluation_does_not_start_driver() {
+        let (mut document, state) = document_with_manual_input_driver();
+        document.start().unwrap();
+
+        assert!(document.evaluate("missing-document-symbol").is_err());
+        assert_eq!(state.borrow().starts, 0);
+        document.stop().unwrap();
+        assert_eq!(state.borrow().stops, 1);
     }
 
     #[wasm_bindgen_test]
