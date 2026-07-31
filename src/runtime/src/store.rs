@@ -21,12 +21,16 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 #[cfg(test)]
 use std::sync::atomic::{AtomicUsize, Ordering};
+#[cfg(test)]
+use std::sync::Mutex;
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::{Capability, CapabilityRequest};
 use crate::context::ResourceBudgetExceededError;
 use crate::event::RuntimeEvent;
+#[cfg(test)]
+use crate::event::RuntimeEventKind;
 use crate::effect::RuntimeEffectRecord;
 use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
@@ -865,6 +869,56 @@ pub struct RuntimeStoreCommit {
   pub events: Vec<RuntimeEvent>,
 }
 
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum InMemoryAppendEventFailureKind {
+  TransactionAborted,
+  EffectAborted,
+}
+
+#[cfg(test)]
+impl InMemoryAppendEventFailureKind {
+  fn matches(self, kind: &RuntimeEventKind) -> bool {
+    matches!(
+      (self, kind),
+      (
+        Self::TransactionAborted,
+        RuntimeEventKind::TransactionAborted { .. },
+      ) | (
+        Self::EffectAborted,
+        RuntimeEventKind::EffectAborted { .. },
+      )
+    )
+  }
+
+  fn name(self) -> &'static str {
+    match self {
+      Self::TransactionAborted => "TransactionAborted",
+      Self::EffectAborted => "EffectAborted",
+    }
+  }
+}
+
+#[cfg(test)]
+#[derive(Debug, Clone)]
+struct InMemoryAppendEventFailure {
+  event: &'static str,
+}
+
+#[cfg(test)]
+impl MechErrorKind for InMemoryAppendEventFailure {
+  fn name(&self) -> &str {
+    "InMemoryAppendEventFailure"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "in-memory store test probe rejected {} event publication",
+      self.event,
+    )
+  }
+}
+
 // -----------------------------------------------------------------------------
 // In-Memory Store
 // -----------------------------------------------------------------------------
@@ -900,6 +954,9 @@ pub struct InMemoryStore {
   panic_on_commit_runtime: bool,
   #[cfg(test)]
   commit_runtime_calls: Option<Arc<AtomicUsize>>,
+  #[cfg(test)]
+  append_event_failures:
+    Option<Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>>,
 }
 
 impl InMemoryStore {
@@ -923,6 +980,15 @@ impl InMemoryStore {
     counter: Arc<AtomicUsize>,
   ) -> Self {
     self.commit_runtime_calls = Some(counter);
+    self
+  }
+
+  #[cfg(test)]
+  pub(crate) fn with_append_event_failures_for_test(
+    mut self,
+    failures: Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>,
+  ) -> Self {
+    self.append_event_failures = Some(failures);
     self
   }
 
@@ -1483,6 +1549,27 @@ impl MechStore for InMemoryStore {
 
   fn append_event(&mut self, event: RuntimeEvent) -> MResult<EventId> {
     event.validate()?;
+
+    #[cfg(test)]
+    if let Some(failures) = &self.append_event_failures {
+      let mut failures = failures
+        .lock()
+        .expect("append-event failure probe mutex poisoned");
+      if failures
+        .front()
+        .is_some_and(|failure| failure.matches(&event.kind))
+      {
+        let failure = failures
+          .pop_front()
+          .expect("matching append-event failure must exist");
+        return Err(MechError::new(
+          InMemoryAppendEventFailure {
+            event: failure.name(),
+          },
+          None,
+        ));
+      }
+    }
 
     if self.events.contains_key(&event.id) {
       return Err(MechError::new(

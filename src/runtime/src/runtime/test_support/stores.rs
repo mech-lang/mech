@@ -1,7 +1,9 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::collections::VecDeque;
+use std::sync::Mutex;
 
-use crate::InMemoryStore;
+use crate::{InMemoryAppendEventFailureKind, InMemoryStore};
 
 #[derive(Clone, Debug)]
 pub(crate) struct StoreCommitProbe {
@@ -17,5 +19,33 @@ impl StoreCommitProbe {
 
     pub(crate) fn calls(&self) -> usize {
         self.calls.load(Ordering::SeqCst)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct AppendEventFailureProbe {
+    failures: Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>,
+}
+
+impl AppendEventFailureProbe {
+    pub(crate) fn new() -> (InMemoryStore, Self) {
+        let failures = Arc::new(Mutex::new(VecDeque::new()));
+        let store = InMemoryStore::new()
+            .with_append_event_failures_for_test(failures.clone());
+        (store, Self { failures })
+    }
+
+    pub(crate) fn fail_next_transaction_aborted(&self) {
+        self.failures
+            .lock()
+            .unwrap()
+            .push_back(InMemoryAppendEventFailureKind::TransactionAborted);
+    }
+
+    pub(crate) fn fail_next_effect_aborted(&self) {
+        self.failures
+            .lock()
+            .unwrap()
+            .push_back(InMemoryAppendEventFailureKind::EffectAborted);
     }
 }

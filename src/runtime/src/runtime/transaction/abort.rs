@@ -181,19 +181,29 @@ impl MechRuntime {
       if failed_effect_aborts.contains(&effect_id) {
         continue;
       }
-      let _ = self.emit_event_immediate_to_context(
+      if let Err(error) = self.emit_event_immediate_to_context(
         context,
         RuntimeEventKind::EffectAborted { effect_id },
-      );
+      ) {
+        rollback_failures.push(format!(
+          "effect-aborted event publication failed for effect {effect_id}: {:?}",
+          error,
+        ));
+      }
     }
 
-    let _ = self.emit_event_immediate_to_context(
+    if let Err(error) = self.emit_event_immediate_to_context(
       context,
       RuntimeEventKind::TransactionAborted {
         transaction_id,
         message: reason.to_string(),
       },
-    );
+    ) {
+      rollback_failures.push(format!(
+        "transaction-aborted event publication failed for transaction {transaction_id}: {:?}",
+        error,
+      ));
+    }
 
     Ok((transaction_id, rollback_failures))
   }

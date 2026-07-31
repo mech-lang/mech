@@ -367,7 +367,7 @@ fn compensation_audit_failure_is_nonfatal() {
 }
 
 #[test]
-fn explicit_abort_audit_failure_does_not_poison() {
+fn explicit_abort_audit_failure_is_reported_and_poisons() {
     let mut runtime = MechRuntime::builder()
         .id_generator(FailingEventIdGenerator::new([5]))
         .build()
@@ -384,11 +384,15 @@ fn explicit_abort_audit_failure_does_not_poison() {
         )
         .unwrap();
 
-    runtime
+    let error = runtime
         .abort_runtime_transaction(&mut context, "audit failure abort")
-        .unwrap();
+        .unwrap_err();
 
-    assert!(!runtime.is_poisoned());
+    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert!(error
+        .full_chain_message()
+        .contains("event publication failed"));
+    assert!(runtime.is_poisoned());
     assert_eq!(context.transaction, None);
 }
 
