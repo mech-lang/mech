@@ -260,6 +260,23 @@ class WebSocket:
         self.socket.close()
 
 
+class NavigationContextPending(Exception):
+    pass
+
+
+def navigation_context_pending(error):
+    message = str(error.get("message", "")).lower()
+    return any(
+        marker in message
+        for marker in (
+            "cannot find default execution context",
+            "cannot find context with specified id",
+            "execution context was destroyed",
+            "inspected target navigated or closed",
+        )
+    )
+
+
 class DevTools:
     def __init__(self, websocket):
         self.websocket = websocket
@@ -279,6 +296,8 @@ class DevTools:
             if response.get("id") != request_id:
                 continue
             if "error" in response:
+                if method == "Runtime.evaluate" and navigation_context_pending(response["error"]):
+                    raise NavigationContextPending(response["error"])
                 fail(f"DevTools {method} failed: {response['error']!r}")
             return response.get("result", {})
 
@@ -332,7 +351,10 @@ def wait_for(expression, description, timeout=35):
     deadline = time.monotonic() + timeout
     last = None
     while time.monotonic() < deadline:
-        last = evaluate(expression)
+        try:
+            last = evaluate(expression)
+        except NavigationContextPending:
+            last = None
         if last:
             return last
         time.sleep(0.08)
