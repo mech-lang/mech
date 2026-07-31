@@ -1,11 +1,11 @@
 use mech_syntax::document::parser::canonical::{
-    parse_canonical_phase_2h_rule_for_test, CanonicalSourceRuleSnapshot,
+    CanonicalSourceRuleSnapshot, parse_canonical_phase_2h_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    compact_debug_tree, normalize_diagnostics, reconstruct_source_range, validate_lossless_range,
     DocumentId, ParseConfig, ParseLimits, Revision, RuleId, SyntaxKind, TextRange, TextSize,
-    TextSnapshot, TokenFlags,
+    TextSnapshot, TokenFlags, compact_debug_tree, normalize_diagnostics, reconstruct_source_range,
+    validate_lossless_range,
 };
 use proptest::prelude::*;
 
@@ -231,6 +231,18 @@ fn border_and_horizontal_trivia_parsing_grow_linearly() {
         rules::ROW_SEPARATOR,
         sizes.into_iter().map(|size| "─".repeat(size)),
     ));
+    for inputs in [
+        sizes.map(|size| format!("─{}", " ".repeat(size))),
+        sizes.map(|size| format!("─{}", "\t".repeat(size))),
+        sizes.map(|size| format!("─{}", "\u{00a0}\u{2009}".repeat(size))),
+        sizes.map(|size| format!("─{}x", " ".repeat(size))),
+        sizes.map(|size| {
+            let spaces = " ".repeat(size);
+            format!("─{spaces}|{spaces}")
+        }),
+    ] {
+        assert_linear(&measurements(rules::ROW_SEPARATOR, inputs));
+    }
     assert_linear(&measurements(
         rules::TABLE_SEPARATOR,
         sizes.into_iter().map(|size| {

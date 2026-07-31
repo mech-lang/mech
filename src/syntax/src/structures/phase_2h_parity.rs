@@ -16,18 +16,18 @@ use crate::document::ast::{
     EmptyMapSyntax, EmptySetSyntax, MatrixDelimiterStyle, TableRowSeparatorSyntax,
 };
 use crate::document::lower::legacy::{
-    lower_legacy_empty_map, lower_legacy_empty_set, lower_legacy_table_row_separator,
-    lower_phase_2h_structure_shell_value, LegacyStructureShellValue,
+    LegacyStructureShellValue, lower_legacy_empty_map, lower_legacy_empty_set,
+    lower_legacy_table_row_separator, lower_phase_2h_structure_shell_value,
 };
 use crate::document::parser::canonical::{
-    parse_canonical_phase_2h_rule_for_test, CanonicalRuleOutcome, CanonicalSourceRuleSnapshot,
-    PHASE_2H_RULES,
+    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, PHASE_2H_RULES,
+    parse_canonical_phase_2h_rule_for_test,
 };
 use crate::document::parser::rules;
 use crate::document::{
-    reconstruct_source_range, validate_lossless_range, AstNode, DocumentId, ParseConfig,
-    ParseLimits, Revision, RuleId, SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TextSize,
-    TextSnapshot,
+    AstNode, DocumentId, ParseConfig, ParseLimits, Revision, RuleId, SyntaxKind, SyntaxNode,
+    SyntaxToken, TextRange, TextSize, TextSnapshot, TokenFlags, reconstruct_source_range,
+    validate_lossless_range,
 };
 use crate::{ParseResult, ParseString};
 use nom::Err;
@@ -169,7 +169,7 @@ fn phase_2h_contracts() -> [Contract; 10] {
             rule: rules::TABLE_TOP,
             value: CanonicalValue::Unit,
             parser: legacy_table_top,
-            probes: ["╭───\n", "┌───\r", "┏━━━\r\n", "{───\n", "|───\n"],
+            probes: ["╭───\n", "┌───\r", "┏───\r\n", "{───\n", "|───\n"],
         },
         Contract {
             name: "row-separator",
@@ -196,7 +196,7 @@ fn phase_2h_contracts() -> [Contract; 10] {
 }
 
 fn legacy_match(input: &str, parser: LegacyParser) -> Result<LegacyMatch, LegacyOutcome> {
-    let graphemes = crate::graphemes::init_source(input);
+    let graphemes = crate::graphemes::init_tag(input);
     let input_len = TextSize::from_u32(input.len() as u32);
     let prefix = |cursor: usize| {
         let consumed = TextSize::from_u32(
@@ -204,8 +204,11 @@ fn legacy_match(input: &str, parser: LegacyParser) -> Result<LegacyMatch, Legacy
                 .iter()
                 .map(|grapheme| grapheme.len() as u32)
                 .sum(),
-        )
-        .min(input_len);
+        );
+        assert!(
+            consumed <= input_len,
+            "legacy Phase 2H parser consumed beyond physical input"
+        );
         Prefix {
             consumed,
             remaining: input_len - consumed,
@@ -403,6 +406,46 @@ fn phase_2h_has_exactly_fifty_direct_parity_cases() {
 }
 
 #[test]
+fn phase_2h_table_top_requires_a_physical_newline() {
+    for input in ["╭───\n", "╭───\r", "╭───\r\n", "┏───\r\n"] {
+        let parsed = canonical_snapshot(input, rules::TABLE_TOP, ParseConfig::default());
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched, "{input:?}");
+        assert!(parsed.diagnostics.is_empty(), "{input:?}");
+        assert!(parsed.is_strictly_clean(), "{input:?}");
+        assert_eq!(
+            parsed.consumed,
+            TextRange::new(TextSize::ZERO, parsed.source.byte_len()),
+            "{input:?}",
+        );
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+        assert_eq!(
+            reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+            input,
+            "{input:?}",
+        );
+        assert!(
+            parsed
+                .syntax()
+                .tokens()
+                .into_iter()
+                .all(|token| !token.flags().contains(TokenFlags::SYNTHETIC)),
+            "{input:?}",
+        );
+    }
+
+    for input in ["╭───", "╭", "┏━━━\r\n"] {
+        let parsed = canonical_snapshot(input, rules::TABLE_TOP, ParseConfig::default());
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{input:?}");
+        assert_eq!(
+            parsed.consumed,
+            TextRange::empty(TextSize::ZERO),
+            "{input:?}"
+        );
+        assert!(parsed.diagnostics.is_empty(), "{input:?}");
+    }
+}
+
+#[test]
 fn phase_2h_delimiter_spellings_and_views_are_exact() {
     for (input, expected) in [
         ("[", MatrixDelimiterStyle::Bracket),
@@ -502,10 +545,12 @@ fn phase_2h_structure_views_preserve_physical_distinctions() {
             .collect::<String>(),
         "  ───  ",
     );
-    assert!(lower_legacy_table_row_separator(&separator)
-        .unwrap()
-        .columns
-        .is_empty());
+    assert!(
+        lower_legacy_table_row_separator(&separator)
+            .unwrap()
+            .columns
+            .is_empty()
+    );
 }
 
 #[test]
@@ -521,8 +566,25 @@ fn phase_2h_regressions_preserve_closed_prefixes_and_horizontal_trivia() {
     for input in [" | ", "\t│\t", "\u{00a0}┃\u{2009}", "\n|", "|\n"] {
         assert_parity(contract(rules::TABLE_SEPARATOR), input);
     }
-    for input in ["─", "───", "┼──┼", "┘", "┛", "╯", "|", "│", "┃", "  ───  "]
-    {
+    for input in [
+        "─",
+        "───",
+        "┼──┼",
+        "┘",
+        "┛",
+        "╯",
+        "|",
+        "│",
+        "┃",
+        "  ───  ",
+        "─   ",
+        "─\t\t",
+        "─\u{00a0}\u{2009}",
+        "─   x",
+        "─   |   ",
+        "─\t┃\t",
+        "┘   x",
+    ] {
         assert_parity(contract(rules::ROW_SEPARATOR), input);
     }
     for input in ["{", "{:", "{_", "{: value}", "{a}"] {

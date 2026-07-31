@@ -6,8 +6,8 @@
 
 use crate::document::{RuleId, SyntaxKind};
 
-use super::super::rule::rules;
 use super::super::Parser;
+use super::super::rule::rules;
 use super::base;
 use super::combinator::{self, Attempt};
 use super::literals;
@@ -220,7 +220,35 @@ pub(crate) fn parse_empty_set(parser: &mut Parser<'_>) -> Attempt {
 }
 
 fn parse_row_separator_item(parser: &mut Parser<'_>) -> bool {
-    base::parse_rule(parser, rules::BOX_DRAWING_CHAR)
-        || parse_table_end(parser).accepted()
-        || base::parse_rule(parser, rules::SPACE_TAB)
+    if base::parse_rule(parser, rules::BOX_DRAWING_CHAR) {
+        return true;
+    }
+
+    if !space_tab_ahead(parser) {
+        return parse_table_end(parser).accepted();
+    }
+
+    if parse_table_end(parser).accepted() {
+        return true;
+    }
+
+    consume_space_tab_run(parser)
+}
+
+fn space_tab_ahead(parser: &mut Parser<'_>) -> bool {
+    let checkpoint = parser.checkpoint();
+    let matched = base::parse_rule(parser, rules::SPACE_TAB);
+    parser.rewind(checkpoint);
+    matched
+}
+
+fn consume_space_tab_run(parser: &mut Parser<'_>) -> bool {
+    let mut matched = false;
+    while base::parse_rule(parser, rules::SPACE_TAB) {
+        matched = true;
+        if parser.is_halted() {
+            break;
+        }
+    }
+    matched
 }
