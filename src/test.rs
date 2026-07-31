@@ -24,6 +24,25 @@ const TEST_EXPLICIT_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
 const TEST_RECURSIVE_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const TEST_SKIP_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
+/// A discovered test source keeps its filesystem identity separate from the
+/// human-readable label used in terminal and serialized reports. On Unix, a
+/// valid source filename need not be UTF-8, so the label must never be used to
+/// reconstruct an execution path.
+#[derive(Clone, Debug)]
+struct TestSourceTarget {
+  path: PathBuf,
+  display: String,
+}
+
+impl TestSourceTarget {
+  fn from_path(path: PathBuf) -> Self {
+    Self {
+      display: path.display().to_string(),
+      path,
+    }
+  }
+}
+
 fn collect_test_targets(path: &Path) -> MResult<Vec<PathBuf>> {
   if let Ok(metadata) = std::fs::symlink_metadata(path) {
     if metadata.file_type().is_symlink() {
@@ -93,12 +112,12 @@ fn is_bytecode_test_path(path: &Path) -> bool {
   matches!(mech_runtime::SourceKind::from_path(path), mech_runtime::SourceKind::MechBytecode)
 }
 
-fn bytecode_test_unsupported_error(path: &str) -> MechError {
+fn bytecode_test_unsupported_error(path: &Path) -> MechError {
   MechError::new(
     GenericError {
       msg: format!(
         "Bytecode test input `{}` is not supported because compiled bytecode does not currently include invariant metadata. Run tests from source files instead.",
-        path
+        path.display()
       ),
     },
     None,
@@ -340,16 +359,16 @@ pub(crate) fn run_mech_tests_without_tree(
   output_path: Option<String>,
   verbose: bool,
 ) -> Result<i32, MechError> {
-  let mut expanded_paths = Vec::new();
+  let mut expanded_targets = Vec::new();
   for input in mech_paths {
     let input_path = Path::new(&input);
     let targets = collect_test_targets(input_path)?;
     for target in targets {
-      expanded_paths.push(target.display().to_string());
+      expanded_targets.push(TestSourceTarget::from_path(target));
     }
   }
 
-  if expanded_paths.is_empty() {
+  if expanded_targets.is_empty() {
     return Err(MechError::new(
       GenericError {
         msg: "No test targets were found.".to_string(),
@@ -361,11 +380,11 @@ pub(crate) fn run_mech_tests_without_tree(
 
   let mut file_reports = Vec::new();
   println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
-  for path in &expanded_paths {
-    if is_bytecode_test_path(Path::new(path)) {
-      let err = bytecode_test_unsupported_error(path);
+  for target in &expanded_targets {
+    if is_bytecode_test_path(&target.path) {
+      let err = bytecode_test_unsupported_error(&target.path);
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
+      file_reports.push(FileReport { path: target.display.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
       continue;
     }
     let config = module_runtime_config(
@@ -377,7 +396,7 @@ pub(crate) fn run_mech_tests_without_tree(
     )?;
     let execution = match execute_source_module_roots_with_report(
       config,
-      &[PathBuf::from(path)],
+      &[target.path.clone()],
     ) {
       Ok(execution) => execution,
       Err(err) => {
@@ -406,7 +425,7 @@ pub(crate) fn run_mech_tests_without_tree(
           let passed = passed_cases.len();
           let failed = failed_cases.len();
           let total = passed + failed;
-          println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
+          println!("{} {}\n", "[Test]".truecolor(153, 221, 85), target.display);
           for detail in &passed_cases {
             println!("{}   ✓", detail.name);
           }
@@ -414,7 +433,7 @@ pub(crate) fn run_mech_tests_without_tree(
             println!("{}   ✗", detail.name);
           }
           file_reports.push(FileReport {
-            path: path.clone(),
+            path: target.display.clone(),
             result: FileResult {
               total,
               passed,
@@ -427,13 +446,13 @@ pub(crate) fn run_mech_tests_without_tree(
           continue;
         }
         eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-        file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
+        file_reports.push(FileReport { path: target.display.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
         continue;
       }
     };
     let report = execution.integrity;
     let _runtime = execution.runtime;
-    println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
+    println!("{} {}\n", "[Test]".truecolor(153, 221, 85), target.display);
 
     let mut passed_cases = Vec::new();
     let mut failed_cases = Vec::new();
@@ -496,7 +515,7 @@ pub(crate) fn run_mech_tests_without_tree(
         println!();
       }
     }
-    file_reports.push(FileReport { path: path.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_cases, run_error: None });
+    file_reports.push(FileReport { path: target.display.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_cases, run_error: None });
   }
 
   let files_passed = file_reports.iter().filter(|f| !f.failed_file()).count();
@@ -509,7 +528,7 @@ pub(crate) fn run_mech_tests_without_tree(
     files: file_reports,
   };
 
-  if expanded_paths.len() > 1 {
+  if expanded_targets.len() > 1 {
     let summary_status = report.status_label();
     println!(
       "\n{} {}: files {} total | {} passed | {} failed || tests {} total | {} passed | {} failed",
@@ -1109,7 +1128,7 @@ mod tests {
 
   #[test]
   fn bytecode_test_error_mentions_invariant_metadata() {
-    let message = bytecode_test_unsupported_error("compiled.mecb").display_message();
+    let message = bytecode_test_unsupported_error(Path::new("compiled.mecb")).display_message();
     assert!(message.contains("Bytecode test input"));
     assert!(message.contains("invariant metadata"));
   }
@@ -1175,6 +1194,36 @@ mod tests {
     let targets = collect_test_targets(&root).unwrap();
 
     assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn mech_tests_preserve_discovered_non_utf8_filename() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let root = temp_test_root("non-utf8-discovery");
+    let source = root.join(OsString::from_vec(b"test-\xff.mec".to_vec()));
+    let output = root.join("report.json");
+    std::fs::write(&source, "answer := 41\nfilename-pass! := answer == 41\n").unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![root.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"files-total\": 1"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert!(report.contains("\"run-error\": null"));
     std::fs::remove_dir_all(root).unwrap();
   }
 }
