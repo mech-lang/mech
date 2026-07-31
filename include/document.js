@@ -240,6 +240,56 @@ async function loadDocumentSourceMap() {
   };
 }
 
+function loadEmbeddedDocumentSourceBundle() {
+  const selector = "script[type='application/x-mech-source-bundle'][data-mech-document-sources]";
+  const element =
+    state.controllerElement?.parentElement?.querySelector(selector) ||
+    document.querySelector(selector);
+  const encoded = element?.textContent?.trim();
+  if (!encoded) {
+    return null;
+  }
+
+  let bundle;
+  try {
+    const bytes = Uint8Array.from(atob(encoded), byte => byte.charCodeAt(0));
+    bundle = JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new Error("invalid embedded Mech document source bundle");
+  }
+
+  if (
+    bundle?.version !== 1 ||
+    typeof bundle.rootSpecifier !== "string" ||
+    !bundle.rootSpecifier.trim() ||
+    !Array.isArray(bundle.sources)
+  ) {
+    throw new Error("invalid embedded Mech document source bundle");
+  }
+
+  const sources = {};
+  for (const source of bundle.sources) {
+    if (
+      typeof source?.specifier !== "string" ||
+      !source.specifier.trim() ||
+      typeof source?.source !== "string" ||
+      Object.prototype.hasOwnProperty.call(sources, source.specifier)
+    ) {
+      throw new Error("invalid embedded Mech document source bundle");
+    }
+    sources[source.specifier] = source.source;
+  }
+  if (!Object.prototype.hasOwnProperty.call(sources, bundle.rootSpecifier)) {
+    throw new Error("embedded Mech document root is missing from its source bundle");
+  }
+
+  return {
+    config: null,
+    rootSpecifier: bundle.rootSpecifier,
+    sources,
+  };
+}
+
 function outputAddress(element) {
   const separator = element.id.lastIndexOf(":");
   if (separator <= 0 || separator === element.id.length - 1) {
@@ -955,7 +1005,8 @@ async function main() {
   const { default: initializeWasm, WasmDocument } = await import(wasmModule);
   await initializeWasm();
   state.initialEncoded = await loadEncodedDocument();
-  const documentSources = await loadDocumentSourceMap();
+  const documentSources =
+    loadEmbeddedDocumentSourceBundle() || await loadDocumentSourceMap();
   if (documentSources?.config) {
     if (
       !Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG") ||

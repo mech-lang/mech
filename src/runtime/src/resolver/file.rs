@@ -332,7 +332,11 @@ fn looks_like_windows_drive_path(text: &str) -> bool {
   bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
-pub(crate) fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
+/// Decodes a canonical `file://` source URI into its native filesystem path.
+///
+/// This is the inverse of [`SourceRequest::from_filesystem_path`].  In
+/// particular, Unix path bytes are restored without a lossy UTF-8 conversion.
+pub fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
   let Some(rest) = uri.strip_prefix("file://") else {
     return Err(filesystem_specifier_error(uri, "file URI must start with file://"));
   };
@@ -561,7 +565,6 @@ fn percent_encode_path(bytes: &[u8]) -> String {
   out
 }
 
-#[cfg(windows)]
 fn percent_encode_path_segment(bytes: &[u8]) -> String {
   let mut out = String::new();
   for &byte in bytes {
@@ -574,6 +577,63 @@ fn percent_encode_path_segment(bytes: &[u8]) -> String {
     }
   }
   out
+}
+
+/// Encodes a normalized relative filesystem path for an in-memory source map.
+///
+/// Each component uses the same percent encoding as filesystem source
+/// requests, so Unix names that are not valid UTF-8 remain reversible without
+/// leaking their absolute filesystem prefix into a portable source bundle.
+pub fn relative_path_to_source_specifier(path: &Path) -> MResult<String> {
+  if path.is_absolute() {
+    return Err(filesystem_specifier_error(
+      path.display().to_string(),
+      "relative source specifier path must not be absolute",
+    ));
+  }
+
+  let mut parts = Vec::new();
+  for component in path.components() {
+    match component {
+      Component::Normal(part) => {
+        #[cfg(unix)]
+        {
+          use std::os::unix::ffi::OsStrExt;
+          parts.push(percent_encode_path_segment(part.as_bytes()));
+        }
+        #[cfg(not(unix))]
+        {
+          let text = part.to_str().ok_or_else(|| {
+            filesystem_specifier_error(
+              path.display().to_string(),
+              "relative source specifier path must be valid UTF-8 on this target",
+            )
+          })?;
+          parts.push(percent_encode_path_segment(text.as_bytes()));
+        }
+      }
+      Component::CurDir => {}
+      Component::ParentDir => {
+        return Err(filesystem_specifier_error(
+          path.display().to_string(),
+          "relative source specifier path must not contain parent traversal",
+        ));
+      }
+      Component::RootDir | Component::Prefix(_) => {
+        return Err(filesystem_specifier_error(
+          path.display().to_string(),
+          "relative source specifier path must contain only normal components",
+        ));
+      }
+    }
+  }
+  if parts.is_empty() {
+    return Err(filesystem_specifier_error(
+      path.display().to_string(),
+      "relative source specifier path must not be empty",
+    ));
+  }
+  Ok(parts.join("/"))
 }
 
 fn is_file_uri_path_byte_unreserved(byte: u8) -> bool {

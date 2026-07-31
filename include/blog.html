@@ -196,8 +196,12 @@
   </script>
   <script
     type="module"
-    data-mech-document-controller>
+    data-mech-document-controller
+    data-mech-wasm-module="{{WASM_MODULE_URL}}">
 {{DOCUMENT_SCRIPT}}
+  </script>
+  <script type="application/x-mech-source-bundle" data-mech-document-sources>
+{{DOCUMENT_SOURCES}}
   </script>
 </body>
 </html>

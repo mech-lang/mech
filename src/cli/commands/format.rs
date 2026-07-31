@@ -1,14 +1,19 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::ops::{Deref, DerefMut};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use base64::Engine as _;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
-use mech_runtime::{DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel};
+use mech_runtime::{
+    DefaultIdGenerator, FS_READ, FileSourceResolver, HostFilesystemAuthority,
+    MECH_TOOL_SUBJECT, SharedCapabilityKernel, SourceRequest, SourceResolver,
+    file_uri_to_path, relative_path_to_source_specifier,
+};
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
@@ -125,22 +130,206 @@ fn document_controller_slots(
     shim: &str,
     document_js: Option<&str>,
     source_url_key: &str,
+    wasm_module_url: &str,
+    document_sources: &str,
 ) -> MResult<HtmlShimExtraSlots> {
     let mut slots = HtmlShimExtraSlots::default();
     slots.insert("SOURCE_URL_KEY", source_url_key);
-    if shim.contains("{{DOCUMENT_SCRIPT}}") {
-        let document_js = document_js.ok_or_else(|| {
-            MechError::new(
-                GenericError {
-                    msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
-        slots.insert("DOCUMENT_SCRIPT", document_js);
+    if !shim.contains("{{DOCUMENT_SCRIPT}}") {
+        return Ok(slots);
     }
+
+    let document_js = document_js.ok_or_else(|| format_error(
+        "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable",
+    ))?;
+    if shim.contains("{{WASM_MODULE_URL}}") {
+        slots.insert("WASM_MODULE_URL", wasm_module_url);
+    } else if !shim.contains("data-mech-wasm-module") {
+        return Err(format_error(
+            "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but does not provide {{WASM_MODULE_URL}} or an explicit data-mech-wasm-module",
+        ));
+    }
+    if shim.contains("{{DOCUMENT_SOURCES}}") {
+        slots.insert("DOCUMENT_SOURCES", document_sources);
+    } else {
+        return Err(format_error(
+            "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but does not provide {{DOCUMENT_SOURCES}} for the standalone source bundle",
+        ));
+    }
+    slots.insert("DOCUMENT_SCRIPT", document_js);
     Ok(slots)
+}
+
+fn format_error(message: impl Into<String>) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: message.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[derive(serde::Serialize)]
+struct DocumentSourceBundle {
+    version: u8,
+    #[serde(rename = "rootSpecifier")]
+    root_specifier: String,
+    sources: Vec<DocumentSourceBundleEntry>,
+}
+
+#[derive(serde::Serialize)]
+struct DocumentSourceBundleEntry {
+    specifier: String,
+    source: String,
+}
+
+#[derive(Clone, Debug)]
+struct ResolvedDocumentSource {
+    path: PathBuf,
+    source: String,
+}
+
+fn is_non_filesystem_source_request(request: &SourceRequest) -> bool {
+    let specifier = request.specifier.as_str();
+    specifier.starts_with("mech:")
+        || specifier.starts_with("pkg:")
+        || specifier.starts_with("http:")
+        || specifier.starts_with("https:")
+        || specifier.starts_with("memory:")
+}
+
+fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
+    let first = paths.first().ok_or_else(|| format_error(
+        "cannot determine a source bundle directory without source paths",
+    ))?;
+    let first = absolute_path(first)?;
+    let mut ancestor = first.parent().ok_or_else(|| format_error(
+        format!("source path `{}` has no parent directory", first.display()),
+    ))?.to_path_buf();
+
+    for path in paths.iter().skip(1) {
+        let path = absolute_path(path)?;
+        let parent = path.parent().ok_or_else(|| format_error(
+            format!("source path `{}` has no parent directory", path.display()),
+        ))?;
+        while !parent.starts_with(&ancestor) {
+            ancestor = ancestor.parent().ok_or_else(|| format_error(
+                "formatted document sources have no common filesystem ancestor",
+            ))?.to_path_buf();
+        }
+    }
+    Ok(ancestor)
+}
+
+fn resolve_document_source_bundle(root: &Path) -> MResult<String> {
+    let root = absolute_path(root)?.canonicalize()?;
+    let root_request = SourceRequest::from_filesystem_path(&root)?;
+    let root_uri = root_request.specifier.clone();
+    let resolver = FileSourceResolver::empty();
+    let mut pending = VecDeque::from([root_request]);
+    let mut sources = BTreeMap::<String, ResolvedDocumentSource>::new();
+
+    while let Some(request) = pending.pop_front() {
+        let Some(resolved) = resolver.resolve(&request)? else {
+            if is_non_filesystem_source_request(&request) {
+                continue;
+            }
+            return Err(format_error(format!(
+                "cannot resolve document source dependency `{}`",
+                request.specifier,
+            )));
+        };
+        if sources.contains_key(&resolved.canonical_uri) {
+            continue;
+        }
+        let path = file_uri_to_path(&resolved.canonical_uri)?;
+        let source = match resolved.source {
+            MechSourceCode::String(source) => source,
+            other => return Err(format_error(format!(
+                "document source dependency `{}` is not Mech text: {:?}",
+                path.display(), other,
+            ))),
+        };
+        pending.extend(resolved.dependencies);
+        sources.insert(resolved.canonical_uri, ResolvedDocumentSource { path, source });
+    }
+
+    let paths = sources.values().map(|source| source.path.clone()).collect::<Vec<_>>();
+    let ancestor = common_parent_directory(&paths)?;
+    let mut root_specifier = None;
+    let mut entries = sources.into_iter().map(|(uri, source)| {
+        let relative = source.path.strip_prefix(&ancestor).map_err(|error| format_error(
+            format!("cannot derive a relative document source specifier: {error}"),
+        ))?;
+        let specifier = relative_path_to_source_specifier(relative)?;
+        if uri == root_uri {
+            root_specifier = Some(specifier.clone());
+        }
+        Ok(DocumentSourceBundleEntry { specifier, source: source.source })
+    }).collect::<MResult<Vec<_>>>()?;
+    entries.sort_by(|left, right| left.specifier.cmp(&right.specifier));
+    let root_specifier = root_specifier.ok_or_else(|| format_error(
+        "document source bundle root was not resolved",
+    ))?;
+    let encoded = serde_json::to_vec(&DocumentSourceBundle {
+        version: 1,
+        root_specifier,
+        sources: entries,
+    }).map_err(|error| format_error(format!("failed to encode document source bundle: {error}")))?;
+    Ok(base64::engine::general_purpose::STANDARD.encode(encoded))
+}
+
+fn relative_asset_url(output_file: &Path, asset_file: &Path) -> MResult<String> {
+    let output_parent = absolute_path(output_file)?
+        .parent()
+        .ok_or_else(|| format_error(format!(
+            "formatted output `{}` has no parent directory",
+            output_file.display(),
+        )))?
+        .to_path_buf();
+    let asset_file = absolute_path(asset_file)?;
+    let output_parts = output_parent.components().collect::<Vec<_>>();
+    let asset_parts = asset_file.components().collect::<Vec<_>>();
+    let shared = output_parts.iter().zip(&asset_parts)
+        .take_while(|(left, right)| left == right)
+        .count();
+    let mut url = String::new();
+    for _ in shared..output_parts.len() {
+        url.push_str("../");
+    }
+    for (index, component) in asset_parts[shared..].iter().enumerate() {
+        if !url.is_empty() && !url.ends_with('/') {
+            url.push('/');
+        }
+        let text = component.as_os_str().to_str().ok_or_else(|| format_error(
+            "runtime asset path must be valid UTF-8",
+        ))?;
+        url.push_str(text);
+        if index + 1 < asset_parts[shared..].len() {
+            url.push('/');
+        }
+    }
+    Ok(if url.starts_with("../") { url } else { format!("./{url}") })
+}
+
+fn write_asset_atomically(path: &Path, bytes: &[u8]) -> MResult<()> {
+    let parent = path.parent().ok_or_else(|| format_error(format!(
+        "runtime asset `{}` has no parent directory",
+        path.display(),
+    )))?;
+    fs::create_dir_all(parent)?;
+    let file_name = path.file_name().and_then(|name| name.to_str()).ok_or_else(|| format_error(
+        "runtime asset file name must be valid UTF-8",
+    ))?;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| format_error(format!("system clock error while writing runtime assets: {error}")))?
+        .as_nanos();
+    let temporary = parent.join(format!(".{file_name}.{}.{}.tmp", std::process::id(), stamp));
+    fs::write(&temporary, bytes)?;
+    fs::rename(&temporary, path)?;
+    Ok(())
 }
 
 fn shipped_shim_name(
@@ -714,29 +903,75 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         html_flag,
     )?;
 
-    // Only create directory if output_path is not a file
-    if !is_output_file && output_path != PathBuf::from(".") {
-        fs::create_dir_all(&output_path)?;
-        println!(
-            "{} Directory created: {}",
-            "[Created]".truecolor(153, 221, 85),
-            output_path.display()
-        );
-    }
-
     // HTML mode
     if html_flag {
-        let document_slots = document_controller_slots(
-            &shim_str,
-            options.resources.document_js,
-            "",
-        )?;
         let shipped_shim = shipped_shim_name(&shim_source);
-        let mut html_items: Vec<(CollectedSourceTarget, String)> = Vec::new();
+        let uses_document_controller = shim_str.contains("{{DOCUMENT_SCRIPT}}");
+        let controller_outputs = loaded_sources
+            .iter()
+            .filter_map(|(target, source)| matches!(source, MechSourceCode::String(_)).then(|| {
+                format_output_file_for_target(
+                    target,
+                    &output_path,
+                    is_output_file,
+                    writes_in_place,
+                    true,
+                )
+            }))
+            .collect::<Vec<_>>();
+        let runtime_assets = if uses_document_controller && !controller_outputs.is_empty() {
+            let wasm = options.resources.mech_wasm.ok_or_else(|| format_error(
+                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm_bg.wasm is unavailable; rebuild with bundle_web enabled",
+            ))?;
+            let js = options.resources.mech_js.ok_or_else(|| format_error(
+                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm.js is unavailable; rebuild with bundle_web enabled",
+            ))?;
+            if js.is_empty() {
+                return Err(format_error("embedded mech_wasm.js is empty"));
+            }
+            if !wasm.starts_with(b"\0asm") {
+                return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
+            }
+            let package = common_parent_directory(&controller_outputs)?.join("_mech").join("pkg");
+            Some((
+                package.join("mech_wasm.js"),
+                package.join("mech_wasm_bg.wasm"),
+                js,
+                wasm,
+            ))
+        } else {
+            None
+        };
+
+        let mut html_items: Vec<(PathBuf, String)> = Vec::new();
         for (target, src) in &loaded_sources {
+            let output_file = format_output_file_for_target(
+                target,
+                &output_path,
+                is_output_file,
+                writes_in_place,
+                true,
+            );
             let html = match src {
                 MechSourceCode::Html(content) => content.clone(),
                 MechSourceCode::String(source) => {
+                    let document_sources = if uses_document_controller {
+                        resolve_document_source_bundle(&target.path)?
+                    } else {
+                        String::new()
+                    };
+                    let wasm_module_url = runtime_assets
+                        .as_ref()
+                        .map(|(js, _, _, _)| relative_asset_url(&output_file, js))
+                        .transpose()?
+                        .unwrap_or_default();
+                    let document_slots = document_controller_slots(
+                        &shim_str,
+                        options.resources.document_js,
+                        "",
+                        &wasm_module_url,
+                        &document_sources,
+                    )?;
                     let tree = parser::parse(source.trim())?;
                     let mut formatter = Formatter::new();
                     let render = formatter.format_html_with_slots(
@@ -764,22 +999,14 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                     .with_compiler_loc());
                 }
             };
-            html_items.push((target.clone(), html));
+            html_items.push((output_file, html));
         }
-        if is_output_file && html_items.len() == 1 {
-            let (_, content) = html_items.remove(0);
-            save_to_file(output_path, &content)?;
-        } else {
-            for (target, content) in html_items {
-                let output_file = format_output_file_for_target(
-                    &target,
-                    &output_path,
-                    is_output_file,
-                    writes_in_place,
-                    true,
-                );
-                save_to_file(output_file, &content)?;
-            }
+        if let Some((js_path, wasm_path, js, wasm)) = runtime_assets {
+            write_asset_atomically(&js_path, js)?;
+            write_asset_atomically(&wasm_path, wasm)?;
+        }
+        for (output_file, content) in html_items {
+            save_to_file(output_file, &content)?;
         }
     } else {
         // Raw source mode

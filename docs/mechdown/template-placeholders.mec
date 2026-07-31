@@ -52,7 +52,7 @@ or `project.js`.
 ### Shipped-controller placeholders
 
 The maintained generic, blog, and documentation shells opt into the shared safe
-browser controller with these two slots:
+browser controller with these slots:
 
 - `{{DOCUMENT_SCRIPT}}` — The embedded document-controller module. It creates a
   safe `WasmDocument`, starts document inputs, renders outputs, and attaches the
@@ -60,6 +60,18 @@ browser controller with these two slots:
 - `{{SOURCE_URL_KEY}}` — A server-supplied, percent-encoded source transport key.
   A formatted file leaves this value empty and the controller falls back to the
   embedded `{{CODE}}` payload.
+- `{{WASM_MODULE_URL}}` — The controller's runtime module URL. `mech serve`
+  supplies its server URL, while `mech format --html` supplies a path relative
+  to each generated page.
+- `{{DOCUMENT_SOURCES}}` — A base64-encoded, versioned source bundle containing
+  the document root and all of its resolved relative Mech dependencies. The
+  controller uses it before attempting a served-project manifest.
+
+When a shipped-controller page is formatted, Mech writes `_mech/pkg/` beside
+the generated output with `mech_wasm.js` and `mech_wasm_bg.wasm`. Deploy the
+HTML tree and that directory together through an ordinary static HTTP server.
+No `mech.mcfg`, `project.js`, or Mech server route is required for the
+standalone document.
 
 Custom shims remain authoritative: a shim without `{{DOCUMENT_SCRIPT}}` receives
 no competing browser bootstrap and may use inline code, an external script, the

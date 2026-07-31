@@ -667,3 +667,23 @@ fn format_resource_authority_is_limited_to_configured_paths() {
     assert!(mech_runtime::check_fs_capability(&mut kernel, authority.subject(), FS_READ, &unrelated.canonicalize().unwrap()).is_err());
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn formatted_document_runtime_urls_are_relative_to_each_page() {
+    let _guard = format_test_lock();
+    let root = temp_root("relative-runtime-url");
+    let package = root.join("formatted/_mech/pkg/mech_wasm.js");
+    assert_eq!(
+        relative_asset_url(&root.join("formatted/index.html"), &package).unwrap(),
+        "./_mech/pkg/mech_wasm.js",
+    );
+    assert_eq!(
+        relative_asset_url(&root.join("formatted/docs/page.html"), &package).unwrap(),
+        "../_mech/pkg/mech_wasm.js",
+    );
+    assert_eq!(
+        relative_asset_url(&root.join("formatted/docs/reference/page.html"), &package).unwrap(),
+        "../../_mech/pkg/mech_wasm.js",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}

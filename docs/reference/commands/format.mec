@@ -45,6 +45,15 @@ mech format docs/page.mec \
 ```
 
 The shipped shims opt into the shared browser controller through
-`{{DOCUMENT_SCRIPT}}`. A custom shim retains authority over inline, external,
-shared-helper, or intentionally static browser behavior. Standalone documents
-require neither `mech.mcfg` nor `project.js`.
+`{{DOCUMENT_SCRIPT}}`. For a controller-backed document, formatting also writes
+`_mech/pkg/mech_wasm.js` and `_mech/pkg/mech_wasm_bg.wasm` next to the output
+tree and embeds a base64 source bundle for the root and every resolved relative
+Mech dependency. Each generated HTML page refers to the package with a relative
+module URL, so deploy the HTML tree and `_mech/` together through an ordinary
+static HTTP server. Standalone documents require neither `mech.mcfg`,
+`project.js`, nor `mech serve` routes.
+
+A custom shim without `{{DOCUMENT_SCRIPT}}` remains intentionally static and
+does not cause a runtime package to be emitted. A custom shim that opts into
+the shared controller must provide `{{WASM_MODULE_URL}}` and
+`{{DOCUMENT_SOURCES}}` so its output remains deployable without the server.

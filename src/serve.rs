@@ -346,6 +346,11 @@ impl ServerSourceRegistry {
               .with_compiler_loc()
             })?;
             extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
+            extra_slots.insert("WASM_MODULE_URL", "/_mech/pkg/mech_wasm.js");
+            // Served documents load their complete source map from the
+            // project manifest. Static formatter output supplies this slot
+            // with an embedded source bundle instead.
+            extra_slots.insert("DOCUMENT_SOURCES", "");
           }
           let mut formatter = Formatter::new();
           let render = formatter.format_html_with_slots(
