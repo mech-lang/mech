@@ -34,60 +34,6 @@ type HashMap<K, V> = HashBrownMap<K, V, BuildHasherDefault<FxHasher>>;
 #[cfg(feature = "no_std")]
 type HashSet<K> = HashBrownSet<K, BuildHasherDefault<FxHasher>>;
 
-#[cfg(feature = "set")]
-fn canonical_set_snapshot(set: &MechSet, phase: &'static str) -> MResult<MechSet> {
-    let mut elements = IndexSet::with_capacity(set.set.len());
-    for (second_index, element) in set.set.iter().enumerate() {
-        let element = element.clone();
-        if let Some(first_index) = elements.iter().position(|existing| existing == &element) {
-            return Err(MechError::new(
-                ValueStateCollectionCollision {
-                    phase,
-                    collection: "set element",
-                    first_index,
-                    second_index,
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        elements.insert(element);
-    }
-    Ok(MechSet {
-        kind: set.kind.clone(),
-        num_elements: set.num_elements,
-        set: elements,
-    })
-}
-
-#[cfg(feature = "map")]
-fn canonical_map_snapshot(map: &MechMap, phase: &'static str) -> MResult<MechMap> {
-    let mut entries = IndexMap::with_capacity(map.map.len());
-    for (second_index, (key, value)) in map.map.iter().enumerate() {
-        let key = key.clone();
-        let value = value.clone();
-        if let Some(first_index) = entries.keys().position(|existing| existing == &key) {
-            return Err(MechError::new(
-                ValueStateCollectionCollision {
-                    phase,
-                    collection: "map key",
-                    first_index,
-                    second_index,
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        entries.insert(key, value);
-    }
-    Ok(MechMap {
-        key_kind: map.key_kind.clone(),
-        value_kind: map.value_kind.clone(),
-        num_elements: map.num_elements,
-        map: entries,
-    })
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct ValueStateKey {
     type_id: TypeId,
@@ -101,6 +47,378 @@ impl ValueStateKey {
             address: target.addr(),
         }
     }
+}
+
+struct ValueStateHashedCycleDetector {
+    active: HashSet<ValueStateKey>,
+    complete: HashSet<ValueStateKey>,
+    phase: &'static str,
+    collection: &'static str,
+    index: usize,
+}
+
+impl ValueStateHashedCycleDetector {
+    fn new(phase: &'static str, collection: &'static str, index: usize) -> Self {
+        Self {
+            active: HashSet::default(),
+            complete: HashSet::default(),
+            phase,
+            collection,
+            index,
+        }
+    }
+
+    fn cycle_error(&self) -> MechError {
+        MechError::new(
+            ValueStateHashedCycleUnsupported {
+                phase: self.phase,
+                collection: self.collection,
+                index: self.index,
+            },
+            None,
+        )
+        .with_compiler_loc()
+    }
+
+    fn borrow_conflict<T: 'static>(&self) -> MechError {
+        MechError::new(
+            ValueStateBorrowConflict {
+                phase: self.phase,
+                type_name: type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    }
+
+    fn visit_ref<T>(
+        &mut self,
+        target: &Ref<T>,
+        descend: impl FnOnce(&mut Self, &T) -> MResult<()>,
+    ) -> MResult<()>
+    where
+        T: 'static,
+    {
+        let key = ValueStateKey::of(target);
+        if self.complete.contains(&key) {
+            return Ok(());
+        }
+        if !self.active.insert(key) {
+            return Err(self.cycle_error());
+        }
+
+        let result = match target.try_borrow() {
+            Ok(payload) => descend(self, &payload),
+            Err(_) => Err(self.borrow_conflict::<T>()),
+        };
+        self.active.remove(&key);
+        if result.is_ok() {
+            self.complete.insert(key);
+        }
+        result
+    }
+
+    fn visit_leaf<T: 'static>(&mut self, target: &Ref<T>) -> MResult<()> {
+        target
+            .try_borrow()
+            .map(|_| ())
+            .map_err(|_| self.borrow_conflict::<T>())
+    }
+
+    fn validate_value(&mut self, value: &Value) -> MResult<()> {
+        match value {
+            #[cfg(feature = "u8")]
+            Value::U8(value) => self.visit_leaf(value),
+            #[cfg(feature = "u16")]
+            Value::U16(value) => self.visit_leaf(value),
+            #[cfg(feature = "u32")]
+            Value::U32(value) => self.visit_leaf(value),
+            #[cfg(feature = "u64")]
+            Value::U64(value) => self.visit_leaf(value),
+            #[cfg(feature = "u128")]
+            Value::U128(value) => self.visit_leaf(value),
+            #[cfg(feature = "i8")]
+            Value::I8(value) => self.visit_leaf(value),
+            #[cfg(feature = "i16")]
+            Value::I16(value) => self.visit_leaf(value),
+            #[cfg(feature = "i32")]
+            Value::I32(value) => self.visit_leaf(value),
+            #[cfg(feature = "i64")]
+            Value::I64(value) => self.visit_leaf(value),
+            #[cfg(feature = "i128")]
+            Value::I128(value) => self.visit_leaf(value),
+            #[cfg(feature = "f32")]
+            Value::F32(value) => self.visit_leaf(value),
+            #[cfg(feature = "f64")]
+            Value::F64(value) => self.visit_leaf(value),
+            #[cfg(feature = "complex")]
+            Value::C64(value) => self.visit_leaf(value),
+            #[cfg(feature = "rational")]
+            Value::R64(value) => self.visit_leaf(value),
+            #[cfg(any(feature = "string", feature = "variable_define"))]
+            Value::String(value) => self.visit_leaf(value),
+            #[cfg(any(feature = "bool", feature = "variable_define"))]
+            Value::Bool(value) => self.visit_leaf(value),
+            #[cfg(feature = "atom")]
+            Value::Atom(value) => self.visit_ref(value, |detector, atom| {
+                detector.visit_leaf(&atom.0.1)
+            }),
+            Value::Index(value) => self.visit_leaf(value),
+            #[cfg(feature = "matrix")]
+            Value::MatrixIndex(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "bool"))]
+            Value::MatrixBool(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "u8"))]
+            Value::MatrixU8(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "u16"))]
+            Value::MatrixU16(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "u32"))]
+            Value::MatrixU32(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "u64"))]
+            Value::MatrixU64(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "u128"))]
+            Value::MatrixU128(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "i8"))]
+            Value::MatrixI8(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "i16"))]
+            Value::MatrixI16(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "i32"))]
+            Value::MatrixI32(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "i64"))]
+            Value::MatrixI64(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "i128"))]
+            Value::MatrixI128(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            Value::MatrixF32(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "f64"))]
+            Value::MatrixF64(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "string"))]
+            Value::MatrixString(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "rational"))]
+            Value::MatrixR64(matrix) => self.validate_matrix(matrix),
+            #[cfg(all(feature = "matrix", feature = "complex"))]
+            Value::MatrixC64(matrix) => self.validate_matrix(matrix),
+            #[cfg(feature = "matrix")]
+            Value::MatrixValue(matrix) => self.validate_value_matrix(matrix),
+            #[cfg(feature = "set")]
+            Value::Set(value) => self.visit_ref(value, |detector, set| {
+                for value in &set.set {
+                    detector.validate_value(value)?;
+                }
+                Ok(())
+            }),
+            #[cfg(feature = "map")]
+            Value::Map(value) => self.visit_ref(value, |detector, map| {
+                for (key, value) in &map.map {
+                    detector.validate_value(key)?;
+                    detector.validate_value(value)?;
+                }
+                Ok(())
+            }),
+            #[cfg(feature = "record")]
+            Value::Record(value) => self.visit_ref(value, |detector, record| {
+                for value in record.data.values() {
+                    detector.validate_value(value)?;
+                }
+                Ok(())
+            }),
+            #[cfg(feature = "table")]
+            Value::Table(value) => self.visit_ref(value, |detector, table| {
+                for (_, matrix) in table.data.values() {
+                    detector.validate_value_matrix(matrix)?;
+                }
+                Ok(())
+            }),
+            #[cfg(feature = "tuple")]
+            Value::Tuple(value) => self.visit_ref(value, |detector, tuple| {
+                for value in &tuple.elements {
+                    detector.validate_value(value)?;
+                }
+                Ok(())
+            }),
+            #[cfg(feature = "enum")]
+            Value::Enum(value) => self.visit_ref(value, |detector, enum_value| {
+                detector.visit_leaf(&enum_value.names)?;
+                for (_, payload) in &enum_value.variants {
+                    if let Some(payload) = payload {
+                        detector.validate_value(payload)?;
+                    }
+                }
+                Ok(())
+            }),
+            Value::MutableReference(value) => self.visit_ref(value, |detector, value| {
+                detector.validate_value(value)
+            }),
+            Value::Typed(value, _) => self.validate_value(value),
+            Value::Id(_)
+            | Value::Kind(_)
+            | Value::IndexAll
+            | Value::EmptyKind(_)
+            | Value::Empty => Ok(()),
+        }
+    }
+
+    #[cfg(feature = "matrix")]
+    fn validate_matrix<T: 'static>(&mut self, matrix: &Matrix<T>) -> MResult<()> {
+        macro_rules! validate_backing {
+            ($value:expr) => {
+                self.visit_leaf($value)
+            };
+        }
+        match matrix {
+            #[cfg(feature = "matrix1")]
+            Matrix::Matrix1(value) => validate_backing!(value),
+            #[cfg(feature = "matrix2")]
+            Matrix::Matrix2(value) => validate_backing!(value),
+            #[cfg(feature = "matrix3")]
+            Matrix::Matrix3(value) => validate_backing!(value),
+            #[cfg(feature = "matrix4")]
+            Matrix::Matrix4(value) => validate_backing!(value),
+            #[cfg(feature = "matrix2x3")]
+            Matrix::Matrix2x3(value) => validate_backing!(value),
+            #[cfg(feature = "matrix3x2")]
+            Matrix::Matrix3x2(value) => validate_backing!(value),
+            #[cfg(feature = "vector2")]
+            Matrix::Vector2(value) => validate_backing!(value),
+            #[cfg(feature = "vector3")]
+            Matrix::Vector3(value) => validate_backing!(value),
+            #[cfg(feature = "vector4")]
+            Matrix::Vector4(value) => validate_backing!(value),
+            #[cfg(feature = "row_vector2")]
+            Matrix::RowVector2(value) => validate_backing!(value),
+            #[cfg(feature = "row_vector3")]
+            Matrix::RowVector3(value) => validate_backing!(value),
+            #[cfg(feature = "row_vector4")]
+            Matrix::RowVector4(value) => validate_backing!(value),
+            #[cfg(feature = "vectord")]
+            Matrix::DVector(value) => validate_backing!(value),
+            #[cfg(feature = "row_vectord")]
+            Matrix::RowDVector(value) => validate_backing!(value),
+            #[cfg(feature = "matrixd")]
+            Matrix::DMatrix(value) => validate_backing!(value),
+        }
+    }
+
+    #[cfg(feature = "matrix")]
+    fn validate_value_matrix(&mut self, matrix: &Matrix<Value>) -> MResult<()> {
+        macro_rules! validate_backing {
+            ($value:expr) => {
+                self.visit_ref($value, |detector, values| {
+                    for value in values.iter() {
+                        detector.validate_value(value)?;
+                    }
+                    Ok(())
+                })
+            };
+        }
+        match matrix {
+            #[cfg(feature = "matrix1")]
+            Matrix::Matrix1(value) => validate_backing!(value),
+            #[cfg(feature = "matrix2")]
+            Matrix::Matrix2(value) => validate_backing!(value),
+            #[cfg(feature = "matrix3")]
+            Matrix::Matrix3(value) => validate_backing!(value),
+            #[cfg(feature = "matrix4")]
+            Matrix::Matrix4(value) => validate_backing!(value),
+            #[cfg(feature = "matrix2x3")]
+            Matrix::Matrix2x3(value) => validate_backing!(value),
+            #[cfg(feature = "matrix3x2")]
+            Matrix::Matrix3x2(value) => validate_backing!(value),
+            #[cfg(feature = "vector2")]
+            Matrix::Vector2(value) => validate_backing!(value),
+            #[cfg(feature = "vector3")]
+            Matrix::Vector3(value) => validate_backing!(value),
+            #[cfg(feature = "vector4")]
+            Matrix::Vector4(value) => validate_backing!(value),
+            #[cfg(feature = "row_vector2")]
+            Matrix::RowVector2(value) => validate_backing!(value),
+            #[cfg(feature = "row_vector3")]
+            Matrix::RowVector3(value) => validate_backing!(value),
+            #[cfg(feature = "row_vector4")]
+            Matrix::RowVector4(value) => validate_backing!(value),
+            #[cfg(feature = "vectord")]
+            Matrix::DVector(value) => validate_backing!(value),
+            #[cfg(feature = "row_vectord")]
+            Matrix::RowDVector(value) => validate_backing!(value),
+            #[cfg(feature = "matrixd")]
+            Matrix::DMatrix(value) => validate_backing!(value),
+        }
+    }
+}
+
+#[cfg(feature = "set")]
+fn canonical_set_snapshot(set: &MechSet, phase: &'static str) -> MResult<MechSet> {
+    for (index, element) in set.set.iter().enumerate() {
+        ValueStateHashedCycleDetector::new(phase, "set element", index)
+            .validate_value(element)?;
+    }
+
+    let values = set.set.iter().cloned().collect::<Vec<_>>();
+    for second_index in 0..values.len() {
+        if let Some(first_index) = values[..second_index]
+            .iter()
+            .position(|existing| existing == &values[second_index])
+        {
+            return Err(MechError::new(
+                ValueStateCollectionCollision {
+                    phase,
+                    collection: "set element",
+                    first_index,
+                    second_index,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+    }
+
+    let mut elements = IndexSet::with_capacity(values.len());
+    for element in values {
+        elements.insert(element);
+    }
+    Ok(MechSet {
+        kind: set.kind.clone(),
+        num_elements: set.num_elements,
+        set: elements,
+    })
+}
+
+#[cfg(feature = "map")]
+fn canonical_map_snapshot(map: &MechMap, phase: &'static str) -> MResult<MechMap> {
+    for (index, key) in map.map.keys().enumerate() {
+        ValueStateHashedCycleDetector::new(phase, "map key", index)
+            .validate_value(key)?;
+    }
+
+    let values = map.map.iter().map(|(key, value)| (key.clone(), value.clone())).collect::<Vec<_>>();
+    for second_index in 0..values.len() {
+        if let Some(first_index) = values[..second_index]
+            .iter()
+            .position(|(existing, _)| existing == &values[second_index].0)
+        {
+            return Err(MechError::new(
+                ValueStateCollectionCollision {
+                    phase,
+                    collection: "map key",
+                    first_index,
+                    second_index,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+    }
+
+    let mut entries = IndexMap::with_capacity(values.len());
+    for (key, value) in values {
+        entries.insert(key, value);
+    }
+    Ok(MechMap {
+        key_kind: map.key_kind.clone(),
+        value_kind: map.value_kind.clone(),
+        num_elements: map.num_elements,
+        map: entries,
+    })
 }
 
 #[derive(Clone, Copy)]
@@ -1121,6 +1439,26 @@ impl MechErrorKind for ValueStateBorrowConflict {
 
     fn message(&self) -> String {
         format!("Cannot borrow {} cell during {}.", self.type_name, self.phase)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValueStateHashedCycleUnsupported {
+    pub phase: &'static str,
+    pub collection: &'static str,
+    pub index: usize,
+}
+
+impl MechErrorKind for ValueStateHashedCycleUnsupported {
+    fn name(&self) -> &str {
+        "ValueStateHashedCycleUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Value-state {} during {} contains a cycle at index {}; cyclic values are unsupported in hashed journal positions.",
+            self.collection, self.phase, self.index
+        )
     }
 }
 

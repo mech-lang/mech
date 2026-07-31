@@ -14,6 +14,7 @@ mod borrow_conflicts;
 mod collections;
 mod collisions;
 mod delta;
+mod hashed_cycles;
 mod nested;
 mod scalar;
 mod support;
