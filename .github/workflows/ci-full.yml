@@ -1062,6 +1062,9 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Compile every workspace target
+        run: cargo check --locked --workspace --all-targets
+
       - name: Run syntax grammar suites
         run: |
           cargo test -p mech-syntax --tests
