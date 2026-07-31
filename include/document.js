@@ -730,9 +730,15 @@ function initializeResizeHandles() {
         const delta = (horizontal ? moveEvent.clientX : moveEvent.clientY) - start;
         // The document console is anchored to the right edge, so moving its
         // left resize handle left must make the pane wider.
+        // Some shipped shells start with a responsive console wider than the
+        // old fixed 900px ceiling. Keep enough space for the document while
+        // never turning a widening drag into a forced shrink.
+        const maximum = horizontal
+          ? Math.max(900, window.innerWidth - 240, initial)
+          : 900;
         const size = Math.max(
           160,
-          Math.min(900, initial + (horizontal ? -delta : delta)),
+          Math.min(maximum, initial + (horizontal ? -delta : delta)),
         );
         state.root.style.setProperty("--mech-console-size", `${size}px`);
         pane.style[horizontal ? "width" : "height"] = `${size}px`;
