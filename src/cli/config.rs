@@ -85,11 +85,16 @@ pub fn load_run_cli_config(
 #[cfg(test)]
 mod config_tests {
     use super::*;
+    #[cfg(feature = "run")]
     use crate::cli::host_grants::*;
+    #[cfg(feature = "run")]
     use crate::cli::run_options::*;
+    #[cfg(feature = "serve")]
     use crate::cli::serve_options::{EffectiveServeOptions, ServeCliArgs};
     use mech_runtime::{ConfigProfileOptions, DEFAULT_CONFIG_FILENAME, MechConfigDocument};
-    use std::path::{Path, PathBuf};
+    #[cfg(feature = "serve")]
+    use std::path::Path;
+    use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     struct CurrentDirGuard {
@@ -99,7 +104,7 @@ mod config_tests {
 
     impl CurrentDirGuard {
         fn enter(path: &std::path::Path) -> Self {
-            let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+            let lock = crate::cli::lock_current_dir();
             let previous = std::env::current_dir().unwrap();
             std::env::set_current_dir(path).unwrap();
             Self {
@@ -127,6 +132,7 @@ mod config_tests {
         root.canonicalize().unwrap()
     }
 
+    #[cfg(feature = "serve")]
     fn command() -> Command {
         add_config_args(
             Command::new("mech").subcommand(
@@ -150,6 +156,7 @@ mod config_tests {
         )
     }
 
+    #[cfg(feature = "serve")]
     fn matches(args: &[&str]) -> clap::ArgMatches {
         command().try_get_matches_from(args).unwrap()
     }
@@ -181,6 +188,7 @@ mod config_tests {
         }
     }
 
+    #[cfg(feature = "run")]
     fn loaded_run_project_config_at(
         base_dir: PathBuf,
         source: &str,
@@ -194,12 +202,14 @@ mod config_tests {
         }
     }
 
+    #[cfg(feature = "serve")]
     fn create_wasm_pkg(path: &Path) {
         std::fs::create_dir_all(path).unwrap();
         std::fs::write(path.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
         std::fs::write(path.join("mech_wasm.js"), b"js").unwrap();
     }
 
+    #[cfg(feature = "serve")]
     fn create_serve_project_with_config_name(root: &Path, config_name: &str) -> PathBuf {
         let project = root.join("project");
         std::fs::create_dir_all(&project).unwrap();
@@ -219,10 +229,12 @@ mod config_tests {
         project
     }
 
+    #[cfg(feature = "serve")]
     fn create_serve_project(root: &Path) -> PathBuf {
         create_serve_project_with_config_name(root, DEFAULT_CONFIG_FILENAME)
     }
 
+    #[cfg(feature = "serve")]
     fn effective_serve_options(
         matches: &clap::ArgMatches,
         config: Option<&LoadedMechConfig>,
@@ -231,14 +243,17 @@ mod config_tests {
         crate::cli::serve_options::effective_serve_options(&args, config)
     }
 
+    #[cfg(feature = "serve")]
     fn error_text(result: MResult<EffectiveServeOptions>) -> String {
         format!("{:?}", result.unwrap_err())
     }
 
+    #[cfg(feature = "run")]
     fn run_error_text(result: MResult<Option<EffectiveRunOptions>>) -> String {
         format!("{:?}", result.unwrap_err())
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn config_run_paths_used_when_cli_paths_absent() {
         let config = loaded_config(r#"config := {run: {paths: ["foo.mec", "bar.mec"]}}"#);
@@ -248,6 +263,7 @@ mod config_tests {
         assert_eq!(effective.paths, vec!["foo.mec", "bar.mec"]);
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn cli_run_paths_override_config_paths() {
         let config = loaded_config(r#"config := {run: {paths: ["foo.mec"]}}"#);
@@ -257,6 +273,7 @@ mod config_tests {
         assert_eq!(effective.paths, vec!["cli.mec"]);
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn run_project_directory_uses_config_paths_not_selector_path() {
         let root = temp_root("run-project-uses-config-paths");
@@ -281,12 +298,14 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn implicit_run_without_inputs_returns_none() {
         let options = effective_run_options(vec![], None, false).unwrap();
         assert_eq!(options, None);
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn implicit_run_without_cli_selector_ignores_config_run_paths() {
         let config = loaded_config(r#"config := {run: {paths: ["foo.mec"]}}"#);
@@ -294,12 +313,14 @@ mod config_tests {
         assert_eq!(options, None);
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_run_without_inputs_and_without_config_paths_errors() {
         let msg = run_error_text(effective_run_options(vec![], None, true));
         assert!(msg.contains("no run inputs supplied"));
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn serve_project_directory_uses_config_paths_not_selector_path() {
         let root = temp_root("serve-project-uses-config-paths");
@@ -325,6 +346,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn serve_only_project_directory_uses_serve_paths() {
         let root = temp_root("serve-only-project-uses-serve-paths");
@@ -346,9 +368,10 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
-    fn runnable_project_directory_preserves_project_selector() {
-        let root = temp_root("runnable-project-preserves-selector");
+    fn runnable_project_directory_uses_run_then_serve_paths() {
+        let root = temp_root("runnable-project-uses-config-paths");
         let project = root.join("project");
         std::fs::create_dir_all(&project).unwrap();
         std::fs::write(project.join("index.html"), "<html></html>").unwrap();
@@ -370,11 +393,19 @@ mod config_tests {
                 .unwrap()
                 .unwrap();
             let options = effective_serve_options(serve_matches, Some(&loaded)).unwrap();
-            assert_eq!(options.paths, vec!["project".to_string()]);
+            assert_eq!(
+                options.paths,
+                vec![
+                    project.join("main.mec").to_string_lossy().to_string(),
+                    project.join("served.mec").to_string_lossy().to_string(),
+                ],
+            );
+            assert!(options.uses_configured_paths);
         }
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn explicit_serve_target_overrides_config_paths() {
         let root = temp_root("explicit-serve-target-overrides");
@@ -396,6 +427,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn project_directory_without_mech_config_falls_back_to_current_dir_config() {
         let root = temp_root("project-without-config-falls-back");
@@ -418,6 +450,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn explicit_config_loads() {
         let root = temp_root("explicit");
@@ -435,6 +468,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn default_config_auto_loads() {
         let root = temp_root("auto");
@@ -451,6 +485,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn cli_scalar_options_override_config() {
         let config = loaded_config(r#"config := {serve: {address: "127.0.0.1", port: 8081}}"#);
@@ -462,6 +497,7 @@ mod config_tests {
         assert_eq!(effective.port, "9090");
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_serve_paths_used_when_cli_paths_absent() {
         let config = loaded_config(r#"config := {serve: {paths: ["docs/reference"]}}"#);
@@ -472,6 +508,7 @@ mod config_tests {
         assert_eq!(effective.paths, vec!["docs/reference"]);
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn cli_serve_paths_override_config_paths() {
         let config = loaded_config(r#"config := {serve: {paths: ["docs/reference"]}}"#);
@@ -482,6 +519,7 @@ mod config_tests {
         assert_eq!(effective.paths, vec!["examples/working"]);
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn stylesheets_combine() {
         let root = temp_root("stylesheets-combine");
@@ -504,6 +542,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_relative_serve_paths_resolve_from_config_file_directory() {
         let root = temp_root("relative-serve-paths");
@@ -551,6 +590,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn cli_paths_override_config_paths_and_remain_cwd_relative() {
         let root = temp_root("cli-paths-cwd-relative");
@@ -572,6 +612,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn cli_shim_and_wasm_override_config_and_remain_cwd_relative() {
         let root = temp_root("cli-shim-wasm-cwd-relative");
@@ -603,6 +644,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn missing_config_shim_is_ignored_when_cli_shim_overrides() {
         let config = loaded_config(r#"config := {serve: {shim: "missing-shim.html"}}"#);
@@ -613,6 +655,7 @@ mod config_tests {
         assert_eq!(effective.shim_path, "local.html");
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn missing_config_wasm_is_ignored_when_cli_wasm_overrides() {
         let config = loaded_config(r#"config := {serve: {wasm: "missing-pkg"}}"#);
@@ -623,6 +666,7 @@ mod config_tests {
         assert_eq!(effective.wasm_pkg, "local-pkg");
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn missing_config_stylesheet_fails_even_with_cli_stylesheet() {
         let config = loaded_config(r#"config := {serve: {stylesheets: ["missing.css"]}}"#);
@@ -634,6 +678,7 @@ mod config_tests {
         assert!(error.contains("configuration error: serve.stylesheets must be an existing file"));
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_stylesheet_directory_is_rejected() {
         let root = temp_root("stylesheet-dir");
@@ -651,6 +696,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_shim_directory_is_rejected() {
         let root = temp_root("shim-dir");
@@ -665,6 +711,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_wasm_file_is_rejected() {
         let root = temp_root("wasm-file");
@@ -679,6 +726,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_wasm_directory_missing_required_files_is_rejected() {
         let root = temp_root("wasm-missing-files");
@@ -693,6 +741,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_wasm_directory_with_required_files_is_accepted() {
         let root = temp_root("wasm-complete");
@@ -709,6 +758,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn config_relative_paths_normalize_backslashes_with_validation() {
         let root = temp_root("normalize-backslashes");
@@ -743,6 +793,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     fn stdout_selection() -> CliHostCapabilitySelection {
         CliHostCapabilitySelection {
             include_defaults: false,
@@ -750,6 +801,7 @@ mod config_tests {
         }
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn default_cli_host_grants_include_default_envelope() {
         let grants =
@@ -765,6 +817,7 @@ mod config_tests {
         );
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_stdout_only_selection_grants_only_stdout() {
         let grants = effective_cli_host_grants(None, stdout_selection()).unwrap();
@@ -776,6 +829,7 @@ mod config_tests {
         assert!(grants.stderr_write_paths.is_empty());
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_stdout_and_env_selection_grants_stdout_and_env_only() {
         let grants = effective_cli_host_grants(
@@ -794,6 +848,7 @@ mod config_tests {
         assert!(grants.stderr_write_paths.is_empty());
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn unknown_cli_capability_profile_errors() {
         let error = effective_cli_host_grants(
@@ -807,6 +862,7 @@ mod config_tests {
         assert!(format!("{error:?}").contains("unknown CLI capability profile `:quxx`"));
     }
 
+    #[cfg(feature = "run")]
     fn assert_default_cli_grants(grants: &EffectiveCliHostGrants) {
         assert_eq!(grants.env_read_paths, vec!["*".to_string()]);
         assert_eq!(
@@ -819,6 +875,7 @@ mod config_tests {
         );
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_empty_config_run_grants_suppress_implicit_defaults() {
         let root = temp_root("cli-empty-grants");
@@ -832,6 +889,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn run_paths_without_grants_does_not_suppress_implicit_defaults() {
         let root = temp_root("cli-run-paths-no-grants");
@@ -846,6 +904,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_empty_run_grants_still_allow_explicit_cli_profiles_to_be_additive() {
         let root = temp_root("cli-empty-grants-additive");
@@ -860,6 +919,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn non_cli_run_grants_do_not_suppress_cli_defaults() {
         let root = temp_root("non-cli-grants-defaults");
@@ -874,6 +934,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_config_run_grants_suppress_implicit_defaults() {
         let root = temp_root("cli-stdout-line");
@@ -890,6 +951,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn deny_default_capabilities_still_suppresses_defaults_without_config_grants() {
         let grants = effective_cli_host_grants(
@@ -905,6 +967,7 @@ mod config_tests {
         assert!(grants.stderr_write_paths.is_empty());
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_cli_profiles_remain_additive_with_config_grants() {
         let root = temp_root("cli-stdout-line-additive");
@@ -922,6 +985,7 @@ mod config_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(feature = "run")]
     #[test]
     fn explicit_cli_run_grants_detect_configured_cli_aliases() {
         let root = temp_root("cli-alias-explicit");

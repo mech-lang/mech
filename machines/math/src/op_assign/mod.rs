@@ -48,10 +48,16 @@ macro_rules! impl_op_assign_range_fxn_s {
         Mul<Output = T> + MulAssign +
         Zero + One +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -92,6 +98,10 @@ macro_rules! impl_op_assign_range_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
@@ -100,7 +110,7 @@ macro_rules! impl_op_assign_range_fxn_s {
       IxVec: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
@@ -128,12 +138,20 @@ macro_rules! impl_op_assign_range_fxn_v {
         Mul<Output = T> + MulAssign +
         Zero + One +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -176,6 +194,10 @@ macro_rules! impl_op_assign_range_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
@@ -185,7 +207,7 @@ macro_rules! impl_op_assign_range_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
@@ -264,7 +286,9 @@ macro_rules! impl_assign_scalar_scalar {
       where
         T: Debug + Clone + Sync + Send + 'static +
            $op_name<Output = T> + [<$op_name Assign>] +
-           PartialEq + PartialOrd + CompileConst + ConstElem + AsValueKind,
+           PartialEq + PartialOrd + ConstElem + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst,
         Ref<T>: ToValue
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -301,13 +325,17 @@ macro_rules! impl_assign_scalar_scalar {
         fn out(&self) -> Value { self.sink.to_value() }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> 
       where
         T: CompileConst + ConstElem + AsValueKind,
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignSS<{}>", stringify!($op_name), T::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
         }
@@ -346,12 +374,18 @@ macro_rules! impl_assign_vector_vector {
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
-        CompileConst + ConstElem + AsValueKind,
+        ConstElem + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-        MatA: Debug + Clone + CompileConst + ConstElem + AsValueKind + 'static,
-        MatB: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+        MatA: Debug + Clone + ConstElem + AsValueKind + 'static,
+        #[cfg(feature = "compiler")]
+        MatA: CompileConst,
+        MatB: Debug + ConstElem + AsValueKind + 'static,
+        #[cfg(feature = "compiler")]
+        MatB: CompileConst,
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
@@ -398,6 +432,10 @@ macro_rules! impl_assign_vector_vector {
         fn out(&self) -> Value {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String {format!("{:#?}", self)}
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> 
@@ -406,7 +444,7 @@ macro_rules! impl_assign_vector_vector {
         MatA: CompileConst + ConstElem + AsValueKind,
         MatB: CompileConst + ConstElem + AsValueKind,
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVV<{}>", stringify!($op_name), MatA::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }
@@ -430,10 +468,14 @@ macro_rules! impl_assign_vector_scalar {
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
-        CompileConst + ConstElem + AsValueKind,
+        ConstElem + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-        MatA: Debug + Clone + CompileConst + ConstElem + AsValueKind + 'static,
+        MatA: Debug + Clone + ConstElem + AsValueKind + 'static,
+        #[cfg(feature = "compiler")]
+        MatA: CompileConst,
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
@@ -480,6 +522,10 @@ macro_rules! impl_assign_vector_scalar {
         fn out(&self) -> Value {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String {format!("{:#?}", self)}
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T, MatA> MechFunctionCompiler for [<$op_name AssignVS>]<T, MatA> 
@@ -487,7 +533,7 @@ macro_rules! impl_assign_vector_scalar {
         T: CompileConst + ConstElem + AsValueKind,
         MatA: CompileConst + ConstElem + AsValueKind,
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVS<{}>", stringify!($op_name), MatA::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }

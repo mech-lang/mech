@@ -991,11 +991,15 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
                 msg: format!(
@@ -1063,11 +1067,15 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64BroadcastFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
                 msg: format!(
@@ -1123,11 +1131,15 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
                 msg: format!(
@@ -1212,11 +1224,15 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ViewToF64ViewFunction {
-    fn compile(&self, _ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
             GenericError {
                 msg: format!(

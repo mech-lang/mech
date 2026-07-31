@@ -13,14 +13,18 @@ impl MechFunctionImpl for MapAccessField {
   }
   fn out(&self) -> Value {self.out.clone()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for MapAccessField {
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0];
         registers[0] = compile_register!(self.out, ctx);
         registers[1] = compile_register_brrw!(self.source, ctx);
-        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_unop(
           hash_str("MapAccessField"),
           registers[0],

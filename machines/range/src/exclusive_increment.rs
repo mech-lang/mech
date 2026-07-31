@@ -22,10 +22,14 @@ pub struct RangeIncrementExclusiveScalar<T, MatA> {
 impl<T, R1, C1, S1> MechFunctionFactory for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
   T: Copy + Debug + Clone + Sync + Send + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   PartialOrd + 'static + One + Add<Output = T>,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+  naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
+  #[cfg(feature = "compiler")]
+  naMatrix<T, R1, C1, S1>: CompileConst,
   R1: Dim + 'static, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -64,6 +68,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>> 
@@ -71,7 +79,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("RangeIncrementExclusiveScalar<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
     compile_ternop!(name, self.out, self.from, self.step, self.to, ctx, FeatureFlag::Builtin(FeatureKind::RangeExclusive) );
   }

@@ -28,6 +28,10 @@ macro_rules! impl_col_set_fxn {
       }
       fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $fxn_name 
@@ -36,7 +40,7 @@ macro_rules! impl_col_set_fxn {
       $vector_size_out<Value>: CompileConst + ConstElem + AsValueKind,
       $out_type: CompileConst + ConstElem + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{},{}>", stringify!($fxn_name), $vector_size_in::<$out_type>::as_value_kind(), $vector_size_out::<Value>::as_value_kind());
         compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
@@ -208,10 +212,14 @@ impl MechFunctionImpl for TableAppendRecord {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("TableAppendRecord");
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
@@ -232,10 +240,14 @@ impl MechFunctionImpl for TableAppendTable {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendTable {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("TableAppendTable");
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Table) );
   }

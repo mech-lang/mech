@@ -15,11 +15,24 @@
 // - `run_actor_turn`: Executes a turn for a scheduled actor, handling the retrieval of the actor record, execution of the turn envelope, and management of transactions and events based on the outcome.
 // - `run_tick`: Executes all scheduled work collected in a tick, returning the outcomes of each piece of work executed in the tick.
 
-use super::*;
+use crate::runtime::{extension, MechRuntime, RuntimeRecordNotFoundError};
+use crate::scheduler::collect_tick;
+use crate::{
+  ActorId,
+  ActorTurn,
+  RuntimeContext,
+  RuntimeEventKind,
+  RuntimeTurnOutcome,
+  ScheduledWork,
+  SchedulerTick,
+  TaskId,
+};
+use mech_core::{MResult, MechError};
 
 impl MechRuntime {
 
   pub fn enqueue_work(&mut self, work: ScheduledWork) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("enqueue_work")?;
     let mut context = self.runtime_context()?;
     self.enqueue_work_with_context(&mut context, work)
   }
@@ -29,25 +42,33 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     work: ScheduledWork,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("enqueue_work_with_context")?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.enqueue_work(work)?;
+    extension::invoke_extension(
+      "scheduler",
+      "enqueue_work",
+      || self.scheduler.enqueue_work(work),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
   }
 
   pub fn enqueue_task(&mut self, task_id: TaskId) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("enqueue_task")?;
     self.enqueue_work(ScheduledWork::task(task_id))
   }
 
   pub fn enqueue_actor(&mut self, actor_id: ActorId) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("enqueue_actor")?;
     self.enqueue_work(ScheduledWork::actor(actor_id))
   }
 
   pub fn collect_tick(&mut self) -> MResult<SchedulerTick> {
+    self.ensure_runtime_mutation_allowed("collect_tick")?;
     let mut context = self.runtime_context()?;
     self.collect_tick_with_context(&mut context)
   }
@@ -56,12 +77,17 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<SchedulerTick> {
+    self.ensure_runtime_mutation_allowed("collect_tick_with_context")?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
-    let tick = collect_tick(
-      self.scheduler.as_mut(),
-      &self.scheduler_policy,
+    let tick = extension::invoke_extension(
+      "scheduler",
+      "collect_tick",
+      || collect_tick(
+        self.scheduler.as_mut(),
+        &self.scheduler_policy,
+      ),
     )?;
 
     self.drain_scheduler_events(context)?;
@@ -74,6 +100,9 @@ impl MechRuntime {
     work: ScheduledWork,
     outcome: RuntimeTurnOutcome,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "complete_scheduled_work",
+    )?;
     let mut context = self.runtime_context()?;
     self.complete_scheduled_work_with_context(&mut context, work, outcome)
   }
@@ -84,11 +113,18 @@ impl MechRuntime {
     work: ScheduledWork,
     outcome: RuntimeTurnOutcome,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "complete_scheduled_work_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.complete_work(work, outcome)?;
+    extension::invoke_extension(
+      "scheduler",
+      "complete_work",
+      || self.scheduler.complete_work(work, outcome),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -99,6 +135,7 @@ impl MechRuntime {
     work: ScheduledWork,
     message: impl Into<String>,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("fail_scheduled_work")?;
     let mut context = self.runtime_context()?;
     self.fail_scheduled_work_with_context(&mut context, work, message)
   }
@@ -109,11 +146,19 @@ impl MechRuntime {
     work: ScheduledWork,
     message: impl Into<String>,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "fail_scheduled_work_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
     work.validate()?;
 
-    self.scheduler.fail_work(work, message.into())?;
+    let message = message.into();
+    extension::invoke_extension(
+      "scheduler",
+      "fail_work",
+      || self.scheduler.fail_work(work, message),
+    )?;
     self.drain_scheduler_events(context)?;
 
     Ok(())
@@ -123,6 +168,7 @@ impl MechRuntime {
     &mut self,
     work: ScheduledWork,
   ) -> MResult<RuntimeTurnOutcome> {
+    self.ensure_runtime_mutation_allowed("run_scheduled_work")?;
     match work {
       ScheduledWork::Task { task_id } => self.run_scheduled_task(task_id),
       ScheduledWork::Actor { actor_id } => self.run_actor_turn(actor_id),
@@ -133,6 +179,7 @@ impl MechRuntime {
     &mut self,
     task_id: TaskId,
   ) -> MResult<RuntimeTurnOutcome> {
+    self.ensure_runtime_mutation_allowed("run_scheduled_task")?;
     let Some(task) = self.store.get_task(task_id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -198,6 +245,7 @@ impl MechRuntime {
     &mut self,
     actor_id: ActorId,
   ) -> MResult<RuntimeTurnOutcome> {
+    self.ensure_runtime_mutation_allowed("run_actor_turn")?;
     let Some(actor) = self.store.get_actor(actor_id)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -284,6 +332,7 @@ impl MechRuntime {
   }
 
   pub fn run_tick(&mut self) -> MResult<Vec<RuntimeTurnOutcome>> {
+    self.ensure_runtime_mutation_allowed("run_tick")?;
     let tick = self.collect_tick()?;
     let mut outcomes = Vec::new();
 
@@ -300,7 +349,11 @@ impl MechRuntime {
     &mut self,
     context: &mut RuntimeContext,
   ) -> MResult<()> {
-    let events = self.scheduler.drain_events();
+    let events = extension::invoke_extension_value(
+      "scheduler",
+      "drain_events",
+      || self.scheduler.drain_events(),
+    )?;
 
     for event in events {
       self.emit_event_to_context(context, event)?;
@@ -309,4 +362,8 @@ impl MechRuntime {
     Ok(())
   }
 }
+
+#[cfg(test)]
+#[path = "schedule/tests/mod.rs"]
+mod panic_tests;
 

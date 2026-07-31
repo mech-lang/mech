@@ -27,7 +27,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use mech_core::{MResult, MechError};
+use mech_core::{
+  MResult, MechError, TransactionStateUnsupportedError,
+};
 
 use crate::id::CapabilityId;
 
@@ -222,6 +224,22 @@ pub trait Capability: std::fmt::Debug + Send + Sync {
   fn validate(&self) -> MResult<()>;
 
   fn check(&self, request: &CapabilityRequest) -> MResult<CapabilityDecision>;
+
+  fn preview_check(
+    &self,
+    _request: &CapabilityRequest,
+  ) -> MResult<CapabilityDecision> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: "capability preview".to_string(),
+        reason: format!(
+          "capability {} does not provide a non-consuming preview check",
+          self.id(),
+        ),
+      },
+      None,
+    ))
+  }
 
   fn is_revocable(&self) -> bool {
     true

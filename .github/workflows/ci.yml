@@ -19,7 +19,12 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
+
+      - name: Audit unsafe boundaries
+        run: |
+          scripts/check-unsafe-boundaries.sh
+          scripts/test-unsafe-boundaries.sh
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -32,6 +37,8 @@ jobs:
 
       - name: Check feature boundaries and examples
         run: |
+          bash scripts/check-bytecode-compiler-boundaries.sh
+
           # Linked-stdlib CLI build for examples that import named modules.
           cargo build --bin mech --features linked_stdlib
           ./target/debug/mech test examples/working
@@ -49,6 +56,9 @@ jobs:
           cargo check -p mech-interpreter --no-default-features --features program
           cargo check -p mech-program --no-default-features --features program
 
+      - name: Run serve executable HTTP suite
+        run: cargo test -p mech --test mech_serve -- --nocapture
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
@@ -62,7 +72,7 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -73,6 +83,18 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Check reduced core feature boundaries
+        run: |
+          cargo check -p mech-core \
+            --no-default-features \
+            --features no_std
+          cargo check -p mech-core \
+            --no-default-features \
+            --features baselib
+          cargo check -p mech-core \
+            --no-default-features \
+            --features "matrix,matrixd,f64"
+
       - name: Run root interpreter and bytecode tests
         run: |
           cargo test --test interpreter --test bytecode
@@ -82,7 +104,55 @@ jobs:
         run: cargo test -p mech-core -p mech-interpreter
 
       - name: Run complete program library suite
-        run: cargo test -p mech-program --lib
+        run: cargo test -p mech-program --lib --tests
+
+      - name: Run non-UTF-8 source-root regressions
+        run: |
+          cargo test -p mech \
+            mech_tests_preserve_discovered_non_utf8_filename \
+            -- --exact --nocapture
+          cargo test -p mech \
+            cli::module_execution::tests::build_module_execution_preserves_non_utf8_root_path \
+            -- --exact --nocapture
+          cargo test -p mech \
+            --features test \
+            cli::module_execution::tests::test_module_execution_preserves_non_utf8_root_path \
+            -- --exact --nocapture
+          cargo test -p mech \
+            cli::commands::run::command_outcome_tests::run_command_preserves_non_utf8_source_path \
+            -- --exact --nocapture
+
+      - name: Run HTML shim formatter contracts
+        run: |
+          cargo test \
+            --no-default-features \
+            --features formatter \
+            --test mech_format_shims \
+            -- --nocapture
+
+      - name: Check isolated interpreter feature boundaries
+        run: |
+          cargo check -p mech-interpreter \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_mul_assign"
+          cargo test -p mech-interpreter \
+            --test op_assign_feature_gates \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_mul_assign" \
+            whole_mul_assignment_uses_mul_feature_only \
+            -- --exact --nocapture
+          cargo check -p mech-interpreter \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_div_assign"
+          cargo test -p mech-interpreter \
+            --test op_assign_feature_gates \
+            --no-default-features \
+            --features "program compiler variables variable_define variable_assign f64 math_div_assign" \
+            whole_div_assignment_uses_div_feature_only \
+            -- --exact --nocapture
+          cargo check -p mech-interpreter \
+            --no-default-features \
+            --features "compiler functions formulas string_concat"
 
       - name: Disk report at end
         if: always()
@@ -97,7 +167,12 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
+
+      - name: Audit sealed runtime boundaries
+        run: |
+          scripts/check-runtime-boundaries.sh
+          bash scripts/test-runtime-boundaries.sh
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -144,6 +219,32 @@ jobs:
         if: always()
         run: bash scripts/ci-disk-report.sh
 
+  macos-runtime:
+    name: macOS runtime tests
+    runs-on: macos-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Run workspace watch regressions
+        run: |
+          cargo test -p mech-runtime \
+            workspace::watch::tests \
+            -- --nocapture
+
+      - name: Run complete runtime library suite
+        run: cargo test -p mech-runtime --lib
+
   project-native:
     name: Project native
     runs-on: ubuntu-latest
@@ -153,7 +254,7 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -204,13 +305,12 @@ jobs:
           test "$(wc -l < /tmp/clock-values.out)" -ge 2
           test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
 
-      - name: Confirm browser examples are generic
+      - name: Confirm obsolete browser mechanisms are absent
         run: |
           test ! -e examples/common
           test ! -e examples/pkg
           test ! -e examples/analog-clock/clock.js
           test ! -e mech-app
-          test ! -e include/blog.html
           ! rg -n \
             "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\.js" \
             src include examples
@@ -233,7 +333,7 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -249,10 +349,10 @@ jobs:
 
       - name: Install wasm-pack
         env:
-          WASM_PACK_VERSION: v0.13.1
+          WASM_PACK_VERSION: v0.15.0
         run: |
           curl -fsSL \
-            "https://github.com/rustwasm/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            "https://github.com/wasm-bindgen/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
             -o /tmp/wasm-pack.tar.gz
           tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
           sudo install "/tmp/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
@@ -260,6 +360,12 @@ jobs:
 
       - name: Show Chrome version
         run: google-chrome --version
+
+      - name: Check shipped rich document shell contracts
+        run: bash scripts/check-shipped-document-shims.sh
+
+      - name: Remove old browser package
+        run: rm -rf src/wasm/pkg
 
       - name: Check browser project feature boundaries
         run: |
@@ -277,6 +383,35 @@ jobs:
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh
 
+      - name: Build embedded browser server in dedicated target
+        run: |
+          cargo build \
+            --bin mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter"
+          cp "$CARGO_TARGET_DIR/debug/mech" \
+            "$CARGO_TARGET_DIR/embedded-browser-mech"
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_format_shims \
+            -- --nocapture
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_serve \
+            formatted_blog_page_executes_when_served \
+            -- --exact --nocapture
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_serve \
+            formatted_docs_page_executes_when_served \
+            -- --exact --nocapture
+
       - name: Remove browser release intermediates
         run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
 
@@ -291,25 +426,43 @@ jobs:
             -- \
             --nocapture
 
+      - name: Smoke test formatted static document in Chrome
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            bash scripts/smoke-formatted-document-browser.sh
+
+      - name: Smoke test standalone and inline-shim FizzBuzz in Chrome
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            bash scripts/smoke-served-fizzbuzz-browser.sh
+
+      - name: Smoke test rich standalone documents in Chrome
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            bash scripts/smoke-served-rich-document-browser.sh
+
       - name: Smoke test served analog clock in Chrome
         run: |
-          cargo build \
-            --bin mech \
-            --no-default-features \
-            --features serve
-
-          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-served-analog-clock-browser.sh
+
+      - name: Rebuild browser package for static bundling
+        run: bash scripts/build-mech-browser.sh
 
       - name: Smoke test documented static browser bundle
         run: |
-          cargo build \
-            --bin mech \
-            --no-default-features \
-            --features bundle_web
-
-          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-bundle-web.sh
+
+      - name: Smoke test bounded server shutdown
+        run: |
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features serve \
+            --test mech_serve \
+            mech_serve_interrupt_closes_keep_alive_server_once \
+            -- --exact --nocapture
 
       - name: Remove generated browser package
         if: always()
@@ -331,7 +484,7 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -354,7 +507,7 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -374,6 +527,55 @@ jobs:
       - name: Test REPL Mika finalization
         run: cargo test --lib --no-default-features --features "repl mika" mika_farewell_remains_visible_after_drop
 
+      - name: Run Windows runtime library tests
+        run: cargo test -p mech-runtime --lib
+
+      - name: Run Windows root library tests
+        run: cargo test -p mech --lib
+
+      - name: Run Windows serve executable HTTP suites
+        run: |
+          cargo test -p mech --test mech_serve -- --nocapture
+          cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
+
+      - name: Run Windows source-tooling process tests
+        run: cargo test -p mech --test windows_source_paths -- --nocapture
+
+      - name: Run Windows formatter and serve HTML shim contracts
+        run: |
+          try {
+            New-Item -ItemType Directory -Force src/wasm/pkg | Out-Null
+            [IO.File]::WriteAllText(
+              (Join-Path $PWD "src/wasm/pkg/mech_wasm.js"),
+              "export default async function init() {}"
+            )
+            [IO.File]::WriteAllBytes(
+              (Join-Path $PWD "src/wasm/pkg/mech_wasm_bg.wasm"),
+              [byte[]](0, 97, 115, 109, 1, 0, 0, 0)
+            )
+            cargo test -p mech --lib --no-default-features --features formatter cli::commands::format::publication -- --nocapture
+            if ($LASTEXITCODE -ne 0) { throw "formatter publication tests failed with exit code $LASTEXITCODE" }
+            cargo test -p mech --no-default-features --features formatter --test mech_format_shims -- --nocapture
+            if ($LASTEXITCODE -ne 0) { throw "formatter shim tests failed with exit code $LASTEXITCODE" }
+            cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_custom_shim_renders_all_supported_slots -- --exact --nocapture
+            if ($LASTEXITCODE -ne 0) { throw "custom shim test failed with exit code $LASTEXITCODE" }
+            cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_default_shim_restores_rich_shell -- --exact --nocapture
+            if ($LASTEXITCODE -ne 0) { throw "default shim test failed with exit code $LASTEXITCODE" }
+            cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_blog_shim_restores_rich_shell -- --exact --nocapture
+            if ($LASTEXITCODE -ne 0) { throw "blog shim test failed with exit code $LASTEXITCODE" }
+            cargo test -p mech --no-default-features --features "serve,formatter" --test mech_serve mech_serve_docs_shim_restores_rich_shell -- --exact --nocapture
+            if ($LASTEXITCODE -ne 0) { throw "docs shim test failed with exit code $LASTEXITCODE" }
+          }
+          finally {
+            Remove-Item -Recurse -Force src/wasm/pkg -ErrorAction SilentlyContinue
+          }
+
+      - name: Run reduced-feature Windows source-tooling tests
+        run: |
+          cargo test -p mech --no-default-features --features run --test windows_source_paths windows_run -- --nocapture
+          cargo test -p mech --no-default-features --features build --test windows_source_paths windows_build -- --nocapture
+          cargo test -p mech --no-default-features --features test --test windows_source_paths windows_test -- --nocapture
+
   dynamic-modules:
     name: Dynamic modules
     runs-on: ubuntu-latest
@@ -382,7 +584,7 @@ jobs:
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
       - uses: dtolnay/rust-toolchain@stable
 

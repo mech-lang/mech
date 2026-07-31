@@ -1,6 +1,8 @@
 // Mech
 //=============================================================================
 
+#![forbid(unsafe_code)]
+
 // Prelude
 // ----------------------------------------------------------------------------
 
@@ -228,25 +230,32 @@ pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
   Ok(())
 }
 
-pub fn ls() -> String {
-  let current_dir = env::current_dir().unwrap();
+pub(crate) fn ls_path(path: &Path) -> MResult<String> {
+  let current_dir = path.canonicalize()?;
   let mut builder = Builder::default();
   builder.push_record(vec!["Mode","Last Write Time","Length","Name"]);
-  for entry in fs::read_dir("./").unwrap() {
-    let entry = entry.unwrap();
+  for entry in fs::read_dir(&current_dir)? {
+    let entry = entry?;
     let path = entry.path();
-    let metadata = fs::metadata(&path).unwrap();
+    let metadata = fs::metadata(&path)?;
     let file_type = if metadata.is_dir() { "d----" } else { "-a---" };
-    let last_write_time = metadata.modified().unwrap();
+    let last_write_time = metadata.modified()?;
     let last_write_time: chrono::DateTime<chrono::Local> = last_write_time.into();
     let length = if metadata.is_file() { metadata.len().to_string() } else { "".to_string() };
-    let name = format!("{}", path.file_name().unwrap().to_str().unwrap());
-    builder.push_record(vec![file_type.to_string(), last_write_time.format("%m/%d/%Y %I:%M %p").to_string(), length, name.to_string()]);
+    let name = path
+      .file_name()
+      .map(|name| name.to_string_lossy().into_owned())
+      .unwrap_or_default();
+    builder.push_record(vec![file_type.to_string(), last_write_time.format("%m/%d/%Y %I:%M %p").to_string(), length, name]);
   }
   let mut table = builder.build();
   table.with(mech_table_style())
        .with(Panel::header(format!("{}","Directory Listing".yellow())));
-  format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
+  Ok(format!("\nDirectory: {}\n\n{table}\n",current_dir.display()))
+}
+
+pub fn ls() -> String {
+  ls_path(Path::new("./")).unwrap()
 }
 
 #[cfg(feature = "pretty_print")]

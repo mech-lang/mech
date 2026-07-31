@@ -2,9 +2,15 @@ use mech_core::{
   browser_capability_error, BrowserAuthority, BrowserDomManifestEntry, BrowserDomPath,
   BrowserOperation, BROWSER_DOM_PROVIDER_URI, MResult, MechError, MechErrorKind, Ref, Value,
 };
+use std::sync::{Arc, Mutex, MutexGuard};
 use crate::{BrowserHostConfig, BrowserHostRuntimeConfig};
 
-use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest};
+use mech_runtime::{
+  PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost,
+  RuntimeEffectMetadata, RuntimeEffectSource, RuntimeResourceProvider,
+  RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+  RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+};
 
 pub trait BrowserDomBackend: std::fmt::Debug {
   fn read_dom_string(
@@ -25,7 +31,7 @@ pub trait BrowserDomBackend: std::fmt::Debug {
 pub struct BrowserResourceProvider<B> {
   instance: String,
   authority: BrowserAuthority,
-  backend: B,
+  backend: Arc<Mutex<B>>,
 }
 
 impl<B> BrowserResourceProvider<B> {
@@ -34,7 +40,11 @@ impl<B> BrowserResourceProvider<B> {
   }
 
   pub fn for_instance(instance: impl Into<String>, authority: BrowserAuthority, backend: B) -> Self {
-    Self { instance: instance.into(), authority, backend }
+    Self {
+      instance: instance.into(),
+      authority,
+      backend: Arc::new(Mutex::new(backend)),
+    }
   }
 
   fn dom_base(&self) -> String {
@@ -54,12 +64,12 @@ impl<B> BrowserResourceProvider<B> {
     &mut self.authority
   }
 
-  pub fn backend(&self) -> &B {
-    &self.backend
+  pub fn backend(&self) -> MutexGuard<'_, B> {
+    self.backend.lock().expect("browser DOM backend lock poisoned")
   }
 
-  pub fn backend_mut(&mut self) -> &mut B {
-    &mut self.backend
+  pub fn backend_mut(&mut self) -> MutexGuard<'_, B> {
+    self.backend.lock().expect("browser DOM backend lock poisoned")
   }
 }
 
@@ -69,7 +79,7 @@ impl<B: BrowserDomBackend> BrowserResourceProvider<B> {
   }
 }
 
-impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B> {
+impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResourceProvider<B> {
   fn scheme(&self) -> &str {
     "browser"
   }
@@ -87,6 +97,7 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
     if self.instance != "browser" {
       return Vec::new();
     }
+
     vec![vec![
       self.dom_base(),
       BROWSER_DOM_PROVIDER_URI.to_string(),
@@ -110,7 +121,16 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
       .authority
       .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
       .map_err(browser_capability_error)?;
-    Ok(Value::String(Ref::new(self.backend.read_dom_string(entry, &path)?)))
+    Ok(Value::String(Ref::new(
+      self
+        .backend
+        .lock()
+        .map_err(|_| browser_resource_provider_error(
+          path.as_str(),
+          "browser DOM backend lock poisoned",
+        ))?
+        .read_dom_string(entry, &path)?,
+    )))
   }
 
   fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -134,7 +154,7 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
       .map_err(browser_capability_error)
   }
 
-  fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+  fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
     self.preflight_write(RuntimeResourceWritePreflightRequest {
       base_uri: request.base_uri.clone(),
       path: request.path.clone(),
@@ -157,7 +177,51 @@ impl<B: BrowserDomBackend> RuntimeResourceProvider for BrowserResourceProvider<B
       Value::String(value) => value.borrow().as_str().to_string(),
       value => value.format_value_inline(),
     };
-    self.backend.write_dom_string(&entry, &path, value.as_str())
+    Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+      BrowserDomWriteEffect {
+        backend: self.backend.clone(),
+        entry,
+        path,
+        value,
+        resource: request.base_uri,
+      },
+    )))
+  }
+}
+
+#[derive(Debug)]
+struct BrowserDomWriteEffect<B: BrowserDomBackend> {
+  backend: Arc<Mutex<B>>,
+  entry: BrowserDomManifestEntry,
+  path: BrowserDomPath,
+  value: String,
+  resource: String,
+}
+
+impl<B: BrowserDomBackend> RuntimeAfterCommitEffect for BrowserDomWriteEffect<B> {
+  fn metadata(&self) -> RuntimeEffectMetadata {
+    RuntimeEffectMetadata::new(
+      RuntimeEffectSource::ResourceProvider {
+        scheme: "browser".to_string(),
+      },
+      "dom-write",
+    )
+    .with_resource(format!("{}/{}", self.resource, self.path.as_str()))
+    .with_cost(RuntimeEffectCost {
+      bytes: u64::try_from(self.value.len()).unwrap_or(u64::MAX),
+      items: 1,
+    })
+  }
+
+  fn deliver(&mut self) -> MResult<()> {
+    self
+      .backend
+      .lock()
+      .map_err(|_| browser_resource_provider_error(
+        self.path.as_str(),
+        "browser DOM backend lock poisoned",
+      ))?
+      .write_dom_string(&self.entry, &self.path, &self.value)
   }
 }
 

@@ -13,15 +13,19 @@ impl MechFunctionImpl for RecordAccessField {
   }
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RecordAccessField {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0];
 
     registers[0] = compile_register!(self.source, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
 
     ctx.emit_nullop(
       hash_str("RecordAccessField"),
@@ -88,15 +92,19 @@ impl MechFunctionImpl for RecordAccessSwizzle {
   }
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RecordAccessSwizzle {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0];
 
     registers[0] = compile_register!(self.source, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Swizzle));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Swizzle));
 
     ctx.emit_nullop(
       hash_str("RecordAccessSwizzle"),

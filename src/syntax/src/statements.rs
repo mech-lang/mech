@@ -265,7 +265,7 @@ fn merge_source_tokens(start: SourceLocation, mut tokens: Vec<Token>) -> MechStr
 }
 
 fn source_path_component_token(input: ParseString) -> ParseResult<Token> {
-  alt((alpha_token, digit_token, dash, underscore, period))(input)
+  alt((alpha_token, digit_token, dash, underscore, period, percent))(input)
 }
 
 fn source_path_component(input: ParseString) -> ParseResult<Vec<Token>> {
@@ -281,8 +281,12 @@ fn source_mec_path(input: ParseString) -> ParseResult<Vec<Token>> {
     tokens.append(&mut component);
   }
   let text = Token::merge_tokens(&mut tokens.clone()).unwrap_or(Token::default()).to_string();
-  if !text.ends_with(".mec") {
-    return Err(nom::Err::Error(ParseError::new(input, "source import path must end in .mec")));
+  let leaf = text.rsplit('/').next().unwrap_or(&text);
+  if leaf.contains('.') && !leaf.ends_with(".mec") {
+    return Err(nom::Err::Error(ParseError::new(
+      input,
+      "source import path must be extensionless or end in .mec",
+    )));
   }
   Ok((input, tokens))
 }

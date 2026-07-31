@@ -22,6 +22,8 @@ pub use grant::*;
 #[cfg(test)]
 mod tests {
   use crate::*;
+  use mech_core::MResult;
+  use std::collections::{HashMap, HashSet};
   use std::sync::Arc;
 
   #[test]
@@ -364,6 +366,48 @@ mod tests {
   }
 
   #[test]
+  fn basic_kernel_enforces_authority_allowlists() {
+    let subject = BasicSubject::new("task://1");
+    let resource = BasicResource::new("db://users");
+    let mut kernel = BasicCapabilityKernel::new();
+    for id in [CapabilityId(1), CapabilityId(2)] {
+      kernel
+        .grant(CapabilityGrant::new(Arc::new(
+          BasicCapability::new(
+            id,
+            &subject,
+            &resource,
+            [BasicOperation::read()],
+          ),
+        )))
+        .unwrap();
+    }
+    let request = CapabilityRequest::new(
+      &subject,
+      &BasicOperation::read(),
+      &resource,
+    );
+
+    assert_eq!(
+      kernel
+        .check_scoped(
+          &request,
+          &RuntimeAuthorityScope::allow_list([CapabilityId(2)]),
+        )
+        .unwrap(),
+      CapabilityId(2),
+    );
+    assert!(
+      kernel
+        .check_scoped(
+          &request,
+          &RuntimeAuthorityScope::allow_list([]),
+        )
+        .is_err(),
+    );
+  }
+
+  #[test]
   fn rollback_grant_removes_descendants_and_graph_indexes() {
     let mut kernel = BasicCapabilityKernel::new();
     let parent_subject = BasicSubject::new("task://1");
@@ -555,6 +599,224 @@ mod tests {
 
     assert!(kernel.is_revoked(CapabilityId(1)).unwrap());
     assert!(kernel.is_revoked(CapabilityId(2)).unwrap());
+  }
+
+  fn pending_use_fixture(
+    max_uses: u64,
+  ) -> (
+    BasicCapabilityKernel,
+    CapabilityRequest,
+    CapabilityId,
+  ) {
+    let subject = BasicSubject::new("task://pending");
+    let resource = BasicResource::new("db://users");
+    let id = CapabilityId(900);
+    let capability = BasicCapability::new(
+      id,
+      &subject,
+      &resource,
+      [BasicOperation::read()],
+    )
+    .with_constraints(
+      BasicConstraints::default().with_max_uses(max_uses),
+    );
+    let mut kernel = BasicCapabilityKernel::new();
+    kernel
+      .grant(CapabilityGrant::new(Arc::new(capability)))
+      .unwrap();
+    (
+      kernel,
+      CapabilityRequest::new(
+        &subject,
+        &BasicOperation::read(),
+        &resource,
+      ),
+      id,
+    )
+  }
+
+  #[test]
+  fn pending_transactional_uses_enforce_live_capability_limit() {
+    let (kernel, request, id) = pending_use_fixture(1);
+    assert_eq!(
+      kernel
+        .preview_check_excluding_with_pending_uses(
+          &request,
+          &HashSet::new(),
+          &HashMap::new(),
+        )
+        .unwrap(),
+      id,
+    );
+    assert!(kernel
+      .preview_check_excluding_with_pending_uses(
+        &request,
+        &HashSet::new(),
+        &HashMap::from([(id, 1)]),
+      )
+      .is_err());
+    assert_eq!(kernel.successful_uses_for_test(id), 0);
+  }
+
+  #[test]
+  fn committed_and_pending_capability_uses_are_combined() {
+    let (mut kernel, request, id) = pending_use_fixture(2);
+    kernel.apply_usage_delta(id, 1).unwrap();
+
+    assert_eq!(
+      kernel
+        .preview_check_excluding_with_pending_uses(
+          &request,
+          &HashSet::new(),
+          &HashMap::new(),
+        )
+        .unwrap(),
+      id,
+    );
+    assert!(kernel
+      .preview_check_excluding_with_pending_uses(
+        &request,
+        &HashSet::new(),
+        &HashMap::from([(id, 1)]),
+      )
+      .is_err());
+    assert_eq!(kernel.successful_uses_for_test(id), 1);
+  }
+
+  #[test]
+  fn pending_use_preview_keeps_exclusions_and_shared_forwarding() {
+    let (kernel, request, id) = pending_use_fixture(2);
+    assert!(kernel
+      .preview_check_excluding_with_pending_uses(
+        &request,
+        &HashSet::from([id]),
+        &HashMap::new(),
+      )
+      .is_err());
+
+    let shared = SharedCapabilityKernel::from_kernel(kernel);
+    assert_eq!(
+      shared
+        .preview_check_excluding_with_pending_uses(
+          &request,
+          &HashSet::new(),
+          &HashMap::from([(id, 1)]),
+        )
+        .unwrap(),
+      id,
+    );
+    assert_eq!(shared.successful_uses_for_test(id), 0);
+  }
+
+  #[derive(Debug)]
+  struct LegacyPreviewKernel {
+    selected: CapabilityId,
+  }
+
+  impl CapabilityKernel for LegacyPreviewKernel {
+    fn grant(&mut self, _grant: CapabilityGrant) -> MResult<CapabilityId> {
+      unimplemented!()
+    }
+
+    fn rollback_grant(&mut self, _capability: CapabilityId) -> MResult<()> {
+      unimplemented!()
+    }
+
+    fn revoke(&mut self, _revocation: CapabilityRevocation) -> MResult<()> {
+      unimplemented!()
+    }
+
+    fn check(
+      &mut self,
+      _request: &CapabilityRequest,
+    ) -> MResult<CapabilityId> {
+      unimplemented!()
+    }
+
+    fn preview_check_excluding(
+      &self,
+      _request: &CapabilityRequest,
+      _excluded: &HashSet<CapabilityId>,
+    ) -> MResult<CapabilityId> {
+      Ok(self.selected)
+    }
+
+    fn get(
+      &self,
+      _id: CapabilityId,
+    ) -> MResult<Option<Arc<dyn Capability>>> {
+      unimplemented!()
+    }
+
+    fn list_for_subject(
+      &self,
+      _subject: &dyn Subject,
+    ) -> MResult<Vec<CapabilityId>> {
+      unimplemented!()
+    }
+
+    fn derive_capability(
+      &mut self,
+      _derivation: CapabilityDerivation,
+    ) -> MResult<CapabilityId> {
+      unimplemented!()
+    }
+
+    fn is_revoked(&self, _id: CapabilityId) -> MResult<bool> {
+      unimplemented!()
+    }
+  }
+
+  #[test]
+  fn unsupported_kernel_fails_closed_for_pending_uses() {
+    let (_, request, id) = pending_use_fixture(1);
+    let kernel = LegacyPreviewKernel { selected: id };
+
+    assert_eq!(
+      kernel
+        .preview_check_excluding_with_pending_uses(
+          &request,
+          &HashSet::new(),
+          &HashMap::new(),
+        )
+        .unwrap(),
+      id,
+    );
+    let error = kernel
+      .preview_check_excluding_with_pending_uses(
+        &request,
+        &HashSet::new(),
+        &HashMap::from([(id, 1)]),
+      )
+      .unwrap_err();
+    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+  }
+
+  #[test]
+  fn custom_kernel_fails_closed_for_authority_allowlists() {
+    let (_, request, id) = pending_use_fixture(1);
+    let mut kernel = LegacyPreviewKernel { selected: id };
+    let scope = RuntimeAuthorityScope::allow_list([id]);
+
+    assert_eq!(
+      kernel
+        .check_scoped(&request, &scope)
+        .unwrap_err()
+        .kind_name(),
+      "TransactionStateUnsupported",
+    );
+    assert_eq!(
+      kernel
+        .preview_scoped_with_transaction(
+          &request,
+          &scope,
+          &HashSet::new(),
+          &HashMap::new(),
+        )
+        .unwrap_err()
+        .kind_name(),
+      "TransactionStateUnsupported",
+    );
   }
 
 }

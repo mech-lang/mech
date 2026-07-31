@@ -328,7 +328,12 @@ mod tests {
     assert!(snapshot.diagnostics.is_empty());
     assert!(snapshot.targets.contains_key("main"));
     assert!(snapshot.sources.values().any(|source| {
-      source.path.as_ref() == Some(&main_path)
+      source
+        .path
+        .as_ref()
+        .and_then(|path| path.canonicalize().ok())
+        .as_ref()
+        == Some(&main_path)
     }));
   }
 

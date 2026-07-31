@@ -9,6 +9,7 @@ use mech_runtime::{
   RuntimeBuilder,
   ModuleBuildOptions,
   SourceKind,
+  TaskRecord,
 };
 
 fn short_text(text: &str) -> String {
@@ -54,9 +55,11 @@ fn main() -> MResult<()> {
 
   println!("runtime: {}", short(runtime.id()));
 
-  let mut context = runtime
-    .runtime_context()?
-    .with_subject("program:runtime-dependency-source");
+  let task = TaskRecord::new(
+    runtime.next_task_id(),
+    "program:runtime-dependency-source",
+  );
+  let mut context = runtime.context_for_task(&task)?;
 
   let resolved = ResolvedSource::new(
     "index",
@@ -90,7 +93,6 @@ fn main() -> MResult<()> {
   println!("module version: {}", short(module_version));
 
   let module_record = runtime
-    .store()
     .get_module_version(module_version)?
     .expect("expected parent module version to exist");
 
@@ -108,7 +110,6 @@ fn main() -> MResult<()> {
   let dependency_version = module_record.dependencies[0];
 
   let dependency_record = runtime
-    .store()
     .get_module_version(dependency_version)?
     .expect("expected dependency module version to exist");
 

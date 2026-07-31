@@ -46,11 +46,15 @@ impl MechFunctionImpl for SetNotElementOfFxn {
   }
   fn out(&self) -> Value { Value::Bool(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetNotElementOfFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = "SetNotElementOfFxn".to_string();
     // Builtin operator ∉
     compile_binop!(name, self.out, self.elem, self.set, ctx, FeatureFlag::Builtin(FeatureKind::NotElementOf));

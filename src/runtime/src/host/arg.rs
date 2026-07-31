@@ -5,12 +5,29 @@
 //! arity checks, and `Value` construction boilerplate.
 //!
 //! The scalar helpers use Mech's existing `Value::as_*` conversion methods where
-//! possible. Compound values are exposed as borrowed/cloned `Value`s here rather
+//! possible. Compound values are exposed as owned `Value`s here rather
 //! than overfitting this runtime crate to every internal container layout.
 
 use mech_core::{
   MResult, MechError, MechErrorKind, Ref, Value, ValueKind,
 };
+use crate::RuntimeValueSnapshot;
+
+pub trait HostArgumentValue {
+  fn host_argument_value(&self) -> Value;
+}
+
+impl HostArgumentValue for Value {
+  fn host_argument_value(&self) -> Value {
+    self.clone()
+  }
+}
+
+impl HostArgumentValue for RuntimeValueSnapshot {
+  fn host_argument_value(&self) -> Value {
+    self.to_value()
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Errors
@@ -79,12 +96,12 @@ fn wrong_type_error(
 // Generic argument access / arity
 // -----------------------------------------------------------------------------
 
-pub fn host_arg<'a>(
+pub fn host_arg<A: HostArgumentValue>(
   function: &str,
-  args: &'a [Value],
+  args: &[A],
   index: usize,
-) -> MResult<&'a Value> {
-  args.get(index).ok_or_else(|| {
+) -> MResult<Value> {
+  args.get(index).map(HostArgumentValue::host_argument_value).ok_or_else(|| {
     host_argument_error(
       function,
       format!("missing argument {}", index),
@@ -94,26 +111,26 @@ pub fn host_arg<'a>(
 
 pub fn host_arg_cloned(
   function: &str,
+  args: &[impl HostArgumentValue],
+  index: usize,
+) -> MResult<Value> {
+  host_arg_resolved(function, args, index)
+}
+
+pub fn host_arg_raw(
+  function: &str,
   args: &[Value],
   index: usize,
 ) -> MResult<Value> {
-  Ok(host_arg_resolved(function, args, index)?.clone())
-}
-
-pub fn host_arg_raw<'a>(
-  function: &str,
-  args: &'a [Value],
-  index: usize,
-) -> MResult<&'a Value> {
   host_arg(function, args, index)
 }
 
 pub fn host_arg_resolved(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Value> {
-  let mut value = host_arg(function, args, index)?.clone();
+  let mut value = host_arg(function, args, index)?;
 
   loop {
     value = match value {
@@ -126,7 +143,7 @@ pub fn host_arg_resolved(
 
 pub fn host_args_tail(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   start: usize,
 ) -> MResult<Vec<Value>> {
   if start > args.len() {
@@ -140,12 +157,17 @@ pub fn host_args_tail(
     ));
   }
 
-  Ok(args[start..].to_vec())
+  Ok(
+    args[start..]
+      .iter()
+      .map(HostArgumentValue::host_argument_value)
+      .collect(),
+  )
 }
 
 pub fn expect_arity(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   expected: usize,
 ) -> MResult<()> {
   if args.len() == expected {
@@ -164,7 +186,7 @@ pub fn expect_arity(
 
 pub fn expect_min_arity(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   min: usize,
 ) -> MResult<()> {
   if args.len() >= min {
@@ -183,7 +205,7 @@ pub fn expect_min_arity(
 
 pub fn expect_max_arity(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   max: usize,
 ) -> MResult<()> {
   if args.len() <= max {
@@ -202,7 +224,7 @@ pub fn expect_max_arity(
 
 pub fn expect_arity_between(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   min: usize,
   max: usize,
 ) -> MResult<()> {
@@ -223,7 +245,7 @@ pub fn expect_arity_between(
 
 pub fn expect_no_args(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
 ) -> MResult<()> {
   expect_arity(function, args, 0)
 }
@@ -239,7 +261,7 @@ pub fn is_empty_value(value: &Value) -> bool {
 
 pub fn host_arg_optional(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<Value>> {
   if index >= args.len() {
@@ -261,7 +283,7 @@ pub fn host_arg_optional(
 
 pub fn host_arg_string(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<String> {
   match host_arg_resolved(function, args, index)? {
@@ -272,7 +294,7 @@ pub fn host_arg_string(
 
 pub fn host_arg_strict_string(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<String> {
   host_arg_string(function, args, index)
@@ -280,14 +302,14 @@ pub fn host_arg_strict_string(
 
 pub fn host_arg_optional_string(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<String>> {
   if index >= args.len() {
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -297,7 +319,7 @@ pub fn host_arg_optional_string(
 #[cfg(feature = "bool")]
 pub fn host_arg_bool(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<bool> {
   match host_arg_resolved(function, args, index)? {
@@ -309,14 +331,14 @@ pub fn host_arg_bool(
 #[cfg(feature = "bool")]
 pub fn host_arg_optional_bool(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<bool>> {
   if index >= args.len() {
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -329,7 +351,7 @@ pub fn host_arg_optional_bool(
 
 pub fn host_arg_u8(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<u8> {
   Ok(*host_arg(function, args, index)?.as_u8()?.borrow())
@@ -337,7 +359,7 @@ pub fn host_arg_u8(
 
 pub fn host_arg_u16(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<u16> {
   Ok(*host_arg(function, args, index)?.as_u16()?.borrow())
@@ -345,7 +367,7 @@ pub fn host_arg_u16(
 
 pub fn host_arg_u32(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<u32> {
   Ok(*host_arg(function, args, index)?.as_u32()?.borrow())
@@ -353,7 +375,7 @@ pub fn host_arg_u32(
 
 pub fn host_arg_u64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<u64> {
   Ok(*host_arg(function, args, index)?.as_u64()?.borrow())
@@ -361,7 +383,7 @@ pub fn host_arg_u64(
 
 pub fn host_arg_u128(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<u128> {
   Ok(*host_arg(function, args, index)?.as_u128()?.borrow())
@@ -369,14 +391,14 @@ pub fn host_arg_u128(
 
 pub fn host_arg_optional_u64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<u64>> {
   if index >= args.len() {
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -389,7 +411,7 @@ pub fn host_arg_optional_u64(
 
 pub fn host_arg_i8(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<i8> {
   Ok(*host_arg(function, args, index)?.as_i8()?.borrow())
@@ -397,7 +419,7 @@ pub fn host_arg_i8(
 
 pub fn host_arg_i16(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<i16> {
   Ok(*host_arg(function, args, index)?.as_i16()?.borrow())
@@ -405,7 +427,7 @@ pub fn host_arg_i16(
 
 pub fn host_arg_i32(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<i32> {
   Ok(*host_arg(function, args, index)?.as_i32()?.borrow())
@@ -413,7 +435,7 @@ pub fn host_arg_i32(
 
 pub fn host_arg_i64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<i64> {
   Ok(*host_arg(function, args, index)?.as_i64()?.borrow())
@@ -421,7 +443,7 @@ pub fn host_arg_i64(
 
 pub fn host_arg_i128(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<i128> {
   Ok(*host_arg(function, args, index)?.as_i128()?.borrow())
@@ -429,14 +451,14 @@ pub fn host_arg_i128(
 
 pub fn host_arg_optional_i64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<i64>> {
   if index >= args.len() {
     return Ok(None);
   }
 
-  if is_empty_value(host_arg(function, args, index)?) {
+  if is_empty_value(&host_arg(function, args, index)?) {
     return Ok(None);
   }
 
@@ -450,7 +472,7 @@ pub fn host_arg_optional_i64(
 #[cfg(feature = "f32")]
 pub fn host_arg_f32(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<f32> {
   Ok(*host_arg_resolved(function, args, index)?.as_f32()?.borrow())
@@ -459,7 +481,7 @@ pub fn host_arg_f32(
 #[cfg(feature = "f64")]
 pub fn host_arg_f64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<f64> {
   Ok(*host_arg_resolved(function, args, index)?.as_f64()?.borrow())
@@ -468,7 +490,7 @@ pub fn host_arg_f64(
 #[cfg(feature = "f64")]
 pub fn host_arg_optional_f64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<f64>> {
   if index >= args.len() {
@@ -488,7 +510,7 @@ pub fn host_arg_optional_f64(
 
 pub fn host_arg_index(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<usize> {
   match host_arg(function, args, index)? {
@@ -499,35 +521,35 @@ pub fn host_arg_index(
 
 pub fn host_arg_id(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<u64> {
   match host_arg(function, args, index)? {
-    Value::Id(value) => Ok(*value),
-    other => Err(wrong_type_error(function, index, "id", other)),
+    Value::Id(value) => Ok(value),
+    other => Err(wrong_type_error(function, index, "id", &other)),
   }
 }
 
 #[cfg(feature = "enum")]
 pub fn host_arg_enum(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechEnum> {
   match host_arg(function, args, index)? {
     Value::Enum(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "enum", other)),
+    other => Err(wrong_type_error(function, index, "enum", &other)),
   }
 }
 
 pub fn host_arg_kind(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<ValueKind> {
   match host_arg(function, args, index)? {
     Value::Kind(kind) => Ok(kind.clone()),
-    other => Err(wrong_type_error(function, index, "kind", other)),
+    other => Err(wrong_type_error(function, index, "kind", &other)),
   }
 }
 
@@ -537,30 +559,30 @@ pub fn host_arg_kind(
 
 pub fn host_arg_reference_value(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Value> {
   match host_arg(function, args, index)? {
     Value::MutableReference(value) => Ok(value.borrow().clone()),
-    other => Err(wrong_type_error(function, index, "mutable reference", other)),
+    other => Err(wrong_type_error(function, index, "mutable reference", &other)),
   }
 }
 
 pub fn host_arg_deref_cloned(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Value> {
   match host_arg(function, args, index)? {
     Value::MutableReference(value) => Ok(value.borrow().clone()),
-    other => Ok(other.clone()),
+    other => Ok(other),
   }
 }
 
 #[cfg(feature = "tuple")]
 pub fn host_arg_tuple(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechTuple> {
   match host_arg_resolved(function, args, index)? {
@@ -572,7 +594,7 @@ pub fn host_arg_tuple(
 #[cfg(feature = "record")]
 pub fn host_arg_record(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechRecord> {
   match host_arg_resolved(function, args, index)? {
@@ -584,7 +606,7 @@ pub fn host_arg_record(
 #[cfg(feature = "table")]
 pub fn host_arg_table(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechTable> {
   match host_arg_resolved(function, args, index)? {
@@ -596,7 +618,7 @@ pub fn host_arg_table(
 #[cfg(feature = "map")]
 pub fn host_arg_map(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMap> {
   match host_arg_resolved(function, args, index)? {
@@ -608,7 +630,7 @@ pub fn host_arg_map(
 #[cfg(feature = "set")]
 pub fn host_arg_set(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechSet> {
   match host_arg_resolved(function, args, index)? {
@@ -620,7 +642,7 @@ pub fn host_arg_set(
 #[cfg(feature = "matrix")]
 pub fn host_arg_matrix_index(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<usize>> {
   match host_arg_resolved(function, args, index)? {
@@ -632,7 +654,7 @@ pub fn host_arg_matrix_index(
 #[cfg(all(feature = "matrix", feature = "bool"))]
 pub fn host_arg_matrix_bool(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<bool>> {
   match host_arg_resolved(function, args, index)? {
@@ -644,7 +666,7 @@ pub fn host_arg_matrix_bool(
 #[cfg(all(feature = "matrix", feature = "u8"))]
 pub fn host_arg_matrix_u8(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u8>> {
   match host_arg_resolved(function, args, index)? {
@@ -656,7 +678,7 @@ pub fn host_arg_matrix_u8(
 #[cfg(all(feature = "matrix", feature = "u16"))]
 pub fn host_arg_matrix_u16(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u16>> {
   match host_arg_resolved(function, args, index)? {
@@ -668,7 +690,7 @@ pub fn host_arg_matrix_u16(
 #[cfg(all(feature = "matrix", feature = "u32"))]
 pub fn host_arg_matrix_u32(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u32>> {
   match host_arg_resolved(function, args, index)? {
@@ -680,7 +702,7 @@ pub fn host_arg_matrix_u32(
 #[cfg(all(feature = "matrix", feature = "u64"))]
 pub fn host_arg_matrix_u64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u64>> {
   match host_arg_resolved(function, args, index)? {
@@ -692,7 +714,7 @@ pub fn host_arg_matrix_u64(
 #[cfg(all(feature = "matrix", feature = "u128"))]
 pub fn host_arg_matrix_u128(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<u128>> {
   match host_arg_resolved(function, args, index)? {
@@ -704,7 +726,7 @@ pub fn host_arg_matrix_u128(
 #[cfg(all(feature = "matrix", feature = "i8"))]
 pub fn host_arg_matrix_i8(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i8>> {
   match host_arg_resolved(function, args, index)? {
@@ -716,7 +738,7 @@ pub fn host_arg_matrix_i8(
 #[cfg(all(feature = "matrix", feature = "i16"))]
 pub fn host_arg_matrix_i16(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i16>> {
   match host_arg_resolved(function, args, index)? {
@@ -728,7 +750,7 @@ pub fn host_arg_matrix_i16(
 #[cfg(all(feature = "matrix", feature = "i32"))]
 pub fn host_arg_matrix_i32(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i32>> {
   match host_arg_resolved(function, args, index)? {
@@ -740,7 +762,7 @@ pub fn host_arg_matrix_i32(
 #[cfg(all(feature = "matrix", feature = "i64"))]
 pub fn host_arg_matrix_i64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i64>> {
   match host_arg_resolved(function, args, index)? {
@@ -752,7 +774,7 @@ pub fn host_arg_matrix_i64(
 #[cfg(all(feature = "matrix", feature = "i128"))]
 pub fn host_arg_matrix_i128(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<i128>> {
   match host_arg_resolved(function, args, index)? {
@@ -764,7 +786,7 @@ pub fn host_arg_matrix_i128(
 #[cfg(all(feature = "matrix", feature = "f32"))]
 pub fn host_arg_matrix_f32(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<f32>> {
   match host_arg_resolved(function, args, index)? {
@@ -776,7 +798,7 @@ pub fn host_arg_matrix_f32(
 #[cfg(all(feature = "matrix", feature = "f64"))]
 pub fn host_arg_matrix_f64(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<f64>> {
   match host_arg_resolved(function, args, index)? {
@@ -788,7 +810,7 @@ pub fn host_arg_matrix_f64(
 #[cfg(all(feature = "matrix", feature = "string"))]
 pub fn host_arg_matrix_string(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<String>> {
   match host_arg_resolved(function, args, index)? {
@@ -800,7 +822,7 @@ pub fn host_arg_matrix_string(
 #[cfg(feature = "matrix")]
 pub fn host_arg_matrix_value_matrix(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<mech_core::MechMatrix<Value>> {
   match host_arg_resolved(function, args, index)? {
@@ -811,7 +833,7 @@ pub fn host_arg_matrix_value_matrix(
 
 pub fn host_arg_optional_value(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<Option<Value>> {
   if index >= args.len() {
@@ -820,11 +842,11 @@ pub fn host_arg_optional_value(
 
   let value = host_arg(function, args, index)?;
 
-  if is_empty_value(value) {
+  if is_empty_value(&value) {
     return Ok(None);
   }
 
-  Ok(Some(value.clone()))
+  Ok(Some(value))
 }
 
 // -----------------------------------------------------------------------------
@@ -938,7 +960,7 @@ pub fn value_empty_kind(kind: ValueKind) -> Value {
 pub trait FromHostValue: Sized {
   fn from_host_value(
     function: &str,
-    args: &[Value],
+    args: &[impl HostArgumentValue],
     index: usize,
   ) -> MResult<Self>;
 }
@@ -950,7 +972,7 @@ pub trait IntoHostValue {
 impl FromHostValue for Value {
   fn from_host_value(
     function: &str,
-    args: &[Value],
+    args: &[impl HostArgumentValue],
     index: usize,
   ) -> MResult<Self> {
     host_arg_cloned(function, args, index)
@@ -967,7 +989,7 @@ impl IntoHostValue for Value {
 impl FromHostValue for String {
   fn from_host_value(
     function: &str,
-    args: &[Value],
+    args: &[impl HostArgumentValue],
     index: usize,
   ) -> MResult<Self> {
     host_arg_string(function, args, index)
@@ -992,7 +1014,7 @@ impl IntoHostValue for &str {
 impl FromHostValue for bool {
   fn from_host_value(
     function: &str,
-    args: &[Value],
+    args: &[impl HostArgumentValue],
     index: usize,
   ) -> MResult<Self> {
     host_arg_bool(function, args, index)
@@ -1016,7 +1038,7 @@ macro_rules! impl_host_numeric {
     impl FromHostValue for $rust {
       fn from_host_value(
         function: &str,
-        args: &[Value],
+        args: &[impl HostArgumentValue],
         index: usize,
       ) -> MResult<Self> {
         $arg_fn(function, args, index)
@@ -1062,14 +1084,14 @@ where
 {
   fn from_host_value(
     function: &str,
-    args: &[Value],
+    args: &[impl HostArgumentValue],
     index: usize,
   ) -> MResult<Self> {
     if index >= args.len() {
       return Ok(None);
     }
 
-    if is_empty_value(host_arg(function, args, index)?) {
+    if is_empty_value(&host_arg(function, args, index)?) {
       return Ok(None);
     }
 
@@ -1095,7 +1117,7 @@ where
 
 pub fn host_arg_as<T: FromHostValue>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   index: usize,
 ) -> MResult<T> {
   T::from_host_value(function, args, index)
@@ -1107,7 +1129,7 @@ pub fn host_return<T: IntoHostValue>(value: T) -> Value {
 
 pub fn host_call0<R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce() -> R,
 ) -> MResult<Value>
 where
@@ -1119,7 +1141,7 @@ where
 
 pub fn host_call1<A, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A) -> R,
 ) -> MResult<Value>
 where
@@ -1135,7 +1157,7 @@ where
 
 pub fn host_call2<A, B, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A, B) -> R,
 ) -> MResult<Value>
 where
@@ -1153,7 +1175,7 @@ where
 
 pub fn host_call3<A, B, C, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A, B, C) -> R,
 ) -> MResult<Value>
 where
@@ -1173,7 +1195,7 @@ where
 
 pub fn host_call4<A, B, C, D, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A, B, C, D) -> R,
 ) -> MResult<Value>
 where
@@ -1195,7 +1217,7 @@ where
 
 pub fn host_call_result0<R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce() -> MResult<R>,
 ) -> MResult<Value>
 where
@@ -1207,7 +1229,7 @@ where
 
 pub fn host_call_result1<A, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A) -> MResult<R>,
 ) -> MResult<Value>
 where
@@ -1223,7 +1245,7 @@ where
 
 pub fn host_call_result2<A, B, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A, B) -> MResult<R>,
 ) -> MResult<Value>
 where
@@ -1241,7 +1263,7 @@ where
 
 pub fn host_call_result3<A, B, C, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A, B, C) -> MResult<R>,
 ) -> MResult<Value>
 where
@@ -1261,7 +1283,7 @@ where
 
 pub fn host_call_result4<A, B, C, D, R>(
   function: &str,
-  args: &[Value],
+  args: &[impl HostArgumentValue],
   f: impl FnOnce(A, B, C, D) -> MResult<R>,
 ) -> MResult<Value>
 where

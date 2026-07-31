@@ -21,8 +21,10 @@ struct NotS<T> {
 impl<T> MechFunctionFactory for NotS<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Not<Output = T>,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<T>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -52,13 +54,17 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for NotS<T> 
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NotS<{}>", T::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
@@ -76,11 +82,15 @@ pub struct NotV<T, MatA> {
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Not<Output = T>,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+  MatA: Debug + ConstElem + AsValueKind + 'static,
+  #[cfg(feature = "compiler")]
+  MatA: CompileConst,
   Ref<MatA>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -102,7 +112,7 @@ impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
   Ref<MatA>: ToValue,
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind +
+  ConstElem + AsValueKind +
   Not<Output = T>,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
@@ -121,6 +131,10 @@ where
   }
   fn out(&self) -> Value {self.out.to_value()}
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T, MatA> MechFunctionCompiler for NotV<T, MatA> 
@@ -128,7 +142,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   MatA: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }

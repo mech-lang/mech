@@ -3,9 +3,21 @@ use std::collections::BTreeMap;
 use mech_core::{MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, Value};
 use mech_host_scene::*;
 use mech_runtime::{
-    ConfigValue, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeResourceProvider,
+    ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
+#[cfg(feature = "native")]
+use mech_runtime::RuntimeHostFactory;
+
+fn deliver_write(
+    provider: &mut dyn RuntimeResourceProvider,
+    request: RuntimeResourceWriteRequest,
+) -> mech_core::MResult<()> {
+    match provider.prepare_write(request)? {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver(),
+        effect => panic!("expected scene after-commit effect, got {effect:?}"),
+    }
+}
 
 fn f(value: f64) -> Value {
     Value::F64(Ref::new(value))
@@ -421,8 +433,46 @@ fn unknown_send_path_rejected() {
 fn latest_scene_replaces_older_scene() {
     let backend = RecordingSceneBackend::new();
     let mut provider = SceneResourceProvider::new("view", backend.clone());
-    provider
-        .write(RuntimeResourceWriteRequest {
+    deliver_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://view/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: empty_scene(),
+        },
+    )
+    .unwrap();
+    let newer = record(vec![
+        ("width", f(200.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    deliver_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://view/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: newer,
+        },
+    )
+    .unwrap();
+    assert_eq!(backend.latest().unwrap().width, 200.0);
+}
+
+#[test]
+fn scene_prepare_write_does_not_render_before_delivery() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("view", backend.clone());
+    let effect = provider
+        .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "scene://view/frame".to_string(),
             path: "replace".to_string(),
             context_name: "view".to_string(),
@@ -431,24 +481,15 @@ fn latest_scene_replaces_older_scene() {
             value: empty_scene(),
         })
         .unwrap();
-    let newer = record(vec![
-        ("width", f(200.0)),
-        ("height", f(50.0)),
-        ("background", s("#000")),
-        ("circles", tuple(vec![])),
-        ("lines", tuple(vec![])),
-    ]);
-    provider
-        .write(RuntimeResourceWriteRequest {
-            base_uri: "scene://view/frame".to_string(),
-            path: "replace".to_string(),
-            context_name: "view".to_string(),
-            operation: RuntimeCapabilityOperation::Write,
-            intent: RuntimeResourceWriteIntent::Send,
-            value: newer,
-        })
-        .unwrap();
-    assert_eq!(backend.latest().unwrap().width, 200.0);
+
+    assert_eq!(backend.generation(), 0);
+    match effect {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => {
+            effect.deliver().unwrap();
+        }
+        effect => panic!("expected scene after-commit effect, got {effect:?}"),
+    }
+    assert_eq!(backend.generation(), 1);
 }
 
 #[cfg(feature = "native")]
@@ -474,7 +515,7 @@ fn native_scene_instances_are_isolated() {
         .unwrap()
         .resource_providers
         .remove(0);
-    main.write(RuntimeResourceWriteRequest {
+    deliver_write(main.as_mut(), RuntimeResourceWriteRequest {
         base_uri: "scene://main/frame".to_string(),
         path: "replace".to_string(),
         context_name: "view".to_string(),
@@ -489,7 +530,7 @@ fn native_scene_instances_are_isolated() {
         ]),
     })
     .unwrap();
-    hud.write(RuntimeResourceWriteRequest {
+    deliver_write(hud.as_mut(), RuntimeResourceWriteRequest {
         base_uri: "scene://hud/frame".to_string(),
         path: "replace".to_string(),
         context_name: "view".to_string(),
@@ -521,9 +562,9 @@ fn scene_provider_deduplicates_identical_replacements() {
         value,
     };
 
-    provider.write(write(empty_scene())).unwrap();
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
     assert_eq!(backend.generation(), 1);
-    provider.write(write(empty_scene())).unwrap();
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
     assert_eq!(backend.generation(), 1);
 
     let changed = record(vec![
@@ -533,12 +574,12 @@ fn scene_provider_deduplicates_identical_replacements() {
         ("circles", tuple(vec![])),
         ("lines", tuple(vec![])),
     ]);
-    provider.write(write(changed)).unwrap();
+    deliver_write(&mut provider, write(changed)).unwrap();
     assert_eq!(backend.generation(), 2);
 
     let other_backend = RecordingSceneBackend::new();
     let mut other_provider = SceneResourceProvider::new("other", other_backend.clone());
-    other_provider.write(RuntimeResourceWriteRequest {
+    deliver_write(&mut other_provider, RuntimeResourceWriteRequest {
         base_uri: "scene://other/frame".to_string(),
         path: "replace".to_string(),
         context_name: "main".to_string(),
@@ -589,10 +630,10 @@ fn scene_provider_failed_replace_does_not_advance_dedup_state() {
         value,
     };
     backend.fail_next();
-    assert!(provider.write(write(empty_scene())).is_err());
+    assert!(deliver_write(&mut provider, write(empty_scene())).is_err());
     assert_eq!(backend.generation(), 0);
-    provider.write(write(empty_scene())).unwrap();
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
     assert_eq!(backend.generation(), 1);
-    provider.write(write(empty_scene())).unwrap();
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
     assert_eq!(backend.generation(), 1);
 }

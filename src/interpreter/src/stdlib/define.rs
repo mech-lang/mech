@@ -26,10 +26,14 @@ pub struct VariableDefineMatrix<T, MatA> {
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + CompileConst + ConstElem + AsNaKind + 'static,
+  MatA: Debug + ConstElem + AsNaKind + 'static,
+  #[cfg(feature = "compiler")]
+  MatA: CompileConst,
   Ref<MatA>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -53,12 +57,16 @@ impl<T, MatA> MechFunctionImpl for VariableDefineMatrix<T, MatA>
 where
   Ref<MatA>: ToValue,
   T: Debug + Clone + Sync + Send + 'static + 
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
   MatA: Debug,
 {
   fn solve(&self) {}
   fn out(&self) -> Value {self.var.to_value()}
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA> 
@@ -66,7 +74,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   MatA: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let variable_register = compile_register_brrw!(self.var, ctx);
     let variable_name = self.name.borrow().clone();
     let variable_mutable = *self.mutable.borrow();
@@ -109,10 +117,14 @@ macro_rules! impl_variable_define_fxn {
         fn solve(&self) {}
         fn out(&self) -> Value { self.var.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let variable_register = compile_register_brrw!(self.var, ctx);
           let variable_name = self.name.borrow().clone();
           let variable_mutable = *self.mutable.borrow();
@@ -188,11 +200,14 @@ pub struct VariableDefineEmpty {
 impl MechFunctionImpl for VariableDefineEmpty {
   fn solve(&self) {}
   fn out(&self) -> Value { self.var.borrow().clone() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(vec![Value::MutableReference(self.var.clone())])
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let variable_register = compile_register_brrw!(self.var, ctx);
     let variable_name = self.name.borrow().clone();
     let variable_mutable = *self.mutable.borrow();
@@ -219,6 +234,28 @@ register_descriptor! {
         ).with_compiler_loc()),
       }
     },
+  }
+}
+
+#[cfg(test)]
+mod empty_transaction_state_tests {
+  use super::*;
+
+  #[test]
+  fn variable_define_empty_exposes_original_outer_value_cell() {
+    let var = Ref::new(Value::Empty);
+    let function = VariableDefineEmpty {
+      id: 1,
+      name: Ref::new("value".to_string()),
+      mutable: Ref::new(true),
+      var: var.clone(),
+    };
+    let values = function.transaction_state_values().unwrap();
+    assert_eq!(values.len(), 1);
+    match &values[0] {
+      Value::MutableReference(value) => assert_eq!(value.addr(), var.addr()),
+      value => panic!("expected mutable-reference transaction state, got {value:?}"),
+    }
   }
 }
 

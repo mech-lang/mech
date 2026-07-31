@@ -60,7 +60,9 @@ macro_rules! vertcat_two_args {
     impl<T> MechFunctionFactory for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -90,13 +92,17 @@ macro_rules! vertcat_two_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
       T: ConstElem + CompileConst + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1));
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
@@ -130,7 +136,9 @@ macro_rules! vertcat_three_args {
     impl<T> MechFunctionFactory for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -162,13 +170,17 @@ macro_rules! vertcat_three_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
       T: ConstElem + CompileConst + AsValueKind + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
         compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
@@ -189,7 +201,9 @@ macro_rules! vertcat_four_args {
     impl<T> MechFunctionFactory for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
+      ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out<T>>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -223,13 +237,17 @@ macro_rules! vertcat_four_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
       T: ConstElem + CompileConst + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
@@ -249,7 +267,9 @@ struct VerticalConcatenateTwoArgs<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -276,6 +296,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateTwoArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -283,14 +307,14 @@ impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
     registers[1] = compile_register_mat!(self.e0, ctx);
     registers[2] = compile_register_mat!(self.e1, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_binop(
       hash_str(&format!("VerticalConcatenateTwoArgs<{}>", T::as_value_kind())),
@@ -318,7 +342,9 @@ struct VerticalConcatenateThreeArgs<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -347,6 +373,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateThreeArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -354,7 +384,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -362,7 +392,7 @@ where
     registers[2] = compile_register_mat!(self.e1, ctx);
     registers[3] = compile_register_mat!(self.e2, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_ternop(
       hash_str(&format!("VerticalConcatenateThreeArgs<{}>", T::as_value_kind())),
@@ -391,7 +421,9 @@ struct VerticalConcatenateFourArgs<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -423,6 +455,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateFourArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -430,7 +466,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
 let mut registers = [0, 0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -439,7 +475,7 @@ let mut registers = [0, 0, 0, 0, 0];
     registers[3] = compile_register_mat!(self.e2, ctx);
     registers[4] = compile_register_mat!(self.e3, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_quadop(
       hash_str(&format!("VerticalConcatenateFourArgs<{}>", T::as_value_kind())),
@@ -466,7 +502,9 @@ struct VerticalConcatenateNArgs<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -498,6 +536,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateNArgs\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "matrixd")]
 #[cfg(feature = "compiler")]
@@ -505,7 +547,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -514,7 +556,7 @@ where
     for e in &self.e0 {
       mat_regs.push(compile_register_mat!(e, ctx));
     }
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
     ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
       registers[0],
@@ -529,25 +571,42 @@ register_vertical_concatenate_fxn!(VerticalConcatenateNArgs);
 #[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
 mod compiler_tests {
   use super::*;
+  use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
 
   #[test]
   fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {
     let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7i64]));
-    let out = Ref::new(DMatrix::from_element(2, 1, 0i64));
     let function = VerticalConcatenateNArgs {
       e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
-      out,
+      out: Ref::new(DMatrix::from_element(2, 1, 0i64)),
     };
-    let mut ctx = CompileCtx::new();
+    let mut context = RecordingBytecodeCompilerContext::default();
 
-    function.compile(&mut ctx).unwrap();
+    function.compile(&mut context).unwrap();
 
-    let matrix_register = ctx.reg_map[&matrix.addr()];
-    assert_eq!(ctx.const_entries.len(), 2);
-    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register)).count(), 1);
-    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register]));
-    assert!(ctx.features.contains(&FeatureFlag::Builtin(FeatureKind::VertCat)));
-    assert!(!ctx.features.contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)));
+    let matrix_register = context.reg_map[&matrix.addr()];
+    assert_eq!(
+      context.instructions.iter()
+        .filter(|instruction| {
+          matches!(
+            instruction,
+            EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+          )
+        })
+        .count(),
+      1,
+    );
+    assert!(matches!(
+      context.instructions.last(),
+      Some(EncodedInstr::VarArg { args, .. })
+        if args == &vec![matrix_register, matrix_register]
+    ));
+    assert!(
+      context.requirements.contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
+    );
+    assert!(
+      !context.requirements.contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
+    );
   }
 }
 
@@ -563,7 +622,9 @@ macro_rules! vertical_concatenate {
       impl<T> MechFunctionFactory for $name<T>
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static +
-        ConstElem + CompileConst + AsValueKind,
+        ConstElem + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst,
         Ref<[<$vec_size>]<T>>: ToValue
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -584,13 +645,17 @@ macro_rules! vertical_concatenate {
         fn solve(&self) {}
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
       }
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for $name<T> 
       where
         T: ConstElem + CompileConst + AsValueKind + AsValueKind
       {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
           compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
         }
@@ -611,7 +676,9 @@ struct VerticalConcatenateVD2<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateVD2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -638,6 +705,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD2\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
@@ -645,7 +716,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -653,7 +724,7 @@ where
     registers[1] = compile_register_mat!(self.e0, ctx);
     registers[2] = compile_register_mat!(self.e1, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_binop(
       hash_str(&format!("VerticalConcatenateVD2<{}>", T::as_value_kind())),
@@ -681,7 +752,9 @@ struct VerticalConcatenateVD3<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateVD3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -710,6 +783,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
@@ -717,7 +794,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -725,7 +802,7 @@ where
     registers[2] = compile_register_mat!(self.e1, ctx);
     registers[3] = compile_register_mat!(self.e2, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_ternop(
       hash_str(&format!("VerticalConcatenateVD3<{}>", T::as_value_kind())),
@@ -754,7 +831,9 @@ struct VerticalConcatenateVD4<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateVD4<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -785,6 +864,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
@@ -792,7 +875,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -801,7 +884,7 @@ where
     registers[3] = compile_register_mat!(self.e2, ctx);
     registers[4] = compile_register_mat!(self.e3, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_quadop(
       hash_str(&format!("VerticalConcatenateVD4<{}>", T::as_value_kind())),
@@ -829,7 +912,9 @@ struct VerticalConcatenateVDN<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateVDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -873,6 +958,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "vectord")]
 #[cfg(feature = "compiler")]
@@ -880,7 +969,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
@@ -889,7 +978,7 @@ where
     for (e,_) in &self.matrix {
       mat_regs.push(compile_register_mat!(e, ctx));
     }
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateVDN<{}>", T::as_value_kind())),
       registers[0],
@@ -912,7 +1001,9 @@ struct VerticalConcatenateS1<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateS1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<Matrix1<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -934,6 +1025,10 @@ where
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(all(feature = "matrix1", feature = "compiler"))]
@@ -941,7 +1036,7 @@ impl<T> MechFunctionCompiler for VerticalConcatenateS1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("VerticalConcatenateS1<{}>", T::as_value_kind());
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
@@ -1025,7 +1120,9 @@ struct VerticalConcatenateSD<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DVector<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1051,13 +1148,17 @@ where
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "vectord", feature = "compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateSD<T> 
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("VerticalConcatenateSD<{}>", T::as_value_kind());
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
@@ -1201,7 +1302,9 @@ struct VerticalConcatenateM1M1M1M1<T> {
 impl<T> MechFunctionFactory for VerticalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-  ConstElem + CompileConst + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<Vector4<T>>: ToValue
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -1239,13 +1342,17 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "vector4", feature = "compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T> 
 where
   T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("VerticalConcatenateM1M1M1M1<{}>", T::as_value_kind());
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }

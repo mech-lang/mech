@@ -1798,6 +1798,27 @@ config := {
     writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
   }
 
+  #[derive(Debug)]
+  struct RecordingBrowserEffect {
+    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
+    path: String,
+    value: String,
+  }
+
+  impl mech_runtime::RuntimeAfterCommitEffect for RecordingBrowserEffect {
+    fn metadata(&self) -> mech_runtime::RuntimeEffectMetadata {
+      mech_runtime::RuntimeEffectMetadata::new(
+        mech_runtime::RuntimeEffectSource::ResourceProvider { scheme: "browser".to_string() },
+        "assign",
+      )
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+      self.writes.lock().unwrap().push((self.path.clone(), self.value.clone()));
+      Ok(())
+    }
+  }
+
   impl RuntimeResourceProvider for RecordingBrowserProvider {
     fn scheme(&self) -> &str {
       "browser"
@@ -1818,19 +1839,22 @@ config := {
       Ok(())
     }
 
-    fn write(&mut self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<mech_runtime::PreparedRuntimeEffect> {
       self.preflight_write(RuntimeResourceWritePreflightRequest {
-        base_uri: request.base_uri,
+        base_uri: request.base_uri.clone(),
         path: request.path.clone(),
-        context_name: request.context_name,
+        context_name: request.context_name.clone(),
         operation: request.operation.clone(),
         intent: request.intent,
       })?;
       let Value::String(value) = request.value else {
         panic!("configured browser instance test writes a string")
       };
-      self.writes.lock().unwrap().push((request.path, value.borrow().as_str().to_string()));
-      Ok(())
+      Ok(mech_runtime::PreparedRuntimeEffect::AfterCommit(Box::new(RecordingBrowserEffect {
+        writes: self.writes.clone(),
+        path: request.path,
+        value: value.borrow().as_str().to_string(),
+      })))
     }
   }
 
@@ -1952,7 +1976,7 @@ config := {
 "#);
     assert!(result.is_err());
     let error = format!("{:?}", result.err().unwrap());
-    assert!(error.contains("RuntimeCapabilityGrantDenied"), "got {error}");
+    assert!(error.contains("CapabilityDenied"), "got {error}");
   }
 
   #[cfg(feature = "serde")]

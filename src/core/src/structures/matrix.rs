@@ -1,9 +1,9 @@
 use crate::*;
 
 #[cfg(feature = "no_std")]
-use core::any::Any;
+use core::{any::Any, cell};
 #[cfg(not(feature = "no_std"))]
-use std::any::Any;
+use std::{any::Any, cell};
 
 use nalgebra::{DMatrix, DVector, RowDVector};
 
@@ -155,14 +155,18 @@ pub trait CopyMat<T> {
   #[cfg(feature = "matrixd")]
   fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
   fn addr(&self) -> usize;
-  fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32>;
+  #[cfg(feature = "compiler")]
+  fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
 macro_rules! copy_mat {
   ($matsize:ident) => {
     impl<T> CopyMat<T> for Ref<$matsize<T>>
-    where 
-      T: Clone + CompileConst + ConstElem,
+    where
+      T: Clone,
+      #[cfg(feature = "compiler")]
+      T: CompileConst + ConstElem,
+      #[cfg(feature = "compiler")]
       $matsize<T>: CompileConst + ConstElem,
     {
       #[cfg(feature = "matrixd")]
@@ -208,7 +212,8 @@ macro_rules! copy_mat {
         src_rows
       }
       fn addr(&self) -> usize { self.addr() }
-      fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+      #[cfg(feature = "compiler")]
+      fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         self.borrow().compile_const(ctx)
       }
     }};}
@@ -394,9 +399,11 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 }
 
-impl<T> Matrix<T> 
+impl<T> Matrix<T>
 where
-  T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq + AsValueKind,
+  T: Clone + 'static,
+  #[cfg(feature = "compiler")]
+  T: CompileConst + ConstElem + AsValueKind + Debug + PartialEq,
 {
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {
@@ -470,6 +477,60 @@ impl<T> Matrix<T> {
       #[cfg(feature = "matrixd")]
       Matrix::DMatrix(x) => &*(x as *const Ref<DMatrix<T>> as *const Ref<R>),
       _ => panic!("Unsupported type for as_unchecked"),
+    }
+  }
+
+  pub(crate) fn try_clone_parts(
+    &self,
+  ) -> Result<
+    (Vec<T>, usize, usize),
+    cell::BorrowError,
+  >
+  where
+    T: Clone,
+  {
+    macro_rules! clone_parts {
+      ($matrix:expr) => {{
+        let matrix = $matrix.try_borrow()?;
+        Ok((
+          matrix.as_slice().to_vec(),
+          matrix.nrows(),
+          matrix.ncols(),
+        ))
+      }};
+    }
+
+    match self {
+      #[cfg(feature = "row_vector4")]
+      Matrix::RowVector4(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "row_vector3")]
+      Matrix::RowVector3(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "row_vector2")]
+      Matrix::RowVector2(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "vector4")]
+      Matrix::Vector4(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "vector3")]
+      Matrix::Vector3(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "vector2")]
+      Matrix::Vector2(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrix4")]
+      Matrix::Matrix4(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrix3")]
+      Matrix::Matrix3(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrix2")]
+      Matrix::Matrix2(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrix1")]
+      Matrix::Matrix1(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrix3x2")]
+      Matrix::Matrix3x2(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrix2x3")]
+      Matrix::Matrix2x3(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "vectord")]
+      Matrix::DVector(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "row_vectord")]
+      Matrix::RowDVector(matrix) => clone_parts!(matrix),
+      #[cfg(feature = "matrixd")]
+      Matrix::DMatrix(matrix) => clone_parts!(matrix),
     }
   }
 

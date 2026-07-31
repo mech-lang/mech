@@ -23,8 +23,10 @@ where
       Add<Output = T> + AddAssign +
       Sub<Output = T> + Div<Output = T> +
       Zero + One +
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
       PartialEq + PartialOrd,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<T>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -64,13 +66,17 @@ where
   }
   fn out(&self) -> Value {self.out.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for NChooseK<T> 
 where
     T: ConstElem + CompileConst + AsValueKind
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NChooseK<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
@@ -92,8 +98,10 @@ where
        Add<Output = T> + AddAssign +
        Sub<Output = T> + Div<Output = T> +
        Zero + One +
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
        PartialEq + PartialOrd + ToMatrix,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
     Ref<T>: ToValue,
     Matrix<T>: ToValue,
 {
@@ -147,6 +155,15 @@ where
       *self.out.borrow_mut() = result;
   }
   fn out(&self) -> Value { (*self.out.borrow()).to_value() }
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Err(MechError::new(
+      TransactionStateUnsupportedError {
+        function: format!("NChooseKMatrix<{}>", core::any::type_name::<T>()),
+        reason: "the retained outer matrix enum is not a Value-backed cell".to_string(),
+      },
+      None,
+    ).with_compiler_loc())
+  }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "matrix", feature = "compiler"))]
@@ -154,12 +171,32 @@ impl<T> MechFunctionCompiler for NChooseKMatrix<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
 register_fxn_descriptor!(NChooseKMatrix, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64");
+
+#[cfg(all(test, feature = "matrix", feature = "f64"))]
+mod transaction_state_tests {
+  use super::*;
+
+  #[test]
+  fn matrix_combinations_decline_unsupported_outer_state_without_borrowing_it() {
+    let function = NChooseKMatrix {
+      n: Ref::new(f64::to_matrix(vec![1.0, 2.0], 2, 1)),
+      k: Ref::new(1.0),
+      out: Ref::new(f64::to_matrix(vec![1.0], 1, 1)),
+    };
+    let held = function.out.borrow();
+
+    let error = function.transaction_state_values().unwrap_err();
+
+    assert_eq!(error.kind_name(), "TransactionStateUnsupported");
+    drop(held);
+  }
+}
 
 
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn MechFunction>> {

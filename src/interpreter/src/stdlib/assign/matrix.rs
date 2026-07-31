@@ -51,10 +51,16 @@ macro_rules! impl_set_all_fxn_s {
     impl<T, R1, C1, S1: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -89,6 +95,10 @@ macro_rules! impl_set_all_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
@@ -97,7 +107,7 @@ macro_rules! impl_set_all_fxn_s {
       IxVec: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
@@ -146,9 +156,13 @@ macro_rules! impl_assign_fxn_s {
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static +
-        CompileConst + ConstElem + AsValueKind,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
-      naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R, C, S>: ConstElem + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R, C, S>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -184,6 +198,10 @@ macro_rules! impl_assign_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>> 
@@ -191,7 +209,7 @@ macro_rules! impl_assign_fxn_s {
       T: CompileConst + ConstElem + AsValueKind,
       naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind());
         compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
@@ -387,11 +405,15 @@ impl<T, R, C, S> MechFunctionFactory for Set1DAS<T, naMatrix<T, R, C, S>>
 where
   Ref<naMatrix<T, R, C, S>>: ToValue,
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
-    CompileConst + ConstElem + AsValueKind,
+    ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   R: Dim,
   C: Dim,
   S: StorageMut<T, R, C> + Debug + IsContiguous + 'static,
-  naMatrix<T, R, C, S>: CompileConst + ConstElem + Debug + AsNaKind,
+  naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+  #[cfg(feature = "compiler")]
+  naMatrix<T, R, C, S>: CompileConst,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -424,6 +446,10 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl<T, R, C, S> MechFunctionCompiler for Set1DAS<T, naMatrix<T, R, C, S>> 
@@ -431,7 +457,7 @@ where
   T: CompileConst + ConstElem + AsValueKind,
   naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
 { 
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("Set1DAS<{}{}>", T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
   }
@@ -492,11 +518,15 @@ impl<T, R1, C1, S1: 'static> MechFunctionFactory for Assign2DSSS<T, naMatrix<T, 
 where
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
   T: Scalar + Clone + Debug + Sync + Send + 'static +
-  CompileConst + ConstElem + AsValueKind,
+  ConstElem + AsValueKind,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   R1: Dim,
   C1: Dim,
   S1: StorageMut<T, R1, C1> + Clone + Debug,
-  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+  naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
+  #[cfg(feature = "compiler")]
+  naMatrix<T, R1, C1, S1>: CompileConst,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -531,13 +561,18 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
+#[cfg(feature = "compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
   T: CompileConst + ConstElem + AsValueKind,
   naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("Assign2DSSS<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
     compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
@@ -617,11 +652,17 @@ macro_rules! impl_assign_scalar_fxn_v {
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -654,6 +695,10 @@ macro_rules! impl_assign_scalar_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>> 
@@ -662,7 +707,7 @@ macro_rules! impl_assign_scalar_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
@@ -838,10 +883,16 @@ macro_rules! impl_assign_range_scalar_fxn_s {
     impl<T, R, C, S: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
-      naMatrix<T, R, C, S>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R, C, S>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -874,6 +925,10 @@ macro_rules! impl_assign_range_scalar_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R, C, S, IxVec> MechFunctionCompiler for $struct_name<T, na::Matrix<T, R, C, S>, IxVec> 
@@ -882,7 +937,7 @@ macro_rules! impl_assign_range_scalar_fxn_s {
       IxVec: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind(), IxVec::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
@@ -905,12 +960,20 @@ macro_rules! impl_assign_range_scalar_fxn_v {
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -946,6 +1009,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
@@ -955,7 +1022,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );  
       }
@@ -1086,10 +1153,16 @@ macro_rules! impl_assign_scalar_range_fxn_s {
     impl<T, R, C, S: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
-      naMatrix<T, R, C, S>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R, C, S>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -1122,6 +1195,10 @@ macro_rules! impl_assign_scalar_range_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R, C, S, IxVec> MechFunctionCompiler for $struct_name<T, na::Matrix<T, R, C, S>, IxVec> 
@@ -1130,7 +1207,7 @@ macro_rules! impl_assign_scalar_range_fxn_s {
       IxVec: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind(), IxVec::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
@@ -1153,12 +1230,20 @@ macro_rules! impl_assign_scalar_range_fxn_v {
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
-        CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+        ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+      #[cfg(feature = "compiler")]
+      IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R1, C1, S1>: CompileConst,
+      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -1194,6 +1279,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
@@ -1203,7 +1292,7 @@ macro_rules! impl_assign_scalar_range_fxn_v {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );  
       }
@@ -1413,11 +1502,19 @@ macro_rules! impl_assign_range_range_fxn_s {
     impl<T, R, C, S: 'static, IxVec1: 'static, IxVec2: 'static> MechFunctionFactory for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
-      IxVec1: CompileConst + ConstElem + Debug + AsRef<[$ix1]> + AsNaKind,
-      IxVec2: CompileConst + ConstElem + Debug + AsRef<[$ix2]> + AsNaKind,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
+      IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind,
+      #[cfg(feature = "compiler")]
+      IxVec1: CompileConst,
+      IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind,
+      #[cfg(feature = "compiler")]
+      IxVec2: CompileConst,
       R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
-      naMatrix<T, R, C, S>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+      #[cfg(feature = "compiler")]
+      naMatrix<T, R, C, S>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -1454,6 +1551,10 @@ macro_rules! impl_assign_range_range_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> 
@@ -1463,7 +1564,7 @@ macro_rules! impl_assign_range_range_fxn_s {
       IxVec2: CompileConst + ConstElem + AsNaKind,
       naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind(), IxVec1::as_na_kind(), IxVec2::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }

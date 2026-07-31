@@ -80,10 +80,14 @@ impl MechFunctionImpl for SetPowersetFxn {
   }
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetPowersetFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("SetPowersetFxn");
     compile_unop!(name, self.out, self.input, ctx, FeatureFlag::Custom(hash_str("set/powerset")));
   }

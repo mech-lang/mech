@@ -19,16 +19,24 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+#[cfg(test)]
+use std::sync::Mutex;
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::{Capability, CapabilityRequest};
 use crate::context::ResourceBudgetExceededError;
 use crate::event::RuntimeEvent;
+#[cfg(test)]
+use crate::event::RuntimeEventKind;
+use crate::effect::RuntimeEffectRecord;
 use crate::id::{
   ActorId, CapabilityId, EventId, MessageId, ModuleId, ModuleVersionId,
   ObjectId, TaskId, TransactionId,
 };
+use crate::module_id;
 use crate::resolver::{
   import_requires_source_dependency, ModuleScopeMetadata, SourceAddressReference,
   SourceContextDeclaration, SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration,
@@ -166,6 +174,11 @@ pub trait MechStore: std::fmt::Debug + Send {
     Ok(())
   }
 
+  /// Applies one atomic, all-or-nothing durable runtime batch.
+  ///
+  /// Returning `Err` means no element of the batch committed. Returning `Ok`
+  /// means the complete batch committed. The runtime does not supply database
+  /// isolation against external writers.
   fn commit_runtime(
     &mut self,
     commit: RuntimeStoreCommit,
@@ -763,6 +776,8 @@ pub struct TransactionRecord {
   pub actor_updates: Vec<ActorId>,
 
   pub events: Vec<EventId>,
+  #[cfg_attr(feature = "serde", serde(default))]
+  pub effects: Vec<RuntimeEffectRecord>,
 }
 
 impl TransactionRecord {
@@ -781,6 +796,7 @@ impl TransactionRecord {
       actor_updates: Vec::new(),
 
       events: Vec::new(),
+      effects: Vec::new(),
     }
   }
 
@@ -819,6 +835,11 @@ impl TransactionRecord {
     self
   }
 
+  pub fn with_effects(mut self, effects: Vec<RuntimeEffectRecord>) -> Self {
+    self.effects = effects;
+    self
+  }
+
   pub fn validate(&self) -> MResult<()> {
     if self.id.is_zero() {
       return invalid_store_record("transaction.id", "must not be zero");
@@ -835,6 +856,10 @@ impl TransactionRecord {
 #[derive(Clone, Debug)]
 pub struct RuntimeStoreCommit {
   pub transaction: TransactionRecord,
+  pub module_puts: Vec<ModuleRecord>,
+  pub module_version_puts: Vec<ModuleVersionRecord>,
+  pub capability_grants: Vec<(CapabilityId, Arc<dyn Capability>)>,
+  pub capability_revocations: Vec<CapabilityId>,
   pub object_puts: Vec<ObjectRecord>,
   pub object_updates: Vec<ObjectRecord>,
   pub task_updates: Vec<TaskRecord>,
@@ -842,6 +867,56 @@ pub struct RuntimeStoreCommit {
   pub message_acks: Vec<(ActorId, MessageId)>,
   pub message_enqueues: Vec<(ActorId, MessageRecord)>,
   pub events: Vec<RuntimeEvent>,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum InMemoryAppendEventFailureKind {
+  TransactionAborted,
+  EffectAborted,
+}
+
+#[cfg(test)]
+impl InMemoryAppendEventFailureKind {
+  fn matches(self, kind: &RuntimeEventKind) -> bool {
+    matches!(
+      (self, kind),
+      (
+        Self::TransactionAborted,
+        RuntimeEventKind::TransactionAborted { .. },
+      ) | (
+        Self::EffectAborted,
+        RuntimeEventKind::EffectAborted { .. },
+      )
+    )
+  }
+
+  fn name(self) -> &'static str {
+    match self {
+      Self::TransactionAborted => "TransactionAborted",
+      Self::EffectAborted => "EffectAborted",
+    }
+  }
+}
+
+#[cfg(test)]
+#[derive(Debug, Clone)]
+struct InMemoryAppendEventFailure {
+  event: &'static str,
+}
+
+#[cfg(test)]
+impl MechErrorKind for InMemoryAppendEventFailure {
+  fn name(&self) -> &str {
+    "InMemoryAppendEventFailure"
+  }
+
+  fn message(&self) -> String {
+    format!(
+      "in-memory store test probe rejected {} event publication",
+      self.event,
+    )
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -872,11 +947,49 @@ pub struct InMemoryStore {
 
   transactions: HashMap<TransactionId, TransactionRecord>,
   transaction_order: Vec<TransactionId>,
+
+  #[cfg(test)]
+  panic_on_get_object: bool,
+  #[cfg(test)]
+  panic_on_commit_runtime: bool,
+  #[cfg(test)]
+  commit_runtime_calls: Option<Arc<AtomicUsize>>,
+  #[cfg(test)]
+  append_event_failures:
+    Option<Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>>,
 }
 
 impl InMemoryStore {
   pub fn new() -> Self {
     Self::default()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn panic_on_get_object_for_test(&mut self) {
+    self.panic_on_get_object = true;
+  }
+
+  #[cfg(test)]
+  pub(crate) fn panic_on_commit_runtime_for_test(&mut self) {
+    self.panic_on_commit_runtime = true;
+  }
+
+  #[cfg(test)]
+  pub(crate) fn with_commit_runtime_counter_for_test(
+    mut self,
+    counter: Arc<AtomicUsize>,
+  ) -> Self {
+    self.commit_runtime_calls = Some(counter);
+    self
+  }
+
+  #[cfg(test)]
+  pub(crate) fn with_append_event_failures_for_test(
+    mut self,
+    failures: Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>,
+  ) -> Self {
+    self.append_event_failures = Some(failures);
+    self
   }
 
   fn prune_events(&mut self) {
@@ -929,6 +1042,86 @@ impl InMemoryStore {
       ));
     }
 
+    Ok(())
+  }
+
+  fn commit_module_put(
+    &mut self,
+    module: ModuleRecord,
+  ) -> MResult<()> {
+    module.validate()?;
+    if module.id != module_id(&module.name) {
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module.id",
+          reason: "module ID does not match its canonical URI",
+        },
+        None,
+      ));
+    }
+
+    if let Some(existing) = self.modules.get(&module.id) {
+      if existing.name == module.name {
+        return Ok(());
+      }
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module.id",
+          reason: "module ID maps to another canonical URI",
+        },
+        None,
+      ));
+    }
+
+    if let Some(existing_id) =
+      self.modules_by_name.get(&module.name)
+    {
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module.name",
+          reason: if existing_id == &module.id {
+            "module name index is missing its primary record"
+          } else {
+            "canonical URI maps to another module ID"
+          },
+        },
+        None,
+      ));
+    }
+
+    self.modules_by_name.insert(module.name.clone(), module.id);
+    self.modules.insert(module.id, module);
+    Ok(())
+  }
+
+  fn commit_module_version_put(
+    &mut self,
+    version: ModuleVersionRecord,
+  ) -> MResult<()> {
+    version.validate()?;
+    version.validate_import_edges()?;
+    self.ensure_module_exists(version.module)?;
+    for dependency in &version.dependencies {
+      self.ensure_module_version_exists(*dependency)?;
+    }
+    for edge in &version.import_edges {
+      self.ensure_module_version_exists(edge.dependency)?;
+    }
+
+    if let Some(existing) = self.module_versions.get(&version.id) {
+      if existing == &version {
+        return Ok(());
+      }
+      return Err(MechError::new(
+        InvalidStoreRecordError {
+          field: "module_version.id",
+          reason: "version ID maps to different contents",
+        },
+        None,
+      ));
+    }
+
+    self.module_versions.insert(version.id, version);
     Ok(())
   }
 }
@@ -1054,6 +1247,10 @@ impl MechStore for InMemoryStore {
   }
 
   fn get_object(&self, id: ObjectId) -> MResult<Option<ObjectRecord>> {
+    #[cfg(test)]
+    if self.panic_on_get_object {
+      panic!("deliberate store read panic");
+    }
     Ok(self.objects.get(&id).cloned())
   }
 
@@ -1353,6 +1550,27 @@ impl MechStore for InMemoryStore {
   fn append_event(&mut self, event: RuntimeEvent) -> MResult<EventId> {
     event.validate()?;
 
+    #[cfg(test)]
+    if let Some(failures) = &self.append_event_failures {
+      let mut failures = failures
+        .lock()
+        .expect("append-event failure probe mutex poisoned");
+      if failures
+        .front()
+        .is_some_and(|failure| failure.matches(&event.kind))
+      {
+        let failure = failures
+          .pop_front()
+          .expect("matching append-event failure must exist");
+        return Err(MechError::new(
+          InMemoryAppendEventFailure {
+            event: failure.name(),
+          },
+          None,
+        ));
+      }
+    }
+
     if self.events.contains_key(&event.id) {
       return Err(MechError::new(
         StoreRecordAlreadyExistsError {
@@ -1404,8 +1622,24 @@ impl MechStore for InMemoryStore {
     &mut self,
     commit: RuntimeStoreCommit,
   ) -> MResult<TransactionId> {
+    #[cfg(test)]
+    if let Some(counter) = &self.commit_runtime_calls {
+      counter.fetch_add(1, Ordering::SeqCst);
+    }
+    #[cfg(test)]
+    if self.panic_on_commit_runtime {
+      panic!("deliberate store commit panic");
+    }
     let id = commit.transaction.id;
     let mut temporary = self.clone();
+
+    for module in commit.module_puts {
+      temporary.commit_module_put(module)?;
+    }
+
+    for version in commit.module_version_puts {
+      temporary.commit_module_version_put(version)?;
+    }
 
     for object in commit.object_puts {
       temporary.put_object(object)?;
@@ -1429,6 +1663,14 @@ impl MechStore for InMemoryStore {
 
     for (actor, message) in commit.message_enqueues {
       temporary.enqueue_message(actor, message)?;
+    }
+
+    for (capability, grant) in commit.capability_grants {
+      temporary.grant_capability(capability, grant)?;
+    }
+
+    for capability in commit.capability_revocations {
+      temporary.revoke_capability(capability)?;
     }
 
     for event in commit.events {
@@ -1580,6 +1822,30 @@ mod tests {
   use crate::event::{
     RuntimeEvent, RuntimeEventKind,
   };
+
+  fn runtime_commit(
+    id: u128,
+    module_puts: Vec<ModuleRecord>,
+    module_version_puts: Vec<ModuleVersionRecord>,
+  ) -> RuntimeStoreCommit {
+    RuntimeStoreCommit {
+      transaction: TransactionRecord::new(
+        TransactionId(id),
+        "test",
+      ),
+      module_puts,
+      module_version_puts,
+      capability_grants: Vec::new(),
+      capability_revocations: Vec::new(),
+      object_puts: Vec::new(),
+      object_updates: Vec::new(),
+      task_updates: Vec::new(),
+      actor_updates: Vec::new(),
+      message_acks: Vec::new(),
+      message_enqueues: Vec::new(),
+      events: Vec::new(),
+    }
+  }
 
   #[test]
   fn module_round_trip() {
@@ -1922,6 +2188,10 @@ mod tests {
       transaction: TransactionRecord::new(TransactionId(1), "task:1")
         .with_write_set(vec![ObjectId(1), ObjectId(2)])
         .with_events(vec![EventId(1)]),
+      module_puts: Vec::new(),
+      module_version_puts: Vec::new(),
+      capability_grants: Vec::new(),
+      capability_revocations: Vec::new(),
       object_puts: vec![ObjectRecord::text(ObjectId(1), "note", "hello")],
       object_updates: vec![ObjectRecord::text(ObjectId(2), "note", "missing")],
       task_updates: Vec::new(),
@@ -1938,6 +2208,154 @@ mod tests {
     assert!(store.get_transaction(TransactionId(1)).unwrap().is_none());
     assert!(store.list_events(None).unwrap().is_empty());
     assert!(store.list_transactions(None).unwrap().is_empty());
+  }
+
+  #[test]
+  fn runtime_commit_publishes_module_and_version_together() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec");
+    let version =
+      ModuleVersionRecord::new(ModuleVersionId(10), module.id, 1);
+
+    store
+      .commit_runtime(runtime_commit(
+        1,
+        vec![module.clone()],
+        vec![version.clone()],
+      ))
+      .unwrap();
+
+    assert_eq!(store.get_module(module.id).unwrap(), Some(module));
+    assert_eq!(
+      store.get_module_version(version.id).unwrap(),
+      Some(version),
+    );
+  }
+
+  #[test]
+  fn runtime_commit_missing_module_owner_is_atomic() {
+    let mut store = InMemoryStore::new();
+    let version = ModuleVersionRecord::new(
+      ModuleVersionId(10),
+      module_id("memory://missing.mec"),
+      1,
+    );
+
+    assert!(
+      store
+        .commit_runtime(runtime_commit(1, Vec::new(), vec![version]))
+        .is_err(),
+    );
+    assert!(store.list_transactions(None).unwrap().is_empty());
+    assert!(
+      store
+        .get_module_version(ModuleVersionId(10))
+        .unwrap()
+        .is_none(),
+    );
+  }
+
+  #[test]
+  fn runtime_commit_missing_dependency_is_atomic() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec");
+    let version = ModuleVersionRecord::new(
+      ModuleVersionId(10),
+      module.id,
+      1,
+    )
+    .with_dependencies(vec![ModuleVersionId(99)]);
+
+    assert!(
+      store
+        .commit_runtime(runtime_commit(
+          1,
+          vec![module.clone()],
+          vec![version],
+        ))
+        .is_err(),
+    );
+    assert!(store.get_module(module.id).unwrap().is_none());
+    assert!(store.list_transactions(None).unwrap().is_empty());
+  }
+
+  #[test]
+  fn identical_runtime_module_publication_is_idempotent() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec")
+        .with_description("first");
+    let version =
+      ModuleVersionRecord::new(ModuleVersionId(10), module.id, 1);
+    store
+      .commit_runtime(runtime_commit(
+        1,
+        vec![module.clone()],
+        vec![version.clone()],
+      ))
+      .unwrap();
+
+    store
+      .commit_runtime(runtime_commit(
+        2,
+        vec![
+          ModuleRecord::new(module.id, module.name.clone())
+            .with_description("second"),
+        ],
+        vec![version],
+      ))
+      .unwrap();
+
+    assert_eq!(
+      store
+        .get_module(module.id)
+        .unwrap()
+        .unwrap()
+        .description
+        .as_deref(),
+      Some("first"),
+    );
+  }
+
+  #[test]
+  fn runtime_module_conflict_leaves_other_categories_unchanged() {
+    let mut store = InMemoryStore::new();
+    let module =
+      ModuleRecord::new(module_id("memory://main.mec"), "memory://main.mec");
+    let version =
+      ModuleVersionRecord::new(ModuleVersionId(10), module.id, 1);
+    store
+      .commit_runtime(runtime_commit(
+        1,
+        vec![module.clone()],
+        vec![version],
+      ))
+      .unwrap();
+    let mut conflict = runtime_commit(
+      2,
+      vec![module],
+      vec![ModuleVersionRecord::new(
+        ModuleVersionId(10),
+        module_id("memory://other.mec"),
+        1,
+      )],
+    );
+    conflict.object_puts.push(ObjectRecord::text(
+      ObjectId(20),
+      "note",
+      "must not commit",
+    ));
+
+    assert!(store.commit_runtime(conflict).is_err());
+    assert!(store.get_object(ObjectId(20)).unwrap().is_none());
+    assert!(
+      store
+        .get_transaction(TransactionId(2))
+        .unwrap()
+        .is_none(),
+    );
   }
 
   #[test]

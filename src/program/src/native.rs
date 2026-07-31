@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
+#[cfg(feature = "compiler")]
 use mech_core::{
-  CompileCtx, MResult, MechError, MechErrorKind, MechFunctionCompiler,
-  MechFunctionImpl, NativeFunctionCompiler, Register, Value,
+  BytecodeCompilerContext, MechError, MechFunctionCompiler, Register,
+};
+use mech_core::{
+  MResult, MechErrorKind, MechFunctionImpl, NativeFunctionCompiler, Value,
 };
 
 pub type NativeClosure =
@@ -58,12 +61,17 @@ impl MechFunctionImpl for ClosureNativeFunction {
   fn to_string(&self) -> String {
     format!("ClosureNativeFunction::{}", self.name)
   }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
+#[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ClosureNativeFunction {
   fn compile(
     &self,
-    _ctx: &mut CompileCtx,
+    _ctx: &mut dyn BytecodeCompilerContext,
   ) -> MResult<Register> {
     Err(MechError::new(
       ClosureNativeFunctionNotBytecodeCompilableError {

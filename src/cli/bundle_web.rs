@@ -550,7 +550,6 @@ fn require_file(field: &str, path: &Path) -> MResult<()> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::cli::CURRENT_DIR_LOCK;
   use std::time::{SystemTime, UNIX_EPOCH};
 
   const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
@@ -567,7 +566,7 @@ export default async function init() {}
 
   impl CurrentDirGuard {
     fn enter(path: &Path) -> Self {
-      let lock = CURRENT_DIR_LOCK.lock().unwrap();
+      let lock = crate::cli::lock_current_dir();
       let previous = std::env::current_dir().unwrap();
       std::env::set_current_dir(path).unwrap();
       Self {
@@ -657,6 +656,7 @@ export default async function init() {}
 
     assert_eq!(loaded.path, explicit.join("demo.mcfg").canonicalize().unwrap());
     assert_ne!(loaded.path, discovered.join("demo.mcfg").canonicalize().unwrap());
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -670,6 +670,7 @@ export default async function init() {}
     let error = format!("{:?}", load_bundle_web_config(&matches).unwrap_err());
 
     assert!(error.contains("bundle-web requires a config"));
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -683,6 +684,7 @@ export default async function init() {}
     let error = format!("{:?}", load_bundle_web_config(&matches).unwrap_err());
 
     assert!(error.contains("bundle-web requires a project config"));
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -716,6 +718,7 @@ export default async function init() {}
     assert_eq!(options.shim_path, root.join("override.html"));
     assert!(options.stylesheet_paths.contains(&root.join("override.css")));
     assert_eq!(options.wasm_pkg, root.join("override-pkg"));
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -810,6 +813,7 @@ export default async function init() {}
     assert!(root.join("out/code/demo.mec").is_file());
     assert!(root.join("out/html/demo.html").is_file());
     assert!(!root.join("out/source/../app/demo.mec").exists());
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -852,6 +856,7 @@ export default async function init() {}
     assert!(root.join("out/code/src/demo.mec").is_file());
     assert!(root.join("out/html/src/demo.html").is_file());
     assert!(!root.join("out/source/../app/src/demo.mec").exists());
+    drop(_guard);
     std::fs::remove_dir_all(root).unwrap();
   }
 

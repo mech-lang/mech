@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" data-mech-inline-shim="true" data-mech-document-status="loading">
+<head>
+  <meta charset="utf-8">
+  <style>{{STYLESHEET}}</style>
+  <title>{{TITLE}}</title>
+</head>
+<body>
+  <main class="mech-document mech-root" mech-interpreter-id="0">
+    {{INTRO}}
+    {{CONTENT}}
+  </main>
+  <script>
+    window.addEventListener("error", event => {
+      document.documentElement.dataset.mechWindowError =
+        event.message || String(event.error);
+    });
+    window.addEventListener("unhandledrejection", event => {
+      document.documentElement.dataset.mechUnhandledRejection =
+        String(event.reason);
+    });
+  </script>
+  <script type="module">
+    import init, { WasmDocument } from "/_mech/pkg/mech_wasm.js";
+
+    const code = `{{CODE}}`;
+
+    function address(element) {
+      const separator = element.id.lastIndexOf(":");
+      return {
+        outputId: BigInt(element.id.slice(0, separator)),
+        interpreterId: BigInt(element.id.slice(separator + 1)),
+      };
+    }
+
+    function render(documentRuntime) {
+      for (const output of document.querySelectorAll(".mech-block-output[id]")) {
+        const { interpreterId, outputId } = address(output);
+        const rendered =
+          documentRuntime.renderedOutput(interpreterId, outputId);
+        if (rendered !== null) {
+          output.innerHTML = rendered.blockHtml;
+        }
+      }
+      for (const output of document.querySelectorAll(".mech-inline-mech-code[id]")) {
+        const { interpreterId, outputId } = address(output);
+        const rendered =
+          documentRuntime.renderedOutput(interpreterId, outputId);
+        if (rendered !== null) {
+          output.innerHTML = rendered.inlineHtml;
+        }
+      }
+    }
+
+    try {
+      await init();
+      const documentRuntime = WasmDocument.fromEncoded(code);
+      render(documentRuntime);
+      document.documentElement.dataset.mechDocumentStatus = "ready";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      document.documentElement.dataset.mechDocumentStatus = "error";
+      document.documentElement.dataset.mechDocumentError = message;
+      const output = document.createElement("pre");
+      output.id = "mech-document-error";
+      output.textContent = `Mech document failed to run: ${message}`;
+      document.body.prepend(output);
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

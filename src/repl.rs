@@ -1,6 +1,13 @@
 use crate::*;
 use mech_core::*;
 use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+#[cfg(feature = "run")]
+use mech_runtime::{
+  FS_LIST,
+  MECH_TOOL_SUBJECT,
+  MechRuntime,
+  fs_request,
+};
 use std::collections::HashMap;
 use nom::{
   IResult,
@@ -31,11 +38,60 @@ pub struct MechRepl {
   pub examples: Dir<'static>,
   pub active: u64,
   pub programs: HashMap<u64,MechProgram>,
+  #[cfg(feature = "run")]
+  runtime: Option<MechRuntime>,
 }
 
 
 fn repl_error(msg: impl Into<String>) -> MechError {
   MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
+}
+
+#[cfg(feature = "run")]
+fn has_explicit_source_scheme(specifier: &str) -> bool {
+  let Some(colon) = specifier.find(':') else {
+    return false;
+  };
+
+  if colon == 1
+    && specifier.as_bytes()[0].is_ascii_alphabetic()
+  {
+    return false;
+  }
+
+  let scheme = &specifier[..colon];
+  let mut chars = scheme.chars();
+  let Some(first) = chars.next() else {
+    return false;
+  };
+
+  first.is_ascii_alphabetic()
+    && chars.all(|character| {
+      character.is_ascii_alphanumeric()
+        || matches!(character, '+' | '.' | '-')
+    })
+}
+
+#[cfg(feature = "run")]
+fn runtime_repl_load_request(
+  source_path: &str,
+) -> MResult<mech_runtime::SourceRequest> {
+  if source_path.is_empty() {
+    return Err(repl_error("runtime REPL load path cannot be empty"));
+  }
+
+  if has_explicit_source_scheme(source_path) {
+    return Ok(mech_runtime::SourceRequest::new(source_path));
+  }
+
+  let path = std::path::Path::new(source_path);
+  let path = if path.is_absolute() {
+    path.to_path_buf()
+  } else {
+    std::env::current_dir()?.join(path)
+  };
+
+  mech_runtime::SourceRequest::from_filesystem_path(path)
 }
 
 impl MechRepl {
@@ -53,6 +109,8 @@ impl MechRepl {
       programs,
       docs: DOCS_DIR.clone(),
       examples: EXAMPLES_DIR.clone(),
+      #[cfg(feature = "run")]
+      runtime: None,
     }
   }
 
@@ -65,7 +123,68 @@ impl MechRepl {
       examples: EXAMPLES_DIR.clone(),
       active: intrp_id,
       programs,
+      #[cfg(feature = "run")]
+      runtime: None,
     }
+  }
+
+  #[cfg(feature = "run")]
+  pub fn from_runtime(runtime: MechRuntime) -> MechRepl {
+    MechRepl {
+      docs: DOCS_DIR.clone(),
+      examples: EXAMPLES_DIR.clone(),
+      active: 0,
+      programs: HashMap::new(),
+      runtime: Some(runtime),
+    }
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn is_runtime_backed(&self) -> bool {
+    self.runtime.is_some()
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn start_runtime_input_drivers(&mut self) -> MResult<()> {
+    self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .start_input_drivers()
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn drain_runtime_host_inputs(
+    &mut self,
+    max_inputs: usize,
+  ) -> MResult<usize> {
+    self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .drain_host_inputs(max_inputs)
+      .map(|outcomes| outcomes.len())
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn drain_all_pending_runtime_host_inputs(&mut self) -> MResult<usize> {
+    let runtime = self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+    let pending = runtime.pending_host_input_count()?;
+    runtime
+      .drain_host_inputs(pending)
+      .map(|outcomes| outcomes.len())
+  }
+
+  #[cfg(feature = "run")]
+  pub(crate) fn shutdown_runtime(&mut self) -> MResult<()> {
+    self
+      .runtime
+      .as_mut()
+      .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+      .shutdown()
   }
 
   pub fn execute_repl_command_control(&mut self, repl_cmd: ReplCommand) -> MResult<ReplExecution> {
@@ -76,6 +195,10 @@ impl MechRepl {
   }
 
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
+    #[cfg(feature = "run")]
+    if self.runtime.is_some() {
+      return self.execute_runtime_repl_command(repl_cmd);
+    }
 
     let prgrm = self
       .programs
@@ -241,7 +364,165 @@ impl MechRepl {
     }
   }
 
+  #[cfg(feature = "run")]
+  fn execute_runtime_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
+    match repl_cmd {
+      ReplCommand::Help => Ok(help()),
+      ReplCommand::Quit => Ok(String::new()),
+      ReplCommand::Docs(name) => {
+        if let Some(name) = name {
+          let glob = format!("*{}*", name);
+          let entries = self
+            .docs
+            .find(&glob)
+            .map_err(|error| repl_error(format!("failed to search documentation: {error}")))?;
+          for entry in entries {
+            if let Some(file) = entry.as_file() {
+              if let Some(doc_content) = file.contents_utf8() {
+                return Ok(doc_content.to_string());
+              }
+            }
+          }
+          Ok(format!("No documentation found for {}", name))
+        } else {
+          Ok("Enter a doc to search for.".to_string())
+        }
+      }
+      ReplCommand::Symbols(_name) => {
+        let runtime = self
+          .runtime
+          .as_ref()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let mut output = String::new();
+        for (name, value) in runtime.root_symbol_values_all()? {
+          output.push_str(&format!("{} = {}\n", name, value));
+        }
+        Ok(output)
+      }
+      ReplCommand::Plan => {
+        Ok("The :plan command is unavailable through the sealed runtime API.".to_string())
+      }
+      ReplCommand::Whos(names) => {
+        let runtime = self
+          .runtime
+          .as_ref()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let rows = if names.is_empty() {
+          runtime.root_symbol_values_all()?
+        } else {
+          let name_refs = names.iter().map(String::as_str).collect::<Vec<_>>();
+          runtime.root_symbol_values(&name_refs)?
+        };
+        let mut output = String::new();
+        for (name, value) in rows {
+          output.push_str(&format!("{} = {}\n", name, value));
+        }
+        Ok(output)
+      }
+      ReplCommand::Clear(_name) => {
+        Err(repl_error(
+          "clearing a runtime-backed REPL is not supported; start a new REPL session",
+        ))
+      }
+      ReplCommand::Ls => {
+        let current_dir = env::current_dir()?;
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        runtime.check_capability(&fs_request(
+          MECH_TOOL_SUBJECT,
+          FS_LIST,
+          &current_dir,
+        )?)?;
+        ls_path(&current_dir)
+      }
+      ReplCommand::Cd(path) => {
+        let requested_path = PathBuf::from(path);
+        let path = if requested_path.is_absolute() {
+          requested_path
+        } else {
+          env::current_dir()?.join(requested_path)
+        };
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        runtime.check_capability(&fs_request(
+          MECH_TOOL_SUBJECT,
+          FS_LIST,
+          &path,
+        )?)?;
+        env::set_current_dir(&path).map_err(|_| {
+          MechError::new(
+            PathNotFound {
+              file_path: path.display().to_string(),
+            },
+            None,
+          )
+          .with_compiler_loc()
+        })?;
+        env::current_dir()
+          .map(|current_path| current_path.display().to_string())
+          .map_err(Into::into)
+      }
+      #[cfg(feature = "serde")]
+      ReplCommand::Save(_path) => {
+        Err(repl_error(
+          "saving a runtime-backed REPL is not supported by the sealed runtime API",
+        ))
+      }
+      ReplCommand::Clc => {
+        clc();
+        Ok(String::new())
+      }
+      ReplCommand::Load(paths) => {
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let mut result = mech_runtime::RuntimeValueSnapshot::empty();
+        for source_path in paths {
+          let request = runtime_repl_load_request(&source_path)?;
+          let (value, _events) =
+            crate::cli::run::run_cli_root_module_with_events(
+              runtime,
+              request,
+              crate::cli::run::cli_module_options(),
+            )?;
+          result = value;
+        }
+        Ok(format!("\n{}\n{}\n", result.kind(), result))
+      }
+      ReplCommand::Code(code) => {
+        let runtime = self
+          .runtime
+          .as_mut()
+          .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
+        let mut result = mech_runtime::RuntimeValueSnapshot::empty();
+        for (_, source) in code {
+          result = runtime.run_string(&source.to_string())?;
+        }
+        let kind_formatted = format!("{}", result.kind()).ansi_color(218);
+        Ok(format!("\n{}\n{}\n", kind_formatted, result))
+      }
+      ReplCommand::Profile(on) => {
+        let _ = on;
+        Ok("Profiling is configured by the retained runtime.".to_string())
+      }
+      ReplCommand::Step(step_id, step_count) => {
+        let _ = (step_id, step_count);
+        Ok("Stepping is not currently exposed by the sealed runtime API.".to_string())
+      }
+      _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
+    }
+  }
+
 }
+
+#[cfg(all(test, feature = "run"))]
+#[path = "repl/tests/runtime_load.rs"]
+mod runtime_load_tests;
 
 fn format_cycles(n: u64, total_duration: Duration) -> String {
   let total_ns = total_duration.as_nanos() as f64;

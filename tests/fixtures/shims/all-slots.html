@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-mech-document-status="loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shim contract: {{TITLE}}</title>
+  <style>{{STYLESHEET}}</style>
+</head>
+<body>
+  <main
+    class="mech-root"
+    mech-interpreter-id="0"
+    data-mech-document-status="loading"
+    data-mech-source-url-key="{{SOURCE_URL_KEY}}">
+    <div id="slot-title">{{TITLE}}</div>
+    <div id="slot-author">{{AUTHOR}}</div>
+    <div id="slot-date">{{DATE}}</div>
+    <div id="slot-kicker">{{KICKER}}</div>
+    <div id="slot-section">{{SECTION}}</div>
+    <div id="slot-version">{{VERSION}}</div>
+    <div id="slot-next">{{NEXT}}</div>
+    <div id="slot-previous">{{PREVIOUS}}</div>
+    <div id="slot-hero">{{HERO}}</div>
+    <div id="slot-summary">{{SUMMARY}}</div>
+    <nav id="slot-toc">{{TOC}}</nav>
+    <div id="slot-abstract">{{ABSTRACT}}</div>
+    <div id="slot-intro">{{INTRO}}</div>
+    <div id="slot-content">{{CONTENT}}</div>
+    <div id="slot-contents">{{CONTENTS}}</div>
+    <div id="slot-cited">{{CITED}}</div>
+    <div id="slot-footnotes">{{FOOTNOTES}}</div>
+    <div id="slot-section-1">{{SECTION1}}</div>
+    <div id="slot-section-2">{{SECTION2}}</div>
+    <div id="slot-repl">{{REPL}}</div>
+    <div id="mech-document-output" data-mech-output-panel></div>
+    <div id="mech-document-errors" data-mech-errors-panel aria-live="polite"></div>
+  </main>
+  <script type="application/x-mech-code" id="slot-code" data-mech-document-code>
+{{CODE}}
+  </script>
+  <div id="slot-source-key" data-value="{{SOURCE_URL_KEY}}"></div>
+  <script type="module" data-mech-document-controller data-mech-wasm-module="{{WASM_MODULE_URL}}">
+{{DOCUMENT_SCRIPT}}
+  </script>
+  <script type="application/x-mech-source-bundle" data-mech-document-sources>
+{{DOCUMENT_SOURCES}}
+  </script>
+  <div id="slot-var-root">{{VAR:answer}}</div>
+</body>
+</html>

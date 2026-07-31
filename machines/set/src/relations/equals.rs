@@ -42,11 +42,15 @@ impl MechFunctionImpl for SetEqualsFxn {
   }
   fn out(&self) -> Value { Value::Bool(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetEqualsFxn {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = "SetEqualsFxn".to_string();
     // Custom feature route: set/equals
     compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Custom(hash_str("set/equals")));

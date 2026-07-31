@@ -576,21 +576,21 @@ pub fn compile_pattern(
     PatternCompiler::default().compile(pattern, expected_kind, interpreter)
 }
 
-enum PatternExpressionSource<'a> {
+enum PatternExpressionSource<'a, 'execution> {
     Interpreter {
         env: &'a Environment,
-        interpreter: &'a Interpreter,
+        interpreter: &'a InterpreterExecution<'execution>,
     },
     Sampled(&'a [Value]),
 }
 
-struct PatternMatchState<'a> {
+struct PatternMatchState<'a, 'execution> {
     binding_specs: Vec<PatternBindingSpec>,
     proposed: Vec<Option<Value>>,
-    expression_source: PatternExpressionSource<'a>,
+    expression_source: PatternExpressionSource<'a, 'execution>,
 }
 
-impl PatternMatchState<'_> {
+impl PatternMatchState<'_, '_> {
     fn expression_value(
         &self,
         expression_index: usize,
@@ -791,7 +791,7 @@ pub fn match_compiled_pattern(
     pattern: &CompiledPattern,
     value: &Value,
     env: &Environment,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<PatternMatch> {
     match_compiled_pattern_with_environment(pattern, value, env, interpreter, false)
 }
@@ -804,7 +804,7 @@ pub fn match_compiled_pattern_with_environment_constraints(
     pattern: &CompiledPattern,
     value: &Value,
     env: &Environment,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<PatternMatch> {
     match_compiled_pattern_with_environment(pattern, value, env, interpreter, true)
 }
@@ -813,7 +813,7 @@ fn match_compiled_pattern_with_environment(
     pattern: &CompiledPattern,
     value: &Value,
     env: &Environment,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
     seed_existing_bindings: bool,
 ) -> MResult<PatternMatch> {
     let specs = pattern.binding_specs();
@@ -878,7 +878,7 @@ pub fn pattern_matches_arguments(
     pattern: &Pattern,
     args: &Vec<Value>,
     env: &mut Environment,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
     if matches!(pattern, Pattern::Wildcard) {
         return Ok(true);
@@ -901,7 +901,7 @@ pub fn pattern_matches_value(
     pattern: &Pattern,
     value: &Value,
     env: &mut Environment,
-    interpreter: &Interpreter,
+    interpreter: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
     let compiled = compile_pattern(pattern, None, interpreter)?;
     let pattern_match = match_compiled_pattern(&compiled, value, env, interpreter)?;
@@ -921,7 +921,7 @@ pub fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
 }
 
 // Reconstructs a Value from a pattern using the current environment. This is the inverse of matching. used to extract or re-emit bound values.
-pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &Interpreter) -> MResult<Value> {
+pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &InterpreterExecution<'_>) -> MResult<Value> {
     match pattern {
         Pattern::Wildcard => Ok(Value::Empty),
         Pattern::Expression(expr) => expression(expr, Some(env), p),
@@ -1367,6 +1367,11 @@ mod tests {
             ],
         };
         let interpreter = Interpreter::new_with_full_stdlib(0);
+        let mut services = NoMechExecutionServices;
+        let execution = InterpreterExecution::new(
+            &interpreter,
+            &mut services,
+        );
         let mut env = Environment::from([(x_id, Value::U64(Ref::new(1)))]);
 
         let mismatch = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
@@ -1377,7 +1382,7 @@ mod tests {
             &pattern,
             &mismatch,
             &env,
-            &interpreter,
+            &execution,
         )
         .unwrap();
         assert!(!pattern_match.matched);
@@ -1395,7 +1400,7 @@ mod tests {
             &pattern,
             &match_value,
             &env,
-            &interpreter,
+            &execution,
         )
         .unwrap();
         assert!(pattern_match.matched);

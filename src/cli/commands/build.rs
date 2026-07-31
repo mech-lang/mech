@@ -2,12 +2,12 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use crate::cli::module_execution::{execute_source_module_roots, module_runtime_config};
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::generate_uuid;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
-use mech_program::*;
 
 pub(crate) fn command() -> Command {
     Command::new("build")
@@ -106,14 +106,6 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     let time_flag = options.time;
     let trace_flag = options.trace;
     let rounds_per_step = options.rounds_per_step;
-    if output_path != PathBuf::from(".") {
-        fs::create_dir_all(&output_path)?;
-        println!(
-            "{} Directory created: {}",
-            "[Created]".truecolor(153, 221, 85),
-            output_path.display()
-        );
-    }
 
     let bytecode_count = validate_build_bytecode_inputs(&mech_paths)?;
     let bytecode = if bytecode_count == 1 {
@@ -122,26 +114,34 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             _ => unreachable!("bytecode input should load as MechSourceCode::ByteCode"),
         }
     } else {
-        let uuid = generate_uuid();
-        let mut program = MechProgram::new(MechProgramConfig {
-            name: format!("program-{}", uuid),
-            environment: MechProgramEnvironment::default(),
-        });
-        program.configure(debug_flag, trace_flag, time_flag, rounds_per_step);
-        for path in mech_paths {
-            let source = mech_runtime::read_runtime_source_file(Path::new(&path))?;
-            let _ = program.run_source(&source)?;
-        }
-        let bytecode = program.interpreter_mut().compile()?;
+        let source_paths = mech_paths.iter().map(PathBuf::from).collect::<Vec<_>>();
+        let config = module_runtime_config(
+            format!("program-{}", generate_uuid()),
+            debug_flag,
+            trace_flag,
+            time_flag,
+            rounds_per_step,
+        )?;
+        let mut runtime = execute_source_module_roots(config, &source_paths)?;
+        let bytecode = runtime.compile_program_bytecode()?;
         if debug_flag {
             println!(
                 "{} Bytecode Size: {:#?} bytes",
                 "[Debug]".truecolor(246, 192, 78),
-                &program.interpreter().context
+                bytecode.len()
             );
         }
         bytecode
     };
+
+    if output_path != PathBuf::from(".") {
+        fs::create_dir_all(&output_path)?;
+        println!(
+            "{} Directory created: {}",
+            "[Created]".truecolor(153, 221, 85),
+            output_path.display()
+        );
+    }
 
     let output_file = output_path.join("output.mecb");
     let mut f = std::fs::File::create(&output_file)?;

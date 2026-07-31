@@ -24,14 +24,18 @@ macro_rules! impl_col_access_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $fxn_name {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0];
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.source, ctx);
-        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_unop(
           hash_str(stringify!($fxn_name)),
           registers[0],
@@ -187,13 +191,17 @@ impl MechFunctionImpl for TableAccessSwizzle {
   }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessSwizzle {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0];
     registers[0] = compile_register!(self.out, ctx);
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Swizzle));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Swizzle));
     ctx.emit_nullop(
       hash_str("TableAccessSwizzle"),
       registers[0],
@@ -223,18 +231,22 @@ impl MechFunctionImpl for TableAccessScalarF {
   }
   fn out(&self) -> Value { Value::Record(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessScalarF {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0,0,0];
     
     registers[0] = compile_register_brrw!(self.out,  ctx);
     registers[1] = compile_register_brrw!(self.source, ctx);
     registers[2] = compile_register_brrw!(self.ix, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
 
     ctx.emit_binop(
       hash_str(stringify!("TableAccessScalarF")),
@@ -309,18 +321,22 @@ impl MechFunctionImpl for TableAccessRangeIndex {
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeIndex {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0,0,0];
     
     registers[0] = compile_register_brrw!(self.out,  ctx);
     registers[1] = compile_register_brrw!(self.source, ctx);
     registers[2] = compile_register_brrw!(self.ix, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::SubscriptRange));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::SubscriptRange));
 
     ctx.emit_binop(
       hash_str(stringify!("TableAccessRangeIndex")),
@@ -368,18 +384,22 @@ impl MechFunctionImpl for TableAccessRangeBool {
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeBool {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let mut registers = [0,0,0];
     
     registers[0] = compile_register_brrw!(self.out,  ctx);
     registers[1] = compile_register_brrw!(self.source, ctx);
     registers[2] = compile_register_brrw!(self.ix, ctx);
 
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::LogicalIndexing));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.require(FeatureFlag::Builtin(FeatureKind::LogicalIndexing));
 
     ctx.emit_binop(
       hash_str(stringify!("TableAccessRangeBool")),

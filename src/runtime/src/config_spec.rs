@@ -1,6 +1,12 @@
+use std::sync::Arc;
+
 use mech_core::{MResult, MechErrorKind, Value};
 
-use crate::{InMemoryDocsProvider, RuntimeCapabilityGrantRegistry, RuntimeCapabilityOperation, RuntimeResourceRegistry};
+use crate::{
+  Capability, IdGenerator, InMemoryDocsProvider,
+  ResourcePathCapability, RuntimeCapabilityOperation,
+  RuntimeResourceRegistry,
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct RuntimeConfigSpec {
@@ -129,7 +135,7 @@ impl MechErrorKind for RuntimeConfigSpecInvalidResource {
   }
 }
 
-pub fn register_config_spec_resources(
+pub(crate) fn register_config_spec_resources(
   registry: &mut RuntimeResourceRegistry,
   spec: &RuntimeConfigSpec,
 ) -> MResult<()> {
@@ -154,12 +160,18 @@ pub fn register_config_spec_resources(
   Ok(())
 }
 
-pub fn register_config_spec_grants(
-  registry: &mut RuntimeCapabilityGrantRegistry,
+pub(crate) fn materialize_config_spec_grants(
+  id_generator: &mut dyn IdGenerator,
   spec: &RuntimeConfigSpec,
-) -> MResult<()> {
+) -> MResult<Vec<Arc<dyn Capability>>> {
+  let mut capabilities = Vec::new();
   for grant in &spec.capability_grants {
-    registry.add_spec(grant.clone())?;
+    capabilities.push(
+      Arc::new(ResourcePathCapability::from_spec(
+        id_generator.capability_id(),
+        grant,
+      )?) as Arc<dyn Capability>,
+    );
   }
-  Ok(())
+  Ok(capabilities)
 }

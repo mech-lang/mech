@@ -85,24 +85,8 @@ fn main() -> MResult<()> {
     r#"{"count":0}"#,
   ))?;
 
-  let actor = runtime.create_actor(
-    "actor:native-function-counter",
-    Some(actor_version),
-    Some(initial_state),
-    Vec::new(),
-  )?;
-
-  let message = runtime.send_message(
-    actor,
-    "increment",
-    b"count by 1".to_vec(),
-  )?;
-
-  println!("actor:         {}", short(actor));
-  println!("initial state: {}", short(initial_state));
-  println!("message:       {}", short(message));
-
   let subject = BasicSubject::new("actor:native-function-counter");
+  let capability_ids = (1..=5).map(CapabilityId).collect::<Vec<_>>();
 
   for (id, name) in [
     (1, "actor/message/kind"),
@@ -118,6 +102,23 @@ fn main() -> MResult<()> {
       [BasicOperation::new("call")],
     )))?;
   }
+
+  let actor = runtime.create_actor(
+    "actor:native-function-counter",
+    Some(actor_version),
+    Some(initial_state),
+    capability_ids,
+  )?;
+
+  let message = runtime.send_message(
+    actor,
+    "increment",
+    b"count by 1".to_vec(),
+  )?;
+
+  println!("actor:         {}", short(actor));
+  println!("initial state: {}", short(initial_state));
+  println!("message:       {}", short(message));
 
   runtime.enqueue_actor(actor)?;
 

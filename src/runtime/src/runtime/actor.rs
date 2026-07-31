@@ -4,7 +4,36 @@
 
 // Actors are the primary entities in the Mech runtime that encapsulate state and behavior. They can receive messages, execute turns, and interact with other actors. The methods in this section allow you to create, retrieve, update, and manage actors, as well as send messages to them and run their turns.
 
-use super::*;
+use crate::runtime::{
+  extension,
+  MechRuntime,
+  RuntimeInvalidOperationError,
+  RuntimeRecordNotFoundError,
+};
+use crate::{
+  ActorBehaviorRuntime,
+  ActorId,
+  ActorRecord,
+  ActorTurn,
+  CapabilityId,
+  HostCall,
+  MessageId,
+  MessageRecord,
+  ModuleVersionId,
+  NoActorBehaviorDriver,
+  ObjectId,
+  ResourceBudgetExceededError,
+  RuntimeContext,
+  RuntimeEventKind,
+  RuntimeTransactionNotFoundError,
+  TransactionId,
+};
+use mech_core::{MResult, MechError, Value};
+use std::collections::HashMap;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 enum VisibleTransactionMessage {
   Durable(MessageRecord),
@@ -29,7 +58,7 @@ impl MechRuntime {
 
     for message in self.store.list_mailbox(actor)? {
       let acknowledged =
-        transaction.staged_message_ack_occurrences(actor, message.id);
+        transaction.store.staged_message_ack_occurrences(actor, message.id);
       let skipped = skipped_occurrences.entry(message.id).or_insert(0);
 
       if *skipped < acknowledged {
@@ -41,11 +70,13 @@ impl MechRuntime {
     }
 
     Ok(transaction
+      .store
       .peek_staged_enqueued_message(actor)
       .map(VisibleTransactionMessage::Staged))
   }
 
   pub fn put_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("put_actor")?;
     let mut context = self.context_for_actor(&actor)?;
     self.put_actor_with_context(&mut context, actor)
   }
@@ -55,6 +86,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("put_actor_with_context")?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -105,6 +137,7 @@ impl MechRuntime {
     state: Option<ObjectId>,
     capabilities: Vec<CapabilityId>,
   ) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("create_actor")?;
     let id = self.next_actor_id();
 
     let mut actor = ActorRecord::new(id, subject)
@@ -134,7 +167,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        if let Some(actor) = transaction.get_staged_actor(id) {
+        if let Some(actor) = transaction.store.get_staged_actor(id) {
           return Ok(Some(actor));
         }
       }
@@ -144,6 +177,7 @@ impl MechRuntime {
   }
 
   pub fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed("update_actor")?;
     self.store.update_actor(actor)
   }
 
@@ -152,6 +186,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorRecord,
   ) -> MResult<ActorId> {
+    self.ensure_runtime_mutation_allowed(
+      "update_actor_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
@@ -173,6 +210,7 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
+    self.ensure_runtime_mutation_allowed("send_message")?;
     let Some(actor_record) = self.store.get_actor(actor)? else {
       return Err(MechError::new(
         RuntimeRecordNotFoundError {
@@ -194,6 +232,9 @@ impl MechRuntime {
     kind: impl Into<String>,
     payload: Vec<u8>,
   ) -> MResult<MessageId> {
+    self.ensure_runtime_mutation_allowed(
+      "send_message_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_messages(1)?;
     context.charge_bytes(payload.len() as u64)?;
@@ -247,7 +288,7 @@ impl MechRuntime {
 
     if let Some(transaction_id) = context.transaction {
       if let Some(transaction) = self.active_transactions.get(&transaction_id) {
-        let ack_count = transaction.staged_message_ack_count(actor)?;
+        let ack_count = transaction.store.staged_message_ack_count(actor)?;
         effective_len = effective_len.checked_sub(ack_count).ok_or_else(|| {
           MechError::new(
             RuntimeInvalidOperationError {
@@ -258,7 +299,7 @@ impl MechRuntime {
           )
         })?;
         effective_len = effective_len
-          .checked_add(transaction.staged_message_enqueue_count(actor)?)
+          .checked_add(transaction.store.staged_message_enqueue_count(actor)?)
           .ok_or_else(|| {
             MechError::new(
               ResourceBudgetExceededError {
@@ -301,6 +342,7 @@ impl MechRuntime {
   }
 
   pub fn pop_message(&mut self, actor: ActorId) -> MResult<Option<MessageRecord>> {
+    self.ensure_runtime_mutation_allowed("pop_message")?;
     self.store.pop_message(actor)
   }
 
@@ -309,6 +351,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor: ActorId,
   ) -> MResult<Option<MessageRecord>> {
+    self.ensure_runtime_mutation_allowed(
+      "pop_message_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     if let Some(transaction_id) = context.transaction {
@@ -362,6 +407,9 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     actor_id: ActorId,
   ) -> MResult<Option<ActorTurn>> {
+    self.ensure_runtime_mutation_allowed(
+      "next_actor_turn_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
 
     let Some(actor) = self.get_actor_with_context(context, actor_id)? else {
@@ -386,6 +434,7 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     turn: &ActorTurn,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed("run_actor_turn_envelope")?;
     let turn_started = Instant::now();
     self.validate_context_for_runtime(context)?;
     turn.validate()?;
@@ -404,6 +453,12 @@ impl MechRuntime {
     }
 
     context.bind_actor_turn(turn);
+    if let Some(transaction_id) = context.transaction {
+      self
+        .active_execution_transaction_mut(transaction_id)?
+        .context_identity
+        .bind_actor_turn(turn);
+    }
 
     self.emit_event_to_context(
       context,
@@ -421,7 +476,11 @@ impl MechRuntime {
       Box::new(NoActorBehaviorDriver::new()),
     );
 
-    let driver_result = driver.run_actor_turn(self, context, turn);
+    let driver_result = extension::invoke_extension(
+      "actor behavior driver",
+      "run_actor_turn",
+      || driver.run_actor_turn(self, context, turn),
+    );
 
     self.actor_behavior_driver = driver;
 
@@ -445,549 +504,10 @@ impl ActorBehaviorRuntime for MechRuntime {
     context: &mut RuntimeContext,
     call: HostCall,
   ) -> MResult<Value> {
-    MechRuntime::call_host_with_context(self, context, call)
+    MechRuntime::call_host_value_with_context(self, context, call)
   }
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-  use crate::actor_behavior::{ActorBehaviorDriver, ActorBehaviorRuntime};
-  use crate::id::SequentialIdGenerator;
-
-  fn runtime_with_actor_and_messages(
-    payloads: &[&[u8]],
-  ) -> MechRuntime {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    runtime
-      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
-      .unwrap();
-
-    for payload in payloads {
-      runtime
-        .send_message(ActorId(1), "ping", payload.to_vec())
-        .unwrap();
-    }
-
-    runtime
-  }
-
-  #[derive(Debug)]
-  struct SleepingActorBehaviorDriver;
-
-  impl ActorBehaviorDriver for SleepingActorBehaviorDriver {
-    fn run_actor_turn(
-      &mut self,
-      _runtime: &mut dyn ActorBehaviorRuntime,
-      _context: &mut RuntimeContext,
-      _turn: &ActorTurn,
-    ) -> MResult<()> {
-      std::thread::sleep(std::time::Duration::from_millis(30));
-      Ok(())
-    }
-  }
-
-  #[test]
-  fn max_actors_is_enforced() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_actors = Some(1);
-    let mut runtime = MechRuntime::new(config).unwrap();
-
-    runtime
-      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
-      .unwrap();
-
-    let error = runtime
-      .put_actor(ActorRecord::new(ActorId(2), "actor:2"))
-      .unwrap_err();
-    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
-    assert_eq!(budget.resource, "actors");
-    assert_eq!(budget.used, 1);
-    assert_eq!(budget.requested, 1);
-    assert_eq!(budget.max, Some(1));
-
-    let duplicate = runtime
-      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
-      .unwrap_err();
-    assert_eq!(duplicate.kind_name(), "StoreRecordAlreadyExists");
-  }
-
-  #[test]
-  fn turn_duration_limit_reports_overrun() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_turn_duration_ms = Some(5);
-    let mut runtime = RuntimeBuilder::new()
-      .config(config)
-      .actor_behavior_driver(SleepingActorBehaviorDriver)
-      .build()
-      .unwrap();
-    let actor = ActorRecord::new(ActorId(1), "actor:1");
-    let message = MessageRecord::new(MessageId(1), ActorId(1), "tick", Vec::new());
-    let turn = ActorTurn::new(actor, message).unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let error = runtime.run_actor_turn_envelope(&mut context, &turn).unwrap_err();
-    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
-    assert_eq!(budget.resource, "turn_duration_ms");
-    assert!(budget.requested > 5);
-    assert_eq!(budget.max, Some(5));
-    assert!(!context.events.iter().any(|event| matches!(event.kind, RuntimeEventKind::ActorTurnCompleted { .. })));
-  }
-
-  #[test]
-  fn transactional_actor_turn_subject_mismatch_is_rejected_before_context_mutation() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    context.subject = "owner".to_string();
-    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-
-    let actor = ActorRecord::new(ActorId(1), "other");
-    let message = MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new());
-    let turn = ActorTurn::new(actor, message).unwrap();
-
-    let subject_before = context.subject.clone();
-    let actor_before = context.actor;
-    let actor_message_before = context.actor_message.clone();
-    let actor_state_before = context.actor_state;
-    let context_event_ids_before: Vec<EventId> =
-      context.events.iter().map(|event| event.id).collect();
-    let runtime_events_before = runtime.list_events(None).unwrap();
-    let staged_event_ids_before = runtime
-      .active_transactions
-      .get(&transaction_id)
-      .unwrap()
-      .staged_event_ids();
-    let staged_put_count_before = runtime
-      .active_transactions
-      .get(&transaction_id)
-      .unwrap()
-      .staged_puts()
-      .count();
-
-    let error = runtime
-      .run_actor_turn_envelope(&mut context, &turn)
-      .unwrap_err();
-
-    assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
-    assert_eq!(context.subject, subject_before);
-    assert_eq!(context.actor, actor_before);
-    assert_eq!(context.actor_message, actor_message_before);
-    assert_eq!(context.actor_state, actor_state_before);
-    assert_eq!(
-      context.events.iter().map(|event| event.id).collect::<Vec<_>>(),
-      context_event_ids_before,
-    );
-    assert_eq!(runtime.list_events(None).unwrap(), runtime_events_before);
-    assert_eq!(
-      runtime
-        .active_transactions
-        .get(&transaction_id)
-        .unwrap()
-        .staged_event_ids(),
-      staged_event_ids_before,
-    );
-    assert_eq!(
-      runtime
-        .active_transactions
-        .get(&transaction_id)
-        .unwrap()
-        .staged_puts()
-        .count(),
-      staged_put_count_before,
-    );
-    assert!(runtime.active_transactions.contains_key(&transaction_id));
-
-    runtime.abort_runtime_transaction(&mut context, "rollback").unwrap();
-  }
-
-  #[test]
-  fn transactional_actor_turn_succeeds_when_subject_matches_owner() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    context.subject = "owner".to_string();
-    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-
-    let actor = ActorRecord::new(ActorId(1), "owner");
-    let message = MessageRecord::new(MessageId(1), ActorId(1), "ping", Vec::new());
-    let turn = ActorTurn::new(actor, message).unwrap();
-
-    runtime.run_actor_turn_envelope(&mut context, &turn).unwrap();
-
-    assert_eq!(context.subject, "owner");
-    assert_eq!(context.actor, Some(ActorId(1)));
-    assert!(context.events.iter().any(|event| {
-      matches!(event.kind, RuntimeEventKind::ActorTurnStarted { actor_id: ActorId(1) })
-    }));
-    assert!(runtime.active_transactions.contains_key(&transaction_id));
-
-    runtime.abort_runtime_transaction(&mut context, "rollback").unwrap();
-  }
-
-  #[test]
-  fn mailbox_limit_survives_fresh_contexts() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_actor_mailbox_len = Some(2);
-    let mut runtime = MechRuntime::new(config).unwrap();
-    runtime
-      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
-      .unwrap();
-
-    runtime
-      .send_message(ActorId(1), "ping", b"one".to_vec())
-      .unwrap();
-    runtime
-      .send_message(ActorId(1), "ping", b"two".to_vec())
-      .unwrap();
-
-    let error = runtime
-      .send_message(ActorId(1), "ping", b"three".to_vec())
-      .unwrap_err();
-    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
-    assert_eq!(budget.resource, "actor_mailbox");
-    assert_eq!(budget.used, 2);
-    assert_eq!(budget.requested, 1);
-    assert_eq!(budget.max, Some(2));
-  }
-
-  #[test]
-  fn transactional_mailbox_limit_uses_effective_length() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_actor_mailbox_len = Some(2);
-    let mut runtime = MechRuntime::new(config).unwrap();
-    runtime
-      .put_actor(ActorRecord::new(ActorId(1), "actor:1"))
-      .unwrap();
-    runtime
-      .send_message(ActorId(1), "ping", b"one".to_vec())
-      .unwrap();
-    runtime
-      .send_message(ActorId(1), "ping", b"two".to_vec())
-      .unwrap();
-
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    let popped = runtime
-      .pop_message_with_context(&mut context, ActorId(1))
-      .unwrap()
-      .unwrap();
-    assert_eq!(popped.payload, b"one");
-
-    runtime
-      .send_message_with_context(
-        &mut context,
-        ActorId(1),
-        "ping",
-        b"three".to_vec(),
-      )
-      .unwrap();
-
-    let error = runtime
-      .send_message_with_context(
-        &mut context,
-        ActorId(1),
-        "ping",
-        b"four".to_vec(),
-      )
-      .unwrap_err();
-    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
-    assert_eq!(budget.resource, "actor_mailbox");
-    assert_eq!(budget.used, 2);
-
-    runtime
-      .abort_runtime_transaction(&mut context, "rollback")
-      .unwrap();
-
-    assert_eq!(
-      runtime.pop_message(ActorId(1)).unwrap().unwrap().payload,
-      b"one",
-    );
-    assert_eq!(
-      runtime.pop_message(ActorId(1)).unwrap().unwrap().payload,
-      b"two",
-    );
-    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
-  }
-
-  #[test]
-  fn transactional_pops_return_distinct_durable_messages_in_fifo_order() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-
-    assert_eq!(
-      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
-      b"one",
-    );
-    assert_eq!(
-      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
-      b"two",
-    );
-  }
-
-  #[test]
-  fn transactional_pops_three_durable_messages_without_repetition() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two", b"three"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-
-    let payloads: Vec<Vec<u8>> = (0..3)
-      .map(|_| {
-        runtime
-          .pop_message_with_context(&mut context, ActorId(1))
-          .unwrap()
-          .unwrap()
-          .payload
-      })
-      .collect();
-
-    assert_eq!(payloads, vec![b"one".to_vec(), b"two".to_vec(), b"three".to_vec()]);
-  }
-
-  #[test]
-  fn transactional_mailbox_returns_durable_before_staged_enqueue() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"durable"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    runtime
-      .send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec())
-      .unwrap();
-
-    assert_eq!(
-      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
-      b"durable",
-    );
-    assert_eq!(
-      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
-      b"staged",
-    );
-  }
-
-  #[test]
-  fn transactional_peek_then_pop_returns_same_effective_head() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-
-    let peeked = runtime.peek_message_with_context(&mut context, ActorId(1)).unwrap().unwrap();
-    let popped = runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap();
-    assert_eq!(peeked.id, popped.id);
-    assert_eq!(popped.payload, b"one");
-  }
-
-  #[test]
-  fn transactional_staged_enqueues_fifo_after_durable_exhausted_then_none() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"durable"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    runtime.send_message_with_context(&mut context, ActorId(1), "ping", b"staged-one".to_vec()).unwrap();
-    runtime.send_message_with_context(&mut context, ActorId(1), "ping", b"staged-two".to_vec()).unwrap();
-
-    let payloads: Vec<Option<Vec<u8>>> = (0..4)
-      .map(|_| runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().map(|m| m.payload))
-      .collect();
-
-    assert_eq!(
-      payloads,
-      vec![
-        Some(b"durable".to_vec()),
-        Some(b"staged-one".to_vec()),
-        Some(b"staged-two".to_vec()),
-        None,
-      ],
-    );
-  }
-
-  #[test]
-  fn commit_removes_acknowledged_durable_messages_once() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two", b"three"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap();
-    runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap();
-    runtime.commit_runtime_transaction(&mut context).unwrap();
-
-    assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"three");
-    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
-  }
-
-  #[test]
-  fn abort_leaves_durable_messages_and_discards_staged_enqueues() {
-    let mut runtime = runtime_with_actor_and_messages(&[b"one", b"two"]);
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap();
-    runtime.send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec()).unwrap();
-    runtime.abort_runtime_transaction(&mut context, "rollback").unwrap();
-
-    assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"one");
-    assert_eq!(runtime.pop_message(ActorId(1)).unwrap().unwrap().payload, b"two");
-    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
-  }
-
-  #[test]
-  fn duplicate_durable_message_ids_are_consumed_by_occurrence() {
-    let mut store = InMemoryStore::new();
-    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
-    store
-      .enqueue_message(
-        ActorId(1),
-        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable-one".to_vec()),
-      )
-      .unwrap();
-    store
-      .enqueue_message(
-        ActorId(1),
-        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable-two".to_vec()),
-      )
-      .unwrap();
-
-    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-
-    assert_eq!(
-      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
-      b"durable-one",
-    );
-    assert_eq!(
-      runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().unwrap().payload,
-      b"durable-two",
-    );
-    assert!(runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().is_none());
-    assert_eq!(
-      runtime
-        .active_transactions
-        .get(&transaction_id)
-        .unwrap()
-        .staged_message_ack_occurrences(ActorId(1), MessageId(5)),
-      2,
-    );
-
-    runtime.commit_runtime_transaction(&mut context).unwrap();
-
-    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
-    assert_eq!(
-      runtime.get_transaction(transaction_id).unwrap().unwrap().message_acks,
-      vec![MessageId(5), MessageId(5)],
-    );
-  }
-
-  #[test]
-  fn duplicate_durable_message_ids_mixed_with_other_ids_preserve_fifo() {
-    let mut store = InMemoryStore::new();
-    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
-    for (id, payload) in [
-      (MessageId(5), b"one".to_vec()),
-      (MessageId(6), b"two".to_vec()),
-      (MessageId(5), b"three".to_vec()),
-    ] {
-      store
-        .enqueue_message(ActorId(1), MessageRecord::new(id, ActorId(1), "ping", payload))
-        .unwrap();
-    }
-
-    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-
-    let payloads: Vec<Vec<u8>> = (0..3)
-      .map(|_| {
-        runtime
-          .pop_message_with_context(&mut context, ActorId(1))
-          .unwrap()
-          .unwrap()
-          .payload
-      })
-      .collect();
-
-    assert_eq!(
-      payloads,
-      vec![b"one".to_vec(), b"two".to_vec(), b"three".to_vec()],
-    );
-    assert!(runtime.pop_message_with_context(&mut context, ActorId(1)).unwrap().is_none());
-  }
-
-  #[test]
-  fn durable_staged_id_collision_commit_keeps_unpopped_staged_message() {
-    let mut store = InMemoryStore::new();
-    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
-    store
-      .enqueue_message(
-        ActorId(1),
-        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable".to_vec()),
-      )
-      .unwrap();
-
-    let mut runtime = MechRuntime::builder()
-      .store(store)
-      .id_generator(SequentialIdGenerator::starting_at(1))
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    let staged_id = runtime
-      .send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec())
-      .unwrap();
-    assert_eq!(staged_id, MessageId(5));
-
-    let popped = runtime
-      .pop_message_with_context(&mut context, ActorId(1))
-      .unwrap()
-      .unwrap();
-    assert_eq!(popped.payload, b"durable".to_vec());
-
-    runtime.commit_runtime_transaction(&mut context).unwrap();
-
-    let remaining = runtime.pop_message(ActorId(1)).unwrap().unwrap();
-    assert_eq!(remaining.id, MessageId(5));
-    assert_eq!(remaining.payload, b"staged".to_vec());
-    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
-  }
-
-  #[test]
-  fn transactional_pop_preserves_provenance_when_durable_and_staged_ids_collide() {
-    let mut store = InMemoryStore::new();
-    store.put_actor(ActorRecord::new(ActorId(1), "actor:1")).unwrap();
-    store
-      .enqueue_message(
-        ActorId(1),
-        MessageRecord::new(MessageId(5), ActorId(1), "ping", b"durable".to_vec()),
-      )
-      .unwrap();
-
-    let mut runtime = MechRuntime::builder()
-      .store(store)
-      .id_generator(SequentialIdGenerator::starting_at(1))
-      .build()
-      .unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-    let staged_id = runtime
-      .send_message_with_context(&mut context, ActorId(1), "ping", b"staged".to_vec())
-      .unwrap();
-
-    assert_eq!(staged_id, MessageId(5));
-
-    let first = runtime
-      .pop_message_with_context(&mut context, ActorId(1))
-      .unwrap()
-      .unwrap();
-    let second = runtime
-      .pop_message_with_context(&mut context, ActorId(1))
-      .unwrap()
-      .unwrap();
-    let third = runtime
-      .pop_message_with_context(&mut context, ActorId(1))
-      .unwrap();
-
-    assert_eq!(first.id, MessageId(5));
-    assert_eq!(second.id, MessageId(5));
-    assert_eq!(first.payload, b"durable".to_vec());
-    assert_eq!(second.payload, b"staged".to_vec());
-    assert!(third.is_none());
-
-    runtime.commit_runtime_transaction(&mut context).unwrap();
-
-    assert!(runtime.pop_message(ActorId(1)).unwrap().is_none());
-  }
-
-}
+#[path = "actor/tests/mod.rs"]
+mod tests;

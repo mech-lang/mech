@@ -13,8 +13,7 @@ fn temp_root(label: &str) -> PathBuf {
 }
 
 fn format_test_lock() -> std::sync::MutexGuard<'static, ()> {
-    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-    LOCK.lock().unwrap()
+    crate::cli::lock_current_dir()
 }
 
 #[test]
@@ -204,12 +203,9 @@ fn format_output_collision_uses_actual_output_paths() {
     std::fs::create_dir_all(root.join("b")).unwrap();
     std::fs::write(root.join("a/main.mec"), "x := 1").unwrap();
     std::fs::write(root.join("b/main.mec"), "y := 2").unwrap();
-    let old_cwd = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&root).unwrap();
     let mut targets = Vec::new();
-    targets.extend(collect_format_targets(Path::new("a"), None, false, false).unwrap());
-    targets.extend(collect_format_targets(Path::new("b"), None, false, false).unwrap());
-    std::env::set_current_dir(old_cwd).unwrap();
+    targets.extend(collect_format_targets(&root.join("a"), None, false, false).unwrap());
+    targets.extend(collect_format_targets(&root.join("b"), None, false, false).unwrap());
 
     ensure_unique_format_outputs(&targets, Path::new("."), false, true, false).unwrap();
     let error = format!(
@@ -660,10 +656,58 @@ fn format_resource_authority_is_limited_to_configured_paths() {
     let unrelated = unrelated_dir.join("style.css");
     std::fs::write(&configured, "body{}").unwrap();
     std::fs::write(&unrelated, "body{}").unwrap();
-    let authority = build_format_resource_authority(&[configured.to_string_lossy().to_string()], "").unwrap();
+    let authority =
+        build_format_resource_authority(&[configured.to_string_lossy().to_string()], "").unwrap();
     let mut kernel = authority.kernel().clone();
-    mech_runtime::check_fs_capability(&mut kernel, authority.subject(), FS_READ, &configured.canonicalize().unwrap()).unwrap();
+    mech_runtime::check_fs_capability(
+        &mut kernel,
+        authority.subject(),
+        FS_READ,
+        &configured.canonicalize().unwrap(),
+    )
+    .unwrap();
     let mut kernel = authority.kernel().clone();
-    assert!(mech_runtime::check_fs_capability(&mut kernel, authority.subject(), FS_READ, &unrelated.canonicalize().unwrap()).is_err());
+    assert!(
+        mech_runtime::check_fs_capability(
+            &mut kernel,
+            authority.subject(),
+            FS_READ,
+            &unrelated.canonicalize().unwrap()
+        )
+        .is_err()
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn formatted_document_runtime_urls_are_relative_to_each_page() {
+    let _guard = format_test_lock();
+    let root = temp_root("relative-runtime-url");
+    let package = root.join("formatted/_mech/pkg/mech_wasm.js");
+    assert_eq!(
+        relative_asset_url(&root.join("formatted/index.html"), &package).unwrap(),
+        "./_mech/pkg/mech_wasm.js",
+    );
+    assert_eq!(
+        relative_asset_url(&root.join("formatted/docs/page.html"), &package).unwrap(),
+        "../_mech/pkg/mech_wasm.js",
+    );
+    assert_eq!(
+        relative_asset_url(&root.join("formatted/docs/reference/page.html"), &package).unwrap(),
+        "../../_mech/pkg/mech_wasm.js",
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn formatter_assets_use_the_explicit_output_directory_root() {
+    let _guard = format_test_lock();
+    let root = temp_root("asset-root");
+    let output = root.join("formatted");
+    let nested_page = output.join("docs/reference/page.html");
+    assert_eq!(
+        formatter_asset_package_directory(&output, false, false, &[nested_page]).unwrap(),
+        output.join("_mech/pkg"),
+    );
     std::fs::remove_dir_all(root).unwrap();
 }

@@ -21,8 +21,10 @@ macro_rules! impl_transpose {
     impl<T> MechFunctionFactory for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + 'static + 
-      ConstElem + CompileConst + AsValueKind +
+      ConstElem + AsValueKind +
       PartialEq + PartialOrd,
+      #[cfg(feature = "compiler")]
+      T: CompileConst,
       Ref<$out_type>: ToValue
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -53,13 +55,17 @@ macro_rules! impl_transpose {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T>
     where
       T: ConstElem + CompileConst + AsValueKind,
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }

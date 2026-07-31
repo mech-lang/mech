@@ -1,8 +1,10 @@
 #![cfg(feature = "provider")]
 
-use mech_core::{BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, BROWSER_DOM_PROVIDER_URI, MResult};
+use std::sync::{Arc, Mutex};
+
+use mech_core::{BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, BROWSER_DOM_PROVIDER_URI, MResult, Ref, Value};
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
-use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest};
+use mech_runtime::{PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest};
 
 #[derive(Debug, Clone)]
 struct TestDomBackend;
@@ -13,6 +15,22 @@ impl BrowserDomBackend for TestDomBackend {
   }
 
   fn write_dom_string(&mut self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath, _value: &str) -> MResult<()> {
+    Ok(())
+  }
+}
+
+#[derive(Debug, Clone, Default)]
+struct RecordingDomBackend {
+  writes: Arc<Mutex<Vec<String>>>,
+}
+
+impl BrowserDomBackend for RecordingDomBackend {
+  fn read_dom_string(&self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath) -> MResult<String> {
+    Ok(String::new())
+  }
+
+  fn write_dom_string(&mut self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath, value: &str) -> MResult<()> {
+    self.writes.lock().unwrap().push(value.to_string());
     Ok(())
   }
 }
@@ -58,4 +76,29 @@ fn default_browser_provider_preflights_legacy_dom_base() {
     operation: RuntimeCapabilityOperation::Write,
     intent: RuntimeResourceWriteIntent::Assign,
   }).unwrap();
+}
+
+#[test]
+fn browser_dom_write_is_deferred_until_delivery() {
+  let backend = RecordingDomBackend::default();
+  let observed = backend.clone();
+  let mut provider = BrowserResourceProvider::new(authority(), backend);
+  let effect = provider.prepare_write(RuntimeResourceWriteRequest {
+    base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
+    path: "body/header/title".to_string(),
+    context_name: "ui".to_string(),
+    operation: RuntimeCapabilityOperation::Write,
+    value: Value::String(Ref::new("deferred".to_string())),
+    intent: RuntimeResourceWriteIntent::Assign,
+  }).unwrap();
+
+  assert!(observed.writes.lock().unwrap().is_empty());
+  match effect {
+    PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver().unwrap(),
+    effect => panic!("expected browser after-commit effect, got {effect:?}"),
+  }
+  assert_eq!(
+    *observed.writes.lock().unwrap(),
+    vec!["deferred".to_string()],
+  );
 }

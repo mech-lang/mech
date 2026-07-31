@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
+#[cfg(windows)]
+use std::path::Prefix;
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
@@ -15,6 +17,20 @@ use super::{
   SourceIncludeCycle, SourceIncludeReadFailed, SourceKind,
   SourceUnknownFileExtension,
 };
+
+impl SourceRequest {
+  /// Creates a source request from a filesystem path.
+  ///
+  /// Unix path bytes are percent-encoded without UTF-8 conversion. The
+  /// Windows drive, UNC, verbatim-drive, and verbatim-UNC paths are normalized
+  /// to standard local or UNC file URIs. The returned request is suitable for
+  /// `FileSourceResolver`.
+  pub fn from_filesystem_path(
+    path: impl AsRef<Path>,
+  ) -> MResult<Self> {
+    Ok(Self::new(path_to_file_uri(path.as_ref())?))
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct SourceFilesystemSpecifierInvalid {
@@ -316,7 +332,11 @@ fn looks_like_windows_drive_path(text: &str) -> bool {
   bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
-fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
+/// Decodes a canonical `file://` source URI into its native filesystem path.
+///
+/// This is the inverse of [`SourceRequest::from_filesystem_path`].  In
+/// particular, Unix path bytes are restored without a lossy UTF-8 conversion.
+pub fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
   let Some(rest) = uri.strip_prefix("file://") else {
     return Err(filesystem_specifier_error(uri, "file URI must start with file://"));
   };
@@ -328,23 +348,27 @@ fn file_uri_to_path(uri: &str) -> MResult<PathBuf> {
   } else {
     return Err(filesystem_specifier_error(uri, "file URI must include an absolute path"));
   };
-  let decoded_path = percent_decode_to_string(uri, raw_path)?;
-  local_file_uri_to_path(uri, authority, &decoded_path)
+  local_file_uri_to_path(uri, authority, raw_path)
 }
 
-#[cfg(not(windows))]
-fn local_file_uri_to_path(uri: &str, authority: &str, decoded_path: &str) -> MResult<PathBuf> {
+#[cfg(unix)]
+fn local_file_uri_to_path(uri: &str, authority: &str, raw_path: &str) -> MResult<PathBuf> {
+  use std::ffi::OsString;
+  use std::os::unix::ffi::OsStringExt;
+
   if !(authority.is_empty() || authority.eq_ignore_ascii_case("localhost")) {
     return Err(filesystem_specifier_error(uri, "non-local file URI authorities are not supported on this platform"));
   }
-  if !decoded_path.starts_with('/') {
+  let decoded_path = percent_decode_to_bytes(uri, raw_path)?;
+  if decoded_path.first() != Some(&b'/') {
     return Err(filesystem_specifier_error(uri, "file URI path must be absolute"));
   }
-  Ok(PathBuf::from(decoded_path))
+  Ok(PathBuf::from(OsString::from_vec(decoded_path)))
 }
 
 #[cfg(windows)]
-fn local_file_uri_to_path(uri: &str, authority: &str, decoded_path: &str) -> MResult<PathBuf> {
+fn local_file_uri_to_path(uri: &str, authority: &str, raw_path: &str) -> MResult<PathBuf> {
+  let decoded_path = percent_decode_to_string(uri, raw_path)?;
   if authority.is_empty() || authority.eq_ignore_ascii_case("localhost") {
     let local_path = if decoded_path.len() >= 4
       && decoded_path.as_bytes()[0] == b'/'
@@ -365,7 +389,19 @@ fn local_file_uri_to_path(uri: &str, authority: &str, decoded_path: &str) -> MRe
   Ok(PathBuf::from(format!("\\\\{}\\{}", authority, path)))
 }
 
-fn percent_decode_to_string(specifier: &str, text: &str) -> MResult<String> {
+#[cfg(not(any(unix, windows)))]
+fn local_file_uri_to_path(uri: &str, authority: &str, raw_path: &str) -> MResult<PathBuf> {
+  if !(authority.is_empty() || authority.eq_ignore_ascii_case("localhost")) {
+    return Err(filesystem_specifier_error(uri, "non-local file URI authorities are not supported on this platform"));
+  }
+  let decoded_path = percent_decode_to_string(uri, raw_path)?;
+  if !decoded_path.starts_with('/') {
+    return Err(filesystem_specifier_error(uri, "file URI path must be absolute"));
+  }
+  Ok(PathBuf::from(decoded_path))
+}
+
+fn percent_decode_to_bytes(specifier: &str, text: &str) -> MResult<Vec<u8>> {
   let bytes = text.as_bytes();
   let mut out = Vec::with_capacity(bytes.len());
   let mut index = 0;
@@ -383,7 +419,12 @@ fn percent_decode_to_string(specifier: &str, text: &str) -> MResult<String> {
       index += 1;
     }
   }
-  String::from_utf8(out).map_err(|error| filesystem_specifier_error(specifier, format!("percent-decoded path is not valid UTF-8: {}", error)))
+  Ok(out)
+}
+
+fn percent_decode_to_string(specifier: &str, text: &str) -> MResult<String> {
+  String::from_utf8(percent_decode_to_bytes(specifier, text)?)
+    .map_err(|error| filesystem_specifier_error(specifier, format!("percent-decoded path is not valid UTF-8: {}", error)))
 }
 
 fn hex_value(byte: u8) -> Option<u8> {
@@ -398,12 +439,7 @@ fn hex_value(byte: u8) -> Option<u8> {
 fn path_to_file_uri(path: &Path) -> MResult<String> {
   #[cfg(windows)]
   {
-    let text = path.display().to_string().replace('\\', "/");
-    if let Some(unc) = text.strip_prefix("//") {
-      return Ok(format!("file://{}", percent_encode_path(unc.as_bytes())));
-    }
-    let path_text = if text.starts_with('/') { text } else { format!("/{}", text) };
-    return Ok(format!("file://{}", percent_encode_path(path_text.as_bytes())));
+    return windows_path_to_file_uri(path);
   }
 
   #[cfg(unix)]
@@ -430,10 +466,110 @@ fn path_to_file_uri(path: &Path) -> MResult<String> {
   }
 }
 
+#[cfg(windows)]
+fn windows_path_to_file_uri(path: &Path) -> MResult<String> {
+  let path_label = format!("{path:?}");
+  let mut components = path.components();
+  let prefix = match components.next() {
+    Some(Component::Prefix(prefix)) => prefix.kind(),
+    _ => {
+      return Err(filesystem_specifier_error(
+        path_label,
+        "Windows file URI source path must include a supported absolute prefix",
+      ));
+    }
+  };
+
+  let mut uri = match prefix {
+    Prefix::Disk(drive) | Prefix::VerbatimDisk(drive) => {
+      if !path.is_absolute() {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "file URI source path must be absolute",
+        ));
+      }
+      format!("file:///{}:", (drive as char).to_ascii_uppercase())
+    }
+    Prefix::UNC(server, share) | Prefix::VerbatimUNC(server, share) => {
+      if !path.is_absolute() {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "file URI source path must be absolute",
+        ));
+      }
+      let server = windows_file_uri_component(path, server)?;
+      let share = windows_file_uri_component(path, share)?;
+      if server.is_empty() || share.is_empty() {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "UNC file URI source path must include server and share names",
+        ));
+      }
+      format!("file://{server}/{share}")
+    }
+    Prefix::DeviceNS(_) => {
+      return Err(filesystem_specifier_error(
+        path_label,
+        "Windows device namespace paths are not supported as file URI sources",
+      ));
+    }
+    Prefix::Verbatim(_) => {
+      return Err(filesystem_specifier_error(
+        path_label,
+        "unsupported Windows verbatim namespace path",
+      ));
+    }
+  };
+
+  for component in components {
+    match component {
+      Component::Prefix(_) => {
+        return Err(filesystem_specifier_error(
+          path_label,
+          "Windows source path contained more than one prefix",
+        ));
+      }
+      Component::RootDir | Component::CurDir => {}
+      Component::ParentDir => uri.push_str("/.."),
+      Component::Normal(part) => {
+        uri.push('/');
+        uri.push_str(&windows_file_uri_component(path, part)?);
+      }
+    }
+  }
+  Ok(uri)
+}
+
+#[cfg(windows)]
+fn windows_file_uri_component(path: &Path, component: &std::ffi::OsStr) -> MResult<String> {
+  let text = component.to_str().ok_or_else(|| {
+    filesystem_specifier_error(
+      format!("{path:?}"),
+      "file URI source path must be valid UTF-8 on this target",
+    )
+  })?;
+  Ok(percent_encode_path_segment(text.as_bytes()))
+}
+
 fn percent_encode_path(bytes: &[u8]) -> String {
   let mut out = String::new();
   for &byte in bytes {
     if is_file_uri_path_byte_unreserved(byte) {
+      out.push(byte as char);
+    } else {
+      out.push('%');
+      out.push(hex_char(byte >> 4));
+      out.push(hex_char(byte & 0x0f));
+    }
+  }
+  out
+}
+
+#[cfg(windows)]
+fn percent_encode_path_segment(bytes: &[u8]) -> String {
+  let mut out = String::new();
+  for &byte in bytes {
+    if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
       out.push(byte as char);
     } else {
       out.push('%');
@@ -949,7 +1085,57 @@ mod tests {
     std::fs::write(&path, "value := 1").unwrap();
     let canonical = path.canonicalize().unwrap();
     let uri = path_to_file_uri(&canonical).unwrap();
-    assert_eq!(file_uri_to_path(&uri).unwrap(), canonical);
+    assert_eq!(
+      file_uri_to_path(&uri).unwrap().canonicalize().unwrap(),
+      canonical.canonicalize().unwrap(),
+    );
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn filesystem_source_request_round_trips_non_utf8_path_bytes() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+
+    let path = temp_root("file-uri-non-utf8-round-trip")
+      .join(OsString::from_vec(b"main-\xFF.mec".to_vec()));
+    let request = SourceRequest::from_filesystem_path(&path).unwrap();
+
+    assert!(request.specifier.starts_with("file://"));
+    assert!(request.specifier.contains("%FF"));
+    assert!(!request.specifier.contains('\u{FFFD}'));
+
+    let decoded = file_uri_to_path(&request.specifier).unwrap();
+    assert_eq!(
+      decoded.as_os_str().as_bytes(),
+      path.as_os_str().as_bytes(),
+    );
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn file_resolver_reads_non_utf8_source_path() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+
+    let root = temp_root("resolve-file-non-utf8");
+    std::fs::create_dir_all(&root).unwrap();
+    let path = root.join(OsString::from_vec(b"main-\xFF.mec".to_vec()));
+    std::fs::write(&path, "answer := 42\n").unwrap();
+    let canonical = path.canonicalize().unwrap();
+
+    let resolver = FileSourceResolver::empty();
+    let request = SourceRequest::from_filesystem_path(&canonical).unwrap();
+    let resolved = resolver.resolve(&request).unwrap().unwrap();
+
+    assert_eq!(resolved.kind, SourceKind::Mech);
+    assert!(resolved.canonical_uri.starts_with("file://"));
+    let round_trip = file_uri_to_path(&resolved.canonical_uri).unwrap();
+    assert_eq!(
+      round_trip.as_os_str().as_bytes(),
+      canonical.as_os_str().as_bytes(),
+    );
     std::fs::remove_dir_all(root).unwrap();
   }
 
@@ -965,6 +1151,79 @@ mod tests {
   fn supports_windows_drive_and_unc_file_uri_forms() {
     assert_eq!(file_uri_to_path("file:///C:/project/main.mec").unwrap(), PathBuf::from("C:\\project\\main.mec"));
     assert_eq!(file_uri_to_path("file://server/share/project/main.mec").unwrap(), PathBuf::from("\\\\server\\share\\project\\main.mec"));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_path_codec_normalizes_drive_and_verbatim_drive_prefixes() {
+    let disk = path_to_file_uri(Path::new(r"C:\project dir\main.mec")).unwrap();
+    let verbatim =
+      path_to_file_uri(Path::new(r"\\?\C:\project dir\main.mec")).unwrap();
+
+    assert_eq!(disk, "file:///C:/project%20dir/main.mec");
+    assert_eq!(verbatim, disk);
+    assert!(disk.starts_with("file:///"));
+    assert!(!disk.contains("%3F"));
+    assert!(!verbatim.contains("%3F"));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_path_codec_normalizes_unc_and_verbatim_unc_prefixes() {
+    let unc =
+      path_to_file_uri(Path::new(r"\\server\share\project dir\main.mec")).unwrap();
+    let verbatim = path_to_file_uri(Path::new(
+      r"\\?\UNC\server\share\project dir\main.mec",
+    ))
+    .unwrap();
+
+    assert_eq!(unc, "file://server/share/project%20dir/main.mec");
+    assert_eq!(verbatim, unc);
+    assert!(!unc.contains("%3F"));
+    assert!(!verbatim.contains("%3F"));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_path_codec_rejects_unsupported_namespaces() {
+    for path in [Path::new(r"\\.\COM1"), Path::new(r"\\?\pictures")] {
+      let error = path_to_file_uri(path).unwrap_err();
+      assert_eq!(error.kind_name(), "SourceFilesystemSpecifierInvalid");
+    }
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn windows_canonicalized_source_request_resolves_real_file() {
+    let root = temp_root("windows-canonical-source");
+    let source_dir = root
+      .join("Mech Windows ü source path # % spaces")
+      .join("nested source");
+    std::fs::create_dir_all(&source_dir).unwrap();
+    let source_path = source_dir.join("main # %.mec");
+    std::fs::write(&source_path, "answer := 42\n").unwrap();
+    let canonical = source_path.canonicalize().unwrap();
+
+    let request = SourceRequest::from_filesystem_path(&canonical).unwrap();
+    assert!(!request.specifier.contains("%3F"));
+    assert!(request.specifier.contains("%20"));
+    assert!(request.specifier.contains("%C3%BC"));
+    assert!(request.specifier.contains("%23"));
+    assert!(request.specifier.contains("%25"));
+
+    let resolved = FileSourceResolver::empty()
+      .resolve(&request)
+      .unwrap()
+      .unwrap();
+    assert_eq!(resolved.kind, SourceKind::Mech);
+    assert_eq!(
+      file_uri_to_path(&resolved.canonical_uri)
+        .unwrap()
+        .canonicalize()
+        .unwrap(),
+      canonical.canonicalize().unwrap(),
+    );
+    std::fs::remove_dir_all(root).unwrap();
   }
 
 

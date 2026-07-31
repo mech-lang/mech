@@ -84,6 +84,12 @@ In HTML shims, these placeholders are available:
 - `{{CONTENTS}}`
 - `{{CONTENT}}` (alias for sectioned contents)
 - `{{CITED}}` (renders Works Cited only where this placeholder appears)
+- `{{FOOTNOTES}}` (renders footnotes only where this placeholder appears)
 - `{{SECTION#}}` where `#` is the 1-indexed numbered section (for example, `{{SECTION1}}`, `{{SECTION2}}`)
+
+The maintained document shims may also use `{{DOCUMENT_SCRIPT}}` and
+`{{SOURCE_URL_KEY}}` to opt into the shared safe browser document controller.
+They are controller slots rather than document metadata. See [Template
+Placeholders](/mechdown/template-placeholders.html) for the browser behavior.
 
 See [Template Placeholders](/mechdown/template-placeholders.html) for the complete placeholder reference, including interactive placeholders such as `{{CODE}}` and `{{REPL}}`.

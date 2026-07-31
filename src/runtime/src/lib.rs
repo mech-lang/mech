@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "no_std", no_std)]
+#![forbid(unsafe_code)]
 
 pub mod id;
 pub mod config;
@@ -8,10 +9,14 @@ pub mod host_delegation;
 #[cfg(feature = "host_delegation_signing")]
 pub mod host_delegation_crypto;
 pub mod operation;
+pub mod effect;
+mod extension;
 mod resource;
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod input;
 pub mod host_interface;
+#[cfg(any(feature = "program", feature = "compiler"))]
+mod snapshot;
 
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub mod runtime;
@@ -48,6 +53,11 @@ pub use self::id::*;
 pub use self::config::*;
 pub use self::config_profile::*;
 pub use self::operation::*;
+pub use self::effect::*;
+pub use self::extension::{
+  RuntimeExtensionPanicked,
+  RuntimeStoreCommitIndeterminate,
+};
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::input::*;
 #[cfg(feature = "host_delegation")]
@@ -56,6 +66,8 @@ pub use self::host_delegation::*;
 pub use self::host_delegation_crypto::*;
 pub use self::resource::*;
 pub use self::host_interface::*;
+#[cfg(any(feature = "program", feature = "compiler"))]
+pub use self::snapshot::*;
 
 #[cfg(any(feature = "program", feature = "compiler"))]
 pub use self::runtime::*;

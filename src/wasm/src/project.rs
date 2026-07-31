@@ -5,7 +5,7 @@ use std::path::Path;
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
-use mech_core::{MechError, MechErrorKind};
+use mech_core::{MechError, MechErrorKind, MechSourceCode};
 #[cfg(feature = "served_project_authority")]
 use base64::Engine as _;
 #[cfg(feature = "served_project_authority")]
@@ -28,7 +28,8 @@ use mech_host_time::BrowserTimeHostFactory;
 use mech_host_timer::BrowserTimerHostFactory;
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
-    ModuleBuildOptions, RuntimeBuilder, SourceKind, SourceRequest, parse_config_document,
+    ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest,
+    SourceResolutionEntry, parse_config_document, validate_source_resolution_entries,
 };
 
 #[cfg(feature = "browser_host_dom")]
@@ -65,19 +66,40 @@ impl WasmProject {
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
+        Self::from_project_sources(document, source_map, Vec::new())
+    }
+
+    #[wasm_bindgen(js_name = fromSourcesWithResolutions)]
+    pub fn from_sources_with_resolutions(
+        config_source: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmProject, JsValue> {
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        Self::from_project_sources(document, source_map, resolutions)
+    }
+
+    fn from_project_sources(
+        document: MechConfigDocument,
+        source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
+    ) -> Result<WasmProject, JsValue> {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions(
+            &source_map,
+            &resolutions,
+        ).map_err(to_js_error)?;
         let mut runtime = build_runtime(&document, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
-        Ok(Self {
+        Ok(Self::from_runtime(
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
-            started: false,
-            stopped: false,
-        })
+        ))
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -85,7 +107,20 @@ impl WasmProject {
     pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_served_project(document, source_map)
+        Self::from_served_project(document, source_map, Vec::new())
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedSourcesWithResolutions)]
+    pub fn from_served_sources_with_resolutions(
+        config_source: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmProject, JsValue> {
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        Self::from_served_project(document, source_map, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -98,38 +133,105 @@ impl WasmProject {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         replace_bundle_run_paths(&mut document, bundle_roots_from_js(roots)?)?;
-        Self::from_served_project(document, source_map)
+        Self::from_served_project(document, source_map, Vec::new())
     }
 
     #[cfg(feature = "served_project_authority")]
     fn from_served_project(
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
     ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver(&source_map).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions(
+            &source_map,
+            &resolutions,
+        ).map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(&document, &authority, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
-        Ok(Self {
+        Ok(Self::from_runtime(
+            runtime,
+            #[cfg(feature = "browser_host_scene")]
+            scenes,
+        ))
+    }
+
+    fn from_runtime(
+        runtime: MechRuntime,
+        #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    ) -> Self {
+        Self {
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
             started: false,
             stopped: false,
-        })
+        }
+    }
+
+    #[wasm_bindgen(js_name = rootInterpreterId)]
+    pub fn root_interpreter_id(&self) -> u64 {
+        self.runtime.root_interpreter_id()
+    }
+
+    #[wasm_bindgen(js_name = renderedOutput)]
+    pub fn rendered_output(
+        &self,
+        interpreter_id: u64,
+        output_id: u64,
+    ) -> Result<JsValue, JsValue> {
+        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+        self.runtime
+            .output_value_for_interpreter(interpreter_id, output_id)
+            .map_err(to_js_error)?
+            .map(rendered_value)
+            .transpose()
+            .map(|value| value.unwrap_or(JsValue::NULL))
+    }
+
+    #[wasm_bindgen(js_name = renderedSymbol)]
+    pub fn rendered_symbol(
+        &self,
+        interpreter_id: u64,
+        name: &str,
+    ) -> Result<JsValue, JsValue> {
+        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+        let names = vec![name.to_string()];
+        let value = self
+            .runtime
+            .symbol_values_for_interpreter(interpreter_id, &names)
+            .map_err(to_js_error)?
+            .and_then(|mut values| values.pop().map(|(_, value)| value));
+        value
+            .map(rendered_value)
+            .transpose()
+            .map(|value| value.unwrap_or(JsValue::NULL))
+    }
+
+    fn actual_interpreter_id(&self, interpreter_id: u64) -> u64 {
+        if interpreter_id == 0 {
+            self.runtime.root_interpreter_id()
+        } else {
+            interpreter_id
+        }
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
-        if self.started {
-            return Ok(());
-        }
-        self.runtime.start_input_drivers().map_err(to_js_error)?;
+        self.refresh_relevant_input_drivers()?;
         self.started = true;
         self.stopped = false;
+        Ok(())
+    }
+
+    /// Reconciles drivers against the retained runtime's current live input
+    /// bindings. The runtime operation is idempotent: active drivers remain
+    /// active and newly relevant drivers are started exactly once.
+    fn refresh_relevant_input_drivers(&mut self) -> Result<(), JsValue> {
+        self.runtime.start_input_drivers().map_err(to_js_error)?;
         Ok(())
     }
 
@@ -186,11 +288,370 @@ impl WasmProject {
         if self.stopped {
             return Ok(());
         }
-        self.runtime.stop_input_drivers().map_err(to_js_error)?;
         self.runtime.shutdown().map_err(to_js_error)?;
         self.started = false;
         self.stopped = true;
         Ok(())
+    }
+}
+
+/// Browser runtime adapter for one formatted Mech source document.
+///
+/// The document owns its bootstrap through its HTML shim. This adapter only
+/// decodes and executes the shim's detached `{{CODE}}` payload, retains the
+/// runtime, and exposes detached render queries.
+enum WasmDocumentBootstrap {
+    Detached,
+    SourceBacked(SourceBackedDocumentBootstrap),
+    #[cfg(feature = "served_project_authority")]
+    Served(ServedDocumentBootstrap),
+}
+
+#[derive(Clone)]
+struct SourceBackedDocumentBootstrap {
+    root_specifier: String,
+    source_map: HashMap<String, String>,
+    resolutions: Vec<SourceResolutionEntry>,
+}
+
+#[cfg(feature = "served_project_authority")]
+#[derive(Clone)]
+struct ServedDocumentBootstrap {
+    source: SourceBackedDocumentBootstrap,
+    config_source: String,
+    authority: BrowserRuntimeInjectionConfig,
+}
+
+#[wasm_bindgen]
+pub struct WasmDocument {
+    project: WasmProject,
+    bootstrap: WasmDocumentBootstrap,
+}
+
+#[wasm_bindgen]
+impl WasmDocument {
+    #[wasm_bindgen(js_name = fromEncoded)]
+    pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let mut runtime =
+            runtime_builder_with_factories(
+                #[cfg(feature = "browser_host_scene")]
+                scenes.clone(),
+            )?
+            .build()
+            .map_err(to_js_error)?;
+        runtime.run_tree(&tree).map_err(to_js_error)?;
+        Ok(Self {
+            project: WasmProject::from_runtime(
+                runtime,
+                #[cfg(feature = "browser_host_scene")]
+                scenes,
+            ),
+            bootstrap: WasmDocumentBootstrap::Detached,
+        })
+    }
+
+    /// Builds a formatted source document with a resolver rooted at its
+    /// logical source specifier. This keeps relative imports available without
+    /// requiring a configured project.
+    #[wasm_bindgen(js_name = fromEncodedWithSources)]
+    pub fn from_encoded_with_sources(
+        encoded: &str,
+        root_specifier: &str,
+        sources: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let source_map = source_map_from_js(sources)?;
+        Self::from_tree_with_sources(tree, root_specifier, source_map, Vec::new())
+    }
+
+    #[wasm_bindgen(js_name = fromEncodedWithBundle)]
+    pub fn from_encoded_with_bundle(
+        encoded: &str,
+        root_specifier: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        Self::from_tree_with_sources(tree, root_specifier, source_map, resolutions)
+    }
+
+    fn from_tree_with_sources(
+        tree: mech_core::nodes::Program,
+        root_specifier: &str,
+        source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
+    ) -> Result<WasmDocument, JsValue> {
+        let bootstrap = SourceBackedDocumentBootstrap {
+            root_specifier: root_specifier.to_string(),
+            source_map,
+            resolutions,
+        };
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let source_resolver = document_source_resolver(tree, &bootstrap)?;
+        let mut runtime = runtime_builder_with_factories(
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?
+        .source_resolver(source_resolver)
+        .build()
+        .map_err(to_js_error)?;
+        runtime
+            .resolve_and_run_root_module(
+                SourceRequest::new(&bootstrap.root_specifier),
+                browser_module_options(),
+            )
+            .map_err(to_js_error)?;
+
+        Ok(Self {
+            project: WasmProject::from_runtime(
+                runtime,
+                #[cfg(feature = "browser_host_scene")]
+                scenes,
+            ),
+            bootstrap: WasmDocumentBootstrap::SourceBacked(bootstrap),
+        })
+    }
+
+    /// Builds a formatted source document with the configured project's
+    /// server-projected host authority and complete source resolver.
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedEncoded)]
+    pub fn from_served_encoded(
+        encoded: &str,
+        root_specifier: &str,
+        config_source: &str,
+        sources: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let authority = served_browser_authority()?;
+        Self::from_served_tree(
+            tree,
+            root_specifier,
+            document,
+            config_source,
+            source_map,
+            Vec::new(),
+            authority,
+        )
+    }
+
+    /// Builds a served document with the resolver's authoritative dependency
+    /// edges. This keeps browser resolution identical to the native workspace
+    /// for extension, index, alias, and other resolver-specific matches.
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = fromServedEncodedWithBundle)]
+    pub fn from_served_encoded_with_bundle(
+        encoded: &str,
+        root_specifier: &str,
+        config_source: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let document = parse_project_config(config_source)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        let authority = served_browser_authority()?;
+        Self::from_served_tree(
+            tree,
+            root_specifier,
+            document,
+            config_source,
+            source_map,
+            resolutions,
+            authority,
+        )
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn from_served_tree(
+        tree: mech_core::nodes::Program,
+        root_specifier: &str,
+        document: MechConfigDocument,
+        config_source: &str,
+        source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
+        authority: BrowserRuntimeInjectionConfig,
+    ) -> Result<WasmDocument, JsValue> {
+        let source = SourceBackedDocumentBootstrap {
+            root_specifier: root_specifier.to_string(),
+            source_map,
+            resolutions,
+        };
+        validate_served_authority(&document, &authority).map_err(to_js_error)?;
+        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let source_resolver = document_source_resolver(tree, &source)?;
+        let mut runtime = build_runtime_from_authority(
+            &document,
+            &authority,
+            source_resolver,
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?;
+        runtime
+            .resolve_and_run_root_module(
+                SourceRequest::new(&source.root_specifier),
+                browser_module_options(),
+            )
+            .map_err(to_js_error)?;
+
+        Ok(Self {
+            project: WasmProject::from_runtime(
+                runtime,
+                #[cfg(feature = "browser_host_scene")]
+                scenes,
+            ),
+            bootstrap: WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
+                source,
+                config_source: config_source.to_string(),
+                authority,
+            }),
+        })
+    }
+
+    #[wasm_bindgen(js_name = rootInterpreterId)]
+    pub fn root_interpreter_id(&self) -> u64 {
+        self.project.root_interpreter_id()
+    }
+
+    #[wasm_bindgen(js_name = renderedOutput)]
+    pub fn rendered_output(
+        &self,
+        interpreter_id: u64,
+        output_id: u64,
+    ) -> Result<JsValue, JsValue> {
+        self.project.rendered_output(interpreter_id, output_id)
+    }
+
+    #[wasm_bindgen(js_name = renderedSymbol)]
+    pub fn rendered_symbol(
+        &self,
+        interpreter_id: u64,
+        name: &str,
+    ) -> Result<JsValue, JsValue> {
+        self.project.rendered_symbol(interpreter_id, name)
+    }
+
+    #[wasm_bindgen(js_name = reset)]
+    pub fn reset(&mut self, encoded: &str) -> Result<(), JsValue> {
+        // Construct before touching the live project. A malformed replacement
+        // must leave the current document usable.
+        let replacement = match &self.bootstrap {
+            WasmDocumentBootstrap::Detached => Self::from_encoded(encoded)?,
+            WasmDocumentBootstrap::SourceBacked(bootstrap) => {
+                Self::from_tree_with_sources(
+                    decode_document_tree(encoded)?,
+                    &bootstrap.root_specifier,
+                    bootstrap.source_map.clone(),
+                    bootstrap.resolutions.clone(),
+                )?
+            }
+            #[cfg(feature = "served_project_authority")]
+            WasmDocumentBootstrap::Served(bootstrap) => {
+                let tree = decode_document_tree(encoded)?;
+                let document = parse_project_config(&bootstrap.config_source)?;
+                Self::from_served_tree(
+                    tree,
+                    &bootstrap.source.root_specifier,
+                    document,
+                    &bootstrap.config_source,
+                    bootstrap.source.source_map.clone(),
+                    bootstrap.source.resolutions.clone(),
+                    bootstrap.authority.clone(),
+                )?
+            }
+        };
+        let was_started = self.project.started && !self.project.stopped;
+
+        self.project.stop()?;
+        self.project = replacement.project;
+        self.bootstrap = replacement.bootstrap;
+        if was_started {
+            self.project.start()?;
+        }
+        Ok(())
+    }
+
+    #[wasm_bindgen(js_name = step)]
+    pub fn step(&mut self, count: u64) -> Result<(), JsValue> {
+        if count == 0 {
+            return Err(js_error("count must be greater than zero"));
+        }
+        #[cfg(feature = "functions")]
+        {
+            for _ in 0..count {
+                self.project.runtime.step(0).map_err(to_js_error)?;
+            }
+            Ok(())
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            let _ = count;
+            Err(js_error("this WASM artifact was built without reactive step support"))
+        }
+    }
+
+    #[wasm_bindgen(js_name = renderedSymbols)]
+    pub fn rendered_symbols(&self, names: JsValue) -> Result<JsValue, JsValue> {
+        let names = rendered_symbol_names_from_js(names)?;
+        let values = match names {
+            Some(names) => {
+                let names = names.iter().map(String::as_str).collect::<Vec<_>>();
+                self.project.runtime.root_symbol_values(&names).map_err(to_js_error)?
+            }
+            None => self.project.runtime.root_symbol_values_all().map_err(to_js_error)?,
+        };
+        let rows = Array::new();
+        for (name, value) in values {
+            rows.push(&rendered_symbol_row(&name, value)?);
+        }
+        Ok(rows.into())
+    }
+
+    #[wasm_bindgen(js_name = interpreterIdByName)]
+    pub fn interpreter_id_by_name(&self, name: &str) -> Result<JsValue, JsValue> {
+        self.project
+            .runtime
+            .interpreter_id_by_name(name)
+            .map_err(to_js_error)
+            .map(|id| {
+                id.map(|id| js_sys::BigInt::from(id).into())
+                    .unwrap_or(JsValue::NULL)
+            })
+    }
+
+    pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
+        let rendered = self.project
+            .runtime
+            .run_string(source)
+            .map_err(to_js_error)
+            .and_then(rendered_value)?;
+        if self.project.started && !self.project.stopped {
+            self.project.refresh_relevant_input_drivers()?;
+        }
+        Ok(rendered)
+    }
+
+    pub fn start(&mut self) -> Result<(), JsValue> {
+        self.project.start()
+    }
+
+    pub fn frame(&mut self, max_inputs: usize) -> Result<JsValue, JsValue> {
+        self.project.frame(max_inputs)
+    }
+
+    pub fn stop(&mut self) -> Result<(), JsValue> {
+        self.project.stop()
     }
 }
 
@@ -251,6 +712,12 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
     )
     .map_err(to_js_error)
 }
+
+fn decode_document_tree(encoded: &str) -> Result<mech_core::nodes::Program, JsValue> {
+    mech_core::nodes::decode_and_decompress(encoded)
+        .map_err(|error| js_error(format!("failed to decode Mech document: {error}")))
+}
+
 fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
     let document = parse_config_document(
         "browser-project/mech.mcfg",
@@ -588,6 +1055,50 @@ fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue
     Ok(out)
 }
 
+fn required_resolution_field(
+    value: &JsValue,
+    field: &'static str,
+) -> Result<String, JsValue> {
+    let value = Reflect::get(value, &JsValue::from_str(field))?
+        .as_string()
+        .ok_or_else(|| js_error(format!(
+            "document source resolution `{field}` must be a string",
+        )))?;
+    if value.trim().is_empty() {
+        return Err(js_error(format!(
+            "document source resolution `{field}` must not be empty",
+        )));
+    }
+    Ok(value)
+}
+
+fn document_resolutions_from_js(
+    value: JsValue,
+    sources: &HashMap<String, String>,
+) -> Result<Vec<SourceResolutionEntry>, JsValue> {
+    if !Array::is_array(&value) {
+        return Err(js_error("document source resolutions must be an array"));
+    }
+    let mut resolutions = Vec::new();
+    for entry in Array::from(&value).iter() {
+        if !entry.is_object() || entry.is_null() {
+            return Err(js_error("document source resolution entries must be objects"));
+        }
+        let referrer = required_resolution_field(&entry, "referrer")?;
+        let specifier = required_resolution_field(&entry, "specifier")?;
+        let target = required_resolution_field(&entry, "target")?;
+        resolutions.push(SourceResolutionEntry::new(referrer, specifier, target));
+    }
+    validate_source_resolution_entries(
+        sources.keys().map(String::as_str),
+        &resolutions,
+    )
+    .map_err(to_js_error)?;
+    resolutions.sort();
+    resolutions.dedup();
+    Ok(resolutions)
+}
+
 fn project_source_resolver(
     sources: &HashMap<String, String>,
 ) -> mech_core::MResult<InMemorySourceResolver> {
@@ -595,6 +1106,53 @@ fn project_source_resolver(
     for (specifier, source) in sources {
         resolver.insert_string(specifier, source)?;
     }
+    Ok(resolver)
+}
+
+fn project_source_resolver_with_resolutions(
+    sources: &HashMap<String, String>,
+    resolutions: &[SourceResolutionEntry],
+) -> mech_core::MResult<InMemorySourceResolver> {
+    validate_source_resolution_entries(
+        sources.keys().map(String::as_str),
+        resolutions,
+    )?;
+    let mut resolver = project_source_resolver(sources)?;
+    for resolution in resolutions {
+        resolver.insert_resolution_entry(resolution)?;
+    }
+    Ok(resolver)
+}
+
+fn document_source_resolver(
+    tree: mech_core::nodes::Program,
+    source: &SourceBackedDocumentBootstrap,
+) -> Result<InMemorySourceResolver, JsValue> {
+    if source.root_specifier.trim().is_empty() {
+        return Err(js_error("document root specifier must not be empty"));
+    }
+    if !source.source_map.contains_key(&source.root_specifier) {
+        return Err(js_error(format!(
+            "document root `{}` is missing from the source map",
+            source.root_specifier,
+        )));
+    }
+
+    let mut resolver = project_source_resolver(&source.source_map).map_err(to_js_error)?;
+    for resolution in &source.resolutions {
+        resolver.insert_resolution_entry(resolution).map_err(to_js_error)?;
+    }
+    resolver
+        .insert_source(
+            &source.root_specifier,
+            ResolvedSource::new(
+                &source.root_specifier,
+                format!("memory:{}", source.root_specifier),
+                MechSourceCode::Tree(tree),
+            )
+            .with_kind(SourceKind::Mech),
+        )
+        .map_err(to_js_error)?;
     Ok(resolver)
 }
 
@@ -613,14 +1171,87 @@ fn run_project_sources(
     document: &MechConfigDocument,
 ) -> mech_core::MResult<()> {
     let run = require_run(document)?;
-    for path in &run.paths {
-        let key = path.to_string_lossy().to_string();
+    let roots = run
+        .paths
+        .iter()
+        .map(|path| path.to_string_lossy().to_string())
+        .collect::<Vec<_>>();
+    run_source_roots(runtime, roots.iter().map(String::as_str))
+}
+
+fn run_source_roots<'a>(
+    runtime: &mut MechRuntime,
+    roots: impl IntoIterator<Item = &'a str>,
+) -> mech_core::MResult<()> {
+    for key in roots {
         runtime.resolve_and_run_root_module(
-            SourceRequest::new(key),
+            SourceRequest::new(key.to_string()),
             browser_module_options(),
         )?;
     }
     Ok(())
+}
+
+fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValue, JsValue> {
+    let value = snapshot.into_value();
+    let rendered = Object::new();
+    Reflect::set(
+        &rendered,
+        &JsValue::from_str("kind"),
+        &JsValue::from_str(&format!("{:?}", value.kind())),
+    )?;
+    Reflect::set(
+        &rendered,
+        &JsValue::from_str("blockHtml"),
+        &JsValue::from_str(&value.to_html()),
+    )?;
+    Reflect::set(
+        &rendered,
+        &JsValue::from_str("inlineHtml"),
+        &JsValue::from_str(&mech_core::escape_html_text(
+            &value.format_value_inline(),
+        )),
+    )?;
+    Ok(rendered.into())
+}
+
+fn rendered_symbol_names_from_js(names: JsValue) -> Result<Option<Vec<String>>, JsValue> {
+    if names.is_null() || names.is_undefined() {
+        return Ok(None);
+    }
+    if !Array::is_array(&names) {
+        return Err(js_error("renderedSymbols names must be null, undefined, or an array of strings"));
+    }
+    Array::from(&names)
+        .iter()
+        .map(|name| {
+            name.as_string().ok_or_else(|| {
+                js_error("renderedSymbols names must contain only strings")
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some)
+}
+
+fn rendered_symbol_row(
+    name: &str,
+    snapshot: mech_runtime::RuntimeValueSnapshot,
+) -> Result<JsValue, JsValue> {
+    let rendered_value = rendered_value(snapshot)?;
+    let row = Object::new();
+    Reflect::set(
+        &row,
+        &JsValue::from_str("name"),
+        &JsValue::from_str(name),
+    )?;
+    for property in ["kind", "inlineHtml", "blockHtml"] {
+        Reflect::set(
+            &row,
+            &JsValue::from_str(property),
+            &Reflect::get(&rendered_value, &JsValue::from_str(property))?,
+        )?;
+    }
+    Ok(row.into())
 }
 fn require_run(document: &MechConfigDocument) -> mech_core::MResult<&mech_runtime::RunHostConfig> {
     let run = document.run.as_ref().ok_or_else(|| {
@@ -767,30 +1398,69 @@ mod tests {
         run_project_sources(&mut runtime, &document).unwrap();
     }
 
-    #[cfg(feature = "served_project_authority")]
     #[test]
-    fn served_bundle_roots_execute_bundle_local_main_and_sibling_dependency() {
-        let mut document = project_document(&["ignored.mec"]);
-        replace_bundle_run_paths(&mut document, vec!["src/main.mec".to_string()]).unwrap();
-        let sources = HashMap::from([
-            (
-                "src/main.mec".to_string(),
-                "+> ./dep.mec\nanswer := dep/value + 1\n".to_string(),
-            ),
-            ("src/dep.mec".to_string(), "value := 41\n<+ value\n".to_string()),
-        ]);
+    fn encoded_document_runs_on_runtime_and_exposes_root_output() {
+        let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let mut runtime = RuntimeBuilder::new()
-            .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
 
-        run_project_sources(&mut runtime, &document).unwrap();
+        let decoded: mech_core::nodes::Program =
+            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+        runtime.run_tree(&decoded).unwrap();
 
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
 
-    fn assert_f64(value: mech_core::Value, expected: f64) {
-        match value {
+    #[test]
+    fn encoded_fizzbuzz_document_retains_fenced_block_output() {
+        let tree = mech_syntax::parser::parse(include_str!(
+            "../../../examples/working/fizzbuzz.mec"
+        ))
+        .unwrap();
+        let output_id = tree
+            .body
+            .sections
+            .iter()
+            .flat_map(|section| &section.elements)
+            .filter_map(|element| match element {
+                mech_core::nodes::SectionElement::FencedMechCode(block)
+                    if block.config.output =>
+                {
+                    block.code.last().map(|(code, _)| {
+                        mech_core::hash_str(&format!("{code:?}"))
+                    })
+                }
+                _ => None,
+            })
+            .last()
+            .expect("FizzBuzz fixture must contain an output block");
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let decoded: mech_core::nodes::Program =
+            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+
+        assert_eq!(
+            output_id, 29_884_140_763_677_669,
+            "the browser runtime key must match the native formatter key",
+        );
+        runtime.run_tree(&decoded).unwrap();
+
+        assert!(
+            runtime
+                .output_value_for_interpreter(
+                    runtime.root_interpreter_id(),
+                    output_id,
+                )
+                .unwrap()
+                .is_some(),
+            "FizzBuzz output must remain queryable by its formatted block id",
+        );
+    }
+
+    fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
+        match value.into_value() {
             mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
             mech_core::Value::MutableReference(value) => match &*value.borrow() {
                 mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
@@ -824,6 +1494,83 @@ mod tests {
 
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
         assert_f64(runtime.root_symbol_value("parent-answer").unwrap(), 42.0);
+    }
+
+    #[test]
+    fn source_backed_document_resolves_relative_imports_from_its_root_specifier() {
+        let source = "The imported answer is {math/value + 1}.\n\n+> ./math.mec\nanswer := math/value + 1\nanswer\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let source_map = HashMap::from([
+            (
+                "docs/main.mec".to_string(),
+                source.to_string(),
+            ),
+            (
+                "docs/math.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
+        ]);
+
+        let document = WasmDocument::from_tree_with_sources(
+            tree,
+            "docs/main.mec",
+            source_map,
+            Vec::new(),
+        )
+        .unwrap();
+
+        assert_f64(
+            document.project.runtime.root_symbol_value("answer").unwrap(),
+            42.0,
+        );
+        assert_f64(
+            document
+                .project
+                .runtime
+                .output_value_for_interpreter(
+                    document.project.runtime.root_interpreter_id(),
+                    mech_core::hash_str("inline-eval:0:0"),
+                )
+                .unwrap()
+                .expect("formatted source root must retain inline output"),
+            42.0,
+        );
+    }
+
+    #[test]
+    fn source_backed_document_preserves_explicit_resolution_edges_across_reset() {
+        let source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let source_map = HashMap::from([
+            ("bundle/000000.mec".to_string(), source.to_string()),
+            (
+                "bundle/000001.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
+        ]);
+        let resolutions = vec![SourceResolutionEntry::new(
+            "bundle/000000.mec",
+            "./math.mec",
+            "bundle/000001.mec",
+        )];
+
+        let mut document = WasmDocument::from_tree_with_sources(
+            tree,
+            "bundle/000000.mec",
+            source_map,
+            resolutions,
+        ).unwrap();
+        assert_f64(
+            document.project.runtime.root_symbol_value("answer").unwrap(),
+            42.0,
+        );
+
+        document.reset(&encoded).unwrap();
+        assert_f64(
+            document.project.runtime.root_symbol_value("answer").unwrap(),
+            42.0,
+        );
     }
 
     #[test]
@@ -1003,12 +1750,14 @@ rows := |id<string> x<f64>|
         run_project_sources(&mut runtime, &document).unwrap();
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[derive(Debug)]
     struct TestManualTimerHostFactory {
         manifest: mech_runtime::HostManifestConfig,
         snapshot: mech_host_timer::SharedTimerSnapshot,
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl TestManualTimerHostFactory {
         fn new() -> Self {
             Self {
@@ -1018,6 +1767,7 @@ rows := |id<string> x<f64>|
         }
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl mech_runtime::RuntimeHostFactory for TestManualTimerHostFactory {
         fn provider_name(&self) -> &str { "timer" }
         fn manifest(&self) -> &mech_runtime::HostManifestConfig { &self.manifest }
@@ -1038,6 +1788,7 @@ rows := |id<string> x<f64>|
         }
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn generic_fixture_document() -> MechConfigDocument {
         parse_config_document(
             "generic-timer-table-scene/mech.mcfg",
@@ -1046,6 +1797,7 @@ rows := |id<string> x<f64>|
         ).unwrap()
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn generic_fixture_sources() -> HashMap<String, String> {
         let mut sources = HashMap::new();
         sources.insert(
@@ -1055,7 +1807,7 @@ rows := |id<string> x<f64>|
         sources
     }
 
-
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn fixture_timer_packet(tick: u64, delta_seconds: f64) -> mech_runtime::RuntimeHostInput {
         mech_runtime::RuntimeHostInput::new(vec![
             mech_runtime::RuntimeHostInputUpdate {
@@ -1069,6 +1821,7 @@ rows := |id<string> x<f64>|
         ]).unwrap()
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[test]
     fn generic_timer_table_scene_fixture_executes_with_timer_and_scene_hosts() {
         let document = generic_fixture_document();
@@ -1195,15 +1948,333 @@ rows := |id<string> x<f64>|
 #[cfg(all(test, target_arch = "wasm32"))]
 mod browser_tests {
     use super::*;
-    use js_sys::Object;
+    use js_sys::{Array, Object};
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+    fn encoded_document(source: &str) -> String {
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        mech_core::nodes::compress_and_encode(&tree).unwrap()
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_authority() -> BrowserRuntimeInjectionConfig {
+        BrowserRuntimeInjectionConfig {
+            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "clock".to_string(),
+                provider: "time".to_string(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            }],
+            run_grants: vec![mech_runtime::RunResourceGrantConfig {
+                target: "clock/clock".to_string(),
+                operations: vec!["read".to_string()],
+                paths: vec!["second".to_string()],
+            }],
+        }
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_config() -> &'static str {
+        r#"config := {
+  hosts: [{ name: "clock" provider: "time" settings: {} }]
+  run: {
+    paths: ["docs/main.mec"]
+    grants: [{ target: "clock/clock" operations: ["read"] paths: ["second"] }]
+  }
+}"#
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_source() -> &'static str {
+        "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nconfigured-answer := math/value + @clock/second * 0\n~answer := 41\nanswer\n"
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn served_document_sources() -> JsValue {
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("docs/main.mec"),
+            &JsValue::from_str(served_document_source()),
+        )
+        .unwrap();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("docs/math.mec"),
+            &JsValue::from_str("value := 41\n<+ value\n"),
+        )
+        .unwrap();
+        sources.into()
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn install_served_authority(authority: &BrowserRuntimeInjectionConfig) {
+        Reflect::set(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+            &serde_wasm_bindgen::to_value(authority).unwrap(),
+        )
+        .unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn assert_configured_answer(document: &WasmDocument) {
+        let configured_answer = document
+            .rendered_symbol(0, "configured-answer")
+            .unwrap();
+        assert_eq!(
+            Reflect::get(&configured_answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("41"),
+        );
+    }
+
+    const DOCUMENT_TEST_INPUT_BASE_URI: &str = "test://clock/ticks";
+
+    #[derive(Debug, Default)]
+    struct DocumentInputDriverState {
+        starts: usize,
+        stops: usize,
+        live: bool,
+        ingress: Option<mech_runtime::RuntimeIngress>,
+    }
+
+    #[derive(Clone, Debug)]
+    struct DocumentInputDriver {
+        state: Rc<RefCell<DocumentInputDriverState>>,
+    }
+
+    impl mech_runtime::RuntimeHostInputDriver for DocumentInputDriver {
+        fn drives(&self, source: &mech_runtime::RuntimeHostInputSource) -> bool {
+            source.base_uri() == DOCUMENT_TEST_INPUT_BASE_URI && source.path() == "value"
+        }
+
+        fn attach(&mut self, ingress: mech_runtime::RuntimeIngress) -> mech_core::MResult<()> {
+            self.state.borrow_mut().ingress = Some(ingress);
+            Ok(())
+        }
+
+        fn start(&mut self) -> mech_core::MResult<()> {
+            let mut state = self.state.borrow_mut();
+            state.starts += 1;
+            state.live = true;
+            Ok(())
+        }
+
+        fn stop(&mut self) -> mech_core::MResult<()> {
+            let mut state = self.state.borrow_mut();
+            state.stops += 1;
+            state.live = false;
+            Ok(())
+        }
+
+        fn is_live(&self) -> bool {
+            self.state.borrow().live
+        }
+    }
+
+    #[derive(Debug)]
+    struct DocumentInputProvider;
+
+    impl mech_runtime::RuntimeResourceProvider for DocumentInputProvider {
+        fn scheme(&self) -> &str {
+            "test"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            vec![DOCUMENT_TEST_INPUT_BASE_URI.to_string()]
+        }
+
+        fn read(
+            &self,
+            request: mech_runtime::RuntimeResourceReadRequest,
+        ) -> mech_core::MResult<mech_core::Value> {
+            if request.base_uri == DOCUMENT_TEST_INPUT_BASE_URI && request.path == "value" {
+                return Ok(mech_core::Value::F64(mech_core::Ref::new(0.0)));
+            }
+            Err(MechError::new(
+                ProjectError {
+                    message: "missing document test resource".to_string(),
+                },
+                None,
+            ))
+        }
+    }
+
+    #[derive(Debug)]
+    struct DocumentInputHostFactory {
+        manifest: mech_runtime::HostManifestConfig,
+        state: Rc<RefCell<DocumentInputDriverState>>,
+    }
+
+    impl DocumentInputHostFactory {
+        fn new(state: Rc<RefCell<DocumentInputDriverState>>) -> Self {
+            Self {
+                manifest: mech_runtime::HostManifestConfig {
+                    provider: "document-test-input".to_string(),
+                    contexts: vec![mech_runtime::HostContextManifest {
+                        name: "ticks".to_string(),
+                        base_uri_template: "test://{instance}/ticks".to_string(),
+                        operations: vec!["read".to_string()],
+                    }],
+                },
+                state,
+            }
+        }
+    }
+
+    impl mech_runtime::RuntimeHostFactory for DocumentInputHostFactory {
+        fn provider_name(&self) -> &str {
+            "document-test-input"
+        }
+
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+            &self.manifest
+        }
+
+        fn validate_settings(
+            &self,
+            _instance_name: &str,
+            _settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<()> {
+            Ok(())
+        }
+
+        fn instantiate(
+            &self,
+            _instance_name: &str,
+            _settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
+            Ok(mech_runtime::RuntimeHostInstallation {
+                interface: mech_runtime::materialize_host_manifest("clock", &self.manifest)?,
+                resource_providers: vec![Box::new(DocumentInputProvider)],
+                input_drivers: vec![Box::new(DocumentInputDriver {
+                    state: self.state.clone(),
+                })],
+            })
+        }
+    }
+
+    fn document_with_manual_input_driver(
+    ) -> (WasmDocument, Rc<RefCell<DocumentInputDriverState>>) {
+        let state = Rc::new(RefCell::new(DocumentInputDriverState::default()));
+        let runtime = RuntimeBuilder::new()
+            .host_factory(Box::new(DocumentInputHostFactory::new(state.clone())))
+            .unwrap()
+            .host_instance(mech_runtime::HostInstanceConfig {
+                name: "clock".to_string(),
+                provider: "document-test-input".to_string(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            })
+            .run_resource_grant(mech_runtime::RunResourceGrantConfig {
+                target: "clock/ticks".to_string(),
+                operations: vec!["read".to_string()],
+                paths: vec!["value".to_string()],
+            })
+            .build()
+            .unwrap();
+        (
+            WasmDocument {
+                project: WasmProject::from_runtime(
+                    runtime,
+                    #[cfg(feature = "browser_host_scene")]
+                    BrowserSceneRegistry::new(),
+                ),
+                bootstrap: WasmDocumentBootstrap::Detached,
+            },
+            state,
+        )
+    }
 
 
     #[wasm_bindgen_test]
     fn wasm_project_reports_served_authority_capability() {
         assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_reuses_validated_served_authority() {
+        let authority = served_document_authority();
+        install_served_authority(&authority);
+        let encoded = encoded_document(served_document_source());
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded,
+            "docs/main.mec",
+            served_document_config(),
+            served_document_sources(),
+        )
+        .unwrap();
+
+        document.reset(&encoded).unwrap();
+        assert_configured_answer(&document);
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_does_not_adopt_replaced_global_authority() {
+        let authority = served_document_authority();
+        install_served_authority(&authority);
+        let encoded = encoded_document(served_document_source());
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded,
+            "docs/main.mec",
+            served_document_config(),
+            served_document_sources(),
+        )
+        .unwrap();
+
+        let replacement = BrowserRuntimeInjectionConfig {
+            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        };
+        install_served_authority(&replacement);
+        document.reset(&encoded).unwrap();
+        assert_configured_answer(&document);
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_survives_removed_global_authority() {
+        let authority = served_document_authority();
+        install_served_authority(&authority);
+        let encoded = encoded_document(served_document_source());
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded,
+            "docs/main.mec",
+            served_document_config(),
+            served_document_sources(),
+        )
+        .unwrap();
+
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
+        document.reset(&encoded).unwrap();
+        assert_configured_answer(&document);
     }
 
     #[wasm_bindgen_test]
@@ -1221,6 +2292,243 @@ mod browser_tests {
         project.start().unwrap();
         project.stop().unwrap();
         project.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn encoded_document_executes_and_exposes_detached_render_queries() {
+        let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        let rendered = document.rendered_symbol(0, "answer").unwrap();
+        assert!(!rendered.is_null());
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+        );
+        assert!(document.rendered_output(0, u64::MAX).unwrap().is_null());
+        document.start().unwrap();
+        assert!(document.frame(1).is_ok());
+        document.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn encoded_document_uses_the_formatter_root_namespace_for_inline_output() {
+        let encoded = encoded_document(
+            "The document evaluates {answer + 1} inline.\n\nanswer := 41",
+        );
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let output_id = mech_core::hash_str("inline-eval:0:0");
+        let rendered = document
+            .rendered_output(0, output_id)
+            .unwrap();
+
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_evaluate_returns_rendered_value() {
+        let encoded = encoded_document("answer := 41 + 1\nanswer");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        let rendered = document.evaluate("answer + 1").unwrap();
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("43"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_evaluate_refreshes_mutable_root_symbol() {
+        let encoded = encoded_document("~answer := 41\nanswer");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        document.evaluate("answer = 7").unwrap();
+
+        let answer = document.rendered_symbol(0, "answer").unwrap();
+        assert_eq!(
+            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("7"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_evaluate_starts_newly_relevant_input_driver() {
+        let (mut document, state) = document_with_manual_input_driver();
+        document.start().unwrap();
+        assert_eq!(state.borrow().starts, 0);
+
+        document
+            .evaluate(
+                "@tick := test://clock/ticks{:read(value)}\ncurrent := @tick/value\ncurrent",
+            )
+            .unwrap();
+        assert_eq!(state.borrow().starts, 1);
+
+        document
+            .project
+            .runtime
+            .ingress()
+            .submit(mech_runtime::RuntimeHostInput::single(
+                mech_runtime::RuntimeHostInputSource::new(
+                    DOCUMENT_TEST_INPUT_BASE_URI,
+                    "value",
+                )
+                .unwrap(),
+                mech_runtime::RuntimeHostInputValue::F64(7.0),
+            ))
+            .unwrap();
+        document.frame(1).unwrap();
+        let current = document.rendered_symbol(0, "current").unwrap();
+        assert_eq!(
+            Reflect::get(&current, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("7"),
+        );
+
+        document.evaluate("unrelated := 1\nunrelated").unwrap();
+        assert_eq!(state.borrow().starts, 1);
+        document.stop().unwrap();
+        assert_eq!(state.borrow().stops, 1);
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_failed_evaluation_does_not_start_driver() {
+        let (mut document, state) = document_with_manual_input_driver();
+        document.start().unwrap();
+
+        assert!(document.evaluate("missing-document-symbol").is_err());
+        assert_eq!(state.borrow().starts, 0);
+        document.stop().unwrap();
+        assert_eq!(state.borrow().stops, 1);
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_restores_initial_program() {
+        let initial = encoded_document("answer := 1\nanswer");
+        let mut document = WasmDocument::from_encoded(&initial).unwrap();
+        document.evaluate("temporary := 9\ntemporary").unwrap();
+        assert!(!document.rendered_symbol(0, "temporary").unwrap().is_null());
+
+        document.reset(&initial).unwrap();
+
+        assert!(document.rendered_symbol(0, "temporary").unwrap().is_null());
+        let answer = document.rendered_symbol(0, "answer").unwrap();
+        assert_eq!(
+            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("1"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_step_rejects_zero() {
+        let encoded = encoded_document("answer := 1\nanswer");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        assert!(document.step(0).is_err());
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_rendered_symbols_returns_detached_rows() {
+        let initial = encoded_document("answer := 42\nanswer");
+        let replacement = encoded_document("answer := 7\nanswer");
+        let mut document = WasmDocument::from_encoded(&initial).unwrap();
+        let requested = Array::new();
+        requested.push(&JsValue::from_str("answer"));
+        let rows = Array::from(&document.rendered_symbols(requested.into()).unwrap());
+        assert_eq!(rows.length(), 1);
+        let row = rows.get(0);
+        assert_eq!(
+            Reflect::get(&row, &JsValue::from_str("name"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("answer"),
+        );
+        assert_eq!(
+            Reflect::get(&row, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+        );
+
+        document.reset(&replacement).unwrap();
+        assert_eq!(
+            Reflect::get(&row, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("42"),
+            "rendered symbol rows must not retain a live runtime value",
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_named_interpreter_lookup_is_stable() {
+        let encoded = encoded_document("~~~mech:foo\nanswer := 7\n~~~");
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let id = document.interpreter_id_by_name("foo").unwrap();
+        assert!(id.is_bigint());
+        assert_eq!(
+            id,
+            JsValue::from(js_sys::BigInt::from(mech_core::hash_str("foo"))),
+        );
+        assert!(document.interpreter_id_by_name("missing").unwrap().is_null());
+    }
+
+    #[wasm_bindgen_test]
+    fn encoded_fizzbuzz_document_uses_native_formatter_output_key() {
+        let tree = mech_syntax::parser::parse(include_str!(
+            "../../../examples/working/fizzbuzz.mec"
+        ))
+        .unwrap();
+        let output_id = tree
+            .body
+            .sections
+            .iter()
+            .flat_map(|section| &section.elements)
+            .filter_map(|element| match element {
+                mech_core::nodes::SectionElement::FencedMechCode(block)
+                    if block.config.output =>
+                {
+                    block.code.last().map(|(code, _)| {
+                        mech_core::hash_str(&format!("{code:?}"))
+                    })
+                }
+                _ => None,
+            })
+            .last()
+            .expect("FizzBuzz fixture must contain an output block");
+        assert_eq!(
+            output_id, 29_884_140_763_677_669,
+            "the WASM output key must match the native formatter key",
+        );
+
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        assert!(
+            !document.rendered_output(0, output_id).unwrap().is_null(),
+            "the formatted FizzBuzz output must remain renderable in WASM",
+        );
     }
 
     #[wasm_bindgen_test]

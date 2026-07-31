@@ -1917,3 +1917,175 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
     min-width: 0;
   }
 }
+
+/* ========================================================================
+   Shipped document controller
+   ======================================================================== */
+
+.workspace {
+  grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--console-width));
+}
+
+/* Keep the rich document's three direct grid children in their intended
+   tracks when a formatted document is served alongside its source file. */
+.workspace > .content-shell {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.workspace > .resize-handle {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.workspace > .console-pane {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.workspace[data-mech-console-open="false"] {
+  grid-template-columns: minmax(0, 1fr) 0 0;
+}
+
+.workspace[data-mech-console-open="false"] .resize-handle {
+  display: none;
+}
+
+.document-console-toggle {
+  position: fixed;
+  top: calc(var(--header-height) + 12px);
+  right: calc(var(--mech-console-size, var(--console-width)) + 12px);
+  z-index: 902;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--console-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+}
+
+.document-console-toggle:hover,
+.document-console-toggle:focus-visible {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.workspace[data-mech-console-open="false"] .document-console-toggle {
+  right: 12px;
+}
+
+.console-pane.hidden,
+.console-pane.is-collapsed {
+  display: none;
+}
+
+.console-pane.is-fullscreen {
+  position: fixed;
+  inset: var(--header-height) 0 0 0;
+  width: 100vw;
+  height: auto;
+  z-index: 900;
+}
+
+.mech-repl {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.mech-repl.hidden {
+  display: none;
+}
+
+.mech-repl-transcript {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.mech-repl-input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.repl-prompt {
+  color: var(--accent-primary);
+  font-family: ui-monospace, monospace;
+  line-height: 1.55;
+}
+
+.repl-input {
+  min-width: 0;
+  min-height: 1.5rem;
+  flex: 1;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--console-text);
+  font: inherit;
+}
+
+.footer-robot img[hidden] + .mika-glyph {
+  max-height: 120px;
+  margin-top: 8px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+@media (max-width: 900px) {
+  .workspace .document-console-toggle {
+    top: auto;
+    right: 12px;
+    bottom: 76px;
+  }
+
+  .workspace[data-mech-console-open="true"] .document-console-toggle {
+    right: min(94vw, 520px);
+  }
+
+  .workspace[data-mech-console-open="true"] .console-pane {
+    display: flex !important;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: min(94vw, 520px);
+    height: min(70vh, 620px);
+    z-index: 900;
+    box-shadow: -8px 0 28px rgba(0, 0, 0, 0.45);
+  }
+
+  .workspace[data-mech-console-open="false"] .console-pane,
+  .workspace .console-pane.hidden,
+  .workspace .console-pane.is-collapsed {
+    display: none !important;
+  }
+
+  .workspace .edge-handle {
+    display: block !important;
+    position: fixed;
+    right: 0;
+    bottom: 24px;
+    top: auto;
+    z-index: 901;
+  }
+
+  .workspace[data-mech-console-open="true"] .edge-handle {
+    right: min(94vw, 520px);
+  }
+}

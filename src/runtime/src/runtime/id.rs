@@ -14,7 +14,16 @@
 // - `next_event_id`: Generates the next unique EventId.
 // - `next_message_id`: Generates the next unique MessageId, which is derived from the next EventId to ensure uniqueness.
 
-use super::*;
+use crate::runtime::MechRuntime;
+use crate::{
+  ActorId,
+  CapabilityId,
+  EventId,
+  MessageId,
+  ObjectId,
+  TaskId,
+  TransactionId,
+};
   
 impl MechRuntime {
   pub fn next_object_id(&mut self) -> ObjectId {

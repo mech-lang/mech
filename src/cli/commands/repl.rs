@@ -1,19 +1,22 @@
 use std::io;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-#[cfg(feature = "mika")]
+#[cfg(any(feature = "mika", feature = "run"))]
 use std::thread;
-#[cfg(feature = "mika")]
+#[cfg(feature = "run")]
+use std::thread::JoinHandle;
+#[cfg(any(feature = "mika", feature = "run"))]
 use std::time::Duration;
 
 use chrono::{Datelike, Local, NaiveDateTime, Timelike};
 use colored::*;
+#[cfg(feature = "run")]
+use crossbeam_channel::{Receiver, RecvTimeoutError, Sender};
 use crossterm::{ExecutableCommand, cursor, style::Print};
 #[cfg(feature = "mika")]
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use mech_core::*;
 use mech_program::*;
-#[cfg(feature = "run")]
-use mech_runtime::RuntimeConfig;
 #[cfg(feature = "mika")]
 use mech_syntax::MICROMIKA_WAVE;
 use mech_syntax::{ReplCommand, parse_repl_command};
@@ -89,9 +92,219 @@ mod tests {
 
 pub(crate) struct ReplStartup {
     #[cfg(feature = "run")]
-    pub runtime_config: Option<RuntimeConfig>,
-    #[cfg(all(feature = "run", feature = "repl"))]
-    pub seed_program: Option<MechProgram>,
+    pub runtime: Option<mech_runtime::MechRuntime>,
+}
+
+enum ReplLoopControl {
+    Continue,
+    Quit,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReplInterruptDisposition {
+    Continue,
+    GracefulRuntimeExit,
+    ImmediateProcessExit,
+}
+
+fn repl_interrupt_disposition(
+    runtime_backed: bool,
+    interrupt_count: usize,
+) -> ReplInterruptDisposition {
+    if interrupt_count < 3 {
+        ReplInterruptDisposition::Continue
+    } else if runtime_backed {
+        ReplInterruptDisposition::GracefulRuntimeExit
+    } else {
+        ReplInterruptDisposition::ImmediateProcessExit
+    }
+}
+
+#[cfg(feature = "mika")]
+fn print_repl_farewell() {
+    play_mika_farewell(
+        ProgressDrawTarget::stderr(),
+        format!("{}Okay cya!{}\n", "⸢".bright_yellow(), "⸥".bright_yellow(),),
+        Duration::from_millis(100),
+    );
+}
+
+#[cfg(not(feature = "mika"))]
+fn print_repl_farewell() {
+    println!("Okay cya!");
+}
+
+fn process_repl_input(
+    repl: &mut MechRepl,
+    input: String,
+    output: &mut dyn FnMut(String),
+) -> ReplLoopControl {
+    if input.chars().next() == Some(':') {
+        // Path-oriented REPL commands use a CRLF delimiter in the syntax
+        // parser. Normalize terminal input so Unix LF input follows the same
+        // command path as Windows console input.
+        let command_input = input
+            .strip_suffix("\r\n")
+            .or_else(|| input.strip_suffix('\n'))
+            .unwrap_or(input.as_str());
+        let command_input = format!("{command_input}\r\n");
+        match parse_repl_command(command_input.as_str()) {
+            Ok((_, repl_command)) => match repl.execute_repl_command_control(repl_command) {
+                Ok(ReplExecution::Output(value)) => output(value),
+                Ok(ReplExecution::Quit) => return ReplLoopControl::Quit,
+                Err(error) => output(format!("!{error:?}")),
+            },
+            Err(error) => output(format!(
+                "{} Unrecognized command: {}",
+                "[Error]".truecolor(246, 98, 78),
+                error,
+            )),
+        }
+    } else if input.trim().is_empty() {
+        return ReplLoopControl::Continue;
+    } else {
+        let command = ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(input))]);
+        match repl.execute_repl_command_control(command) {
+            Ok(ReplExecution::Output(value)) => output(value),
+            Ok(ReplExecution::Quit) => return ReplLoopControl::Quit,
+            Err(error) => output(format!("(x)> {error:#?}")),
+        }
+    }
+
+    ReplLoopControl::Continue
+}
+
+#[cfg(feature = "run")]
+#[derive(Debug)]
+enum RuntimeReplInput {
+    Line(String),
+    EndOfInput,
+    ReadFailed(String),
+}
+
+#[cfg(feature = "run")]
+struct RuntimeReplInputWorker {
+    input: Receiver<RuntimeReplInput>,
+    resume: Sender<()>,
+    handle: JoinHandle<()>,
+    waiting_for_resume: Arc<AtomicBool>,
+}
+
+#[cfg(feature = "run")]
+const RUNTIME_REPL_INPUT_POLL: Duration = Duration::from_millis(10);
+
+#[cfg(feature = "run")]
+const MAX_REPL_HOST_INPUTS_PER_TURN: usize = 64;
+
+#[cfg(feature = "run")]
+fn spawn_runtime_repl_input_worker() -> RuntimeReplInputWorker {
+    let (sender, receiver) = crossbeam_channel::bounded(1);
+    let (resume, wait_for_resume) = crossbeam_channel::bounded(0);
+    let waiting_for_resume = Arc::new(AtomicBool::new(false));
+    let worker_waiting_for_resume = waiting_for_resume.clone();
+    let handle = thread::spawn(move || {
+        loop {
+            let mut input = String::new();
+            match io::stdin().read_line(&mut input) {
+                Ok(0) => {
+                    let _ = sender.send(RuntimeReplInput::EndOfInput);
+                    break;
+                }
+                Ok(_) => {
+                    worker_waiting_for_resume.store(true, Ordering::Release);
+                    if sender.send(RuntimeReplInput::Line(input)).is_err() {
+                        worker_waiting_for_resume.store(false, Ordering::Release);
+                        break;
+                    }
+                    if wait_for_resume.recv().is_err() {
+                        worker_waiting_for_resume.store(false, Ordering::Release);
+                        break;
+                    }
+                    worker_waiting_for_resume.store(false, Ordering::Release);
+                }
+                Err(error) => {
+                    let _ = sender.send(RuntimeReplInput::ReadFailed(error.to_string()));
+                    break;
+                }
+            }
+        }
+    });
+    RuntimeReplInputWorker {
+        input: receiver,
+        resume,
+        handle,
+        waiting_for_resume,
+    }
+}
+
+#[cfg(feature = "run")]
+fn runtime_repl_input_error(message: impl Into<String>) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: message.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(feature = "run")]
+fn run_runtime_repl_event_loop(
+    repl: &mut MechRepl,
+    input: &Receiver<RuntimeReplInput>,
+    poll_interval: Duration,
+    exit_requested: &AtomicBool,
+    before_input: &mut dyn FnMut(),
+    output: &mut dyn FnMut(String),
+    after_command: &mut dyn FnMut(),
+    after_idle_drain: &mut dyn FnMut(),
+) -> MResult<CliOutcome> {
+    let loop_result = (|| {
+        if exit_requested.load(Ordering::Acquire) {
+            return Ok(CliOutcome::exit(0));
+        }
+
+        repl.start_runtime_input_drivers()?;
+
+        before_input();
+        loop {
+            if exit_requested.load(Ordering::Acquire) {
+                return Ok(CliOutcome::exit(0));
+            }
+
+            match input.recv_timeout(poll_interval) {
+                Ok(RuntimeReplInput::Line(line)) => {
+                    repl.drain_all_pending_runtime_host_inputs()?;
+                    let control = process_repl_input(repl, line, output);
+                    if matches!(control, ReplLoopControl::Quit) {
+                        return Ok(CliOutcome::exit(0));
+                    }
+
+                    repl.start_runtime_input_drivers()?;
+                    before_input();
+                    after_command();
+                }
+                Ok(RuntimeReplInput::EndOfInput) => return Ok(CliOutcome::exit(0)),
+                Ok(RuntimeReplInput::ReadFailed(error)) => {
+                    return Err(runtime_repl_input_error(format!(
+                        "failed to read runtime REPL input: {error}",
+                    )));
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    repl.drain_runtime_host_inputs(MAX_REPL_HOST_INPUTS_PER_TURN)?;
+                    after_idle_drain();
+                }
+                Err(RecvTimeoutError::Disconnected) => return Ok(CliOutcome::exit(0)),
+            }
+        }
+    })();
+    let shutdown_result = repl.shutdown_runtime();
+
+    match (loop_result, shutdown_result) {
+        (Err(error), _) => Err(error),
+        (Ok(_), Err(error)) => Err(error),
+        (Ok(outcome), Ok(())) => Ok(outcome),
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -157,37 +370,52 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     );
     println!("{} {}", micromika, intro_message);
 
+    let runtime_backed_startup = {
+        #[cfg(feature = "run")]
+        {
+            startup.runtime.is_some()
+        }
+
+        #[cfg(not(feature = "run"))]
+        {
+            false
+        }
+    };
+    let runtime_exit_requested = Arc::new(AtomicBool::new(false));
     let caught_interrupts = Arc::new(Mutex::new(0));
     let ci = caught_interrupts.clone();
+    let handler_exit_requested = runtime_exit_requested.clone();
     ctrlc::set_handler(move || {
         println!("{}", ctrlc_cmd);
-        let should_exit = {
+        let interrupt_count = {
             let mut caught_interrupts = match ci.lock() {
                 Ok(guard) => guard,
                 Err(poisoned) => poisoned.into_inner(),
             };
 
             *caught_interrupts += 1;
-            *caught_interrupts >= 3
+            *caught_interrupts
         };
-        if should_exit {
-            #[cfg(feature = "mika")]
-            play_mika_farewell(
-                ProgressDrawTarget::stderr(),
-                format!("{}Okay cya!{}\n", mika_open, mika_close),
-                Duration::from_millis(100),
-            );
 
-            #[cfg(not(feature = "mika"))]
-            println!("Okay cya!");
-
-            std::process::exit(0);
+        match repl_interrupt_disposition(runtime_backed_startup, interrupt_count) {
+            ReplInterruptDisposition::Continue => {
+                println!(
+                    "\n{} {}Enter {} to terminate this REPL session.{}\n",
+                    micromika_point, mika_open, quit_cmd, mika_close
+                );
+                print_prompt();
+            }
+            ReplInterruptDisposition::GracefulRuntimeExit => {
+                if handler_exit_requested.swap(true, Ordering::AcqRel) {
+                    return;
+                }
+                print_repl_farewell();
+            }
+            ReplInterruptDisposition::ImmediateProcessExit => {
+                print_repl_farewell();
+                std::process::exit(0);
+            }
         }
-        println!(
-            "\n{} {}Enter {} to terminate this REPL session.{}\n",
-            micromika_point, mika_open, quit_cmd, mika_close
-        );
-        print_prompt();
     })
     .map_err(|error| {
         MechError::new(
@@ -200,26 +428,12 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     })?;
 
     #[cfg(all(feature = "repl", feature = "run"))]
-    let mut repl = {
-        if let Some(program) = startup.seed_program {
-            MechRepl::from(program)
-        } else {
-            let config = startup
-                .runtime_config
-                .unwrap_or_else(RuntimeConfig::default);
-            config.validate()?;
-            let mut repl_program = MechProgram::new(MechProgramConfig {
-                name: config.name.clone(),
-                environment: MechProgramEnvironment::default(),
-            });
-            repl_program.configure(
-                config.diagnostics.debug_enabled,
-                config.diagnostics.trace_enabled,
-                config.diagnostics.profile_enabled,
-                config.limits.max_steps_per_turn_as_usize()?,
-            );
-            MechRepl::from(repl_program)
-        }
+    let mut repl = match startup.runtime {
+        Some(runtime) => MechRepl::from_runtime(runtime),
+        None => MechRepl::from(MechProgram::new(MechProgramConfig {
+            name: format!("repl-{}", generate_uuid()),
+            environment: MechProgramEnvironment::default(),
+        })),
     };
 
     #[cfg(all(feature = "repl", not(feature = "run")))]
@@ -227,6 +441,56 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         name: format!("repl-{}", generate_uuid()),
         environment: MechProgramEnvironment::default(),
     }));
+
+    #[cfg(feature = "run")]
+    if repl.is_runtime_backed() {
+        let RuntimeReplInputWorker {
+            input,
+            resume,
+            handle,
+            waiting_for_resume,
+        } = spawn_runtime_repl_input_worker();
+        let mut before_input = || {
+            if let Ok(mut interrupts) = caught_interrupts.lock() {
+                *interrupts = 0;
+            }
+            print_prompt();
+        };
+        let mut output = |value: String| println!("{value}");
+        let mut after_idle_drain = || {};
+        let loop_result = {
+            let mut after_command = || {
+                let _ = resume.send(());
+            };
+            run_runtime_repl_event_loop(
+                &mut repl,
+                &input,
+                RUNTIME_REPL_INPUT_POLL,
+                runtime_exit_requested.as_ref(),
+                &mut before_input,
+                &mut output,
+                &mut after_command,
+                &mut after_idle_drain,
+            )
+        };
+        let worker_was_waiting = waiting_for_resume.load(Ordering::Acquire);
+        drop(resume);
+        let worker_result = if worker_was_waiting || handle.is_finished() {
+            handle
+                .join()
+                .map_err(|_| runtime_repl_input_error("runtime REPL input worker panicked"))
+        } else {
+            // A portable blocking stdin read cannot be cancelled. On an
+            // idle-loop failure, detach that read rather than blocking
+            // runtime cleanup; normal submitted-line and :quit paths join.
+            Ok(())
+        };
+        return match (loop_result, worker_result) {
+            (Err(error), _) => Err(error),
+            (Ok(_), Err(error)) => Err(error),
+            (Ok(outcome), Ok(())) => Ok(outcome),
+        };
+    }
 
     loop {
         {
@@ -238,28 +502,16 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
 
-        if input.chars().next() == Some(':') {
-            match parse_repl_command(input.as_str()) {
-                Ok((_, repl_command)) => match repl.execute_repl_command_control(repl_command) {
-                    Ok(ReplExecution::Output(output)) => println!("{}", output),
-                    Ok(ReplExecution::Quit) => return Ok(CliOutcome::exit(0)),
-                    Err(err) => println!("!{:?}", err),
-                },
-                Err(x) => println!(
-                    "{} Unrecognized command: {}",
-                    "[Error]".truecolor(246, 98, 78),
-                    x
-                ),
-            }
-        } else if input.trim().is_empty() {
-            continue;
-        } else {
-            let cmd = ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(input))]);
-            match repl.execute_repl_command_control(cmd) {
-                Ok(ReplExecution::Output(output)) => println!("{}", output),
-                Ok(ReplExecution::Quit) => return Ok(CliOutcome::exit(0)),
-                Err(err) => println!("(x)> {:#?}", err),
-            }
+        let mut output = |value: String| println!("{value}");
+        if matches!(
+            process_repl_input(&mut repl, input, &mut output),
+            ReplLoopControl::Quit
+        ) {
+            return Ok(CliOutcome::exit(0));
         }
     }
 }
+
+#[cfg(all(test, feature = "run"))]
+#[path = "repl/tests/runtime_live.rs"]
+mod runtime_live_tests;

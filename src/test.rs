@@ -1,12 +1,13 @@
 use crate::*;
-use mech_core::*;
-use mech_program::*;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use crate::cli::module_execution::{
+  execute_source_module_roots_with_report,
+  module_runtime_config,
+};
 use crate::fs_paths::{extension_allowed, unsupported_source_path_error};
 use crate::source_discovery::{
   collect_sources_with_events,
@@ -14,10 +15,33 @@ use crate::source_discovery::{
   DiscoveryOptions,
   MissingPathPolicy,
 };
+use mech_program::{
+  IntegrityConstraintEvaluation, IntegrityConstraintFailureReason,
+  IntegrityConstraintViolation, IntegrityConstraintViolationSet,
+};
 
 const TEST_EXPLICIT_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
 const TEST_RECURSIVE_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const TEST_SKIP_DIRS: &[&str] = &["target", ".git", "dist", "out"];
+
+/// A discovered test source keeps its filesystem identity separate from the
+/// human-readable label used in terminal and serialized reports. On Unix, a
+/// valid source filename need not be UTF-8, so the label must never be used to
+/// reconstruct an execution path.
+#[derive(Clone, Debug)]
+struct TestSourceTarget {
+  path: PathBuf,
+  display: String,
+}
+
+impl TestSourceTarget {
+  fn from_path(path: PathBuf) -> Self {
+    Self {
+      display: path.display().to_string(),
+      path,
+    }
+  }
+}
 
 fn collect_test_targets(path: &Path) -> MResult<Vec<PathBuf>> {
   if let Ok(metadata) = std::fs::symlink_metadata(path) {
@@ -88,12 +112,12 @@ fn is_bytecode_test_path(path: &Path) -> bool {
   matches!(mech_runtime::SourceKind::from_path(path), mech_runtime::SourceKind::MechBytecode)
 }
 
-fn bytecode_test_unsupported_error(path: &str) -> MechError {
+fn bytecode_test_unsupported_error(path: &Path) -> MechError {
   MechError::new(
     GenericError {
       msg: format!(
         "Bytecode test input `{}` is not supported because compiled bytecode does not currently include invariant metadata. Run tests from source files instead.",
-        path
+        path.display()
       ),
     },
     None,
@@ -112,6 +136,57 @@ struct CaseDetail {
   evaluated_kind: String,
   actual: String,
   expected: String,
+}
+
+fn integrity_reason(
+  reason: Option<&IntegrityConstraintFailureReason>,
+) -> String {
+  match reason {
+    None => "evaluated to true".to_string(),
+    Some(IntegrityConstraintFailureReason::EvaluatedFalse) => {
+      "evaluated to false".to_string()
+    }
+    Some(IntegrityConstraintFailureReason::ExpectedBool) => {
+      "expected a scalar bool".to_string()
+    }
+    Some(IntegrityConstraintFailureReason::BorrowConflict) => {
+      "could not read the settled constraint result".to_string()
+    }
+  }
+}
+
+fn integrity_evaluation_case(
+  evaluation: &IntegrityConstraintEvaluation,
+) -> CaseDetail {
+  CaseDetail {
+    name: evaluation.name.clone(),
+    expression: evaluation.expression.clone(),
+    reason: integrity_reason(evaluation.reason.as_ref()),
+    evaluated_kind: evaluation
+      .evaluated_kind
+      .as_ref()
+      .map(ToString::to_string)
+      .unwrap_or_else(|| "unknown".to_string()),
+    actual: evaluation.actual.clone().unwrap_or_default(),
+    expected: evaluation.expected.clone().unwrap_or_default(),
+  }
+}
+
+fn integrity_violation_case(
+  violation: &IntegrityConstraintViolation,
+) -> CaseDetail {
+  CaseDetail {
+    name: violation.name.clone(),
+    expression: violation.expression.clone(),
+    reason: integrity_reason(Some(&violation.reason)),
+    evaluated_kind: violation
+      .evaluated_kind
+      .as_ref()
+      .map(ToString::to_string)
+      .unwrap_or_else(|| "unknown".to_string()),
+    actual: violation.actual.clone().unwrap_or_default(),
+    expected: violation.expected.clone().unwrap_or_default(),
+  }
 }
 
 #[derive(Debug, Serialize)]
@@ -284,16 +359,16 @@ pub(crate) fn run_mech_tests_without_tree(
   output_path: Option<String>,
   verbose: bool,
 ) -> Result<i32, MechError> {
-  let mut expanded_paths = Vec::new();
+  let mut expanded_targets = Vec::new();
   for input in mech_paths {
     let input_path = Path::new(&input);
     let targets = collect_test_targets(input_path)?;
     for target in targets {
-      expanded_paths.push(target.display().to_string());
+      expanded_targets.push(TestSourceTarget::from_path(target));
     }
   }
 
-  if expanded_paths.is_empty() {
+  if expanded_targets.is_empty() {
     return Err(MechError::new(
       GenericError {
         msg: "No test targets were found.".to_string(),
@@ -305,84 +380,100 @@ pub(crate) fn run_mech_tests_without_tree(
 
   let mut file_reports = Vec::new();
   println!("{} Running tests...\n", "[Test]".truecolor(153, 221, 85));
-  for path in &expanded_paths {
-    let uuid = generate_uuid();
-    let mut program = MechProgram::new(MechProgramConfig {
-      name: format!("test-{}", uuid),
-      environment: MechProgramEnvironment::default(),
-    });
-    program.configure(debug_flag, trace_flag, time_flag, 10_000);
-    if is_bytecode_test_path(Path::new(path)) {
-      let err = bytecode_test_unsupported_error(path);
+  for target in &expanded_targets {
+    if is_bytecode_test_path(&target.path) {
+      let err = bytecode_test_unsupported_error(&target.path);
       eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
+      file_reports.push(FileReport { path: target.display.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
       continue;
     }
-    let source = match mech_runtime::read_runtime_source_file(Path::new(path)) {
-      Ok(source) => source,
+    let config = module_runtime_config(
+      format!("test-{}", generate_uuid()),
+      debug_flag,
+      trace_flag,
+      time_flag,
+      10_000,
+    )?;
+    let execution = match execute_source_module_roots_with_report(
+      config,
+      &[target.path.clone()],
+    ) {
+      Ok(execution) => execution,
       Err(err) => {
-        let err = MechError::new(
-          GenericError {
-            msg: format!("Unable to read test source `{}`: {:?}", path, err),
-          },
-          None,
-        )
-        .with_compiler_loc();
+        if let Some(failures) =
+          err.kind_as::<IntegrityConstraintViolationSet>()
+        {
+          let mut passed_cases = Vec::new();
+          let mut failed_cases = Vec::new();
+          if failures.evaluations.is_empty() {
+            failed_cases.extend(
+              failures
+                .violations
+                .iter()
+                .map(integrity_violation_case),
+            );
+          } else {
+            for evaluation in &failures.evaluations {
+              let detail = integrity_evaluation_case(evaluation);
+              if evaluation.passed {
+                passed_cases.push(detail);
+              } else {
+                failed_cases.push(detail);
+              }
+            }
+          }
+          let passed = passed_cases.len();
+          let failed = failed_cases.len();
+          let total = passed + failed;
+          println!("{} {}\n", "[Test]".truecolor(153, 221, 85), target.display);
+          for detail in &passed_cases {
+            println!("{}   ✓", detail.name);
+          }
+          for detail in &failed_cases {
+            println!("{}   ✗", detail.name);
+          }
+          file_reports.push(FileReport {
+            path: target.display.clone(),
+            result: FileResult {
+              total,
+              passed,
+              failed,
+            },
+            failed: failed_cases,
+            passed: passed_cases,
+            run_error: None,
+          });
+          continue;
+        }
         eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-        file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
+        file_reports.push(FileReport { path: target.display.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
         continue;
       }
     };
-    if let Err(err) = program.run_source(&source) {
-      eprintln!("{} {}", "[Error]".truecolor(246,98,78), err.display_message());
-      file_reports.push(FileReport { path: path.clone(), result: FileResult{total:0,passed:0,failed:0}, failed: vec![], passed: vec![], run_error: Some(err.display_message()) });
-      continue;
-    }
-
-    let state = &program.interpreter().state.borrow();
-    println!("{} {}\n", "[Test]".truecolor(153, 221, 85), path);
-
-    let mut violations: HashMap<u64, CaseDetail> = HashMap::new();
-    for v in &state.invariant_violations {
-      if let Some(inv) = v.error.kind_as::<InvariantViolationError>() {
-        violations.insert(v.id, CaseDetail {
-          name: state.invariants.get(&v.id).map(|(n, _)| n.clone()).unwrap_or_else(|| format!("#{}", v.id)),
-          expression: inv.expression.clone(),
-          reason: inv.reason.clone(),
-          evaluated_kind: inv.evaluated_kind.clone(),
-          actual: inv.lhs_value.clone().unwrap_or_else(|| "?".to_string()),
-          expected: inv.rhs_value.clone().unwrap_or_else(|| "?".to_string()),
-        });
-      }
-    }
+    let report = execution.integrity;
+    let _runtime = execution.runtime;
+    println!("{} {}\n", "[Test]".truecolor(153, 221, 85), target.display);
 
     let mut passed_cases = Vec::new();
     let mut failed_cases = Vec::new();
-    let width = state.invariants.values().map(|(n, _)| n.len()).max().unwrap_or(0);
-    for (id, (name, value)) in state.invariants.iter() {
-      match &*value.borrow() {
-        Value::Bool(b) if *b.borrow() => {
-          println!("{:<width$}   ✓", name, width=width);
-          passed_cases.push(CaseDetail {
-            name: name.clone(),
-            expression: state.invariant_expressions.get(id).cloned().unwrap_or_else(|| name.clone()),
-            reason: state.invariant_evaluations.get(id).map(|e| e.reason.clone()).unwrap_or_else(|| "evaluated to true".to_string()),
-            evaluated_kind: state.invariant_evaluations.get(id).map(|e| e.evaluated_kind.clone()).unwrap_or_else(|| "bool".to_string()),
-            actual: state.invariant_evaluations.get(id).map(|e| e.actual.clone()).unwrap_or_else(|| "true".to_string()),
-            expected: state.invariant_evaluations.get(id).map(|e| e.expected.clone()).unwrap_or_else(|| "true".to_string()),
-          });
-        }
-        _ => {
-          println!("{:<width$}   ✗", name, width=width);
-          failed_cases.push(violations.remove(id).unwrap_or(CaseDetail {
-            name: name.clone(),
-            expression: state.invariant_expressions.get(id).cloned().unwrap_or_default(),
-            reason: "Invariant evaluated to false or non-bool value".to_string(),
-            evaluated_kind: "bool".to_string(),
-            actual: "?".to_string(),
-            expected: "?".to_string()
-          }));
-        }
+    let width = report
+      .evaluations
+      .iter()
+      .map(|case| case.name.len())
+      .max()
+      .unwrap_or(0);
+    for evaluation in report.evaluations {
+      println!(
+        "{:<width$}   {}",
+        evaluation.name,
+        if evaluation.passed { "✓" } else { "✗" },
+        width=width,
+      );
+      let detail = integrity_evaluation_case(&evaluation);
+      if evaluation.passed {
+        passed_cases.push(detail);
+      } else {
+        failed_cases.push(detail);
       }
     }
 
@@ -424,7 +515,7 @@ pub(crate) fn run_mech_tests_without_tree(
         println!();
       }
     }
-    file_reports.push(FileReport { path: path.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_cases, run_error: None });
+    file_reports.push(FileReport { path: target.display.clone(), result: FileResult { total, passed, failed }, failed: failed_cases, passed: passed_cases, run_error: None });
   }
 
   let files_passed = file_reports.iter().filter(|f| !f.failed_file()).count();
@@ -437,7 +528,7 @@ pub(crate) fn run_mech_tests_without_tree(
     files: file_reports,
   };
 
-  if expanded_paths.len() > 1 {
+  if expanded_targets.len() > 1 {
     let summary_status = report.status_label();
     println!(
       "\n{} {}: files {} total | {} passed | {} failed || tests {} total | {} passed | {} failed",
@@ -516,6 +607,368 @@ mod tests {
     ));
     std::fs::create_dir_all(&root).unwrap();
     root
+  }
+
+  fn imported_invariant_fixture(label: &str) -> (PathBuf, PathBuf) {
+    let root = temp_test_root(label);
+    let main = root.join("main.mec");
+    std::fs::write(
+      &main,
+      "+> ./dep.mec\nanswer := dep/value + 1\nanswer! := answer == 42\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
+    (root, main)
+  }
+
+  fn contains_address_like_diagnostic(text: &str) -> bool {
+    text.split("0x").skip(1).any(|suffix| {
+      suffix
+        .chars()
+        .take_while(char::is_ascii_hexdigit)
+        .count()
+        >= 6
+    })
+  }
+
+  #[test]
+  fn mech_tests_resolve_imported_dependencies_with_passing_invariants() {
+    let (root, main) = imported_invariant_fixture("imported-pass");
+    let output = root.join("report.json");
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"files-passed\": 1"));
+    assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_classify_each_integrity_violation_as_a_failed_case() {
+    let root = temp_test_root("integrity-aggregate");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "first! := false\nsecond! := 42.0\nthird! := 2.0 < 1.0\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      true,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 1);
+    assert!(report.contains("\"tests-total\": 3"));
+    assert!(report.contains("\"tests-failed\": 3"));
+    assert!(report.contains("\"run-error\": null"));
+    assert!(report.contains("\"first!\""));
+    assert!(report.contains("\"second!\""));
+    assert!(report.contains("\"third!\""));
+    assert!(!report.contains("@0x"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(feature = "linked_stdlib")]
+  #[test]
+  fn mech_tests_execute_linked_module_imports() {
+    let root = temp_test_root("linked-module-import");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> math\nresult := math/sin(0)\nresult! := result == 0\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"files-passed\": 1"));
+    assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_resolve_nested_dependencies_with_passing_invariants() {
+    let root = temp_test_root("nested-pass");
+    let main = root.join("main.mec");
+    let lib = root.join("lib");
+    let output = root.join("report.json");
+    std::fs::create_dir_all(&lib).unwrap();
+    std::fs::write(
+      &main,
+      "+> ./lib/first.mec\nanswer := first/value + 1\nanswer! := answer == 42\n",
+    )
+    .unwrap();
+    std::fs::write(
+      lib.join("first.mec"),
+      "+> ./second.mec\nvalue := second/value + 1\n<+ value\n",
+    )
+    .unwrap();
+    std::fs::write(lib.join("second.mec"), "value := 40\n<+ value\n").unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    assert_eq!(exit_code, 0);
+    assert!(std::fs::read_to_string(&output).unwrap().contains("\"tests-passed\": 1"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_report_missing_dependencies_as_run_errors() {
+    let root = temp_test_root("missing-dependency");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(&main, "+> ./missing.mec\nanswer := 1\n").unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 1);
+    assert!(report.contains("\"run-error\": \""));
+    assert!(report.contains("missing.mec"));
+    assert!(report.contains("main.mec"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_isolate_each_root_runtime() {
+    let root = temp_test_root("root-isolation");
+    let first = root.join("first.mec");
+    let second = root.join("second.mec");
+    let output = root.join("report.json");
+    std::fs::write(&first, "value := 1\nown! := value == 1\n").unwrap();
+    std::fs::write(&second, "value := 2\ntwo! := value == 2\n").unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![first.display().to_string(), second.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"files-passed\": 2"));
+    assert!(report.contains("\"tests-passed\": 2"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_include_passing_dependency_constraint_without_root_proxy() {
+    let root = temp_test_root("dependency-pass-no-proxy");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> ./dep.mec\n\nanswer := dep/value + 1\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("dep.mec"),
+      "value := 41\n\ndependency-pass! := value == 41\n\n<+ value\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"tests-total\": 1"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert!(report.contains("\"tests-failed\": 0"));
+    assert!(report.contains("dependency-pass!"));
+    assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_aggregate_passing_and_failing_dependency_constraints() {
+    let root = temp_test_root("dependency-pass-fail");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> ./dep.mec\n\nanswer := dep/value + 1\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("dep.mec"),
+      "value := 41\n\ndependency-pass! := value == 41\ndependency-fail! := value == 42\n\n<+ value\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      true,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 1);
+    assert!(report.contains("\"tests-total\": 2"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert!(report.contains("\"tests-failed\": 1"));
+    assert!(report.contains("dependency-pass!"));
+    assert!(report.contains("dependency-fail!"));
+    assert!(report.contains("\"run-error\": null"));
+    assert!(!report.contains("@0x"));
+    assert!(!contains_address_like_diagnostic(&report));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_include_nested_dependency_constraints_once() {
+    let root = temp_test_root("nested-dependency-once");
+    let main = root.join("main.mec");
+    let output = root.join("report.json");
+    std::fs::write(
+      &main,
+      "+> ./left.mec\n+> ./right.mec\n\nanswer := left/value + right/value\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("left.mec"),
+      "+> ./shared.mec\n\nvalue := shared/value\n\n<+ value\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("right.mec"),
+      "+> ./shared.mec\n\nvalue := shared/value\n\n<+ value\n",
+    )
+    .unwrap();
+    std::fs::write(
+      root.join("shared.mec"),
+      "value := 21\n\nnested-once! := value == 21\n\n<+ value\n",
+    )
+    .unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![main.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"tests-total\": 1"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert_eq!(report.matches("nested-once!").count(), 1);
+    assert!(report.contains("\"run-error\": null"));
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn mech_tests_preserve_report_formats_for_imported_modules() {
+    let (root, main) = imported_invariant_fixture("report-formats");
+    let json_output = root.join("report.json");
+    let mech_output = root.join("report.mec");
+    let input = vec![main.display().to_string()];
+
+    assert_eq!(
+      run_mech_tests(input.clone(), false, false, false, false, None, false).unwrap(),
+      0
+    );
+    assert_eq!(
+      run_mech_tests(
+        input.clone(),
+        false,
+        false,
+        false,
+        false,
+        Some(json_output.display().to_string()),
+        false,
+      )
+      .unwrap(),
+      0
+    );
+    assert_eq!(
+      run_mech_tests(
+        input,
+        false,
+        false,
+        false,
+        false,
+        Some(mech_output.display().to_string()),
+        false,
+      )
+      .unwrap(),
+      0
+    );
+    assert!(std::fs::read_to_string(json_output).unwrap().contains("files-total"));
+    assert!(std::fs::read_to_string(mech_output).unwrap().contains("files-total"));
+    std::fs::remove_dir_all(root).unwrap();
   }
 
   #[test]
@@ -675,7 +1128,7 @@ mod tests {
 
   #[test]
   fn bytecode_test_error_mentions_invariant_metadata() {
-    let message = bytecode_test_unsupported_error("compiled.mecb").display_message();
+    let message = bytecode_test_unsupported_error(Path::new("compiled.mecb")).display_message();
     assert!(message.contains("Bytecode test input"));
     assert!(message.contains("invariant metadata"));
   }
@@ -741,6 +1194,36 @@ mod tests {
     let targets = collect_test_targets(&root).unwrap();
 
     assert_eq!(targets, vec![source]);
+    std::fs::remove_dir_all(root).unwrap();
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn mech_tests_preserve_discovered_non_utf8_filename() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let root = temp_test_root("non-utf8-discovery");
+    let source = root.join(OsString::from_vec(b"test-\xff.mec".to_vec()));
+    let output = root.join("report.json");
+    std::fs::write(&source, "answer := 41\nfilename-pass! := answer == 41\n").unwrap();
+
+    let exit_code = run_mech_tests(
+      vec![root.display().to_string()],
+      false,
+      false,
+      false,
+      false,
+      Some(output.display().to_string()),
+      false,
+    )
+    .unwrap();
+
+    let report = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(exit_code, 0);
+    assert!(report.contains("\"files-total\": 1"));
+    assert!(report.contains("\"tests-passed\": 1"));
+    assert!(report.contains("\"run-error\": null"));
     std::fs::remove_dir_all(root).unwrap();
   }
 }

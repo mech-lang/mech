@@ -146,7 +146,6 @@ PY
 "$MECH_BIN" serve \
   --address 127.0.0.1 \
   --port "$port" \
-  --wasm "$repo_root/src/wasm/pkg" \
   "$project_dir" >"$server_log" 2>&1 &
 server_pid="$!"
 
@@ -186,8 +185,14 @@ def fail(message):
 
 if not isinstance(manifest, dict):
     fail("project source manifest top-level value is not an object")
-if manifest.get("version") != 1:
-    fail("project source manifest version is not 1")
+if manifest.get("version") != 2:
+    fail("project source manifest version is not 2")
+
+if manifest.get("roots") != ["app/clock.mec"]:
+    fail("project source manifest has unexpected root source identities")
+
+if not isinstance(manifest.get("resolutions"), list):
+    fail("project source manifest resolutions is not a list")
 
 sources = manifest.get("sources")
 if not isinstance(sources, list):
@@ -208,8 +213,8 @@ for source in sources:
     pairs.add((specifier, url))
 
 expected_pairs = {
-    ("app/clock.mec", "app/clock.mec"),
-    ("app/support.mec", "app/support.mec"),
+    ("app/clock.mec", "source/app/clock.mec"),
+    ("app/support.mec", "source/app/support.mec"),
 }
 if pairs != expected_pairs:
     fail("project source manifest has unexpected source pairs")

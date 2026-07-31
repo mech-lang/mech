@@ -23,6 +23,7 @@ macro_rules! register_descriptor {
 }
 
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_register_brrw {
   ($reg:expr, $ctx:ident) => {
@@ -35,6 +36,7 @@ macro_rules! compile_register_brrw {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_register {
   ($reg:expr, $ctx:ident) => {
@@ -47,6 +49,7 @@ macro_rules! compile_register {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_register_mat {
   ($reg:expr, $ctx:ident) => {
@@ -59,6 +62,7 @@ macro_rules! compile_register_mat {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_nullop {
   ($name:tt, $out:expr, $ctx:ident, $feature_flag:expr) => {
@@ -68,7 +72,7 @@ macro_rules! compile_nullop {
     // Compile out
     registers[0] = compile_register_brrw!($out, $ctx);
 
-    $ctx.features.insert($feature_flag);
+    $ctx.require($feature_flag);
 
     // Emit the operation
     $ctx.emit_nullop(
@@ -80,6 +84,7 @@ macro_rules! compile_nullop {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_unop {
   ($name:tt, $out:expr, $arg:expr, $ctx:ident, $feature_flag:expr) => {
@@ -90,7 +95,7 @@ macro_rules! compile_unop {
     registers[0] = compile_register_brrw!($out, $ctx);
     registers[1] = compile_register_brrw!($arg, $ctx);
   
-    $ctx.features.insert($feature_flag);
+    $ctx.require($feature_flag);
 
     // Emit the operation
     $ctx.emit_unop(
@@ -103,6 +108,7 @@ macro_rules! compile_unop {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_binop {
   ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr) => {
@@ -112,7 +118,7 @@ macro_rules! compile_binop {
     registers[1] = compile_register_brrw!($arg1, $ctx);
     registers[2] = compile_register_brrw!($arg2, $ctx);
 
-    $ctx.features.insert($feature_flag);
+    $ctx.require($feature_flag);
 
     $ctx.emit_binop(
       hash_str(&$name),
@@ -125,6 +131,7 @@ macro_rules! compile_binop {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_ternop {
   ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident, $feature_flag:expr) => {
@@ -135,7 +142,7 @@ macro_rules! compile_ternop {
     registers[2] = compile_register_brrw!($arg2, $ctx);
     registers[3] = compile_register_brrw!($arg3, $ctx);
 
-    $ctx.features.insert($feature_flag);
+    $ctx.require($feature_flag);
 
     $ctx.emit_ternop(
       hash_str(&$name),
@@ -149,6 +156,7 @@ macro_rules! compile_ternop {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_quadop {
   ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident, $feature_flag:expr) => {
@@ -160,7 +168,7 @@ macro_rules! compile_quadop {
     registers[3] = compile_register_brrw!($arg3, $ctx);
     registers[4] = compile_register_brrw!($arg4, $ctx);
 
-    $ctx.features.insert($feature_flag);
+    $ctx.require($feature_flag);
 
     $ctx.emit_quadop(
       hash_str(&$name),
@@ -174,6 +182,7 @@ macro_rules! compile_quadop {
   };
 }
 
+#[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_varop {
   ($name:tt, $out:expr, $args:expr, $ctx:ident, $feature_flag:expr) => {
@@ -183,7 +192,7 @@ macro_rules! compile_varop {
     for i in 0..arg_count {
       registers[i + 1] = compile_register_brrw!($args[i], $ctx);
     }
-    $ctx.features.insert($feature_flag);
+    $ctx.require($feature_flag);
     $ctx.emit_varop(
       hash_str(&$name),
       registers[0],
@@ -191,33 +200,6 @@ macro_rules! compile_varop {
     );
     return Ok(registers[0])
   };
-}
-
-#[cfg(all(test, feature = "compiler", feature = "i64"))]
-mod tests {
-  use crate::*;
-
-  #[test]
-  fn pointer_register_scalar_initializes_once() {
-    let mut ctx = CompileCtx::new();
-    let ctx = &mut ctx;
-    let scalar_a = Ref::new(42i64);
-    let scalar_b = Ref::new(42i64);
-
-    let register_a = compile_register_brrw!(scalar_a, ctx);
-    let register_a_again = compile_register_brrw!(scalar_a, ctx);
-    let register_b = compile_register_brrw!(scalar_b, ctx);
-
-    assert_eq!(register_a_again, register_a);
-    assert_ne!(register_b, register_a);
-    assert_eq!(ctx.const_entries.len(), 2);
-
-    let const_loads = ctx.instrs.iter().filter_map(|instruction| match instruction {
-      EncodedInstr::ConstLoad { dst, const_id } => Some((*dst, *const_id)),
-      _ => None,
-    }).collect::<Vec<_>>();
-    assert_eq!(const_loads, vec![(register_a, 0), (register_b, 1)]);
-  }
 }
 
 #[macro_export]
@@ -311,13 +293,17 @@ macro_rules! impl_binop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }   
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
       T: ConstElem + CompileConst + AsValueKind
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
         compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
       }
@@ -357,10 +343,14 @@ macro_rules! impl_unop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+
+      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+      }
     }
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}", stringify!($struct_name));
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }

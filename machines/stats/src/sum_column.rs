@@ -56,9 +56,11 @@ impl<T> MechFunctionFactory for StatsSumColumnRD2<T>
 where
   T: Copy + Debug + Clone + Sync + Send + 'static +
      Add<Output = T> + AddAssign +
-     CompileConst + ConstElem + AsValueKind +
+     ConstElem + AsValueKind +
      Zero + One +
      PartialEq + PartialOrd,
+  #[cfg(feature = "compiler")]
+  T: CompileConst,
   Ref<DMatrix<T>>: ToValue,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -94,6 +96,10 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
@@ -102,7 +108,7 @@ impl<T> MechFunctionCompiler for StatsSumColumnRD2<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), T::as_value_kind());
     compile_unop!(name,self.out,self.arg,ctx,FeatureFlag::Custom(hash_str("stats/sum")));
   }

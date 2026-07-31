@@ -22,6 +22,10 @@ where
   }
   fn out(&self) -> Value { self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+
+  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    Ok(self.reactive_output_values())
+  }
 }
 
 #[cfg(feature = "compiler")]
@@ -29,7 +33,7 @@ impl<T> MechFunctionCompiler for MapAssign<T>
 where
   T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
     let name = format!("MapAssign<{}>", T::as_value_kind());
     compile_unop!(name,self.sink,self.source,ctx,FeatureFlag::Builtin(FeatureKind::Assign));
   }

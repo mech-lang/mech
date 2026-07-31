@@ -6,14 +6,15 @@ use crate::structures::Matrix;
 // CompileConst Trait
 // ----------------------------------------------------------------------------
 
+#[cfg(feature = "compiler")]
 pub trait CompileConst {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32>;
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
 #[cfg(feature = "compiler")]
 impl CompileConst for Value {
 
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let reg = match self {
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().compile_const(ctx)?,
@@ -107,7 +108,7 @@ impl CompileConst for Value {
 
 #[cfg(all(feature = "f64", feature = "compiler"))]
 impl CompileConst for f64 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_f64::<LittleEndian>(*self)?;
     ctx.compile_const(&payload, ValueKind::F64)
@@ -116,7 +117,7 @@ impl CompileConst for f64 {
 
 #[cfg(all(feature = "f32", feature = "compiler"))]
 impl CompileConst for f32 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_f32::<LittleEndian>(*self)?;
     ctx.compile_const(&payload, ValueKind::F32)
@@ -125,7 +126,7 @@ impl CompileConst for f32 {
 
 #[cfg(all(feature = "u8", feature = "compiler"))]
 impl CompileConst for u8 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_u8(*self)?;
     ctx.compile_const(&payload, ValueKind::U8)
@@ -134,7 +135,7 @@ impl CompileConst for u8 {
 
 #[cfg(all(feature = "i8", feature = "compiler"))]
 impl CompileConst for i8 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_i8(*self)?;
     ctx.compile_const(&payload, ValueKind::I8)
@@ -143,7 +144,7 @@ impl CompileConst for i8 {
 
 #[cfg(feature = "compiler")]
 impl CompileConst for usize {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_u64::<LittleEndian>(*self as u64)?;
     ctx.compile_const(&payload, ValueKind::Index)
@@ -155,7 +156,7 @@ macro_rules! impl_compile_const {
     paste! {
       #[cfg(all(feature = $feature, feature = "compiler"))]
       impl CompileConst for $t {
-        fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+        fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
           let mut payload = Vec::<u8>::new();
           payload.[<write_ $t>]::<LittleEndian>(*self)?;
           ctx.compile_const(&payload, ValueKind::[<$t:upper>])
@@ -184,7 +185,7 @@ impl_compile_const!("i128", i128);
 
 #[cfg(all(feature = "compiler", any(feature = "bool", feature = "variable_define")))]
 impl CompileConst for bool {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_u8(if *self { 1 } else { 0 })?;
     ctx.compile_const(&payload, ValueKind::Bool)
@@ -193,7 +194,7 @@ impl CompileConst for bool {
 
 #[cfg(all(feature = "compiler", any(feature = "string", feature = "variable_define")))]
 impl CompileConst for String {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_u32::<LittleEndian>(self.len() as u32)?;
     payload.extend_from_slice(self.as_bytes());
@@ -203,7 +204,7 @@ impl CompileConst for String {
 
 #[cfg(all(feature = "rational", feature = "compiler"))]
 impl CompileConst for R64 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_i64::<LittleEndian>(*self.numer())?;
     payload.write_i64::<LittleEndian>(*self.denom())?;
@@ -213,7 +214,7 @@ impl CompileConst for R64 {
 
 #[cfg(all(feature = "complex", feature = "compiler"))]
 impl CompileConst for C64 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_f64::<LittleEndian>(self.0.re)?;
     payload.write_f64::<LittleEndian>(self.0.im)?;
@@ -228,7 +229,7 @@ macro_rules! impl_compile_const_matrix {
     where
       T: ConstElem + AsValueKind,
     {
-      fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+      fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         let rows = self.nrows() as u32;
         let cols = self.ncols() as u32;
         let mut payload = Vec::<u8>::with_capacity((rows * cols) as usize * 8);
@@ -287,7 +288,7 @@ impl<T> CompileConst for Matrix<T>
 where
   T: CompileConst + ConstElem + AsValueKind
 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     match self {
       #[cfg(feature = "matrixd")]
       Matrix::DMatrix(mat) => mat.borrow().compile_const(ctx),
@@ -328,7 +329,7 @@ impl<T> CompileConst for Ref<DMatrix<T>>
 where
   T: CompileConst + ConstElem + AsValueKind
 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     self.borrow().compile_const(ctx)
   }
 }
@@ -338,7 +339,7 @@ impl<T> CompileConst for Ref<DVector<T>>
 where
   T: CompileConst + ConstElem + AsValueKind
 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     self.borrow().compile_const(ctx)
   }
 }
@@ -348,14 +349,14 @@ impl<T> CompileConst for Ref<RowDVector<T>>
 where
   T: CompileConst + ConstElem + AsValueKind
 {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     self.borrow().compile_const(ctx)
   }
 }
 
 #[cfg(all(feature = "record", feature = "compiler"))]
 impl CompileConst for MechRecord {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
 
     // write the number of columns
@@ -382,7 +383,7 @@ impl CompileConst for MechRecord {
 
 #[cfg(all(feature = "enum", feature = "compiler"))]
 impl CompileConst for MechEnum {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_u64::<LittleEndian>(self.id)?;
     payload.write_u32::<LittleEndian>(self.variants.len() as u32)?;
@@ -410,7 +411,7 @@ impl CompileConst for MechEnum {
 
 #[cfg(all(feature = "atom", feature = "compiler"))]
 impl CompileConst for MechAtom {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_u64::<LittleEndian>(self.id())?;
     self.name().write_le(&mut payload);
@@ -420,7 +421,7 @@ impl CompileConst for MechAtom {
 
 #[cfg(all(feature = "set", feature = "compiler"))]
 impl CompileConst for MechSet {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     self.kind.write_le(&mut payload);
     payload.write_u32::<LittleEndian>(self.num_elements as u32)?;
@@ -433,7 +434,7 @@ impl CompileConst for MechSet {
 
 #[cfg(all(feature = "tuple", feature = "compiler"))]
 impl CompileConst for MechTuple {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     self.value_kind().write_le(&mut payload);
     payload.write_u32::<LittleEndian>(self.elements.len() as u32)?;
@@ -446,7 +447,7 @@ impl CompileConst for MechTuple {
 
 #[cfg(all(feature = "map", feature = "compiler"))]
 impl CompileConst for MechMap {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     self.key_kind.write_le(&mut payload);
     self.value_kind.write_le(&mut payload);
@@ -1337,7 +1338,7 @@ impl ConstElem for MechTable {
 
 #[cfg(all(feature = "table", feature = "compiler"))]
 impl CompileConst for MechTable {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     self.value_kind().write_le(&mut payload);
     payload.write_u32::<LittleEndian>(self.rows as u32)?;

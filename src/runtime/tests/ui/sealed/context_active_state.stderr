@@ -1,0 +1,22 @@
+error[E0616]: field `budget` of struct `RuntimeContext` is private
+ --> tests/ui/sealed/context_active_state.rs:6:11
+  |
+6 |   context.budget.max_steps = Some(u64::MAX);
+  |           ^^^^^^ private field
+
+error[E0616]: field `events` of struct `RuntimeContext` is private
+ --> tests/ui/sealed/context_active_state.rs:7:11
+  |
+7 |   context.events.clear();
+  |           ^^^^^^ private field
+  |
+help: a method `events` also exists, call it with parentheses
+  |
+7 |   context.events().clear();
+  |                 ++
+
+error[E0616]: field `access` of struct `RuntimeContext` is private
+ --> tests/ui/sealed/context_active_state.rs:8:11
+  |
+8 |   context.access.reads.clear();
+  |           ^^^^^^ private field

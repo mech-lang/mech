@@ -1,0 +1,4 @@
+:root { color-scheme: light; }
+body { margin: 0; font-family: system-ui, sans-serif; }
+.mech-root { padding: 1rem; }
+.console-scroll { min-height: 1rem; }

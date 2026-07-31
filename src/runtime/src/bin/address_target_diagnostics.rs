@@ -1,5 +1,6 @@
 use mech_core::{Ref, Value};
-use mech_runtime::{FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, RuntimeBuilder, RuntimeCapabilityGrant, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceScope};
+use mech_runtime::{CapabilityId, FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions, PreparedRuntimeEffect, ResourcePathCapability, RuntimeBuilder, RuntimeCapabilityOperation, RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceScope};
+use std::sync::Arc;
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
   let case_root = root.join(name);
@@ -28,19 +29,22 @@ fn run_case(root: &std::path::Path, name: &str, source: &str, docs: Option<InMem
   }
   let mut runtime = builder.build().unwrap();
   if grant_read {
-    runtime.grant_capability(RuntimeCapabilityGrant {
-      subject: "task://main".to_string(),
-      resource: "docs://manual".to_string(),
-      operations: vec![RuntimeCapabilityOperation::Read],
-      paths: vec!["intro/title".to_string()],
-    }).unwrap();
+    runtime.grant_capability(Arc::new(
+      ResourcePathCapability::exact(
+        CapabilityId(1),
+        "task://main",
+        "docs://manual",
+        ["read"],
+        "intro/title",
+      ).unwrap(),
+    )).unwrap();
   }
   let options = ModuleBuildOptions::new("diagnostics", "v0.3", "native", &[], &[]);
 
   match runtime.resolve_and_store_module_source("main.mec", options) {
     Ok(Some(version)) => {
       println!("main module version: {version}");
-      let record = runtime.store().get_module_version(version).unwrap().unwrap();
+      let record = runtime.get_module_version(version).unwrap().unwrap();
       println!("scoped address references:");
       for scope in &record.scopes {
         for reference in &scope.address_references {
@@ -76,7 +80,11 @@ fn main() {
   let mut provider = InMemoryDocsProvider::new();
   println!("provider write/read:");
   println!("  write docs://manual intro/title = true");
-  provider.write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: Value::Bool(Ref::new(true)), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  let effect = provider.prepare_write(RuntimeResourceWriteRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string(), operation: RuntimeCapabilityOperation::Write, value: Value::Bool(Ref::new(true)), intent: RuntimeResourceWriteIntent::Assign }).unwrap();
+  match effect {
+    PreparedRuntimeEffect::Compensatable(mut effect) => effect.apply().unwrap(),
+    other => panic!("in-memory docs returned unexpected effect protocol: {:?}", other.protocol()),
+  }
   let value = provider.read(RuntimeResourceReadRequest { base_uri: "docs://manual".to_string(), path: "intro/title".to_string(), context_name: "manual".to_string() }).unwrap();
   match value {
     Value::Bool(value) => println!("  read result: Bool({})", value.borrow()),
@@ -115,7 +123,7 @@ fn main() {
   );
   run_case(
     &root,
-    "docs read without host grant fails RuntimeCapabilityGrantDenied",
+    "docs read without capability fails CapabilityDenied",
     "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     Some(docs_provider_with("intro/title", Value::Bool(Ref::new(true)))),
     None,

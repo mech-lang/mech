@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::{Deref, DerefMut};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -8,7 +7,16 @@ use colored::*;
 use mech_core::*;
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
-use mech_runtime::{DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel};
+use mech_runtime::{
+    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT,
+    SharedCapabilityKernel,
+};
+
+mod document_bundle;
+mod publication;
+
+use document_bundle::resolve_document_source_bundle;
+use publication::{PlannedOutput, publish_outputs_recoverably};
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
@@ -118,6 +126,153 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
                 println!("{badge} Downloaded fallback {name}: {url}")
             }
         }
+    }
+}
+
+fn document_controller_slots(
+    shim: &str,
+    document_js: Option<&str>,
+    source_url_key: &str,
+    wasm_module_url: &str,
+    document_sources: &str,
+) -> MResult<HtmlShimExtraSlots> {
+    let mut slots = HtmlShimExtraSlots::default();
+    slots.insert("SOURCE_URL_KEY", source_url_key);
+    if !shim.contains("{{DOCUMENT_SCRIPT}}") {
+        return Ok(slots);
+    }
+
+    let document_js = document_js.ok_or_else(|| format_error(
+        "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable",
+    ))?;
+    if shim.contains("{{WASM_MODULE_URL}}") {
+        slots.insert("WASM_MODULE_URL", wasm_module_url);
+    } else if !shim.contains("data-mech-wasm-module") {
+        return Err(format_error(
+            "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but does not provide {{WASM_MODULE_URL}} or an explicit data-mech-wasm-module",
+        ));
+    }
+    if shim.contains("{{DOCUMENT_SOURCES}}") {
+        slots.insert("DOCUMENT_SOURCES", document_sources);
+    } else {
+        return Err(format_error(
+            "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but does not provide {{DOCUMENT_SOURCES}} for the standalone source bundle",
+        ));
+    }
+    slots.insert("DOCUMENT_SCRIPT", document_js);
+    Ok(slots)
+}
+
+fn format_error(message: impl Into<String>) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: message.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
+    let first = paths.first().ok_or_else(|| format_error(
+        "cannot determine a source bundle directory without source paths",
+    ))?;
+    let first = absolute_path(first)?;
+    let mut ancestor = first.parent().ok_or_else(|| format_error(
+        format!("source path `{}` has no parent directory", first.display()),
+    ))?.to_path_buf();
+
+    for path in paths.iter().skip(1) {
+        let path = absolute_path(path)?;
+        let parent = path.parent().ok_or_else(|| format_error(
+            format!("source path `{}` has no parent directory", path.display()),
+        ))?;
+        while !parent.starts_with(&ancestor) {
+            ancestor = ancestor.parent().ok_or_else(|| format_error(
+                "formatted document sources have no common filesystem ancestor",
+            ))?.to_path_buf();
+        }
+    }
+    Ok(ancestor)
+}
+
+fn relative_asset_url(output_file: &Path, asset_file: &Path) -> MResult<String> {
+    let output_parent = absolute_path(output_file)?
+        .parent()
+        .ok_or_else(|| format_error(format!(
+            "formatted output `{}` has no parent directory",
+            output_file.display(),
+        )))?
+        .to_path_buf();
+    let asset_file = absolute_path(asset_file)?;
+    let output_parts = output_parent.components().collect::<Vec<_>>();
+    let asset_parts = asset_file.components().collect::<Vec<_>>();
+    let shared = output_parts.iter().zip(&asset_parts)
+        .take_while(|(left, right)| left == right)
+        .count();
+    let mut url = String::new();
+    for _ in shared..output_parts.len() {
+        url.push_str("../");
+    }
+    for (index, component) in asset_parts[shared..].iter().enumerate() {
+        if !url.is_empty() && !url.ends_with('/') {
+            url.push('/');
+        }
+        let text = component.as_os_str().to_str().ok_or_else(|| format_error(
+            "runtime asset path must be valid UTF-8",
+        ))?;
+        url.push_str(text);
+        if index + 1 < asset_parts[shared..].len() {
+            url.push('/');
+        }
+    }
+    Ok(if url.starts_with("../") { url } else { format!("./{url}") })
+}
+
+fn formatter_asset_package_directory(
+    output_path: &Path,
+    is_output_file: bool,
+    writes_in_place: bool,
+    outputs: &[PathBuf],
+) -> MResult<PathBuf> {
+    let root = if is_output_file {
+        absolute_path(output_path)?
+            .parent()
+            .ok_or_else(|| format_error(format!(
+                "formatted output `{}` has no parent directory",
+                output_path.display(),
+            )))?
+            .to_path_buf()
+    } else if writes_in_place {
+        common_parent_directory(outputs)?
+    } else {
+        absolute_path(output_path)?
+    };
+    Ok(root.join("_mech").join("pkg"))
+}
+
+fn shipped_shim_name(
+    source: &crate::cli::resources::ResourceSource,
+) -> Option<&'static str> {
+    match source {
+        crate::cli::resources::ResourceSource::EmbeddedDefault
+        | crate::cli::resources::ResourceSource::EmptyPathFallback => {
+            return Some("include/index.html");
+        }
+        crate::cli::resources::ResourceSource::LocalPath(path) => {
+            let include = Path::new(env!("CARGO_MANIFEST_DIR")).join("include");
+            for (file, label) in [
+                ("index.html", "include/index.html"),
+                ("blog.html", "include/blog.html"),
+                ("docs.html", "include/docs.html"),
+            ] {
+                if include.join(file).canonicalize().ok().as_ref() == Some(path) {
+                    return Some(label);
+                }
+            }
+            None
+        }
+        crate::cli::resources::ResourceSource::RemoteUrl(_) => None,
     }
 }
 
@@ -624,6 +779,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
     )
     .await?;
     render_resource_events(&badge.to_string(), "HTML shim", &shim.events);
+    let shim_source = shim.source.clone();
     let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
         MechError::new(
             Utf8ConversionError {
@@ -666,26 +822,88 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         html_flag,
     )?;
 
-    // Only create directory if output_path is not a file
-    if !is_output_file && output_path != PathBuf::from(".") {
-        fs::create_dir_all(&output_path)?;
-        println!(
-            "{} Directory created: {}",
-            "[Created]".truecolor(153, 221, 85),
-            output_path.display()
-        );
-    }
-
     // HTML mode
     if html_flag {
-        let mut html_items: Vec<(CollectedSourceTarget, String)> = Vec::new();
+        let shipped_shim = shipped_shim_name(&shim_source);
+        let uses_document_controller = shim_str.contains("{{DOCUMENT_SCRIPT}}");
+        let needs_bundled_wasm =
+            uses_document_controller && shim_str.contains("{{WASM_MODULE_URL}}");
+        let controller_outputs = loaded_sources
+            .iter()
+            .filter_map(|(target, source)| matches!(source, MechSourceCode::String(_)).then(|| {
+                format_output_file_for_target(
+                    target,
+                    &output_path,
+                    is_output_file,
+                    writes_in_place,
+                    true,
+                )
+            }))
+            .collect::<Vec<_>>();
+        let runtime_assets = if needs_bundled_wasm && !controller_outputs.is_empty() {
+            let package = formatter_asset_package_directory(
+                &output_path,
+                is_output_file,
+                writes_in_place,
+                &controller_outputs,
+            )?;
+            Some((
+                package.join("mech_wasm.js"),
+                package.join("mech_wasm_bg.wasm"),
+            ))
+        } else {
+            None
+        };
+
+        let mut html_items: Vec<(PathBuf, String)> = Vec::new();
         for (target, src) in &loaded_sources {
+            let output_file = format_output_file_for_target(
+                target,
+                &output_path,
+                is_output_file,
+                writes_in_place,
+                true,
+            );
             let html = match src {
                 MechSourceCode::Html(content) => content.clone(),
                 MechSourceCode::String(source) => {
-                    let tree = parser::parse(source.trim())?;
+                    let resolved_document = if uses_document_controller {
+                        Some(resolve_document_source_bundle(&target.path)?)
+                    } else {
+                        None
+                    };
+                    let document_sources = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.encoded_bundle.as_str())
+                        .unwrap_or("");
+                    let authoritative_source = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.root_source.as_str())
+                        .unwrap_or(source);
+                    let wasm_module_url = runtime_assets
+                        .as_ref()
+                        .map(|(js, _)| relative_asset_url(&output_file, js))
+                        .transpose()?
+                        .unwrap_or_default();
+                    let document_slots = document_controller_slots(
+                        &shim_str,
+                        options.resources.document_js,
+                        "",
+                        &wasm_module_url,
+                        &document_sources,
+                    )?;
+                    let tree = parser::parse(authoritative_source.trim())?;
                     let mut formatter = Formatter::new();
-                    formatter.format_html(&tree, stylesheet_str.clone(), shim_str.clone())
+                    let render = formatter.format_html_with_slots(
+                        &tree,
+                        stylesheet_str.clone(),
+                        shim_str.clone(),
+                        &document_slots,
+                    );
+                    if let Some(shim_name) = shipped_shim {
+                        validate_shipped_shim_render(shim_name, &render)?;
+                    }
+                    render.html
                 }
                 other => {
                     return Err(MechError::new(
@@ -701,22 +919,48 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                     .with_compiler_loc());
                 }
             };
-            html_items.push((target.clone(), html));
+            html_items.push((output_file, html));
         }
-        if is_output_file && html_items.len() == 1 {
-            let (_, content) = html_items.remove(0);
-            save_to_file(output_path, &content)?;
-        } else {
-            for (target, content) in html_items {
-                let output_file = format_output_file_for_target(
-                    &target,
-                    &output_path,
-                    is_output_file,
-                    writes_in_place,
-                    true,
-                );
-                save_to_file(output_file, &content)?;
+        let mut planned_outputs = Vec::new();
+        if let Some((js_path, wasm_path)) = runtime_assets {
+            let wasm = options.resources.mech_wasm.ok_or_else(|| format_error(
+                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm_bg.wasm is unavailable; rebuild with bundle_web enabled",
+            ))?;
+            let js = options.resources.mech_js.ok_or_else(|| format_error(
+                "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but embedded mech_wasm.js is unavailable; rebuild with bundle_web enabled",
+            ))?;
+            if js.is_empty() {
+                return Err(format_error("embedded mech_wasm.js is empty"));
             }
+            if !wasm.starts_with(b"\0asm") {
+                return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
+            }
+            planned_outputs.push(PlannedOutput {
+                path: js_path,
+                bytes: js.to_vec(),
+            });
+            planned_outputs.push(PlannedOutput {
+                path: wasm_path,
+                bytes: wasm.to_vec(),
+            });
+        }
+        let html_output_paths = html_items
+            .iter()
+            .map(|(path, _)| path.clone())
+            .collect::<Vec<_>>();
+        planned_outputs.extend(html_items.into_iter().map(|(path, content)| {
+            PlannedOutput {
+                path,
+                bytes: content.into_bytes(),
+            }
+        }));
+        publish_outputs_recoverably(planned_outputs)?;
+        for output_file in html_output_paths {
+            println!(
+                "{} Saving file to {}…Done.",
+                "[Save]".truecolor(153,221,85),
+                output_file.display(),
+            );
         }
     } else {
         // Raw source mode

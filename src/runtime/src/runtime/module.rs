@@ -14,8 +14,63 @@
 // - `activate_module_version`: Activates a specific version of a module, making it the active version for that module.
 // - `active_module_version`: Retrieves the active version of a module, if any.
 
-use super::*;
-use crate::{NonExecutableModuleSource, SourceIndex};
+use super::{
+  extension,
+  MechRuntime,
+  RuntimeInvalidOperationError,
+  RuntimeModuleDependencyCycleError,
+  RuntimeModuleDependencyMissingError,
+  RuntimeModuleImportEdgeInvalid,
+  RuntimeRootModuleSourceNotFound,
+};
+use crate::{
+  module_id,
+  CapabilityRequest,
+  ModuleBuildOptions,
+  ModuleDependencyGraph,
+  ModuleId,
+  ModuleImportEdge,
+  ModuleRecord,
+  ModuleVersionId,
+  ModuleVersionRecord,
+  NonExecutableModuleSource,
+  ResolvedSource,
+  RuntimeContext,
+  RuntimeEventKind,
+  RuntimeModuleJournalConflict,
+  SourceImportAlias,
+  SourceIndex,
+  SourceRequest,
+  SourceScope,
+};
+use mech_core::{MResult, MechError, MechSourceCode};
+#[cfg(feature = "invariant_define")]
+use mech_program::IntegrityConstraintReport;
+use std::collections::{HashMap, HashSet};
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
+
+struct RootModuleExecution {
+  result: crate::RuntimeValueSnapshot,
+  #[cfg(feature = "invariant_define")]
+  integrity: IntegrityConstraintReport,
+}
+
+pub(in crate::runtime) fn validate_module_import_edges(
+  record: &ModuleVersionRecord,
+) -> MResult<()> {
+  record.validate_import_edges().map_err(|error| {
+    MechError::new(
+      RuntimeModuleImportEdgeInvalid {
+        module: record.id,
+        reason: format!("{:?}", error),
+      },
+      None,
+    )
+  })
+}
 
 fn source_index_for_module_record_source(
   source: &mech_core::MechSourceCode,
@@ -56,6 +111,7 @@ impl MechRuntime {
     name: &str,
     canonical_uri: &str,
   ) -> MResult<ModuleId> {
+    self.ensure_runtime_mutation_allowed("ensure_module")?;
     if let Some(module) = self.store.find_module_by_name(canonical_uri)? {
       return Ok(module.id);
     }
@@ -65,6 +121,44 @@ impl MechRuntime {
       .with_description(name.to_string());
 
     self.store.put_module(module)
+  }
+
+  fn ensure_module_for_build_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    name: &str,
+    canonical_uri: &str,
+  ) -> MResult<ModuleId> {
+    let transaction_id = Self::context_transaction_id(context)?;
+    if let Some(module) =
+      self.find_module_by_name_visible(context, canonical_uri)?
+    {
+      return Ok(module.id);
+    }
+
+    let id = module_id(canonical_uri);
+    if let Some(module) = self.get_module_visible(context, id)? {
+      if module.name == canonical_uri {
+        return Ok(id);
+      }
+      return Err(MechError::new(
+        RuntimeModuleJournalConflict {
+          record_type: "module",
+          identity: id.to_string(),
+          reason: "visible module ID maps to another canonical URI"
+            .to_string(),
+        },
+        None,
+      ));
+    }
+
+    let module = ModuleRecord::new(id, canonical_uri)
+      .with_description(name.to_string());
+    self
+      .active_execution_transaction_mut(transaction_id)?
+      .modules
+      .stage_module(module)?;
+    Ok(id)
   }
 
   fn materialize_manifest_context_imports(
@@ -197,7 +291,11 @@ impl MechRuntime {
     let request = request.into();
     request.validate()?;
 
-    self.source_resolver.resolve(&request)
+    extension::invoke_extension(
+      "source resolver",
+      "resolve",
+      || self.source_resolver.resolve(&request),
+    )
   }
 
   pub fn resolve_source_with_context(
@@ -205,13 +303,20 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
   ) -> MResult<Option<ResolvedSource>> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_source_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
     let request = request.into();
     request.validate()?;
 
-    let resolved = self.source_resolver.resolve(&request)?;
+    let resolved = extension::invoke_extension(
+      "source resolver",
+      "resolve",
+      || self.source_resolver.resolve(&request),
+    )?;
 
     if let Some(source) = &resolved {
       self.emit_event_to_context(
@@ -229,6 +334,7 @@ impl MechRuntime {
     &mut self,
     request: impl Into<SourceRequest>,
   ) -> MResult<Option<ResolvedSource>> {
+    self.ensure_runtime_mutation_allowed("resolve_source_evented")?;
     let mut context = self.runtime_context()?;
     self.resolve_source_with_context(&mut context, request)
   }
@@ -238,6 +344,9 @@ impl MechRuntime {
     resolved: ResolvedSource,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed(
+      "store_resolved_module_source",
+    )?;
     let mut context = self.runtime_context()?;
 
     self.build_module_from_resolved_source_with_context(
@@ -253,6 +362,29 @@ impl MechRuntime {
     resolved: ResolvedSource,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed(
+      "build_module_from_resolved_source_with_context",
+    )?;
+    self.with_atomic_module_operation(
+      context,
+      "build_module_from_resolved_source_with_context",
+      |runtime, context| {
+        runtime.build_module_from_resolved_source_in_transaction(
+          context,
+          resolved,
+          options,
+        )
+      },
+    )
+  }
+
+  fn build_module_from_resolved_source_in_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    resolved: ResolvedSource,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<ModuleVersionId> {
+    let _ = Self::context_transaction_id(context)?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_resolved_source_with_context_and_graph(
@@ -271,6 +403,7 @@ impl MechRuntime {
     dependency_graph: &mut ModuleDependencyGraph,
   ) -> MResult<ModuleVersionId> {
     self.validate_context_for_runtime(context)?;
+    let transaction_id = Self::context_transaction_id(context)?;
     context.charge_step()?;
 
     if !resolved.is_executable_mech_source() {
@@ -400,7 +533,8 @@ impl MechRuntime {
       self.materialize_manifest_context_imports(&mut record)?;
       Self::validate_runtime_module_record_address_targets(&record)?;
 
-      let module = self.ensure_module(
+      let module = self.ensure_module_for_build_with_context(
+        context,
         &record.name,
         &record.canonical_uri,
       )?;
@@ -411,17 +545,9 @@ impl MechRuntime {
         "ModuleBuilder and runtime module store derived different ModuleId values",
       );
 
-      if self
-        .store
-        .get_module_version(record.module_version)?
-        .is_some()
-      {
-        dependency_graph.cache_version(&canonical_uri, record.module_version);
-        return Ok(record.module_version);
-      }
-
+      let module_version = record.module_version;
       let version = ModuleVersionRecord::new(
-        record.module_version,
+        module_version,
         module,
         1,
       )
@@ -436,18 +562,41 @@ impl MechRuntime {
       .with_capability_requirements(record.capability_requirements);
       validate_module_import_edges(&version)?;
 
-      self.store.put_module_version(version)?;
+      if let Some(existing) =
+        self.get_module_version_visible(context, module_version)?
+      {
+        if existing != version {
+          return Err(MechError::new(
+            RuntimeModuleJournalConflict {
+              record_type: "module_version",
+              identity: module_version.to_string(),
+              reason: "visible version ID maps to different contents"
+                .to_string(),
+            },
+            None,
+          ));
+        }
+        dependency_graph.cache_version(&canonical_uri, module_version);
+        return Ok(module_version);
+      }
 
-      dependency_graph.cache_version(&canonical_uri, record.module_version);
+      let staged = self
+        .active_execution_transaction_mut(transaction_id)?
+        .modules
+        .stage_version(version)?;
 
-      self.emit_event_to_context(
-        context,
-        RuntimeEventKind::ModuleCompiled {
-          module_version: record.module_version,
-        },
-      )?;
+      dependency_graph.cache_version(&canonical_uri, module_version);
 
-      Ok(record.module_version)
+      if staged {
+        self.emit_event_to_context(
+          context,
+          RuntimeEventKind::ModuleCompiled {
+            module_version,
+          },
+        )?;
+      }
+
+      Ok(module_version)
     })();
 
     dependency_graph.leave(&canonical_uri);
@@ -481,6 +630,9 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_and_store_module_source",
+    )?;
     let mut context = self.runtime_context()?;
 
     self.build_module_from_request_with_context(
@@ -496,6 +648,30 @@ impl MechRuntime {
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<Option<ModuleVersionId>> {
+    self.ensure_runtime_mutation_allowed(
+      "build_module_from_request_with_context",
+    )?;
+    let request = request.into();
+    self.with_atomic_module_operation(
+      context,
+      "build_module_from_request_with_context",
+      |runtime, context| {
+        runtime.build_module_from_request_in_transaction(
+          context,
+          request,
+          options,
+        )
+      },
+    )
+  }
+
+  pub(super) fn build_module_from_request_in_transaction(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<Option<ModuleVersionId>> {
+    let _ = Self::context_transaction_id(context)?;
     let mut dependency_graph = ModuleDependencyGraph::new();
 
     self.build_module_from_request_with_context_and_graph(
@@ -510,7 +686,10 @@ impl MechRuntime {
     &mut self,
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
-  ) -> MResult<Value> {
+  ) -> MResult<crate::RuntimeValueSnapshot> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_and_run_root_module",
+    )?;
     let mut context = self.runtime_context()?;
     self.resolve_and_run_root_module_with_context(&mut context, request, options)
   }
@@ -520,51 +699,137 @@ impl MechRuntime {
     context: &mut RuntimeContext,
     request: impl Into<SourceRequest>,
     options: ModuleBuildOptions<'_>,
-  ) -> MResult<Value> {
-    let turn_started = Instant::now();
-    self.validate_context_for_runtime(context)?;
-
-    let request = request.into();
-    request.validate()?;
-    let root_specifier = request.specifier.clone();
-    let previous_module_version = context.module_version;
-
-    let result = (|| -> MResult<Value> {
-      let Some(root_version) = self.build_module_from_request_with_context(
+  ) -> MResult<crate::RuntimeValueSnapshot> {
+    self
+      .resolve_and_run_root_module_execution_with_context(
         context,
         request,
         options,
-      )? else {
-        return Err(MechError::new(
-          RuntimeRootModuleSourceNotFound { specifier: root_specifier },
-          None,
-        ));
-      };
+      )
+      .map(|execution| execution.result)
+  }
 
-      context.module_version = Some(root_version);
+  #[cfg(feature = "invariant_define")]
+  pub fn resolve_and_run_root_module_report(
+    &mut self,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
+    self.ensure_runtime_mutation_allowed(
+      "resolve_and_run_root_module_report",
+    )?;
+    let mut context = self.runtime_context()?;
+    self.resolve_and_run_root_module_report_with_context(
+      &mut context,
+      request,
+      options,
+    )
+  }
 
-      let mut preflight_seen = HashSet::new();
-      self.preflight_module_graph_for_scope(
+  #[cfg(feature = "invariant_define")]
+  pub fn resolve_and_run_root_module_report_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
+    self
+      .resolve_and_run_root_module_execution_with_context(
         context,
-        root_version,
-        &SourceScope::Program,
-        &mut preflight_seen,
-      )?;
+        request,
+        options,
+      )
+      .map(|execution| crate::RuntimeRootModuleExecutionReport {
+        result: execution.result,
+        integrity: execution.integrity,
+      })
+  }
 
-      let mut seen = HashSet::new();
-      let mut module_instances = HashMap::new();
-      let value = self.execute_module_retained_root_for_scope(
+  fn resolve_and_run_root_module_execution_with_context(
+    &mut self,
+    context: &mut RuntimeContext,
+    request: impl Into<SourceRequest>,
+    options: ModuleBuildOptions<'_>,
+  ) -> MResult<RootModuleExecution> {
+    let request = request.into();
+    request.validate()?;
+    let root_specifier = request.specifier.clone();
+    let turn_started = Instant::now();
+    let mut root_version_for_audit = None;
+
+    let result = self.with_atomic_program_operation(
+      context,
+      "resolve_and_run_root_module_with_context",
+      |runtime, context| {
+        let Some(root_version) =
+          runtime.build_module_from_request_in_transaction(
+            context,
+            request,
+            options,
+          )?
+        else {
+          return Err(MechError::new(
+            RuntimeRootModuleSourceNotFound {
+              specifier: root_specifier.clone(),
+            },
+            None,
+          ));
+        };
+
+        root_version_for_audit = Some(root_version);
+        context.module_version = Some(root_version);
+
+        let mut preflight_seen = HashSet::new();
+        runtime.preflight_module_graph_for_scope(
+          context,
+          root_version,
+          &SourceScope::Program,
+          &mut preflight_seen,
+        )?;
+
+        let mut seen = HashSet::new();
+        let mut module_instances = HashMap::new();
+        let mut integrity_evaluations =
+          super::execution::IntegrityEvaluationCollector::default();
+        let result = runtime.execute_module_retained_root_for_scope(
+          context,
+          root_version,
+          &SourceScope::Program,
+          &mut seen,
+          &mut module_instances,
+          &mut integrity_evaluations,
+          turn_started,
+        )?;
+        Ok(RootModuleExecution {
+          result: crate::RuntimeValueSnapshot::try_capture(
+            &result,
+          )?,
+          #[cfg(feature = "invariant_define")]
+          integrity: IntegrityConstraintReport::from_evaluations(
+            integrity_evaluations,
+          ),
+        })
+      },
+    );
+
+    if let Err(error) = &result {
+      let _ = self.emit_event_immediate_to_context(
         context,
-        root_version,
-        &SourceScope::Program,
-        &mut seen,
-        &mut module_instances,
-        turn_started,
-      )?;
-      Ok(value)
-    })();
-
-    context.module_version = previous_module_version;
+        RuntimeEventKind::ProgramFailed {
+          task_id: context.task,
+          message: format!("{:?}", error),
+        },
+      );
+      if let Some(root_version) = root_version_for_audit {
+        let _ = self.emit_event_immediate_to_context(
+          context,
+          RuntimeEventKind::ModuleExecutionFailed {
+            module_version: root_version,
+            message: format!("{:?}", error),
+          },
+        );
+      }
+    }
     result
   }
 
@@ -575,6 +840,7 @@ impl MechRuntime {
     source: &str,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed("put_source_module")?;
     let mut context = self.runtime_context()?;
 
     self.put_source_module_with_context(
@@ -594,6 +860,9 @@ impl MechRuntime {
     source: &str,
     options: ModuleBuildOptions<'_>,
   ) -> MResult<ModuleVersionId> {
+    self.ensure_runtime_mutation_allowed(
+      "put_source_module_with_context",
+    )?;
     let resolved = ResolvedSource::new(
       name,
       canonical_uri,
@@ -601,10 +870,16 @@ impl MechRuntime {
     )
     .with_kind(crate::SourceKind::Mech);
 
-    self.build_module_from_resolved_source_with_context(
+    self.with_atomic_module_operation(
       context,
-      resolved,
-      options,
+      "put_source_module_with_context",
+      |runtime, context| {
+        runtime.build_module_from_resolved_source_in_transaction(
+          context,
+          resolved,
+          options,
+        )
+      },
     )
   }
 
@@ -613,6 +888,9 @@ impl MechRuntime {
     module: ModuleId,
     version: ModuleVersionId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "activate_module_version",
+    )?;
     let mut context = self.runtime_context()?
       .with_module_version(version);
 
@@ -625,6 +903,9 @@ impl MechRuntime {
     module: ModuleId,
     version: ModuleVersionId,
   ) -> MResult<()> {
+    self.ensure_runtime_mutation_allowed(
+      "activate_module_version_with_context",
+    )?;
     self.validate_context_for_runtime(context)?;
     context.charge_step()?;
 
@@ -661,66 +942,5 @@ impl MechRuntime {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-  use crate::SourceKind;
-
-  #[test]
-  fn max_source_bytes_rejects_module_source() {
-    let mut config = RuntimeConfig::default();
-    config.limits.max_source_bytes = Some(3);
-    let mut runtime = MechRuntime::new(config).unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let canonical_uri = "memory://big-module.mec";
-    let resolved = ResolvedSource::new(
-      "big-module",
-      canonical_uri,
-      MechSourceCode::String("1234".to_string()),
-    )
-    .with_kind(SourceKind::Mech);
-
-    let error = runtime
-      .build_module_from_resolved_source_with_context(
-        &mut context,
-        resolved,
-        ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
-      )
-      .unwrap_err();
-    let budget = error.kind_as::<ResourceBudgetExceededError>().unwrap();
-    assert_eq!(budget.resource, "source_bytes");
-    assert_eq!(budget.requested, 4);
-    assert_eq!(budget.max, Some(3));
-    assert!(runtime
-      .store
-      .find_module_by_name(canonical_uri)
-      .unwrap()
-      .is_none());
-    assert!(runtime
-      .list_events(None)
-      .unwrap()
-      .iter()
-      .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. })));
-  }
-
-  #[test]
-  fn non_executable_module_source_is_rejected_before_indexing() {
-    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let resolved = ResolvedSource::new(
-      "style.css",
-      "memory://style.css",
-      MechSourceCode::String("not valid Mech source".to_string()),
-    )
-    .with_kind(SourceKind::Css);
-
-    let error = runtime
-      .build_module_from_resolved_source_with_context(
-        &mut context,
-        resolved,
-        ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
-      )
-      .unwrap_err();
-
-    assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
-  }
-}
+#[path = "module/tests/mod.rs"]
+mod tests;

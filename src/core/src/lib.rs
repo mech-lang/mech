@@ -1,23 +1,24 @@
 #![cfg_attr(feature = "no_std", no_std)]
 #![allow(warnings)]
 #![allow(dead_code)]
+#![feature(where_clause_attrs)]
 
 //extern crate core as rust_core;
 extern crate seahash;
 
-#[cfg(feature="no_std")] #[macro_use] 
+#[cfg(feature="no_std")] #[macro_use]
 extern crate alloc;
-#[cfg(not(feature = "no_std"))] 
+#[cfg(not(feature = "no_std"))]
 extern crate core;
 
 #[cfg(feature="no_std")]
-use hashbrown::HashMap;
-#[cfg(not(feature = "no_std"))] 
+use hashbrown::HashMap as HashBrownMap;
+#[cfg(not(feature = "no_std"))]
 use std::collections::HashMap;
 
 #[cfg(feature="no_std")]
 use alloc::fmt::{self, Debug, Display};
-#[cfg(not(feature = "no_std"))] 
+#[cfg(not(feature = "no_std"))]
 use std::fmt::{self, Debug, Display};
 
 #[cfg(feature="no_std")]
@@ -25,10 +26,13 @@ use alloc::vec::Vec;
 
 #[cfg(feature="no_std")]
 use fxhash::FxHasher;
+#[cfg(feature = "no_std")]
+type HashMap<K, V> =
+  HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
 
 #[cfg(feature = "no_std")]
 use embedded_io::{self, Read, Write};
-#[cfg(not(feature = "no_std"))] 
+#[cfg(not(feature = "no_std"))]
 use std::io::{self, Error as ioError, Cursor, Read, Write};
 
 #[cfg(feature = "no_std")]
@@ -36,17 +40,17 @@ use alloc::string::{String, ToString};
 
 #[cfg(feature = "no_std")]
 use core::hash::{Hash, Hasher};
-#[cfg(not(feature = "no_std"))] 
+#[cfg(not(feature = "no_std"))]
 use std::hash::{Hash, Hasher};
 
 #[cfg(feature = "no_std")]
 use alloc::boxed::Box;
 
-#[cfg(feature = "matrix")]  
+#[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 #[cfg(feature = "pretty_print")]
 extern crate tabled;
-#[cfg(feature = "serde")] #[macro_use] 
+#[cfg(feature = "serde")] #[macro_use]
 extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
@@ -98,11 +102,21 @@ use tabled::{
 };
 
 pub mod error;
+pub mod execution;
 pub mod browser;
 pub mod kind;
 pub mod nodes;
+#[cfg(feature = "functions")]
+pub mod reactive_transaction;
+pub mod state_journal;
 pub mod structures;
 pub mod value;
+mod value_snapshot;
+pub use self::value_snapshot::{
+  ValueSnapshotBorrowConflict,
+  ValueSnapshotCollectionCollision,
+  ValueSnapshotCycleUnsupported,
+};
 #[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "mika")]
@@ -112,9 +126,13 @@ pub mod stdlib;
 pub mod types;
 
 pub use self::error::*;
+pub use self::execution::*;
 pub use self::browser::*;
 pub use self::kind::*;
 pub use self::nodes::*;
+#[cfg(feature = "functions")]
+pub use self::reactive_transaction::*;
+pub use self::state_journal::*;
 pub use self::structures::*;
 pub use self::value::*;
 #[cfg(feature = "functions")]
@@ -183,7 +201,7 @@ pub struct IndexedString {
 }
 
 impl IndexedString {
-  
+
   fn new(input: &str) -> Self {
     let mut data = Vec::new();
     let mut index_map = Vec::new();
@@ -284,7 +302,7 @@ pub fn humanize_bytes(bytes: &[u8]) -> String {
 pub fn emojify<T>(num: &T) -> String
 where
     T: Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: std::fmt::Debug,
+    <T as TryInto<u128>>::Error: core::fmt::Debug,
 {
   match (*num).try_into() {
     Ok(v) => {
@@ -312,22 +330,22 @@ where
 }
 
 pub const WORDLIST: &[&str;256] = &[
-  "nil", "ama", "ine", "ska", "pha", "gel", "art", 
+  "nil", "ama", "ine", "ska", "pha", "gel", "art",
   "ona", "sas", "ist", "aus", "pen", "ust", "umn",
   "ado", "con", "loo", "man", "eer", "lin", "ium",
   "ack", "som", "lue", "ird", "avo", "dog", "ger",
   "ter", "nia", "bon", "nal", "ina", "pet", "cat",
   "ing", "lie", "ken", "fee", "ola", "old", "rad",
   "met", "cut", "azy", "cup", "ota", "dec", "del",
-  "elt", "iet", "don", "ble", "ear", "rth", "eas", 
+  "elt", "iet", "don", "ble", "ear", "rth", "eas",
   "war", "eig", "tee", "ele", "emm", "ene", "qua",
-  "tst", "fan", "fif", "fil", "fin", "fis", "fiv", 
+  "tst", "fan", "fif", "fil", "fin", "fis", "fiv",
   "flo", "for", "foo", "fou", "fot", "fox", "fre",
-  "fri", "fru", "gee", "gia", "glu", "fol", "gre", 
-  "ham", "hap", "har", "haw", "hel", "hig", "hot", 
+  "fri", "fru", "gee", "gia", "glu", "fol", "gre",
+  "ham", "hap", "har", "haw", "hel", "hig", "hot",
   "hyd", "ida", "ill", "ind", "ini", "ink", "iwa",
-  "and", "ite", "jer", "jig", "joh", "jul", "uly", 
-  "kan", "ket", "kil", "kin", "kit", "lac", "lak", 
+  "and", "ite", "jer", "jig", "joh", "jul", "uly",
+  "kan", "ket", "kil", "kin", "kit", "lac", "lak",
   "lem", "ard", "lim", "lio", "lit", "lon", "lou",
   "low", "mag", "nes", "mai", "gam", "arc", "mar",
   "mao", "mas", "may", "mex", "mic", "mik", "ril",
@@ -335,15 +353,15 @@ pub const WORDLIST: &[&str;256] = &[
   "moe", "tan", "oon", "ain", "mup", "sic", "neb",
   "une", "net", "nev", "nin", "een", "nit", "nor",
   "nov", "nut", "oct", "ohi", "okl", "one", "ora",
-  "ges", "ore", "osc", "ove", "oxy", "pap", "par", 
+  "ges", "ore", "osc", "ove", "oxy", "pap", "par",
   "pey", "pip", "piz", "plu", "pot", "pri", "pur",
-  "que", "uqi", "qui", "red", "riv", "rob", "roi", 
+  "que", "uqi", "qui", "red", "riv", "rob", "roi",
   "rug", "sad", "sal", "sat", "sep", "sev", "eve",
-  "sha", "sie", "sin", "sik", "six", "sit", "sky", 
+  "sha", "sie", "sin", "sik", "six", "sit", "sky",
   "soc", "sod", "sol", "sot", "tir", "ker", "spr",
-  "sta", "ste", "mam", "mer", "swe", "tab", "tag", 
+  "sta", "ste", "mam", "mer", "swe", "tab", "tag",
   "see", "nis", "tex", "thi", "the", "tim", "tri",
-  "twe", "ent", "two", "unc", "ess", "uni", "ura", 
+  "twe", "ent", "two", "unc", "ess", "uni", "ura",
   "veg", "ven", "ver", "vic", "vid", "vio", "vir",
   "was", "est", "whi", "hit", "iam", "win", "his",
   "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
@@ -356,7 +374,7 @@ pub const EMOJILIST: &[&str; 256] = &[
   "🐵","🐶","🐺","🦊","🦝","🐱","🐈","🐈","🦁","🐷","🐮","🦬","🐯","🐴","🫎","🦄","🦓","🦙","🦒","🐘","🦣","🦏","🦛","🐫","🐏","🐭","🐰","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐦","🐧","🕊️","🦅","🦆","🐦‍🔥","🦉","🦤","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🦖","🐳","🐬","🦭","🐠","🦈","🐙","🪼","🦀","🦞","🦐","🦑","🐌","🦋","🐛","🐝","🪲","🐞","🦗","🕸️","🪰","🪱","🦠","👻","👽","🐶","🐮","🐚","🪸","🪶","🦧","🪿","🦢","🤖",
   "🌹","🌳","🌴","🌵","🍀","🍁","🍄","🌛","🌞","🪐","⭐","⛅","🌧️","🌨️","🌈","❄️","☃️","☄️","🔥","🌻",
   "🍇","🍉","🍊","🍋","🍋‍🟩","🍌","🍍","🥭","🍎","🍐","🍓","🥝","🍅","🫒","🥥","🥔","🥕","🌽","🌶️","🫑","🥒","🥦","🧄","🧅","🫛","🍦","🍧","🍩","🍪","🍰","🧁","🥧","🍫","🍭","🍞","🥨","🥯","🧇","🍟","🍿","🧃",
-  "🎤","🎧","📻","🎷","🪗","🎸","🎹","🎺","🎻","🪇","🥁","⚗️","📷","🧳","🌡️","🧸","🧶","🔎","🕯️","💡","🔦","🔒","🗝️","🪚","🔧","🪛","🔩","⚙️","⚖️","🧰","🧲","🪜","🔬","📡","🧷","🧹","🧺","🪣","🧼","🧽","🧯","🛒",  
+  "🎤","🎧","📻","🎷","🪗","🎸","🎹","🎺","🎻","🪇","🥁","⚗️","📷","🧳","🌡️","🧸","🧶","🔎","🕯️","💡","🔦","🔒","🗝️","🪚","🔧","🪛","🔩","⚙️","⚖️","🧰","🧲","🪜","🔬","📡","🧷","🧹","🧺","🪣","🧼","🧽","🧯","🛒",
   "⏰","🛟","🛩️","🚁","🛰️","🚀","🛸","⚓","🚂","🚑","🚒","🚕","🚗","🚚","🚜","🏎️","🏍️","🛵","🦼","🚲","🛹","🛼","🛞","📰","📦","📫","✏️","🖊️","🖌️","🖍️","📌","📏","✂️","🗑️","🏆","⚾","🏀","🎾","🎳","⛳","⛸️","🤿","🛷","🎯","🪁","🧩","🪅","🎨","🧭","🏔️","🏝️","⛲","⛺","🎠","🛝","🧵","💈","🎪","🛎️","💎","⛵"
 ];
 

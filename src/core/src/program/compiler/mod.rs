@@ -8,11 +8,11 @@ use hashbrown::HashSet;
 
 pub mod sections;
 pub mod constants;
-pub mod context;
+pub mod api;
 
 pub use self::sections::*;
 pub use self::constants::*;
-pub use self::context::*;
+pub use self::api::*;
 
 pub type Register = u32;
 

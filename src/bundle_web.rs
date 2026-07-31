@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use mech_core::*;
-use mech_syntax::formatter::Formatter;
+use mech_syntax::formatter::{Formatter, HtmlShimExtraSlots};
 use mech_syntax::parser;
 
 use crate::fs_paths::validate_safe_relative_path;
@@ -136,7 +136,14 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
     let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
     let mut formatter = Formatter::new();
-    let html = formatter.format_html(&tree, stylesheet_string.clone(), source_shim);
+    let html = formatter
+      .format_html_with_slots(
+        &tree,
+        stylesheet_string.clone(),
+        source_shim,
+        &HtmlShimExtraSlots::default(),
+      )
+      .html;
     write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
   }
   let mut roots = Vec::with_capacity(options.loaded_config.document.run.as_ref().unwrap().paths.len());
@@ -392,6 +399,12 @@ fn read_shim(path: &Path) -> MResult<String> {
 }
 
 fn validate_static_web_shim(shim: &str) -> MResult<()> {
+  if shim.contains("{{DOCUMENT_SCRIPT}}") || shim.contains("{{SOURCE_URL_KEY}}") {
+    return Err(validation_error(
+      "bundle-web does not support source-document controller shims. Use a static project shim with `./_mech/project.js`, or use `mech format --html` / `mech serve` for a standalone document.",
+    ));
+  }
+
   for (pattern, url, fix) in [
     ("\"/code/", "/code/", "./code/..."),
     ("'/code/", "/code/", "./code/..."),
@@ -1217,6 +1230,24 @@ export default async function init() {}
 
     assert!(error.contains("bundle-web shim contains server-root Mech URL"));
     assert!(error.contains("./code/"));
+    fs::remove_dir_all(root).unwrap();
+  }
+
+  #[test]
+  fn bundle_web_rejects_source_document_controller_shims() {
+    let root = temp_root("document-controller-shim");
+    let loaded = write_demo_project(&root);
+    fs::write(
+      root.join("index.html"),
+      r#"<!doctype html><html><body>{{DOCUMENT_SCRIPT}}</body></html>"#,
+    )
+    .unwrap();
+    let out = root.join("out");
+
+    let error = format!("{:?}", bundle_web_project(options(&root, &out, loaded)).unwrap_err());
+
+    assert!(error.contains("bundle-web does not support source-document controller shims"));
+    assert!(error.contains("./_mech/project.js"));
     fs::remove_dir_all(root).unwrap();
   }
 

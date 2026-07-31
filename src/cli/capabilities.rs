@@ -391,7 +391,7 @@ mod filesystem_capability_tests {
 
     impl CurrentDirGuard {
         fn enter(path: &Path) -> Self {
-            let lock = crate::cli::CURRENT_DIR_LOCK.lock().unwrap();
+            let lock = crate::cli::lock_current_dir();
             let previous = std::env::current_dir().unwrap();
             std::env::set_current_dir(path).unwrap();
             Self {
@@ -759,17 +759,4 @@ pub(crate) fn build_filesystem_runtime_access(
         kernel,
         events: build.events,
     })
-}
-
-#[cfg(feature = "run")]
-pub(crate) fn install_file_resolver(
-    runtime: &mut mech_runtime::MechRuntime,
-    access: &FilesystemRuntimeAccess,
-    cwd: &Path,
-) -> MResult<()> {
-    runtime.set_source_resolver(
-        mech_runtime::FileSourceResolver::new(cwd)
-            .with_capabilities(access.kernel.clone(), MECH_TOOL_SUBJECT),
-    );
-    Ok(())
 }

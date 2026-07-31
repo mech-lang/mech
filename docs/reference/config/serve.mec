@@ -23,19 +23,50 @@ config := {
 |-------|-------------|
 | `address` | Server bind address. Defaults to `127.0.0.1`. |
 | `port` | Server port. Defaults to `8081`. |
-| `paths` | Source files served and compiled by the project. |
-| `shim` | HTML shim used for the served root page. |
+| `paths` | Source files or recursive source directories composed with `run.paths`. |
+| `shim` | HTML shim that explicitly owns the served root page. |
 | `wasm` | Path to a wasm package directory. |
 | `stylesheets` | Stylesheets to include with formatted output. |
 
-2. Browser host config injection
+2. Workspace composition
+-------------------------------------------------------------------------------
+
+Configured serving uses the same runtime workspace as `mech serve file.mec` and
+`mech serve directory`. `run.paths` are selected first, followed by additional
+`serve.paths`; duplicates retain their first position. File entries become
+explicit targets and directory entries are discovered recursively.
+
+Browser-project routes compose with the source-document routes:
+
+| Route | Response |
+|-------|----------|
+| `/foo.mec` | Formatted Mech HTML. |
+| `/foo.html` | Formatted Mech HTML alias. |
+| `/foo` | Extensionless formatted Mech HTML alias. |
+| `/source/foo.mec` | Raw Mech source. |
+| `/code/foo.mec` | Encoded syntax tree. |
+| `/mech.mcfg` | The loaded project configuration. |
+| `/_mech/project-sources.json` | Current source inventory using `/source/...` URLs. |
+
+The project JS and WASM package routes remain under `/_mech/`. Workspace watch
+refresh updates both formatted sources and the project source inventory.
+
+3. Project root
+-------------------------------------------------------------------------------
+
+A configured browser application that must own `/` supplies a real
+`index.html` or configures `serve.shim`. Otherwise the server chooses the first
+selected source, `index.mec`, a single source, or a generated source listing.
+Configured browser assets do not hide source-document routes.
+
+4. Browser host config injection
 -------------------------------------------------------------------------------
 
 When browser host settings or run grants are configured, `mech serve` derives a browser host config projection and injects it into the served shim.
 
 Browser pages can initialize from that projection with `WasmMech.fromHostConfig()`.
 
-3. Static bundling
+5. Static bundling
 -------------------------------------------------------------------------------
 
 `bundle-web` requires nonempty `run.paths` and `serve.paths` from the project config. It reads the `serve` section to determine project sources and stylesheets; the shim and wasm package may come from the config or the `--shim` and `--wasm` command-line options. Static bundles require relative browser URLs; server-root URLs such as `/_mech/project.js` are not portable in static output.
