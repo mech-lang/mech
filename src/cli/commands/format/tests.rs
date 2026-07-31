@@ -14,7 +14,7 @@ fn temp_root(label: &str) -> PathBuf {
 
 fn format_test_lock() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-    LOCK.lock().unwrap()
+    LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 #[test]
@@ -204,12 +204,9 @@ fn format_output_collision_uses_actual_output_paths() {
     std::fs::create_dir_all(root.join("b")).unwrap();
     std::fs::write(root.join("a/main.mec"), "x := 1").unwrap();
     std::fs::write(root.join("b/main.mec"), "y := 2").unwrap();
-    let old_cwd = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&root).unwrap();
     let mut targets = Vec::new();
-    targets.extend(collect_format_targets(Path::new("a"), None, false, false).unwrap());
-    targets.extend(collect_format_targets(Path::new("b"), None, false, false).unwrap());
-    std::env::set_current_dir(old_cwd).unwrap();
+    targets.extend(collect_format_targets(&root.join("a"), None, false, false).unwrap());
+    targets.extend(collect_format_targets(&root.join("b"), None, false, false).unwrap());
 
     ensure_unique_format_outputs(&targets, Path::new("."), false, true, false).unwrap();
     let error = format!(

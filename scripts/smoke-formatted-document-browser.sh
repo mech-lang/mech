@@ -46,13 +46,30 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 PY
 }
 
-mkdir -p "$work_dir/project/vendor" "$work_dir/shared"
-cp tests/fixtures/format_static/support.mec "$work_dir/project/café.mec"
+mkdir -p \
+  "$work_dir/project/vendor" \
+  "$work_dir/project/indexdep.mec" \
+  "$work_dir/shared"
 cat > "$work_dir/project/main.mec" <<'MEC'
 +> ./café.mec
++> ./extdep.mec
++> ./indexdep.mec
 +> ./vendor/support.mec
-answer := café/value + support/value
++> ./vendor/percent.mec
+answer := café/value + extdep/value + indexdep/value + support/value + percent/value
 answer
+MEC
+cat > "$work_dir/project/café.mec" <<'MEC'
+value := 2
+<+ value
+MEC
+cat > "$work_dir/project/extdep.mec.mec" <<'MEC'
+value := 3
+<+ value
+MEC
+cat > "$work_dir/project/indexdep.mec/index.mec" <<'MEC'
+value := 5
+<+ value
 MEC
 cat > "$work_dir/shared/support.mec" <<'MEC'
 +> ./nested.mec
@@ -60,10 +77,15 @@ value := nested/value
 <+ value
 MEC
 cat > "$work_dir/shared/nested.mec" <<'MEC'
-value := 1
+value := 7
+<+ value
+MEC
+cat > "$work_dir/shared/rate%.mec" <<'MEC'
+value := 11
 <+ value
 MEC
 ln -s ../../shared/support.mec "$work_dir/project/vendor/support.mec"
+ln -s '../../shared/rate%.mec' "$work_dir/project/vendor/percent.mec"
 output_dir="$work_dir/static"
 format_log="$work_dir/format.log"
 if ! "$MECH_BIN" --no-config format "$work_dir/project/main.mec" --html --out "$output_dir" >"$format_log" 2>&1; then
@@ -78,9 +100,12 @@ page_file="$(find "$output_dir" -name main.html -type f -print -quit)"
   echo "formatter did not emit mech_wasm_bg.wasm" >&2
   exit 1
 }
+canonical_support="$(cd "$work_dir/shared" && pwd -P)/support.mec"
+canonical_percent="$(cd "$work_dir/shared" && pwd -P)/rate%.mec"
 if grep -F "$work_dir" "$page_file" >/dev/null \
   || grep -F 'file://' "$page_file" >/dev/null \
-  || grep -F "$work_dir/shared/support.mec" "$page_file" >/dev/null; then
+  || grep -F "$canonical_support" "$page_file" >/dev/null \
+  || grep -F "$canonical_percent" "$page_file" >/dev/null; then
   echo "standalone source bundle leaked a filesystem location" >&2
   exit 1
 fi
@@ -289,7 +314,7 @@ try:
         ):
             fail(f"could not submit browser REPL command: {command}")
 
-    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '42'; })()"
+    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '28'; })()"
     submit("answer")
     wait_for(exact_answer, "the imported source value")
     submit(":clear")

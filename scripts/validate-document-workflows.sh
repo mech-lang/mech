@@ -20,6 +20,18 @@ fi
 cargo test -p mech \
   mech_tests_preserve_discovered_non_utf8_filename \
   -- --exact --nocapture
+cargo test -p mech-runtime \
+  --lib \
+  resolver::memory \
+  -- --nocapture
+cargo test -p mech \
+  --lib \
+  cli::commands::format::document_bundle \
+  -- --nocapture
+cargo test -p mech \
+  --lib \
+  cli::commands::format::publication \
+  -- --nocapture
 cargo test -p mech \
   --no-default-features \
   --features formatter \
