@@ -13,8 +13,7 @@ fn temp_root(label: &str) -> PathBuf {
 }
 
 fn format_test_lock() -> std::sync::MutexGuard<'static, ()> {
-    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-    LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    crate::cli::lock_current_dir()
 }
 
 #[test]
