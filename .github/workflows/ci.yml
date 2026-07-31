@@ -37,6 +37,10 @@ jobs:
 
       - name: Check feature boundaries and examples
         run: |
+          # Compile every registered library, binary, integration-test, example,
+          # and benchmark target before running narrower feature checks.
+          cargo check --workspace --all-targets
+
           # Linked-stdlib CLI build for examples that import named modules.
           cargo build --bin mech --features linked_stdlib
           ./target/debug/mech test examples/working
