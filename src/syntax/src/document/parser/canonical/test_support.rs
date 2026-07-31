@@ -15,7 +15,7 @@ use super::super::rule::rules;
 use super::combinator::Attempt;
 use super::{
     control_operators, declarations, imports, kinds, literals, operators, paths,
-    pattern_primitives, source_imports, subscript_primitives,
+    pattern_primitives, source_imports, structure_shell, subscript_primitives,
 };
 
 /// The exact combined Phase 2F direct-rule surface.
@@ -60,6 +60,20 @@ pub(crate) const PHASE_2G_RULES: &[RuleId; 15] = &[
     rules::EXP_ASSIGN_OPERATOR,
     rules::SEND_OPERATOR,
     rules::GUARD_OPERATOR,
+];
+
+/// The exact closed Phase 2H structure-shell surface.
+pub(crate) const PHASE_2H_RULES: &[RuleId; 10] = &[
+    rules::MATRIX_START,
+    rules::MATRIX_END,
+    rules::TABLE_START,
+    rules::TABLE_END,
+    rules::TABLE_SEPARATOR,
+    rules::TABLE_HORZ,
+    rules::TABLE_TOP,
+    rules::ROW_SEPARATOR,
+    rules::EMPTY_MAP,
+    rules::EMPTY_SET,
 ];
 
 /// The exact direct-rule outcome, including local committed recovery.
@@ -289,6 +303,23 @@ pub fn parse_canonical_phase_2g_rule_for_test(
                 .or_else(|| pattern_primitives::parse_rule(parser, rule))
                 .or_else(|| control_operators::parse_rule(parser, rule))
                 .expect("Phase 2G support guard accepts this RuleId")
+        })
+    })
+}
+
+/// Parse one exact Phase 2H structure-shell rule as a deterministic source
+/// prefix. This hidden surface deliberately does not introduce a matrix,
+/// table, map, set, structure, expression, or document root.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2h_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    PHASE_2H_RULES.contains(&rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            structure_shell::parse_rule(parser, rule)
+                .expect("Phase 2H support guard accepts this RuleId")
         })
     })
 }
