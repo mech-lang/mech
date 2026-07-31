@@ -1,5 +1,6 @@
 pub(crate) mod base;
 pub(crate) mod combinator;
+pub(crate) mod declarations;
 pub(crate) mod found;
 pub(crate) mod grammar;
 pub(crate) mod imports;
@@ -10,6 +11,7 @@ pub(crate) mod operators;
 pub(crate) mod paths;
 mod ports;
 pub(crate) mod roots;
+pub(crate) mod source_imports;
 pub(crate) mod statements;
 mod test_support;
 pub mod terminal_spec;
@@ -22,6 +24,7 @@ pub use ports::{
 pub use test_support::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2c_rule_for_test,
     parse_canonical_phase_2d_rule_for_test, parse_canonical_phase_2e_rule_for_test,
+    parse_canonical_phase_2f_rule_for_test,
 };
 pub use terminal_spec::{
     FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,

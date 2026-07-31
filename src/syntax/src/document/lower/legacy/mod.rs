@@ -1,5 +1,6 @@
 mod base;
 mod common;
+mod declarations;
 mod grammar;
 mod imports;
 mod kinds;
@@ -8,11 +9,18 @@ mod mechdown;
 mod operators;
 mod paths;
 mod source;
+mod source_imports;
 
 pub use base::{
     lower_legacy_digit_sequence, lower_legacy_escaped_character, lower_legacy_identifier,
     lower_legacy_identifier_path_segment,
 };
+pub use declarations::{
+    lower_legacy_context_base, lower_legacy_context_capability_declaration,
+    lower_legacy_context_capability_scope, lower_legacy_context_declaration,
+    lower_legacy_export_declaration,
+};
+pub(crate) use declarations::{lower_phase_2f_declaration_value, LegacyDeclarationValue};
 pub use grammar::lower_legacy_grammar;
 pub use imports::{
     lower_legacy_module_import, lower_legacy_module_import_alias, lower_legacy_module_import_path,
@@ -41,3 +49,5 @@ pub use operators::{
 pub(crate) use operators::{lower_phase_2d_operator_value, LegacyOperatorValue};
 pub(crate) use imports::{lower_phase_2e_module_import_value, LegacyModuleImportValue};
 pub use paths::{lower_legacy_context_address_path, lower_legacy_prefixed_context_path};
+pub use source_imports::{lower_legacy_import_declaration, lower_legacy_source_import_specifier};
+pub(crate) use source_imports::{lower_phase_2f_source_import_value, LegacySourceImportValue};
