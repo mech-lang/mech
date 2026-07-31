@@ -565,6 +565,7 @@ fn percent_encode_path(bytes: &[u8]) -> String {
   out
 }
 
+#[cfg(windows)]
 fn percent_encode_path_segment(bytes: &[u8]) -> String {
   let mut out = String::new();
   for &byte in bytes {
@@ -577,105 +578,6 @@ fn percent_encode_path_segment(bytes: &[u8]) -> String {
     }
   }
   out
-}
-
-fn percent_encode_path_segment_preserving_escapes(bytes: &[u8]) -> String {
-  let mut out = String::new();
-  let mut index = 0;
-  while index < bytes.len() {
-    let byte = bytes[index];
-    if byte == b'%'
-      && index + 2 < bytes.len()
-      && bytes[index + 1].is_ascii_hexdigit()
-      && bytes[index + 2].is_ascii_hexdigit()
-    {
-      out.push('%');
-      out.push((bytes[index + 1] as char).to_ascii_uppercase());
-      out.push((bytes[index + 2] as char).to_ascii_uppercase());
-      index += 3;
-      continue;
-    }
-    if byte.is_ascii_alphanumeric()
-      || matches!(byte, b'-' | b'.' | b'_' | b'~')
-    {
-      out.push(byte as char);
-    } else {
-      out.push('%');
-      out.push(hex_char(byte >> 4));
-      out.push(hex_char(byte & 0x0f));
-    }
-    index += 1;
-  }
-  out
-}
-
-pub(super) fn portable_relative_source_specifier_candidate(
-  specifier: &str,
-) -> String {
-  specifier
-    .split('/')
-    .map(|component| {
-      percent_encode_path_segment_preserving_escapes(component.as_bytes())
-    })
-    .collect::<Vec<_>>()
-    .join("/")
-}
-
-/// Encodes a normalized relative filesystem path for an in-memory source map.
-///
-/// Each component uses the same percent encoding as filesystem source
-/// requests, so Unix names that are not valid UTF-8 remain reversible without
-/// leaking their absolute filesystem prefix into a portable source bundle.
-pub fn relative_path_to_source_specifier(path: &Path) -> MResult<String> {
-  if path.is_absolute() {
-    return Err(filesystem_specifier_error(
-      path.display().to_string(),
-      "relative source specifier path must not be absolute",
-    ));
-  }
-
-  let mut parts = Vec::new();
-  for component in path.components() {
-    match component {
-      Component::Normal(part) => {
-        #[cfg(unix)]
-        {
-          use std::os::unix::ffi::OsStrExt;
-          parts.push(percent_encode_path_segment(part.as_bytes()));
-        }
-        #[cfg(not(unix))]
-        {
-          let text = part.to_str().ok_or_else(|| {
-            filesystem_specifier_error(
-              path.display().to_string(),
-              "relative source specifier path must be valid UTF-8 on this target",
-            )
-          })?;
-          parts.push(percent_encode_path_segment(text.as_bytes()));
-        }
-      }
-      Component::CurDir => {}
-      Component::ParentDir => {
-        return Err(filesystem_specifier_error(
-          path.display().to_string(),
-          "relative source specifier path must not contain parent traversal",
-        ));
-      }
-      Component::RootDir | Component::Prefix(_) => {
-        return Err(filesystem_specifier_error(
-          path.display().to_string(),
-          "relative source specifier path must contain only normal components",
-        ));
-      }
-    }
-  }
-  if parts.is_empty() {
-    return Err(filesystem_specifier_error(
-      path.display().to_string(),
-      "relative source specifier path must not be empty",
-    ));
-  }
-  Ok(parts.join("/"))
 }
 
 fn is_file_uri_path_byte_unreserved(byte: u8) -> bool {

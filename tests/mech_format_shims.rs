@@ -254,8 +254,8 @@ fn mech_format_bundles_relative_import_sources() {
             .expect("source bundle must be base64"),
     )
     .expect("source bundle must be JSON");
-    assert_eq!(bundle["version"], 1);
-    assert_eq!(bundle["rootSpecifier"], "main.mec");
+    assert_eq!(bundle["version"], 2);
+    assert_eq!(bundle["rootSpecifier"], "bundle/000000.mec");
     assert_eq!(
         bundle["sources"]
             .as_array()
@@ -263,7 +263,15 @@ fn mech_format_bundles_relative_import_sources() {
             .iter()
             .map(|source| source["specifier"].as_str().expect("specifier"))
             .collect::<Vec<_>>(),
-        vec!["main.mec", "support.mec"],
+        vec!["bundle/000000.mec", "bundle/000001.mec"],
+    );
+    assert_eq!(
+        bundle["resolutions"],
+        serde_json::json!([{
+            "referrer": "bundle/000000.mec",
+            "specifier": "./support.mec",
+            "target": "bundle/000001.mec",
+        }]),
     );
     assert!(html.contains("data-mech-wasm-module=\"./_mech/pkg/mech_wasm.js\""));
     assert!(!html.contains(&directory.path().display().to_string()));

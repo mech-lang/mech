@@ -14,18 +14,64 @@
 
 use std::collections::HashMap;
 
-use mech_core::{MResult, MechSourceCode};
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use super::{
   MutableSourceResolver, ResolvedSource, SourceKind, SourceRequest,
   SourceResolver,
-  file::portable_relative_source_specifier_candidate,
 };
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct InMemoryResolutionKey {
+  referrer_canonical_uri: String,
+  requested_specifier: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct InMemorySourceResolutionConflict {
+  pub referrer_canonical_uri: String,
+  pub requested_specifier: String,
+  pub existing_target: String,
+  pub requested_target: String,
+}
+
+impl MechErrorKind for InMemorySourceResolutionConflict {
+  fn name(&self) -> &str { "InMemorySourceResolutionConflict" }
+
+  fn message(&self) -> String {
+    format!(
+      "in-memory source resolution `{}` from `{}` already targets `{}` and cannot target `{}`",
+      self.requested_specifier,
+      self.referrer_canonical_uri,
+      self.existing_target,
+      self.requested_target,
+    )
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct InMemorySourceResolutionTargetMissing {
+  pub role: &'static str,
+  pub source: String,
+}
+
+impl MechErrorKind for InMemorySourceResolutionTargetMissing {
+  fn name(&self) -> &str { "InMemorySourceResolutionTargetMissing" }
+
+  fn message(&self) -> String {
+    format!(
+      "in-memory source resolution {} source `{}` is not registered",
+      self.role,
+      self.source,
+    )
+  }
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct InMemorySourceResolver {
   sources: HashMap<String, ResolvedSource>,
   aliases: HashMap<String, String>,
+  resolutions: HashMap<InMemoryResolutionKey, String>,
 }
 
 impl InMemorySourceResolver {
@@ -91,6 +137,65 @@ impl InMemorySourceResolver {
     self
   }
 
+  pub fn insert_resolution(
+    &mut self,
+    referrer_source: impl AsRef<str>,
+    requested_specifier: impl Into<String>,
+    target_source: impl AsRef<str>,
+  ) -> MResult<()> {
+    let referrer_source = self.resolve_alias(referrer_source.as_ref()).to_string();
+    let target_source = self.resolve_alias(target_source.as_ref()).to_string();
+    let requested_specifier = requested_specifier.into();
+
+    if requested_specifier.trim().is_empty() {
+      return Err(MechError::new(
+        super::InvalidSourceRequestError {
+          field: "specifier",
+          reason: "must not be empty",
+        },
+        None,
+      ));
+    }
+
+    let referrer = self.sources.get(&referrer_source).ok_or_else(|| MechError::new(
+      InMemorySourceResolutionTargetMissing {
+        role: "referrer",
+        source: referrer_source.clone(),
+      },
+      None,
+    ))?;
+    if !self.sources.contains_key(&target_source) {
+      return Err(MechError::new(
+        InMemorySourceResolutionTargetMissing {
+          role: "target",
+          source: target_source,
+        },
+        None,
+      ));
+    }
+
+    let key = InMemoryResolutionKey {
+      referrer_canonical_uri: referrer.canonical_uri.clone(),
+      requested_specifier,
+    };
+    if let Some(existing_target) = self.resolutions.get(&key) {
+      if existing_target == &target_source {
+        return Ok(());
+      }
+      return Err(MechError::new(
+        InMemorySourceResolutionConflict {
+          referrer_canonical_uri: key.referrer_canonical_uri,
+          requested_specifier: key.requested_specifier,
+          existing_target: existing_target.clone(),
+          requested_target: target_source,
+        },
+        None,
+      ));
+    }
+    self.resolutions.insert(key, target_source);
+    Ok(())
+  }
+
   pub fn contains(&self, specifier: &str) -> bool {
     let resolved = self.resolve_alias(specifier);
     self.sources.contains_key(resolved)
@@ -98,12 +203,19 @@ impl InMemorySourceResolver {
 
   pub fn remove(&mut self, specifier: &str) -> Option<ResolvedSource> {
     let resolved = self.resolve_alias(specifier).to_string();
-    self.sources.remove(&resolved)
+    let removed = self.sources.remove(&resolved);
+    if let Some(source) = &removed {
+      self.resolutions.retain(|key, target| {
+        key.referrer_canonical_uri != source.canonical_uri && target != &resolved
+      });
+    }
+    removed
   }
 
   pub fn clear(&mut self) {
     self.sources.clear();
     self.aliases.clear();
+    self.resolutions.clear();
   }
 
   pub fn len(&self) -> usize {
@@ -165,9 +277,21 @@ impl SourceResolver for InMemorySourceResolver {
   fn resolve(&self, request: &SourceRequest) -> MResult<Option<ResolvedSource>> {
     request.validate()?;
 
-    let specifier = self.resolve_alias(&request.specifier);
+    if let Some(referrer_canonical_uri) = request.referrer.as_ref() {
+      let key = InMemoryResolutionKey {
+        referrer_canonical_uri: referrer_canonical_uri.clone(),
+        requested_specifier: request.specifier.clone(),
+      };
+      if let Some(target) = self.resolutions.get(&key) {
+        return Ok(self.sources.get(target).cloned());
+      }
+    }
 
-    if let Some(source) = self.sources.get(specifier) {
+    if let Some(source) = self.sources.get(&request.specifier) {
+      return Ok(Some(source.clone()));
+    }
+
+    if let Some(source) = self.sources.get(self.resolve_alias(&request.specifier)) {
       return Ok(Some(source.clone()));
     }
 
@@ -185,18 +309,7 @@ impl SourceResolver for InMemorySourceResolver {
       return Ok(Some(source.clone()));
     }
 
-    let portable_candidate =
-      portable_relative_source_specifier_candidate(&candidate);
-    if portable_candidate == candidate {
-      return Ok(None);
-    }
-
-    Ok(
-      self
-        .sources
-        .get(self.resolve_alias(&portable_candidate))
-        .cloned(),
-    )
+    Ok(None)
   }
 }
 
@@ -292,59 +405,117 @@ mod tests {
   }
 
   #[test]
-  fn resolves_literal_unicode_import_against_portable_source_key() {
-    let resolver = InMemorySourceResolver::new()
-      .with_string("caf%C3%A9.mec", "value := 41");
+  fn in_memory_resolution_edge_resolves_exact_request() {
+    let mut resolver = InMemorySourceResolver::new()
+      .with_string("root", "x := 1")
+      .with_string("dependency", "value := 41");
+    resolver.insert_resolution("root", "./literal spelling", "dependency").unwrap();
 
-    let request = SourceRequest::new("./café.mec")
-      .with_referrer("memory:main.mec");
-    let resolved = resolver.resolve(&request).unwrap().unwrap();
+    let resolved = resolver.resolve(
+      &SourceRequest::new("./literal spelling").with_referrer("memory:root"),
+    ).unwrap().unwrap();
 
-    assert_eq!(resolved.name, "caf%C3%A9.mec");
+    assert_eq!(resolved.name, "dependency");
   }
 
   #[test]
-  fn resolves_nested_literal_unicode_import_against_portable_source_key() {
-    let resolver = InMemorySourceResolver::new()
-      .with_string(
-        "donn%C3%A9es/%C3%A9t%C3%A9/dep.mec",
-        "value := 41",
-      );
+  fn in_memory_resolution_edge_uses_referrer_canonical_identity() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver.insert_source(
+      "root-key",
+      ResolvedSource::new(
+        "logical-root",
+        "document:canonical-root",
+        MechSourceCode::String("x := 1".to_string()),
+      ).with_kind(SourceKind::Mech),
+    ).unwrap();
+    resolver.insert_string("target", "value := 41").unwrap();
+    resolver.insert_resolution("root-key", "./dep", "target").unwrap();
 
-    let request = SourceRequest::new("../données/été/dep.mec")
-      .with_referrer("memory:app/main.mec");
-    let resolved = resolver.resolve(&request).unwrap().unwrap();
-
-    assert_eq!(
-      resolved.name,
-      "donn%C3%A9es/%C3%A9t%C3%A9/dep.mec",
-    );
+    assert!(resolver.resolve(
+      &SourceRequest::new("./dep").with_referrer("memory:root-key"),
+    ).unwrap().is_none());
+    assert_eq!(resolver.resolve(
+      &SourceRequest::new("./dep").with_referrer("document:canonical-root"),
+    ).unwrap().unwrap().name, "target");
   }
 
   #[test]
-  fn resolves_already_percent_encoded_relative_import_without_double_encoding() {
-    let resolver = InMemorySourceResolver::new()
-      .with_string("caf%C3%A9.mec", "value := 41");
+  fn in_memory_resolution_edge_precedes_global_exact_source() {
+    let mut resolver = InMemorySourceResolver::new()
+      .with_string("root", "x := 1")
+      .with_string("./dep", "value := 0")
+      .with_string("edge-target", "value := 41");
+    resolver.insert_resolution("root", "./dep", "edge-target").unwrap();
 
-    let request = SourceRequest::new("./caf%C3%A9.mec")
-      .with_referrer("memory:main.mec");
-    let resolved = resolver.resolve(&request).unwrap().unwrap();
+    let resolved = resolver.resolve(
+      &SourceRequest::new("./dep").with_referrer("memory:root"),
+    ).unwrap().unwrap();
 
-    assert_eq!(resolved.name, "caf%C3%A9.mec");
-    assert!(!resolver.contains("caf%25C3%25A9.mec"));
+    assert_eq!(resolved.name, "edge-target");
   }
 
   #[test]
-  fn literal_relative_source_key_retains_priority_over_portable_fallback() {
+  fn in_memory_resolution_edge_reuses_target_canonical_uri() {
+    let mut resolver = InMemorySourceResolver::new().with_string("root", "x := 1");
+    resolver.insert_source(
+      "target-key",
+      ResolvedSource::new(
+        "target-name",
+        "document:canonical-target",
+        MechSourceCode::String("value := 41".to_string()),
+      ).with_kind(SourceKind::Mech),
+    ).unwrap();
+    resolver.insert_resolution("root", "./dep", "target-key").unwrap();
+
+    let resolved = resolver.resolve(
+      &SourceRequest::new("./dep").with_referrer("memory:root"),
+    ).unwrap().unwrap();
+
+    assert_eq!(resolved.name, "target-name");
+    assert_eq!(resolved.canonical_uri, "document:canonical-target");
+  }
+
+  #[test]
+  fn in_memory_resolution_edge_rejects_conflicting_target() {
+    let mut resolver = InMemorySourceResolver::new()
+      .with_string("root", "x := 1")
+      .with_string("first", "value := 1")
+      .with_string("second", "value := 2");
+    resolver.insert_resolution("root", "./dep", "first").unwrap();
+    resolver.insert_resolution("root", "./dep", "first").unwrap();
+
+    let error = resolver.insert_resolution("root", "./dep", "second").unwrap_err();
+    assert_eq!(error.kind_name(), "InMemorySourceResolutionConflict");
+  }
+
+  #[test]
+  fn in_memory_resolution_edge_rejects_dangling_source() {
+    let mut resolver = InMemorySourceResolver::new()
+      .with_string("root", "x := 1")
+      .with_string("target", "value := 1");
+
+    let missing_referrer = resolver
+      .insert_resolution("missing", "./dep", "target")
+      .unwrap_err();
+    let missing_target = resolver
+      .insert_resolution("root", "./dep", "missing")
+      .unwrap_err();
+
+    assert_eq!(missing_referrer.kind_name(), "InMemorySourceResolutionTargetMissing");
+    assert_eq!(missing_target.kind_name(), "InMemorySourceResolutionTargetMissing");
+  }
+
+  #[test]
+  fn ordinary_memory_relative_resolution_remains_available() {
     let resolver = InMemorySourceResolver::new()
-      .with_string("café.mec", "value := 1")
-      .with_string("caf%C3%A9.mec", "value := 2");
+      .with_string("app/dep.mec", "value := 41");
 
-    let request = SourceRequest::new("./café.mec")
-      .with_referrer("memory:main.mec");
-    let resolved = resolver.resolve(&request).unwrap().unwrap();
+    let resolved = resolver.resolve(
+      &SourceRequest::new("./dep.mec").with_referrer("memory:app/main.mec"),
+    ).unwrap().unwrap();
 
-    assert_eq!(resolved.name, "café.mec");
+    assert_eq!(resolved.name, "app/dep.mec");
   }
 
   #[test]

@@ -259,10 +259,11 @@ function loadEmbeddedDocumentSourceBundle() {
   }
 
   if (
-    bundle?.version !== 1 ||
+    (bundle?.version !== 1 && bundle?.version !== 2) ||
     typeof bundle.rootSpecifier !== "string" ||
     !bundle.rootSpecifier.trim() ||
-    !Array.isArray(bundle.sources)
+    !Array.isArray(bundle.sources) ||
+    (bundle.version === 2 && !Array.isArray(bundle.resolutions))
   ) {
     throw new Error("invalid embedded Mech document source bundle");
   }
@@ -283,10 +284,43 @@ function loadEmbeddedDocumentSourceBundle() {
     throw new Error("embedded Mech document root is missing from its source bundle");
   }
 
+  const resolutions = [];
+  const resolutionTargets = new Map();
+  for (const resolution of bundle.version === 2 ? bundle.resolutions : []) {
+    if (
+      typeof resolution?.referrer !== "string" ||
+      !resolution.referrer.trim() ||
+      typeof resolution?.specifier !== "string" ||
+      !resolution.specifier.trim() ||
+      typeof resolution?.target !== "string" ||
+      !resolution.target.trim() ||
+      !Object.prototype.hasOwnProperty.call(sources, resolution.referrer) ||
+      !Object.prototype.hasOwnProperty.call(sources, resolution.target)
+    ) {
+      throw new Error("invalid embedded Mech document source resolution");
+    }
+    const key = JSON.stringify([resolution.referrer, resolution.specifier]);
+    const existing = resolutionTargets.get(key);
+    if (existing !== undefined && existing !== resolution.target) {
+      throw new Error("conflicting embedded Mech document source resolution");
+    }
+    if (existing === resolution.target) {
+      continue;
+    }
+    resolutionTargets.set(key, resolution.target);
+    resolutions.push({
+      referrer: resolution.referrer,
+      specifier: resolution.specifier,
+      target: resolution.target,
+    });
+  }
+
   return {
     config: null,
+    version: bundle.version,
     rootSpecifier: bundle.rootSpecifier,
     sources,
+    resolutions,
   };
 }
 
@@ -1024,16 +1058,34 @@ async function main() {
       documentSources.sources,
     );
   } else if (documentSources) {
-    if (typeof WasmDocument.fromEncodedWithSources !== "function") {
+    if (
+      documentSources.version === 2 &&
+      typeof WasmDocument.fromEncodedWithBundle !== "function"
+    ) {
+      throw new Error(
+        "source document bundles require a browser WASM build with explicit source resolution",
+      );
+    }
+    if (
+      documentSources.version !== 2 &&
+      typeof WasmDocument.fromEncodedWithSources !== "function"
+    ) {
       throw new Error(
         "source documents with imports require a browser WASM build with document source resolution",
       );
     }
-    state.document = WasmDocument.fromEncodedWithSources(
-      state.initialEncoded,
-      documentSources.rootSpecifier,
-      documentSources.sources,
-    );
+    state.document = documentSources.version === 2
+      ? WasmDocument.fromEncodedWithBundle(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.sources,
+          documentSources.resolutions,
+        )
+      : WasmDocument.fromEncodedWithSources(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.sources,
+        );
   } else {
     state.document = WasmDocument.fromEncoded(state.initialEncoded);
   }

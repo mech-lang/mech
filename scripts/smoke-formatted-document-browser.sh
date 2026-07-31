@@ -46,11 +46,27 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 PY
 }
 
-cp tests/fixtures/format_static/unicode-main.mec "$work_dir/main.mec"
-cp tests/fixtures/format_static/support.mec "$work_dir/café.mec"
+mkdir -p "$work_dir/project/vendor" "$work_dir/shared"
+cp tests/fixtures/format_static/support.mec "$work_dir/project/café.mec"
+cat > "$work_dir/project/main.mec" <<'MEC'
++> ./café.mec
++> ./vendor/support.mec
+answer := café/value + support/value
+answer
+MEC
+cat > "$work_dir/shared/support.mec" <<'MEC'
++> ./nested.mec
+value := nested/value
+<+ value
+MEC
+cat > "$work_dir/shared/nested.mec" <<'MEC'
+value := 1
+<+ value
+MEC
+ln -s ../../shared/support.mec "$work_dir/project/vendor/support.mec"
 output_dir="$work_dir/static"
 format_log="$work_dir/format.log"
-if ! "$MECH_BIN" --no-config format "$work_dir/main.mec" --html --out "$output_dir" >"$format_log" 2>&1; then
+if ! "$MECH_BIN" --no-config format "$work_dir/project/main.mec" --html --out "$output_dir" >"$format_log" 2>&1; then
   sed -n '1,240p' "$format_log" >&2 || true
   exit 1
 fi
@@ -62,6 +78,12 @@ page_file="$(find "$output_dir" -name main.html -type f -print -quit)"
   echo "formatter did not emit mech_wasm_bg.wasm" >&2
   exit 1
 }
+if grep -F "$work_dir" "$page_file" >/dev/null \
+  || grep -F 'file://' "$page_file" >/dev/null \
+  || grep -F "$work_dir/shared/support.mec" "$page_file" >/dev/null; then
+  echo "standalone source bundle leaked a filesystem location" >&2
+  exit 1
+fi
 
 port="$(port_for_test)"
 server_log="$work_dir/static-server.log"

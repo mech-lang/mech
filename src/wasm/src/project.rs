@@ -271,6 +271,14 @@ enum WasmDocumentBootstrap {
 struct SourceBackedDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
+    resolutions: Vec<DocumentSourceResolution>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct DocumentSourceResolution {
+    referrer: String,
+    specifier: String,
+    target: String,
 }
 
 #[cfg(feature = "served_project_authority")]
@@ -323,17 +331,32 @@ impl WasmDocument {
     ) -> Result<WasmDocument, JsValue> {
         let tree = decode_document_tree(encoded)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_tree_with_sources(tree, root_specifier, source_map)
+        Self::from_tree_with_sources(tree, root_specifier, source_map, Vec::new())
+    }
+
+    #[wasm_bindgen(js_name = fromEncodedWithBundle)]
+    pub fn from_encoded_with_bundle(
+        encoded: &str,
+        root_specifier: &str,
+        sources: JsValue,
+        resolutions: JsValue,
+    ) -> Result<WasmDocument, JsValue> {
+        let tree = decode_document_tree(encoded)?;
+        let source_map = source_map_from_js(sources)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        Self::from_tree_with_sources(tree, root_specifier, source_map, resolutions)
     }
 
     fn from_tree_with_sources(
         tree: mech_core::nodes::Program,
         root_specifier: &str,
         source_map: HashMap<String, String>,
+        resolutions: Vec<DocumentSourceResolution>,
     ) -> Result<WasmDocument, JsValue> {
         let bootstrap = SourceBackedDocumentBootstrap {
             root_specifier: root_specifier.to_string(),
             source_map,
+            resolutions,
         };
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
@@ -398,6 +421,7 @@ impl WasmDocument {
         let source = SourceBackedDocumentBootstrap {
             root_specifier: root_specifier.to_string(),
             source_map,
+            resolutions: Vec::new(),
         };
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
@@ -466,6 +490,7 @@ impl WasmDocument {
                     decode_document_tree(encoded)?,
                     &bootstrap.root_specifier,
                     bootstrap.source_map.clone(),
+                    bootstrap.resolutions.clone(),
                 )?
             }
             #[cfg(feature = "served_project_authority")]
@@ -966,6 +991,65 @@ fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue
     Ok(out)
 }
 
+fn required_resolution_field(
+    value: &JsValue,
+    field: &'static str,
+) -> Result<String, JsValue> {
+    let value = Reflect::get(value, &JsValue::from_str(field))?
+        .as_string()
+        .ok_or_else(|| js_error(format!(
+            "document source resolution `{field}` must be a string",
+        )))?;
+    if value.trim().is_empty() {
+        return Err(js_error(format!(
+            "document source resolution `{field}` must not be empty",
+        )));
+    }
+    Ok(value)
+}
+
+fn document_resolutions_from_js(
+    value: JsValue,
+    sources: &HashMap<String, String>,
+) -> Result<Vec<DocumentSourceResolution>, JsValue> {
+    if !Array::is_array(&value) {
+        return Err(js_error("document source resolutions must be an array"));
+    }
+    let mut unique = BTreeMap::<(String, String), String>::new();
+    for entry in Array::from(&value).iter() {
+        if !entry.is_object() || entry.is_null() {
+            return Err(js_error("document source resolution entries must be objects"));
+        }
+        let referrer = required_resolution_field(&entry, "referrer")?;
+        let specifier = required_resolution_field(&entry, "specifier")?;
+        let target = required_resolution_field(&entry, "target")?;
+        if !sources.contains_key(&referrer) {
+            return Err(js_error(format!(
+                "document source resolution referrer `{referrer}` is missing from the source map",
+            )));
+        }
+        if !sources.contains_key(&target) {
+            return Err(js_error(format!(
+                "document source resolution target `{target}` is missing from the source map",
+            )));
+        }
+        let key = (referrer, specifier);
+        if let Some(existing) = unique.get(&key) {
+            if existing != &target {
+                return Err(js_error(format!(
+                    "document source resolution `{}` from `{}` conflicts: `{existing}` and `{target}`",
+                    key.1, key.0,
+                )));
+            }
+            continue;
+        }
+        unique.insert(key, target);
+    }
+    Ok(unique.into_iter().map(|((referrer, specifier), target)| {
+        DocumentSourceResolution { referrer, specifier, target }
+    }).collect())
+}
+
 fn project_source_resolver(
     sources: &HashMap<String, String>,
 ) -> mech_core::MResult<InMemorySourceResolver> {
@@ -991,6 +1075,13 @@ fn document_source_resolver(
     }
 
     let mut resolver = project_source_resolver(&source.source_map).map_err(to_js_error)?;
+    for resolution in &source.resolutions {
+        resolver.insert_resolution(
+            &resolution.referrer,
+            resolution.specifier.clone(),
+            &resolution.target,
+        ).map_err(to_js_error)?;
+    }
     resolver
         .insert_source(
             &source.root_specifier,
@@ -1364,6 +1455,7 @@ mod tests {
             tree,
             "docs/main.mec",
             source_map,
+            Vec::new(),
         )
         .unwrap();
 
@@ -1381,6 +1473,42 @@ mod tests {
                 )
                 .unwrap()
                 .expect("formatted source root must retain inline output"),
+            42.0,
+        );
+    }
+
+    #[test]
+    fn source_backed_document_preserves_explicit_resolution_edges_across_reset() {
+        let source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let source_map = HashMap::from([
+            ("bundle/000000.mec".to_string(), source.to_string()),
+            (
+                "bundle/000001.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
+        ]);
+        let resolutions = vec![DocumentSourceResolution {
+            referrer: "bundle/000000.mec".to_string(),
+            specifier: "./math.mec".to_string(),
+            target: "bundle/000001.mec".to_string(),
+        }];
+
+        let mut document = WasmDocument::from_tree_with_sources(
+            tree,
+            "bundle/000000.mec",
+            source_map,
+            resolutions,
+        ).unwrap();
+        assert_f64(
+            document.project.runtime.root_symbol_value("answer").unwrap(),
+            42.0,
+        );
+
+        document.reset(&encoded).unwrap();
+        assert_f64(
+            document.project.runtime.root_symbol_value("answer").unwrap(),
             42.0,
         );
     }

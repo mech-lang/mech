@@ -1,21 +1,23 @@
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use base64::Engine as _;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
 use mech_runtime::{
-    DefaultIdGenerator, FS_READ, FileSourceResolver, HostFilesystemAuthority,
-    MECH_TOOL_SUBJECT, SharedCapabilityKernel, SourceRequest, SourceResolver,
-    file_uri_to_path, relative_path_to_source_specifier,
+    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT,
+    SharedCapabilityKernel,
 };
+
+mod document_bundle;
+
+use document_bundle::resolve_document_source_bundle;
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
@@ -172,35 +174,6 @@ fn format_error(message: impl Into<String>) -> MechError {
     .with_compiler_loc()
 }
 
-#[derive(serde::Serialize)]
-struct DocumentSourceBundle {
-    version: u8,
-    #[serde(rename = "rootSpecifier")]
-    root_specifier: String,
-    sources: Vec<DocumentSourceBundleEntry>,
-}
-
-#[derive(serde::Serialize)]
-struct DocumentSourceBundleEntry {
-    specifier: String,
-    source: String,
-}
-
-#[derive(Clone, Debug)]
-struct ResolvedDocumentSource {
-    path: PathBuf,
-    source: String,
-}
-
-fn standalone_dependency_error(request: &SourceRequest) -> MechError {
-    let referrer = request.referrer.as_deref().unwrap_or("<unknown>");
-    format_error(format!(
-        "standalone HTML cannot bundle dependency `{}` requested by `{referrer}`; \
-         only dependencies resolvable and packaged at format time are supported",
-        request.specifier,
-    ))
-}
-
 fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
     let first = paths.first().ok_or_else(|| format_error(
         "cannot determine a source bundle directory without source paths",
@@ -222,58 +195,6 @@ fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
         }
     }
     Ok(ancestor)
-}
-
-fn resolve_document_source_bundle(root: &Path) -> MResult<String> {
-    let root = absolute_path(root)?.canonicalize()?;
-    let root_request = SourceRequest::from_filesystem_path(&root)?;
-    let root_uri = root_request.specifier.clone();
-    let resolver = FileSourceResolver::empty();
-    let mut pending = VecDeque::from([root_request]);
-    let mut sources = BTreeMap::<String, ResolvedDocumentSource>::new();
-
-    while let Some(request) = pending.pop_front() {
-        let Some(resolved) = resolver.resolve(&request)? else {
-            return Err(standalone_dependency_error(&request));
-        };
-        if sources.contains_key(&resolved.canonical_uri) {
-            continue;
-        }
-        let path = file_uri_to_path(&resolved.canonical_uri)?;
-        let source = match resolved.source {
-            MechSourceCode::String(source) => source,
-            other => return Err(format_error(format!(
-                "document source dependency `{}` is not Mech text: {:?}",
-                path.display(), other,
-            ))),
-        };
-        pending.extend(resolved.dependencies);
-        sources.insert(resolved.canonical_uri, ResolvedDocumentSource { path, source });
-    }
-
-    let paths = sources.values().map(|source| source.path.clone()).collect::<Vec<_>>();
-    let ancestor = common_parent_directory(&paths)?;
-    let mut root_specifier = None;
-    let mut entries = sources.into_iter().map(|(uri, source)| {
-        let relative = source.path.strip_prefix(&ancestor).map_err(|error| format_error(
-            format!("cannot derive a relative document source specifier: {error}"),
-        ))?;
-        let specifier = relative_path_to_source_specifier(relative)?;
-        if uri == root_uri {
-            root_specifier = Some(specifier.clone());
-        }
-        Ok(DocumentSourceBundleEntry { specifier, source: source.source })
-    }).collect::<MResult<Vec<_>>>()?;
-    entries.sort_by(|left, right| left.specifier.cmp(&right.specifier));
-    let root_specifier = root_specifier.ok_or_else(|| format_error(
-        "document source bundle root was not resolved",
-    ))?;
-    let encoded = serde_json::to_vec(&DocumentSourceBundle {
-        version: 1,
-        root_specifier,
-        sources: entries,
-    }).map_err(|error| format_error(format!("failed to encode document source bundle: {error}")))?;
-    Ok(base64::engine::general_purpose::STANDARD.encode(encoded))
 }
 
 fn relative_asset_url(output_file: &Path, asset_file: &Path) -> MResult<String> {
