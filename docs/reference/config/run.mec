@@ -1,0 +1,60 @@
+Run Config
+===============================================================================
+
+The `run` section configures source paths and grants used by `mech run`.
+
+```mech
+config := {
+  run: {
+    paths: ["main.mec"]
+    grants: []
+  }
+}
+```
+
+1. Source paths
+-------------------------------------------------------------------------------
+
+`paths` is a list of source files to run when no command-line source path overrides the config.
+
+```mech
+config := {
+  run: {
+    paths: ["src/main.mec", "src/support.mec"]
+  }
+}
+```
+
+2. Grants
+-------------------------------------------------------------------------------
+
+`grants` gives the running program permission to use host contexts.
+
+```mech
+config := {
+  run: {
+    grants: [
+      {
+        target: "browser/dom"
+        operations: ["read"]
+        paths: ["body/content/input/_value"]
+      }
+    ]
+  }
+}
+```
+
+The grant target is a context target in the form `<instance>/<context>`.
+
+3. Empty grants
+-------------------------------------------------------------------------------
+
+An explicit empty grants list means no configured run grants.
+
+```mech
+config := {
+  run: {
+    grants: []
+  }
+}
+```

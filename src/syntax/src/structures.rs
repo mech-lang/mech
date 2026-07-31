@@ -81,10 +81,42 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
 // matrix := matrix-start, (box-drawing-char | whitespace)*, matrix-row*, box-drawing-char*, matrix-end ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
-  let (input, (_, r)) = range(matrix_start)(input)?;
-  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
-  let (input, rows) = many0(matrix_row)(input)?;
-  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+  let (mut input, (_, r)) = range(matrix_start)(input)?;
+  let mut rows = Vec::new();
+
+  loop {
+    let (next_input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+    input = next_input;
+
+    if peek(matrix_end)(input.clone()).is_ok() {
+      break;
+    }
+
+    match matrix_row(input.clone()) {
+      Ok((next_input, row)) => {
+        if next_input.cursor == input.cursor {
+          return Err(Failure(ParseError::new(
+            input,
+            "Internal parser error: matrix row parser made no progress",
+          )));
+        }
+
+        rows.push(row);
+        input = next_input;
+      }
+      Err(Err::Error(_)) => {
+        let _ = label!(matrix_end, msg, r)(input)?;
+        unreachable!("matrix parser loop already ruled out matrix_end before attempting a row");
+      }
+      Err(err @ Err::Failure(_)) => {
+        return Err(err);
+      }
+      Err(err @ Err::Incomplete(_)) => {
+        return Err(err);
+      }
+    }
+  }
+
   let (input, _) = whitespace0(input)?;
   let (input, _) = match label!(matrix_end, msg, r)(input) {
     Ok(k) => k,

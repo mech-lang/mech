@@ -98,6 +98,7 @@ use tabled::{
 };
 
 pub mod error;
+pub mod browser;
 pub mod kind;
 pub mod nodes;
 pub mod structures;
@@ -111,6 +112,7 @@ pub mod stdlib;
 pub mod types;
 
 pub use self::error::*;
+pub use self::browser::*;
 pub use self::kind::*;
 pub use self::nodes::*;
 pub use self::structures::*;
@@ -131,6 +133,9 @@ inventory::collect!(FunctionDescriptor);
 
 #[cfg(feature = "functions")]
 inventory::collect!(FunctionCompilerDescriptor);
+
+#[cfg(feature = "functions")]
+inventory::collect!(ModuleItemDescriptor);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -354,3 +359,6 @@ pub const EMOJILIST: &[&str; 256] = &[
   "🎤","🎧","📻","🎷","🪗","🎸","🎹","🎺","🎻","🪇","🥁","⚗️","📷","🧳","🌡️","🧸","🧶","🔎","🕯️","💡","🔦","🔒","🗝️","🪚","🔧","🪛","🔩","⚙️","⚖️","🧰","🧲","🪜","🔬","📡","🧷","🧹","🧺","🪣","🧼","🧽","🧯","🛒",  
   "⏰","🛟","🛩️","🚁","🛰️","🚀","🛸","⚓","🚂","🚑","🚒","🚕","🚗","🚚","🚜","🏎️","🏍️","🛵","🦼","🚲","🛹","🛼","🛞","📰","📦","📫","✏️","🖊️","🖌️","🖍️","📌","📏","✂️","🗑️","🏆","⚾","🏀","🎾","🎳","⛳","⛸️","🤿","🛷","🎯","🪁","🧩","🪅","🎨","🧭","🏔️","🏝️","⛲","⛺","🎠","🛝","🧵","💈","🎪","🛎️","💎","⛵"
 ];
+
+pub mod module_manifest;
+pub use module_manifest::*;

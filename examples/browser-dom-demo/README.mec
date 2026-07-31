@@ -1,0 +1,14 @@
+Browser DOM Static Bundle Demo
+===============================================================================
+
+This project is the executable static-web example for `mech bundle-web`. It configures browser DOM access and runs `demo.mec` through the standard browser project lifecycle.
+
+Build the supported browser WASM package, bundle the project, and serve the result:
+
+```sh
+bash scripts/build-mech-browser.sh
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+python -m http.server 9000 -d dist/browser-dom-demo
+```
+
+Open `http://127.0.0.1:9000/`. The project reads `Ada` from the DOM and writes the computed greeting, output, and status back to the page.

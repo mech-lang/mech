@@ -245,3 +245,10 @@ register_descriptor! {
     ptr: &MathRemainder{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "remainder",
+  }
+}

@@ -105,7 +105,7 @@ pub enum TokenKind {
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   #[cfg(feature = "mika")]
   Mika(Mika), 
-  MikaSection, MikaSectionOpen, MikaSectionClose,
+  MikaSection, MikaSectionOpen, MikaSectionClose, ModuleExportSigil, ModuleImportSigil,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus, PromptSigil,
@@ -311,6 +311,7 @@ pub struct Title {
   pub date: Option<Paragraph>,
   pub hero: Option<SectionElement>,
   pub kicker: Option<Paragraph>,
+  pub section: Option<Paragraph>,
   pub summary: Option<Paragraph>,
   pub next: Option<Paragraph>,
   pub previous: Option<Paragraph>,
@@ -518,8 +519,19 @@ pub enum FloatDirection {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct FencedMechCode {
+pub struct ParsedMechCode {
   pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FencedMechCode {
+  pub source: Token,
+  pub code: Vec<(MechCode,Option<Comment>)>,
+  pub imports: Vec<ImportDeclaration>,
+  pub exports: Vec<ExportDeclaration>,
   pub config: BlockConfig,
   pub options: Option<OptionMap>,
 }
@@ -796,12 +808,174 @@ impl MDList {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleImportKind {
+  Module,
+  Item,
+  Glob,
+  Group,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportIntrinsicSegment {
+  pub marker: Token,
+  pub name: Identifier,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleImportPathSegment {
+  Name(Identifier),
+  Intrinsic(ModuleImportIntrinsicSegment),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportPath {
+  pub segments: Vec<ModuleImportPathSegment>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImportGroupItem {
+  pub item: ModuleImportPath,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleImportAlias {
+  Value(ModuleImportPath),
+  Context(Identifier),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleImport {
+  pub module: Identifier,
+  pub item: Option<ModuleImportPath>,
+  pub group_items: Option<Vec<ModuleImportGroupItem>>,
+  pub alias: Option<ModuleImportAlias>,
+  pub kind: ModuleImportKind,
+}
+
+impl ModuleImportPathSegment {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ModuleImportPathSegment::Name(identifier) => identifier.tokens(),
+      ModuleImportPathSegment::Intrinsic(segment) => {
+        let mut tokens = vec![segment.marker.clone()];
+        tokens.append(&mut segment.name.tokens());
+        tokens
+      }
+    }
+  }
+}
+
+impl ModuleImportPath {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for segment in &self.segments {
+      tokens.append(&mut segment.tokens());
+    }
+    tokens
+  }
+
+  pub fn iter(&self) -> impl Iterator<Item = &Identifier> {
+    self.segments.iter().map(|segment| match segment {
+      ModuleImportPathSegment::Name(identifier) => identifier,
+      ModuleImportPathSegment::Intrinsic(segment) => &segment.name,
+    })
+  }
+}
+
+impl fmt::Display for ModuleImportPathSegment {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ModuleImportPathSegment::Name(identifier) => write!(f, "{}", identifier.to_string()),
+      ModuleImportPathSegment::Intrinsic(segment) => write!(f, "_{}", segment.name.to_string()),
+    }
+  }
+}
+
+impl fmt::Display for ModuleImportPath {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let parts = self
+      .segments
+      .iter()
+      .map(|segment| segment.to_string())
+      .collect::<Vec<_>>()
+      .join("/");
+    write!(f, "{parts}")
+  }
+}
+
+
+impl ModuleImportAlias {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ModuleImportAlias::Value(path) => path.tokens(),
+      ModuleImportAlias::Context(identifier) => {
+        let mut tokens = vec![Token {
+          kind: TokenKind::At,
+          chars: vec!['@'],
+          src_range: identifier.name.src_range.clone(),
+        }];
+        tokens.append(&mut identifier.tokens());
+        tokens
+      }
+    }
+  }
+}
+
+impl fmt::Display for ModuleImportAlias {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ModuleImportAlias::Value(path) => write!(f, "{}", path),
+      ModuleImportAlias::Context(identifier) => write!(f, "@{}", identifier.to_string()),
+    }
+  }
+}
+
+impl ModuleImport {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.module.tokens();
+
+    if let Some(item_path) = &self.item {
+      tokens.append(&mut item_path.tokens());
+    }
+
+    if let Some(group_items) = &self.group_items {
+      for group_item in group_items {
+        tokens.append(&mut group_item.item.tokens());
+      }
+    }
+
+    if matches!(self.kind, ModuleImportKind::Glob) {
+      tokens.push(Token {
+        kind: TokenKind::Asterisk,
+        chars: vec!['*'],
+        src_range: self.module.name.src_range.clone(),
+      });
+    }
+
+    if let Some(alias) = &self.alias {
+      tokens.append(&mut alias.tokens());
+    }
+
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum MechCode {
   Comment(Comment),
+  ActivationScope(ActivationScope),
   Expression(Expression),
   FsmImplementation(FsmImplementation),
   FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
+  Import(ModuleImport),
   Statement(Statement),
   Error(Token, SourceRange),
 }
@@ -815,14 +989,72 @@ impl Recoverable for MechCode {
 impl MechCode {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      MechCode::ActivationScope(x) => x.tokens(),
       MechCode::Expression(x) => x.tokens(),
       MechCode::Statement(x) => x.tokens(),
       MechCode::Comment(x) => x.tokens(),
       MechCode::FsmSpecification(x) => x.tokens(),
       MechCode::FsmImplementation(x) => x.tokens(),
       MechCode::FunctionDefine(_) => vec![],
+      MechCode::Import(x) => x.tokens(),
       MechCode::Error(t,_) => vec![t.clone()],
     }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ActivationScope {
+  pub operator: Token,
+  pub trigger: Expression,
+  pub body: ActivationBody,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ActivationBody {
+  Block(Vec<(MechCode, Option<Comment>)>),
+  PatternArms(Vec<ActivationArm>),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ActivationArm {
+  pub pattern: Pattern,
+  pub guard: Option<Expression>,
+  pub body: ActivationArmBody,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ActivationArmBody {
+  Block(Vec<(MechCode, Option<Comment>)>),
+  Expression(Expression),
+}
+
+impl ActivationScope {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![self.operator.clone()];
+    tokens.append(&mut self.trigger.tokens());
+    match &self.body {
+      ActivationBody::Block(body) => append_activation_block_tokens(&mut tokens, body),
+      ActivationBody::PatternArms(arms) => for arm in arms {
+        tokens.append(&mut arm.pattern.tokens());
+        if let Some(guard) = &arm.guard { tokens.append(&mut guard.tokens()); }
+        match &arm.body {
+          ActivationArmBody::Block(body) => append_activation_block_tokens(&mut tokens, body),
+          ActivationArmBody::Expression(expression) => tokens.append(&mut expression.tokens()),
+        }
+      },
+    }
+    tokens
+  }
+}
+
+fn append_activation_block_tokens(tokens: &mut Vec<Token>, body: &[(MechCode, Option<Comment>)]) {
+  for (code, comment) in body {
+    tokens.append(&mut code.tokens());
+    if let Some(comment) = comment { tokens.append(&mut comment.tokens()); }
   }
 }
 
@@ -1104,12 +1336,18 @@ impl StateDefinition {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
+  ImportDeclaration(ImportDeclaration),
+  ExportDeclaration(ExportDeclaration),
+  ContextDeclaration(ContextDeclaration),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  ContextSend(ContextSend),
+  #[cfg(feature = "invariant_define")]
+  InvariantDefine(InvariantDefine),
   TupleDestructure(TupleDestructure),
   SplitTable,     // todo
   FlattenTable,   // todo
@@ -1118,15 +1356,111 @@ pub enum Statement {
 impl Statement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Statement::ImportDeclaration(x) => x.tokens(),
+      Statement::ExportDeclaration(x) => x.tokens(),
+      Statement::ContextDeclaration(x) => x.tokens(),
       Statement::EnumDefine(x) => x.tokens(),
       Statement::FsmDeclare(x) => x.tokens(),
       Statement::KindDefine(x) => x.tokens(),
       Statement::OpAssign(x) => x.tokens(),
       Statement::VariableAssign(x) => x.tokens(),
       Statement::VariableDefine(x) => x.tokens(),
+      Statement::ContextSend(x) => x.tokens(),
+      #[cfg(feature = "invariant_define")]
+      Statement::InvariantDefine(x) => x.tokens(),
       Statement::TupleDestructure(x) => x.tokens(),
       Statement::SplitTable => vec![], // todo
       Statement::FlattenTable => vec![], // todo
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImportDeclaration {
+  pub specifier: MechString,
+}
+
+impl ImportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.specifier.text.clone()]
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ExportDeclaration {
+  pub name: Identifier,
+}
+
+impl ExportDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextDeclaration {
+  pub name: Identifier,
+  pub base: ContextBase,
+  pub capabilities: Vec<ContextCapabilityDeclaration>,
+}
+
+impl ContextDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.base.tokens());
+    for cap in &self.capabilities {
+      tkns.append(&mut cap.tokens());
+    }
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ContextBase {
+  ResourceUri(Token),
+  Context(Identifier),
+}
+
+impl ContextBase {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ContextBase::ResourceUri(uri) => vec![uri.clone()],
+      ContextBase::Context(name) => name.tokens(),
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextCapabilityDeclaration {
+  pub operation: Identifier,
+  pub scope: ContextCapabilityScope,
+}
+
+impl ContextCapabilityDeclaration {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.operation.tokens();
+    tkns.append(&mut self.scope.tokens());
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ContextCapabilityScope {
+  Path(Identifier),
+  Wildcard(Token),
+}
+
+impl ContextCapabilityScope {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      ContextCapabilityScope::Path(path) => path.tokens(),
+      ContextCapabilityScope::Wildcard(wildcard) => vec![wildcard.clone()],
     }
   }
 }
@@ -1550,6 +1884,21 @@ pub struct VariableDefine {
   pub expression: Expression,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct InvariantDefine {
+  pub name: Identifier,
+  pub expression: Expression,
+}
+
+impl InvariantDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
+}
+
 impl VariableDefine {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.var.tokens();
@@ -1562,12 +1911,16 @@ impl VariableDefine {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Var {
   pub name: Identifier,
+  pub context: Option<Identifier>,
   pub kind: Option<KindAnnotation>,
 }
 
 impl Var {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.name.tokens();
+    if let Some(context) = &self.context {
+      tkns.append(&mut context.tokens());
+    }
     if let Some(knd) = &self.kind {
       let mut t = knd.tokens();
       tkns.append(&mut t);
@@ -1581,6 +1934,21 @@ impl Var {
 pub struct VariableAssign {
   pub target: SliceRef,
   pub expression: Expression,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ContextSend {
+  pub target: Var,
+  pub expression: Expression,
+}
+
+impl ContextSend {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 impl VariableAssign {
@@ -1614,6 +1982,22 @@ impl Identifier {
   }
 }
 
+/// Constructs an identifier reserved for sampled runtime pattern values. The
+/// leading NUL cannot be produced by Mech source syntax, so source names always
+/// retain ordinary binding semantics.
+pub fn internal_pattern_value_identifier(name: &str) -> Identifier {
+  let mut chars = Vec::with_capacity(name.chars().count() + 1);
+  chars.push('\0');
+  chars.extend(name.chars());
+  Identifier {
+    name: Token::new(TokenKind::Identifier, SourceRange::default(), chars),
+  }
+}
+
+pub fn is_internal_pattern_value_identifier(identifier: &Identifier) -> bool {
+  identifier.name.chars.first() == Some(&'\0')
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Emoji {
@@ -1630,12 +2014,16 @@ pub struct Word {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Slice {
   pub name: Identifier,
+  pub context: Option<Identifier>,
   pub subscript: Vec<Subscript>
 }
 
 impl Slice {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.name.tokens();
+    if let Some(context) = &self.context {
+      tkns.append(&mut context.tokens());
+    }
     for sub in &self.subscript {
       let mut sub_tkns = sub.tokens();
       tkns.append(&mut sub_tkns);
@@ -1648,12 +2036,16 @@ impl Slice {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct SliceRef {
   pub name: Identifier,
+  pub context: Option<Identifier>,
   pub subscript: Option<Vec<Subscript>>
 }
 
 impl SliceRef {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = self.name.tokens();
+    if let Some(context) = &self.context {
+      tkns.append(&mut context.tokens());
+    }
     if let Some(subs) = &self.subscript {
       for sub in subs {
         let mut sub_tkns = sub.tokens();
@@ -1977,7 +2369,13 @@ impl Literal {
       Literal::Atom(atm) => atm.name.tokens(),
       Literal::Boolean(tkn) => vec![tkn.clone()],
       Literal::Number(x) => x.tokens(),
-      Literal::String(strng) => vec![strng.text.clone()],
+      Literal::String(strng) => {
+        vec![
+          Token::new(TokenKind::Quote, SourceRange::default(), vec!['"']),
+          strng.text.clone(),
+          Token::new(TokenKind::Quote, SourceRange::default(), vec!['"']),
+        ]
+      },
       Literal::Empty(tkn) => vec![tkn.clone()],
       Literal::Kind(knd) => knd.tokens(),
       Literal::TypedLiteral((lit, knd)) => {
@@ -2426,6 +2824,11 @@ pub struct RangeExpression {
 impl RangeExpression {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tokens = self.start.tokens();
+    if let Some((inc_op, inc)) = &self.increment {
+      tokens.push(inc_op.token());
+      tokens.append(&mut inc.tokens());
+    }
+    tokens.push(self.operator.token());
     tokens.append(&mut self.terminal.tokens());
     tokens
   }
@@ -2443,11 +2846,69 @@ impl Term {
     let mut lhs_tkns = self.lhs.tokens();
     let mut rhs_tkns = vec![];
     for (op, r) in &self.rhs {
+      rhs_tkns.push(op.token());
       let mut tkns = r.tokens();
       rhs_tkns.append(&mut tkns);
     }
     lhs_tkns.append(&mut rhs_tkns);
     lhs_tkns
+  }
+}
+
+impl RangeOp {
+  pub fn token(&self) -> Token {
+    let chars = match self {
+      RangeOp::Exclusive => "..".chars().collect(),
+      RangeOp::Inclusive => "..=".chars().collect(),
+    };
+    Token::new(TokenKind::Text, SourceRange::default(), chars)
+  }
+}
+
+impl FormulaOperator {
+  pub fn token(&self) -> Token {
+    let chars = match self {
+      FormulaOperator::AddSub(AddSubOp::Add) => "+",
+      FormulaOperator::AddSub(AddSubOp::Sub) => "-",
+      FormulaOperator::Comparison(ComparisonOp::Equal) => "==",
+      FormulaOperator::Comparison(ComparisonOp::NotEqual) => "!=",
+      FormulaOperator::Comparison(ComparisonOp::LessThan) => "<",
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan) => ">",
+      FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => "<=",
+      FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => ">=",
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => "≡",
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => "!≡",
+      FormulaOperator::Power(PowerOp::Pow) => "^",
+      FormulaOperator::Logic(LogicOp::And) => "&&",
+      FormulaOperator::Logic(LogicOp::Or) => "||",
+      FormulaOperator::Logic(LogicOp::Xor) => "^",
+      FormulaOperator::Logic(LogicOp::Not) => "!",
+      FormulaOperator::MulDiv(MulDivOp::Div) => "/",
+      FormulaOperator::MulDiv(MulDivOp::Mod) => "%",
+      FormulaOperator::MulDiv(MulDivOp::Mul) => "*",
+      FormulaOperator::Vec(VecOp::Cross) => "×",
+      FormulaOperator::Vec(VecOp::Dot) => ".*",
+      FormulaOperator::Vec(VecOp::MatMul) => "**",
+      FormulaOperator::Vec(VecOp::Solve) => "\\",
+      FormulaOperator::Table(TableOp::InnerJoin) => "⋈",
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => "⟕",
+      FormulaOperator::Table(TableOp::RightOuterJoin) => "⟖",
+      FormulaOperator::Table(TableOp::FullOuterJoin) => "⟗",
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => "⋉",
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => "▷",
+      FormulaOperator::Set(SetOp::Union) => "∪",
+      FormulaOperator::Set(SetOp::Intersection) => "∩",
+      FormulaOperator::Set(SetOp::Difference) => "\\",
+      FormulaOperator::Set(SetOp::Complement) => "ᶜ",
+      FormulaOperator::Set(SetOp::ElementOf) => "∈",
+      FormulaOperator::Set(SetOp::NotElementOf) => "∉",
+      FormulaOperator::Set(SetOp::ProperSubset) => "⊂",
+      FormulaOperator::Set(SetOp::ProperSuperset) => "⊃",
+      FormulaOperator::Set(SetOp::Subset) => "⊆",
+      FormulaOperator::Set(SetOp::Superset) => "⊇",
+      FormulaOperator::Set(SetOp::SymmetricDifference) => "∆",
+    };
+    Token::new(TokenKind::Text, SourceRange::default(), chars.chars().collect())
   }
 }
 

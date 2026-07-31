@@ -1,0 +1,39 @@
+Robot Arm Demo
+===============================================================================
+
+The robot arm demo shows that host contexts are not limited to the browser.
+
+The demo host exposes command and state contexts:
+
+```text
+robot://{instance}/commands
+robot://{instance}/state
+```
+
+The command context supports `move`, `grip`, and `home`. The state context supports `read`.
+
+1. Files
+-------------------------------------------------------------------------------
+
+```text
+hosts/robot-arm/examples/
+  robot-arm-demo/
+    demo.mcfg
+    demo.mec
+  browser-robot-arm-demo/
+    demo.js
+    demo.mcfg
+    demo.mec
+```
+
+2. What the guide demonstrates
+-------------------------------------------------------------------------------
+
+The robot arm host is a demo provider. It is useful for documenting the host model because it has provider-specific operations rather than only generic `read` and `write`.
+
+A Mech program can bind a robot context and send commands to it. The host receives the command, records mock state, and exposes readable state paths.
+
+3. Provider reference
+-------------------------------------------------------------------------------
+
+For the provider contract, see [Robot Arm Host](/hosts/robot-arm/docs/index.html).

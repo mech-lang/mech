@@ -1,0 +1,32 @@
+Robot Arm State
+===============================================================================
+
+The robot arm state context exposes mock state from the demo host.
+
+1. Context
+-------------------------------------------------------------------------------
+
+```text
+arm/state
+```
+
+2. Read paths
+-------------------------------------------------------------------------------
+
+| Path | Description |
+|------|-------------|
+| `position` | Last mock position value. |
+| `gripper` | Last mock gripper value. |
+| `last-command` | Last command name accepted by the host. |
+
+3. Example
+-------------------------------------------------------------------------------
+
+```mech
++> @state := arm/state
+
+position := @state/position
+last-command := @state/last-command
+```
+
+State paths are read-only.

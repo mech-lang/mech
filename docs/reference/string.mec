@@ -129,3 +129,22 @@ m<[string]:2,2> := [1 2 3 4]
 ```
 
 This converts a {{<[f64]:1,4>}} (row matrix of floats) to a {{<[string]:2,2>}} (square matrix of strings).
+
+4. Indexing
+-------------------------------------------------------------------------------
+
+Strings support scalar indexing with one-based indices:
+
+```mech:ex 4.1
+word := "Hello"
+first := word[1] -- "H"
+last := word[5]  -- "o"
+```
+
+String indexing is based on extended Unicode grapheme clusters rather than bytes or Unicode scalar values:
+
+```mech:ex 4.2
+s := "é👩‍🚀"
+x := s[1] -- "é"
+y := s[2] -- "👩‍🚀"
+```

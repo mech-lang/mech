@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathCbrt{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "cbrt",
+  }
+}

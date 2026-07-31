@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathJ1{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "bessel/j1",
+  }
+}

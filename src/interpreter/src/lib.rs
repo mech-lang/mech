@@ -95,7 +95,16 @@ use indexmap::set::IndexSet;
 use na::DMatrix;
 use std::time::Duration;
 
+#[cfg(feature = "functions")]
+pub mod builtins;
+#[cfg(feature = "functions")]
+pub mod modules;
 pub mod expressions;
+#[cfg(all(
+  feature = "functions",
+  feature = "symbol_table",
+))]
+pub mod activation;
 #[cfg(feature = "functions")]
 pub mod functions;
 pub mod interpreter;
@@ -111,6 +120,10 @@ pub mod tracing;
 
 pub use mech_core::*;
 
+#[cfg(feature = "functions")]
+pub use crate::builtins::*;
+#[cfg(feature = "functions")]
+pub use crate::modules::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::functions::*;
@@ -150,6 +163,7 @@ pub use mech_matrix::*;
 pub use mech_set::*;
 #[cfg(feature = "stats")]
 pub use mech_stats::*;
+use std::sync::Arc;
 
 pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "u8")]
@@ -193,8 +207,7 @@ pub fn load_stdlib(fxns: &mut Functions) {
   }
 
   for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
-    fxns.function_compilers
-      .insert(hash_str(fxn_comp.name), fxn_comp.ptr);
+    fxns.insert_function_compiler(fxn_comp.name, Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)));
   }
 }
 

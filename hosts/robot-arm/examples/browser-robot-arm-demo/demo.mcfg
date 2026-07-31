@@ -1,0 +1,48 @@
+config := {
+  hosts: [
+    {
+      name: "ui"
+      provider: "browser"
+      settings: {
+        dom: [
+          { path: "x-slider/_value" selector: "#x-slider" property: "value" operations: ["read"] }
+          { path: "y-slider/_value" selector: "#y-slider" property: "value" operations: ["read"] }
+          { path: "z-slider/_value" selector: "#z-slider" property: "value" operations: ["read"] }
+          { path: "grip-toggle/_checked" selector: "#grip-toggle" property: "attribute" attribute: "checked" operations: ["read"] }
+          { path: "robot-state/_text" selector: "#robot-state" property: "text" operations: ["write"] }
+          { path: "gripper-state/_text" selector: "#gripper-state" property: "text" operations: ["write"] }
+        ]
+      }
+    }
+    {
+      name: "arm"
+      provider: "robot-arm"
+      settings: { backend: "mock" }
+    }
+  ]
+  run: {
+    paths: ["demo.mec"]
+    grants: [
+      {
+        target: "ui/dom"
+        operations: ["read"]
+        paths: ["x-slider/_value", "y-slider/_value", "z-slider/_value", "grip-toggle/_checked"]
+      }
+      {
+        target: "ui/dom"
+        operations: ["write"]
+        paths: ["robot-state/_text", "gripper-state/_text"]
+      }
+      {
+        target: "arm/commands"
+        operations: ["move", "grip"]
+        paths: ["move", "grip"]
+      }
+      {
+        target: "arm/state"
+        operations: ["read"]
+        paths: ["position", "gripper"]
+      }
+    ]
+  }
+}

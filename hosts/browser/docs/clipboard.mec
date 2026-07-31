@@ -1,0 +1,36 @@
+Browser Clipboard
+===============================================================================
+
+The browser host can represent clipboard authority in browser settings.
+
+1. Config shape
+-------------------------------------------------------------------------------
+
+```mech
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        clipboard: [
+          {operations: ["read", "write"]}
+        ]
+      }
+    }
+  ]
+}
+```
+
+2. Operations
+-------------------------------------------------------------------------------
+
+Supported operations:
+
+- `read`
+- `write`
+
+3. Runtime status
+-------------------------------------------------------------------------------
+
+Clipboard helpers are part of the browser WASM API. Browser permission prompts and browser security rules still apply.

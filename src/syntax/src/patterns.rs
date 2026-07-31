@@ -54,11 +54,7 @@ fn spread_operator(input: ParseString) -> ParseResult<()> {
 }
 
 fn pattern_array_item(input: ParseString) -> ParseResult<Pattern> {
-  if let Ok((input, _)) = wildcard(input.clone()) {
-    return Ok((input, Pattern::Wildcard));
-  }
-  let (input, expr) = expression(input)?;
-  Ok((input, Pattern::Expression(expr)))
+  pattern(input)
 }
 
 #[derive(Clone)]
@@ -256,4 +252,76 @@ pub fn pattern_tuple(input: ParseString) -> ParseResult<PatternTuple> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, PatternTuple(patterns)))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn parse_array_pattern(source: &str) -> PatternArray {
+    let graphemes = crate::graphemes::init_tag(source);
+    let input = ParseString::new(&graphemes);
+    let (remaining, parsed) = pattern(input).expect("expected array pattern to parse");
+    assert!(remaining.is_empty(), "expected the whole array pattern to be consumed");
+    match parsed {
+      Pattern::Array(array) => array,
+      other => panic!("expected Pattern::Array, got {:?}", other),
+    }
+  }
+
+  #[test]
+  fn array_items_accept_recursive_patterns_around_spread() {
+    let array = parse_array_pattern("[(left, right), ..., :some((payload, nested))]");
+    assert!(matches!(array.prefix.as_slice(), [Pattern::Tuple(_)]));
+    assert!(matches!(
+      array.spread,
+      Some(PatternArraySpread {
+        kind: PatternArraySpreadKind::Spread,
+        binding: None,
+      })
+    ));
+    let [Pattern::TupleStruct(variant)] = array.suffix.as_slice() else {
+      panic!("expected a tagged suffix pattern");
+    };
+    assert_eq!(variant.patterns.len(), 1);
+    assert!(matches!(variant.patterns[0], Pattern::Tuple(_)));
+  }
+
+  #[test]
+  fn array_rest_binding_accepts_recursive_pattern() {
+    let array = parse_array_pattern("[(:head(value), other) | :tail((left, right))]");
+    assert!(matches!(array.prefix.as_slice(), [Pattern::Tuple(_)]));
+    let Some(PatternArraySpread {
+      kind: PatternArraySpreadKind::Rest,
+      binding: Some(binding),
+    }) = array.spread else {
+      panic!("expected a recursively patterned rest binding");
+    };
+    assert!(matches!(*binding, Pattern::TupleStruct(_)));
+    assert!(array.suffix.is_empty());
+  }
+
+  #[test]
+  fn array_rest_binding_accepts_nested_array_pattern() {
+    let array = parse_array_pattern("[head | [second, ..., last]]");
+    assert!(matches!(array.prefix.as_slice(), [Pattern::Expression(_)]));
+    let Some(PatternArraySpread {
+      kind: PatternArraySpreadKind::Rest,
+      binding: Some(binding),
+    }) = array.spread else {
+      panic!("expected an array-patterned rest binding");
+    };
+    let Pattern::Array(nested) = *binding else {
+      panic!("expected the rest binding to be an array pattern");
+    };
+    assert_eq!(nested.prefix.len(), 1);
+    assert!(matches!(
+      nested.spread,
+      Some(PatternArraySpread {
+        kind: PatternArraySpreadKind::Spread,
+        binding: None,
+      })
+    ));
+    assert_eq!(nested.suffix.len(), 1);
+  }
 }

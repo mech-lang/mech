@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "lidar"
+    contexts: [
+      {
+        name: "scan"
+        base-uri: "lidar://{instance}/scan"
+        operations: ["read"]
+      }
+    ]
+  }
+}

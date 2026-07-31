@@ -83,3 +83,10 @@ register_descriptor! {
     ptr: &MathCosh{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "cosh",
+  }
+}

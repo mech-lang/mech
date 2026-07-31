@@ -1,0 +1,49 @@
+WASM
+===============================================================================
+
+Browser deployment uses the Mech WASM package.
+
+1. Build the package
+-------------------------------------------------------------------------------
+
+Build the package from `src/wasm`:
+
+```sh
+cd src/wasm
+wasm-pack build --target web
+cd ../..
+```
+
+2. Compression for `mech serve`
+-------------------------------------------------------------------------------
+
+`mech serve` expects the wasm package directory to contain both the JavaScript loader and the compressed wasm artifact:
+
+```text
+mech_wasm.js
+mech_wasm_bg.wasm.br
+```
+
+After `wasm-pack build --target web`, create the Brotli-compressed wasm file:
+
+```sh
+brotli -Z --force src/wasm/pkg/mech_wasm_bg.wasm
+```
+
+3. Config
+-------------------------------------------------------------------------------
+
+Projects served by `mech serve` or bundled by `mech bundle-web` can point `serve.wasm` at the generated package directory.
+
+```mech
+config := {
+  serve: {
+    wasm: "../../src/wasm/pkg"
+  }
+}
+```
+
+4. Browser initialization
+-------------------------------------------------------------------------------
+
+Browser projects that use host configuration initialize with `WasmMech.fromHostConfig()`.

@@ -1,0 +1,52 @@
+config := {
+  runtime: {
+    limits: {
+      max-turn-duration-ms: 2000
+    }
+  }
+
+  hosts: [
+    {
+      name: "clock"
+      provider: "time"
+      settings: {
+        interval-ms: 1000
+      }
+    }
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+    {
+      name: "view"
+      provider: "scene"
+      settings: {
+        selector: "#clock"
+        renderer: "svg"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["clock.mec"]
+
+    grants: [
+      {
+        target: "clock/clock"
+        operations: ["read"]
+        paths: ["unix-ms", "hour", "minute", "second", "millisecond"]
+      }
+      {
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+      {
+        target: "view/frame"
+        operations: ["write"]
+        paths: ["replace"]
+      }
+    ]
+  }
+}

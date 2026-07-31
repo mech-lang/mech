@@ -492,33 +492,7 @@ where
   T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let mut registers = [0, 0, 0];
-
-    registers[0] = compile_register!(self.out, ctx);
-
-    let e0_addr = self.e0.addr();
-    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
-    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e0_reg, e0_const_id);
-    registers[1] = e0_reg;
-
-    let e1_addr = self.e1.addr();
-    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
-    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e1_reg, e1_const_id);
-    registers[2] = e1_reg;
-
-    let e2_addr = self.e2.addr();
-    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
-    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e2_reg, e2_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
-
-    let e3_addr = self.e3.addr();
-    let e3_reg = ctx.alloc_register_for_ptr(e3_addr);
-    let e3_const_id = self.e3.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e3_reg, e3_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], registers[3], e3_reg];
+    let registers = [compile_register!(self.out, ctx), compile_register_mat!(self.e0, ctx), compile_register_mat!(self.e1, ctx), compile_register_mat!(self.e2, ctx), compile_register_mat!(self.e3, ctx)];
 
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
@@ -594,11 +568,7 @@ where
 
     let mut mat_regs = Vec::new();
     for e in &self.e0 {
-      let e_addr = e.addr();
-      let e_reg = ctx.alloc_register_for_ptr(e_addr);
-      let e_const_id = e.compile_const_mat(ctx).unwrap();
-      ctx.emit_const_load(e_reg, e_const_id);
-      mat_regs.push(e_reg);
+      mat_regs.push(compile_register_mat!(e, ctx));
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_varop(
@@ -736,11 +706,7 @@ where
 
     let mut mat_regs = Vec::new();
     for (e, _) in &self.matrix {
-      let e_addr = e.addr();
-      let e_reg = ctx.alloc_register_for_ptr(e_addr);
-      let e_const_id = e.compile_const_mat(ctx).unwrap();
-      ctx.emit_const_load(e_reg, e_const_id);
-      mat_regs.push(e_reg);
+      mat_regs.push(compile_register_mat!(e, ctx));
     }
     let mut scalar_regs = Vec::new();
     for (e, _) in &self.scalar {
@@ -765,6 +731,86 @@ where
 }
 #[cfg(feature = "row_vectord")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateRDN);
+
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "row_vectord", feature = "i64"))]
+mod compiler_tests {
+  use super::*;
+
+  fn matrix() -> Ref<DMatrix<i64>> {
+    Ref::new(DMatrix::from_vec(1, 1, vec![7i64]))
+  }
+
+  fn assert_single_matrix_load(ctx: &CompileCtx, matrix: &Ref<DMatrix<i64>>) -> Register {
+    let matrix_register = ctx.reg_map[&matrix.addr()];
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register)).count(), 1);
+    matrix_register
+  }
+
+  #[test]
+  fn pointer_register_matrix_initializes_once() {
+    let mut ctx = CompileCtx::new();
+    let ctx = &mut ctx;
+    let matrix_a = matrix();
+    let matrix_b = matrix();
+
+    let register_a = compile_register_mat!(matrix_a, ctx);
+    let register_a_again = compile_register_mat!(matrix_a, ctx);
+    let register_b = compile_register_mat!(matrix_b, ctx);
+
+    assert_eq!(register_a_again, register_a);
+    assert_ne!(register_b, register_a);
+    assert_eq!(ctx.const_entries.len(), 2);
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_a)).count(), 1);
+    assert_eq!(ctx.instrs.iter().filter(|instruction| matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_b)).count(), 1);
+  }
+
+  #[test]
+  fn horizontal_concatenate_four_args_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let function = HorizontalConcatenateFourArgs {
+      e0: Box::new(matrix.clone()), e1: Box::new(matrix.clone()),
+      e2: Box::new(matrix.clone()), e3: Box::new(matrix.clone()),
+      out: Ref::new(DMatrix::from_element(1, 4, 0i64)),
+    };
+    let mut ctx = CompileCtx::new();
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&ctx, &matrix);
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::QuadOp { a, b, c, d, .. }) if [*a, *b, *c, *d] == [matrix_register; 4]));
+  }
+
+  #[test]
+  fn horizontal_concatenate_n_args_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let function = HorizontalConcatenateNArgs {
+      e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+      out: Ref::new(DMatrix::from_element(1, 2, 0i64)),
+    };
+    let mut ctx = CompileCtx::new();
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&ctx, &matrix);
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register]));
+  }
+
+  #[test]
+  fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
+    let matrix = matrix();
+    let scalar = Ref::new(9i64);
+    let scalar_addr = scalar.addr();
+    let function = HorizontalConcatenateRDN {
+      matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
+      scalar: vec![(scalar, 2)],
+      out: Ref::new(RowDVector::from_element(3, 0i64)),
+    };
+    let mut ctx = CompileCtx::new();
+    function.compile(&mut ctx).unwrap();
+
+    let matrix_register = assert_single_matrix_load(&ctx, &matrix);
+    let scalar_register = ctx.reg_map[&scalar_addr];
+    assert!(matches!(ctx.instrs.last(), Some(EncodedInstr::VarArg { args, .. }) if args == &vec![matrix_register, matrix_register, scalar_register]));
+  }
+}
 
 // HorizontalConcatenateS1D ---------------------------------------------------
 

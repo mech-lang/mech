@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathFloor{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "floor",
+  }
+}

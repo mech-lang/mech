@@ -1,0 +1,8 @@
+[package]
+name = "lidar_smoketest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rplidar_drv = "0.6"
+serialport  = "4"

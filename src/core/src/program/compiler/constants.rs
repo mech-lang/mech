@@ -114,7 +114,7 @@ impl CompileConst for f64 {
   }
 }
 
-#[cfg(feature = "f32")]
+#[cfg(all(feature = "f32", feature = "compiler"))]
 impl CompileConst for f32 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -123,7 +123,7 @@ impl CompileConst for f32 {
   }
 }
 
-#[cfg(feature = "u8")]
+#[cfg(all(feature = "u8", feature = "compiler"))]
 impl CompileConst for u8 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -132,7 +132,7 @@ impl CompileConst for u8 {
   }
 }
 
-#[cfg(feature = "i8")]
+#[cfg(all(feature = "i8", feature = "compiler"))]
 impl CompileConst for i8 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -153,7 +153,7 @@ impl CompileConst for usize {
 macro_rules! impl_compile_const {
   ($feature:literal, $t:tt) => {
     paste! {
-      #[cfg(feature = $feature)]
+      #[cfg(all(feature = $feature, feature = "compiler"))]
       impl CompileConst for $t {
         fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
           let mut payload = Vec::<u8>::new();
@@ -182,7 +182,7 @@ impl_compile_const!("i64", i64);
 #[cfg(feature = "i128")]
 impl_compile_const!("i128", i128);
 
-#[cfg(any(feature = "bool", feature = "variable_define"))]
+#[cfg(all(feature = "compiler", any(feature = "bool", feature = "variable_define")))]
 impl CompileConst for bool {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -191,7 +191,7 @@ impl CompileConst for bool {
   }
 }
 
-#[cfg(any(feature = "string", feature = "variable_define"))]
+#[cfg(all(feature = "compiler", any(feature = "string", feature = "variable_define")))]
 impl CompileConst for String {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -201,7 +201,7 @@ impl CompileConst for String {
   }
 }
 
-#[cfg(feature = "rational")]
+#[cfg(all(feature = "rational", feature = "compiler"))]
 impl CompileConst for R64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -211,7 +211,7 @@ impl CompileConst for R64 {
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "compiler"))]
 impl CompileConst for C64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -223,6 +223,7 @@ impl CompileConst for C64 {
 
 macro_rules! impl_compile_const_matrix {
   ($matrix_type:ty) => {
+    #[cfg(feature = "compiler")]
     impl<T> CompileConst for $matrix_type
     where
       T: ConstElem + AsValueKind,
@@ -281,7 +282,7 @@ impl_compile_const_matrix!(na::DVector<T>);
 #[cfg(feature = "row_vectord")]
 impl_compile_const_matrix!(na::RowDVector<T>);
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "compiler"))]
 impl<T> CompileConst for Matrix<T> 
 where
   T: CompileConst + ConstElem + AsValueKind
@@ -322,7 +323,7 @@ where
   }
 }
 
-#[cfg(feature = "matrixd")]
+#[cfg(all(feature = "matrixd", feature = "compiler"))]
 impl<T> CompileConst for Ref<DMatrix<T>> 
 where
   T: CompileConst + ConstElem + AsValueKind
@@ -332,7 +333,7 @@ where
   }
 }
 
-#[cfg(feature = "vectord")]
+#[cfg(all(feature = "vectord", feature = "compiler"))]
 impl<T> CompileConst for Ref<DVector<T>> 
 where
   T: CompileConst + ConstElem + AsValueKind
@@ -342,7 +343,7 @@ where
   }
 }
 
-#[cfg(feature = "row_vectord")]
+#[cfg(all(feature = "row_vectord", feature = "compiler"))]
 impl<T> CompileConst for Ref<RowDVector<T>> 
 where
   T: CompileConst + ConstElem + AsValueKind
@@ -352,7 +353,7 @@ where
   }
 }
 
-#[cfg(feature = "record")]
+#[cfg(all(feature = "record", feature = "compiler"))]
 impl CompileConst for MechRecord {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -379,7 +380,7 @@ impl CompileConst for MechRecord {
   }
 }
 
-#[cfg(feature = "enum")]
+#[cfg(all(feature = "enum", feature = "compiler"))]
 impl CompileConst for MechEnum {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -407,7 +408,7 @@ impl CompileConst for MechEnum {
   }
 }
 
-#[cfg(feature = "atom")]
+#[cfg(all(feature = "atom", feature = "compiler"))]
 impl CompileConst for MechAtom {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -417,7 +418,7 @@ impl CompileConst for MechAtom {
   }
 }
 
-#[cfg(feature = "set")]
+#[cfg(all(feature = "set", feature = "compiler"))]
 impl CompileConst for MechSet {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -430,7 +431,7 @@ impl CompileConst for MechSet {
   }
 }
 
-#[cfg(feature = "tuple")]
+#[cfg(all(feature = "tuple", feature = "compiler"))]
 impl CompileConst for MechTuple {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -443,7 +444,7 @@ impl CompileConst for MechTuple {
   }
 }
 
-#[cfg(feature = "map")]
+#[cfg(all(feature = "map", feature = "compiler"))]
 impl CompileConst for MechMap {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
@@ -578,7 +579,6 @@ impl ConstElem for C64 {
   fn align() -> u8 { 16 }
 }
 
-#[cfg(feature = "string")]
 impl ConstElem for String {
   fn write_le(&self, out: &mut Vec<u8>) {
     use byteorder::{LittleEndian, WriteBytesExt};
@@ -1022,7 +1022,7 @@ impl ConstElem for Value {
     }
   }
   fn value_kind(&self) -> ValueKind {
-    self.value_kind()
+    self.kind()
   }
   fn align() -> u8 {
     1
@@ -1186,6 +1186,19 @@ impl ConstElem for ValueKind {
         let row_count = cursor.read_u32::<LittleEndian>().expect("read table row count") as usize;
         ValueKind::Table(fields, row_count)
       }
+      #[cfg(feature = "tuple")]
+      27 => {
+        let element_count = cursor.read_u32::<LittleEndian>().expect("read tuple kind length") as usize;
+        let mut elements = Vec::with_capacity(element_count);
+        for _ in 0..element_count {
+          let kind = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+          let mut encoded = Vec::new();
+          kind.write_le(&mut encoded);
+          cursor.set_position(cursor.position() + encoded.len() as u64);
+          elements.push(kind);
+        }
+        ValueKind::Tuple(elements)
+      }
       #[cfg(feature = "set")]
       29 => {
         let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
@@ -1322,7 +1335,7 @@ impl ConstElem for MechTable {
   fn align() -> u8 { 8 }
 }
 
-#[cfg(feature = "table")]
+#[cfg(all(feature = "table", feature = "compiler"))]
 impl CompileConst for MechTable {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();

@@ -50,6 +50,7 @@ baselib = ["bool", "string",
       "mech-core/baselib"
     ]
 
+prelude = ["membership_default", "modify_default", "operations_default", "relations_default", "setdata_default", "comprehensions"]
 membership_default = ["element_of", "not_element_of"]
 modify_default = ["insert", "remove"]
 operations_default = ["cartesian_product", "difference", "intersection", "powerset", "symmetric_difference", "union"]

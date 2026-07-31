@@ -27,6 +27,7 @@ pub struct TitleFrontMatter {
   pub date: Option<Paragraph>,
   pub hero: Option<SectionElement>,
   pub kicker: Option<Paragraph>,
+  pub section: Option<Paragraph>,
   pub summary: Option<Paragraph>,
   pub next: Option<Paragraph>,
   pub previous: Option<Paragraph>,
@@ -51,6 +52,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
     date: front_matter.date,
     hero: front_matter.hero,
     kicker: front_matter.kicker,
+    section: front_matter.section,
     summary: front_matter.summary,
     next: front_matter.next,
     previous: front_matter.previous,
@@ -89,6 +91,7 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
       "author" => front_matter.author = Some(paragraph),
       "date" => front_matter.date = Some(paragraph),
       "kicker" => front_matter.kicker = Some(paragraph),
+      "section" => front_matter.section = Some(paragraph),
       "summary" => front_matter.summary = Some(paragraph),
       "next" => front_matter.next = Some(paragraph),
       "previous" => front_matter.previous = Some(paragraph),
@@ -798,9 +801,16 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         let parse_string = ParseString::new(&graphemes);
 
         match mech_code(parse_string) {
-          Ok((_, mech_tree)) => {
+          Ok((_, parsed)) => {
             // TODO what if not all the input is parsed? Is that handled?
-            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{code: mech_tree, config, options})));
+            return Ok((input, SectionElement::FencedMechCode(FencedMechCode{
+              source: code_token,
+              code: parsed.code,
+              imports: parsed.imports,
+              exports: parsed.exports,
+              config,
+              options
+            })));
           },
           Err(err) => {
             return Err(nom::Err::Error(ParseError {
@@ -1064,8 +1074,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   
     // check if it's mech_code first, we'll prioritize that
     match mech_code(new_input.clone()) {
-      Ok((input, mech_tree)) => {
-        elements.push(SectionElement::MechCode(mech_tree));
+      Ok((input, parsed)) => {
+        elements.push(SectionElement::MechCode(parsed.code));
         new_input = input;
         continue;
       }
@@ -1115,4 +1125,59 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
     }
   }
   Ok((new_input, Body { sections }))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::{parser, Formatter};
+
+  #[test]
+  fn fenced_block_scopes_imports_and_exports() {
+    let src = "~~~mech:foo\n+> math/*\nx := 1.23\nsin(x)\n~~~\n\n~~~mech:bar\n+> geometry/triangle-area\narea := triangle-area(3, 4, 1.5708)\n<+ area\n~~~\n";
+    let tree = parser::parse(src).unwrap();
+    let fenced: Vec<_> = tree
+      .body
+      .sections
+      .iter()
+      .flat_map(|section| section.elements.iter())
+      .filter_map(|el| match el { SectionElement::FencedMechCode(code) => Some(code), _ => None })
+      .collect();
+    assert_eq!(fenced[0].config.namespace_str, "foo");
+    assert_eq!(fenced[0].imports.len(), 0);
+    assert_eq!(fenced[0].exports.len(), 0);
+    assert!(fenced[0].code.iter().any(|(node, _)| matches!(node, MechCode::Import(import) if import.module.to_string() == "math" && import.kind == ModuleImportKind::Glob)));
+    assert_eq!(fenced[1].config.namespace_str, "bar");
+    assert_eq!(fenced[1].imports.len(), 0);
+    assert_eq!(fenced[1].exports.len(), 1);
+    assert!(fenced[1].code.iter().any(|(node, _)| matches!(node, MechCode::Import(import) if import.module.to_string() == "geometry" && import.kind == ModuleImportKind::Item)));
+    assert_eq!(fenced[1].exports[0].name.to_string(), "area");
+  }
+
+  #[test]
+  fn formatter_replaces_version_and_section_placeholders() {
+    let src = "Template Test\n==============\nsection: Guides\n==============\n\nIntro text.\n";
+    let tree = parser::parse(src).unwrap();
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(
+      &tree,
+      "".to_string(),
+      "<main>{{SECTION}} {{VERSION}} {{TITLE}}</main>".to_string(),
+    );
+    assert!(html.contains("mech-section"));
+    assert!(html.contains("Guides"));
+    assert!(html.contains(env!("CARGO_PKG_VERSION")));
+    assert!(!html.contains("{{SECTION}}"));
+    assert!(!html.contains("{{VERSION}}"));
+  }
+
+  #[test]
+  fn formatter_keeps_declarations() {
+    let src = "~~~mech:foo\n+> math/sin\n<+ area\n~~~\n";
+    let tree = parser::parse(src).unwrap();
+    let mut formatter = Formatter::new();
+    let formatted = formatter.format(&tree);
+    assert!(formatted.contains("+> math/sin"));
+    assert!(formatted.contains("<+ area"));
+  }
 }

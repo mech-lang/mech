@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathTrunc{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "trunc",
+  }
+}

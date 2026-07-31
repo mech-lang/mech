@@ -1,0 +1,34 @@
+config := {
+  hosts: [
+    {
+      name: "front"
+      provider: "lidar"
+      settings: {
+        port: "/dev/ttyUSB0"
+        baud: 115200
+        interval-ms: 100
+        points-per-scan: 100
+      }
+    }
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+  ]
+  run: {
+    paths: ["obstacle.mec"]
+    grants: [
+      {
+        target: "front/scan"
+        operations: ["read"]
+        paths: ["nearest-mm", "nearest-angle", "front-mm", "count", "scan-id"]
+      }
+      {
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+    ]
+  }
+}

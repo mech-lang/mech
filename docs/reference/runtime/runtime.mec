@@ -1,0 +1,32 @@
+Runtime Object
+===============================================================================
+
+`MechRuntime` is the host-facing runtime object.
+
+It wraps the current program/interpreter layer and owns the system-level components required to run configured Mech programs.
+
+1. Responsibilities
+-------------------------------------------------------------------------------
+
+The runtime is responsible for:
+
+- Runtime identity and configuration.
+- Program execution.
+- Runtime contexts.
+- Capability checks.
+- Resource providers.
+- Host interfaces.
+- Source resolution.
+- Scheduling.
+- Runtime events.
+- Module manifests.
+
+2. Runtime context
+-------------------------------------------------------------------------------
+
+A runtime context is the per-operation execution envelope. It carries identity and authority information such as subject, task, actor, module, transaction, budget, capabilities, and emitted events.
+
+3. Host integration
+-------------------------------------------------------------------------------
+
+Hosts are installed through runtime construction. Once installed, host contexts can be bound by Mech source and used through context paths.

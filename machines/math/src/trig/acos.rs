@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathAcos{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "acos",
+  }
+}

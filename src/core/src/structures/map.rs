@@ -54,13 +54,30 @@ impl MechMap {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechMap {
   fn pretty_print(&self) -> String {
+    fn indent_multiline(value: &str, spaces: usize) -> String {
+      let pad = " ".repeat(spaces);
+      value.lines().map(|line| format!("{pad}{line}")).collect::<Vec<_>>().join("\n")
+    }
+
     let mut lines = Vec::new();
 
     for (k, v) in &self.map {
+      let key = k.pretty_print();
+      let value = v.pretty_print();
+      let pair_prefix = format!("  {}: ", key);
+      let continuation_indent = " ".repeat(pair_prefix.len());
+      let mut value_lines = value.lines();
+      let first_line = value_lines.next().unwrap_or("");
+      let rest = value_lines.collect::<Vec<_>>().join("\n");
+      let rendered_value = if rest.is_empty() {
+        first_line.to_string()
+      } else {
+        format!("{}\n{}", first_line, indent_multiline(&rest, continuation_indent.len()))
+      };
       lines.push(format!(
-        "  {}: {}",
-        k.pretty_print(),
-        v.pretty_print()
+        "{}{}",
+        pair_prefix,
+        rendered_value
       ));
     }
 

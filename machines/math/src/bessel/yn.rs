@@ -245,3 +245,10 @@ register_descriptor! {
     ptr: &MathYn{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "bessel/yn",
+  }
+}

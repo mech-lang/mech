@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "scene"
+    contexts: [
+      {
+        name: "frame"
+        base-uri: "scene://{instance}/frame"
+        operations: ["write"]
+      }
+    ]
+  }
+}

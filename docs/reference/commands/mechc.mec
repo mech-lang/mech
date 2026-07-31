@@ -1,0 +1,35 @@
+`mechc`
+===============================================================================
+
+`mechc` is the compiler and executable packaging command.
+
+1. Build
+-------------------------------------------------------------------------------
+
+```sh
+mechc build main.mec --out app
+```
+
+For an optimized build:
+
+```sh
+mechc build main.mec --release --out app
+```
+
+The current build flow compiles Mech bytecode, builds a Rust shim, packages bytecode into the shim, and writes the final artifact under the build directory.
+
+```text
+build/debug/app.exe
+build/release/app.exe
+```
+
+This page documents the current artifact path. The cross-platform executable packaging contract should be tightened before documenting it as stable.
+
+2. Clean
+-------------------------------------------------------------------------------
+
+```sh
+mechc clean
+```
+
+`clean` removes build artifacts.

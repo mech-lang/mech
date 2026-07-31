@@ -15,6 +15,23 @@ impl MechFunctionImpl for TupleAccessElement {
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+impl MechFunctionFactory for TupleAccessElement {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Nullary(out) => Ok(Box::new(Self { out })),
+      _ => Err(MechError::new(
+        IncorrectNumberOfArguments { expected: 0, found: args.len() },
+        None,
+      ).with_compiler_loc()),
+    }
+  }
+}
+register_descriptor! {
+  FunctionDescriptor {
+    name: "TupleAccessElement",
+    ptr: TupleAccessElement::new,
+  }
+}
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TupleAccessElement {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
@@ -23,7 +40,7 @@ impl MechFunctionCompiler for TupleAccessElement {
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Tuple));
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
     ctx.emit_nullop(
-      hash_str(stringify!("TupleAccessElement")),
+      hash_str("TupleAccessElement"),
       registers[0],
     );
     return Ok(registers[0]);

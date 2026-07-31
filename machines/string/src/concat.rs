@@ -100,3 +100,10 @@ fn impl_concat_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFu
 }
 
 impl_mech_binop_fxn!(StringConcat,impl_concat_fxn,"string/concat");
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "string",
+    item: "concat",
+  }
+}

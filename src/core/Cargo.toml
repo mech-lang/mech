@@ -30,7 +30,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
       "statements_default", "subscript_default",
       ]   
 
-statements_default = ["variable_assign","variable_define","kind_define"]
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
 stdlib = ["bool", "string", 
@@ -70,6 +70,7 @@ mika = []
 statements = []
 variables = ["variable_define", "symbol_table"]
 variable_define = ["statements", "functions"]
+invariant_define = ["variable_define"]
 variable_assign = ["statements"]
 kind_define = ["kind_annotation", "statements"]
 kind_annotation = ["functions"]

@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathErfc{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "erfc",
+  }
+}

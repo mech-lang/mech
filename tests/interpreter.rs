@@ -1,13 +1,14 @@
 #![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
+extern crate mech;
 extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
+use mech::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use indexmap::set::IndexSet;
 
 /// Compare interpreter output to expected value
@@ -16,14 +17,26 @@ macro_rules! test_interpreter {
     #[test]
     fn $func() {
       let s = $input;
-      match parser::parse(&s) {
-          Ok(tree) => { 
-            let mut intrp = Interpreter::new(0);
-            let result = intrp.interpret(&tree).unwrap();
-            assert_eq!(result, $expected);
-          },
-          Err(err) => {panic!("{:?}", err);}
-      }   
+      let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
+      match program.run_string(s) {
+        Ok(result) => assert_eq!(result, $expected),
+        Err(err) => panic!("{:?}", err),
+      }
+    }
+  )
+}
+
+macro_rules! test_interpreter_linked {
+  ($func:ident, $input:tt, $expected:expr) => (
+    #[test]
+    fn $func() {
+      let s = $input;
+      let mut program = MechProgram::new(MechProgramConfig{name: "test".to_string(), environment: MechProgramEnvironment::default()});
+      program.load_full_stdlib();
+      match program.run_string(s) {
+        Ok(result) => assert_eq!(result, $expected),
+        Err(err) => panic!("{:?}", err),
+      }
     }
   )
 }
@@ -47,6 +60,8 @@ test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new
 test_interpreter!(interpret_literal_string_empty, r#""""#, Value::String(Ref::new("".to_string())));
 test_interpreter!(interpret_literal_string_multiline, r#""Hello 
  World""#, Value::String(Ref::new("Hello \n World".to_string())));
+test_interpreter!(interpret_string_access_uses_grapheme_clusters, r#"s := "é👩‍🚀z"
+s[2]"#, Value::String(Ref::new("👩‍🚀".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_true2, "✓ ", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_literal_false2, "✗ ", Value::Bool(Ref::new(false)));
@@ -69,9 +84,8 @@ test_interpreter!(
 #[test]
 fn interpret_fsm_fails_when_transition_targets_undefined_state() {
   let s = "#Door(n<u64>) => <u64>\n  ├ :Closed(n<u64>)\n  └ :Open(n<u64>).\n\n#Door(n<u64>) -> :Closed(n)\n  :Closed(n) -> :Locked(n)\n  :Open(n) => n.\n\n#Door(1u64)";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_fsm_fails_when_transition_targets_undefined_state".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
 }
 
 test_interpreter!(
@@ -85,9 +99,8 @@ test_interpreter!(interpret_variable_define_kind_literal, "x := <u8>;", Value::K
 #[test]
 fn interpret_variable_define_undefined_kind_literal_error() {
   let s = "x := <foo>;";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_variable_define_undefined_kind_literal_error".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
 }
 test_interpreter!(interpret_variable_define_typed_empty, "emp<_> := _", Value::Empty);
 #[cfg(feature = "u64")]
@@ -105,7 +118,7 @@ test_interpreter!(
 #[cfg(feature = "u64")]
 test_interpreter!(
   interpret_option_match_scalar_some,
-  "x<u64?> := 4u64; x? | x > 3u64 => x | * => 0u64.",
+  "x<u64?> := 4u64; x? | value, value > 3u64 => value | * => 0u64.",
   Value::U64(Ref::new(4))
 );
 #[cfg(feature = "u64")]
@@ -123,9 +136,8 @@ test_interpreter!(
 #[test]
 fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
   let s = "x := [1 2 _ 5]\n\nx";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_literal_with_empty_infers_optional_f64_elements".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
     ValueKind::Matrix(
@@ -138,9 +150,8 @@ fn interpret_matrix_literal_with_empty_infers_optional_f64_elements() {
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_u64_defaults() {
   let s = "x<[u64?]> := [_ 2u64 _ 3u64 _ 4u64]\n\nunwrapped<[u64]> := x?\n  | x => x\n  | * => 0u64.\n\nunwrapped";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_u64_defaults".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
     value => value,
@@ -160,9 +171,10 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
      | x => x\n\
      | * => 0.\n\
    y";
+
   let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_after_outer_join_column_access_converts_option_to_scalar".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
     value => value,
@@ -172,9 +184,8 @@ fn interpret_option_match_after_outer_join_column_access_converts_option_to_scal
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped<[f64]> := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_typed_f64_defaults".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   let detached = match result {
     Value::MutableReference(v) => v.borrow().clone(),
     value => value,
@@ -187,9 +198,8 @@ fn interpret_option_matrix_literal_unwraps_to_typed_f64_defaults() {
 #[test]
 fn interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults() {
   let s = "x<[f64?]> := [_ 2 _ 3 _ 4]\n\nunwrapped := x?\n  | x => x\n  | * => 0.\n\nunwrapped";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_matrix_literal_unwraps_to_inferred_f64_defaults".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   assert_eq!(
     result.deref_kind(),
     ValueKind::Matrix(Box::new(ValueKind::F64), vec![1, 6])
@@ -204,9 +214,38 @@ test_interpreter!(
 #[test]
 fn interpret_option_match_requires_wildcard_arm() {
   let s = "foo<u64?> := 1234\n\nbar := foo?\n  | 0 => 9.\n\nbar";
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_requires_wildcard_arm".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
+#[test]
+fn interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind() {
+  let s = r#"
+x := {
+  {
+    failed: {
+    }
+  }
+  {
+    failed: {
+      "foo"
+    }
+  }
+}
+x
+"#;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_set_literal_mixed_empty_and_string_infers_optional_string_kind".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  assert_eq!(
+    result.deref_kind(),
+    ValueKind::Set(
+      Box::new(ValueKind::Record(vec![(
+        "failed".to_string(),
+        ValueKind::Set(Box::new(ValueKind::Option(Box::new(ValueKind::String))), None),
+      )])),
+      Some(2)
+    )
+  );
 }
 
 #[test]
@@ -218,9 +257,8 @@ string-color := my-color?
   | :red   => "red"
   | :green => "green".
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_reports_missing_variants_color".to_string(), environment: MechProgramEnvironment::default()});
+  let err = program.run_string(s).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
   assert!(msg.contains(":blue"));
@@ -236,9 +274,8 @@ label := state?
   | :open   => "open"
   | :closed => "closed".
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_reports_missing_variants_generalized".to_string(), environment: MechProgramEnvironment::default()});
+  let err = program.run_string(s).unwrap_err();
   let msg = format!("{:?}", err);
   assert!(msg.contains("MatchNonExhaustive"));
   assert!(msg.contains(":locked"));
@@ -255,9 +292,8 @@ code := x?
   | :pending => 2
   | :stopped => 0.
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_is_exhaustive".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
   assert_eq!(result, Value::F64(Ref::new(1.0)));
 }
 
@@ -271,11 +307,14 @@ code := x?
   | :pending => "pending"
   | :stopped => 0.
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("MatchArmKindMismatch"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_enum_match_all_variants_without_wildcard_still_checks_arm_kinds".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("MatchArmKindMismatch"));
+    }
+  }
 }
 
 #[cfg(feature = "u64")]
@@ -314,6 +353,20 @@ test_interpreter!(
   Value::U64(Ref::new(3))
 );
 
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_match_structural_failure_skips_guard,
+  "pair := (1u64, 2u64)\nresult := pair?\n  | (x, 0u64), missing-capture > 0u64 => x\n  | * => 9u64.\nresult + 0u64",
+  Value::U64(Ref::new(9))
+);
+
+#[cfg(all(feature = "u64", feature = "f64"))]
+test_interpreter!(
+  interpret_match_fractional_f64_literal_does_not_equal_u64,
+  "value := 1u64\nresult := value?\n  | 1.5 => 99u64\n  | * => 7u64.\nresult + 0u64",
+  Value::U64(Ref::new(7))
+);
+
 test_interpreter!(interpret_option_match_tuple_struct_pattern, "state := (:Done, 9u64); y := state? | :Done(x) => x | * => 0u64.; y + 0u64", Value::U64(Ref::new(9)));
 #[test]
 fn interpret_tagged_union_match_requires_exhaustive_arms() {
@@ -324,19 +377,96 @@ x<option> := :some(:ok(42u64))
 result := x?
   | :some(:ok(n)) => n.
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  assert!(intrp.interpret(&tree).is_err());
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_option_match_tuple_struct_pattern".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("MatchNonExhaustive"));
+    }
+  }
 }
 test_interpreter!(
   interpret_function_shorthand_match_arm_broadcasts_over_matrix_input,
   "add-one(x<f64>) => <f64>\n  | x + 1.\n\nadd-one([1 2 3])",
   Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3))
 );
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_function_multi_argument_wildcard_arm_matches,
+  "multi-default(left<u64>, right<u64>) => <u64>\n  | * => 9u64.\n\nmulti-default(1u64, 2u64)",
+  Value::U64(Ref::new(9))
+);
 test_interpreter!(interpret_function_array_pattern_arms, "head(xs<[u64]:1,3>) => <u64>\n  | [x …] => x\n  | * => 0u64.\nhead([10u64 20u64 30u64]) + 0u64", Value::U64(Ref::new(10)));
 test_interpreter!(interpret_fsm_array_pattern_state_arguments, "#VecFsm(n<u64>) => <u64>\n  ├ :Scan(xs<[u64]:1,3>)\n  └ :Done(out<u64>).\n\n#VecFsm(n<u64>) -> :Scan([1u64 2u64 3u64])\n  :Scan([x … y]) -> :Done(x + y)\n  :Done(out) => out.\n\n#VecFsm(0u64)", Value::U64(Ref::new(4)));
 test_interpreter!(interpret_fsm_accepts_unsized_vector_input, "#Echo(xs<[u64]>) => <u64>\n  ├ :Start(xs<[u64]>)\n  └ :Done(out<u64>).\n\n#Echo(xs<[u64]>) -> :Start(xs)\n  :Start([x ...]) -> :Done(x)\n  :Done(out) => out.\n\n#Echo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(5)));
+#[cfg(feature = "u64")]
+test_interpreter!(
+  interpret_fsm_pattern_binding_does_not_replace_input,
+  "#RestoreInput(input<u64>) => <u64>\n  ├ :Start(value<u64>)\n  └ :Done(value<u64>).\n\n#RestoreInput(input<u64>) -> :Start(7u64)\n  :Start(input) -> :Done(0u64)\n  :Done(*) => input.\n\n#RestoreInput(42u64)",
+  Value::U64(Ref::new(42))
+);
 test_interpreter!(interpret_fsm_array_spread_reconstruction_keeps_scalar_guards, "#Demo(arr<[u64]>) => <u64>\n  ├ :Pass(arr<[u64]>)\n  └ :Done(out<u64>).\n\n#Demo(arr<[u64]>) -> :Pass(arr)\n  :Pass([a, b | tail])\n    ├ a > b -> :Pass([a tail])\n    └ * -> :Done(0u64)\n  :Pass([x …]) -> :Done(x)\n  :Done(out) => out.\n\n#Demo([5u64 3u64 8u64 1u64])", Value::U64(Ref::new(0)));
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_recursive_rest_across_function_fsm_match_and_comprehension,
+  r#"
+probe(xs<[u64]>) => <u64>
+  | [head | [second, ..., last]] => head + second + last
+  | * => 0u64.
+
+#Probe(xs<[u64]>) => <u64>
+  ├ :Scan(xs<[u64]>)
+  └ :Done(out<u64>).
+
+#Probe(xs) -> :Scan(xs)
+  :Scan([head | [second, ..., last]]) -> :Done(head + second + last)
+  :Scan(*) -> :Done(0u64)
+  :Done(out) => out.
+
+value := [1u64 2u64 3u64 4u64]
+function-result := probe(value)
+fsm-result := #Probe(value)
+match-result := value?
+  | [head | [second, ..., last]] => head + second + last
+  | * => 0u64.
+comprehension-result := [head + second + last | [head | [second, ..., last]] <- {value}]
+function-result + fsm-result + match-result + comprehension-result[1]
+"#,
+  Value::U64(Ref::new(28))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_repeated_binding_and_first_arm_across_dispatch_contexts,
+  r#"
+probe(xs<[u64]>) => <u64>
+  | [x, x] => x
+  | [x, ...] => 99u64
+  | * => 0u64.
+
+#Probe(xs<[u64]>) => <u64>
+  ├ :Scan(xs<[u64]>)
+  └ :Done(out<u64>).
+
+#Probe(xs) -> :Scan(xs)
+  :Scan([x, x]) -> :Done(x)
+  :Scan([x, ...]) -> :Done(99u64)
+  :Scan(*) -> :Done(0u64)
+  :Done(out) => out.
+
+equal := [3u64 3u64]
+unequal := [3u64 4u64]
+function-result := probe(equal)
+fsm-result := #Probe(equal)
+match-equal := equal? | [x, x] => x | [x, ...] => 99u64 | * => 0u64.
+match-unequal := unequal? | [x, x] => x | [x, ...] => 99u64 | * => 0u64.
+generated := [x | [x, x] <- {equal, unequal}]
+function-result + fsm-result + match-equal + match-unequal + generated[1]
+"#,
+  Value::U64(Ref::new(111))
+);
 test_interpreter!(interpret_fsm_bubble_sort_returns_typed_u64_matrix, "#bubble-sort(arr<[u64]>) => <[u64]>\n  ├ :Start(arr<[u64]>)\n  ├ :Pass(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  ├ :Next(arr<[u64]>, swaps<u64>)\n  ├ :Reverse(arr<[u64]>, acc<[u64]>, swaps<u64>)\n  └ :Done(arr<[u64]>).\n\n#bubble-sort(arr) -> :Start(arr)\n  :Start(arr) -> :Pass(arr, [], 0u64)\n  :Pass([a, b | tail], acc, swaps)\n    ├ a > b -> :Pass([a tail], [b acc], swaps + 1u64)\n    └ *     -> :Pass([b tail], [a acc], swaps)\n  :Pass([x], acc, swaps) -> :Next([x acc], swaps)\n  :Pass([], acc, swaps)  -> :Next(acc, swaps)\n  :Next(arr, swaps) -> :Reverse(arr, [], swaps)\n  :Reverse([x | tail], acc, swaps) -> :Reverse(tail, [x acc], swaps)\n  :Reverse([], acc, 0u64)     -> :Done(acc)\n  :Reverse([], acc, swaps) -> :Pass(acc, [], 0u64)\n  :Done(arr) => arr.\n\n#bubble-sort([5u64 3u64 8u64 1u64])", Value::MatrixU64(Matrix::from_vec(vec![1, 3, 5, 8], 1, 4)));
 test_interpreter!(interpret_fsm_bubble_sort_assigns_matrix_value, "#bubble-sort(arr<[u64]>) => <[u64]>
   ├ :Start(arr<[u64]>)
@@ -386,11 +516,14 @@ fn interpret_fsm_bubble_sort_rejects_f64_argument_kind() {
 x<[f64]> := [3 5 4 1 2]
 #bubble-sort(x)
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("FsmArgumentKindMismatch"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_fsm_bubble_sort_rejects_f64_argument_kind".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("FsmArgumentKindMismatch"));
+    }
+  }
 }
 #[test]
 fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
@@ -418,11 +551,14 @@ fn interpret_fsm_bubble_sort_rejects_untyped_numeric_matrix_argument_kind() {
 y := [3 5 4 1 2]
 #bubble-sort(y)
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("FsmArgumentKindMismatch"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("FsmArgumentKindMismatch"));
+    }
+  }
 }
 test_interpreter!(
   interpret_variable_define_typed_set_from_range_matrix,
@@ -490,6 +626,14 @@ test_interpreter!(interpret_matrix_div_complex, "[1+2i 3+4i] / [5+6i 7+8i]", Val
 
 test_interpreter!(interpret_matrix_eq_rational, "[1/2 3/4] == [1/2 3/4]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_eq_complex, "[1+2i 3+4i] == [1+2i 3+4i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_eq, "x := 1 + [4 5 6]\nx === [5 6 7]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_neq, "x := 1 + [4 5 6]\nx !== [5 6 8]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_eq_symbol, "x := 1 + [4 5 6]\nx ≡ [5 6 7]", Value::Bool(Ref::new(true)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_matrix_strict_neq_symbol, "x := 1 + [4 5 6]\nx !≡ [5 6 8]", Value::Bool(Ref::new(true)));
 test_interpreter!(interpret_matrix_neq_rational, "[1/2 3/4] != [1/2 3/5]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_neq_complex, "[1+2i 3+4i] != [1+2i 3+5i]", Value::MatrixBool(Matrix::from_vec(vec![false, true], 1, 2)));
 test_interpreter!(interpret_matrix_gt_rational, "[1/2 3/4] > [1/4 1/2]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
@@ -762,6 +906,9 @@ test_interpreter!(interpret_matrixmatmul_r3m3, "a := [1.0 2.0 3.0]; b := [4.0 5.
 test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; a := [1.0 2.0 3.0]'; c := b ** a", Value::MatrixF64(Matrix::from_vec(vec![32.0, 50.0, 68.0], 3, 1)));
 test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::from_vec(vec!["Hello".to_string(), "World".to_string()], 1, 2)));
 test_interpreter!(interpret_matrix_string_access, r#"x:=["Hello" "World"];x[2]"#, Value::String(Ref::new("World".to_string())));
+test_interpreter!(interpret_string_access_first, r#"a := "Hello"; a[1]"#, Value::String(Ref::new("H".to_string())));
+test_interpreter!(interpret_string_access_last, r#"a := "Hello"; a[5]"#, Value::String(Ref::new("o".to_string())));
+test_interpreter!(interpret_string_access_mutable, r#"~a := "Hello"; a[1]"#, Value::String(Ref::new("H".to_string())));
 test_interpreter!(interpret_matrix_string_assign, r#"~x:=["Hello" "World"];x[1]="Foo";[x[1] x[2]]"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string()], 1, 2)));
 test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo";"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()], 1, 3)));
 test_interpreter!(interpret_table_string_access, r#"x:=|x<string> y<string> | "a" "b" | "c" "d" |; x.y"#, Value::MatrixString(Matrix::from_vec(vec!["b".to_string(), "d".to_string()], 2, 1)));
@@ -858,6 +1005,11 @@ test_interpreter!(interpret_slice_range_2d, "x := [1 2 3; 4 5 6; 7 8 9]; x[2..=3
 test_interpreter!(interpret_slice_sclar_range, "ix := [true false true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[2,ix]", Value::MatrixF64(Matrix::from_vec(vec![4.0, 6.0], 1, 2)));
 test_interpreter!(interpret_slice_range_scalar, "ix := [true false true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[ix,2]", Value::MatrixF64(Matrix::from_vec(vec![2.0, 8.0], 2, 1)));
 test_interpreter!(interpret_slice_all, "x := [1 2; 4 5]; x[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 2.0, 5.0], 4, 1)));
+test_interpreter!(interpret_slice_all_matrix_regression, "a := [1 2; 3 4]; a[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 4, 1)));
+test_interpreter!(interpret_slice_all_row_vector_regression, "x := [1 2 3]; x[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 3, 1)));
+test_interpreter!(interpret_slice_all_vector_regression, "b := [1; 2; 3]; b[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 3, 1)));
+test_interpreter!(interpret_slice_all_dynamic_row_vector_regression, "x := [1 2 3 4 5]; x[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 5, 1)));
+test_interpreter!(interpret_slice_all_dynamic_vector_regression, "b := [1; 2; 3; 4; 5]; b[:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 5, 1)));
 test_interpreter!(interpret_slice_all_2d, "x := [1 2; 4 5]; x[:,2]", Value::MatrixF64(Matrix::from_vec(vec![2.0, 5.0], 2, 1)));
 test_interpreter!(interpret_slice_all_2d_row, "x := [1 2; 4 5]; x[2,:]", Value::MatrixF64(Matrix::from_vec(vec![4.0, 5.0], 1, 2)));
 test_interpreter!(interpret_slice_all_2d_row2, "x := [1 2 3 4 5; 6 7 8 9 10]; x[1,:]", Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 1, 5)));
@@ -900,6 +1052,99 @@ test_interpreter!(interpret_dot_index_table6, "x := | x<u32> y<f32> z<i8>|1 2 3|
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set_empty2,"{}", Value::Set(Ref::new(MechSet::from_vec(vec![]))));
 test_interpreter!(interpret_set, "{1,2,3}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
+
+#[test]
+fn interpret_matrix_single_record_cell() {
+  let s = r##"dom := [
+  {
+    path: "body/content/mech-sandbox/input/_value"
+    selector: "#name-input"
+    property: "value"
+  }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_single_record_cell".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  let Value::MatrixValue(matrix) = result else { panic!("expected MatrixValue"); };
+  assert_eq!(matrix.shape(), vec![1, 1]);
+  let values = matrix.as_vec();
+  let Value::Record(record) = &values[0] else { panic!("expected record cell"); };
+  let record = record.borrow();
+  assert_eq!(record.data.len(), 3);
+  assert!(record.data.contains_key(&hash_str("path")));
+  assert!(record.data.contains_key(&hash_str("selector")));
+  assert!(record.data.contains_key(&hash_str("property")));
+}
+
+#[test]
+fn interpret_matrix_records_with_blank_line_are_column_cells() {
+  let s = r##"dom := [
+  {
+    path: "body/content/mech-sandbox/input/_value"
+    selector: "#name-input"
+    property: "value"
+  }
+
+  {
+    path: "body/content/mech-sandbox/output/_value"
+    selector: "#roundtrip-output"
+    property: "value"
+  }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_records_with_blank_line_are_column_cells".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  let Value::MatrixValue(matrix) = result else { panic!("expected MatrixValue"); };
+  assert_eq!(matrix.shape(), vec![2, 1]);
+  let values = matrix.as_vec();
+  assert!(matches!(values[0], Value::Record(_)));
+  assert!(matches!(values[1], Value::Record(_)));
+}
+
+#[test]
+fn interpret_matrix_records_without_blank_line_are_column_cells() {
+  let s = r##"dom := [
+  { path: "a" selector: "#x" property: "value" }
+  { path: "b" selector: "#y" property: "value" }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_records_without_blank_line_are_column_cells".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(s).unwrap();
+  let Value::MatrixValue(matrix) = result else { panic!("expected MatrixValue"); };
+  assert_eq!(matrix.shape(), vec![2, 1]);
+  let values = matrix.as_vec();
+  assert!(matches!(values[0], Value::Record(_)));
+  assert!(matches!(values[1], Value::Record(_)));
+}
+
+
+#[test]
+fn interpret_matrix_record_missing_closing_bracket_errors() {
+  let s = r##"dom := [
+  {
+    path: "a"
+  }
+"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_record_missing_closing_bracket_errors".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
+#[test]
+fn interpret_matrix_eof_after_whitespace_errors() {
+  let s = "dom := [
+  
+";
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_eof_after_whitespace_errors".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
+
+#[test]
+fn interpret_matrix_record_bad_value_errors() {
+  let s = r##"dom := [
+  { path: }
+]"##;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_matrix_record_bad_value_errors".to_string(), environment: MechProgramEnvironment::default()});
+  assert!(program.run_string(s).is_err());
+}
+
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(Ref::new(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(Ref::new(1.0))),((44311847522083591,"b".to_string()),Value::String(Ref::new("Hello".to_string())))]))));
 test_interpreter!(interpret_define_custom_record, r#"<point2>:=<{a<f64>,b<f64>}>; p<point2>:={a:1.0,b:2.0}"#, Value::Record(Ref::new(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(Ref::new(1.0))),((44311847522083591,"b".to_string()),Value::F64(Ref::new(2.0)))]))));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(Ref::new(2.0)));
@@ -912,6 +1157,35 @@ test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(Ref::new(M
 test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x.
 foo(10)"#, Value::F64(Ref::new(20.0)));
+#[test]
+fn interpret_user_function_string_access_valid() {
+  let source = r#"pick() = ch<string> :=
+s := "abc"
+ch := s[2].
+
+pick()"#;
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_user_function_string_access_valid".to_string(), environment: MechProgramEnvironment::default()});
+  let result = program.run_string(source).unwrap();
+  assert_eq!(result, Value::String(Ref::new("b".to_string())));
+}
+
+#[test]
+fn interpret_user_function_string_access_error_propagates() {
+  let source = r#"bad() = ch<string> :=
+~s := "abc"
+s = "x"
+ch := s[3].
+
+bad()"#;
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut program = MechProgram::new(MechProgramConfig{name: "interpret_user_function_string_access_error_propagates".to_string(), environment: MechProgramEnvironment::default()});
+    program.run_string(source)
+  }));
+  let run_result = result.expect("user function string access should not panic");
+  let error = run_result.expect_err("user function string access should return an error");
+  assert!(format!("{:?}", error).contains("IndexOutOfBounds"), "got {error:?}");
+}
+
 test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
 foo(10,20)"#, Value::F64(Ref::new(30.0)));
@@ -975,10 +1249,25 @@ test_interpreter!(interpret_function_recursive_power,r#"power(x<u64>, y<u64>) =>
   ├ (*, 0) => 1
   └ (x, y) => x * power(x, y - 1<u64>).
 power(2<u64>, 10<u64>)"#, Value::U64(Ref::new(1024)));
-test_interpreter!(interpret_function_call_native_vector, "math/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
-test_interpreter!(interpret_function_call_native, r#"math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
-test_interpreter!(interpret_function_call_native_cos, r#"math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
-test_interpreter!(interpret_function_call_native_vector2, "math/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native_vector, "+> math\nmath/sin([1.570796327 1.570796327])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native, r#"+> math
+math/sin(1.5707963267948966)"#, Value::F64(Ref::new(1.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native_cos, r#"+> math
+math/cos(0.0)"#, Value::F64(Ref::new(1.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_function_call_native_vector2, "+> math\nmath/cos([0.0 0.0])", Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2)));
+
+test_interpreter!(interpret_function_shorthand_with_wildcard_arm, r#"hi() => <string>
+  | * => "hi".
+
+hi()"#, Value::String(Ref::new("hi".to_string())));
+test_interpreter!(interpret_function_single_shorthand_arm_without_arrow, r#"hi() => <string>
+  | "hi".
+
+hi()"#, Value::String(Ref::new("hi".to_string())));
 test_interpreter!(interpret_user_function_scalar_auto_broadcast, r#"add-one(x<f64>) => <f64>
   | * => x + 1.
 add-one([1 2 3])"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, 4.0], 1, 3)));
@@ -1119,7 +1408,8 @@ test_interpreter!(interpret_vertcat_m2r2, "x := [5 2;3 4]; y := [8 9];z := [x;y]
 
 test_interpreter!(interpret_vertcat_r2m2x3, "x := [1 2 3; 4 5 6]; y := [7 8 9]; z := [y;x]", Value::MatrixF64(Matrix::from_vec(vec![7.0, 1.0, 4.0, 8.0, 2.0, 5.0, 9.0, 3.0, 6.0], 3, 3)));
 
-test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/row(x);", Value::MatrixF64(Matrix::from_vec(vec![5.0, 7.0], 1, 2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter!(interpret_stats_sum_rowm2, "+> stats\nx := [1 2; 4 5]; y := stats/sum/row(x);", Value::MatrixF64(Matrix::from_vec(vec![5.0, 7.0], 1, 2)));
 
 test_interpreter!(interpret_add_assign, "~x := 10; x += 20", Value::F64(Ref::new(30.0)));
 test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; ~x := [1 2 3 4]; x[ix] += y;", Value::MatrixF64(Matrix::from_vec(vec![11.0, 7.0, 8.0, 4.0], 1, 4)));
@@ -1217,22 +1507,26 @@ test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_inner_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋈ B; J.b[1]"#, Value::U64(Ref::new(200)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_inner_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/join(A, B); J.b[2]"#, Value::U64(Ref::new(300)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_inner_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/join(A, B); J.b[2]"#, Value::U64(Ref::new(300)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟕ B; J.id[1]"#, Value::U64(Ref::new(1)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_left_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-outer-join(A, B); J.id[2]"#, Value::U64(Ref::new(2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_left_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-outer-join(A, B); J.id[2]"#, Value::U64(Ref::new(2)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_right_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟖ B; J.id[3]"#, Value::U64(Ref::new(4)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_right_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/right-outer-join(A, B); J.id[3]"#, Value::U64(Ref::new(4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_right_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/right-outer-join(A, B); J.id[3]"#, Value::U64(Ref::new(4)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_full_outer_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⟗ B; J.id[4]"#, Value::U64(Ref::new(4)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#, Value::U64(Ref::new(1)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_full_outer_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#, Value::U64(Ref::new(1)));
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
 #[test]
@@ -1243,13 +1537,16 @@ b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
 x := a ⟗ b
 x.hw1
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let result = intrp.interpret(&tree).unwrap();
-  assert_eq!(
-    result.kind(),
-    ValueKind::Matrix(Box::new(ValueKind::Option(Box::new(ValueKind::U8))), vec![4,1])
-  );
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_table_full_outer_join_optional_column_kind_is_u8_option_matrix".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => {
+      assert_eq!(
+        result.kind(),
+        ValueKind::Matrix(Box::new(ValueKind::Option(Box::new(ValueKind::U8))), vec![4,1])
+      );
+    } 
+    Err(err) => panic!("Program execution failed: {:?}", err),
+  }
 }
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
@@ -1317,12 +1614,14 @@ z := x.hw1[4]"#,
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_semi_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋉ B; J.a[2]"#, Value::U64(Ref::new(30)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_left_semi_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-semi-join(A, B); J.id[1]"#, Value::U64(Ref::new(2)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_left_semi_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-semi-join(A, B); J.id[1]"#, Value::U64(Ref::new(2)));
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(interpret_table_left_anti_join_symbol, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ▷ B; J.id[1]"#, Value::U64(Ref::new(1)));
 #[cfg(all(feature = "table", feature = "u64"))]
-test_interpreter!(interpret_table_left_anti_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-anti-join(A, B); J.a[1]"#, Value::U64(Ref::new(10)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_table_left_anti_join_word, r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-anti-join(A, B); J.a[1]"#, Value::U64(Ref::new(10)));
 
 #[cfg(feature = "u64")]
 test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::from_vec(vec![1, 2, 3, 4], 4, 1)));
@@ -1359,7 +1658,7 @@ A := [2.0, 1.0, -1.0
       -3.0, -1.0, 2.0
       -2.0, 1.0, 2.0]"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, -3.0, -2.0, 1.0, -1.0, 1.0, -1.0, 2.0, 2.0], 3, 3)));
 
-test_interpreter!(interpret_matrix_solve, r#"A := [2.0, 1.0, -1.0;-3.0, -1.0, 2.0;-2.0, 1.0, 2.0];b := [8.0, -11.0, -3.0]'; math/round(A \ b)"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0, -1.0], 3, 1)));
+test_interpreter!(interpret_matrix_solve, r#"A := [1.0, 0.0; 0.0, 1.0]; b := [2.0, 3.0]'; A \ b"#, Value::MatrixF64(Matrix::from_vec(vec![2.0, 3.0], 2, 1)));
 
 test_interpreter!(interpret_set_union, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
 test_interpreter!(interpret_set_intersection, r#"A := {1, 2, 3}; B := {2, 3, 4}; U := A ∩ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
@@ -1379,17 +1678,82 @@ test_interpreter!(interpret_set_difference_empty, r#"A := {1, 2}; B := {1, 2}; U
 test_interpreter!(interpret_set_union_duplicates, r#"A := {1, 1, 2}; B := {2, 2, 3}; U := A ∪ B"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))]))));
 test_interpreter!(interpret_set_subset_empty_left, r#"A := {}; B := {1}; C := A ⊆ B"#, Value::Bool(Ref::new(true)));
 
-test_interpreter!(interpret_compare_max_scalar, "compare/max(5,3)", Value::F64(Ref::new(5.0)));
-test_interpreter!(interpret_compare_max_vector, "compare/max([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4)));
-test_interpreter!(interpret_compare_max_vector_vector, "compare/max([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4)));
-test_interpreter!(interpret_compare_min_scalar, "compare/min(5,3)", Value::F64(Ref::new(3.0)));
-test_interpreter!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4)));
-test_interpreter!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_max_scalar, "compare/max(5,3)", Value::F64(Ref::new(5.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_max_vector, "compare/max([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_max_vector_vector, "compare/max([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_min_scalar, "compare/min(5,3)", Value::F64(Ref::new(3.0)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_min_vector, "compare/min([3 4 5 6],4)", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4)));
+#[cfg(feature = "linked_stdlib")]
+test_interpreter_linked!(interpret_compare_min_vector_vector, "compare/min([3 4 5 6],[6 5 4 3])", Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4)));
 
 test_interpreter!(interpret_set_comprehension, r#"{ x * x | x <- {1,2,3,4}, y := 2, (x % 2) == 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(4.0)), Value::F64(Ref::new(16.0))]))));
 test_interpreter!(interpret_set_comprehension_variable, r#"qq := {1,2,3,4}; { x * x | x <- qq, y := 2, (x % 2) != 0 }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0))]))));
 test_interpreter!(interpret_set_comprehension_tuple, r#"qq := {(1,2),(3,4),(5,6),(7,8)}; { x * x | (x, *) <- qq }"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(25.0)), Value::F64(Ref::new(49.0))]))));
 test_interpreter!(interpret_set_comprehension_fof, r#"pairs:= {(1,2), (1,3), (2,8), (3,5), (3,9)}; user := 1; {fof | ( u, f ) <- pairs, ( f, fof ) <- pairs, u ⩵ user}"#, Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(5.0)), Value::F64(Ref::new(9.0)), Value::F64(Ref::new(8.0))]))));
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  pattern_conformance_comprehension_repeated_binding,
+  r#"pairs := {(1u64, 1u64), (1u64, 2u64), (3u64, 3u64)}; {x | (x, x) <- pairs}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(1)), Value::U64(Ref::new(3))])))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  pattern_conformance_comprehension_typed_and_expression_values,
+  r#"pairs := {(1u64, 10u64), (2u64, 20u64)}; expected := 1u64; {x | (expected + 0u64, x) <- pairs}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(10))])))
+);
+
+#[cfg(feature = "u64")]
+test_interpreter!(
+  pattern_conformance_comprehension_nested_tuple,
+  r#"values := {((1u64, 2u64), 3u64), ((4u64, 5u64), 6u64)}; {a + b + c | ((a, b), c) <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(6)), Value::U64(Ref::new(15))])))
+);
+
+#[cfg(all(feature = "u64", feature = "atom"))]
+test_interpreter!(
+  pattern_conformance_comprehension_atom_tuple,
+  r#"events := {(:ready, 7u64), (:ready, 9u64)}; {x | :ready(x) <- events}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(7)), Value::U64(Ref::new(9))])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_exact_array,
+  r#"values := {[1u64 2u64], [3u64 4u64]}; {a + b | [a, b] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(3)), Value::U64(Ref::new(7))])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_prefix_suffix_spread,
+  r#"values := {[1u64 2u64 3u64 4u64], [5u64 6u64 7u64 8u64]}; {head + last | [head, ..., last] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(5)), Value::U64(Ref::new(13))])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_bound_rest,
+  r#"values := {[1u64 2u64 3u64], [4u64 5u64 6u64]}; {tail | [head | tail] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![
+    Value::MatrixU64(Matrix::from_vec(vec![2, 3], 1, 2)),
+    Value::MatrixU64(Matrix::from_vec(vec![5, 6], 1, 2)),
+  ])))
+);
+
+#[cfg(all(feature = "u64", feature = "matrix"))]
+test_interpreter!(
+  pattern_conformance_comprehension_recursive_rest_pattern,
+  r#"values := {[1u64 2u64 3u64 4u64], [5u64 6u64 7u64 8u64]}; {head + second + last | [head | [second, ..., last]] <- values}"#,
+  Value::Set(Ref::new(MechSet::from_vec(vec![Value::U64(Ref::new(7)), Value::U64(Ref::new(19))])))
+);
 
 test_interpreter!(interpret_matrix_comprehension, r#"[ x * x | x <- [1 2 3 4], y := 2, (x % 2) == 0 ]"#, Value::MatrixF64(Matrix::from_vec(vec![4.0, 16.0], 1, 2)));
 test_interpreter!(interpret_matrix_comprehension_variable, r#"qq := [1 2 3 4]; [ x * x | x <- qq, y := 2, (x % 2) != 0 ]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0, 9.0], 1, 2)));
@@ -1429,6 +1793,7 @@ unwrap(x<option>) => <u64>
 
 unwrap(x)
 "#, Value::U64(Ref::new(0u64)));
+
 #[test]
 fn interpret_tagged_union_function_match_requires_exhaustive_arms() {
   let s = r#"
@@ -1442,13 +1807,16 @@ unwrap(x<option>) => <u64>
 
 unwrap(x)
 "#;
-  let tree = parser::parse(s).unwrap();
-  let mut intrp = Interpreter::new(0);
-  let err = intrp.interpret(&tree).unwrap_err();
-  let msg = format!("{:?}", err);
-  assert!(msg.contains("FunctionMatchNonExhaustive"));
-  assert!(msg.contains(":none"));
-  assert!(msg.contains("wildcard"));
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_tagged_union_function_match_requires_exhaustive_arms".to_string(), environment: MechProgramEnvironment::default()});
+  match program.run_string(s) {
+    Ok(result) => panic!("Expected error but got result: {:?}", result),
+    Err(err) => {
+      let msg = format!("{:?}", err);
+      assert!(msg.contains("FunctionMatchNonExhaustive"));
+      assert!(msg.contains(":none"));
+      assert!(msg.contains("wildcard"));
+    }
+  }
 }
 test_interpreter!(interpret_enum_qualified_name, r#"
 <color> := :red | :green | :blue; 
@@ -1473,3 +1841,67 @@ test_interpreter!(interpreter_mika_micromica, r#"╭⦿╯"#, Value::Atom(Ref::n
 test_interpreter!(interpreter_mika_micromica_gripper, r#"Ɔ∞⦿╯"#, Value::Atom(Ref::new(MechAtom::from_name("Ɔ∞⦿╯"))));
 test_interpreter!(interpreter_mika_minimika, r#"(˙◯˙)"#, Value::Atom(Ref::new(MechAtom::from_name("(˙◯˙)"))));
 test_interpreter!(interpreter_mika_micromica_mikasection, r#"╭⦿╯ ⸢Hello, I'm Mika!⸥"#, Value::Atom(Ref::new(MechAtom::from_name("╭⦿╯"))));
+
+#[test]
+fn interpret_mutable_string_access_updates_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_updates_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string("~s := \"abc\"\nfirst := s[1]\ns = \"xyz\"").unwrap();
+  program.step(2).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let first = symbols_brrw.get(hash_str("first")).unwrap().borrow().clone();
+  let first = match first {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(first, Value::String(Ref::new("x".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_index_updates_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_index_updates_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string(r#"s := "abc"
+~i := 1
+ch := s[i]
+i = 2"#).unwrap();
+  program.step(3).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let ch = symbols_brrw.get(hash_str("ch")).unwrap().borrow().clone();
+  let ch = match ch {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(ch, Value::String(Ref::new("b".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_source_and_index_update_after_assignment() {
+  let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_source_and_index_update_after_assignment".to_string(), environment: MechProgramEnvironment::default()});
+  program.run_string(r#"~s := "abc"
+~i := 1
+ch := s[i]
+s = "xyz"
+i = 2"#).unwrap();
+  program.step(3).unwrap();
+  let symbols = program.interpreter().symbols();
+  let symbols_brrw = symbols.borrow();
+  let ch = symbols_brrw.get(hash_str("ch")).unwrap().borrow().clone();
+  let ch = match ch {
+    Value::MutableReference(value) => value.borrow().clone(),
+    other => other,
+  };
+  assert_eq!(ch, Value::String(Ref::new("y".to_string())));
+}
+
+#[test]
+fn interpret_mutable_string_access_stale_index_returns_error_without_panic() {
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut program = MechProgram::new(MechProgramConfig{name: "interpret_mutable_string_access_stale_index_returns_error_without_panic".to_string(), environment: MechProgramEnvironment::default()});
+    program.run_string("~s := \"abc\"\nch := s[3]\ns = \"x\"").unwrap();
+    program.step(2)
+  }));
+  let step_result = result.expect("stale string index should not panic");
+  let error = step_result.expect_err("stale string index should return a Mech error");
+  assert!(format!("{:?}", error).contains("IndexOutOfBounds"), "got {error:?}");
+}

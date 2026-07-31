@@ -1,8 +1,6 @@
 use crate::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-const MECH_ERROR_HTML_PREFIX: &str = "__MECH_ERROR_HTML__:";
-
 // Mechdown
 // ----------------------------------------------------------------------------
 
@@ -91,7 +89,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       } else {
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
-        let mut new_sub_interpreter =  Interpreter::new(code_id);
+        let mut new_sub_interpreter =  Interpreter::new(code_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
 
         let mut pp = sub_interpreters
@@ -171,7 +169,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       if let Some(mika_section) = s {
         let mika_interp_id = mika_interpreter_id(p.id, m, s);
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
-        let mut new_sub_interpreter = Interpreter::new(mika_interp_id);
+        let mut new_sub_interpreter = Interpreter::new(mika_interp_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
         let pp = sub_interpreters
           .entry(mika_interp_id)
@@ -203,16 +201,7 @@ fn eval_fenced_code_block(
       Ok(value) => out = value,
       Err(err) => {
         if isolate_errors {
-          #[cfg(feature = "pretty_print")]
-          return Ok(Value::String(Ref::new(format!(
-            "{MECH_ERROR_HTML_PREFIX}{}",
-            err.to_html()
-          ))));
-          #[cfg(not(feature = "pretty_print"))]
-          return Ok(Value::String(Ref::new(format!(
-            "{MECH_ERROR_HTML_PREFIX}{}",
-            err.full_chain_message()
-          ))));
+          return Ok(Value::String(Ref::new(err.full_chain_message())));
         }
         return Err(err);
       }
@@ -222,16 +211,7 @@ fn eval_fenced_code_block(
         Ok(_) => {}
         Err(err) => {
           if isolate_errors {
-            #[cfg(feature = "pretty_print")]
-            return Ok(Value::String(Ref::new(format!(
-              "{MECH_ERROR_HTML_PREFIX}{}",
-              err.to_html()
-            ))));
-            #[cfg(not(feature = "pretty_print"))]
-            return Ok(Value::String(Ref::new(format!(
-              "{MECH_ERROR_HTML_PREFIX}{}",
-              err.full_chain_message()
-            ))));
+            return Ok(Value::String(Ref::new(err.full_chain_message())));
           }
           return Err(err);
         }
@@ -288,10 +268,113 @@ pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Empty)
 }
 
+#[cfg(feature = "functions")]
+fn module_import_item_path(item: &ModuleImportPath) -> String {
+  item.to_string()
+}
+
+
+#[cfg(feature = "functions")]
+fn context_export_error(module: &str, item: &str) -> MechError {
+  MechError::new(
+    GenericError { msg: format!("Module export `{module}/{item}` is a context export; import it with `+> @name := {module}/{item}`") },
+    None,
+  ).with_compiler_loc()
+}
+
+#[cfg(feature = "functions")]
+fn is_context_export(p: &Interpreter, module: &str, item: &str) -> bool {
+  p.module_manifests
+    .borrow()
+    .export(module, item)
+    .is_some_and(|export| export.kind == ModuleManifestExportKind::Context)
+}
+
+#[cfg(feature = "functions")]
+pub fn module_import_runtime(import: &ModuleImport, p: &Interpreter) -> MResult<Value> {
+  let module = import.module.to_string();
+  match import.kind {
+    ModuleImportKind::Module => {
+      if import.alias.is_some() {
+        return Err(MechError::new(
+          GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      load_module(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Item => {
+      let item = import.item.as_ref().ok_or_else(|| {
+        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+      })?;
+      let item = module_import_item_path(item);
+      match &import.alias {
+        None => {
+          if is_context_export(p, &module, &item) {
+            return Err(context_export_error(&module, &item));
+          }
+          import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+        }
+        Some(ModuleImportAlias::Value(alias)) => {
+          if is_context_export(p, &module, &item) {
+            return Err(context_export_error(&module, &item));
+          }
+          import_module_item_as(&mut p.functions().borrow_mut(), &module, &item, &alias.to_string())?;
+        }
+        Some(ModuleImportAlias::Context(alias)) => {
+          p.bind_context_export(alias, &module, &item)?;
+        }
+      }
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Glob => {
+      if import.alias.is_some() {
+        return Err(MechError::new(
+          GenericError { msg: "Module import alias is only supported for item imports".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      if p.module_manifests.borrow().manifest(&module).is_some_and(|manifest| manifest.exports.iter().any(|export| export.kind == ModuleManifestExportKind::Context)) {
+        return Err(MechError::new(
+          GenericError { msg: "Glob imports do not support context exports; import context exports explicitly with `+> @name := module/item`".to_string() },
+          None,
+        ).with_compiler_loc());
+      }
+      import_module_glob(&mut p.functions().borrow_mut(), &module)?;
+      Ok(Value::Empty)
+    }
+    ModuleImportKind::Group => {
+      let group_items = import.group_items.as_ref().ok_or_else(|| {
+        MechError::new(MissingFunctionError { function_id: hash_str(&module) }, None).with_compiler_loc()
+      })?;
+
+      for group_item in group_items {
+        let item = module_import_item_path(&group_item.item);
+        if is_context_export(p, &module, &item) {
+          return Err(MechError::new(
+            GenericError { msg: format!("Grouped imports do not support context exports; import `{module}/{item}` with `+> @name := {module}/{item}`") },
+            None,
+          ).with_compiler_loc());
+        }
+        import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+      }
+      Ok(Value::Empty)
+    }
+  }
+}
+
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   let out = match &code {
+    MechCode::ActivationScope(scope) => activation_scope(scope, p),
     MechCode::Expression(expr) => expression(&expr, None, p),
-    MechCode::Statement(stmt) => statement(&stmt, None, p),
+    MechCode::Statement(stmt) => {
+      #[cfg(feature = "subscript_formula")]
+      reset_current_string_access_expression_live(p);
+      statement(&stmt, None, p)
+    },
+    #[cfg(feature = "functions")]
+    MechCode::Import(import) => module_import_runtime(import, p),
     #[cfg(feature = "state_machines")]
     MechCode::FsmSpecification(fsm_spec) => {
       crate::state_machines::register_fsm_specification(fsm_spec, p)?;
@@ -319,4 +402,99 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   #[cfg(feature = "symbol_table")]
   update_ans_symbol(&out, p);
   Ok(out)
+}
+
+#[derive(Debug, Clone)]
+struct ActivationTriggerMustBeStableReference;
+impl MechErrorKind for ActivationTriggerMustBeStableReference {
+  fn name(&self) -> &str { "ActivationTriggerMustBeStableReference" }
+  fn message(&self) -> String { "An activation trigger must refer to existing reactive storage.".to_string() }
+}
+#[derive(Debug, Clone)]
+struct ActivationScopeRegistrationUnsupported;
+impl MechErrorKind for ActivationScopeRegistrationUnsupported {
+  fn name(&self) -> &str { "ActivationScopeRegistrationUnsupported" }
+  fn message(&self) -> String { "Activation registration requires reactive functions and symbol storage.".to_string() }
+}
+#[derive(Debug, Clone)] struct ActivationScopeContextSendUnsupported;
+impl MechErrorKind for ActivationScopeContextSendUnsupported { fn name(&self) -> &str { "ActivationScopeContextSendUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeDefinitionUnsupported;
+impl MechErrorKind for ActivationScopeDefinitionUnsupported { fn name(&self) -> &str { "ActivationScopeDefinitionUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeDeclarationUnsupported;
+impl MechErrorKind for ActivationScopeDeclarationUnsupported { fn name(&self) -> &str { "ActivationScopeDeclarationUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeTriggerWriteUnsupported;
+impl MechErrorKind for ActivationScopeTriggerWriteUnsupported { fn name(&self) -> &str { "ActivationScopeTriggerWriteUnsupported" } fn message(&self) -> String { "An activation scope cannot assign to its own trigger.".to_string() } }
+#[derive(Debug, Clone)] struct ActivationScopeNestedUnsupported;
+impl MechErrorKind for ActivationScopeNestedUnsupported { fn name(&self) -> &str { "ActivationScopeNestedUnsupported" } fn message(&self) -> String { "Unsupported construct in activation scope.".to_string() } }
+
+fn validate_activation_body(body: &[(MechCode, Option<Comment>)], trigger_id: u64) -> MResult<()> {
+  for (code, _) in body { match code {
+    MechCode::ActivationScope(_) => return Err(MechError::new(ActivationScopeNestedUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Import(_) | MechCode::FunctionDefine(_) | MechCode::FsmSpecification(_) | MechCode::FsmImplementation(_) => return Err(MechError::new(ActivationScopeDefinitionUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::VariableAssign(assign)) if assign.target.name.hash() == trigger_id => return Err(MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::OpAssign(assign)) if assign.target.name.hash() == trigger_id => return Err(MechError::new(ActivationScopeTriggerWriteUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::ContextSend(_)) => return Err(MechError::new(ActivationScopeContextSendUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::VariableDefine(def)) if def.mutable => return Err(MechError::new(ActivationScopeDefinitionUnsupported, None).with_tokens(code.tokens())),
+    MechCode::Statement(Statement::ContextDeclaration(_) | Statement::ExportDeclaration(_) | Statement::FsmDeclare(_)) => return Err(MechError::new(ActivationScopeDeclarationUnsupported, None).with_tokens(code.tokens())),
+    _ => {}
+  }} Ok(())
+}
+
+#[cfg(all(feature = "functions", feature = "symbol_table"))]
+fn activation_trigger_cells(scope: &ActivationScope, var: &Var, p: &Interpreter) -> MResult<Vec<ReactiveCellId>> {
+  let trigger = { let state = p.state.borrow(); state.get_symbol(var.name.hash()) }.ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?;
+  let cells = trigger.borrow().reactive_root_cell_ids();
+  if cells.is_empty() { return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())); }
+  Ok(cells)
+}
+#[cfg(not(all(feature = "functions", feature = "symbol_table")))]
+fn activation_trigger_cells(scope: &ActivationScope, _var: &Var, _p: &Interpreter) -> MResult<Vec<ReactiveCellId>> { Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens())) }
+
+#[cfg(all(feature = "functions", feature = "symbol_table"))]
+fn elaborate_activation_scope(scope: &ActivationScope, p: &Interpreter, trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> {
+  match &scope.body {
+    ActivationBody::Block(body) => {
+      let plan = p.plan();
+      let checkpoint = plan.checkpoint();
+      let symbols = p.symbols();
+      let symbol_snapshot = symbols.borrow().snapshot();
+      let program_dictionary = p.state.borrow().dictionary.clone();
+      let dictionary_snapshot = program_dictionary.borrow().clone();
+      plan.push_activation_registration_scope_with_sampled_cells(
+        trigger_cells,
+        crate::activation::activation_scope_entry_cells(p),
+      );
+      let result=(|| -> MResult<Value> { for (code,_) in body { mech_code(code,p)?; } Ok(Value::Empty) })();
+      plan.pop_activation_registration_scope();
+      match result {
+        Ok(value) => Ok(value),
+        Err(error) => {
+          symbols.borrow_mut().restore(symbol_snapshot);
+          *program_dictionary.borrow_mut() = dictionary_snapshot;
+          match plan.rollback(checkpoint) {
+            Ok(()) => Err(error),
+            Err(rollback_error) => Err(rollback_error),
+          }
+        }
+      }
+    }
+    ActivationBody::PatternArms(arms) => {
+      let trigger = match &scope.trigger {
+        Expression::Var(var) => p.state.borrow().get_symbol(var.name.hash()).map(|value| value.borrow().clone()),
+        _ => None,
+      }.ok_or_else(|| MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens()))?;
+      crate::activation::elaborate_patterned_activation(scope, arms, trigger, trigger_cells, p)
+    }
+  }
+}
+#[cfg(not(all(feature = "functions", feature = "symbol_table")))]
+fn elaborate_activation_scope(scope: &ActivationScope, _p: &Interpreter, _trigger_cells: Vec<ReactiveCellId>) -> MResult<Value> { Err(MechError::new(ActivationScopeRegistrationUnsupported,None).with_tokens(scope.tokens())) }
+
+fn activation_scope(scope: &ActivationScope, p: &Interpreter) -> MResult<Value> {
+  let var = match &scope.trigger { Expression::Var(var) => var, _ => return Err(MechError::new(ActivationTriggerMustBeStableReference, None).with_tokens(scope.trigger.tokens())) };
+  if let ActivationBody::Block(body) = &scope.body {
+    validate_activation_body(body, var.name.hash())?;
+  }
+  let trigger_cells = activation_trigger_cells(scope, var, p)?;
+  elaborate_activation_scope(scope, p, trigger_cells)
 }

@@ -1,0 +1,40 @@
+CLI Host Manifest
+===============================================================================
+
+The CLI host manifest declares the provider and contexts exposed by the CLI host.
+
+1. Provider
+-------------------------------------------------------------------------------
+
+```text
+cli
+```
+
+2. Contexts
+-------------------------------------------------------------------------------
+
+```text
+cli/env
+cli/stdout
+cli/stderr
+```
+
+3. Operations
+-------------------------------------------------------------------------------
+
+| Context | Operations |
+|---------|------------|
+| `env` | `read` |
+| `stdout` | `write` |
+| `stderr` | `write` |
+
+4. Base URIs
+-------------------------------------------------------------------------------
+
+The materialized base URI shape is:
+
+```text
+cli://{instance}/env
+cli://{instance}/stdout
+cli://{instance}/stderr
+```

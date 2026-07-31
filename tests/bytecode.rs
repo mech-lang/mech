@@ -6,28 +6,26 @@ use std::rc::Rc;
 use mech_core::matrix::Matrix;
 use mech_syntax::*;
 use mech_core::*;
-use mech_interpreter::*;
+use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use indexmap::set::IndexSet;
 
 macro_rules! bytecode_test {
   ($name:ident, $code:expr, $expected:expr) => {
     #[test]
     fn $name() {
-      let mut intrp = Interpreter::new(0);
+      let mut prgrm = MechProgram::new(MechProgramConfig { name: stringify!($name).to_string(), environment: MechProgramEnvironment::default() });
 
-      let tree = parser::parse($code)
-        .unwrap_or_else(|err| panic!("Parse error: {:?}", err));
+      prgrm.run_string($code)
+        .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
 
-      let _ = intrp.interpret(&tree)
-        .unwrap_or_else(|err| panic!("Interpret error: {:?}", err));
-
-      let bytecode = intrp.compile()
+      let bytecode = prgrm.compile_bytecode()
         .unwrap_or_else(|err| panic!("Compile error: {:?}", err));
 
       let prog = ParsedProgram::from_bytes(&bytecode)
         .unwrap_or_else(|err| panic!("Deserialize error: {:?}", err));
 
-      let result = intrp.run_program(&prog)
+
+      let result = prgrm.run_bytecode_program(&prog)
         .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
 
       assert_eq!(result, $expected);
@@ -55,23 +53,29 @@ bytecode_test!(bytecode_math_div_assign_vr, "~x := [10 20]; y := [1 2]; z := [10
 bytecode_test!(bytecode_matrix_rowvector3,"[1 2 3]",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0], 1, 3)));
 bytecode_test!(bytecode_matrix_vector2,"[1; 2]",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0], 2, 1)));
 bytecode_test!(bytecode_matrix_matrix2x2,"[1 2; 3 4]",Value::MatrixF64(Matrix::from_vec(vec![1.0,3.0,2.0,4.0], 2, 2)));
-bytecode_test!(bytecode_combinatorics_n_choose_k,"combinatorics/n-choose-k(10,2)",Value::F64(Ref::new(45.0)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_combinatorics_n_choose_k,"+> combinatorics\ncombinatorics/n-choose-k(10,2)",Value::F64(Ref::new(45.0)));
 bytecode_test!(bytecode_compare_gt,"1 > 2",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_compare_eq,r#""foo" == "bar""#,Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_logic_and,"true && false",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_logic_or,"true || false",Value::Bool(Ref::new(true)));
 bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
-bytecode_test!(bytecode_math_cos,"math/cos(0)",Value::F64(Ref::new(1.0)));
-bytecode_test!(bytecode_math_sin,"math/sin(0)",Value::F64(Ref::new(0.0)));
-bytecode_test!(bytecode_math_atan2,"math/atan2(1, 1)",Value::F64(Ref::new(std::f64::consts::FRAC_PI_4)));
-bytecode_test!(bytecode_math_atan22,"math/atan(1, 1)",Value::F64(Ref::new(std::f64::consts::FRAC_PI_4)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_math_cos,"+> math\nmath/cos(0)",Value::F64(Ref::new(1.0)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_math_sin,"+> math\nmath/sin(0)",Value::F64(Ref::new(0.0)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_math_atan2,"+> math\nmath/atan2(1, 1)",Value::F64(Ref::new(std::f64::consts::FRAC_PI_4)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_math_atan22,"+> math\nmath/atan(1, 1)",Value::F64(Ref::new(std::f64::consts::FRAC_PI_4)));
 bytecode_test!(bytecode_matrix_matmul_transpose,"[1 2 3] ** [4 5 6]'",Value::MatrixF64(Matrix::from_vec(vec![32.0], 1, 1)));
-bytecode_test!(bytecode_matrix_dot,"matrix/dot([1 2 3],[4 5 6])",Value::F64(Ref::new(32.0)));
+bytecode_test!(bytecode_matrix_dot,"[1 2 3] \u{00b7} [4 5 6]",Value::F64(Ref::new(32.0)));
 bytecode_test!(bytecode_range_inclusive,"1..=4",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0], 1, 4)));
 bytecode_test!(bytecode_range_inclusive_d,"1..=5",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0,5.0], 1, 5)));
 bytecode_test!(bytecode_range_inclusive_refs,"a := 1; b :=4 ; a..=b",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0], 1, 4)));
 bytecode_test!(bytecode_range_exclusive,"1..5",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0], 1, 4)));
-bytecode_test!(bytecode_stats_sum_column,"stats/sum/column([1 2 3])",Value::MatrixF64(Matrix::from_vec(vec![6.0], 1, 1)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_stats_sum_column,"+> stats\nstats/sum/column([1 2 3])",Value::MatrixF64(Matrix::from_vec(vec![6.0], 1, 1)));
 bytecode_test!(bytecode_matrix_index_assign,"~x := [1 2 3]; x[1] = 10",Value::MatrixF64(Matrix::from_vec(vec![10.0,2.0,3.0], 1, 3)));
 bytecode_test!(bytecode_matrix_index_assign_bool,"~x := [1 2 3]; x[[true false true]] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![4.0,2.0,6.0], 1, 3)));
 bytecode_test!(bytecode_matrix_index_assign_bool_all,"~x := [1 2 3]; x[true] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![4.0,5.0,6.0], 1, 3)));
@@ -112,10 +116,12 @@ bytecode_test!(bytecode_matrix_index_2d_vbb3, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[
 bytecode_test!(bytecode_matrix_index_2d_vbb4, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,7.0,3.0,9.0], 2, 2)));
 bytecode_test!(bytecode_matrix_index_2d_vub, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]"#, Value::MatrixF64(Matrix::from_vec(vec![3.0,6.0,9.0,9.0], 4, 1)));
 bytecode_test!(bytecode_matrix_index_2d_vbu, r#"ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1,ix2]"#, Value::MatrixF64(Matrix::from_vec(vec![7.0,8.0,9.0,9.0], 1, 4)));
-bytecode_test!(bytecode_math_sqrt,"math/sqrt(9)",Value::F64(Ref::new(3.0)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_math_sqrt,"+> math\nmath/sqrt(9)",Value::F64(Ref::new(3.0)));
 bytecode_test!(bytecode_define_set,"x := {1 2 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
 bytecode_test!(bytecode_set,"{1 2 3 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
-bytecode_test!(bytecode_math_abs,"math/abs(-10)", Value::F64(Ref::new(10.0)));
+#[cfg(feature = "linked_stdlib")]
+bytecode_test!(bytecode_math_abs,"+> math\nmath/abs(-10)", Value::F64(Ref::new(10.0)));
 bytecode_test!(bytecode_define_table, "x := |x<f64> y<u64>| 1 2 | 3 4 |", Value::Table(Ref::new(MechTable::new_table(
   vec!["x".to_string(), "y".to_string()],
   vec![ValueKind::F64, ValueKind::U64],
@@ -126,3 +132,279 @@ bytecode_test!(bytecode_define_table, "x := |x<f64> y<u64>| 1 2 | 3 4 |", Value:
 ))));
 bytecode_test!(bytecode_define_table_eq, "x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y", Value::Bool(Ref::new(true)));
 //bytecode_test!(bytecode_set_union, "x := {1 2 3}; y := {3 4 5}; x ∪ y", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)),Value::F64(Ref::new(2.0)),Value::F64(Ref::new(3.0)),Value::F64(Ref::new(4.0)),Value::F64(Ref::new(5.0))]))));
+fn compile_bytecode_strict_compare_returns_error_without_panic(source: &str, expected_message: &str) {
+  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+      name: "strict_compare_no_panic".to_string(),
+      environment: MechProgramEnvironment::default(),
+    });
+    prgrm.run_string(source).unwrap();
+    prgrm.compile_bytecode()
+  }));
+  let compile_result = result.expect("strict compare bytecode compilation should not panic");
+  let error = compile_result.expect_err("strict compare bytecode compilation should return an error");
+  assert!(error.full_chain_message().contains(expected_message), "unexpected error: {:?}", error);
+}
+
+#[test]
+fn bytecode_strict_equality_returns_error_without_panic() {
+  compile_bytecode_strict_compare_returns_error_without_panic("x := 1 === 1", "dynamic strict equality");
+}
+
+#[test]
+fn bytecode_strict_inequality_returns_error_without_panic() {
+  compile_bytecode_strict_compare_returns_error_without_panic("x := 1 !== 2", "dynamic strict inequality");
+}
+
+
+#[test]
+fn bytecode_static_bound_string_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_static_bound_string_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\nfirst := s[1]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_literal_string_immutable_index_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_literal_string_immutable_index_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\ni := 1\nfirst := s[i]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+
+#[test]
+fn bytecode_string_access_constant_string_aliases_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_constant_string_aliases_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("s := \"abc\"\na := s\nb := a\nc := b\nd := c\nfirst := s[1]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_string_access_constant_index_aliases_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_constant_index_aliases_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("i := 1\na := i\nb := a\ns := \"abc\"\nfirst := s[i]\n").unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_live_computed_string_index_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_computed_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~p := 1\ni := p + 1\ns := \"abc\"\nfirst := s[i]\n").unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+
+#[test]
+fn bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~unused := 0
+s := "a" + "bc"
+first := s[1]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_string_plan_output_depending_on_mutable_symbol_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_plan_output_depending_on_mutable_symbol_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~p := "a"
+s := p + "bc"
+first := s[1]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~unused := 0
+i := 1 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_index_plan_output_depending_on_mutable_symbol_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_index_plan_output_depending_on_mutable_symbol_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~i0 := 1
+i := i0 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_live_markers_do_not_leak_between_programs_for_string_source() {
+  let mut live = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_live".to_string(), environment: MechProgramEnvironment::default() });
+  live.run_string(r#"~p := "a"
+s := p + "bc"
+first := s[1]
+"#).unwrap();
+  let error = format!("{:?}", live.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+
+  let mut constant = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_constant".to_string(), environment: MechProgramEnvironment::default() });
+  constant.run_string(r#"s := "abc"
+first := s[1]
+"#).unwrap();
+  constant.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_live_markers_do_not_leak_between_programs_for_index() {
+  let mut live = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_index_live".to_string(), environment: MechProgramEnvironment::default() });
+  live.run_string(r#"~i0 := 1
+i := i0 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", live.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+
+  let mut constant = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_index_constant".to_string(), environment: MechProgramEnvironment::default() });
+  constant.run_string(r#"i := 1 + 0
+s := "abc"
+first := s[i]
+"#).unwrap();
+  constant.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_inline_mutable_string_source_access_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_mutable_string_source_access_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~p := "a"
+s := p + "bc"
+first := s[1]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_inline_mutable_index_access_rejects() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_mutable_index_access_rejects".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"~i0 := 1
+s := "abc"
+first := s[i0 + 1]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_inline_constant_string_source_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_constant_string_source_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "a" + "bc"
+first := s[1]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_inline_constant_index_access_compiles() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_constant_index_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "abc"
+first := s[1 + 0]
+"#).unwrap();
+  prgrm.compile_bytecode().unwrap();
+}
+
+#[test]
+fn bytecode_live_direct_string_access_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_direct_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~p := \"a\"\ns := p + \"bc\"\nch := s[1]\n").unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+}
+
+#[test]
+fn bytecode_dynamic_string_index_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string(r#"s := "abc"
+~i := 1
+first := s[i]
+"#).unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+}
+
+#[test]
+fn bytecode_dynamic_string_access_rejects_stale_constant_compile() {
+  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
+  prgrm.run_string("~s := \"abc\"\nfirst := s[1]\n").unwrap();
+  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+}
+
+#[test]
+fn bytecode_constant_string_access_after_live_statement_still_compiles() {
+  let code = r#"
+~i := 1
+i == 1
+s := "abc"
+ch := s[1]
+"#;
+
+  let mut prgrm = MechProgram::new(MechProgramConfig {
+    name: "bytecode_constant_string_access_after_live_statement_still_compiles".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
+
+  prgrm.run_string(code).unwrap();
+  prgrm.compile_bytecode()
+    .unwrap_or_else(|err| panic!("constant string access should compile after unrelated live statement: {:?}", err));
+}
+
+#[cfg(feature = "u8")]
+#[test]
+fn bytecode_rejects_live_u8_string_index_dependency() {
+  let code = r#"
+~i0 := 1<u8>
+i := i0 + 0<u8>
+s := "abc"
+ch := s[i]
+"#;
+
+  let mut prgrm = MechProgram::new(MechProgramConfig {
+    name: "bytecode_rejects_live_u8_string_index_dependency".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
+
+  prgrm.run_string(code).unwrap();
+  let err = prgrm.compile_bytecode();
+  assert!(
+    err.is_err(),
+    "live u8-derived string index must not compile as a frozen constant"
+  );
+}
+
+#[test]
+fn bytecode_rejects_live_function_input_index_result_dependency() {
+  let code = r#"
+~i0 := 1
+id(ix<f64>) = out<f64> :=
+out := ix + 0.
+
+i := id(i0 + 0)
+s := "abc"
+ch := s[i]
+"#;
+
+  let mut prgrm = MechProgram::new(MechProgramConfig {
+    name: "bytecode_rejects_live_function_input_index_result_dependency".to_string(),
+    environment: MechProgramEnvironment::default(),
+  });
+
+  prgrm.run_string(code).unwrap();
+  let err = prgrm.compile_bytecode();
+  assert!(
+    err.is_err(),
+    "live function-input-derived index result must not compile as a frozen string access"
+  );
+}

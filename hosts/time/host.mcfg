@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "time"
+    contexts: [
+      {
+        name: "clock"
+        base-uri: "time://{instance}/clock"
+        operations: ["read"]
+      }
+    ]
+  }
+}

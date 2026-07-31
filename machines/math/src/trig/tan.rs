@@ -75,3 +75,10 @@ register_descriptor! {
     ptr: &MathTan{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "tan",
+  }
+}

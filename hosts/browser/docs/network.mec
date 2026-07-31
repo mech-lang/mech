@@ -1,0 +1,43 @@
+Browser Network
+===============================================================================
+
+The browser host can represent network read authority in browser settings.
+
+1. Config shape
+-------------------------------------------------------------------------------
+
+```mech
+config := {
+  hosts: [
+    {
+      name: "browser"
+      provider: "browser"
+      settings: {
+        network: [
+          {
+            origin: "https://example.com"
+            methods: ["GET"]
+            operations: ["read"]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+2. Fields
+-------------------------------------------------------------------------------
+
+| Field | Description |
+|-------|-------------|
+| `origin` | Allowed origin. |
+| `methods` | Optional HTTP method list. |
+| `operations` | Supported operations. |
+
+3. Operations
+-------------------------------------------------------------------------------
+
+The current browser network config supports `read`.
+
+Browser CORS and normal browser fetch rules still apply.

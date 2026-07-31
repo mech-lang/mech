@@ -245,3 +245,10 @@ register_descriptor! {
     ptr: &MathCopysign{},
   }
 }
+
+register_descriptor! {
+  ModuleItemDescriptor {
+    module: "math",
+    item: "copysign",
+  }
+}
