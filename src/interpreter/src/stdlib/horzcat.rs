@@ -4885,7 +4885,7 @@ macro_rules! impl_horzcat_arms {
           (1, 2, 1) => {
             let ev2 = get_v2(&arguments[0]);
             match &ev2 {
-              Some(ref e0) => return Ok(Box::new(HorizontalConcatenateV2 { out: e0.clone() })),
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateV2 { out: e0.clone() })),
               x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
             }
           }
@@ -4893,7 +4893,7 @@ macro_rules! impl_horzcat_arms {
           (1, 2, 2) => {
             let em2 = get_m2(&arguments[0]);
             match &em2 {
-              Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM2 { out: e0.clone() })),
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateM2 { out: e0.clone() })),
               x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2".to_string())).with_compiler_loc()),
             }
           }
