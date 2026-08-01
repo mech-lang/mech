@@ -1,4 +1,6 @@
 #![allow(warnings)]
+#[path = "interpreter/catalog.rs"]
+mod catalog;
 extern crate mech;
 extern crate mech_core;
 extern crate mech_syntax;

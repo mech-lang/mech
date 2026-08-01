@@ -18,6 +18,7 @@ mech-interpreter = {
     "functions",
     "symbol_table",
     "f64",
+    "math_add",
     "row_vectord",
     "vectord",
     "matrix_horzcat",

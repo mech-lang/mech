@@ -1,4 +1,6 @@
 #![allow(warnings)]
+#[path = "bytecode/catalog.rs"]
+mod catalog;
 #[path = "bytecode/dynamic_matrix_factory.rs"]
 mod dynamic_matrix_factory;
 
