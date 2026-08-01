@@ -5,10 +5,10 @@ use mech_core::{
     ReactiveRegisterCommit, ReactiveRegisterWrite, ReactiveSolveStatus, Ref, Register, Value,
     hash_str,
 };
+use mech_engine::Interpreter;
 use mech_engine::{
     MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate, ProgramTurnFinalization,
 };
-use mech_interpreter::Interpreter;
 use std::hint::black_box;
 
 struct BenchCombinational {

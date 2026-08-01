@@ -5,21 +5,15 @@ edition = "2024"
 publish = false
 
 [dependencies]
-mech-interpreter = {
-  path = "../../../src/interpreter",
-  default-features = false,
-  features = ["program", "functions", "symbol_table", "f64", "math_add"],
-}
 mech-engine = {
   path = "../../../src/engine",
   default-features = false,
-  features = ["program", "functions", "formulas", "symbol_table", "f64"],
+  features = ["program", "functions", "formulas", "symbol_table", "f64", "math_add"],
 }
 
 [patch.crates-io]
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
-mech-interpreter = { path = "../../../src/interpreter" }
 mech-engine = { path = "../../../src/engine" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
 mech-compare = { path = "../../../machines/compare" }

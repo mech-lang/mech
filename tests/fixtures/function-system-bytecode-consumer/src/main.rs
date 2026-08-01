@@ -1,6 +1,6 @@
 use mech_core::{DecodedInstr, ParsedProgram, RuntimeFunctionId, Value, hash_str};
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_interpreter as _;
+use mech_engine as _;
 use mech_math as _;
 use mech_range as _;
 use mech_string as _;

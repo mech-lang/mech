@@ -12,7 +12,7 @@ use crate::{
     RuntimeHealth, RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
 };
 use mech_core::{FunctionCatalogBuilder, GenericError, MResult, MechError};
-use mech_interpreter::FunctionSystem;
+use mech_engine::FunctionSystem;
 use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};

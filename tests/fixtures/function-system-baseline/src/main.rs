@@ -3,8 +3,8 @@ use mech_core::{
     DecodedInstr, FunctionCompilerDescriptor, FunctionDescriptor, Functions, MechSet,
     ModuleItemDescriptor, NativeFunctionCompiler, ParsedProgram, Ref, Value, ValueKind, hash_str,
 };
-use mech_interpreter as _;
-use mech_interpreter::Interpreter;
+use mech_engine as _;
+use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig};
 use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "fixed-specialization-cases")]
@@ -310,7 +310,7 @@ fn generate_json_baselines(
     inventory: &RegistryInventory,
 ) -> AppResult<(FunctionSurface, SpecializationCases)> {
     let mut functions = Functions::new();
-    mech_interpreter::load_stdlib(&mut functions);
+    mech_engine::load_stdlib(&mut functions);
 
     let full_source_specializers = effective_source_specializers(&functions, "full")?;
     validate_effective_source_names(&full_source_specializers, &inventory.source_names)?;

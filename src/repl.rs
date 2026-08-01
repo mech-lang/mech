@@ -85,12 +85,12 @@ fn runtime_repl_load_request(source_path: &str) -> MResult<mech_runtime::SourceR
 impl MechRepl {
     pub fn new() -> MechRepl {
         let intrp_id = generate_uuid();
-        let program = MechProgram::new(MechProgramConfig {
+        let retained_program = MechProgram::new(MechProgramConfig {
             name: format!("repl-{}", intrp_id),
             environment: MechProgramEnvironment::default(),
         });
         let mut programs = HashMap::new();
-        programs.insert(intrp_id, program);
+        programs.insert(intrp_id, retained_program);
         MechRepl {
             active: intrp_id,
             programs,
@@ -101,10 +101,10 @@ impl MechRepl {
         }
     }
 
-    pub fn from(program: MechProgram) -> MechRepl {
+    pub fn from(retained_program: MechProgram) -> MechRepl {
         let intrp_id = generate_uuid();
         let mut programs = HashMap::new();
-        programs.insert(intrp_id, program);
+        programs.insert(intrp_id, retained_program);
         MechRepl {
             docs: DOCS_DIR.clone(),
             examples: EXAMPLES_DIR.clone(),

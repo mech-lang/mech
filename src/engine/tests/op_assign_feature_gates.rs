@@ -1,5 +1,5 @@
 #[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
-use mech_interpreter::Interpreter;
+use mech_engine::Interpreter;
 
 #[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
 fn evaluate_f64(source: &str) -> f64 {

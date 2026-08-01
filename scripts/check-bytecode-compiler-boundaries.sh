@@ -98,10 +98,10 @@ $(cargo +nightly-2026-03-03 tree \
   --no-default-features \
   --features "program functions symbol_table f64" \
   -e features \
-  -i mech-interpreter)"
+  -i mech-engine)"
 reject_tree_entry "$runtime_program_tree" "mech-bytecode v" "mech-bytecode in the runtime-only program graph"
 reject_tree_entry "$runtime_program_tree" 'mech-core feature "compiler"' "mech-core/compiler in the runtime-only program graph"
-reject_tree_entry "$runtime_program_tree" 'mech-interpreter feature "compiler"' "mech-interpreter/compiler in the runtime-only program graph"
+reject_tree_entry "$runtime_program_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the runtime-only program graph"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
@@ -130,10 +130,10 @@ $(cargo +nightly-2026-03-03 tree \
   --no-default-features \
   --features "compiler functions symbol_table f64" \
   -e features \
-  -i mech-interpreter)"
+  -i mech-engine)"
 require_tree_entry "$compiler_program_tree" "mech-bytecode v" "mech-bytecode in the compiler-enabled program graph"
 require_tree_entry "$compiler_program_tree" 'mech-core feature "compiler"' "mech-core/compiler in the compiler-enabled program graph"
-require_tree_entry "$compiler_program_tree" 'mech-interpreter feature "compiler"' "mech-interpreter/compiler in the compiler-enabled program graph"
+require_tree_entry "$compiler_program_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the compiler-enabled program graph"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
@@ -162,10 +162,10 @@ $(cargo +nightly-2026-03-03 tree \
   --no-default-features \
   --features "program functions symbol_table f64" \
   -e features \
-  -i mech-interpreter)"
+  -i mech-engine)"
 reject_tree_entry "$runtime_runtime_tree" "mech-bytecode v" "mech-bytecode in the runtime-only runtime graph"
 reject_tree_entry "$runtime_runtime_tree" 'mech-core feature "compiler"' "mech-core/compiler in the runtime-only runtime graph"
-reject_tree_entry "$runtime_runtime_tree" 'mech-interpreter feature "compiler"' "mech-interpreter/compiler in the runtime-only runtime graph"
+reject_tree_entry "$runtime_runtime_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the runtime-only runtime graph"
 
 cargo +nightly-2026-03-03 test \
   --manifest-path "$repository_root/Cargo.toml" \
@@ -189,10 +189,10 @@ $(cargo +nightly-2026-03-03 tree \
 $(cargo +nightly-2026-03-03 tree \
   --manifest-path "$consumer_manifest" \
   -e features \
-  -i mech-interpreter)"
+  -i mech-engine)"
 reject_tree_entry "$consumer_tree" "mech-bytecode v" "mech-bytecode in the consumer graph"
 reject_tree_entry "$consumer_tree" 'mech-core feature "compiler"' "mech-core/compiler in the consumer graph"
-reject_tree_entry "$consumer_tree" 'mech-interpreter feature "compiler"' "mech-interpreter/compiler in the consumer graph"
+reject_tree_entry "$consumer_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the consumer graph"
 
 cargo +nightly-2026-03-03 run \
   --manifest-path "$producer_manifest" \

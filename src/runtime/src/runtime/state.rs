@@ -11,9 +11,9 @@ use crate::{
     SchedulerPolicy, SourceResolver, TransactionId,
 };
 use mech_core::{MResult, ModuleManifestCatalog};
-use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId};
 #[cfg(feature = "functions")]
-use mech_interpreter::FunctionSystem;
+use mech_engine::FunctionSystem;
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;

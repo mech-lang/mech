@@ -20,8 +20,8 @@ use mech_core::{
 use mech_bytecode::CompileCtx;
 
 #[cfg(feature = "functions")]
-use mech_interpreter::FunctionSystem;
-use mech_interpreter::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
+use crate::FunctionSystem;
+use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 use mech_syntax::parser;
 
 use crate::ClosureNativeFunctionCompiler;
@@ -207,7 +207,7 @@ pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<d
         validate_stable_value_update(&current, &source)?;
     }
 
-    let compiler = mech_interpreter::AssignValue {};
+    let compiler = crate::AssignValue {};
     compiler.compile(&vec![Value::MutableReference(sink), source])
 }
 
@@ -507,7 +507,7 @@ impl MechProgram {
     pub fn new(config: MechProgramConfig) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_system(config, mech_interpreter::default_function_system())
+            Self::with_function_system(config, crate::default_function_system())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -579,22 +579,18 @@ impl MechProgram {
 
     #[cfg(feature = "functions")]
     pub fn load_full_stdlib(&mut self) {
-        mech_interpreter::load_stdlib(&mut self.interpreter.functions().borrow_mut());
+        crate::load_stdlib(&mut self.interpreter.functions().borrow_mut());
     }
 
     #[cfg(feature = "functions")]
     pub fn load_function_module(&mut self, module: &str) -> MResult<()> {
-        mech_interpreter::load_module(&mut self.interpreter.functions().borrow_mut(), module)?;
+        crate::load_module(&mut self.interpreter.functions().borrow_mut(), module)?;
         Ok(())
     }
 
     #[cfg(feature = "functions")]
     pub fn import_function_module_item(&mut self, module: &str, item: &str) -> MResult<()> {
-        mech_interpreter::import_module_item(
-            &mut self.interpreter.functions().borrow_mut(),
-            module,
-            item,
-        )
+        crate::import_module_item(&mut self.interpreter.functions().borrow_mut(), module, item)
     }
 
     #[cfg(feature = "functions")]
@@ -604,7 +600,7 @@ impl MechProgram {
         item: &str,
         alias: &str,
     ) -> MResult<()> {
-        mech_interpreter::import_module_item_as(
+        crate::import_module_item_as(
             &mut self.interpreter.functions().borrow_mut(),
             module,
             item,
@@ -614,7 +610,7 @@ impl MechProgram {
 
     #[cfg(feature = "functions")]
     pub fn import_function_module_glob(&mut self, module: &str) -> MResult<()> {
-        mech_interpreter::import_module_glob(&mut self.interpreter.functions().borrow_mut(), module)
+        crate::import_module_glob(&mut self.interpreter.functions().borrow_mut(), module)
     }
 
     pub fn register_native_function_compiler(

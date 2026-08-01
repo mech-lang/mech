@@ -6,7 +6,7 @@ publish = false
 
 [features]
 default = ["fixed-specialization-cases"]
-fixed-specialization-cases = ["mech-interpreter/matrix2", "mech-interpreter/vector2"]
+fixed-specialization-cases = ["mech-engine/matrix2", "mech-engine/vector2"]
 
 [dependencies]
 mech-bytecode = {
@@ -22,11 +22,6 @@ mech-combinatorics = {
   default-features = false,
   features = ["n_choose_k"],
 }
-mech-interpreter = {
-  path = "../../../src/interpreter",
-  default-features = true,
-  features = ["linked_stdlib"],
-}
 mech-engine = {
   path = "../../../src/engine",
   default-features = true,
@@ -41,7 +36,6 @@ serde_json = "1"
 mech-bytecode = { path = "../../../src/bytecode" }
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
-mech-interpreter = { path = "../../../src/interpreter" }
 mech-engine = { path = "../../../src/engine" }
 mech-runtime = { path = "../../../src/runtime" }
 mech-abi = { path = "../../../src/abi" }
