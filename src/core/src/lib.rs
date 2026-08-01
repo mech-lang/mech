@@ -111,6 +111,8 @@ use tabled::{
 pub mod browser;
 pub mod error;
 pub mod execution;
+#[cfg(feature = "functions")]
+pub mod function_catalog;
 pub mod kind;
 pub mod nodes;
 #[cfg(feature = "functions")]
@@ -133,6 +135,8 @@ pub mod types;
 pub use self::browser::*;
 pub use self::error::*;
 pub use self::execution::*;
+#[cfg(feature = "functions")]
+pub use self::function_catalog::*;
 #[cfg(feature = "functions")]
 pub use self::functions::*;
 pub use self::kind::*;

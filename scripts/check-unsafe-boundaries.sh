@@ -29,9 +29,23 @@ raw_pointer_syntax='(\*|as[[:space:]]+\*)[[:space:]]*(const|mut)[[:space:]]+[[:a
 
 code_matches() {
   matches=$(grep -En -- "$1" "$2" 2>/dev/null || true)
-  printf '%s\n' "$matches" |
-    grep -Ev '^[0-9]+:[[:space:]]*(//|/\*|\*)' ||
-    true
+  matches=$(printf '%s\n' "$matches" |
+    grep -Ev '^[0-9]+:[[:space:]]*(//|/\*|\*)' || true)
+
+  # Catalog IDs are transparent u64 newtypes, so their from_raw constructors
+  # do not create pointers or bypass initialization. Keep the broad raw-memory
+  # audit while excluding only complete, standalone calls to those two types.
+  matches=$(printf '%s\n' "$matches" |
+    grep -Ev '^[0-9]+:[[:space:]]*(let[[:space:]]+[[:alnum:]_]+[[:space:]]*=[[:space:]]*)?(OperationId|RuntimeFunctionId)::from_raw\((\*?[[:alnum:]_]+|0x[[:xdigit:]_]+|[[:digit:]_]+)\)[,;][[:space:]]*$' || true)
+
+  case "$2" in
+    src/core/src/function_catalog.rs|*/src/core/src/function_catalog.rs)
+      matches=$(printf '%s\n' "$matches" |
+        grep -Ev '^[0-9]+:[[:space:]]*pub[[:space:]]+const[[:space:]]+fn[[:space:]]+from_raw\(raw:[[:space:]]*u64\)[[:space:]]*->[[:space:]]*Self[[:space:]]*\{[[:space:]]*$' || true)
+      ;;
+  esac
+
+  printf '%s\n' "$matches"
 }
 
 line_number=0

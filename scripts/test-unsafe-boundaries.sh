@@ -48,6 +48,10 @@ printf 'fn cast(x: u32) -> f32 { transmute(x) }\n' > "$fixture/src/transmute.rs"
 expect_rejection "transmute" "outside the exact allowlist"
 
 reset_fixture
+printf 'fn reclaim(ptr: *mut u8) { Box::from_raw(ptr); }\n' > "$fixture/src/from_raw.rs"
+expect_rejection "raw pointer constructor" "outside the exact allowlist"
+
+reset_fixture
 printf 'fn read(xs: &[u8]) -> u8 { *xs.get_unchecked(0) }\n' > "$fixture/src/get_unchecked.rs"
 expect_rejection "get_unchecked" "outside the exact allowlist"
 
@@ -73,6 +77,23 @@ expect_rejection "directory allowlist" "names a directory"
 reset_fixture
 printf 'fn main() { unsafe {} }\n' > "$fixture/src/allowed.rs"
 printf 'src/allowed.rs|ffi|owner|pointer validity|documented fixture\n' > "$allowlist"
+UNSAFE_BOUNDARY_ROOT="$fixture" \
+  UNSAFE_BOUNDARY_ALLOWLIST="$allowlist" \
+  "$audit" > "$output" 2>&1
+grep -Fq "unsafe boundary audit passed" "$output"
+
+reset_fixture
+mkdir -p "$fixture/src/core/src"
+printf '%s\n' \
+  'pub struct OperationId(u64);' \
+  'impl OperationId {' \
+  '    pub const fn from_raw(raw: u64) -> Self {' \
+  '        Self(raw)' \
+  '    }' \
+  '}' \
+  'fn decode(raw: u64) {' \
+  '    let operation = OperationId::from_raw(raw);' \
+  '}' > "$fixture/src/core/src/function_catalog.rs"
 UNSAFE_BOUNDARY_ROOT="$fixture" \
   UNSAFE_BOUNDARY_ALLOWLIST="$allowlist" \
   "$audit" > "$output" 2>&1
