@@ -94,14 +94,15 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-Mech `v0.3` is currently **beta** status, meaning while many intended features are implemented and working well, other features are incomplete, not tested, or undocumented.
+Mech `v0.4` is currently **beta** status, meaning while many intended features are implemented and working well, other features are incomplete, not tested, or undocumented.
 
 A Brief Roadmap:
 
 - ☑️ [v0.1](https://github.com/mech-lang/mech/tree/v0.1-beta) - proof of concept system - minimum viable language implementation
 - ☑️ [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
-- 📍 [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, modules, state machines, Mika
-- ☐ v0.4 - system specification - tools, distributed programs, capabilities
+- ☑️ [v0.3](https://github.com/mech-lang/mech/tree/v0.3-beta) - program specification - functions, patterns, state machines, Mika
+- 📍 [v0.4](https://github.com/mech-lang/mech/tree/v0.4-beta) - system specification - modules, hosts, capabilities
+- ☐ [v0.5](https://github.com/mech-lang/mech/tree/v0.5-beta) - concurrency - parallel, asynchronous, and distributed execution
 
 For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html).
 

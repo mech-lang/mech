@@ -137,7 +137,6 @@ src/interpreter/src/stdlib/mod.rs|typed-interpreter-kernel|mech-interpreter|vali
 src/interpreter/src/stdlib/table_ops.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/interpreter/src/stdlib/vertcat.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/interpreter/src/structures.rs|typed-interpreter-kernel|mech-interpreter|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/utilities/src/lib.rs|ffi|mech-utilities|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 src/wasm/src/websocket.rs|ffi|mech-wasm|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/fixtures/dynamic-status-module/src/lib.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/mech_repl_ctrlc.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
