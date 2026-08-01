@@ -517,6 +517,19 @@ impl<'a> Parser<'a> {
     self.nesting = self.nesting.saturating_sub(1);
   }
 
+  pub(crate) fn with_nesting<T>(
+    &mut self,
+    parse: impl FnOnce(&mut Self) -> T,
+  ) -> Option<T> {
+    if !self.push_nesting() {
+      return None;
+    }
+
+    let result = parse(self);
+    self.pop_nesting();
+    Some(result)
+  }
+
   pub(crate) fn is_fence_start(&self) -> bool {
     mechdown::fence_delimiter(self.cursor()).is_some()
   }
@@ -949,6 +962,81 @@ mod tests {
     let outer = parser.start();
     let _inner = parser.start();
     outer.abandon(&mut parser);
+  }
+
+  #[test]
+  fn scoped_nesting_returns_result_and_restores_depth() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(
+      &source,
+      LexicalMode::CanonicalSourceFragment,
+      ParseConfig::default(),
+      &mut ids,
+    );
+    let initial = parser.nesting();
+
+    let result = parser.with_nesting(|parser| {
+      assert_eq!(parser.nesting(), initial + 1);
+      42_u32
+    });
+
+    assert_eq!(result, Some(42));
+    assert_eq!(parser.nesting(), initial);
+  }
+
+  #[test]
+  fn scoped_nesting_does_not_call_closure_at_limit() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let config = ParseConfig {
+      limits: ParseLimits {
+        max_nesting: 0,
+        ..ParseLimits::default()
+      },
+    };
+    let mut parser = Parser::new(
+      &source,
+      LexicalMode::CanonicalSourceFragment,
+      config,
+      &mut ids,
+    );
+    let initial = parser.nesting();
+    let mut called = false;
+
+    let result = parser.with_nesting(|_| {
+      called = true;
+    });
+
+    assert_eq!(result, None);
+    assert!(!called);
+    assert_eq!(parser.nesting(), initial);
+  }
+
+  #[test]
+  fn scoped_nesting_restores_depth_when_closure_halts_parser() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(
+      &source,
+      LexicalMode::CanonicalSourceFragment,
+      ParseConfig::default(),
+      &mut ids,
+    );
+    let initial = parser.nesting();
+
+    let result = parser.with_nesting(|parser| {
+      parser.halt();
+      assert_eq!(parser.nesting(), initial + 1);
+      "halted"
+    });
+
+    assert_eq!(result, Some("halted"));
+    assert!(parser.is_halted());
+    assert_eq!(parser.nesting(), initial);
   }
 
   #[test]

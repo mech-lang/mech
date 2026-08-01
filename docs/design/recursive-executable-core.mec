@@ -1,9 +1,9 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: Phase 2I-A frozen implementation contract.
+Status: Phase 2I-B frozen syntax-emission contract.
 
-Current canonical progress remains 328 / 539. Phase 2I-A ports zero
+Current canonical progress remains 328 / 539. Phase 2I-B ports zero
 productions. The generated implementation boundary contains 80 rules across
 one strongly connected component.
 
@@ -11,6 +11,12 @@ The authoritative member inventory is
 `docs/design/grammar-audit/phase-2i-recursive-core.tsv`. The generated count is
 authoritative; no manual 33-rule, 83-rule, family-total, or handwritten member
 assumption defines this phase.
+
+The authoritative representation inventory is
+`docs/design/grammar-audit/phase-2i-syntax-schema.tsv`. It freezes module
+ownership and concrete tree emission for the same 80 rules: 71 unconditional
+nodes, seven conditional precedence nodes, and two transparent aliases. It
+reserves 73 new append-only syntax kinds and reuses five existing kinds.
 
 1. Grammar and audit authority
 -------------------------------------------------------------------------------
@@ -30,6 +36,10 @@ canonical recursive closure.
 status. The recursive-core closure starts at `expression`, follows generated
 canonical dependencies through complete unported strongly connected
 components, and stops only at rules whose syntax is already implemented.
+
+`phase-2i-recursive-core.tsv` defines membership and dependencies.
+`phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
+emission. The schema does not replace or duplicate the dependency graph.
 
 The dependency extractor does not inspect legacy Rust parser calls. An
 independent repository test normalizes implementation-level descriptive
@@ -76,6 +86,24 @@ is no partial registry activation and no earlier phase count change.
 4. Module design
 -------------------------------------------------------------------------------
 
+Phase 2I-B freezes this exact ownership division:
+
+```text
+kinds             11
+literals           1
+variables          2
+subscripts         6
+structures        23
+calls               4
+patterns            7
+comprehensions      4
+fsm                 7
+precedence         13
+expressions          2
+                   --
+total               80
+```
+
 The planned parser layout is:
 
 ```text
@@ -103,6 +131,9 @@ lower/legacy/recursive_core/
 The implementation uses ordinary mutually recursive Rust functions. It does
 not introduce a parser generator, boxed parser closures, a Nom-like combinator
 framework, or one monolithic `recursive_core.rs` module.
+
+Phase 2I-B creates none of those future module directories. It introduces no
+production parser, typed view, lowerer, parser root, or port activation.
 
 5. Complete-form selection
 -------------------------------------------------------------------------------
@@ -153,6 +184,11 @@ TableExpression
 SetExpression
 ```
 
+`formula` and `pattern-array-item` are transparent aliases. The five reused
+kinds are `Expression`, `KindAnnotation`, `AdditiveExpression`,
+`ParentheticalExpression`, and `VariableDefine`; every other node-valued
+schema row uses one of the 73 new append-only kinds reserved by Phase 2I-B.
+
 7. Recovery ownership
 -------------------------------------------------------------------------------
 
@@ -198,5 +234,5 @@ This is the complete current parser-root API.
 2I-E  parity and atomic registry activation
 ```
 
-Phase 2I-B must not be stacked until the Phase 2I-A contract has been reviewed
-and merged.
+Phase 2I-B freezes representation only. Phase 2I-C implements all 80 mutually
+recursive productions against this fixed schema without partial activation.

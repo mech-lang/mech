@@ -595,7 +595,7 @@ fn reviewed_count_anchors_and_families_are_frozen() {
 }
 
 #[test]
-fn phase_2i_a_contains_no_recursive_parser_implementation() {
+fn recursive_core_remains_unimplemented_and_unactivated() {
     let root = repository_root();
     for path in [
         "src/syntax/src/document/parser/canonical/recursive_core",
