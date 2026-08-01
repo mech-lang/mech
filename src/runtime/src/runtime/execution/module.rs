@@ -21,7 +21,7 @@ use crate::{RuntimeContext, RuntimeModuleResult, RuntimeValueSnapshot};
 use mech_core::{MResult, MechError, MechSourceCode, Value, hash_str};
 #[cfg(feature = "invariant_define")]
 use mech_engine::{IntegrityConstraintEvaluation, IntegrityConstraintReport};
-use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{MechProgramConfig, MechProgramEnvironment};
 use std::collections::{HashMap, HashSet};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -397,7 +397,7 @@ impl MechRuntime {
             module_instances,
             integrity_evaluations,
         )?;
-        let mut module_program = MechProgram::new(MechProgramConfig {
+        let mut module_program = self.new_program(MechProgramConfig {
             name: self.config.name.clone(),
             environment: MechProgramEnvironment {
                 trace_enabled: self.config.diagnostics.trace_enabled,

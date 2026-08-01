@@ -16,11 +16,15 @@ use crate::{
     RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver,
     materialize_config_spec_grants, register_config_spec_resources,
 };
+#[cfg(feature = "functions")]
+use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
 use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
+#[cfg(feature = "functions")]
+use std::sync::Arc;
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -28,6 +32,8 @@ use std::rc::Rc;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
+    #[cfg(feature = "functions")]
+    function_catalog: Arc<FunctionCatalog>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
     capability_kernel: Box<dyn CapabilityKernel>,
@@ -54,6 +60,7 @@ impl std::fmt::Debug for RuntimeBuilder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RuntimeBuilder")
             .field("config", &self.config)
+            .field("function_catalog", &"<FunctionCatalog>")
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
             .field("capability_kernel", &"<dyn CapabilityKernel>")
@@ -80,6 +87,8 @@ impl Default for RuntimeBuilder {
     fn default() -> Self {
         Self {
             config: RuntimeConfig::default(),
+            #[cfg(feature = "functions")]
+            function_catalog: mech_interpreter::default_function_catalog(),
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
                 InMemoryStore::new(),
@@ -115,6 +124,12 @@ impl RuntimeBuilder {
 
     pub fn config(mut self, config: RuntimeConfig) -> Self {
         self.config = config;
+        self
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_catalog(mut self, catalog: Arc<FunctionCatalog>) -> Self {
+        self.function_catalog = catalog;
         self
     }
 
@@ -293,11 +308,19 @@ impl RuntimeBuilder {
             .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
         self.store.configure_event_retention(max_events)?;
 
+        #[cfg(feature = "functions")]
+        let program =
+            MechProgram::with_function_catalog(program_config, Arc::clone(&self.function_catalog));
+        #[cfg(not(feature = "functions"))]
+        let program = MechProgram::new(program_config);
+
         let mut runtime = MechRuntime {
             id: runtime_id,
             event_sequence: 0,
             config: self.config,
-            program: MechProgram::new(program_config),
+            #[cfg(feature = "functions")]
+            function_catalog: self.function_catalog,
+            program,
             id_generator: self.id_generator,
             store: self.store,
             capability_kernel: self.capability_kernel,
@@ -398,5 +421,27 @@ impl RuntimeBuilder {
         )?;
 
         Ok(runtime)
+    }
+}
+
+#[cfg(all(test, feature = "functions"))]
+mod tests {
+    use super::{MechProgramConfig, RuntimeBuilder};
+    use mech_core::FunctionCatalogBuilder;
+    use std::sync::Arc;
+
+    #[test]
+    fn custom_catalog_reaches_retained_and_runtime_created_programs() {
+        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let runtime = RuntimeBuilder::new()
+            .function_catalog(Arc::clone(&catalog))
+            .build()
+            .unwrap();
+
+        assert!(Arc::ptr_eq(&runtime.function_catalog, &catalog));
+        assert!(Arc::ptr_eq(runtime.program().function_catalog(), &catalog));
+
+        let isolated = runtime.new_program(MechProgramConfig::default());
+        assert!(Arc::ptr_eq(isolated.function_catalog(), &catalog));
     }
 }

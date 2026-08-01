@@ -6,7 +6,6 @@ use crate::resolver::SourceScope;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, RuntimeProgramBusy};
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
 use mech_core::{MResult, MechError, MechSourceCode, ValRef, Value, hash_str};
-use mech_engine::MechProgram;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
@@ -361,7 +360,7 @@ impl MechRuntime {
             },
         )?;
 
-        let mut bytecode_program = MechProgram::new(self.program.config.clone());
+        let mut bytecode_program = self.new_program(self.program.config.clone());
 
         let live_state_before = self.live_state_snapshot();
         let result = (|| {

@@ -1,10 +1,12 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        Interpreter, MechSourceCode, ModuleManifestCatalog, ProgramState, ReactiveCellId, Ref,
+        FunctionCatalogBuilder, FunctionExport, FunctionExposure, Interpreter, MechSourceCode,
+        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
         RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict, hash_str,
     };
     use std::collections::HashMap;
+    use std::sync::Arc;
 
     #[cfg(feature = "invariant_define")]
     use super::super::super::{ComparisonOp, FormulaOperator, IntegrityConstraint};
@@ -28,6 +30,95 @@ mod checkpoint_tests {
             .borrow_mut()
             .insert(id, name.to_string());
         (cell, backing)
+    }
+
+    #[cfg(feature = "math_add")]
+    #[test]
+    fn catalog_identity_and_function_environment_survive_children_clear_and_restore() {
+        let mut builder = FunctionCatalogBuilder::new();
+        mech_math::install_math_add_catalog(&mut builder).unwrap();
+        let operation = OperationId::from_name("math/add");
+        builder
+            .insert_export(FunctionExport {
+                operation,
+                canonical_name: "math/add".to_string(),
+                module: Some("math".to_string()),
+                item: Some("plus".to_string()),
+                exposure: FunctionExposure::ModuleOnly,
+            })
+            .unwrap();
+        let catalog = Arc::new(builder.build().unwrap());
+        let mut interpreter = Interpreter::with_function_catalog(41, 100, Arc::clone(&catalog));
+
+        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        assert!(
+            interpreter
+                .state
+                .borrow()
+                .function_environment
+                .is_visible(operation)
+        );
+
+        let cloned = interpreter.clone();
+        assert!(Arc::ptr_eq(cloned.function_catalog(), &catalog));
+
+        let child = interpreter.new_child_interpreter(42, 100);
+        assert!(Arc::ptr_eq(child.function_catalog(), &catalog));
+        assert!(
+            child
+                .state
+                .borrow()
+                .function_environment
+                .is_visible(operation)
+        );
+
+        let environment_before = interpreter.state.borrow().function_environment.clone();
+        assert_eq!(environment_before.resolve_name("plus"), None);
+        let checkpoint = interpreter.checkpoint().unwrap();
+        let module_only_export = catalog.module_export("math", "plus").unwrap().clone();
+        interpreter
+            .state
+            .borrow_mut()
+            .function_environment
+            .bind_export(&module_only_export, "plus")
+            .unwrap();
+        assert_eq!(
+            interpreter
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("plus"),
+            Some(operation),
+        );
+        assert_ne!(
+            interpreter.state.borrow().function_environment,
+            environment_before,
+        );
+
+        interpreter.restore(checkpoint).unwrap();
+        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        assert_eq!(
+            interpreter.state.borrow().function_environment,
+            environment_before,
+        );
+        assert_eq!(
+            interpreter
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("plus"),
+            None,
+        );
+
+        interpreter.clear();
+        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        assert!(
+            interpreter
+                .state
+                .borrow()
+                .function_environment
+                .is_visible(operation)
+        );
     }
 
     #[test]

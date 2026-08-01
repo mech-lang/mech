@@ -10,11 +10,15 @@ use crate::{
     RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeId, RuntimeResourceRegistry, Scheduler,
     SchedulerPolicy, SourceResolver, TransactionId,
 };
+#[cfg(feature = "functions")]
+use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog};
-use mech_engine::{MechProgram, ProgramInputId};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
+#[cfg(feature = "functions")]
+use std::sync::Arc;
 
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
     state: Rc<Cell<Option<T>>>,
@@ -39,6 +43,8 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
+    #[cfg(feature = "functions")]
+    pub(super) function_catalog: Arc<FunctionCatalog>,
     pub(super) program: MechProgram,
     pub(super) id_generator: Box<dyn IdGenerator>,
     pub(super) store: Box<dyn MechStore>,
@@ -75,6 +81,7 @@ impl std::fmt::Debug for MechRuntime {
             .field("id", &self.id)
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
+            .field("function_catalog", &"<FunctionCatalog>")
             .field("program", &"<MechProgram>")
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
@@ -127,6 +134,17 @@ impl MechRuntime {
     /// Runtime internals must not use it to bypass the program coordinator.
     pub(crate) fn program_mut(&mut self) -> &mut MechProgram {
         &mut self.program
+    }
+
+    pub(in crate::runtime) fn new_program(&self, config: MechProgramConfig) -> MechProgram {
+        #[cfg(feature = "functions")]
+        {
+            MechProgram::with_function_catalog(config, Arc::clone(&self.function_catalog))
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            MechProgram::new(config)
+        }
     }
 
     pub(crate) fn health(&self) -> &RuntimeHealth {
