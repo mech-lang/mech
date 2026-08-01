@@ -307,6 +307,21 @@ fn run_runtime_repl_event_loop(
     }
 }
 
+#[cfg(feature = "run")]
+fn finalize_runtime_repl_outcome(
+    interrupt_requested: &AtomicBool,
+    result: MResult<CliOutcome>,
+    farewell: impl FnOnce(),
+) -> MResult<CliOutcome> {
+    // The CLI turns a returned exit outcome into `process::exit`. Complete the
+    // farewell synchronously so process termination cannot cut off its frames.
+    if interrupt_requested.load(Ordering::Acquire) && matches!(&result, Ok(CliOutcome::Exit(0))) {
+        farewell();
+    }
+
+    result
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ReplGreetingVariant {
     Standard,
@@ -406,10 +421,7 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
                 print_prompt();
             }
             ReplInterruptDisposition::GracefulRuntimeExit => {
-                if handler_exit_requested.swap(true, Ordering::AcqRel) {
-                    return;
-                }
-                print_repl_farewell();
+                handler_exit_requested.store(true, Ordering::Release);
             }
             ReplInterruptDisposition::ImmediateProcessExit => {
                 print_repl_farewell();
@@ -485,11 +497,16 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
             // runtime cleanup; normal submitted-line and :quit paths join.
             Ok(())
         };
-        return match (loop_result, worker_result) {
+        let result = match (loop_result, worker_result) {
             (Err(error), _) => Err(error),
             (Ok(_), Err(error)) => Err(error),
             (Ok(outcome), Ok(())) => Ok(outcome),
         };
+        return finalize_runtime_repl_outcome(
+            runtime_exit_requested.as_ref(),
+            result,
+            print_repl_farewell,
+        );
     }
 
     loop {

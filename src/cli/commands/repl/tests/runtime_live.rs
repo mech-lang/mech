@@ -14,8 +14,8 @@ use mech_runtime::{
 use mech_syntax::ReplCommand;
 
 use super::{
-    CliOutcome, MechRepl, ReplInterruptDisposition, RuntimeReplInput, repl_interrupt_disposition,
-    run_runtime_repl_event_loop,
+    CliOutcome, MechRepl, ReplInterruptDisposition, RuntimeReplInput,
+    finalize_runtime_repl_outcome, repl_interrupt_disposition, run_runtime_repl_event_loop,
 };
 
 const TEST_PROVIDER: &str = "replinput";
@@ -503,6 +503,20 @@ fn program_backed_third_interrupt_retains_immediate_exit_policy() {
         repl_interrupt_disposition(false, 3),
         ReplInterruptDisposition::ImmediateProcessExit,
     );
+}
+
+#[test]
+fn runtime_interrupt_finishes_farewell_before_returning_exit_outcome() {
+    let exit_requested = AtomicBool::new(true);
+    let mut events = Vec::new();
+
+    let outcome = finalize_runtime_repl_outcome(&exit_requested, Ok(CliOutcome::Exit(0)), || {
+        events.push("farewell")
+    });
+    events.push("returned");
+
+    assert!(matches!(outcome, Ok(CliOutcome::Exit(0))));
+    assert_eq!(events, ["farewell", "returned"]);
 }
 
 #[test]
