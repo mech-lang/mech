@@ -6,6 +6,8 @@ use std::io::{Cursor, Read, Write};
 use std::ops::Deref;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
+#[cfg(feature = "functions")]
+use std::sync::Arc;
 use std::time::Duration;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown",))]
 use web_time::Instant;
@@ -27,6 +29,8 @@ pub type InterpreterRef = Ref<Box<Interpreter>>;
 pub struct Interpreter {
     pub id: u64,
     checkpoint_owner: Rc<()>,
+    #[cfg(feature = "functions")]
+    function_catalog: Arc<FunctionCatalog>,
     pub profile: bool,
     pub max_steps: usize,
     #[cfg(feature = "trace")]
@@ -315,6 +319,8 @@ struct ProgramStateCheckpoint {
     #[cfg(feature = "functions")]
     functions_snapshot: FunctionsSnapshot,
     #[cfg(feature = "functions")]
+    function_environment: FunctionEnvironment,
+    #[cfg(feature = "functions")]
     plan: Plan,
     #[cfg(feature = "functions")]
     plan_checkpoint: PlanCheckpoint,
@@ -355,6 +361,8 @@ impl ProgramStateCheckpoint {
         let functions = state.functions.clone();
         #[cfg(feature = "functions")]
         let functions_snapshot = FunctionsSnapshot::capture(&functions)?;
+        #[cfg(feature = "functions")]
+        let function_environment = state.function_environment.clone();
         #[cfg(feature = "functions")]
         for value in functions_snapshot.transaction_state_values()? {
             journal.capture_value(&value)?;
@@ -410,6 +418,8 @@ impl ProgramStateCheckpoint {
             #[cfg(feature = "functions")]
             functions_snapshot,
             #[cfg(feature = "functions")]
+            function_environment,
+            #[cfg(feature = "functions")]
             plan,
             #[cfg(feature = "functions")]
             plan_checkpoint,
@@ -457,6 +467,7 @@ impl ProgramStateCheckpoint {
             #[cfg(feature = "functions")]
             {
                 state.functions = self.functions.clone();
+                state.function_environment = self.function_environment.clone();
                 state.plan = self.plan.clone();
             }
             state.kinds = self.kinds.clone();
@@ -955,6 +966,8 @@ impl Clone for Interpreter {
         Self {
             id: self.id,
             checkpoint_owner: Rc::new(()),
+            #[cfg(feature = "functions")]
+            function_catalog: Arc::clone(&self.function_catalog),
             ip: self.ip,
             profile: false,
             max_steps: self.max_steps,
@@ -1173,7 +1186,34 @@ impl Interpreter {
     }
 
     pub fn new(id: u64, max_steps: usize) -> Self {
+        #[cfg(feature = "functions")]
+        {
+            Self::with_function_catalog(id, max_steps, default_function_catalog())
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            Self::initialize(id, max_steps, ProgramState::new())
+        }
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn with_function_catalog(
+        id: u64,
+        max_steps: usize,
+        function_catalog: Arc<FunctionCatalog>,
+    ) -> Self {
         let mut state = ProgramState::new();
+        state.function_environment = FunctionEnvironment::from_catalog_prelude(&function_catalog)
+            .expect("validated function catalog prelude must initialize");
+        Self::initialize(id, max_steps, state, function_catalog)
+    }
+
+    fn initialize(
+        id: u64,
+        max_steps: usize,
+        mut state: ProgramState,
+        #[cfg(feature = "functions")] function_catalog: Arc<FunctionCatalog>,
+    ) -> Self {
         load_stdkinds(&mut state.kinds);
         #[cfg(feature = "symbol_table")]
         {
@@ -1198,6 +1238,8 @@ impl Interpreter {
         Self {
             id,
             checkpoint_owner: Rc::new(()),
+            #[cfg(feature = "functions")]
+            function_catalog,
             ip: 0,
             profile: false,
             max_steps, // Default maximum steps
@@ -1233,6 +1275,16 @@ impl Interpreter {
             user_state_machine_specs: Ref::new(HashMap::new()),
             code: Vec::new(),
         }
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
+        &self.function_catalog
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn new_child_interpreter(&self, id: u64, max_steps: usize) -> Self {
+        Self::with_function_catalog(id, max_steps, Arc::clone(&self.function_catalog))
     }
 
     pub fn default() -> Self {
@@ -1316,7 +1368,15 @@ impl Interpreter {
     pub fn clear(&mut self) {
         let id = self.id;
         let checkpoint_owner = self.checkpoint_owner.clone();
-        *self = Interpreter::new(id, self.max_steps);
+        #[cfg(feature = "functions")]
+        {
+            let function_catalog = Arc::clone(&self.function_catalog);
+            *self = Interpreter::with_function_catalog(id, self.max_steps, function_catalog);
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            *self = Interpreter::new(id, self.max_steps);
+        }
         self.checkpoint_owner = checkpoint_owner;
     }
 

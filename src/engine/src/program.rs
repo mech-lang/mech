@@ -8,6 +8,8 @@ use web_time::Instant;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown",)))]
 use std::time::Instant;
 
+#[cfg(feature = "functions")]
+use mech_core::FunctionCatalog;
 use mech_core::{
     MResult, MechError, MechErrorKind, MechFunction, MechSourceCode, NativeFunctionCompiler,
     ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome, ValRef, Value,
@@ -501,8 +503,29 @@ impl MechProgram {
     }
 
     pub fn new(config: MechProgramConfig) -> Self {
+        #[cfg(feature = "functions")]
+        {
+            Self::with_function_catalog(config, mech_interpreter::default_function_catalog())
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            let id = hash_str(&format!("program/{}", config.name));
+            let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
+
+            interpreter.set_trace_enabled(config.environment.trace_enabled);
+
+            Self {
+                config,
+                interpreter,
+            }
+        }
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
         let id = hash_str(&format!("program/{}", config.name));
-        let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
+        let mut interpreter =
+            Interpreter::with_function_catalog(id, config.environment.rounds_per_step, catalog);
 
         interpreter.set_trace_enabled(config.environment.trace_enabled);
 
@@ -510,6 +533,11 @@ impl MechProgram {
             config,
             interpreter,
         }
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
+        self.interpreter.function_catalog()
     }
 
     /// Captures the complete structural and value state of this program.
@@ -1526,6 +1554,97 @@ impl MechErrorKind for UnsupportedProgramSourceError {
 mod tests {
     use super::*;
     use mech_core::Ref;
+    #[cfg(feature = "functions")]
+    use mech_core::{
+        FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, OperationId,
+    };
+
+    #[cfg(feature = "functions")]
+    struct UnusedTestSpecializer;
+
+    #[cfg(feature = "functions")]
+    impl FunctionSpecializer for UnusedTestSpecializer {
+        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            unreachable!("program checkpoint test never specializes its marker operation")
+        }
+    }
+
+    #[cfg(feature = "functions")]
+    #[test]
+    fn program_uses_and_retains_an_explicit_catalog() {
+        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let mut program =
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
+
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+
+        program.interpreter_mut().clear();
+
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+    }
+
+    #[cfg(feature = "functions")]
+    #[test]
+    fn program_checkpoint_restore_rolls_back_the_function_environment() {
+        let mut builder = FunctionCatalogBuilder::new();
+        let operation = builder
+            .insert_specializer("test/marker", Arc::new(UnusedTestSpecializer))
+            .unwrap();
+        builder
+            .insert_export(FunctionExport {
+                operation,
+                canonical_name: "test/marker".to_string(),
+                module: Some("test".to_string()),
+                item: Some("marker".to_string()),
+                exposure: FunctionExposure::ModuleOnly,
+            })
+            .unwrap();
+        let catalog = Arc::new(builder.build().unwrap());
+        let mut program =
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
+        let environment_before = program
+            .interpreter()
+            .state
+            .borrow()
+            .function_environment
+            .clone();
+        let checkpoint = program.checkpoint().unwrap();
+        let export = catalog.module_export("test", "marker").unwrap().clone();
+
+        program
+            .interpreter_mut()
+            .state
+            .borrow_mut()
+            .function_environment
+            .bind_export(&export, "marker")
+            .unwrap();
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("marker"),
+            Some(OperationId::from_name("test/marker")),
+        );
+
+        program.restore(checkpoint).unwrap();
+
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+        assert_eq!(
+            program.interpreter().state.borrow().function_environment,
+            environment_before,
+        );
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("marker"),
+            None,
+        );
+    }
 
     #[cfg(feature = "invariant_define")]
     fn constraint<'a>(program: &'a MechProgram, name: &str) -> mech_core::IntegrityConstraint {

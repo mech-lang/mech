@@ -103,6 +103,8 @@ pub mod builtins;
 mod bytecode_test_context;
 pub mod expressions;
 #[cfg(feature = "functions")]
+pub mod function_catalog;
+#[cfg(feature = "functions")]
 pub mod functions;
 pub mod interpreter;
 pub mod literals;
@@ -122,6 +124,8 @@ pub use mech_core::*;
 #[cfg(feature = "functions")]
 pub use crate::builtins::*;
 pub use crate::expressions::*;
+#[cfg(feature = "functions")]
+pub use crate::function_catalog::*;
 #[cfg(feature = "functions")]
 pub use crate::functions::*;
 pub use crate::interpreter::*;

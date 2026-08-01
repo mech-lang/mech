@@ -308,7 +308,7 @@ impl MechRuntime {
             },
         );
 
-        let replacement = MechProgram::new(self.program.config.clone());
+        let replacement = self.new_program(self.program.config.clone());
         let mut program = std::mem::replace(&mut self.program, replacement);
         let turn = RefCell::new(RuntimeCoordinatedTurn {
             runtime: self,
