@@ -1,4 +1,4 @@
-#![no_main]
+#![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
 #[macro_use]
