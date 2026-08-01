@@ -317,6 +317,7 @@ gloo-net = {version = "0.6.0", features = ["http"]}
 wasm-bindgen-futures = "0.4.50"
 
 [dev-dependencies]
+serde_json = "1"
 wasm-bindgen-test = "0.3.50"
 
 [dependencies.web-sys]
