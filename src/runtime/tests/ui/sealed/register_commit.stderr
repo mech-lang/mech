@@ -13,20 +13,16 @@ help: the trait `functions::reactive_register_sealed::Sealed` is not implemented
 help: the following other types implement trait `functions::reactive_register_sealed::Sealed`
  --> $WORKSPACE/src/core/src/functions.rs
   |
-  | / impl<T> reactive_register_sealed::Sealed
-  | |   for ReactiveRegisterWrite<T>
-  | |______________________________^ `ReactiveRegisterWrite<T>`
+  | impl<T> reactive_register_sealed::Sealed for ReactiveRegisterWrite<T> {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ReactiveRegisterWrite<T>`
 ...
-  | / impl reactive_register_sealed::Sealed
-  | |   for ReactiveRegisterNoopCommit
-  | |________________________________^ `ReactiveRegisterNoopCommit`
+  | impl reactive_register_sealed::Sealed for ReactiveRegisterNoopCommit {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ReactiveRegisterNoopCommit`
 note: required by a bound in `ReactiveRegisterCommit`
  --> $WORKSPACE/src/core/src/functions.rs
   |
-  | pub trait ReactiveRegisterCommit:
-  |           ---------------------- required by a bound in this trait
-  |   reactive_register_sealed::Sealed
-  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `ReactiveRegisterCommit`
+  | pub trait ReactiveRegisterCommit: reactive_register_sealed::Sealed {
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `ReactiveRegisterCommit`
   = note: `ReactiveRegisterCommit` is a "sealed trait", because to implement it you also need to implement `mech_core::functions::reactive_register_sealed::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it
   = help: the following types implement the trait:
             mech_core::ReactiveRegisterWrite<T>

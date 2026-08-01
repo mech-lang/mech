@@ -11,5 +11,5 @@ error[E0382]: borrow of moved value: `participant`
 note: `ReactiveJournalParticipant::<'_>::commit` takes ownership of the receiver `self`, which moves `participant`
  --> $WORKSPACE/src/core/src/reactive_transaction.rs
   |
-  |   pub fn commit(self) {
-  |                 ^^^^
+  |     pub fn commit(self) {
+  |                   ^^^^
