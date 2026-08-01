@@ -2744,7 +2744,8 @@ expression := fsm-pipe
             | set-comprehension
             | matrix-comprehension
             | range-expression
-            | formula, ?(question, whitespace0, +match-arm, ?period) ;
+            | formula,
+              ?(whitespace0, question, whitespace0, +match-arm, ?period) ;
 formula := l1 ;
 l1 := l2, *(logic-operator, l2) ;
 l2 := l3, *(comparison-operator, l3) ;
