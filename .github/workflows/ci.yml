@@ -78,6 +78,13 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Check generated syntax inventories
+        run: |
+          python3 scripts/generate-canonical-rule-registry.py --check
+          python3 scripts/generate-canonical-port-registry.py --check
+          python3 scripts/generate-canonical-dependencies.py --check
+          python3 scripts/generate-canonical-scc-report.py --check
+
       - name: Run syntax grammar suites
         run: |
           cargo test -p mech-syntax --tests

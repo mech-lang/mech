@@ -23,6 +23,17 @@ Phase 2H structure-shell layer contributes 10 of those productions without
 adding a complete matrix, table, map, set, structure, expression, or document
 parser root.
 
+The exact next executable implementation boundary is generated from the
+normative `ebnf:canonical` grammar graph in `docs/design/specification.mec` and
+recorded in `docs/design/grammar-audit/phase-2i-recursive-core.tsv`.
+`canonical-dependencies.tsv` records the generated canonical edges,
+`productions.tsv` retains inventory and implementation-derived legacy call
+provenance, and `ports.tsv` defines migration status. The legacy call columns do
+not define the canonical grammar closure.
+
+Phase 2I-A adds only the generated dependency contract and ports no production.
+The recursive parser itself remains absent.
+
 The legacy parser, public `parse` API, existing `Program` AST, formatter,
 interpreter, runtime, and accepted grammar remain unchanged while this
 architecture is introduced.
