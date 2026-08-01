@@ -31,8 +31,17 @@ recorded in `docs/design/grammar-audit/phase-2i-recursive-core.tsv`.
 provenance, and `ports.tsv` defines migration status. The legacy call columns do
 not define the canonical grammar closure.
 
-Phase 2I-A adds only the generated dependency contract and ports no production.
-The recursive parser itself remains absent.
+Phase 2I-A adds only the generated dependency contract. Phase 2I-B freezes the
+representation of all 80 members in
+`docs/design/grammar-audit/phase-2i-syntax-schema.tsv`: 71 unconditional nodes,
+seven conditional precedence nodes, and two transparent aliases. It reserves
+73 append-only syntax kinds and reuses five existing kinds. Current canonical
+progress remains 328 / 539, and the recursive parser itself remains absent.
+
+`phase-2i-recursive-core.tsv` defines membership and dependencies.
+`phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
+emission. Phase 2I-B introduces no production parser, typed view, lowerer,
+parser root, or port activation.
 
 The legacy parser, public `parse` API, existing `Program` AST, formatter,
 interpreter, runtime, and accepted grammar remain unchanged while this
