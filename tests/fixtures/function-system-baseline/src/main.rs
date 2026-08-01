@@ -1,7 +1,7 @@
 use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
     DecodedInstr, FunctionCompilerDescriptor, FunctionDescriptor, Functions, MechSet,
-    ModuleItemDescriptor, ParsedProgram, Ref, Value, ValueKind, hash_str,
+    ModuleItemDescriptor, NativeFunctionCompiler, ParsedProgram, Ref, Value, ValueKind, hash_str,
 };
 use mech_interpreter as _;
 use mech_interpreter::Interpreter;
@@ -239,6 +239,13 @@ fn main() {
 }
 
 fn run() -> AppResult<()> {
+    // This machine is discovered only through inventory in the frozen baseline.
+    // Referencing a concrete compiler symbol prevents the native linker from
+    // discarding its inventory registrations as an otherwise-unused rlib.
+    std::hint::black_box(
+        <mech_combinatorics::CombinatoricsNChooseK as NativeFunctionCompiler>::compile,
+    );
+
     let arguments = env::args().skip(1).collect::<Vec<_>>();
     if arguments.len() != 2 {
         return Err(USAGE.to_string());

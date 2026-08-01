@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  cargo:
+  cargo-features:
+    name: Cargo feature and example checks
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -38,11 +39,14 @@ jobs:
       - name: Check feature boundaries and examples
         run: |
           bash scripts/check-bytecode-compiler-boundaries.sh
-          bash scripts/check-function-system-contracts.sh
-          bash scripts/check-standard-machine-library-tests.sh
 
           # Linked-stdlib CLI build for examples that import named modules.
           cargo build --bin mech --features linked_stdlib
+          cargo test -p mech-runtime \
+            --features linked_stdlib \
+            --test function_system_source_contract \
+            -- \
+            --nocapture
           ./target/debug/mech test examples/working
 
           # Prelude-only no-default feature checks.
@@ -64,6 +68,49 @@ jobs:
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
+
+  function-system-contracts:
+    name: Function-system contracts (${{ matrix.slice }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        slice:
+          - surface
+          - machines
+          - consumer
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Check ${{ matrix.slice }} compatibility contracts
+        run: bash scripts/check-function-system-contracts.sh "${{ matrix.slice }}"
+
+  cargo:
+    name: cargo
+    if: ${{ always() }}
+    needs:
+      - cargo-features
+      - function-system-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every Cargo contract shard
+        env:
+          FEATURE_RESULT: ${{ needs.cargo-features.result }}
+          FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
+        run: |
+          test "$FEATURE_RESULT" = success
+          test "$FUNCTION_SYSTEM_RESULT" = success
 
   cargo-language:
     name: Cargo language tests

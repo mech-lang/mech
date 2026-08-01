@@ -17,6 +17,11 @@ mech-core = {
   path = "../../../src/core",
   default-features = false,
 }
+mech-combinatorics = {
+  path = "../../../machines/combinatorics",
+  default-features = false,
+  features = ["n_choose_k"],
+}
 mech-interpreter = {
   path = "../../../src/interpreter",
   default-features = true,

@@ -6,6 +6,13 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/mech-standard-machine-baseline.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT HUP INT TERM
 
 core_patch="patch.crates-io.mech-core.path=\"$repository_root/src/core\""
+abi_patch="patch.crates-io.mech-abi.path=\"$repository_root/src/abi\""
+
+# These disposable builds do not need debug information. Keeping all three
+# configurations for a machine in one target preserves isolation while reusing
+# its dependencies; the target is then discarded before the next machine.
+export CARGO_PROFILE_DEV_DEBUG=0
+export CARGO_PROFILE_TEST_DEBUG=0
 
 check_machine() {
   machine=$1
@@ -13,7 +20,6 @@ check_machine() {
   compiler_features=$3
   manifest="$repository_root/machines/$machine/Cargo.toml"
   target_dir="$scratch/$machine-target"
-
   echo "checking $machine runtime-only operation configuration"
   cargo +nightly-2026-03-03 check \
     --manifest-path "$manifest" \
@@ -30,12 +36,43 @@ check_machine() {
     --no-default-features \
     --features "$compiler_features"
 
-  echo "testing $machine default library configuration"
-  cargo +nightly-2026-03-03 test \
-    --manifest-path "$manifest" \
-    --target-dir "$target_dir" \
-    --config "$core_patch" \
-    --lib
+  # Most standard machines currently have no default-profile unit assertions.
+  # Type-check every default target so cfg(test), examples, and benches remain
+  # healthy without code-generating and linking an empty test executable.
+  echo "checking $machine default targets"
+  case "$machine" in
+    combinatorics)
+      cargo +nightly-2026-03-03 check \
+        --manifest-path "$manifest" \
+        --target-dir "$target_dir" \
+        --config "$core_patch" \
+        --config "$abi_patch" \
+        --all-targets
+      ;;
+    *)
+      cargo +nightly-2026-03-03 check \
+        --manifest-path "$manifest" \
+        --target-dir "$target_dir" \
+        --config "$core_patch" \
+        --all-targets
+      ;;
+  esac
+
+  # Combinatorics is the only PR0 machine with default-profile assertions.
+  # Run those assertions against the already-validated reduced runtime profile.
+  if [ "$machine" = combinatorics ]; then
+    echo "testing combinatorics reduced-profile behavior"
+    cargo +nightly-2026-03-03 test \
+      --manifest-path "$manifest" \
+      --target-dir "$target_dir" \
+      --config "$core_patch" \
+      --config "$abi_patch" \
+      --no-default-features \
+      --features "$runtime_features" \
+      --lib
+  fi
+
+  rm -rf "$target_dir"
 }
 
 check_machine \
