@@ -11,6 +11,11 @@
 use mech_core::{FloatDirection, OpAssignOp, Token, TokenKind};
 #[cfg(feature = "mika")]
 use mech_core::{MikaArm, MikaEyeLeft, MikaEyeRight, MikaNose};
+use mech_syntax::document::parser::canonical::{
+    CanonicalRuleOutcome, parse_canonical_phase_2i_rule_for_test,
+};
+use mech_syntax::document::parser::rules;
+use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot, compact_debug_tree};
 use mech_syntax::*;
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -46,6 +51,7 @@ const ENTRY_POINTS: &[&str] = &[
     "boolean",
     "box-drawing-char",
     "box-drawing-emoji",
+    "canonical-phase-2i-expression",
     "citation",
     "code-block",
     "comment",
@@ -2498,6 +2504,26 @@ fn run_repl_crlf(source: &str) -> ParseOutcome {
     run_repl(&completed)
 }
 
+fn run_canonical_phase_2i_expression(source: &str) -> ParseOutcome {
+    let snapshot = TextSnapshot::new(DocumentId(0x2c6), Revision(0), source).unwrap();
+    let parsed =
+        parse_canonical_phase_2i_rule_for_test(snapshot, rules::EXPRESSION, ParseConfig::default())
+            .unwrap();
+    if parsed.outcome == CanonicalRuleOutcome::NoMatch {
+        return ParseOutcome::Failure;
+    }
+    let consumed_bytes = parsed.consumed.end.0 as usize;
+    let consumed = source[..consumed_bytes].graphemes(true).count();
+    let source_len = source.graphemes(true).count();
+    ParseOutcome::Success {
+        ast: json!({"syntax": compact_debug_tree(&parsed.syntax())}),
+        consumed,
+        source_len,
+        remaining: source[consumed_bytes..].to_owned(),
+        diagnostics: parsed.diagnostics.len(),
+    }
+}
+
 fn run_case(entry_point: &str, source: &str) -> ParseOutcome {
     match entry_point {
         "parse" => run_public_parse(source),
@@ -2511,6 +2537,7 @@ fn run_case(entry_point: &str, source: &str) -> ParseOutcome {
         "boolean" => run_nom(source, boolean),
         "box-drawing-char" => run_nom(source, box_drawing_char),
         "box-drawing-emoji" => run_nom(source, box_drawing_emoji),
+        "canonical-phase-2i-expression" => run_canonical_phase_2i_expression(source),
         "citation" => run_nom(source, citation),
         "code-block" => run_nom(source, code_block),
         "comment" => run_nom(source, comment),

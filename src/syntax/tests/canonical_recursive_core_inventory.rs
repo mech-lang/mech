@@ -595,10 +595,40 @@ fn reviewed_count_anchors_and_families_are_frozen() {
 }
 
 #[test]
-fn recursive_core_remains_unimplemented_and_unactivated() {
+fn recursive_core_has_the_exact_implementation_shell_and_remains_unactivated() {
     let root = repository_root();
+    let parser_directory = root.join("src/syntax/src/document/parser/canonical/recursive_core");
+    assert!(parser_directory.is_dir());
+    let actual_files = fs::read_dir(&parser_directory)
+        .expect("read recursive parser directory")
+        .map(|entry| {
+            entry
+                .expect("read recursive parser entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect::<BTreeSet<_>>();
+    let expected_files = [
+        "calls.rs",
+        "comprehensions.rs",
+        "expressions.rs",
+        "fsm.rs",
+        "kinds.rs",
+        "literals.rs",
+        "mod.rs",
+        "patterns.rs",
+        "precedence.rs",
+        "structures.rs",
+        "subscripts.rs",
+        "variables.rs",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect::<BTreeSet<_>>();
+    assert_eq!(actual_files, expected_files);
+
     for path in [
-        "src/syntax/src/document/parser/canonical/recursive_core",
         "src/syntax/src/document/ast/recursive_core",
         "src/syntax/src/document/lower/legacy/recursive_core",
     ] {
@@ -611,4 +641,65 @@ fn recursive_core_remains_unimplemented_and_unactivated() {
         fs::read_to_string(root.join("src/syntax/src/document/parser/canonical_ports.rs"))
             .expect("read canonical_ports.rs");
     assert!(!generated_ports.contains("Phase2I"));
+
+    let phase = phase_report();
+    let ports = ports();
+    assert_eq!(phase.len(), EXPECTED_PHASE_2I_RULES);
+    for name in phase.keys() {
+        let port = &ports[name];
+        assert!(is_unported(port), "{name}");
+        assert_eq!(port.lowering, "pending", "{name}");
+        assert_eq!(port.policy, "undecided", "{name}");
+        assert!(port.phase.is_empty(), "{name}");
+    }
+}
+
+#[test]
+fn recursive_dispatcher_and_production_functions_are_exactly_the_frozen_eighty() {
+    let root = repository_root();
+    let parser_directory = root.join("src/syntax/src/document/parser/canonical/recursive_core");
+    let expected_functions = phase_report()
+        .keys()
+        .map(|name| format!("parse_{}", name.replace('-', "_")))
+        .collect::<BTreeSet<_>>();
+    assert_eq!(expected_functions.len(), EXPECTED_PHASE_2I_RULES);
+
+    let mut actual_functions = BTreeSet::new();
+    for entry in fs::read_dir(&parser_directory).expect("read recursive parser directory") {
+        let path = entry.expect("read recursive parser entry").path();
+        if path.file_name().and_then(|name| name.to_str()) == Some("mod.rs") {
+            continue;
+        }
+        let source = fs::read_to_string(&path).expect("read recursive production module");
+        for suffix in source.split("pub(super) fn ").skip(1) {
+            let name = suffix.split('(').next().expect("function name").trim();
+            if name.starts_with("parse_") {
+                assert!(
+                    actual_functions.insert(name.to_owned()),
+                    "duplicate production function {name}"
+                );
+            }
+        }
+    }
+    assert_eq!(actual_functions, expected_functions);
+
+    let module = fs::read_to_string(parser_directory.join("mod.rs")).expect("read dispatcher");
+    let inventory_start = module.find("pub(crate) const PHASE_2I_RULES").unwrap();
+    let inventory_end = module[inventory_start..].find("];\n").unwrap() + inventory_start;
+    let inventory = &module[inventory_start..inventory_end];
+    assert_eq!(
+        inventory.matches("rules::").count(),
+        EXPECTED_PHASE_2I_RULES
+    );
+
+    let dispatcher_start = module.find("pub(crate) fn parse_rule").unwrap();
+    let dispatcher = &module[dispatcher_start..];
+    assert_eq!(
+        dispatcher
+            .lines()
+            .filter(|line| line.contains("rules::") && line.contains("=>"))
+            .count(),
+        EXPECTED_PHASE_2I_RULES
+    );
+    assert!(dispatcher.contains("_ => return None"));
 }

@@ -230,6 +230,9 @@ EXPR-SET-COMPREHENSION	expression	expression	all	accept	accepted/expression-set-
 EXPR-MATRIX-COMPREHENSION	expression	expression	all	accept	accepted/expression-matrix-comprehension.mec	snapshots/EXPR-MATRIX-COMPREHENSION.json	Expression order selects matrix comprehension.
 EXPR-RANGE	expression	expression	all	accept	accepted/expression-range.mec	snapshots/EXPR-RANGE.json	Expression order selects range before formula.
 EXPR-FORMULA	expression	expression	all	accept	accepted/expression-formula.mec	snapshots/EXPR-FORMULA.json	Expression order falls through to formula.
+MATCH-001-ADJACENT	expression	canonical-phase-2i-expression	all	accept	accepted/match-001-adjacent.mec	snapshots/MATCH-001-ADJACENT.json	MATCH-001 permits an adjacent expression match suffix.
+MATCH-001-SPACED	expression	canonical-phase-2i-expression	all	accept	accepted/match-001-spaced.mec	snapshots/MATCH-001-SPACED.json	MATCH-001 permits horizontal whitespace before the question mark.
+MATCH-001-MULTILINE	expression	canonical-phase-2i-expression	all	accept	accepted/match-001-multiline.mec	snapshots/MATCH-001-MULTILINE.json	MATCH-001 permits tab and newline whitespace around the question mark.
 PATTERN-EXPRESSION-FALLBACK	pattern	pattern	all	accept	accepted/pattern-expression.mec	snapshots/PATTERN-EXPRESSION-FALLBACK.json	Pattern order falls through to expression.
 PATTERN-MALFORMED-PREFIX	pattern	pattern	all	accept-prefix	accepted/pattern-malformed-prefix.mec	snapshots/PATTERN-MALFORMED-PREFIX.json	Malformed atom-struct prefix falls back to shorter atom expression.
 SECTION-MECH	section-selection	parse	all	accept	accepted/section-mech.mec	snapshots/SECTION-MECH.json	Section prioritizes complete Mech code.
