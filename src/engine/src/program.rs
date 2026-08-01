@@ -578,19 +578,14 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn load_full_stdlib(&mut self) {
-        crate::load_stdlib(&mut self.interpreter.functions().borrow_mut());
-    }
-
-    #[cfg(feature = "functions")]
     pub fn load_function_module(&mut self, module: &str) -> MResult<()> {
-        crate::load_module(&mut self.interpreter.functions().borrow_mut(), module)?;
+        crate::load_module(&self.interpreter, module)?;
         Ok(())
     }
 
     #[cfg(feature = "functions")]
     pub fn import_function_module_item(&mut self, module: &str, item: &str) -> MResult<()> {
-        crate::import_module_item(&mut self.interpreter.functions().borrow_mut(), module, item)
+        crate::import_module_item(&self.interpreter, module, item)
     }
 
     #[cfg(feature = "functions")]
@@ -600,17 +595,12 @@ impl MechProgram {
         item: &str,
         alias: &str,
     ) -> MResult<()> {
-        crate::import_module_item_as(
-            &mut self.interpreter.functions().borrow_mut(),
-            module,
-            item,
-            alias,
-        )
+        crate::import_module_item_as(&self.interpreter, module, item, alias)
     }
 
     #[cfg(feature = "functions")]
     pub fn import_function_module_glob(&mut self, module: &str) -> MResult<()> {
-        crate::import_module_glob(&mut self.interpreter.functions().borrow_mut(), module)
+        crate::import_module_glob(&self.interpreter, module)
     }
 
     pub fn register_native_function_compiler(
@@ -2895,8 +2885,8 @@ mod program_reactive_turn_tests {
     #[test]
     fn program_reactive_turn_orders_nested_interpreters_deterministically() {
         let mut p = MechProgram::new(MechProgramConfig::default());
-        let mut c1 = Interpreter::new_with_full_stdlib(101);
-        let mut c2 = Interpreter::new_with_full_stdlib(202);
+        let mut c1 = Interpreter::new(101, 10_000);
+        let mut c2 = Interpreter::new(202, 10_000);
         for (i, src) in [
             (
                 &mut c1,
@@ -2980,11 +2970,9 @@ mod program_reactive_turn_tests {
     #[test]
     fn program_reactive_turn_decoded_plan_reuses_identity() {
         let mut source = MechProgram::new(MechProgramConfig::default());
-        source.load_full_stdlib();
         source.run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\noutput").unwrap();
         let bytes = source.compile_bytecode().unwrap();
         let mut p = MechProgram::new(MechProgramConfig::default());
-        p.load_full_stdlib();
         p.run_bytecode(&bytes).unwrap();
         let id = p.interpreter().id;
         let x = p

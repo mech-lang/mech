@@ -1,5 +1,5 @@
 use mech_core::structures::Matrix as ValueMatrix;
-use mech_core::{DecodedInstr, MResult, ParsedProgram, Value, hash_str};
+use mech_core::{DecodedInstr, MResult, ParsedProgram, RuntimeFunctionId, Value, hash_str};
 use mech_engine::{MechProgram, MechProgramConfig};
 
 #[test]
@@ -8,7 +8,6 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
 
     let factory_id = hash_str(FACTORY_NAME);
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     source.run_string(
         "left := [1 2 3 4 5; 6 7 8 9 10; 11 12 13 14 15; 16 17 18 19 20; 21 22 23 24 25]\n\
          right := [25 24 23 22 21; 20 19 18 17 16; 15 14 13 12 11; 10 9 8 7 6; 5 4 3 2 1]\n\
@@ -35,22 +34,28 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
     );
 
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     decoded
         .run_bytecode_program(&parsed)
         .unwrap_or_else(|error| {
             panic!("fresh full runtime failed to reconstruct {FACTORY_NAME}: {error:?}")
         });
 
-    let functions = decoded.interpreter().functions();
-    let functions = functions.borrow();
+    let catalog_entry = decoded
+        .function_catalog()
+        .runtime_entry(RuntimeFunctionId::from_raw(factory_id))
+        .expect("standard catalog must contain the decoded runtime factory");
+    assert_eq!(catalog_entry.name, FACTORY_NAME);
+
+    let functions_ref = decoded.interpreter().functions();
+    let functions = functions_ref.borrow();
     assert!(
-        functions.functions.contains_key(&factory_id),
-        "full runtime factory table must contain {FACTORY_NAME}",
+        !functions.functions.contains_key(&factory_id),
+        "standard runtime factory {FACTORY_NAME} must not be copied into the mutable legacy table",
     );
     assert_eq!(
         functions.dictionary.borrow().get(&factory_id).cloned(),
-        Some(FACTORY_NAME.to_string()),
+        None,
+        "the mutable legacy dictionary must not advertise catalog-owned factories",
     );
     drop(functions);
 

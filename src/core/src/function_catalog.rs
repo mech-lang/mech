@@ -103,7 +103,7 @@ pub struct FunctionSpecializerEntry {
     pub specializer: Arc<dyn FunctionSpecializer>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FunctionExposure {
     Internal,
     Prelude,
@@ -124,7 +124,9 @@ pub struct FunctionCatalog {
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
+    exports_by_module: BTreeMap<String, Vec<FunctionExport>>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
+    all_exports: Vec<FunctionExport>,
 }
 
 impl FunctionCatalog {
@@ -168,6 +170,14 @@ impl FunctionCatalog {
         self.specializers.values()
     }
 
+    /// Returns every named specializer in ascending [`OperationId`] order.
+    /// Parser-only intrinsics are intentionally excluded.
+    pub fn all_specializers(
+        &self,
+    ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
+        self.specializers.values()
+    }
+
     pub fn intrinsic_specializer_entries(
         &self,
     ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
@@ -184,6 +194,28 @@ impl FunctionCatalog {
     pub fn module_export(&self, module: &str, item: &str) -> Option<&FunctionExport> {
         self.exports_by_module_item
             .get(&(String::from(module), String::from(item)))
+    }
+
+    /// Returns the exports for one exact module in ascending module/item order.
+    pub fn module_exports(
+        &self,
+        module: &str,
+    ) -> impl ExactSizeIterator<Item = &FunctionExport> + '_ {
+        self.exports_by_module
+            .get(module)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+            .iter()
+    }
+
+    pub fn has_module(&self, module: &str) -> bool {
+        self.module_exports(module).next().is_some()
+    }
+
+    /// Returns every export exactly once in deterministic order: first by
+    /// [`OperationId`], then by module, item, exposure, and canonical name.
+    pub fn all_exports(&self) -> impl ExactSizeIterator<Item = &FunctionExport> + '_ {
+        self.all_exports.iter()
     }
 
     pub fn runtime_factory_count(&self) -> usize {
@@ -539,7 +571,7 @@ impl FunctionCatalogBuilder {
         Ok(())
     }
 
-    pub fn build(self) -> MResult<FunctionCatalog> {
+    pub fn build(mut self) -> MResult<FunctionCatalog> {
         for (operation, exports) in &self.exports_by_operation {
             let Some(specializer) = self.specializers.get(operation) else {
                 let export = &exports[0];
@@ -569,12 +601,38 @@ impl FunctionCatalogBuilder {
             }
         }
 
+        for exports in self.exports_by_operation.values_mut() {
+            exports.sort_by(|left, right| {
+                left.module
+                    .cmp(&right.module)
+                    .then_with(|| left.item.cmp(&right.item))
+                    .then_with(|| left.exposure.cmp(&right.exposure))
+                    .then_with(|| left.canonical_name.cmp(&right.canonical_name))
+            });
+        }
+
+        let mut exports_by_module = BTreeMap::<String, Vec<FunctionExport>>::new();
+        for ((module, _), export) in &self.exports_by_module_item {
+            exports_by_module
+                .entry(module.clone())
+                .or_default()
+                .push(export.clone());
+        }
+        let all_exports = self
+            .exports_by_operation
+            .values()
+            .flatten()
+            .cloned()
+            .collect();
+
         let catalog = FunctionCatalog {
             runtime_factories: self.runtime_factories,
             specializers: self.specializers,
             intrinsic_specializers: self.intrinsic_specializers,
             exports_by_module_item: self.exports_by_module_item,
+            exports_by_module,
             exports_by_operation: self.exports_by_operation,
+            all_exports,
         };
 
         Ok(catalog)
@@ -748,20 +806,32 @@ fn validate_export(export: &FunctionExport) -> MResult<()> {
         ));
     }
 
-    match (&export.module, &export.item) {
-        (Some(module), Some(item)) if module.is_empty() => Err(invalid_export_error(
-            export,
-            String::from("module name must not be empty"),
-        )),
-        (Some(_), Some(item)) if item.is_empty() => Err(invalid_export_error(
-            export,
-            String::from("item name must not be empty"),
-        )),
-        (Some(_), Some(_)) | (None, None) => Ok(()),
-        _ => Err(invalid_export_error(
-            export,
-            String::from("module and item must either both be present or both be absent"),
-        )),
+    match export.exposure {
+        FunctionExposure::Internal | FunctionExposure::Prelude => {
+            if export.module.is_none() && export.item.is_none() {
+                Ok(())
+            } else {
+                Err(invalid_export_error(
+                    export,
+                    String::from("internal and prelude exports cannot declare a module or item"),
+                ))
+            }
+        }
+        FunctionExposure::ModuleOnly => match (&export.module, &export.item) {
+            (Some(module), Some(_)) if module.is_empty() => Err(invalid_export_error(
+                export,
+                String::from("module name must not be empty"),
+            )),
+            (Some(_), Some(item)) if item.is_empty() => Err(invalid_export_error(
+                export,
+                String::from("item name must not be empty"),
+            )),
+            (Some(_), Some(_)) => Ok(()),
+            _ => Err(invalid_export_error(
+                export,
+                String::from("module-only exports must declare both a module and an item"),
+            )),
+        },
     }
 }
 
@@ -963,6 +1033,19 @@ mod tests {
                 Some(""),
                 FunctionExposure::ModuleOnly,
             ),
+            export("math/add", None, None, FunctionExposure::ModuleOnly),
+            export(
+                "math/add",
+                Some("math"),
+                Some("add"),
+                FunctionExposure::Internal,
+            ),
+            export(
+                "math/add",
+                Some("math"),
+                Some("add"),
+                FunctionExposure::Prelude,
+            ),
         ] {
             let mut builder = FunctionCatalogBuilder::new();
             let error = builder.insert_export(malformed).unwrap_err();
@@ -1101,6 +1184,153 @@ mod tests {
         assert_eq!(
             catalog.module_export("math", "add").unwrap().canonical_name,
             "math/add"
+        );
+    }
+
+    #[test]
+    fn module_queries_are_exact_and_sorted_by_item() {
+        let mut builder = FunctionCatalogBuilder::new();
+        for name in ["math/zeta", "math/alpha", "math-extra/only"] {
+            builder
+                .insert_specializer(name, test_specializer())
+                .unwrap();
+        }
+        for (name, module, item) in [
+            ("math/zeta", "math", "zeta"),
+            ("math-extra/only", "math-extra", "only"),
+            ("math/alpha", "math", "alpha"),
+        ] {
+            builder
+                .insert_export(export(
+                    name,
+                    Some(module),
+                    Some(item),
+                    FunctionExposure::ModuleOnly,
+                ))
+                .unwrap();
+        }
+
+        let catalog = builder.build().unwrap();
+        let items = catalog
+            .module_exports("math")
+            .map(|export| export.item.as_deref().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(items, ["alpha", "zeta"]);
+        assert!(catalog.has_module("math"));
+        assert!(catalog.has_module("math-extra"));
+        assert!(!catalog.has_module("mat"));
+        assert!(!catalog.has_module("missing"));
+    }
+
+    #[test]
+    fn all_specializers_are_named_only_and_sorted_by_operation_id() {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_specializer("stats/mean", test_specializer())
+            .unwrap();
+        builder
+            .insert_specializer("math/add", test_specializer())
+            .unwrap();
+        builder
+            .insert_specializer("logic/and", test_specializer())
+            .unwrap();
+        builder
+            .insert_intrinsic_specializer("assign", test_specializer())
+            .unwrap();
+
+        let catalog = builder.build().unwrap();
+        let specializers = catalog.all_specializers().collect::<Vec<_>>();
+        let operation_ids = specializers
+            .iter()
+            .map(|entry| entry.operation)
+            .collect::<Vec<_>>();
+
+        assert_eq!(specializers.len(), 3);
+        assert!(operation_ids.is_sorted());
+        assert!(
+            specializers
+                .iter()
+                .all(|entry| entry.canonical_name != "assign")
+        );
+    }
+
+    #[test]
+    fn all_exports_are_complete_unique_and_independent_of_insertion_order() {
+        fn build_catalog(reverse_exports: bool) -> FunctionCatalog {
+            let mut builder = FunctionCatalogBuilder::new();
+            for name in ["stats/mean", "math/add"] {
+                builder
+                    .insert_specializer(name, test_specializer())
+                    .unwrap();
+            }
+
+            let mut exports = vec![
+                export("math/add", None, None, FunctionExposure::Prelude),
+                export(
+                    "stats/mean",
+                    Some("stats"),
+                    Some("mean"),
+                    FunctionExposure::ModuleOnly,
+                ),
+                export("math/add", None, None, FunctionExposure::Internal),
+                export(
+                    "math/add",
+                    Some("math"),
+                    Some("add"),
+                    FunctionExposure::ModuleOnly,
+                ),
+            ];
+            if reverse_exports {
+                exports.reverse();
+            }
+            for export in exports {
+                builder.insert_export(export).unwrap();
+            }
+            builder.build().unwrap()
+        }
+
+        fn signatures(
+            catalog: &FunctionCatalog,
+        ) -> Vec<(
+            OperationId,
+            Option<String>,
+            Option<String>,
+            FunctionExposure,
+            String,
+        )> {
+            catalog
+                .all_exports()
+                .map(|export| {
+                    (
+                        export.operation,
+                        export.module.clone(),
+                        export.item.clone(),
+                        export.exposure,
+                        export.canonical_name.clone(),
+                    )
+                })
+                .collect()
+        }
+
+        let forward = build_catalog(false);
+        let reverse = build_catalog(true);
+        let forward_signatures = signatures(&forward);
+
+        assert_eq!(forward_signatures, signatures(&reverse));
+        assert_eq!(forward_signatures.len(), 4);
+        assert!(forward_signatures.windows(2).all(|pair| pair[0] != pair[1]));
+        assert_eq!(
+            forward
+                .exports_for_operation(OperationId::from_name("math/add"))
+                .iter()
+                .map(|export| export.exposure)
+                .collect::<Vec<_>>(),
+            [
+                FunctionExposure::Internal,
+                FunctionExposure::Prelude,
+                FunctionExposure::ModuleOnly,
+            ],
         );
     }
 }

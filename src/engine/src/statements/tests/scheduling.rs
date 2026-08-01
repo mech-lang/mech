@@ -47,7 +47,7 @@ fn dirty_scheduler_updates_only_reachable_combinational_nodes() {
         "a := 1.0\nb := a + 1.0\nc := b + 1.0\n\nu := 100.0\nv := u + 1.0",
     )
     .unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     interpreter.interpret(&tree).unwrap();
     assert_eq!(
         (
@@ -90,7 +90,7 @@ fn dirty_scheduler_updates_only_reachable_combinational_nodes() {
 #[test]
 fn dirty_scheduler_stops_at_register_boundary() {
     let tree = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     interpreter.interpret(&tree).unwrap();
     assert_eq!(
         (value(&interpreter, "x"), value(&interpreter, "z")),

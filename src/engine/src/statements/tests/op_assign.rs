@@ -10,7 +10,7 @@ use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnS
 fn whole_add_assignment_registers_state_node() {
     let source = "~x := 1.0; y := 2.0; x += y; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
     assert_eq!(
@@ -24,7 +24,7 @@ fn whole_add_assignment_registers_state_node() {
 fn whole_add_assignment_alias_is_sampled_once() {
     let source = "~x := 2.0; x += x; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 4.0);
     let x_cell = root_cell(&symbol(&interpreter, "x"));
@@ -45,7 +45,7 @@ fn whole_add_assignment_alias_is_sampled_once() {
 #[test]
 fn register_commit_add_assignment_updates_register_only() {
     let t = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
-    let mut i = Interpreter::new_with_full_stdlib(0);
+    let mut i = Interpreter::new(0, 10_000);
     i.interpret(&t).unwrap();
     assert_eq!((value(&i, "x"), value(&i, "z")), (3., 4.));
     let (x, y) = (cell(&i, "x"), cell(&i, "y"));
@@ -63,7 +63,7 @@ fn register_commit_add_assignment_updates_register_only() {
 #[test]
 fn register_commit_simultaneous_assignments_use_precommit_state() {
     let t = mech_syntax::parser::parse("~x := 1.0\n~y := 2.0\nx += y\ny += x").unwrap();
-    let mut i = Interpreter::new_with_full_stdlib(0);
+    let mut i = Interpreter::new(0, 10_000);
     i.interpret(&t).unwrap();
     assert_eq!((value(&i, "x"), value(&i, "y")), (3., 5.));
     let (x, y) = (cell(&i, "x"), cell(&i, "y"));
@@ -81,7 +81,7 @@ fn register_commit_simultaneous_assignments_use_precommit_state() {
 #[test]
 fn reactive_turn_updates_downstream_after_register_commit() {
     let tree = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     interpreter.interpret(&tree).unwrap();
     let (x_cell, y_cell, z_cell) = (
         cell(&interpreter, "x"),

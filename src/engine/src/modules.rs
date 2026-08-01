@@ -13,72 +13,9 @@ pub struct ModuleManifest {
     pub items: Vec<String>,
 }
 
-fn module_items(module: &str) -> Vec<String> {
-    let mut items = Vec::<String>::new();
-
-    for item_desc in inventory::iter::<ModuleItemDescriptor> {
-        if item_desc.module == module {
-            let item = item_desc.item.to_string();
-            if !items.iter().any(|existing| existing == &item) {
-                items.push(item);
-            }
-        }
-    }
-
-    items
-}
-
-fn has_module_item(module: &str) -> bool {
-    inventory::iter::<ModuleItemDescriptor>
-        .into_iter()
-        .any(|item_desc| item_desc.module == module)
-}
-
 pub trait ModuleLoader {
     fn can_load(&self, module: &str) -> bool;
     fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest>;
-}
-
-#[derive(Default)]
-pub struct LinkedModuleLoader;
-
-impl ModuleLoader for LinkedModuleLoader {
-    fn can_load(&self, module: &str) -> bool {
-        has_module_item(module)
-    }
-
-    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
-        let items = module_items(module);
-
-        if items.is_empty() {
-            return Err(MechError::new(
-                MissingFunctionError {
-                    function_id: hash_str(module),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-
-        let module_prefix = format!("{module}/");
-        for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
-            let name = fxn_comp.name;
-
-            if let Some(item) = name.strip_prefix(&module_prefix) {
-                if items.iter().any(|manifest_item| manifest_item == item) {
-                    fxns.insert_function_compiler(
-                        name,
-                        Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)),
-                    );
-                }
-            }
-        }
-
-        Ok(ModuleManifest {
-            module: module.to_string(),
-            items,
-        })
-    }
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -1262,8 +1199,8 @@ impl ModuleRegistry {
         self
     }
 
-    pub fn linked_stdlib() -> Self {
-        let registry = Self::new().with_loader(Box::new(LinkedModuleLoader::default()));
+    pub fn available() -> Self {
+        let registry = Self::new();
         #[cfg(feature = "dynamic-modules")]
         let registry = registry.with_loader(Box::new(DynamicModuleLoader::default()));
         registry
@@ -1276,80 +1213,227 @@ impl ModuleRegistry {
             }
         }
 
-        Err(MechError::new(
-            MissingFunctionError {
-                function_id: hash_str(module),
-            },
-            None,
-        )
-        .with_compiler_loc())
+        Err(missing_module(module))
     }
 }
 
-pub fn load_module(fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
-    ModuleRegistry::linked_stdlib().load(fxns, module)
+fn missing_module(module: &str) -> MechError {
+    MechError::new(
+        MissingFunctionError {
+            function_id: hash_str(module),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
-pub fn import_module_qualified(fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
-    load_module(fxns, module)
+fn missing_module_item(module: &str, item: &str) -> MechError {
+    MechError::new(
+        MissingFunctionError {
+            function_id: hash_str(&format!("{module}/{item}")),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
-pub fn import_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
-    let manifest = load_module(fxns, module)?;
+fn static_module_manifest(catalog: &FunctionCatalog, module: &str) -> Option<ModuleManifest> {
+    if !catalog.has_module(module) {
+        return None;
+    }
+
+    Some(ModuleManifest {
+        module: module.to_string(),
+        items: catalog
+            .module_exports(module)
+            .map(|export| {
+                export
+                    .item
+                    .clone()
+                    .expect("catalog module exports always have an item")
+            })
+            .collect(),
+    })
+}
+
+fn bind_static_exports<'a>(
+    interpreter: &Interpreter,
+    bindings: impl IntoIterator<Item = (&'a FunctionExport, String)>,
+) -> MResult<()> {
+    let mut state = interpreter.state.borrow_mut();
+    let checkpoint = state.function_environment.clone();
+
+    for (export, visible_name) in bindings {
+        if let Err(error) = state
+            .function_environment
+            .bind_catalog_export(export, &visible_name)
+        {
+            state.function_environment = checkpoint;
+            return Err(error);
+        }
+    }
+
+    Ok(())
+}
+
+fn load_dynamic_module(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
+    let functions = interpreter.functions();
+    ModuleRegistry::available().load(&mut functions.borrow_mut(), module)
+}
+
+fn load_module_with_registry(
+    interpreter: &Interpreter,
+    module: &str,
+    registry: &ModuleRegistry,
+) -> MResult<ModuleManifest> {
+    let catalog = interpreter.function_catalog();
+    if let Some(manifest) = static_module_manifest(catalog, module) {
+        let bindings = catalog.module_exports(module).map(|export| {
+            let item = export
+                .item
+                .as_deref()
+                .expect("catalog module exports always have an item");
+            (export, format!("{module}/{item}"))
+        });
+        bind_static_exports(interpreter, bindings)?;
+        return Ok(manifest);
+    }
+
+    let functions = interpreter.functions();
+    registry.load(&mut functions.borrow_mut(), module)
+}
+
+pub fn load_module(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
+    load_module_with_registry(interpreter, module, &ModuleRegistry::available())
+}
+
+pub fn import_module_qualified(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
+    load_module(interpreter, module)
+}
+
+pub fn import_module_item(interpreter: &Interpreter, module: &str, item: &str) -> MResult<()> {
+    let catalog = interpreter.function_catalog();
+    if catalog.has_module(module) {
+        let export = catalog
+            .module_export(module, item)
+            .ok_or_else(|| missing_module_item(module, item))?;
+        let local_name = item.rsplit('/').next().unwrap_or(item);
+        return bind_static_exports(interpreter, [(export, local_name.to_string())]);
+    }
+
+    let manifest = load_dynamic_module(interpreter, module)?;
     if !manifest
         .items
         .iter()
         .any(|manifest_item| manifest_item == item)
     {
-        return Err(MechError::new(
-            MissingFunctionError {
-                function_id: hash_str(&format!("{module}/{item}")),
-            },
-            None,
-        )
-        .with_compiler_loc());
+        return Err(missing_module_item(module, item));
     }
-    alias_module_item(fxns, module, item)
+    let functions = interpreter.functions();
+    alias_dynamic_module_item(&mut functions.borrow_mut(), module, item)
 }
 
 pub fn import_module_item_as(
-    fxns: &mut Functions,
+    interpreter: &Interpreter,
     module: &str,
     item: &str,
     alias: &str,
 ) -> MResult<()> {
-    let manifest = load_module(fxns, module)?;
+    let catalog = interpreter.function_catalog();
+    if catalog.has_module(module) {
+        let export = catalog
+            .module_export(module, item)
+            .ok_or_else(|| missing_module_item(module, item))?;
+        return bind_static_exports(interpreter, [(export, alias.to_string())]);
+    }
+
+    let manifest = load_dynamic_module(interpreter, module)?;
     if !manifest
         .items
         .iter()
         .any(|manifest_item| manifest_item == item)
     {
-        return Err(MechError::new(
-            MissingFunctionError {
-                function_id: hash_str(&format!("{module}/{item}")),
-            },
-            None,
-        )
-        .with_compiler_loc());
+        return Err(missing_module_item(module, item));
     }
-
-    alias_module_item_as(fxns, module, item, alias)
+    let functions = interpreter.functions();
+    alias_dynamic_module_item_as(&mut functions.borrow_mut(), module, item, alias)
 }
 
-pub fn import_module_glob(fxns: &mut Functions, module: &str) -> MResult<()> {
-    let manifest = load_module(fxns, module)?;
-    for item in manifest.items.iter() {
-        alias_module_item(fxns, module, item)?;
+pub fn import_module_group(
+    interpreter: &Interpreter,
+    module: &str,
+    items: &[String],
+) -> MResult<()> {
+    let catalog = interpreter.function_catalog();
+    if catalog.has_module(module) {
+        let mut bindings = Vec::with_capacity(items.len());
+        for item in items {
+            let export = catalog
+                .module_export(module, item)
+                .ok_or_else(|| missing_module_item(module, item))?;
+            let local_name = item.rsplit('/').next().unwrap_or(item);
+            bindings.push((export, local_name.to_string()));
+        }
+        return bind_static_exports(interpreter, bindings);
+    }
+
+    let functions = interpreter.functions();
+    let checkpoint = FunctionsSnapshot::capture(&functions)?;
+    let result = (|| {
+        let manifest = load_dynamic_module(interpreter, module)?;
+        for item in items {
+            if !manifest
+                .items
+                .iter()
+                .any(|manifest_item| manifest_item == item)
+            {
+                return Err(missing_module_item(module, item));
+            }
+        }
+
+        let mut functions = functions.borrow_mut();
+        for item in items {
+            alias_dynamic_module_item(&mut functions, module, item)?;
+        }
+        Ok(())
+    })();
+
+    if let Err(error) = result {
+        checkpoint.restore()?;
+        return Err(error);
     }
     Ok(())
 }
 
-fn alias_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
-    let local_name = item.rsplit('/').next().unwrap_or(item);
-    alias_module_item_as(fxns, module, item, local_name)
+pub fn import_module_glob(interpreter: &Interpreter, module: &str) -> MResult<()> {
+    let catalog = interpreter.function_catalog();
+    if catalog.has_module(module) {
+        let bindings = catalog.module_exports(module).map(|export| {
+            let item = export
+                .item
+                .as_deref()
+                .expect("catalog module exports always have an item");
+            let local_name = item.rsplit('/').next().unwrap_or(item);
+            (export, local_name.to_string())
+        });
+        return bind_static_exports(interpreter, bindings);
+    }
+
+    let manifest = load_dynamic_module(interpreter, module)?;
+    let functions = interpreter.functions();
+    let mut functions = functions.borrow_mut();
+    for item in &manifest.items {
+        alias_dynamic_module_item(&mut functions, module, item)?;
+    }
+    Ok(())
 }
 
-fn alias_module_item_as(
+fn alias_dynamic_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
+    let local_name = item.rsplit('/').next().unwrap_or(item);
+    alias_dynamic_module_item_as(fxns, module, item, local_name)
+}
+
+fn alias_dynamic_module_item_as(
     fxns: &mut Functions,
     module: &str,
     item: &str,
@@ -1386,6 +1470,150 @@ fn alias_module_item_as(
             None,
         )
         .with_compiler_loc())
+    }
+}
+
+#[cfg(test)]
+mod static_catalog_module_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    struct TestSpecializer;
+
+    impl FunctionSpecializer for TestSpecializer {
+        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            unreachable!("module visibility tests do not specialize functions")
+        }
+    }
+
+    fn static_catalog() -> Arc<FunctionCatalog> {
+        let mut builder = FunctionCatalogBuilder::new();
+        for (canonical_name, module, item) in [
+            ("math/sin", "math", "sin"),
+            ("math/cos", "math", "cos"),
+            ("stats/sum/column", "stats", "sum/column"),
+        ] {
+            let operation = builder
+                .insert_specializer(canonical_name, Arc::new(TestSpecializer))
+                .unwrap();
+            builder
+                .insert_export(FunctionExport {
+                    operation,
+                    canonical_name: canonical_name.to_string(),
+                    module: Some(module.to_string()),
+                    item: Some(item.to_string()),
+                    exposure: FunctionExposure::ModuleOnly,
+                })
+                .unwrap();
+        }
+        Arc::new(builder.build().unwrap())
+    }
+
+    fn interpreter() -> Interpreter {
+        Interpreter::with_function_catalog(0, 100, static_catalog())
+    }
+
+    fn binding(interpreter: &Interpreter, name: &str) -> Option<FunctionBinding> {
+        interpreter
+            .state
+            .borrow()
+            .function_environment
+            .resolve_name(name)
+    }
+
+    #[test]
+    fn qualified_item_alias_glob_and_nested_imports_bind_exact_catalog_exports() {
+        let qualified = interpreter();
+        let manifest = load_module(&qualified, "math").unwrap();
+        assert_eq!(manifest.items, ["cos", "sin"]);
+        assert_eq!(
+            binding(&qualified, "math/cos"),
+            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
+                "math/cos",
+            ))),
+        );
+        assert_eq!(binding(&qualified, "cos"), None);
+
+        let item = interpreter();
+        import_module_item(&item, "stats", "sum/column").unwrap();
+        assert_eq!(
+            binding(&item, "column"),
+            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
+                "stats/sum/column",
+            ))),
+        );
+        assert_eq!(binding(&item, "stats/sum/column"), None);
+
+        let alias = interpreter();
+        import_module_item_as(&alias, "math", "cos", "trig").unwrap();
+        assert_eq!(
+            binding(&alias, "trig"),
+            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
+                "math/cos",
+            ))),
+        );
+        assert_eq!(binding(&alias, "cos"), None);
+
+        let glob = interpreter();
+        import_module_glob(&glob, "math").unwrap();
+        assert!(binding(&glob, "cos").is_some());
+        assert!(binding(&glob, "sin").is_some());
+        assert_eq!(binding(&glob, "math/cos"), None);
+    }
+
+    struct RecordingLoader {
+        probed: Arc<AtomicBool>,
+    }
+
+    impl ModuleLoader for RecordingLoader {
+        fn can_load(&self, _: &str) -> bool {
+            self.probed.store(true, Ordering::SeqCst);
+            true
+        }
+
+        fn load(&self, _: &mut Functions, _: &str) -> MResult<ModuleManifest> {
+            unreachable!("an exact static module must take precedence")
+        }
+    }
+
+    #[test]
+    fn exact_static_module_precedes_every_dynamic_loader() {
+        let interpreter = interpreter();
+        let probed = Arc::new(AtomicBool::new(false));
+        let registry = ModuleRegistry::new().with_loader(Box::new(RecordingLoader {
+            probed: probed.clone(),
+        }));
+
+        load_module_with_registry(&interpreter, "math", &registry).unwrap();
+
+        assert!(!probed.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn missing_item_in_static_module_does_not_mutate_visibility() {
+        let interpreter = interpreter();
+
+        let error = import_module_item(&interpreter, "math", "missing").unwrap_err();
+
+        assert_eq!(error.kind_name(), "MissingFunction");
+        assert_eq!(binding(&interpreter, "missing"), None);
+        assert_eq!(binding(&interpreter, "math/missing"), None);
+    }
+
+    #[test]
+    fn failed_group_import_rolls_back_every_earlier_binding() {
+        let interpreter = interpreter();
+
+        let error = import_module_group(
+            &interpreter,
+            "math",
+            &[String::from("sin"), String::from("missing")],
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "MissingFunction");
+        assert_eq!(binding(&interpreter, "sin"), None);
+        assert_eq!(binding(&interpreter, "missing"), None);
     }
 }
 

@@ -3,7 +3,7 @@ use mech_syntax::parser;
 
 fn run(src: &str) -> mech_core::MResult<Interpreter> {
     let program = parser::parse(src).unwrap();
-    let p = Interpreter::new_with_full_stdlib(0);
+    let p = Interpreter::new(0, 10_000);
     let mut services = NoMechExecutionServices;
     {
         let execution = InterpreterExecution::new(&p, &mut services);

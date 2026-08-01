@@ -26,17 +26,15 @@ impl FunctionEnvironment {
             environment.enabled_operations.insert(entry.operation);
         }
 
-        for entry in catalog.specializer_entries() {
-            for export in catalog.exports_for_operation(entry.operation) {
-                match export.exposure {
-                    FunctionExposure::Internal => {
-                        environment.enabled_operations.insert(export.operation);
-                    }
-                    FunctionExposure::Prelude => {
-                        environment.bind_catalog_export(export, &export.canonical_name)?;
-                    }
-                    FunctionExposure::ModuleOnly => {}
+        for export in catalog.all_exports() {
+            match export.exposure {
+                FunctionExposure::Internal => {
+                    environment.enabled_operations.insert(export.operation);
                 }
+                FunctionExposure::Prelude => {
+                    environment.bind_catalog_export(export, &export.canonical_name)?;
+                }
+                FunctionExposure::ModuleOnly => {}
             }
         }
 

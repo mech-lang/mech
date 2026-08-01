@@ -4,7 +4,7 @@ use mech_engine::Interpreter;
 #[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
 fn evaluate_f64(source: &str) -> f64 {
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     let output = interpreter.interpret(&tree).unwrap();
     *output.as_f64().unwrap().borrow()
 }

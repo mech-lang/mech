@@ -31,20 +31,30 @@ macro_rules! test_interpreter {
     };
 }
 
-macro_rules! test_interpreter_linked {
-    ($func:ident, $input:tt, $expected:expr) => {
+macro_rules! test_catalog_internal_operation {
+    ($func:ident, $operation:literal, [$($argument:expr),+ $(,)?], $expected:expr) => {
         #[test]
         fn $func() {
-            let s = $input;
-            let mut program = MechProgram::new(MechProgramConfig {
+            let program = MechProgram::new(MechProgramConfig {
                 name: "test".to_string(),
                 environment: MechProgramEnvironment::default(),
             });
-            program.load_full_stdlib();
-            match program.run_string(s) {
-                Ok(result) => assert_eq!(result, $expected),
-                Err(err) => panic!("{:?}", err),
-            }
+            let operation = OperationId::from_name($operation);
+            let state = program.interpreter().state.borrow();
+            assert!(state.function_environment.operation_is_enabled(operation));
+            assert_eq!(state.function_environment.resolve_name($operation), None);
+            drop(state);
+
+            let arguments = vec![$($argument),+];
+            let function = program
+                .function_catalog()
+                .specializer(operation)
+                .expect("internal operation must exist in the standard catalog")
+                .specializer
+                .specialize(&arguments)
+                .expect("internal operation must specialize for the test arguments");
+            function.solve();
+            assert_eq!(function.out(), $expected);
         }
     };
 }
@@ -943,25 +953,25 @@ test_interpreter!(
     Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_interpreter!(
     interpret_matrix_strict_eq,
     "x := 1 + [4 5 6]\nx === [5 6 7]",
     Value::Bool(Ref::new(true))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_interpreter!(
     interpret_matrix_strict_neq,
     "x := 1 + [4 5 6]\nx !== [5 6 8]",
     Value::Bool(Ref::new(true))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_interpreter!(
     interpret_matrix_strict_eq_symbol,
     "x := 1 + [4 5 6]\nx ≡ [5 6 7]",
     Value::Bool(Ref::new(true))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_interpreter!(
     interpret_matrix_strict_neq_symbol,
     "x := 1 + [4 5 6]\nx !≡ [5 6 8]",
     Value::Bool(Ref::new(true))
@@ -3750,13 +3760,65 @@ test_interpreter!(
     r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := A ⋈ B; J.b[1]"#,
     Value::U64(Ref::new(200))
 );
+
+#[cfg(all(feature = "table", feature = "u64", feature = "linked_stdlib"))]
+fn internal_table_join_cell(operation_name: &str, column: &str, row: usize) -> Value {
+    let mut program = MechProgram::new(MechProgramConfig {
+        name: "internal-table-join".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    program
+        .run_string(
+            r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |
+B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |"#,
+        )
+        .unwrap();
+
+    let operation = OperationId::from_name(operation_name);
+    let state = program.interpreter().state.borrow();
+    assert!(state.function_environment.operation_is_enabled(operation));
+    assert_eq!(
+        state.function_environment.resolve_name(operation_name),
+        None
+    );
+    drop(state);
+
+    let arguments = program
+        .root_symbol_values(&["A", "B"])
+        .unwrap()
+        .into_iter()
+        .map(|(_, value)| value)
+        .collect::<Vec<_>>();
+    let function = program
+        .function_catalog()
+        .specializer(operation)
+        .expect("table join must exist in the standard catalog")
+        .specializer
+        .specialize(&arguments)
+        .expect("table join must specialize for table arguments");
+    function.solve();
+
+    let Value::Table(table) = function.out() else {
+        panic!("table join must return a table")
+    };
+    let table = table.borrow();
+    table
+        .data
+        .get(&hash_str(column))
+        .unwrap_or_else(|| panic!("joined table must contain column {column}"))
+        .1
+        .index1d(row)
+}
+
 #[cfg(all(feature = "table", feature = "u64"))]
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
-    interpret_table_inner_join_word,
-    r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/join(A, B); J.b[2]"#,
-    Value::U64(Ref::new(300))
-);
+#[test]
+fn interpret_table_inner_join_catalog_operation() {
+    assert_eq!(
+        internal_table_join_cell("table/join", "b", 2),
+        Value::U64(Ref::new(300)),
+    );
+}
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(
@@ -3766,11 +3828,13 @@ test_interpreter!(
 );
 #[cfg(all(feature = "table", feature = "u64"))]
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
-    interpret_table_left_outer_join_word,
-    r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-outer-join(A, B); J.id[2]"#,
-    Value::U64(Ref::new(2))
-);
+#[test]
+fn interpret_table_left_outer_join_catalog_operation() {
+    assert_eq!(
+        internal_table_join_cell("table/left-outer-join", "id", 2),
+        Value::U64(Ref::new(2)),
+    );
+}
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(
@@ -3780,11 +3844,13 @@ test_interpreter!(
 );
 #[cfg(all(feature = "table", feature = "u64"))]
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
-    interpret_table_right_outer_join_word,
-    r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/right-outer-join(A, B); J.id[3]"#,
-    Value::U64(Ref::new(4))
-);
+#[test]
+fn interpret_table_right_outer_join_catalog_operation() {
+    assert_eq!(
+        internal_table_join_cell("table/right-outer-join", "id", 3),
+        Value::U64(Ref::new(4)),
+    );
+}
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(
@@ -3794,11 +3860,13 @@ test_interpreter!(
 );
 #[cfg(all(feature = "table", feature = "u64"))]
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
-    interpret_table_full_outer_join_word,
-    r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/full-outer-join(A, B); J.id[1]"#,
-    Value::U64(Ref::new(1))
-);
+#[test]
+fn interpret_table_full_outer_join_catalog_operation() {
+    assert_eq!(
+        internal_table_join_cell("table/full-outer-join", "id", 1),
+        Value::U64(Ref::new(1)),
+    );
+}
 
 #[cfg(all(feature = "table", feature = "u64", feature = "u8"))]
 #[test]
@@ -3898,11 +3966,13 @@ test_interpreter!(
 );
 #[cfg(all(feature = "table", feature = "u64"))]
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
-    interpret_table_left_semi_join_word,
-    r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-semi-join(A, B); J.id[1]"#,
-    Value::U64(Ref::new(2))
-);
+#[test]
+fn interpret_table_left_semi_join_catalog_operation() {
+    assert_eq!(
+        internal_table_join_cell("table/left-semi-join", "id", 1),
+        Value::U64(Ref::new(2)),
+    );
+}
 
 #[cfg(all(feature = "table", feature = "u64"))]
 test_interpreter!(
@@ -3912,11 +3982,13 @@ test_interpreter!(
 );
 #[cfg(all(feature = "table", feature = "u64"))]
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
-    interpret_table_left_anti_join_word,
-    r#"A := |id<u64> a<u64>| 1 10 | 2 20 | 3 30 |; B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |; J := table/left-anti-join(A, B); J.a[1]"#,
-    Value::U64(Ref::new(10))
-);
+#[test]
+fn interpret_table_left_anti_join_catalog_operation() {
+    assert_eq!(
+        internal_table_join_cell("table/left-anti-join", "a", 1),
+        Value::U64(Ref::new(10)),
+    );
+}
 
 #[cfg(feature = "u64")]
 test_interpreter!(
@@ -4136,39 +4208,57 @@ test_interpreter!(
 );
 
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_catalog_internal_operation!(
     interpret_compare_max_scalar,
-    "compare/max(5,3)",
+    "compare/max",
+    [Value::F64(Ref::new(5.0)), Value::F64(Ref::new(3.0))],
     Value::F64(Ref::new(5.0))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_catalog_internal_operation!(
     interpret_compare_max_vector,
-    "compare/max([3 4 5 6],4)",
+    "compare/max",
+    [
+        Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 5.0, 6.0], 1, 4)),
+        Value::F64(Ref::new(4.0)),
+    ],
     Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_catalog_internal_operation!(
     interpret_compare_max_vector_vector,
-    "compare/max([3 4 5 6],[6 5 4 3])",
+    "compare/max",
+    [
+        Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 5.0, 6.0], 1, 4)),
+        Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 4.0, 3.0], 1, 4)),
+    ],
     Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_catalog_internal_operation!(
     interpret_compare_min_scalar,
-    "compare/min(5,3)",
+    "compare/min",
+    [Value::F64(Ref::new(5.0)), Value::F64(Ref::new(3.0))],
     Value::F64(Ref::new(3.0))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_catalog_internal_operation!(
     interpret_compare_min_vector,
-    "compare/min([3 4 5 6],4)",
+    "compare/min",
+    [
+        Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 5.0, 6.0], 1, 4)),
+        Value::F64(Ref::new(4.0)),
+    ],
     Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4))
 );
 #[cfg(feature = "linked_stdlib")]
-test_interpreter_linked!(
+test_catalog_internal_operation!(
     interpret_compare_min_vector_vector,
-    "compare/min([3 4 5 6],[6 5 4 3])",
+    "compare/min",
+    [
+        Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 5.0, 6.0], 1, 4)),
+        Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 4.0, 3.0], 1, 4)),
+    ],
     Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 3.0], 1, 4))
 );
 

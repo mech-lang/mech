@@ -326,7 +326,7 @@ pub fn module_import_runtime(
                 )
                 .with_compiler_loc());
             }
-            load_module(&mut p.functions().borrow_mut(), &module)?;
+            load_module(p, &module)?;
             Ok(Value::Empty)
         }
         ModuleImportKind::Item => {
@@ -345,18 +345,13 @@ pub fn module_import_runtime(
                     if is_context_export(p, &module, &item) {
                         return Err(context_export_error(&module, &item));
                     }
-                    import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
+                    import_module_item(p, &module, &item)?;
                 }
                 Some(ModuleImportAlias::Value(alias)) => {
                     if is_context_export(p, &module, &item) {
                         return Err(context_export_error(&module, &item));
                     }
-                    import_module_item_as(
-                        &mut p.functions().borrow_mut(),
-                        &module,
-                        &item,
-                        &alias.to_string(),
-                    )?;
+                    import_module_item_as(p, &module, &item, &alias.to_string())?;
                 }
                 Some(ModuleImportAlias::Context(alias)) => {
                     p.bind_context_export(alias, &module, &item)?;
@@ -389,7 +384,7 @@ pub fn module_import_runtime(
           None,
         ).with_compiler_loc());
             }
-            import_module_glob(&mut p.functions().borrow_mut(), &module)?;
+            import_module_glob(p, &module)?;
             Ok(Value::Empty)
         }
         ModuleImportKind::Group => {
@@ -403,16 +398,19 @@ pub fn module_import_runtime(
                 .with_compiler_loc()
             })?;
 
-            for group_item in group_items {
-                let item = module_import_item_path(&group_item.item);
+            let items = group_items
+                .iter()
+                .map(|group_item| module_import_item_path(&group_item.item))
+                .collect::<Vec<_>>();
+            for item in &items {
                 if is_context_export(p, &module, &item) {
                     return Err(MechError::new(
             GenericError { msg: format!("Grouped imports do not support context exports; import `{module}/{item}` with `+> @name := {module}/{item}`") },
             None,
           ).with_compiler_loc());
                 }
-                import_module_item(&mut p.functions().borrow_mut(), &module, &item)?;
             }
+            import_module_group(p, &module, &items)?;
             Ok(Value::Empty)
         }
     }
