@@ -1,0 +1,53 @@
+[package]
+name = "function-system-baseline"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[features]
+default = ["fixed-specialization-cases"]
+fixed-specialization-cases = ["mech-interpreter/matrix2", "mech-interpreter/vector2"]
+
+[dependencies]
+mech-bytecode = {
+  path = "../../../src/bytecode",
+  default-features = false,
+}
+mech-core = {
+  path = "../../../src/core",
+  default-features = false,
+}
+mech-interpreter = {
+  path = "../../../src/interpreter",
+  default-features = true,
+  features = ["linked_stdlib"],
+}
+mech-program = {
+  path = "../../../src/program",
+  default-features = true,
+  features = ["linked_stdlib"],
+}
+inventory = "0.3.22"
+nalgebra = "0.34.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[patch.crates-io]
+mech-bytecode = { path = "../../../src/bytecode" }
+mech-core = { path = "../../../src/core" }
+mech-syntax = { path = "../../../src/syntax" }
+mech-interpreter = { path = "../../../src/interpreter" }
+mech-program = { path = "../../../src/program" }
+mech-runtime = { path = "../../../src/runtime" }
+mech-abi = { path = "../../../src/abi" }
+mech-math = { path = "../../../machines/math" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-range = { path = "../../../machines/range" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-set = { path = "../../../machines/set" }
+mech-string = { path = "../../../machines/string" }
+mech-stats = { path = "../../../machines/stats" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+
+[workspace]
