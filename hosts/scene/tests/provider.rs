@@ -2,12 +2,12 @@ use std::collections::BTreeMap;
 
 use mech_core::{MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, Value};
 use mech_host_scene::*;
+#[cfg(feature = "native")]
+use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
-#[cfg(feature = "native")]
-use mech_runtime::RuntimeHostFactory;
 
 fn deliver_write(
     provider: &mut dyn RuntimeResourceProvider,
@@ -241,7 +241,10 @@ fn table_columns_may_be_reordered() {
         ("circles", table(vec![circle])),
         ("lines", tuple(vec![])),
     ]);
-    assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles[0].id, "c1");
+    assert_eq!(
+        SceneSnapshot::from_value(&scene).unwrap().circles[0].id,
+        "c1"
+    );
 }
 
 #[test]
@@ -515,35 +518,41 @@ fn native_scene_instances_are_isolated() {
         .unwrap()
         .resource_providers
         .remove(0);
-    deliver_write(main.as_mut(), RuntimeResourceWriteRequest {
-        base_uri: "scene://main/frame".to_string(),
-        path: "replace".to_string(),
-        context_name: "view".to_string(),
-        operation: RuntimeCapabilityOperation::Write,
-        intent: RuntimeResourceWriteIntent::Send,
-        value: record(vec![
-            ("width", f(100.0)),
-            ("height", f(50.0)),
-            ("background", s("#000")),
-            ("circles", tuple(vec![])),
-            ("lines", tuple(vec![])),
-        ]),
-    })
+    deliver_write(
+        main.as_mut(),
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://main/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: record(vec![
+                ("width", f(100.0)),
+                ("height", f(50.0)),
+                ("background", s("#000")),
+                ("circles", tuple(vec![])),
+                ("lines", tuple(vec![])),
+            ]),
+        },
+    )
     .unwrap();
-    deliver_write(hud.as_mut(), RuntimeResourceWriteRequest {
-        base_uri: "scene://hud/frame".to_string(),
-        path: "replace".to_string(),
-        context_name: "view".to_string(),
-        operation: RuntimeCapabilityOperation::Write,
-        intent: RuntimeResourceWriteIntent::Send,
-        value: record(vec![
-            ("width", f(200.0)),
-            ("height", f(50.0)),
-            ("background", s("#000")),
-            ("circles", tuple(vec![])),
-            ("lines", tuple(vec![])),
-        ]),
-    })
+    deliver_write(
+        hud.as_mut(),
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://hud/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: record(vec![
+                ("width", f(200.0)),
+                ("height", f(50.0)),
+                ("background", s("#000")),
+                ("circles", tuple(vec![])),
+                ("lines", tuple(vec![])),
+            ]),
+        },
+    )
     .unwrap();
     assert_eq!(registry.latest("main").unwrap().width, 100.0);
     assert_eq!(registry.latest("hud").unwrap().width, 200.0);
@@ -579,14 +588,18 @@ fn scene_provider_deduplicates_identical_replacements() {
 
     let other_backend = RecordingSceneBackend::new();
     let mut other_provider = SceneResourceProvider::new("other", other_backend.clone());
-    deliver_write(&mut other_provider, RuntimeResourceWriteRequest {
-        base_uri: "scene://other/frame".to_string(),
-        path: "replace".to_string(),
-        context_name: "main".to_string(),
-        operation: RuntimeCapabilityOperation::Write,
-        intent: RuntimeResourceWriteIntent::Send,
-        value: empty_scene(),
-    }).unwrap();
+    deliver_write(
+        &mut other_provider,
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://other/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "main".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: empty_scene(),
+        },
+    )
+    .unwrap();
     assert_eq!(other_backend.generation(), 1);
 }
 
@@ -596,8 +609,12 @@ struct FailableSceneBackend {
     fail_next: std::sync::Arc<std::sync::Mutex<bool>>,
 }
 impl FailableSceneBackend {
-    fn generation(&self) -> u64 { self.inner.generation() }
-    fn fail_next(&self) { *self.fail_next.lock().unwrap() = true; }
+    fn generation(&self) -> u64 {
+        self.inner.generation()
+    }
+    fn fail_next(&self) {
+        *self.fail_next.lock().unwrap() = true;
+    }
 }
 impl SceneBackend for FailableSceneBackend {
     fn replace_scene(&mut self, scene: SceneSnapshot) -> mech_core::MResult<()> {
@@ -613,8 +630,12 @@ impl SceneBackend for FailableSceneBackend {
 #[derive(Debug, Clone)]
 struct TestSceneError;
 impl MechErrorKind for TestSceneError {
-    fn name(&self) -> &str { "SceneBackendRejected" }
-    fn message(&self) -> String { "backend rejected scene".to_string() }
+    fn name(&self) -> &str {
+        "SceneBackendRejected"
+    }
+    fn message(&self) -> String {
+        "backend rejected scene".to_string()
+    }
 }
 
 #[test]

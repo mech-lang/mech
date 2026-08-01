@@ -4,19 +4,18 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::MResult;
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource,
-    RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
+    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver,
+    RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
 };
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
 
+use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 use crate::{
-    timer_source_matches,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
-    timer_settings_from_config,
+    timer_settings_from_config, timer_source_matches,
 };
-use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BrowserMonotonicTimerBackend;
@@ -118,19 +117,11 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
             if !live.load(Ordering::SeqCst) {
                 return;
             }
-            let state = pending
-                .lock()
-                .map_err(|_| ())
-                .and_then(|mut pending| {
-                    submit_pending_timer_snapshots(
-                        &instance,
-                        Some(&ingress),
-                        &snapshot,
-                        &mut pending,
-                    )
+            let state = pending.lock().map_err(|_| ()).and_then(|mut pending| {
+                submit_pending_timer_snapshots(&instance, Some(&ingress), &snapshot, &mut pending)
                     .map(|(_, state)| state)
                     .map_err(|_| ())
-                });
+            });
             match state {
                 Ok(TimerSubmitState::Drained) => {}
                 Ok(TimerSubmitState::Full) => return,
@@ -157,19 +148,11 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
                 live.store(false, Ordering::SeqCst);
                 return;
             }
-            let state = pending
-                .lock()
-                .map_err(|_| ())
-                .and_then(|mut pending| {
-                    submit_pending_timer_snapshots(
-                        &instance,
-                        Some(&ingress),
-                        &snapshot,
-                        &mut pending,
-                    )
+            let state = pending.lock().map_err(|_| ()).and_then(|mut pending| {
+                submit_pending_timer_snapshots(&instance, Some(&ingress), &snapshot, &mut pending)
                     .map(|(_, state)| state)
                     .map_err(|_| ())
-                });
+            });
             if matches!(state, Ok(TimerSubmitState::Closed) | Err(())) {
                 live.store(false, Ordering::SeqCst);
             }

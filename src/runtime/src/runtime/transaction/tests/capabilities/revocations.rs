@@ -67,9 +67,11 @@ fn provisional_revocation_does_not_leak_to_other_transactions() {
         .revoke_capability_with_context(&mut owner, id)
         .unwrap();
 
-    assert!(runtime
-        .check_capability_with_context(&mut owner, &request("task:1"))
-        .is_err());
+    assert!(
+        runtime
+            .check_capability_with_context(&mut owner, &request("task:1"))
+            .is_err()
+    );
     assert_eq!(
         runtime
             .check_capability_with_context(&mut observer, &request("task:1"))

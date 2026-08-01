@@ -1,6 +1,5 @@
 #![allow(warnings)]
 #![feature(iter_intersperse)]
-
 #![feature(test)]
 #![feature(get_mut_unchecked)]
 
@@ -8,12 +7,12 @@ extern crate test;
 
 use test::Bencher;
 
-use std::sync::Arc;
+use hashbrown::{HashMap, HashSet};
 use std::cell::RefCell;
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
-use hashbrown::{HashMap, HashSet};
+use std::sync::Arc;
 
 use std::collections::VecDeque;
 use std::thread;
@@ -25,114 +24,115 @@ use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
 use mech_core::interpreter::*;
-use mech_syntax::parser::{parse};
-use nalgebra::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
+use mech_syntax::parser::parse;
+use nalgebra::{
+    DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix4, Matrix6, Rotation3,
+    RowDVector, RowVector2, RowVector3, RowVector4, Vector3,
+};
 
 #[bench]
-fn set_column(b:&mut Bencher){
-  let s = r#"a := [1 2; 3 4]
+fn set_column(b: &mut Bencher) {
+    let s = r#"a := [1 2; 3 4]
 a[:,1] = 4"#;
-  match parser::parse(&s) {
-    Ok(tree) => { 
-      let mut intrp = Interpreter::new();
-      let result = intrp.interpret(&tree);
-      let fxn = &intrp.plan.borrow()[0];
-      b.iter(|| {
-        let result = fxn.solve();
-      });
+    match parser::parse(&s) {
+        Ok(tree) => {
+            let mut intrp = Interpreter::new();
+            let result = intrp.interpret(&tree);
+            let fxn = &intrp.plan.borrow()[0];
+            b.iter(|| {
+                let result = fxn.solve();
+            });
+        }
+        _ => (),
     }
-    _ => (),
-  }
 }
 
 #[bench]
-fn matrix_multiply(b:&mut Bencher){
-  let s = r#"a := [1 2; 3 4]
+fn matrix_multiply(b: &mut Bencher) {
+    let s = r#"a := [1 2; 3 4]
 b := [4 5; 6 7]
 c := a ** b"#;
-  match parser::parse(&s) {
-    Ok(tree) => { 
-      let mut intrp = Interpreter::new();
-      let result = intrp.interpret(&tree);
-      let fxn = &intrp.plan.borrow()[0];
-      b.iter(|| {
-        let result = fxn.solve();
-      });
+    match parser::parse(&s) {
+        Ok(tree) => {
+            let mut intrp = Interpreter::new();
+            let result = intrp.interpret(&tree);
+            let fxn = &intrp.plan.borrow()[0];
+            b.iter(|| {
+                let result = fxn.solve();
+            });
+        }
+        _ => (),
     }
-    _ => (),
-  }
 }
 
 #[bench]
-fn add_scalar(b:&mut Bencher){
-  let s = r#"1 + 1"#;
-  match parser::parse(&s) {
-    Ok(tree) => { 
-      let mut intrp = Interpreter::new();
-      let result = intrp.interpret(&tree);
-      let fxn = &intrp.plan.borrow()[0];
-      b.iter(|| {
-        fxn.solve();
-      });
+fn add_scalar(b: &mut Bencher) {
+    let s = r#"1 + 1"#;
+    match parser::parse(&s) {
+        Ok(tree) => {
+            let mut intrp = Interpreter::new();
+            let result = intrp.interpret(&tree);
+            let fxn = &intrp.plan.borrow()[0];
+            b.iter(|| {
+                fxn.solve();
+            });
+        }
+        _ => (),
     }
-    _ => (),
-  }
 }
 
 #[bench]
-fn matrix_add_row(b:&mut Bencher){
-  let s = r#"a := [1 2 3]
+fn matrix_add_row(b: &mut Bencher) {
+    let s = r#"a := [1 2 3]
 b := [4 5 6]
 c := a + b"#;
-  match parser::parse(&s) {
-    Ok(tree) => { 
-      let mut intrp = Interpreter::new();
-      let result = intrp.interpret(&tree);
-      let fxn = &intrp.plan.borrow()[0];
-      b.iter(|| {
-        fxn.solve();
-      });
+    match parser::parse(&s) {
+        Ok(tree) => {
+            let mut intrp = Interpreter::new();
+            let result = intrp.interpret(&tree);
+            let fxn = &intrp.plan.borrow()[0];
+            b.iter(|| {
+                fxn.solve();
+            });
+        }
+        _ => (),
     }
-    _ => (),
-  }
 }
 
 #[bench]
-fn matrix_add_baseline_nalgebra(b:&mut Bencher){
-  b.iter(|| {
-    let a: RowVector3<i64> = RowVector3::from_vec(vec![1,2,3]);
-    let b: RowVector3<i64> = RowVector3::from_vec(vec![4,5,6]);
-    let c = a + b;
-  });
+fn matrix_add_baseline_nalgebra(b: &mut Bencher) {
+    b.iter(|| {
+        let a: RowVector3<i64> = RowVector3::from_vec(vec![1, 2, 3]);
+        let b: RowVector3<i64> = RowVector3::from_vec(vec![4, 5, 6]);
+        let c = a + b;
+    });
 }
 
 #[bench]
-fn matrix_add_baseline_rust(b:&mut Bencher){
-  b.iter(|| {
-    let a: [i64;3] = [1, 2, 3];
-    let b: [i64;3] = [4, 5, 6];
-    let mut c = [0, 0, 0];
-    for i in 0..3 {
-      c[i] = a[i] + b[i];
-    }
-  });
+fn matrix_add_baseline_rust(b: &mut Bencher) {
+    b.iter(|| {
+        let a: [i64; 3] = [1, 2, 3];
+        let b: [i64; 3] = [4, 5, 6];
+        let mut c = [0, 0, 0];
+        for i in 0..3 {
+            c[i] = a[i] + b[i];
+        }
+    });
 }
 
 #[bench]
-fn add_baseline_rust(b:&mut Bencher){
-  b.iter(|| {
-    1 + 1
-  });
+fn add_baseline_rust(b: &mut Bencher) {
+    b.iter(|| 1 + 1);
 }
 
 #[bench]
-fn matrix_row_add_baseline_heap(b:&mut Bencher){
-  b.iter(|| {
-    let a: Vec<i64> = vec![1, 2, 3];
-    let b: Vec<i64> = vec![4, 5, 6];
-    let mut c = vec![0, 0, 0];
-    for i in 0..3 {
-      c[i] = a[i] + b[i];
-    }
-  });
+fn matrix_row_add_baseline_heap(b: &mut Bencher) {
+    b.iter(|| {
+        let a: Vec<i64> = vec![1, 2, 3];
+        let b: Vec<i64> = vec![4, 5, 6];
+        let mut c = vec![0, 0, 0];
+        for i in 0..3 {
+            c[i] = a[i] + b[i];
+        }
+    });
 }

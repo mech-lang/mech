@@ -336,7 +336,10 @@ impl PatternCompiler {
                             .ok_or_else(|| {
                                 self.error(
                                     pattern,
-                                    format!("Enum kind '{}' has no registered definition.", enum_id),
+                                    format!(
+                                        "Enum kind '{}' has no registered definition.",
+                                        enum_id
+                                    ),
                                 )
                             })?;
                         let declared_payload = enum_definition
@@ -921,7 +924,11 @@ pub fn clear_pattern_bindings(pattern: &Pattern, env: &mut Environment) {
 }
 
 // Reconstructs a Value from a pattern using the current environment. This is the inverse of matching. used to extract or re-emit bound values.
-pub fn pattern_to_value(pattern: &Pattern, env: &Environment, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn pattern_to_value(
+    pattern: &Pattern,
+    env: &Environment,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
     match pattern {
         Pattern::Wildcard => Ok(Value::Empty),
         Pattern::Expression(expr) => expression(expr, Some(env), p),
@@ -1368,10 +1375,7 @@ mod tests {
         };
         let interpreter = Interpreter::new_with_full_stdlib(0);
         let mut services = NoMechExecutionServices;
-        let execution = InterpreterExecution::new(
-            &interpreter,
-            &mut services,
-        );
+        let execution = InterpreterExecution::new(&interpreter, &mut services);
         let mut env = Environment::from([(x_id, Value::U64(Ref::new(1)))]);
 
         let mismatch = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
@@ -1379,10 +1383,7 @@ mod tests {
             Value::U64(Ref::new(3)),
         ])));
         let pattern_match = match_compiled_pattern_with_environment_constraints(
-            &pattern,
-            &mismatch,
-            &env,
-            &execution,
+            &pattern, &mismatch, &env, &execution,
         )
         .unwrap();
         assert!(!pattern_match.matched);

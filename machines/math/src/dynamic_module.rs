@@ -169,80 +169,33 @@ unsafe fn call_unary_f64_view(
     MechStatusV1::Ok
 }
 
-define_unary_f64_dynamic_kernels!(
-    math_round_f64_v1,
-    math_round_f64_view_v1,
-    round
-);
+define_unary_f64_dynamic_kernels!(math_round_f64_v1, math_round_f64_view_v1, round);
 
-define_unary_f64_dynamic_kernels!(
-    math_sqrt_f64_v1,
-    math_sqrt_f64_view_v1,
-    sqrt
-);
+define_unary_f64_dynamic_kernels!(math_sqrt_f64_v1, math_sqrt_f64_view_v1, sqrt);
 
-define_unary_f64_dynamic_kernels!(
-    math_floor_f64_v1,
-    math_floor_f64_view_v1,
-    floor
-);
+define_unary_f64_dynamic_kernels!(math_floor_f64_v1, math_floor_f64_view_v1, floor);
 
-define_unary_f64_dynamic_kernels!(
-    math_ceil_f64_v1,
-    math_ceil_f64_view_v1,
-    ceil
-);
+define_unary_f64_dynamic_kernels!(math_ceil_f64_v1, math_ceil_f64_view_v1, ceil);
 
-define_unary_f64_dynamic_kernels!(
-    math_sin_f64_v1,
-    math_sin_f64_view_v1,
-    sin
-);
+define_unary_f64_dynamic_kernels!(math_sin_f64_v1, math_sin_f64_view_v1, sin);
 
-define_unary_f64_dynamic_kernels!(
-    math_cos_f64_v1,
-    math_cos_f64_view_v1,
-    cos
-);
+define_unary_f64_dynamic_kernels!(math_cos_f64_v1, math_cos_f64_view_v1, cos);
 
-define_unary_f64_dynamic_kernels!(
-    math_tan_f64_v1,
-    math_tan_f64_view_v1,
-    tan
-);
+define_unary_f64_dynamic_kernels!(math_tan_f64_v1, math_tan_f64_view_v1, tan);
 
-define_unary_f64_dynamic_kernels!(
-    math_asin_f64_v1,
-    math_asin_f64_view_v1,
-    asin
-);
+define_unary_f64_dynamic_kernels!(math_asin_f64_v1, math_asin_f64_view_v1, asin);
 
-define_unary_f64_dynamic_kernels!(
-    math_acos_f64_v1,
-    math_acos_f64_view_v1,
-    acos
-);
+define_unary_f64_dynamic_kernels!(math_acos_f64_v1, math_acos_f64_view_v1, acos);
 
-define_unary_f64_dynamic_kernels!(
-    math_atan_f64_v1,
-    math_atan_f64_view_v1,
-    atan
-);
+define_unary_f64_dynamic_kernels!(math_atan_f64_v1, math_atan_f64_view_v1, atan);
 
-define_binary_f64_dynamic_kernel!(
-    math_atan2_f64_v1,
-    atan2
-);
+define_binary_f64_dynamic_kernel!(math_atan2_f64_v1, atan2);
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn assert_export_metadata(
-        index: usize,
-        expected_name: &[u8],
-        expected_kind: MechKernelKindV1,
-    ) {
+    fn assert_export_metadata(index: usize, expected_name: &[u8], expected_kind: MechKernelKindV1) {
         let mut export = MechExportV1 {
             name: MechStrV1 {
                 ptr: core::ptr::null(),

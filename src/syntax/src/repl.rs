@@ -1,177 +1,191 @@
 use crate::*;
 use mech_core::*;
 use nom::{
-  IResult,
-  bytes::complete::tag,
-  branch::alt,
-  bytes::complete::{take_while, take_until, take_till1},
-  combinator::{opt, not},
-  multi::{separated_list1, separated_list0},
-  character::complete::{space0,space1,digit1},
-  sequence::tuple as nom_tuple,
+    IResult,
+    branch::alt,
+    bytes::complete::tag,
+    bytes::complete::{take_till1, take_until, take_while},
+    character::complete::{digit1, space0, space1},
+    combinator::{not, opt},
+    multi::{separated_list0, separated_list1},
+    sequence::tuple as nom_tuple,
 };
 
 #[derive(Debug, Clone)]
 pub enum ReplCommand {
-  Help,
-  Quit,
-  //Pause,
-  //Resume,
-  //Stop,
-  Save(String),
-  Docs(Option<String>),
-  Code(Vec<(String,MechSourceCode)>),
-  Ls,
-  Profile(bool),
-  Cd(String),
-  Step(Option<usize>,Option<u64>),
-  Load(Vec<String>),
-  Whos(Vec<String>),
-  Plan,
-  Symbols(Option<String>),
-  Clear(Option<String>),
-  Clc,
-  //Error(String),
-  //Empty,
+    Help,
+    Quit,
+    //Pause,
+    //Resume,
+    //Stop,
+    Save(String),
+    Docs(Option<String>),
+    Code(Vec<(String, MechSourceCode)>),
+    Ls,
+    Profile(bool),
+    Cd(String),
+    Step(Option<usize>, Option<u64>),
+    Load(Vec<String>),
+    Whos(Vec<String>),
+    Plan,
+    Symbols(Option<String>),
+    Clear(Option<String>),
+    Clc,
+    //Error(String),
+    //Empty,
 }
 
 pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((
-    cd_rpl,
-    step_rpl,
-    clear_rpl,
-    clc_rpl,
-    load_rpl,
-    code_rpl,
-    help_rpl,
-    quit_rpl,
-    save_rpl,
-    symbols_rpl,
-    profile_rpl,
-    plan_rpl,
-    ls_rpl,
-    whos_rpl,
-    docs_rpl,
-  ))(input)?;
-  let (input, _) = opt(tag("\r"))(input)?;
-  let (input, _) = opt(tag("\n"))(input)?;
-  if !input.is_empty() {
-    return Err(nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Eof)));
-  }
-  Ok((input, command))
+    let (input, _) = tag(":")(input)?;
+    let (input, command) = alt((
+        cd_rpl,
+        step_rpl,
+        clear_rpl,
+        clc_rpl,
+        load_rpl,
+        code_rpl,
+        help_rpl,
+        quit_rpl,
+        save_rpl,
+        symbols_rpl,
+        profile_rpl,
+        plan_rpl,
+        ls_rpl,
+        whos_rpl,
+        docs_rpl,
+    ))(input)?;
+    let (input, _) = opt(tag("\r"))(input)?;
+    let (input, _) = opt(tag("\n"))(input)?;
+    if !input.is_empty() {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Eof,
+        )));
+    }
+    Ok((input, command))
 }
 
 fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("save")(input)?;
-  let (input, _) = space1(input)?;
-  let (input, path) = take_while(|c: char| c.is_alphanumeric() || c == '/' || c == '.' || c == '_')(input)?;
-  Ok((input, ReplCommand::Save(path.to_string())))
+    let (input, _) = tag("save")(input)?;
+    let (input, _) = space1(input)?;
+    let (input, path) =
+        take_while(|c: char| c.is_alphanumeric() || c == '/' || c == '.' || c == '_')(input)?;
+    Ok((input, ReplCommand::Save(path.to_string())))
 }
 
 fn code_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("code"), tag("c")))(input)?;
-  let (input, _) = space0(input)?;
-  let (input, code) = take_while(|_| true)(input)?;
-  Ok((input, ReplCommand::Code(vec![("repl".to_string(), MechSourceCode::String(code.to_string()))])))
+    let (input, _) = alt((tag("code"), tag("c")))(input)?;
+    let (input, _) = space0(input)?;
+    let (input, code) = take_while(|_| true)(input)?;
+    Ok((
+        input,
+        ReplCommand::Code(vec![(
+            "repl".to_string(),
+            MechSourceCode::String(code.to_string()),
+        )]),
+    ))
 }
 
 fn profile_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("profile")(input)?;
-  let (input, _) = space0(input)?;
-  let (input, on_off) = alt((tag("on"), tag("off")))(input)?;
-  Ok((input, ReplCommand::Profile(on_off == "on")))
+    let (input, _) = tag("profile")(input)?;
+    let (input, _) = space0(input)?;
+    let (input, on_off) = alt((tag("on"), tag("off")))(input)?;
+    Ok((input, ReplCommand::Profile(on_off == "on")))
 }
 
 fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("docs"), tag("d")))(input)?;
-  let (input, _) = space0(input)?;
-  let (input, name) = opt(take_till1(|c| c == '\r' || c == '\n'))(input)?;
-  let name = name.map(|s| s.to_string());
-  Ok((input, ReplCommand::Docs(name)))
+    let (input, _) = alt((tag("docs"), tag("d")))(input)?;
+    let (input, _) = space0(input)?;
+    let (input, name) = opt(take_till1(|c| c == '\r' || c == '\n'))(input)?;
+    let name = name.map(|s| s.to_string());
+    Ok((input, ReplCommand::Docs(name)))
 }
 
 fn help_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("help"),tag("h")))(input)?;
-  Ok((input, ReplCommand::Help))
+    let (input, _) = alt((tag("help"), tag("h")))(input)?;
+    Ok((input, ReplCommand::Help))
 }
 
 fn quit_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("quit"), tag("exit"), tag("q")))(input)?;
-  Ok((input, ReplCommand::Quit))
+    let (input, _) = alt((tag("quit"), tag("exit"), tag("q")))(input)?;
+    Ok((input, ReplCommand::Quit))
 }
 
 fn cd_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("cd")(input)?;
-  let (input, _) = space0(input)?;
-  let (input, path) = take_until("\r\n")(input)?;
-  Ok((input, ReplCommand::Cd(path.to_string())))
+    let (input, _) = tag("cd")(input)?;
+    let (input, _) = space0(input)?;
+    let (input, path) = take_until("\r\n")(input)?;
+    Ok((input, ReplCommand::Cd(path.to_string())))
 }
 
 fn symbols_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("symbols"), tag("s")))(input)?;
-  let (input, _) = space0(input)?;
-  let (input, name) = opt(take_while(|c: char| c.is_alphanumeric()))(input)?;
-  Ok((input, ReplCommand::Symbols(name.map(|s| s.to_string()))))
+    let (input, _) = alt((tag("symbols"), tag("s")))(input)?;
+    let (input, _) = space0(input)?;
+    let (input, name) = opt(take_while(|c: char| c.is_alphanumeric()))(input)?;
+    Ok((input, ReplCommand::Symbols(name.map(|s| s.to_string()))))
 }
 
 fn plan_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("plan"), tag("p")))(input)?;
-  Ok((input, ReplCommand::Plan))
+    let (input, _) = alt((tag("plan"), tag("p")))(input)?;
+    Ok((input, ReplCommand::Plan))
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-  let (input, id) = take_till1(|c| c == ' ' || c == '\n' || c == '\r')(input)?;
-  Ok((input, id.to_string()))
+    let (input, id) = take_till1(|c| c == ' ' || c == '\n' || c == '\r')(input)?;
+    Ok((input, id.to_string()))
 }
 
 fn whos_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("whos"), tag("w")))(input)?;
-  let (input, _) = space0(input)?;
-  let (input, names) = separated_list0(many1(tag(" ")), identifier)(input)?;
-  Ok((input, ReplCommand::Whos(names)))
+    let (input, _) = alt((tag("whos"), tag("w")))(input)?;
+    let (input, _) = space0(input)?;
+    let (input, names) = separated_list0(many1(tag(" ")), identifier)(input)?;
+    Ok((input, ReplCommand::Whos(names)))
 }
 
 fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("clear")(input)?;
-  Ok((input, ReplCommand::Clear(None)))
+    let (input, _) = tag("clear")(input)?;
+    Ok((input, ReplCommand::Clear(None)))
 }
 
 fn clc_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("clc")(input)?;
-  Ok((input, ReplCommand::Clc))
+    let (input, _) = tag("clc")(input)?;
+    Ok((input, ReplCommand::Clc))
 }
 
 fn ls_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("ls")(input)?;
-  Ok((input, ReplCommand::Ls))
+    let (input, _) = tag("ls")(input)?;
+    Ok((input, ReplCommand::Ls))
 }
 
 fn load_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("load")(input)?;
-  let (input, _) = space1(input)?;
-  let (input, path_strings) = separated_list1(space1, alt((take_until(" "),take_until("\r\n"))))(input)?;
-  Ok((input, ReplCommand::Load(path_strings.iter().map(|s| s.to_string()).collect())))
+    let (input, _) = tag("load")(input)?;
+    let (input, _) = space1(input)?;
+    let (input, path_strings) =
+        separated_list1(space1, alt((take_until(" "), take_until("\r\n"))))(input)?;
+    Ok((
+        input,
+        ReplCommand::Load(path_strings.iter().map(|s| s.to_string()).collect()),
+    ))
 }
 
 fn step_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("step")(input)?;
-  let (input, _) = space1(input)?;
-  let (input, step_id) = opt(nom_tuple((tag("#"), digit1, space1)))(input)?;
-  let (input, count) = opt(digit1)(input)?;
-  let step_id = match step_id {
-    Some((_, id_str, _)) => match id_str.parse::<usize>() {
-      Ok(id) => Some(id),
-      Err(_) => None,
-    },
-    _ => None,
-  };
-  let count = match count {
-    Some(count_str) => match count_str.parse::<u64>() {
-      Ok(count) => Some(count),
-      Err(_) => None,
-    },
-    _ => None,
-  };
-  Ok((input, ReplCommand::Step(step_id, count)))
+    let (input, _) = tag("step")(input)?;
+    let (input, _) = space1(input)?;
+    let (input, step_id) = opt(nom_tuple((tag("#"), digit1, space1)))(input)?;
+    let (input, count) = opt(digit1)(input)?;
+    let step_id = match step_id {
+        Some((_, id_str, _)) => match id_str.parse::<usize>() {
+            Ok(id) => Some(id),
+            Err(_) => None,
+        },
+        _ => None,
+    };
+    let count = match count {
+        Some(count_str) => match count_str.parse::<u64>() {
+            Ok(count) => Some(count),
+            Err(_) => None,
+        },
+        _ => None,
+    };
+    Ok((input, ReplCommand::Step(step_id, count)))
 }

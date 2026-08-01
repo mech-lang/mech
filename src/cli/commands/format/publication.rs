@@ -87,10 +87,12 @@ fn physical_destination_identity(path: &Path) -> MResult<PathBuf> {
                 unresolved_components.push(component.to_os_string());
                 existing_ancestor = existing_ancestor
                     .parent()
-                    .ok_or_else(|| format_error(format!(
-                        "formatter output `{}` has no existing ancestor",
-                        path.display(),
-                    )))?
+                    .ok_or_else(|| {
+                        format_error(format!(
+                            "formatter output `{}` has no existing ancestor",
+                            path.display(),
+                        ))
+                    })?
                     .to_path_buf();
             }
             Err(error) => return Err(error.into()),
@@ -115,19 +117,25 @@ fn ensure_unique_physical_destinations<'a>(
 }
 
 fn publication_artifact_path(path: &Path, suffix: &str) -> MResult<PathBuf> {
-    let parent = path.parent().ok_or_else(|| format_error(format!(
-        "formatter output `{}` has no parent directory",
-        path.display(),
-    )))?;
-    let file_name = path.file_name().ok_or_else(|| format_error(format!(
-        "formatter output `{}` has no file name",
-        path.display(),
-    )))?;
+    let parent = path.parent().ok_or_else(|| {
+        format_error(format!(
+            "formatter output `{}` has no parent directory",
+            path.display(),
+        ))
+    })?;
+    let file_name = path.file_name().ok_or_else(|| {
+        format_error(format!(
+            "formatter output `{}` has no file name",
+            path.display(),
+        ))
+    })?;
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map_err(|error| format_error(format!(
-            "system clock error while publishing formatter outputs: {error}",
-        )))?
+        .map_err(|error| {
+            format_error(format!(
+                "system clock error while publishing formatter outputs: {error}",
+            ))
+        })?
         .as_nanos();
     let sequence = NEXT_PUBLICATION_ARTIFACT.fetch_add(1, Ordering::Relaxed);
     let mut artifact_name = OsString::from(".");
@@ -140,10 +148,7 @@ fn publication_artifact_path(path: &Path, suffix: &str) -> MResult<PathBuf> {
     Ok(parent.join(artifact_name))
 }
 
-fn unused_publication_artifact_path(
-    path: &Path,
-    suffix: &str,
-) -> MResult<PathBuf> {
+fn unused_publication_artifact_path(path: &Path, suffix: &str) -> MResult<PathBuf> {
     loop {
         let candidate = publication_artifact_path(path, suffix)?;
         match fs::symlink_metadata(&candidate) {
@@ -174,23 +179,35 @@ fn destination_exists(path: &Path) -> MResult<bool> {
 
 fn missing_parent_directories(path: &Path) -> MResult<Vec<PathBuf>> {
     let mut missing = Vec::new();
-    let mut current = path.parent().ok_or_else(|| format_error(format!(
-        "formatter output `{}` has no parent directory",
-        path.display(),
-    )))?.to_path_buf();
+    let mut current = path
+        .parent()
+        .ok_or_else(|| {
+            format_error(format!(
+                "formatter output `{}` has no parent directory",
+                path.display(),
+            ))
+        })?
+        .to_path_buf();
     loop {
         match fs::metadata(&current) {
             Ok(metadata) if metadata.is_dir() => break,
-            Ok(_) => return Err(format_error(format!(
-                "formatter output parent `{}` is not a directory",
-                current.display(),
-            ))),
+            Ok(_) => {
+                return Err(format_error(format!(
+                    "formatter output parent `{}` is not a directory",
+                    current.display(),
+                )));
+            }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 missing.push(current.clone());
-                current = current.parent().ok_or_else(|| format_error(format!(
-                    "formatter output parent `{}` has no existing ancestor",
-                    path.display(),
-                )))?.to_path_buf();
+                current = current
+                    .parent()
+                    .ok_or_else(|| {
+                        format_error(format!(
+                            "formatter output parent `{}` has no existing ancestor",
+                            path.display(),
+                        ))
+                    })?
+                    .to_path_buf();
             }
             Err(error) => return Err(error.into()),
         }
@@ -198,10 +215,7 @@ fn missing_parent_directories(path: &Path) -> MResult<Vec<PathBuf>> {
     Ok(missing)
 }
 
-fn remove_file(
-    operation: &'static str,
-    path: &Path,
-) -> Result<(), std::io::Error> {
+fn remove_file(operation: &'static str, path: &Path) -> Result<(), std::io::Error> {
     maybe_fail_publication_operation(operation, path)?;
     match fs::remove_file(path) {
         Ok(()) => Ok(()),
@@ -210,20 +224,13 @@ fn remove_file(
     }
 }
 
-fn rename(
-    operation: &'static str,
-    from: &Path,
-    to: &Path,
-) -> Result<(), std::io::Error> {
+fn rename(operation: &'static str, from: &Path, to: &Path) -> Result<(), std::io::Error> {
     let fault_path = if operation == "backup" { from } else { to };
     maybe_fail_publication_operation(operation, fault_path)?;
     fs::rename(from, to)
 }
 
-fn remove_created_directories(
-    created_directories: &[PathBuf],
-    failures: &mut Vec<String>,
-) {
+fn remove_created_directories(created_directories: &[PathBuf], failures: &mut Vec<String>) {
     for directory in created_directories.iter().rev() {
         if let Err(error) = fs::remove_dir(directory) {
             if error.kind() != std::io::ErrorKind::NotFound {
@@ -249,7 +256,9 @@ fn remove_staging_files(outputs: &[PreparedOutput], failures: &mut Vec<String>) 
 
 fn restore_backups(outputs: &[PreparedOutput], failures: &mut Vec<String>) {
     for output in outputs.iter().rev() {
-        let Some(backup) = output.backup.as_ref() else { continue };
+        let Some(backup) = output.backup.as_ref() else {
+            continue;
+        };
         if let Err(error) = rename("restore-backup", backup, &output.destination) {
             failures.push(format!(
                 "failed to restore formatter output `{}` from `{}`: {error}",
@@ -275,9 +284,7 @@ fn publication_failure(
     }
 }
 
-pub(super) fn publish_outputs_recoverably(
-    outputs: Vec<PlannedOutput>,
-) -> MResult<()> {
+pub(super) fn publish_outputs_recoverably(outputs: Vec<PlannedOutput>) -> MResult<()> {
     let mut destinations = BTreeSet::new();
     let mut required_directories = BTreeSet::new();
     let mut prepared = Vec::with_capacity(outputs.len());
@@ -300,9 +307,7 @@ pub(super) fn publish_outputs_recoverably(
         };
         prepared.push((destination, output.bytes, staging, backup));
     }
-    ensure_unique_physical_destinations(
-        prepared.iter().map(|(destination, _, _, _)| destination),
-    )?;
+    ensure_unique_physical_destinations(prepared.iter().map(|(destination, _, _, _)| destination))?;
 
     let mut required_directories = required_directories.into_iter().collect::<Vec<_>>();
     required_directories.sort_by_key(|path| path.components().count());
@@ -379,11 +384,7 @@ pub(super) fn publish_outputs_recoverably(
         let Some(backup) = outputs[index].planned_backup.clone() else {
             continue;
         };
-        if let Err(error) = rename(
-            "backup",
-            &outputs[index].destination,
-            &backup,
-        ) {
+        if let Err(error) = rename("backup", &outputs[index].destination, &backup) {
             let mut rollback_failures = Vec::new();
             restore_backups(&outputs[..index], &mut rollback_failures);
             remove_staging_files(&outputs, &mut rollback_failures);
@@ -434,7 +435,9 @@ pub(super) fn publish_outputs_recoverably(
 
     let mut cleanup_failures = Vec::new();
     for output in &outputs {
-        let Some(backup) = output.backup.as_ref() else { continue };
+        let Some(backup) = output.backup.as_ref() else {
+            continue;
+        };
         if let Err(error) = remove_file("cleanup-backup", backup) {
             cleanup_failures.push(format!(
                 "failed to remove formatter output backup `{}`: {error}",
@@ -479,12 +482,16 @@ fn maybe_fail_publication_operation(
     operation: &'static str,
     path: &Path,
 ) -> Result<(), std::io::Error> {
-    let file_name = path.file_name().and_then(|name| name.to_str()).unwrap_or("");
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("");
     PUBLICATION_FAULTS.with(|faults| {
         let mut faults = faults.borrow_mut();
-        let Some(index) = faults.iter().position(|fault| {
-            fault.operation == operation && fault.file_name == file_name
-        }) else {
+        let Some(index) = faults
+            .iter()
+            .position(|fault| fault.operation == operation && fault.file_name == file_name)
+        else {
             return Ok(());
         };
         faults.remove(index);
@@ -505,16 +512,18 @@ impl Drop for PublicationFaultGuard {
 }
 
 #[cfg(test)]
-fn inject_publication_faults(
-    faults: &[(&'static str, &str)],
-) -> PublicationFaultGuard {
+fn inject_publication_faults(faults: &[(&'static str, &str)]) -> PublicationFaultGuard {
     PUBLICATION_FAULTS.with(|state| {
         let mut state = state.borrow_mut();
         assert!(state.is_empty(), "publication faults were already armed");
-        state.extend(faults.iter().map(|(operation, file_name)| PublicationFault {
-            operation,
-            file_name: (*file_name).to_string(),
-        }));
+        state.extend(
+            faults
+                .iter()
+                .map(|(operation, file_name)| PublicationFault {
+                    operation,
+                    file_name: (*file_name).to_string(),
+                }),
+        );
     });
     PublicationFaultGuard
 }

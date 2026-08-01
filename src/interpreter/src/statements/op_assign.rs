@@ -1,79 +1,83 @@
-use crate::{Environment, InterpreterExecution, MResult, Value};
-#[cfg(feature = "math")]
-use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
 #[cfg(feature = "math")]
 use super::variable_assign::assignment_registration_operand;
 #[cfg(feature = "math")]
-use crate::{
-  MechError, OpAssign, OpAssignOp, execute_initialized_indexed_compiler_with_registration_arguments,
-  expression,
-};
-#[cfg(feature = "math_add_assign")]
-use crate::{AddAssignRange, AddAssignRangeAll, AddAssignValue};
-#[cfg(feature = "math_sub_assign")]
-use crate::{SubAssignRange, SubAssignRangeAll, SubAssignValue};
-#[cfg(feature = "math_div_assign")]
-use crate::{DivAssignRange, DivAssignRangeAll, DivAssignValue};
-#[cfg(feature = "math_mul_assign")]
-use crate::{MulAssignRange, MulAssignRangeAll, MulAssignValue};
+use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
+use crate::NativeFunctionCompiler;
 #[cfg(any(
-  feature = "math_add_assign",
-  feature = "math_sub_assign",
-  feature = "math_div_assign",
-  feature = "math_mul_assign"
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
 ))]
 use crate::Subscript;
 #[cfg(all(
-  any(
-    feature = "math_add_assign",
-    feature = "math_sub_assign",
-    feature = "math_div_assign",
-    feature = "math_mul_assign"
-  ),
-  any(feature = "subscript_formula", feature = "subscript_range")
-))]
-use crate::NativeFunctionCompiler;
-#[cfg(all(
-  any(
-    feature = "math_add_assign",
-    feature = "math_sub_assign",
-    feature = "math_div_assign",
-    feature = "math_mul_assign"
-  ),
-  feature = "subscript_formula"
-))]
-use crate::{MatrixAssignScalar, MatrixAssignScalarAll, subscript_formula_ix};
-#[cfg(all(
-  any(
-    feature = "math_add_assign",
-    feature = "math_sub_assign",
-    feature = "math_div_assign",
-    feature = "math_mul_assign"
-  ),
-  feature = "subscript_range"
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    feature = "subscript_range"
 ))]
 use crate::subscript_range;
+#[cfg(feature = "math_add_assign")]
+use crate::{AddAssignRange, AddAssignRangeAll, AddAssignValue};
+#[cfg(feature = "math_div_assign")]
+use crate::{DivAssignRange, DivAssignRangeAll, DivAssignValue};
+use crate::{Environment, InterpreterExecution, MResult, Value};
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    feature = "subscript_formula"
+))]
+use crate::{MatrixAssignScalar, MatrixAssignScalarAll, subscript_formula_ix};
+#[cfg(feature = "math")]
+use crate::{
+    MechError, OpAssign, OpAssignOp,
+    execute_initialized_indexed_compiler_with_registration_arguments, expression,
+};
+#[cfg(feature = "math_mul_assign")]
+use crate::{MulAssignRange, MulAssignRangeAll, MulAssignValue};
+#[cfg(feature = "math_sub_assign")]
+use crate::{SubAssignRange, SubAssignRangeAll, SubAssignValue};
 #[cfg(any(
-  feature = "math_add_assign",
-  feature = "math_sub_assign",
-  feature = "math_div_assign",
-  feature = "math_mul_assign"
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
 ))]
 use paste::paste;
 
 #[cfg(feature = "math")]
-pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
-  let mut source = expression(&op_assgn.expression, env, p)?;
-  let slc = &op_assgn.target;
-  if slc.context.is_some() {
-    return Err(MechError::new(AddressedAssignmentUnsupported, None)
-      .with_compiler_loc()
-      .with_tokens(slc.tokens()));
-  }
-  let id = slc.name.hash();
-  let sink = {
-    let mut state_brrw = p.state.borrow_mut();
-    match state_brrw.get_mutable_symbol(id) {
+pub fn op_assign(
+    op_assgn: &OpAssign,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
+    let mut source = expression(&op_assgn.expression, env, p)?;
+    let slc = &op_assgn.target;
+    if slc.context.is_some() {
+        return Err(MechError::new(AddressedAssignmentUnsupported, None)
+            .with_compiler_loc()
+            .with_tokens(slc.tokens()));
+    }
+    let id = slc.name.hash();
+    let sink = {
+        let mut state_brrw = p.state.borrow_mut();
+        match state_brrw.get_mutable_symbol(id) {
       Some(val) => val.borrow().clone(),
       None => {
         match state_brrw.contains_symbol(id) {
@@ -88,46 +92,77 @@ pub fn op_assign(op_assgn: &OpAssign, env: Option<&Environment>, p: &Interpreter
         }
       }
     }
-  };
-  match &slc.subscript {
-    Some(sbscrpt) => {
-      // todo: this only works for the first subscript, it needs to work for multiple subscripts
-      for s in sbscrpt {
-        let fxn = match op_assgn.op {
-          #[cfg(feature = "math_add_assign")]
-          OpAssignOp::Add => add_assign(&s, &sink, &source, env, p)?,
-          #[cfg(feature = "math_sub_assign")]
-          OpAssignOp::Sub => sub_assign(&s, &sink, &source, env, p)?,
-          #[cfg(feature = "math_div_assign")]
-          OpAssignOp::Div => div_assign(&s, &sink, &source, env, p)?,
-          #[cfg(feature = "math_mul_assign")]
-          OpAssignOp::Mul => mul_assign(&s, &sink, &source, env, p)?,
-          _ => todo!(),
-        };
-        return Ok(fxn);
-      }
+    };
+    match &slc.subscript {
+        Some(sbscrpt) => {
+            // todo: this only works for the first subscript, it needs to work for multiple subscripts
+            for s in sbscrpt {
+                let fxn = match op_assgn.op {
+                    #[cfg(feature = "math_add_assign")]
+                    OpAssignOp::Add => add_assign(&s, &sink, &source, env, p)?,
+                    #[cfg(feature = "math_sub_assign")]
+                    OpAssignOp::Sub => sub_assign(&s, &sink, &source, env, p)?,
+                    #[cfg(feature = "math_div_assign")]
+                    OpAssignOp::Div => div_assign(&s, &sink, &source, env, p)?,
+                    #[cfg(feature = "math_mul_assign")]
+                    OpAssignOp::Mul => mul_assign(&s, &sink, &source, env, p)?,
+                    _ => todo!(),
+                };
+                return Ok(fxn);
+            }
+        }
+        None => {
+            let plan = p.plan();
+            let registration_source = assignment_registration_operand(&source);
+            let compile_arguments = vec![sink, source];
+            let registration_arguments = vec![registration_source];
+            return match op_assgn.op {
+                #[cfg(feature = "math_add_assign")]
+                OpAssignOp::Add => {
+                    execute_initialized_indexed_compiler_with_registration_arguments(
+                        p,
+                        &plan,
+                        &AddAssignValue {},
+                        compile_arguments,
+                        registration_arguments,
+                    )
+                }
+                #[cfg(feature = "math_sub_assign")]
+                OpAssignOp::Sub => {
+                    execute_initialized_indexed_compiler_with_registration_arguments(
+                        p,
+                        &plan,
+                        &SubAssignValue {},
+                        compile_arguments,
+                        registration_arguments,
+                    )
+                }
+                #[cfg(feature = "math_div_assign")]
+                OpAssignOp::Div => {
+                    execute_initialized_indexed_compiler_with_registration_arguments(
+                        p,
+                        &plan,
+                        &DivAssignValue {},
+                        compile_arguments,
+                        registration_arguments,
+                    )
+                }
+                #[cfg(feature = "math_mul_assign")]
+                OpAssignOp::Mul => {
+                    execute_initialized_indexed_compiler_with_registration_arguments(
+                        p,
+                        &plan,
+                        &MulAssignValue {},
+                        compile_arguments,
+                        registration_arguments,
+                    )
+                }
+                _ => todo!(),
+            };
+        }
     }
-    None => {
-      let plan = p.plan();
-      let registration_source = assignment_registration_operand(&source);
-      let compile_arguments = vec![sink, source];
-      let registration_arguments = vec![registration_source];
-      return match op_assgn.op {
-        #[cfg(feature = "math_add_assign")]
-        OpAssignOp::Add => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &AddAssignValue{}, compile_arguments, registration_arguments),
-        #[cfg(feature = "math_sub_assign")]
-        OpAssignOp::Sub => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &SubAssignValue{}, compile_arguments, registration_arguments),
-        #[cfg(feature = "math_div_assign")]
-        OpAssignOp::Div => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &DivAssignValue{}, compile_arguments, registration_arguments),
-        #[cfg(feature = "math_mul_assign")]
-        OpAssignOp::Mul => execute_initialized_indexed_compiler_with_registration_arguments(p, &plan, &MulAssignValue{}, compile_arguments, registration_arguments),
-        _ => todo!(),
-      };
-    }
-  }
-  unreachable!(); // subscript should have thrown an error if we can't access an element
+    unreachable!(); // subscript should have thrown an error if we can't access an element
 }
-
 
 macro_rules! op_assign {
   ($fxn_name:ident, $op:tt) => {
@@ -204,7 +239,6 @@ macro_rules! op_assign {
     }
   };
 }
-
 
 #[cfg(feature = "math_add_assign")]
 op_assign!(add_assign, Add);

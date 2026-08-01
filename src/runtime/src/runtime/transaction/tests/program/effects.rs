@@ -1,10 +1,9 @@
 use super::support::CommitDecisionEffect;
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
-    CapabilityId, MechRuntime, RuntimeEventKind,
-    InMemoryDocsProvider, PlannedStagedHostFunction, PreparedRuntimeEffect,
-    RuntimeCapabilityOperation, RuntimePreparedHostCall, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest, RuntimeValueSnapshot,
+    CapabilityId, InMemoryDocsProvider, MechRuntime, PlannedStagedHostFunction,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEventKind, RuntimePreparedHostCall,
+    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeValueSnapshot,
 };
 use mech_core::Value;
 use std::sync::{Arc, Mutex};

@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{
     Capability, CapabilityId, ObjectId, ObjectRecord, PreparedRuntimeEffect, RuntimeEventKind,
@@ -33,11 +33,13 @@ fn retained_root_graph_begins_inside_hidden_program_transaction() {
 
     assert!(transaction_started < source_resolved);
     assert!(source_resolved < compiled);
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_some(),
+    );
     assert!(runtime.root_symbol_value("answer").is_ok());
     assert!(runtime.active_transactions.is_empty());
 }
@@ -87,11 +89,13 @@ fn graph_object_capability_and_effect_commit_together() {
         .commit_runtime_transaction_detailed(&mut context)
         .unwrap();
 
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_some(),
+    );
     assert_eq!(runtime.get_object(object.id).unwrap(), Some(object));
     assert_eq!(runtime.check_capability(&request).unwrap(), capability.id(),);
     assert_eq!(deliveries.load(Ordering::SeqCst), 1);

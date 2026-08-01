@@ -6,6 +6,6 @@ mod support;
 mod usage;
 
 use support::{
-    capability, limited_capability, request, CapabilityPanicPhase, FailingCheckpointRestoreKernel,
-    FailingRollbackKernel, PanickingCapabilityKernel,
+    CapabilityPanicPhase, FailingCheckpointRestoreKernel, FailingRollbackKernel,
+    PanickingCapabilityKernel, capability, limited_capability, request,
 };

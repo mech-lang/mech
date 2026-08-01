@@ -1,12 +1,12 @@
 use crate::*;
-use mech_core::*;
-use paste::paste;
-use std::ops::Neg;
-use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::ops::Not;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use paste::paste;
+use std::fmt::Debug;
+use std::marker::PhantomData;
+use std::ops::Neg;
+use std::ops::Not;
 
 // Not ------------------------------------------------------------------------
 
@@ -14,60 +14,86 @@ use mech_core::matrix::Matrix;
 
 #[derive(Debug)]
 struct NotS<T> {
-  pub arg: Ref<T>,
-  pub out: Ref<T>,
-  pub _marker: PhantomData<T>,
+    pub arg: Ref<T>,
+    pub out: Ref<T>,
+    pub _marker: PhantomData<T>,
 }
 impl<T> MechFunctionFactory for NotS<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + 
-  ConstElem + AsValueKind +
-  Not<Output = T>,
-  #[cfg(feature = "compiler")]
-  T: CompileConst,
-  Ref<T>: ToValue,
+    T: Copy
+        + Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + Not<Output = T>,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<T>: ToValue,
 {
-  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-      FunctionArgs::Unary(out, arg) => {
-        let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
-        let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
-        Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
-      },
-      _ => Err(MechError::new(
-          IncorrectNumberOfArguments { expected: 1, found: args.len() },
-          None
-        ).with_compiler_loc()
-      ),
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, arg) => {
+                let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
+                let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    arg,
+                    out,
+                    _marker: PhantomData::default(),
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
     }
-  }
 }
 impl<T> MechFunctionImpl for NotS<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
-  Ref<T>: ToValue,
+    T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
+    Ref<T>: ToValue,
 {
-  fn solve(&self) {
-    let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_mut_ptr();
-    unsafe { *out_ptr = !*arg_ptr; }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
+        unsafe {
+            *out_ptr = !*arg_ptr;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for NotS<T> 
+impl<T> MechFunctionCompiler for NotS<T>
 where
-  T: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("NotS<{}>", T::as_value_kind());
-    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("NotS<{}>", T::as_value_kind());
+        compile_unop!(
+            name,
+            self.out,
+            self.arg,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::Not)
+        );
+    }
 }
 register_fxn_descriptor!(NotS, bool, "bool");
 
@@ -75,85 +101,98 @@ register_fxn_descriptor!(NotS, bool, "bool");
 
 #[derive(Debug)]
 pub struct NotV<T, MatA> {
-  pub arg: Ref<MatA>,
-  pub out: Ref<MatA>,
-  pub _marker: PhantomData<T>,
+    pub arg: Ref<MatA>,
+    pub out: Ref<MatA>,
+    pub _marker: PhantomData<T>,
 }
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
-  T: Debug + Clone + Sync + Send + 'static + 
-  ConstElem + AsValueKind +
-  Not<Output = T>,
-  #[cfg(feature = "compiler")]
-  T: CompileConst,
-  for<'a> &'a MatA: IntoIterator<Item = &'a T>,
-  for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + ConstElem + AsValueKind + 'static,
-  #[cfg(feature = "compiler")]
-  MatA: CompileConst,
-  Ref<MatA>: ToValue
+    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind + Not<Output = T>,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+    for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+    MatA: Debug + ConstElem + AsValueKind + 'static,
+    #[cfg(feature = "compiler")]
+    MatA: CompileConst,
+    Ref<MatA>: ToValue,
 {
-  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-      FunctionArgs::Unary(out, arg) => {
-        let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
-        let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
-        Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
-      },
-      _ => Err(MechError::new(
-          IncorrectNumberOfArguments { expected: 1, found: args.len() },
-          None
-        ).with_compiler_loc()
-      ),
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, arg) => {
+                let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
+                let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    arg,
+                    out,
+                    _marker: PhantomData::default(),
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
     }
-  }
 }
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
-  Ref<MatA>: ToValue,
-  T: Debug + Clone + Sync + Send + 'static + 
-  ConstElem + AsValueKind +
-  Not<Output = T>,
-  for<'a> &'a MatA: IntoIterator<Item = &'a T>,
-  for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug,
+    Ref<MatA>: ToValue,
+    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind + Not<Output = T>,
+    for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+    for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+    MatA: Debug,
 {
-  fn solve(&self) {
-    unsafe {
-      let sink_ptr = self.out.as_mut_ptr();
-      let source_ptr = self.arg.as_ptr();
-      let sink_ref: &mut MatA = &mut *sink_ptr;
-      let source_ref: &MatA = &*source_ptr;
-      for (dst, src) in sink_ref.into_iter().zip(source_ref.into_iter()) {
-        *dst = !src.clone();
-      }
+    fn solve(&self) {
+        unsafe {
+            let sink_ptr = self.out.as_mut_ptr();
+            let source_ptr = self.arg.as_ptr();
+            let sink_ref: &mut MatA = &mut *sink_ptr;
+            let source_ref: &MatA = &*source_ptr;
+            for (dst, src) in sink_ref.into_iter().zip(source_ref.into_iter()) {
+                *dst = !src.clone();
+            }
+        }
     }
-  }
-  fn out(&self) -> Value {self.out.to_value()}
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
-impl<T, MatA> MechFunctionCompiler for NotV<T, MatA> 
+impl<T, MatA> MechFunctionCompiler for NotV<T, MatA>
 where
-  T: CompileConst + ConstElem + AsValueKind,
-  MatA: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + AsValueKind,
+    MatA: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
-    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
+        compile_unop!(
+            name,
+            self.out,
+            self.arg,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::Not)
+        );
+    }
 }
 
 fn impl_not_fxn(arg_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_urnop_match_arms!(
-    Not,
-    (arg_value),
-    Bool, bool, "bool";
-  )
+    impl_urnop_match_arms!(
+      Not,
+      (arg_value),
+      Bool, bool, "bool";
+    )
 }
 
-impl_mech_urnop_fxn!(LogicNot,impl_not_fxn,"logic/not");
+impl_mech_urnop_fxn!(LogicNot, impl_not_fxn, "logic/not");

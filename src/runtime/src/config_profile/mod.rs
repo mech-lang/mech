@@ -8,14 +8,12 @@ mod lower;
 
 use self::analyze::ConfigAnalyzer;
 use self::compile::ConfigCompiler;
-use self::error::*;
 pub use self::error::InvalidConfigField;
+use self::error::*;
 use self::eval::ConfigEvaluator;
 pub use self::eval::ConfigValue;
 use self::extract::{ConfigExtractor, ExtractedConfigProgram};
-use self::ir::{
-    ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram,
-};
+use self::ir::{ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram};
 use self::lower::ConfigLowerer;
 pub use self::lower::{
     ConfigCapabilityGrant, ConfigCapabilityKind, DiagnosticsConfigPatch, MechConfigDocument,

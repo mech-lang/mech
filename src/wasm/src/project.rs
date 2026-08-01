@@ -5,19 +5,15 @@ use std::path::Path;
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
-use mech_core::{MechError, MechErrorKind, MechSourceCode};
 #[cfg(feature = "served_project_authority")]
 use base64::Engine as _;
-#[cfg(feature = "served_project_authority")]
-use serde::Deserialize;
+use mech_core::{MechError, MechErrorKind, MechSourceCode};
+#[cfg(feature = "browser_host_dom")]
+use mech_host_browser::BrowserHostFactory;
 #[cfg(feature = "served_project_authority")]
 use mech_host_browser::BrowserRuntimeInjectionConfig;
 #[cfg(feature = "served_project_authority")]
-use mech_host_browser::{verify_browser_host_delegation, BrowserHostDelegationEnvelope};
-#[cfg(feature = "served_project_authority")]
-use mech_runtime::{HostDelegationKeyStore, HostDelegationPublicKey, HostDelegationVerificationRequest, HOST_DELEGATION_ALGORITHM_ED25519};
-#[cfg(feature = "browser_host_dom")]
-use mech_host_browser::BrowserHostFactory;
+use mech_host_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
 use mech_host_console::BrowserConsoleHostFactory;
 #[cfg(feature = "browser_host_scene")]
@@ -31,6 +27,13 @@ use mech_runtime::{
     ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest,
     SourceResolutionEntry, parse_config_document, validate_source_resolution_entries,
 };
+#[cfg(feature = "served_project_authority")]
+use mech_runtime::{
+    HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore, HostDelegationPublicKey,
+    HostDelegationVerificationRequest,
+};
+#[cfg(feature = "served_project_authority")]
+use serde::Deserialize;
 
 #[cfg(feature = "browser_host_dom")]
 use crate::host::WasmBrowserDomBackend;
@@ -55,7 +58,6 @@ impl WasmProject {
         }
         Ok(out)
     }
-
 
     #[wasm_bindgen(js_name = supportsServedAuthority)]
     pub fn supports_served_authority() -> bool {
@@ -89,11 +91,14 @@ impl WasmProject {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_resolutions(
-            &source_map,
-            &resolutions,
-        ).map_err(to_js_error)?;
-        let mut runtime = build_runtime(&document, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
+        let source_resolver = project_source_resolver_with_resolutions(&source_map, &resolutions)
+            .map_err(to_js_error)?;
+        let mut runtime = build_runtime(
+            &document,
+            source_resolver,
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self::from_runtime(
             runtime,
@@ -104,7 +109,10 @@ impl WasmProject {
 
     #[cfg(feature = "served_project_authority")]
     #[wasm_bindgen(js_name = fromServedSources)]
-    pub fn from_served_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
+    pub fn from_served_sources(
+        config_source: &str,
+        sources: JsValue,
+    ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         Self::from_served_project(document, source_map, Vec::new())
@@ -147,11 +155,15 @@ impl WasmProject {
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_resolutions(
-            &source_map,
-            &resolutions,
-        ).map_err(to_js_error)?;
-        let mut runtime = build_runtime_from_authority(&document, &authority, source_resolver, #[cfg(feature = "browser_host_scene")] scenes.clone())?;
+        let source_resolver = project_source_resolver_with_resolutions(&source_map, &resolutions)
+            .map_err(to_js_error)?;
+        let mut runtime = build_runtime_from_authority(
+            &document,
+            &authority,
+            source_resolver,
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self::from_runtime(
             runtime,
@@ -179,11 +191,7 @@ impl WasmProject {
     }
 
     #[wasm_bindgen(js_name = renderedOutput)]
-    pub fn rendered_output(
-        &self,
-        interpreter_id: u64,
-        output_id: u64,
-    ) -> Result<JsValue, JsValue> {
+    pub fn rendered_output(&self, interpreter_id: u64, output_id: u64) -> Result<JsValue, JsValue> {
         let interpreter_id = self.actual_interpreter_id(interpreter_id);
         self.runtime
             .output_value_for_interpreter(interpreter_id, output_id)
@@ -194,11 +202,7 @@ impl WasmProject {
     }
 
     #[wasm_bindgen(js_name = renderedSymbol)]
-    pub fn rendered_symbol(
-        &self,
-        interpreter_id: u64,
-        name: &str,
-    ) -> Result<JsValue, JsValue> {
+    pub fn rendered_symbol(&self, interpreter_id: u64, name: &str) -> Result<JsValue, JsValue> {
         let interpreter_id = self.actual_interpreter_id(interpreter_id);
         let names = vec![name.to_string()];
         let value = self
@@ -335,13 +339,12 @@ impl WasmDocument {
         let tree = decode_document_tree(encoded)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let mut runtime =
-            runtime_builder_with_factories(
-                #[cfg(feature = "browser_host_scene")]
-                scenes.clone(),
-            )?
-            .build()
-            .map_err(to_js_error)?;
+        let mut runtime = runtime_builder_with_factories(
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?
+        .build()
+        .map_err(to_js_error)?;
         runtime.run_tree(&tree).map_err(to_js_error)?;
         Ok(Self {
             project: WasmProject::from_runtime(
@@ -525,20 +528,12 @@ impl WasmDocument {
     }
 
     #[wasm_bindgen(js_name = renderedOutput)]
-    pub fn rendered_output(
-        &self,
-        interpreter_id: u64,
-        output_id: u64,
-    ) -> Result<JsValue, JsValue> {
+    pub fn rendered_output(&self, interpreter_id: u64, output_id: u64) -> Result<JsValue, JsValue> {
         self.project.rendered_output(interpreter_id, output_id)
     }
 
     #[wasm_bindgen(js_name = renderedSymbol)]
-    pub fn rendered_symbol(
-        &self,
-        interpreter_id: u64,
-        name: &str,
-    ) -> Result<JsValue, JsValue> {
+    pub fn rendered_symbol(&self, interpreter_id: u64, name: &str) -> Result<JsValue, JsValue> {
         self.project.rendered_symbol(interpreter_id, name)
     }
 
@@ -548,14 +543,12 @@ impl WasmDocument {
         // must leave the current document usable.
         let replacement = match &self.bootstrap {
             WasmDocumentBootstrap::Detached => Self::from_encoded(encoded)?,
-            WasmDocumentBootstrap::SourceBacked(bootstrap) => {
-                Self::from_tree_with_sources(
-                    decode_document_tree(encoded)?,
-                    &bootstrap.root_specifier,
-                    bootstrap.source_map.clone(),
-                    bootstrap.resolutions.clone(),
-                )?
-            }
+            WasmDocumentBootstrap::SourceBacked(bootstrap) => Self::from_tree_with_sources(
+                decode_document_tree(encoded)?,
+                &bootstrap.root_specifier,
+                bootstrap.source_map.clone(),
+                bootstrap.resolutions.clone(),
+            )?,
             #[cfg(feature = "served_project_authority")]
             WasmDocumentBootstrap::Served(bootstrap) => {
                 let tree = decode_document_tree(encoded)?;
@@ -597,7 +590,9 @@ impl WasmDocument {
         #[cfg(not(feature = "functions"))]
         {
             let _ = count;
-            Err(js_error("this WASM artifact was built without reactive step support"))
+            Err(js_error(
+                "this WASM artifact was built without reactive step support",
+            ))
         }
     }
 
@@ -607,9 +602,16 @@ impl WasmDocument {
         let values = match names {
             Some(names) => {
                 let names = names.iter().map(String::as_str).collect::<Vec<_>>();
-                self.project.runtime.root_symbol_values(&names).map_err(to_js_error)?
+                self.project
+                    .runtime
+                    .root_symbol_values(&names)
+                    .map_err(to_js_error)?
             }
-            None => self.project.runtime.root_symbol_values_all().map_err(to_js_error)?,
+            None => self
+                .project
+                .runtime
+                .root_symbol_values_all()
+                .map_err(to_js_error)?,
         };
         let rows = Array::new();
         for (name, value) in values {
@@ -631,7 +633,8 @@ impl WasmDocument {
     }
 
     pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
-        let rendered = self.project
+        let rendered = self
+            .project
             .runtime
             .run_string(source)
             .map_err(to_js_error)
@@ -759,25 +762,33 @@ fn runtime_builder_with_factories(
     #[cfg(feature = "browser_host_time")]
     {
         builder = builder
-            .host_factory(Box::new(BrowserTimeHostFactory::new().map_err(to_js_error)?))
+            .host_factory(Box::new(
+                BrowserTimeHostFactory::new().map_err(to_js_error)?,
+            ))
             .map_err(to_js_error)?;
     }
     #[cfg(feature = "browser_host_timer")]
     {
         builder = builder
-            .host_factory(Box::new(BrowserTimerHostFactory::new().map_err(to_js_error)?))
+            .host_factory(Box::new(
+                BrowserTimerHostFactory::new().map_err(to_js_error)?,
+            ))
             .map_err(to_js_error)?;
     }
     #[cfg(feature = "browser_host_console")]
     {
         builder = builder
-            .host_factory(Box::new(BrowserConsoleHostFactory::new().map_err(to_js_error)?))
+            .host_factory(Box::new(
+                BrowserConsoleHostFactory::new().map_err(to_js_error)?,
+            ))
             .map_err(to_js_error)?;
     }
     #[cfg(feature = "browser_host_scene")]
     {
         let scene_factory = BrowserSceneHostFactory::with_registry(scenes).map_err(to_js_error)?;
-        builder = builder.host_factory(Box::new(scene_factory)).map_err(to_js_error)?;
+        builder = builder
+            .host_factory(Box::new(scene_factory))
+            .map_err(to_js_error)?;
     }
     Ok(builder)
 }
@@ -787,8 +798,11 @@ fn build_runtime(
     source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
-    let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?
-        .source_resolver(source_resolver);
+    let mut builder = runtime_builder_with_factories(
+        #[cfg(feature = "browser_host_scene")]
+        scenes,
+    )?
+    .source_resolver(source_resolver);
     for host in &document.hosts {
         builder = builder.host_instance(host.clone());
     }
@@ -806,11 +820,18 @@ fn build_runtime_from_authority(
     source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
-    let mut builder = runtime_builder_with_factories(#[cfg(feature = "browser_host_scene")] scenes)?
-        .config(authority.into_runtime_config().map_err(to_js_error)?)
-        .source_resolver(source_resolver);
+    let mut builder = runtime_builder_with_factories(
+        #[cfg(feature = "browser_host_scene")]
+        scenes,
+    )?
+    .config(authority.into_runtime_config().map_err(to_js_error)?)
+    .source_resolver(source_resolver);
     for required in &document.hosts {
-        if let Some(host) = authority.hosts.iter().find(|host| host.name == required.name && host.provider == required.provider) {
+        if let Some(host) = authority
+            .hosts
+            .iter()
+            .find(|host| host.name == required.name && host.provider == required.provider)
+        {
             builder = builder.host_instance(host.clone());
         }
     }
@@ -827,7 +848,9 @@ fn build_runtime_from_authority(
     _source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] _scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
-    Err(js_error("served project authority support was not compiled into this WASM artifact"))
+    Err(js_error(
+        "served project authority support was not compiled into this WASM artifact",
+    ))
 }
 
 fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
@@ -860,13 +883,20 @@ fn validate_compiled_host_providers(document: &MechConfigDocument) -> mech_core:
     validate_compiled_host_providers_for_hosts(&document.hosts)
 }
 
-fn validate_compiled_host_providers_for_hosts(hosts: &[mech_runtime::HostInstanceConfig]) -> mech_core::MResult<()> {
+fn validate_compiled_host_providers_for_hosts(
+    hosts: &[mech_runtime::HostInstanceConfig],
+) -> mech_core::MResult<()> {
     let compiled = compiled_browser_providers();
     for host in hosts {
         if let Some(feature) = standard_browser_provider_feature(&host.provider) {
             if !compiled.contains_key(host.provider.as_str()) {
                 return Err(MechError::new(
-                    ProjectError { message: format!("project requires host provider `{}`, but this WASM artifact was built without `{}`", host.provider, feature) },
+                    ProjectError {
+                        message: format!(
+                            "project requires host provider `{}`, but this WASM artifact was built without `{}`",
+                            host.provider, feature
+                        ),
+                    },
                     None,
                 ));
             }
@@ -892,13 +922,19 @@ fn decode_injected_host_delegation_keys(
     let mut decoded_keys = Vec::with_capacity(keys.len());
     for key in keys {
         if key.algorithm != HOST_DELEGATION_ALGORITHM_ED25519 {
-            return Err(js_error(format!("unsupported trusted host key algorithm `{}`", key.algorithm)));
+            return Err(js_error(format!(
+                "unsupported trusted host key algorithm `{}`",
+                key.algorithm
+            )));
         }
         let public_key = base64::engine::general_purpose::STANDARD
             .decode(key.public_key.as_bytes())
             .map_err(|error| js_error(format!("invalid trusted host key publicKey: {error}")))?;
         if public_key.len() != 32 {
-            return Err(js_error(format!("trusted host key publicKey must decode to 32 bytes, got {}", public_key.len())));
+            return Err(js_error(format!(
+                "trusted host key publicKey must decode to 32 bytes, got {}",
+                public_key.len()
+            )));
         }
         decoded_keys.push(HostDelegationPublicKey {
             issuer: key.issuer,
@@ -919,20 +955,30 @@ fn trusted_host_keys_from_js_value(value: JsValue) -> Result<HostDelegationKeySt
 
 #[cfg(feature = "served_project_authority")]
 fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> {
-    let window = web_sys::window().ok_or_else(|| js_error("served project authority requires a browser window"))?;
+    let window = web_sys::window()
+        .ok_or_else(|| js_error("served project authority requires a browser window"))?;
     let host_config = Reflect::get(&window, &JsValue::from_str("__MECH_HOST_CONFIG"))?;
     if host_config.is_undefined() || host_config.is_null() {
-        return Err(js_error("served project authority is missing __MECH_HOST_CONFIG"));
+        return Err(js_error(
+            "served project authority is missing __MECH_HOST_CONFIG",
+        ));
     }
     #[cfg(feature = "served_project_authority")]
     {
         let trusted = Reflect::get(&window, &JsValue::from_str("__MECH_TRUSTED_HOST_KEYS"))?;
-        let audience = Reflect::get(&window, &JsValue::from_str("__MECH_HOST_DELEGATION_AUDIENCE"))?;
+        let audience = Reflect::get(
+            &window,
+            &JsValue::from_str("__MECH_HOST_DELEGATION_AUDIENCE"),
+        )?;
         if !trusted.is_undefined() && !trusted.is_null() {
-            let envelope: BrowserHostDelegationEnvelope = serde_wasm_bindgen::from_value(host_config.clone())
-                .map_err(|error| js_error(format!("invalid served host delegation envelope: {error}")))?;
+            let envelope: BrowserHostDelegationEnvelope =
+                serde_wasm_bindgen::from_value(host_config.clone()).map_err(|error| {
+                    js_error(format!("invalid served host delegation envelope: {error}"))
+                })?;
             let trusted_keys = trusted_host_keys_from_js_value(trusted)?;
-            let audience = audience.as_string().ok_or_else(|| js_error("served host delegation audience must be a string"))?;
+            let audience = audience
+                .as_string()
+                .ok_or_else(|| js_error("served host delegation audience must be a string"))?;
             let now_ms = js_sys::Date::now().max(0.0) as u64;
             let verified = verify_browser_host_delegation(
                 &envelope,
@@ -942,14 +988,14 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
                     trusted_keys,
                     max_clock_skew_ms: 60_000,
                 },
-            ).map_err(to_js_error)?;
+            )
+            .map_err(to_js_error)?;
             return Ok(verified.authority.runtime_injection);
         }
     }
     serde_wasm_bindgen::from_value(host_config)
         .map_err(|error| js_error(format!("invalid served host config: {error}")))
 }
-
 
 fn validate_served_authority(
     document: &MechConfigDocument,
@@ -958,13 +1004,32 @@ fn validate_served_authority(
 ) -> mech_core::MResult<()> {
     #[cfg(not(feature = "served_project_authority"))]
     {
-        return Err(MechError::new(ProjectError { message: "served project authority support was not compiled into this WASM artifact".into() }, None));
+        return Err(MechError::new(
+            ProjectError {
+                message:
+                    "served project authority support was not compiled into this WASM artifact"
+                        .into(),
+            },
+            None,
+        ));
     }
     #[cfg(feature = "served_project_authority")]
     {
         for required in &document.hosts {
-            if !authority.hosts.iter().any(|host| host.name == required.name && host.provider == required.provider) {
-                return Err(MechError::new(ProjectError { message: format!("served project requires host `{}` provider `{}`, but server authority did not grant it", required.name, required.provider) }, None));
+            if !authority
+                .hosts
+                .iter()
+                .any(|host| host.name == required.name && host.provider == required.provider)
+            {
+                return Err(MechError::new(
+                    ProjectError {
+                        message: format!(
+                            "served project requires host `{}` provider `{}`, but server authority did not grant it",
+                            required.name, required.provider
+                        ),
+                    },
+                    None,
+                ));
             }
         }
         validate_required_grants(document, authority)?;
@@ -982,7 +1047,11 @@ fn required_issued_grants(
         for required in &run.grants {
             let operations = required.operations.clone();
             let paths = required.paths.clone();
-            if authority.run_grants.iter().any(|issued| issued.target == required.target) {
+            if authority
+                .run_grants
+                .iter()
+                .any(|issued| issued.target == required.target)
+            {
                 out.push(mech_runtime::RunResourceGrantConfig {
                     target: required.target.clone(),
                     operations,
@@ -1007,16 +1076,35 @@ fn validate_required_grants(
                 .filter(|issued| issued.target == required.target)
                 .collect::<Vec<_>>();
             if issued.is_empty() {
-                return Err(MechError::new(ProjectError { message: format!("served project requires grant `{}`, but server authority did not issue it", required.target) }, None));
+                return Err(MechError::new(
+                    ProjectError {
+                        message: format!(
+                            "served project requires grant `{}`, but server authority did not issue it",
+                            required.target
+                        ),
+                    },
+                    None,
+                ));
             }
             for operation in &required.operations {
                 for path in &required.paths {
                     let authorized = issued.iter().any(|grant| {
                         grant.operations.iter().any(|issued| issued == operation)
-                            && grant.paths.iter().any(|issued| grant_path_allows(issued, path))
+                            && grant
+                                .paths
+                                .iter()
+                                .any(|issued| grant_path_allows(issued, path))
                     });
                     if !authorized {
-                        return Err(MechError::new(ProjectError { message: format!("served project grant `{}` requires operation `{}` on path `{}` outside server authority", required.target, operation, path) }, None));
+                        return Err(MechError::new(
+                            ProjectError {
+                                message: format!(
+                                    "served project grant `{}` requires operation `{}` on path `{}` outside server authority",
+                                    required.target, operation, path
+                                ),
+                            },
+                            None,
+                        ));
                     }
                 }
             }
@@ -1055,15 +1143,14 @@ fn source_map_from_js(value: JsValue) -> Result<HashMap<String, String>, JsValue
     Ok(out)
 }
 
-fn required_resolution_field(
-    value: &JsValue,
-    field: &'static str,
-) -> Result<String, JsValue> {
+fn required_resolution_field(value: &JsValue, field: &'static str) -> Result<String, JsValue> {
     let value = Reflect::get(value, &JsValue::from_str(field))?
         .as_string()
-        .ok_or_else(|| js_error(format!(
-            "document source resolution `{field}` must be a string",
-        )))?;
+        .ok_or_else(|| {
+            js_error(format!(
+                "document source resolution `{field}` must be a string",
+            ))
+        })?;
     if value.trim().is_empty() {
         return Err(js_error(format!(
             "document source resolution `{field}` must not be empty",
@@ -1082,18 +1169,17 @@ fn document_resolutions_from_js(
     let mut resolutions = Vec::new();
     for entry in Array::from(&value).iter() {
         if !entry.is_object() || entry.is_null() {
-            return Err(js_error("document source resolution entries must be objects"));
+            return Err(js_error(
+                "document source resolution entries must be objects",
+            ));
         }
         let referrer = required_resolution_field(&entry, "referrer")?;
         let specifier = required_resolution_field(&entry, "specifier")?;
         let target = required_resolution_field(&entry, "target")?;
         resolutions.push(SourceResolutionEntry::new(referrer, specifier, target));
     }
-    validate_source_resolution_entries(
-        sources.keys().map(String::as_str),
-        &resolutions,
-    )
-    .map_err(to_js_error)?;
+    validate_source_resolution_entries(sources.keys().map(String::as_str), &resolutions)
+        .map_err(to_js_error)?;
     resolutions.sort();
     resolutions.dedup();
     Ok(resolutions)
@@ -1113,10 +1199,7 @@ fn project_source_resolver_with_resolutions(
     sources: &HashMap<String, String>,
     resolutions: &[SourceResolutionEntry],
 ) -> mech_core::MResult<InMemorySourceResolver> {
-    validate_source_resolution_entries(
-        sources.keys().map(String::as_str),
-        resolutions,
-    )?;
+    validate_source_resolution_entries(sources.keys().map(String::as_str), resolutions)?;
     let mut resolver = project_source_resolver(sources)?;
     for resolution in resolutions {
         resolver.insert_resolution_entry(resolution)?;
@@ -1140,7 +1223,9 @@ fn document_source_resolver(
 
     let mut resolver = project_source_resolver(&source.source_map).map_err(to_js_error)?;
     for resolution in &source.resolutions {
-        resolver.insert_resolution_entry(resolution).map_err(to_js_error)?;
+        resolver
+            .insert_resolution_entry(resolution)
+            .map_err(to_js_error)?;
     }
     resolver
         .insert_source(
@@ -1208,9 +1293,7 @@ fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValu
     Reflect::set(
         &rendered,
         &JsValue::from_str("inlineHtml"),
-        &JsValue::from_str(&mech_core::escape_html_text(
-            &value.format_value_inline(),
-        )),
+        &JsValue::from_str(&mech_core::escape_html_text(&value.format_value_inline())),
     )?;
     Ok(rendered.into())
 }
@@ -1220,14 +1303,15 @@ fn rendered_symbol_names_from_js(names: JsValue) -> Result<Option<Vec<String>>, 
         return Ok(None);
     }
     if !Array::is_array(&names) {
-        return Err(js_error("renderedSymbols names must be null, undefined, or an array of strings"));
+        return Err(js_error(
+            "renderedSymbols names must be null, undefined, or an array of strings",
+        ));
     }
     Array::from(&names)
         .iter()
         .map(|name| {
-            name.as_string().ok_or_else(|| {
-                js_error("renderedSymbols names must contain only strings")
-            })
+            name.as_string()
+                .ok_or_else(|| js_error("renderedSymbols names must contain only strings"))
         })
         .collect::<Result<Vec<_>, _>>()
         .map(Some)
@@ -1239,11 +1323,7 @@ fn rendered_symbol_row(
 ) -> Result<JsValue, JsValue> {
     let rendered_value = rendered_value(snapshot)?;
     let row = Object::new();
-    Reflect::set(
-        &row,
-        &JsValue::from_str("name"),
-        &JsValue::from_str(name),
-    )?;
+    Reflect::set(&row, &JsValue::from_str("name"), &JsValue::from_str(name))?;
     for property in ["kind", "inlineHtml", "blockHtml"] {
         Reflect::set(
             &row,
@@ -1350,12 +1430,8 @@ mod tests {
 
     #[test]
     fn from_sources_executes_paths_in_order() {
-        let document = parse_config_document(
-            "test.mcfg",
-            CONFIG,
-            ConfigProfileOptions::default(),
-        )
-        .unwrap();
+        let document =
+            parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
         let mut sources = HashMap::new();
         sources.insert("a.mec".to_string(), "x := 1".to_string());
         sources.insert("b.mec".to_string(), "y := 2".to_string());
@@ -1402,9 +1478,7 @@ mod tests {
     fn encoded_document_runs_on_runtime_and_exposes_root_output() {
         let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let mut runtime = RuntimeBuilder::new()
-            .build()
-            .unwrap();
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
 
         let decoded: mech_core::nodes::Program =
             mech_core::nodes::decode_and_decompress(&encoded).unwrap();
@@ -1415,22 +1489,20 @@ mod tests {
 
     #[test]
     fn encoded_fizzbuzz_document_retains_fenced_block_output() {
-        let tree = mech_syntax::parser::parse(include_str!(
-            "../../../examples/working/fizzbuzz.mec"
-        ))
-        .unwrap();
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
+                .unwrap();
         let output_id = tree
             .body
             .sections
             .iter()
             .flat_map(|section| &section.elements)
             .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block)
-                    if block.config.output =>
-                {
-                    block.code.last().map(|(code, _)| {
-                        mech_core::hash_str(&format!("{code:?}"))
-                    })
+                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
+                    block
+                        .code
+                        .last()
+                        .map(|(code, _)| mech_core::hash_str(&format!("{code:?}")))
                 }
                 _ => None,
             })
@@ -1449,10 +1521,7 @@ mod tests {
 
         assert!(
             runtime
-                .output_value_for_interpreter(
-                    runtime.root_interpreter_id(),
-                    output_id,
-                )
+                .output_value_for_interpreter(runtime.root_interpreter_id(), output_id,)
                 .unwrap()
                 .is_some(),
             "FizzBuzz output must remain queryable by its formatted block id",
@@ -1478,12 +1547,18 @@ mod tests {
                 "app/main.mec".to_string(),
                 "+> ./lib.mec\nanswer := lib/value + 1\nanswer\n".to_string(),
             ),
-            ("app/lib.mec".to_string(), "value := 41\n<+ value\n".to_string()),
+            (
+                "app/lib.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
             (
                 "nested/main.mec".to_string(),
                 "+> ../shared/lib.mec\nparent-answer := lib/value + 1\n".to_string(),
             ),
-            ("shared/lib.mec".to_string(), "value := 41\n<+ value\n".to_string()),
+            (
+                "shared/lib.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
         ]);
         let mut runtime = RuntimeBuilder::new()
             .source_resolver(project_source_resolver(&sources).unwrap())
@@ -1501,26 +1576,23 @@ mod tests {
         let source = "The imported answer is {math/value + 1}.\n\n+> ./math.mec\nanswer := math/value + 1\nanswer\n";
         let tree = mech_syntax::parser::parse(source).unwrap();
         let source_map = HashMap::from([
-            (
-                "docs/main.mec".to_string(),
-                source.to_string(),
-            ),
+            ("docs/main.mec".to_string(), source.to_string()),
             (
                 "docs/math.mec".to_string(),
                 "value := 41\n<+ value\n".to_string(),
             ),
         ]);
 
-        let document = WasmDocument::from_tree_with_sources(
-            tree,
-            "docs/main.mec",
-            source_map,
-            Vec::new(),
-        )
-        .unwrap();
+        let document =
+            WasmDocument::from_tree_with_sources(tree, "docs/main.mec", source_map, Vec::new())
+                .unwrap();
 
         assert_f64(
-            document.project.runtime.root_symbol_value("answer").unwrap(),
+            document
+                .project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap(),
             42.0,
         );
         assert_f64(
@@ -1560,15 +1632,24 @@ mod tests {
             "bundle/000000.mec",
             source_map,
             resolutions,
-        ).unwrap();
+        )
+        .unwrap();
         assert_f64(
-            document.project.runtime.root_symbol_value("answer").unwrap(),
+            document
+                .project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap(),
             42.0,
         );
 
         document.reset(&encoded).unwrap();
         assert_f64(
-            document.project.runtime.root_symbol_value("answer").unwrap(),
+            document
+                .project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap(),
             42.0,
         );
     }
@@ -1586,9 +1667,11 @@ mod tests {
             .unwrap();
 
         let error = run_project_sources(&mut runtime, &document).unwrap_err();
-        assert!(error
-            .kind_as::<mech_runtime::RuntimeModuleDependencyMissingError>()
-            .is_some());
+        assert!(
+            error
+                .kind_as::<mech_runtime::RuntimeModuleDependencyMissingError>()
+                .is_some()
+        );
     }
 
     #[test]
@@ -1596,8 +1679,14 @@ mod tests {
         let document = project_document(&["first.mec", "second.mec"]);
         let sources = HashMap::from([
             ("first.mec".to_string(), "marker := 1\n".to_string()),
-            ("second.mec".to_string(), "answer := marker + 1\n".to_string()),
-            ("unused.mec".to_string(), "this is not valid Mech\n".to_string()),
+            (
+                "second.mec".to_string(),
+                "answer := marker + 1\n".to_string(),
+            ),
+            (
+                "unused.mec".to_string(),
+                "this is not valid Mech\n".to_string(),
+            ),
         ]);
         let mut runtime = RuntimeBuilder::new()
             .source_resolver(project_source_resolver(&sources).unwrap())
@@ -1609,11 +1698,15 @@ mod tests {
         assert_f64(runtime.root_symbol_value("answer").unwrap(), 2.0);
     }
 
-
     #[cfg(feature = "served_project_authority")]
-    fn authority_config(hosts: Vec<mech_runtime::HostInstanceConfig>, grants: Vec<mech_runtime::RunResourceGrantConfig>) -> BrowserRuntimeInjectionConfig {
+    fn authority_config(
+        hosts: Vec<mech_runtime::HostInstanceConfig>,
+        grants: Vec<mech_runtime::RunResourceGrantConfig>,
+    ) -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
-            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&mech_runtime::RuntimeConfig::default()),
+            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
             hosts,
             run_grants: grants,
         }
@@ -1621,11 +1714,19 @@ mod tests {
 
     #[cfg(feature = "served_project_authority")]
     fn host(name: &str, provider: &str) -> mech_runtime::HostInstanceConfig {
-        mech_runtime::HostInstanceConfig { name: name.to_string(), provider: provider.to_string(), settings: mech_runtime::ConfigValue::Map(Default::default()) }
+        mech_runtime::HostInstanceConfig {
+            name: name.to_string(),
+            provider: provider.to_string(),
+            settings: mech_runtime::ConfigValue::Map(Default::default()),
+        }
     }
 
     #[cfg(feature = "served_project_authority")]
-    fn grant(target: &str, operations: &[&str], paths: &[&str]) -> mech_runtime::RunResourceGrantConfig {
+    fn grant(
+        target: &str,
+        operations: &[&str],
+        paths: &[&str],
+    ) -> mech_runtime::RunResourceGrantConfig {
         mech_runtime::RunResourceGrantConfig {
             target: target.to_string(),
             operations: operations.iter().map(|op| op.to_string()).collect(),
@@ -1637,15 +1738,18 @@ mod tests {
     fn document_with_grant(path: &str, operation: &str) -> MechConfigDocument {
         parse_config_document(
             "served-test.mcfg",
-            &format!(r#"config := {{
+            &format!(
+                r#"config := {{
   hosts: [{{ name: "view" provider: "scene" settings: {{}} }}]
   run: {{
     paths: ["main.mec"]
     grants: [{{ target: "view/frame" operations: ["{operation}"] paths: ["{path}"] }}]
   }}
-}}"#),
+}}"#
+            ),
             ConfigProfileOptions::default(),
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -1654,7 +1758,10 @@ mod tests {
         let doc = document_with_grant("replace", "write");
         let authority = authority_config(
             vec![host("view", "scene")],
-            vec![grant("view/frame", &["read"], &["replace"]), grant("view/frame", &["write"], &["replace"])],
+            vec![
+                grant("view/frame", &["read"], &["replace"]),
+                grant("view/frame", &["write"], &["replace"]),
+            ],
         );
         validate_served_authority(&doc, &authority).unwrap();
     }
@@ -1674,7 +1781,10 @@ mod tests {
     #[test]
     fn extra_operation_is_rejected() {
         let doc = document_with_grant("replace", "write");
-        let authority = authority_config(vec![host("view", "scene")], vec![grant("view/frame", &["read"], &["replace"])]);
+        let authority = authority_config(
+            vec![host("view", "scene")],
+            vec![grant("view/frame", &["read"], &["replace"])],
+        );
         assert!(validate_served_authority(&doc, &authority).is_err());
     }
 
@@ -1682,7 +1792,10 @@ mod tests {
     #[test]
     fn broader_path_request_is_rejected() {
         let doc = document_with_grant("hands/*", "write");
-        let authority = authority_config(vec![host("view", "scene")], vec![grant("view/frame", &["write"], &["hands/second"])]);
+        let authority = authority_config(
+            vec![host("view", "scene")],
+            vec![grant("view/frame", &["write"], &["hands/second"])],
+        );
         assert!(validate_served_authority(&doc, &authority).is_err());
     }
 
@@ -1692,7 +1805,10 @@ mod tests {
         let doc = document_with_grant("secret/file", "write");
         let authority = authority_config(
             vec![host("view", "scene")],
-            vec![grant("view/frame", &["write"], &["public/*"]), grant("view/frame", &["read"], &["secret/*"])],
+            vec![
+                grant("view/frame", &["write"], &["public/*"]),
+                grant("view/frame", &["read"], &["secret/*"]),
+            ],
         );
         assert!(validate_served_authority(&doc, &authority).is_err());
     }
@@ -1726,22 +1842,22 @@ mod tests {
         validate_served_authority(&document, &authority).unwrap();
     }
 
-
-
     #[test]
     fn generic_table_project_source_runs_through_runtime_loader() {
         let document = parse_config_document(
             "generic-table.mcfg",
             r#"config := { hosts: [] run: { paths: ["generic-table.mec"] grants: [] } }"#,
             ConfigProfileOptions::default(),
-        ).unwrap();
+        )
+        .unwrap();
         let mut sources = HashMap::new();
         sources.insert(
             "generic-table.mec".to_string(),
             r#"delta := 0.25
 rows := |id<string> x<f64>|
   | "row-a" 1 + delta |
-  | "row-b" 2 + delta |"#.to_string(),
+  | "row-b" 2 + delta |"#
+                .to_string(),
         );
         let mut runtime = RuntimeBuilder::new()
             .source_resolver(project_source_resolver(&sources).unwrap())
@@ -1762,23 +1878,40 @@ rows := |id<string> x<f64>|
         fn new() -> Self {
             Self {
                 manifest: mech_host_timer::timer_host_manifest().unwrap(),
-                snapshot: mech_host_timer::new_shared_snapshot(mech_host_timer::TimerSnapshot::new(0, 60, 0)),
+                snapshot: mech_host_timer::new_shared_snapshot(
+                    mech_host_timer::TimerSnapshot::new(0, 60, 0),
+                ),
             }
         }
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl mech_runtime::RuntimeHostFactory for TestManualTimerHostFactory {
-        fn provider_name(&self) -> &str { "timer" }
-        fn manifest(&self) -> &mech_runtime::HostManifestConfig { &self.manifest }
-        fn validate_settings(&self, _instance_name: &str, settings: &mech_runtime::ConfigValue) -> mech_core::MResult<()> {
+        fn provider_name(&self) -> &str {
+            "timer"
+        }
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+            &self.manifest
+        }
+        fn validate_settings(
+            &self,
+            _instance_name: &str,
+            settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<()> {
             mech_host_timer::timer_settings_from_config(settings).map(|_| ())
         }
-        fn instantiate(&self, instance_name: &str, settings: &mech_runtime::ConfigValue) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
+        fn instantiate(
+            &self,
+            instance_name: &str,
+            settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
             let settings = mech_host_timer::timer_settings_from_config(settings)?;
             Ok(mech_runtime::RuntimeHostInstallation {
                 interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
-                resource_providers: vec![Box::new(mech_host_timer::TimerResourceProvider::new(instance_name, self.snapshot.clone()))],
+                resource_providers: vec![Box::new(mech_host_timer::TimerResourceProvider::new(
+                    instance_name,
+                    self.snapshot.clone(),
+                ))],
                 input_drivers: vec![Box::new(mech_host_timer::ManualTimerInputDriver::new(
                     instance_name,
                     settings.frequency_hz,
@@ -1794,7 +1927,8 @@ rows := |id<string> x<f64>|
             "generic-timer-table-scene/mech.mcfg",
             include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg"),
             ConfigProfileOptions::default(),
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
@@ -1811,29 +1945,42 @@ rows := |id<string> x<f64>|
     fn fixture_timer_packet(tick: u64, delta_seconds: f64) -> mech_runtime::RuntimeHostInput {
         mech_runtime::RuntimeHostInput::new(vec![
             mech_runtime::RuntimeHostInputUpdate {
-                source: mech_runtime::RuntimeHostInputSource::new("timer://tick/tick", "tick").unwrap(),
+                source: mech_runtime::RuntimeHostInputSource::new("timer://tick/tick", "tick")
+                    .unwrap(),
                 value: mech_runtime::RuntimeHostInputValue::F64(tick as f64),
             },
             mech_runtime::RuntimeHostInputUpdate {
-                source: mech_runtime::RuntimeHostInputSource::new("timer://tick/tick", "delta-seconds").unwrap(),
+                source: mech_runtime::RuntimeHostInputSource::new(
+                    "timer://tick/tick",
+                    "delta-seconds",
+                )
+                .unwrap(),
                 value: mech_runtime::RuntimeHostInputValue::F64(delta_seconds),
             },
-        ]).unwrap()
+        ])
+        .unwrap()
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[test]
     fn generic_timer_table_scene_fixture_executes_with_timer_and_scene_hosts() {
         let document = generic_fixture_document();
-        let source_paths = required_path_strings(include_str!("../tests/fixtures/generic-timer-table-scene/mech.mcfg")).unwrap();
+        let source_paths = required_path_strings(include_str!(
+            "../tests/fixtures/generic-timer-table-scene/mech.mcfg"
+        ))
+        .unwrap();
         assert_eq!(source_paths, vec!["table-scene.mec".to_string()]);
 
         let scene_backend = mech_host_scene::RecordingSceneBackend::new();
         let mut builder = RuntimeBuilder::new()
             .source_resolver(project_source_resolver(&generic_fixture_sources()).unwrap())
             .host_input_capacity(16)
-            .host_factory(Box::new(TestManualTimerHostFactory::new())).unwrap()
-            .host_factory(Box::new(mech_host_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap())).unwrap();
+            .host_factory(Box::new(TestManualTimerHostFactory::new()))
+            .unwrap()
+            .host_factory(Box::new(
+                mech_host_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
+            ))
+            .unwrap();
         for host in &document.hosts {
             builder = builder.host_instance(host.clone());
         }
@@ -1849,7 +1996,10 @@ rows := |id<string> x<f64>|
         let initial_x = initial_scene.circles[0].x;
 
         runtime.start_input_drivers().unwrap();
-        runtime.ingress().submit(fixture_timer_packet(1, 0.25)).unwrap();
+        runtime
+            .ingress()
+            .submit(fixture_timer_packet(1, 0.25))
+            .unwrap();
         assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
         let outcomes = runtime.drain_host_inputs(1).unwrap();
         assert_eq!(outcomes.len(), 1);
@@ -1863,7 +2013,10 @@ rows := |id<string> x<f64>|
         assert!(scene_backend.generation() >= 2);
 
         for tick in 2..12 {
-            runtime.ingress().submit(fixture_timer_packet(tick, 0.25)).unwrap();
+            runtime
+                .ingress()
+                .submit(fixture_timer_packet(tick, 0.25))
+                .unwrap();
         }
         assert_eq!(runtime.pending_host_input_count().unwrap(), 10);
         let drained = runtime.drain_host_inputs(3).unwrap();
@@ -1877,12 +2030,8 @@ rows := |id<string> x<f64>|
     #[test]
     fn from_sources_rejects_missing_source() {
         let mut runtime = RuntimeBuilder::new().build().unwrap();
-        let document = parse_config_document(
-            "test.mcfg",
-            CONFIG,
-            ConfigProfileOptions::default(),
-        )
-        .unwrap();
+        let document =
+            parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
         assert!(run_project_sources(&mut runtime, &document).is_err());
     }
     #[cfg(feature = "served_project_authority")]
@@ -1895,7 +2044,8 @@ rows := |id<string> x<f64>|
             key_id: "key-1".to_string(),
             algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
             public_key: base64::engine::general_purpose::STANDARD.encode(&public_key),
-        }]).unwrap();
+        }])
+        .unwrap();
         let key = store.key("issuer", "key-1").unwrap();
         assert_eq!(key.issuer, "issuer");
         assert_eq!(key.key_id, "key-1");
@@ -1933,16 +2083,16 @@ rows := |id<string> x<f64>|
     fn injected_key_rejects_wrong_length() {
         use base64::Engine as _;
         for bytes in [vec![0u8; 31], vec![0u8; 33]] {
-            let result = decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
-                issuer: "issuer".to_string(),
-                key_id: "key-1".to_string(),
-                algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
-                public_key: base64::engine::general_purpose::STANDARD.encode(bytes),
-            }]);
+            let result =
+                decode_injected_host_delegation_keys(vec![InjectedHostDelegationPublicKey {
+                    issuer: "issuer".to_string(),
+                    key_id: "key-1".to_string(),
+                    algorithm: mech_runtime::HOST_DELEGATION_ALGORITHM_ED25519.to_string(),
+                    public_key: base64::engine::general_purpose::STANDARD.encode(bytes),
+                }]);
             assert!(result.is_err());
         }
     }
-
 }
 
 #[cfg(all(test, target_arch = "wasm32"))]
@@ -2025,9 +2175,7 @@ mod browser_tests {
 
     #[cfg(feature = "served_project_authority")]
     fn assert_configured_answer(document: &WasmDocument) {
-        let configured_answer = document
-            .rendered_symbol(0, "configured-answer")
-            .unwrap();
+        let configured_answer = document.rendered_symbol(0, "configured-answer").unwrap();
         assert_eq!(
             Reflect::get(&configured_answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -2163,8 +2311,8 @@ mod browser_tests {
         }
     }
 
-    fn document_with_manual_input_driver(
-    ) -> (WasmDocument, Rc<RefCell<DocumentInputDriverState>>) {
+    fn document_with_manual_input_driver() -> (WasmDocument, Rc<RefCell<DocumentInputDriverState>>)
+    {
         let state = Rc::new(RefCell::new(DocumentInputDriverState::default()));
         let runtime = RuntimeBuilder::new()
             .host_factory(Box::new(DocumentInputHostFactory::new(state.clone())))
@@ -2194,10 +2342,12 @@ mod browser_tests {
         )
     }
 
-
     #[wasm_bindgen_test]
     fn wasm_project_reports_served_authority_capability() {
-        assert_eq!(WasmProject::supports_served_authority(), cfg!(feature = "served_project_authority"));
+        assert_eq!(
+            WasmProject::supports_served_authority(),
+            cfg!(feature = "served_project_authority")
+        );
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -2316,14 +2466,11 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn encoded_document_uses_the_formatter_root_namespace_for_inline_output() {
-        let encoded = encoded_document(
-            "The document evaluates {answer + 1} inline.\n\nanswer := 41",
-        );
+        let encoded =
+            encoded_document("The document evaluates {answer + 1} inline.\n\nanswer := 41");
         let document = WasmDocument::from_encoded(&encoded).unwrap();
         let output_id = mech_core::hash_str("inline-eval:0:0");
-        let rendered = document
-            .rendered_output(0, output_id)
-            .unwrap();
+        let rendered = document.rendered_output(0, output_id).unwrap();
 
         assert_eq!(
             Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
@@ -2373,9 +2520,7 @@ mod browser_tests {
         assert_eq!(state.borrow().starts, 0);
 
         document
-            .evaluate(
-                "@tick := test://clock/ticks{:read(value)}\ncurrent := @tick/value\ncurrent",
-            )
+            .evaluate("@tick := test://clock/ticks{:read(value)}\ncurrent := @tick/value\ncurrent")
             .unwrap();
         assert_eq!(state.borrow().starts, 1);
 
@@ -2384,11 +2529,8 @@ mod browser_tests {
             .runtime
             .ingress()
             .submit(mech_runtime::RuntimeHostInput::single(
-                mech_runtime::RuntimeHostInputSource::new(
-                    DOCUMENT_TEST_INPUT_BASE_URI,
-                    "value",
-                )
-                .unwrap(),
+                mech_runtime::RuntimeHostInputSource::new(DOCUMENT_TEST_INPUT_BASE_URI, "value")
+                    .unwrap(),
                 mech_runtime::RuntimeHostInputValue::F64(7.0),
             ))
             .unwrap();
@@ -2492,27 +2634,30 @@ mod browser_tests {
             id,
             JsValue::from(js_sys::BigInt::from(mech_core::hash_str("foo"))),
         );
-        assert!(document.interpreter_id_by_name("missing").unwrap().is_null());
+        assert!(
+            document
+                .interpreter_id_by_name("missing")
+                .unwrap()
+                .is_null()
+        );
     }
 
     #[wasm_bindgen_test]
     fn encoded_fizzbuzz_document_uses_native_formatter_output_key() {
-        let tree = mech_syntax::parser::parse(include_str!(
-            "../../../examples/working/fizzbuzz.mec"
-        ))
-        .unwrap();
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
+                .unwrap();
         let output_id = tree
             .body
             .sections
             .iter()
             .flat_map(|section| &section.elements)
             .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block)
-                    if block.config.output =>
-                {
-                    block.code.last().map(|(code, _)| {
-                        mech_core::hash_str(&format!("{code:?}"))
-                    })
+                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
+                    block
+                        .code
+                        .last()
+                        .map(|(code, _)| mech_core::hash_str(&format!("{code:?}")))
                 }
                 _ => None,
             })
@@ -2538,10 +2683,12 @@ mod browser_tests {
         Reflect::set(
             &sources,
             &JsValue::from_str("generic-table.mec"),
-            &JsValue::from_str(r#"delta := 0.25
+            &JsValue::from_str(
+                r#"delta := 0.25
 rows := |id<string> x<f64>|
   | "row-a" 1 + delta |
-  | "row-b" 2 + delta |"#),
+  | "row-b" 2 + delta |"#,
+            ),
         )
         .unwrap();
         let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
@@ -2574,12 +2721,19 @@ rows := |id<string> x<f64>|
         .unwrap();
         let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
         let result = project.frame(1).unwrap();
-        assert_eq!(Reflect::get(&result, &JsValue::from_str("rendered")).unwrap().as_f64(), Some(0.0));
+        assert_eq!(
+            Reflect::get(&result, &JsValue::from_str("rendered"))
+                .unwrap()
+                .as_f64(),
+            Some(0.0)
+        );
     }
 
     #[wasm_bindgen_test]
     fn generic_project_with_time_console_and_scene_runs_clock_source() {
-        assert!(required_path_strings(include_str!("../../../examples/analog-clock/mech.mcfg")).is_ok());
+        assert!(
+            required_path_strings(include_str!("../../../examples/analog-clock/mech.mcfg")).is_ok()
+        );
     }
 
     #[wasm_bindgen_test]
@@ -2595,16 +2749,21 @@ rows := |id<string> x<f64>|
         Reflect::set(
             &sources,
             &JsValue::from_str("table-scene.mec"),
-            &JsValue::from_str(include_str!("../tests/fixtures/generic-timer-table-scene/table-scene.mec")),
+            &JsValue::from_str(include_str!(
+                "../tests/fixtures/generic-timer-table-scene/table-scene.mec"
+            )),
         )
         .unwrap();
         let mut project = WasmProject::from_sources(config, sources.into()).unwrap();
         project.start().unwrap();
         let result = project.frame(1).unwrap();
-        assert_eq!(Reflect::get(&result, &JsValue::from_str("rendered")).unwrap().as_f64(), Some(1.0));
+        assert_eq!(
+            Reflect::get(&result, &JsValue::from_str("rendered"))
+                .unwrap()
+                .as_f64(),
+            Some(1.0)
+        );
         project.stop().unwrap();
         canvas.remove();
     }
-
-
 }

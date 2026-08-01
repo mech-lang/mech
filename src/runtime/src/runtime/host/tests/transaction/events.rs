@@ -20,11 +20,7 @@ fn host_session_events_use_shared_monotonic_sequence() {
         .unwrap()
         .build()
         .unwrap();
-    grant_host_call(
-        &mut runtime,
-        CapabilityId(740),
-        "demo/event-sequence",
-    );
+    grant_host_call(&mut runtime, CapabilityId(740), "demo/event-sequence");
 
     runtime
         .call_host(HostCall::new("demo/event-sequence", Vec::new()))
@@ -71,7 +67,10 @@ fn failed_host_audit_survives_full_context_retention() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "HostFunctionNotFound");
-    for events in [context.events().to_vec(), runtime.list_events(None).unwrap()] {
+    for events in [
+        context.events().to_vec(),
+        runtime.list_events(None).unwrap(),
+    ] {
         let started = events
             .iter()
             .filter(|event| {
@@ -94,19 +93,13 @@ fn failed_host_audit_survives_full_context_retention() {
             .collect::<Vec<_>>();
         let aborted = events
             .iter()
-            .filter(|event| {
-                matches!(
-                    event.kind,
-                    RuntimeEventKind::TransactionAborted { .. }
-                )
-            })
+            .filter(|event| matches!(event.kind, RuntimeEventKind::TransactionAborted { .. }))
             .collect::<Vec<_>>();
         assert_eq!(started.len(), 1, "unexpected started audit: {events:?}");
         assert_eq!(failed.len(), 1, "unexpected failed audit: {events:?}");
         assert_eq!(aborted.len(), 1, "unexpected abort audit: {events:?}");
         assert!(
-            started[0].sequence < failed[0].sequence
-                && failed[0].sequence < aborted[0].sequence,
+            started[0].sequence < failed[0].sequence && failed[0].sequence < aborted[0].sequence,
             "failed host audit did not precede abort: {:?}",
             events
                 .iter()

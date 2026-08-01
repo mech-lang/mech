@@ -1,7 +1,7 @@
 use super::support::{record_value, scalar, scalar_value};
 use crate::{MechMap, MechSet, Ref, Value, ValueStateBorrowConflict, ValueStateJournal};
 use core::any::type_name;
-use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 
 #[test]
 fn state_journal_split_restore_preflights_before_apply() {

@@ -42,16 +42,20 @@ fn max_source_bytes_rejects_module_source() {
     assert_eq!(budget.resource, "source_bytes");
     assert_eq!(budget.requested, 4);
     assert_eq!(budget.max, Some(3));
-    assert!(runtime
-        .store
-        .find_module_by_name(canonical_uri)
-        .unwrap()
-        .is_none());
-    assert!(runtime
-        .list_events(None)
-        .unwrap()
-        .iter()
-        .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. })));
+    assert!(
+        runtime
+            .store
+            .find_module_by_name(canonical_uri)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        runtime
+            .list_events(None)
+            .unwrap()
+            .iter()
+            .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. }))
+    );
 }
 
 #[test]
@@ -90,24 +94,32 @@ fn retained_root_integrity_failure_exposes_no_graph_or_completion() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-    assert!(runtime
-        .program
-        .root_symbol_value("integrity-baseline")
-        .is_ok());
-    assert!(runtime
-        .program
-        .root_symbol_value("integrity-root-value")
-        .is_err());
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("integrity-baseline")
+            .is_ok()
+    );
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("integrity-root-value")
+            .is_err()
+    );
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none()
+    );
     let events = runtime.list_events(None).unwrap();
     let operation_events = &events[events_before..];
-    assert!(operation_events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
+    assert!(
+        operation_events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. }))
+    );
     assert!(operation_events.iter().any(|event| matches!(
         event.kind,
         RuntimeEventKind::IntegrityConstraintViolated { .. }
@@ -139,10 +151,12 @@ fn isolated_dependency_integrity_failure_prevents_root_materialization() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-    assert!(runtime
-        .program
-        .root_symbol_value("integrity-root-ran")
-        .is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("integrity-root-ran")
+            .is_err()
+    );
     for uri in ["memory:root.mec", "memory:dep.mec"] {
         assert!(
             runtime.store.find_module_by_name(uri).unwrap().is_none(),
@@ -151,9 +165,11 @@ fn isolated_dependency_integrity_failure_prevents_root_materialization() {
     }
     let events = runtime.list_events(None).unwrap();
     let operation_events = &events[events_before..];
-    assert!(operation_events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
+    assert!(
+        operation_events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. }))
+    );
     assert!(operation_events.iter().any(|event| matches!(
         event.kind,
         RuntimeEventKind::IntegrityConstraintViolated { .. }

@@ -17,18 +17,12 @@ fn module_import_intrinsic_segment(input: ParseString) -> ParseResult<ModuleImpo
     let (input, name) = cut(identifier_path_segment)(input)?;
     Ok((
         input,
-        ModuleImportPathSegment::Intrinsic(ModuleImportIntrinsicSegment {
-            marker,
-            name,
-        }),
+        ModuleImportPathSegment::Intrinsic(ModuleImportIntrinsicSegment { marker, name }),
     ))
 }
 
 fn module_import_path_segment(input: ParseString) -> ParseResult<ModuleImportPathSegment> {
-    alt((
-        module_import_intrinsic_segment,
-        module_import_name_segment,
-    ))(input)
+    alt((module_import_intrinsic_segment, module_import_name_segment))(input)
 }
 
 fn module_import_path(input: ParseString) -> ParseResult<ModuleImportPath> {
@@ -61,10 +55,8 @@ fn module_import_value_alias(input: ParseString) -> ParseResult<ModuleImportAlia
 }
 
 fn context_import_alias_segment(input: ParseString) -> ParseResult<Identifier> {
-    let (input, (first, mut rest)) = nom_tuple((
-        alpha_token,
-        many0(alt((alpha_token, digit_token, dash))),
-    ))(input)?;
+    let (input, (first, mut rest)) =
+        nom_tuple((alpha_token, many0(alt((alpha_token, digit_token, dash)))))(input)?;
     let mut tokens = vec![first];
     tokens.append(&mut rest);
     let mut merged = Token::merge_tokens(&mut tokens).unwrap();
@@ -76,7 +68,10 @@ fn module_import_context_alias(input: ParseString) -> ParseResult<Identifier> {
     let (input, _) = at(input)?;
     let (input, name) = context_import_alias_segment(input)?;
     if slash(input.clone()).is_ok() {
-        return Err(nom::Err::Error(ParseError::new(input, "context import aliases must be a single identifier")));
+        return Err(nom::Err::Error(ParseError::new(
+            input,
+            "context import aliases must be a single identifier",
+        )));
     }
     Ok((input, name))
 }
@@ -101,10 +96,7 @@ fn import_alias_operator(input: ParseString) -> ParseResult<()> {
 }
 
 fn import_group_separator(input: ParseString) -> ParseResult<()> {
-    let (input, _) = alt((
-        list_separator,
-        map(whitespace1, |_| ()),
-    ))(input)?;
+    let (input, _) = alt((list_separator, map(whitespace1, |_| ())))(input)?;
     Ok((input, ()))
 }
 
@@ -135,11 +127,8 @@ fn aliased_item_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, alias) = module_import_alias(input)?;
     let (input, _) = import_alias_operator(input)?;
 
-    let (input, (module, _, item)) = cut(nom_tuple((
-        module_root,
-        slash,
-        module_import_path,
-    )))(input)?;
+    let (input, (module, _, item)) =
+        cut(nom_tuple((module_root, slash, module_import_path)))(input)?;
 
     Ok((
         input,
@@ -162,7 +151,9 @@ fn module_suffix_import(input: ParseString) -> ParseResult<ModuleImport> {
             delimited(left_brace, cut(import_group_items), right_brace),
             |group_items| (None, Some(group_items), ModuleImportKind::Group),
         ),
-        map(module_import_path, |item| (Some(item), None, ModuleImportKind::Item)),
+        map(module_import_path, |item| {
+            (Some(item), None, ModuleImportKind::Item)
+        }),
     )))(input)?;
 
     Ok((
@@ -180,7 +171,10 @@ fn module_suffix_import(input: ParseString) -> ParseResult<ModuleImport> {
 fn module_only_import(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, module) = module_root(input)?;
     if slash(input.clone()).is_ok() {
-        return Err(nom::Err::Error(ParseError::new(input, "not a module-only import")));
+        return Err(nom::Err::Error(ParseError::new(
+            input,
+            "not a module-only import",
+        )));
     }
 
     Ok((

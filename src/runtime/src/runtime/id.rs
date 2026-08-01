@@ -15,42 +15,34 @@
 // - `next_message_id`: Generates the next unique MessageId, which is derived from the next EventId to ensure uniqueness.
 
 use crate::runtime::MechRuntime;
-use crate::{
-  ActorId,
-  CapabilityId,
-  EventId,
-  MessageId,
-  ObjectId,
-  TaskId,
-  TransactionId,
-};
-  
+use crate::{ActorId, CapabilityId, EventId, MessageId, ObjectId, TaskId, TransactionId};
+
 impl MechRuntime {
-  pub fn next_object_id(&mut self) -> ObjectId {
-    self.id_generator.object_id()
-  }
+    pub fn next_object_id(&mut self) -> ObjectId {
+        self.id_generator.object_id()
+    }
 
-  pub fn next_actor_id(&mut self) -> ActorId {
-    self.id_generator.actor_id()
-  }
+    pub fn next_actor_id(&mut self) -> ActorId {
+        self.id_generator.actor_id()
+    }
 
-  pub fn next_task_id(&mut self) -> TaskId {
-    self.id_generator.task_id()
-  }
+    pub fn next_task_id(&mut self) -> TaskId {
+        self.id_generator.task_id()
+    }
 
-  pub fn next_capability_id(&mut self) -> CapabilityId {
-    self.id_generator.capability_id()
-  }
+    pub fn next_capability_id(&mut self) -> CapabilityId {
+        self.id_generator.capability_id()
+    }
 
-  pub fn next_transaction_id(&mut self) -> TransactionId {
-    self.id_generator.transaction_id()
-  }
+    pub fn next_transaction_id(&mut self) -> TransactionId {
+        self.id_generator.transaction_id()
+    }
 
-  pub fn next_event_id(&mut self) -> EventId {
-    self.id_generator.event_id()
-  }
+    pub fn next_event_id(&mut self) -> EventId {
+        self.id_generator.event_id()
+    }
 
-  pub fn next_message_id(&mut self) -> MessageId {
-    MessageId(self.id_generator.event_id().as_u128())
-  }
+    pub fn next_message_id(&mut self) -> MessageId {
+        MessageId(self.id_generator.event_id().as_u128())
+    }
 }

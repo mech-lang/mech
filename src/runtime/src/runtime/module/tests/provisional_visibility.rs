@@ -1,4 +1,4 @@
-use crate::{module_id, RuntimeEventKind};
+use crate::{RuntimeEventKind, module_id};
 
 use super::support::{runtime_with_sources, test_module_options};
 
@@ -15,22 +15,30 @@ fn explicit_transaction_owns_provisional_graph_visibility() {
     let module = module_id("memory:main.mec");
     let observer = runtime.runtime_context().unwrap();
 
-    assert!(runtime
-        .get_module_visible(&owner, module)
-        .unwrap()
-        .is_some(),);
-    assert!(runtime
-        .get_module_version_visible(&owner, version)
-        .unwrap()
-        .is_some(),);
-    assert!(runtime
-        .get_module_visible(&observer, module)
-        .unwrap()
-        .is_none(),);
-    assert!(runtime
-        .get_module_version_visible(&observer, version)
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .get_module_visible(&owner, module)
+            .unwrap()
+            .is_some(),
+    );
+    assert!(
+        runtime
+            .get_module_version_visible(&owner, version)
+            .unwrap()
+            .is_some(),
+    );
+    assert!(
+        runtime
+            .get_module_visible(&observer, module)
+            .unwrap()
+            .is_none(),
+    );
+    assert!(
+        runtime
+            .get_module_version_visible(&observer, version)
+            .unwrap()
+            .is_none(),
+    );
     assert!(runtime.store.get_module(module).unwrap().is_none());
     assert!(runtime.store.get_module_version(version).unwrap().is_none(),);
     assert!(runtime.run_module_with_context(&mut owner, version).is_ok(),);
@@ -58,14 +66,22 @@ fn failed_later_build_preserves_earlier_provisional_graph() {
         .unwrap()
         .unwrap();
 
-    assert!(runtime
-        .build_module_from_request_with_context(&mut context, "later.mec", test_module_options(),)
-        .is_err(),);
+    assert!(
+        runtime
+            .build_module_from_request_with_context(
+                &mut context,
+                "later.mec",
+                test_module_options(),
+            )
+            .is_err(),
+    );
 
-    assert!(runtime
-        .get_module_version_visible(&context, earlier)
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .get_module_version_visible(&context, earlier)
+            .unwrap()
+            .is_some(),
+    );
     for uri in ["memory:later.mec", "memory:later-dependency.mec"] {
         assert!(
             runtime
@@ -129,10 +145,12 @@ fn module_only_work_is_allowed_while_another_transaction_owns_program() {
         .unwrap()
         .unwrap();
 
-    assert!(runtime
-        .get_module_version_visible(&context_b, version)
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .get_module_version_visible(&context_b, version)
+            .unwrap()
+            .is_some(),
+    );
     runtime
         .abort_runtime_transaction(&mut context_b, "discard B")
         .unwrap();
@@ -161,9 +179,11 @@ fn equal_publication_from_two_transactions_is_idempotent() {
     runtime.commit_runtime_transaction(&mut first).unwrap();
     runtime.commit_runtime_transaction(&mut second).unwrap();
 
-    assert!(runtime
-        .store
-        .get_module_version(first_version)
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .get_module_version(first_version)
+            .unwrap()
+            .is_some(),
+    );
 }

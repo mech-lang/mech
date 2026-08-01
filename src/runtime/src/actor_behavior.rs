@@ -9,9 +9,7 @@
 //! behavior execution mediated by context, capabilities, budgets, events, and
 //! transactions.
 
-use mech_core::{
-  MResult, Value, Ref
-};
+use mech_core::{MResult, Ref, Value};
 
 use crate::actor::ActorTurn;
 use crate::context::RuntimeContext;
@@ -22,11 +20,11 @@ use crate::host::HostCall;
 // -----------------------------------------------------------------------------
 
 pub trait ActorBehaviorRuntime {
-  fn call_host_with_context(
-    &mut self,
-    context: &mut RuntimeContext,
-    call: HostCall,
-  ) -> MResult<Value>;
+    fn call_host_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        call: HostCall,
+    ) -> MResult<Value>;
 }
 
 // -----------------------------------------------------------------------------
@@ -34,12 +32,12 @@ pub trait ActorBehaviorRuntime {
 // -----------------------------------------------------------------------------
 
 pub trait ActorBehaviorDriver: std::fmt::Debug + Send {
-  fn run_actor_turn(
-    &mut self,
-    runtime: &mut dyn ActorBehaviorRuntime,
-    context: &mut RuntimeContext,
-    turn: &ActorTurn,
-  ) -> MResult<()>;
+    fn run_actor_turn(
+        &mut self,
+        runtime: &mut dyn ActorBehaviorRuntime,
+        context: &mut RuntimeContext,
+        turn: &ActorTurn,
+    ) -> MResult<()>;
 }
 
 // -----------------------------------------------------------------------------
@@ -50,20 +48,20 @@ pub trait ActorBehaviorDriver: std::fmt::Debug + Send {
 pub struct NoActorBehaviorDriver;
 
 impl NoActorBehaviorDriver {
-  pub fn new() -> Self {
-    Self
-  }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 impl ActorBehaviorDriver for NoActorBehaviorDriver {
-  fn run_actor_turn(
-    &mut self,
-    _runtime: &mut dyn ActorBehaviorRuntime,
-    _context: &mut RuntimeContext,
-    _turn: &ActorTurn,
-  ) -> MResult<()> {
-    Ok(())
-  }
+    fn run_actor_turn(
+        &mut self,
+        _runtime: &mut dyn ActorBehaviorRuntime,
+        _context: &mut RuntimeContext,
+        _turn: &ActorTurn,
+    ) -> MResult<()> {
+        Ok(())
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -84,76 +82,72 @@ impl ActorBehaviorDriver for NoActorBehaviorDriver {
 /// transaction record are the proof.
 #[derive(Clone, Debug)]
 pub struct HostCallActorBehaviorDriver {
-  pub new_state: String,
-  pub read_message: bool,
-  pub read_state: bool,
-  pub write_state: bool,
+    pub new_state: String,
+    pub read_message: bool,
+    pub read_state: bool,
+    pub write_state: bool,
 }
 
 impl HostCallActorBehaviorDriver {
-  pub fn new(new_state: impl Into<String>) -> Self {
-    Self {
-      new_state: new_state.into(),
-      read_message: true,
-      read_state: true,
-      write_state: true,
+    pub fn new(new_state: impl Into<String>) -> Self {
+        Self {
+            new_state: new_state.into(),
+            read_message: true,
+            read_state: true,
+            write_state: true,
+        }
     }
-  }
 
-  pub fn without_message_reads(mut self) -> Self {
-    self.read_message = false;
-    self
-  }
+    pub fn without_message_reads(mut self) -> Self {
+        self.read_message = false;
+        self
+    }
 
-  pub fn without_state_read(mut self) -> Self {
-    self.read_state = false;
-    self
-  }
+    pub fn without_state_read(mut self) -> Self {
+        self.read_state = false;
+        self
+    }
 
-  pub fn without_state_write(mut self) -> Self {
-    self.write_state = false;
-    self
-  }
+    pub fn without_state_write(mut self) -> Self {
+        self.write_state = false;
+        self
+    }
 }
 
 impl ActorBehaviorDriver for HostCallActorBehaviorDriver {
-  fn run_actor_turn(
-    &mut self,
-    runtime: &mut dyn ActorBehaviorRuntime,
-    context: &mut RuntimeContext,
-    turn: &ActorTurn,
-  ) -> MResult<()> {
-    turn.validate()?;
+    fn run_actor_turn(
+        &mut self,
+        runtime: &mut dyn ActorBehaviorRuntime,
+        context: &mut RuntimeContext,
+        turn: &ActorTurn,
+    ) -> MResult<()> {
+        turn.validate()?;
 
-    if self.read_message {
-      runtime.call_host_with_context(
-        context,
-        HostCall::new("actor/message/kind", Vec::new()),
-      )?;
+        if self.read_message {
+            runtime
+                .call_host_with_context(context, HostCall::new("actor/message/kind", Vec::new()))?;
 
-      runtime.call_host_with_context(
-        context,
-        HostCall::new("actor/message/payload", Vec::new()),
-      )?;
+            runtime.call_host_with_context(
+                context,
+                HostCall::new("actor/message/payload", Vec::new()),
+            )?;
+        }
+
+        if self.read_state {
+            runtime
+                .call_host_with_context(context, HostCall::new("actor/state/get", Vec::new()))?;
+        }
+
+        if self.write_state {
+            runtime.call_host_with_context(
+                context,
+                HostCall::new(
+                    "actor/state/put",
+                    vec![Value::String(Ref::new(self.new_state.clone()))],
+                ),
+            )?;
+        }
+
+        Ok(())
     }
-
-    if self.read_state {
-      runtime.call_host_with_context(
-        context,
-        HostCall::new("actor/state/get", Vec::new()),
-      )?;
-    }
-
-    if self.write_state {
-      runtime.call_host_with_context(
-        context,
-        HostCall::new(
-          "actor/state/put",
-          vec![Value::String(Ref::new(self.new_state.clone()))],
-        ),
-      )?;
-    }
-
-    Ok(())
-  }
 }

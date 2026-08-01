@@ -1,9 +1,9 @@
-use crate::{
-    ModuleVersionId, ModuleVersionRecord, RuntimeHealth, RuntimeModuleJournalConflict, module_id,
-};
 use super::new_runtime;
 use crate::PreparedRuntimeEffect;
 use crate::runtime::test_support::effects::{EffectLifecycleLog, TransactionalEffectProbe};
+use crate::{
+    ModuleVersionId, ModuleVersionRecord, RuntimeHealth, RuntimeModuleJournalConflict, module_id,
+};
 
 #[test]
 fn module_journal_validation_precedes_effect_preparation() {

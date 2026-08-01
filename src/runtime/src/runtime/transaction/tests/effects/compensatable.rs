@@ -4,7 +4,7 @@ use crate::{
     MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, RuntimeEventKind, RuntimeHealth,
 };
 
-use super::{compensatable, transactional, PanicEffectPhase, PanickingCompensatableEffect};
+use super::{PanicEffectPhase, PanickingCompensatableEffect, compensatable, transactional};
 
 #[test]
 fn apply_failure_compensates_and_aborts_in_reverse_phase_order() {
@@ -54,14 +54,18 @@ fn apply_failure_compensates_and_aborts_in_reverse_phase_order() {
     );
     assert_eq!(context.transaction, Some(transaction_id));
     assert!(!runtime.is_poisoned());
-    assert!(context
-        .events
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::EffectCompensated { .. }) }));
-    assert!(context
-        .events
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::EffectAborted { .. }) }));
+    assert!(
+        context
+            .events
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::EffectCompensated { .. }) })
+    );
+    assert!(
+        context
+            .events
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::EffectAborted { .. }) })
+    );
 
     runtime
         .abort_runtime_transaction(&mut context, "apply test cleanup")
@@ -91,9 +95,11 @@ fn store_failure_compensates_effect_and_keeps_transaction_active() {
         )
         .unwrap();
 
-    assert!(runtime
-        .commit_runtime_transaction_detailed(&mut context)
-        .is_err());
+    assert!(
+        runtime
+            .commit_runtime_transaction_detailed(&mut context)
+            .is_err()
+    );
 
     assert_eq!(
         *log.lock().unwrap(),
@@ -144,10 +150,12 @@ fn compensation_failure_poisons_runtime_with_complete_diagnostic() {
         RuntimeHealth::Poisoned(poison) => poison,
     };
     assert!(poison.original_error.contains("second apply failed"));
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|failure| failure.contains("first compensate failed")));
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|failure| failure.contains("first compensate failed"))
+    );
     assert!(runtime.list_events(None).unwrap().iter().any(|event| {
         matches!(
             event.kind,
@@ -155,9 +163,11 @@ fn compensation_failure_poisons_runtime_with_complete_diagnostic() {
         )
     }));
 
-    assert!(runtime
-        .abort_runtime_transaction(&mut context, "poison test cleanup")
-        .is_err());
+    assert!(
+        runtime
+            .abort_runtime_transaction(&mut context, "poison test cleanup")
+            .is_err()
+    );
     assert_eq!(context.transaction, None);
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
 }

@@ -1,18 +1,18 @@
 use super::super::environment::expression_solves_deferred;
 use super::{Environment, subscript_formula, subscript_range};
 use crate::{
-  AccessRange, AccessScalar, InterpreterExecution, MResult, NativeFunctionCompiler, Subscript,
-  Value,
+    AccessRange, AccessScalar, InterpreterExecution, MResult, NativeFunctionCompiler, Subscript,
+    Value,
 };
 
 pub(super) fn access(
-  sbscrpt: &Subscript,
-  val: &Value,
-  env: Option<&Environment>,
-  p: &InterpreterExecution<'_>,
+    sbscrpt: &Subscript,
+    val: &Value,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
-  let plan = p.plan();
-  match sbscrpt {
+    let plan = p.plan();
+    match sbscrpt {
         Subscript::Brace(subs) => {
             let mut fxn_input = vec![val.clone()];
             match &subs[..] {
@@ -22,11 +22,17 @@ pub(super) fn access(
                     let shape = result.shape();
                     fxn_input.push(result);
                     match shape[..] {
-                        [1, 1] => { plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?); }
+                        [1, 1] => {
+                            plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
+                        [n, 1] => {
+                            plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
+                        [1, n] => {
+                            plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                        }
                         _ => todo!(),
                     }
                 }
@@ -48,11 +54,11 @@ pub(super) fn access(
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
             if !expression_solves_deferred(p) {
-              new_fxn.solve();
+                new_fxn.solve();
             }
             let res = new_fxn.out();
             return Ok(res);
         }
-    _ => unreachable!(),
-  }
+        _ => unreachable!(),
+    }
 }

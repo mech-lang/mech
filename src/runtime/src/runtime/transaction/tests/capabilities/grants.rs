@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
 use crate::{
@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::super::RuntimeCapabilityOverlay;
-use super::{capability, request, FailingRollbackKernel};
+use super::{FailingRollbackKernel, capability, request};
 
 #[test]
 fn capability_grant_store_failure_never_grants_kernel_authority() {
@@ -31,11 +31,13 @@ fn capability_grant_store_failure_never_grants_kernel_authority() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "StoreRecordAlreadyExists");
-    assert!(runtime
-        .capability_kernel()
-        .get(CapabilityId(100))
-        .unwrap()
-        .is_none());
+    assert!(
+        runtime
+            .capability_kernel()
+            .get(CapabilityId(100))
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(context.authority, RuntimeAuthorityScope::AllForSubject,);
     assert!(!context.events.iter().any(|event| {
         matches!(
@@ -81,11 +83,13 @@ fn capability_grant_kernel_failure_rolls_back_store() {
 
     assert_eq!(error.kind_name(), "CapabilityAlreadyExists");
     assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert!(runtime
-        .capability_kernel()
-        .get(CapabilityId(100))
-        .unwrap()
-        .is_some());
+    assert!(
+        runtime
+            .capability_kernel()
+            .get(CapabilityId(100))
+            .unwrap()
+            .is_some()
+    );
     assert_eq!(context.events, context_events_before);
     assert_eq!(context.authority, context_authority_before);
 }
@@ -118,22 +122,28 @@ fn capability_grant_event_failure_removes_non_revocable_live_authority() {
     assert_eq!(context.events, context_events_before);
     assert_eq!(context.authority, RuntimeAuthorityScope::AllForSubject,);
     assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert!(runtime
-        .capability_kernel()
-        .get(CapabilityId(100))
-        .unwrap()
-        .is_none());
+    assert!(
+        runtime
+            .capability_kernel()
+            .get(CapabilityId(100))
+            .unwrap()
+            .is_none()
+    );
     assert!(runtime.check_capability(&request("task:1")).is_err());
-    assert!(runtime
-        .list_events(None)
-        .unwrap()
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::RuntimeCreated { .. }) }));
-    assert!(!runtime
-        .list_events(None)
-        .unwrap()
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. }) }));
+    assert!(
+        runtime
+            .list_events(None)
+            .unwrap()
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::RuntimeCreated { .. }) })
+    );
+    assert!(
+        !runtime
+            .list_events(None)
+            .unwrap()
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. }) })
+    );
 }
 
 #[test]
@@ -157,19 +167,23 @@ fn capability_grant_failed_transactional_event_staging_is_compensated() {
     assert_eq!(context.events, context_events_before);
     assert_eq!(context.transaction, Some(transaction_id));
     assert!(runtime.active_transactions.contains_key(&transaction_id));
-    assert!(!runtime
-        .active_transactions
-        .get(&transaction_id)
-        .unwrap()
-        .store
-        .staged_events()
-        .any(|event| matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. })));
+    assert!(
+        !runtime
+            .active_transactions
+            .get(&transaction_id)
+            .unwrap()
+            .store
+            .staged_events()
+            .any(|event| matches!(event.kind, RuntimeEventKind::CapabilityGranted { .. }))
+    );
     assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
-    assert!(runtime
-        .capability_kernel()
-        .get(CapabilityId(100))
-        .unwrap()
-        .is_none());
+    assert!(
+        runtime
+            .capability_kernel()
+            .get(CapabilityId(100))
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(context.authority, RuntimeAuthorityScope::AllForSubject,);
 
     runtime
@@ -215,19 +229,23 @@ fn capability_grant_incomplete_rollback_is_reported_and_continues() {
     let rollback = error
         .kind_as::<RuntimeCapabilityGrantRollbackFailed>()
         .unwrap();
-    assert!(rollback
-        .rollback_failures
-        .iter()
-        .any(|failure| failure.contains("capability kernel: GenericError")));
+    assert!(
+        rollback
+            .rollback_failures
+            .iter()
+            .any(|failure| failure.contains("capability kernel: GenericError"))
+    );
     assert!(rollback_attempted.load(Ordering::SeqCst));
     assert!(runtime.get_capability(CapabilityId(100)).unwrap().is_none());
     assert_eq!(context.events, context_events_before);
     assert_eq!(context.authority, RuntimeAuthorityScope::AllForSubject,);
-    assert!(runtime
-        .capability_kernel()
-        .get(CapabilityId(100))
-        .unwrap()
-        .is_some());
+    assert!(
+        runtime
+            .capability_kernel()
+            .get(CapabilityId(100))
+            .unwrap()
+            .is_some()
+    );
 }
 
 #[test]
@@ -336,9 +354,11 @@ fn provisional_capability_grant_is_visible_only_to_its_transaction() {
             .unwrap(),
         id,
     );
-    assert!(runtime
-        .check_capability_with_context(&mut observer, &request("task:1"))
-        .is_err());
+    assert!(
+        runtime
+            .check_capability_with_context(&mut observer, &request("task:1"))
+            .is_err()
+    );
     assert!(runtime.get_capability(id).unwrap().is_none());
     assert!(runtime.capability_kernel().get(id).unwrap().is_none());
 

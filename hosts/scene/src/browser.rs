@@ -265,12 +265,21 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         ctx.set_stroke_style(&JsValue::from_str(&l.stroke));
         ctx.set_line_width(l.stroke_width);
         ctx.set_line_cap(&l.line_cap);
-        ctx.translate(l.origin_x, l.origin_y)
-            .map_err(|_| scene_error("BrowserScene", format!("failed to translate line `{}`", l.id)))?;
-        ctx.rotate(l.rotation.to_radians())
-            .map_err(|_| scene_error("BrowserScene", format!("failed to rotate line `{}`", l.id)))?;
-        ctx.translate(-l.origin_x, -l.origin_y)
-            .map_err(|_| scene_error("BrowserScene", format!("failed to restore line `{}` translation", l.id)))?;
+        ctx.translate(l.origin_x, l.origin_y).map_err(|_| {
+            scene_error(
+                "BrowserScene",
+                format!("failed to translate line `{}`", l.id),
+            )
+        })?;
+        ctx.rotate(l.rotation.to_radians()).map_err(|_| {
+            scene_error("BrowserScene", format!("failed to rotate line `{}`", l.id))
+        })?;
+        ctx.translate(-l.origin_x, -l.origin_y).map_err(|_| {
+            scene_error(
+                "BrowserScene",
+                format!("failed to restore line `{}` translation", l.id),
+            )
+        })?;
         ctx.begin_path();
         ctx.move_to(l.x1, l.y1);
         ctx.line_to(l.x2, l.y2);
@@ -350,7 +359,8 @@ fn upsert_background(
 ) -> MResult<Element> {
     let el = match root
         .query_selector("[data-mech-scene-background=\"true\"]")
-        .map_err(|_| scene_error("BrowserScene", "failed to query svg background"))? {
+        .map_err(|_| scene_error("BrowserScene", "failed to query svg background"))?
+    {
         Some(el) => el,
         None => {
             let el = doc

@@ -46,7 +46,7 @@ impl TestOptions {
                 .get_many::<String>("mech_test_file_paths")
                 .map_or(vec![".".to_string()], |files| {
                     files.map(|file| file.to_string()).collect()
-            }),
+                }),
             output_path: matches.get_one::<String>("output_path").cloned(),
             verbose: matches.get_flag("verbose"),
             debug: root.debug,

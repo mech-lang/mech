@@ -1,7 +1,10 @@
 #[macro_use]
 use crate::stdlib::*;
 use self::assign::*;
-use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
+use na::{
+    DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, Matrix6, Rotation3,
+    RowDVector, RowVector2, RowVector3, RowVector4, Vector2, Vector3, Vector4,
+};
 
 // x.a = 1 --------------------------------------------------------------------
 
@@ -18,7 +21,7 @@ macro_rules! impl_col_set_fxn {
       fn solve(&self) {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
-        unsafe { 
+        unsafe {
           for i in 0..(*source_ptr).len() {
             paste! {
               (&mut (*sink_ptr))[i] = Value::[<$out_type:camel>](Ref::new((*source_ptr).index(i).clone()));
@@ -34,7 +37,7 @@ macro_rules! impl_col_set_fxn {
       }
     }
     #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $fxn_name 
+    impl MechFunctionCompiler for $fxn_name
     where
       $vector_size_in<$out_type>: CompileConst + ConstElem + AsValueKind,
       $vector_size_out<Value>: CompileConst + ConstElem + AsValueKind,
@@ -49,28 +52,28 @@ macro_rules! impl_col_set_fxn {
 }
 
 macro_rules! impl_col_set_fxn_shapes {
-  ($type:ident) => {
-    paste!{
-      #[cfg(feature = "matrix1")]
-      impl_col_set_fxn!([<TableSetCol $type:camel M1>], Matrix1, Matrix1, $type);
-      #[cfg(feature = "vector2")]
-      impl_col_set_fxn!([<TableSetCol $type:camel V2>], Vector2, Vector2, $type);
-      #[cfg(feature = "vector3")]
-      impl_col_set_fxn!([<TableSetCol $type:camel V3>], Vector3, Vector3, $type);
-      #[cfg(feature = "vector4")]
-      impl_col_set_fxn!([<TableSetCol $type:camel V4>], Vector4, Vector4, $type);
-      #[cfg(feature = "vectord")]
-      impl_col_set_fxn!([<TableSetCol $type:camel VD>], DVector, DVector, $type);
-      #[cfg(all(feature = "vectord", feature = "vector4"))]
-      impl_col_set_fxn!([<TableSetCol $type:camel VDV4>], Vector4, DVector, $type);
-      #[cfg(all(feature = "vectord", feature = "vector3"))]
-      impl_col_set_fxn!([<TableSetCol $type:camel VDV3>], Vector3, DVector, $type);
-      #[cfg(all(feature = "vectord", feature = "vector2"))]
-      impl_col_set_fxn!([<TableSetCol $type:camel VDV2>], Vector2, DVector, $type);
-      #[cfg(all(feature = "vectord", feature = "matrix1"))]
-      impl_col_set_fxn!([<TableSetCol $type:camel VDM1>], Matrix1, DVector, $type);
-    }
-  }
+    ($type:ident) => {
+        paste! {
+          #[cfg(feature = "matrix1")]
+          impl_col_set_fxn!([<TableSetCol $type:camel M1>], Matrix1, Matrix1, $type);
+          #[cfg(feature = "vector2")]
+          impl_col_set_fxn!([<TableSetCol $type:camel V2>], Vector2, Vector2, $type);
+          #[cfg(feature = "vector3")]
+          impl_col_set_fxn!([<TableSetCol $type:camel V3>], Vector3, Vector3, $type);
+          #[cfg(feature = "vector4")]
+          impl_col_set_fxn!([<TableSetCol $type:camel V4>], Vector4, Vector4, $type);
+          #[cfg(feature = "vectord")]
+          impl_col_set_fxn!([<TableSetCol $type:camel VD>], DVector, DVector, $type);
+          #[cfg(all(feature = "vectord", feature = "vector4"))]
+          impl_col_set_fxn!([<TableSetCol $type:camel VDV4>], Vector4, DVector, $type);
+          #[cfg(all(feature = "vectord", feature = "vector3"))]
+          impl_col_set_fxn!([<TableSetCol $type:camel VDV3>], Vector3, DVector, $type);
+          #[cfg(all(feature = "vectord", feature = "vector2"))]
+          impl_col_set_fxn!([<TableSetCol $type:camel VDV2>], Vector2, DVector, $type);
+          #[cfg(all(feature = "vectord", feature = "matrix1"))]
+          impl_col_set_fxn!([<TableSetCol $type:camel VDM1>], Matrix1, DVector, $type);
+        }
+    };
 }
 
 #[cfg(feature = "bool")]
@@ -149,161 +152,218 @@ macro_rules! impl_set_column_match_arms {
 }
 
 fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_set_column_match_arms!(
-    (sink,source,key),
-    Bool, bool, "bool";
-    I8,   i8,   "i8";
-    I16,  i16,  "i16";
-    I32,  i32,  "i32";
-    I64,  i64,  "i64";
-    I128, i128, "i128";
-    U8,   u8,   "u8";
-    U16,  u16,  "u16";
-    U32,  u32,  "u32";
-    U64,  u64,  "u64";
-    U128, u128, "u128";
-    F32,  f32,  "f32";
-    F64,  f64,  "f64";
-    String, String, "string";
-    C64, C64,"complex";
-    R64, R64,"rational";
-  )
+    impl_set_column_match_arms!(
+      (sink,source,key),
+      Bool, bool, "bool";
+      I8,   i8,   "i8";
+      I16,  i16,  "i16";
+      I32,  i32,  "i32";
+      I64,  i64,  "i64";
+      I128, i128, "i128";
+      U8,   u8,   "u8";
+      U16,  u16,  "u16";
+      U32,  u32,  "u32";
+      U64,  u64,  "u64";
+      U128, u128, "u128";
+      F32,  f32,  "f32";
+      F64,  f64,  "f64";
+      String, String, "string";
+      C64, C64,"complex";
+      R64, R64,"rational";
+    )
 }
 
 pub struct AssignTableColumn {}
 impl NativeFunctionCompiler for AssignTableColumn {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() < 3 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let sink = arguments[0].clone();
-    let source = arguments[1].clone();
-    let key = arguments[2].clone();
-    match impl_set_column_fxn(sink.clone(), source.clone(), key.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (&sink,&source,&key) {
-          (Value::MutableReference(sink),_,_) => { impl_set_column_fxn(sink.borrow().clone(), source.clone(), key.clone()) }
-          (sink, source, key) => Err(MechError::new(
-              UnhandledFunctionArgumentKind3 { arg: (sink.kind(), source.kind(), key.kind()), fxn_name: "table/assign-column".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() < 3 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let sink = arguments[0].clone();
+        let source = arguments[1].clone();
+        let key = arguments[2].clone();
+        match impl_set_column_fxn(sink.clone(), source.clone(), key.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (&sink, &source, &key) {
+                (Value::MutableReference(sink), _, _) => {
+                    impl_set_column_fxn(sink.borrow().clone(), source.clone(), key.clone())
+                }
+                (sink, source, key) => Err(MechError::new(
+                    UnhandledFunctionArgumentKind3 {
+                        arg: (sink.kind(), source.kind(), key.kind()),
+                        fxn_name: "table/assign-column".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 // table1 += table2 ------------------------------------------------------------
 
 #[derive(Debug)]
 struct TableAppendRecord {
-  sink: Ref<MechTable>,
-  source: Ref<MechRecord>,
+    sink: Ref<MechTable>,
+    source: Ref<MechRecord>,
 }
 impl MechFunctionImpl for TableAppendRecord {
-  fn solve(&self) {
-    unsafe {
-      let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
-      let source_ptr = &(*(self.source.as_ptr()));
-      sink_ptr.append_record(source_ptr.clone());
+    fn solve(&self) {
+        unsafe {
+            let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
+            let source_ptr = &(*(self.source.as_ptr()));
+            sink_ptr.append_record(source_ptr.clone());
+        }
     }
-  }
-  fn out(&self) -> Value { Value::Table(self.sink.clone()) }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn out(&self) -> Value {
+        Value::Table(self.sink.clone())
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("TableAppendRecord");
-    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("TableAppendRecord");
+        compile_unop!(
+            name,
+            self.sink,
+            self.source,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::Assign)
+        );
+    }
 }
 
 #[derive(Debug)]
 struct TableAppendTable {
-  sink: Ref<MechTable>,
-  source: Ref<MechTable>,
+    sink: Ref<MechTable>,
+    source: Ref<MechTable>,
 }
 impl MechFunctionImpl for TableAppendTable {
-  fn solve(&self) {
-    unsafe {
-      let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
-      let source_ptr = &(*(self.source.as_ptr()));
-      sink_ptr.append_table(&source_ptr);
+    fn solve(&self) {
+        unsafe {
+            let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
+            let source_ptr = &(*(self.source.as_ptr()));
+            sink_ptr.append_table(&source_ptr);
+        }
     }
-  }
-  fn out(&self) -> Value { Value::Table(self.sink.clone()) }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn out(&self) -> Value {
+        Value::Table(self.sink.clone())
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendTable {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("TableAppendTable");
-    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Table) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("TableAppendTable");
+        compile_unop!(
+            name,
+            self.sink,
+            self.source,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::Table)
+        );
+    }
 }
 
 pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
-  match (sink.clone(),source.clone()) {
-    (Value::Table(tbl), Value::Record(rcrd)) => {
-      tbl.borrow().check_record_schema(&rcrd.borrow())?;
-      return Ok(Box::new(TableAppendRecord{ sink: tbl, source: rcrd }))
+    match (sink.clone(), source.clone()) {
+        (Value::Table(tbl), Value::Record(rcrd)) => {
+            tbl.borrow().check_record_schema(&rcrd.borrow())?;
+            return Ok(Box::new(TableAppendRecord {
+                sink: tbl,
+                source: rcrd,
+            }));
+        }
+        (Value::Table(tbl_sink), Value::Table(tbl_src)) => {
+            tbl_sink.borrow().check_table_schema(&tbl_src.borrow())?;
+            return Ok(Box::new(TableAppendTable {
+                sink: tbl_sink,
+                source: tbl_src,
+            }));
+        }
+        (sink, source) => {
+            return Err(MechError::new(
+                UnhandledFunctionArgumentKind2 {
+                    arg: (sink.kind(), source.kind()),
+                    fxn_name: "table/add-assign".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
     }
-    (Value::Table(tbl_sink), Value::Table(tbl_src)) => {
-      tbl_sink.borrow().check_table_schema(&tbl_src.borrow())?;
-      return Ok(Box::new(TableAppendTable{ sink: tbl_sink, source: tbl_src }))
-    }
-    (sink,source) => return Err(MechError::new(
-        UnhandledFunctionArgumentKind2 { arg: (sink.kind(),source.kind()), fxn_name: "table/add-assign".to_string() },
-        None
-      ).with_compiler_loc()
-    ),
-  }
 }
 
 pub struct AddAssignTable {}
 impl NativeFunctionCompiler for AddAssignTable {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() <= 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let sink = arguments[0].clone();
-    let source = arguments[1].clone();
-    match add_assign_table_fxn(sink.clone(),source.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(x) => {
-        match (sink,source) {
-          (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_table_fxn(sink.borrow().clone(),source.borrow().clone()) },
-          (sink,Value::MutableReference(source)) => { add_assign_table_fxn(sink.clone(),source.borrow().clone()) },
-          (Value::MutableReference(sink),source) => { add_assign_table_fxn(sink.borrow().clone(),source.clone()) },
-          (sink,source) => Err(MechError::new(
-              UnhandledFunctionArgumentKind2 { arg: (sink.kind(),source.kind()), fxn_name: "table/add-assign".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() <= 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let sink = arguments[0].clone();
+        let source = arguments[1].clone();
+        match add_assign_table_fxn(sink.clone(), source.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(x) => match (sink, source) {
+                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                    add_assign_table_fxn(sink.borrow().clone(), source.borrow().clone())
+                }
+                (sink, Value::MutableReference(source)) => {
+                    add_assign_table_fxn(sink.clone(), source.borrow().clone())
+                }
+                (Value::MutableReference(sink), source) => {
+                    add_assign_table_fxn(sink.borrow().clone(), source.clone())
+                }
+                (sink, source) => Err(MechError::new(
+                    UnhandledFunctionArgumentKind2 {
+                        arg: (sink.kind(), source.kind()),
+                        fxn_name: "table/add-assign".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 #[derive(Debug, Clone)]
 pub struct UndefinedTableColumnError {
-  pub id: u64,
+    pub id: u64,
 }
 impl MechErrorKind for UndefinedTableColumnError {
-  fn name(&self) -> &str { "UndefinedTableColumn" }
-  fn message(&self) -> String {
-      format!("Column {:?} is not defined in this table.", self.id)
-  }
+    fn name(&self) -> &str {
+        "UndefinedTableColumn"
+    }
+    fn message(&self) -> String {
+        format!("Column {:?} is not defined in this table.", self.id)
+    }
 }

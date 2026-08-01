@@ -1,5 +1,5 @@
-use crate::{EventId, ObjectId, ObjectRecord, RuntimeEventKind};
 use super::{event_count, new_runtime};
+use crate::{EventId, ObjectId, ObjectRecord, RuntimeEventKind};
 
 #[test]
 fn transaction_commit_persists_staged_events_once() {

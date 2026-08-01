@@ -1,10 +1,8 @@
 use ariadne::{Color, Label, Report, ReportKind, sources};
 use mech_core::*;
-use mech_syntax::ParserErrorReport;
 #[cfg(feature = "invariant_define")]
-use mech_program::{
-    IntegrityConstraintFailureReason, IntegrityConstraintViolationSet,
-};
+use mech_program::{IntegrityConstraintFailureReason, IntegrityConstraintViolationSet};
+use mech_syntax::ParserErrorReport;
 
 use crate::WatchPathFailed;
 
@@ -117,9 +115,7 @@ pub(crate) fn print_mech_error(err: &MechError) {
 }
 
 #[cfg(feature = "invariant_define")]
-pub(crate) fn format_integrity_constraint_error(
-    error: &MechError,
-) -> Option<String> {
+pub(crate) fn format_integrity_constraint_error(error: &MechError) -> Option<String> {
     let failures = error.kind_as::<IntegrityConstraintViolationSet>()?;
     let mut rendered = failures
         .violations
@@ -147,16 +143,12 @@ pub(crate) fn format_integrity_constraint_error(
         })
         .collect::<Vec<_>>()
         .join("\n\n");
-    rendered.push_str(
-        "\n\nReactive turn rolled back.\nNo external effects were committed.",
-    );
+    rendered.push_str("\n\nReactive turn rolled back.\nNo external effects were committed.");
     Some(rendered)
 }
 
 #[cfg(not(feature = "invariant_define"))]
-pub(crate) fn format_integrity_constraint_error(
-    _error: &MechError,
-) -> Option<String> {
+pub(crate) fn format_integrity_constraint_error(_error: &MechError) -> Option<String> {
     None
 }
 

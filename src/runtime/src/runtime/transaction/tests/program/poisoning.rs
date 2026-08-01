@@ -1,6 +1,4 @@
-use super::super::{
-    ProgramTransactionTestFault, set_program_transaction_test_fault,
-};
+use super::super::{ProgramTransactionTestFault, set_program_transaction_test_fault};
 use crate::{MechRuntime, RuntimeHealth, RuntimeInvalidOperationError};
 use mech_core::{MResult, MechError};
 
@@ -89,12 +87,18 @@ fn missing_implicit_envelope_during_cleanup_is_not_hidden() {
     assert!(poison.rollback_failures.iter().any(|failure| {
         failure.contains("implicit transaction cleanup") && failure.contains("could not start")
     }));
-    assert!(poison.rollback_failures.iter().any(|failure| {
-        failure.contains("program owner still references transaction")
-    }));
-    assert!(poison.rollback_failures.iter().any(|failure| {
-        failure.contains("runtime context still references transaction")
-    }));
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|failure| { failure.contains("program owner still references transaction") })
+    );
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|failure| { failure.contains("runtime context still references transaction") })
+    );
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(runtime.program_transaction_owner, None);
     assert_eq!(context.transaction, None);

@@ -1,4 +1,3 @@
-
 // Program
 // =============================================================================
 
@@ -11,23 +10,23 @@
 use mech_core::*;
 pub use mech_interpreter::ExecutionServicesBorrowConflict;
 
-#[cfg(feature = "program")]
-pub mod program;
 #[cfg(feature = "invariant_define")]
 pub mod integrity;
 #[cfg(feature = "native")]
 pub mod native;
+#[cfg(feature = "program")]
+pub mod program;
 //#[cfg(feature = "runloop")]
 //pub mod runloop;
 //#[cfg(feature = "persister")]
 //pub mod persister;
 
-#[cfg(feature = "program")]
-pub use crate::program::*;
 #[cfg(feature = "invariant_define")]
 pub use crate::integrity::*;
 #[cfg(feature = "native")]
 pub use crate::native::*;
+#[cfg(feature = "program")]
+pub use crate::program::*;
 //#[cfg(feature = "runloop")]
 //pub use crate::runloop::*;
 //#[cfg(feature = "persister")]
@@ -35,30 +34,30 @@ pub use crate::native::*;
 
 #[macro_export]
 macro_rules! print_tree {
-  ($tree:expr) => {
-    #[cfg(feature = "pretty_print")]
-    println!("{}", $tree.pretty_print());
-    #[cfg(not(feature = "pretty_print"))]
-    println!("{:#?}", $tree);
-  };
+    ($tree:expr) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", $tree.pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", $tree);
+    };
 }
 
 #[macro_export]
 macro_rules! print_symbols {
-  ($intrp:expr) => {
-    #[cfg(feature = "pretty_print")]
-    println!("{}", $intrp.pretty_print_symbols());
-    #[cfg(not(feature = "pretty_print"))]
-    println!("{:#?}", $intrp.symbols());
-  };
+    ($intrp:expr) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", $intrp.pretty_print_symbols());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", $intrp.symbols());
+    };
 }
 
 #[macro_export]
 macro_rules! print_plan {
-  ($intrp:expr) => {
-    #[cfg(feature = "pretty_print")]
-    println!("{}", $intrp.plan().pretty_print());
-    #[cfg(not(feature = "pretty_print"))]
-    println!("{:#?}", $intrp.plan());
-  };
+    ($intrp:expr) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", $intrp.plan().pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", $intrp.plan());
+    };
 }

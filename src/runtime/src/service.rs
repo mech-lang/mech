@@ -16,48 +16,26 @@ mod workspace_session;
 #[cfg(feature = "watcher")]
 pub use self::workspace_session::*;
 
-use crate::id::{
-  ActorId, ObjectId,
-};
+use crate::id::{ActorId, ObjectId};
 
-use crate::store::{
-  ActorRecord, ObjectRecord,
-};
+use crate::store::{ActorRecord, ObjectRecord};
 
 // -----------------------------------------------------------------------------
 // Runtime Services
 // -----------------------------------------------------------------------------
 
 pub trait RuntimeManagedServices {
-  fn allocate_object_id(&mut self) -> MResult<ObjectId>;
+    fn allocate_object_id(&mut self) -> MResult<ObjectId>;
 
-  fn get_object(
-    &mut self,
-    id: ObjectId,
-  ) -> MResult<Option<ObjectRecord>>;
+    fn get_object(&mut self, id: ObjectId) -> MResult<Option<ObjectRecord>>;
 
-  fn put_object(
-    &mut self,
-    object: ObjectRecord,
-  ) -> MResult<ObjectId>;
+    fn put_object(&mut self, object: ObjectRecord) -> MResult<ObjectId>;
 
-  fn update_object(
-    &mut self,
-    object: ObjectRecord,
-  ) -> MResult<ObjectId>;
+    fn update_object(&mut self, object: ObjectRecord) -> MResult<ObjectId>;
 
-  fn get_actor(
-    &mut self,
-    id: ActorId,
-  ) -> MResult<Option<ActorRecord>>;
+    fn get_actor(&mut self, id: ActorId) -> MResult<Option<ActorRecord>>;
 
-  fn update_actor(
-    &mut self,
-    actor: ActorRecord,
-  ) -> MResult<ActorId>;
+    fn update_actor(&mut self, actor: ActorRecord) -> MResult<ActorId>;
 
-  fn set_current_actor_state(
-    &mut self,
-    state: ObjectId,
-  ) -> MResult<()>;
+    fn set_current_actor_state(&mut self, state: ObjectId) -> MResult<()>;
 }

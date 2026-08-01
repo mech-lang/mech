@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::{
-    RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest, PreparedRuntimeEffect,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
 
 #[derive(Debug, Default)]
@@ -150,42 +150,54 @@ fn env_write_and_send_error() {
 #[test]
 fn stdout_and_stderr_send_text_and_line() {
     let mut provider = CliResourceProvider::new(FakeCliBackend::default());
-    execute_write(&mut provider, RuntimeResourceWriteRequest {
+    execute_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
             base_uri: "cli://stdout".to_string(),
             path: "text".to_string(),
             context_name: "out".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("abc"),
             intent: RuntimeResourceWriteIntent::Send,
-        })
-        .unwrap();
-    execute_write(&mut provider, RuntimeResourceWriteRequest {
+        },
+    )
+    .unwrap();
+    execute_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
             base_uri: "cli://stdout".to_string(),
             path: "line".to_string(),
             context_name: "out".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("abc"),
             intent: RuntimeResourceWriteIntent::Send,
-        })
-        .unwrap();
-    execute_write(&mut provider, RuntimeResourceWriteRequest {
+        },
+    )
+    .unwrap();
+    execute_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
             base_uri: "cli://stderr".to_string(),
             path: "text".to_string(),
             context_name: "err".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("warning"),
             intent: RuntimeResourceWriteIntent::Send,
-        })
-        .unwrap();
-    execute_write(&mut provider, RuntimeResourceWriteRequest {
+        },
+    )
+    .unwrap();
+    execute_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
             base_uri: "cli://stderr".to_string(),
             path: "line".to_string(),
             context_name: "err".to_string(),
             operation: RuntimeCapabilityOperation::Write,
             value: str_value("warning"),
             intent: RuntimeResourceWriteIntent::Send,
-        })
-        .unwrap();
+        },
+    )
+    .unwrap();
     assert_eq!(provider.backend().stdout, vec!["abc", "abc\n"]);
     assert_eq!(provider.backend().stderr, vec!["warning", "warning\n"]);
 }

@@ -23,7 +23,7 @@ macro_rules! trace_println {
 #[cfg(not(feature = "trace"))]
 #[macro_export]
 macro_rules! trace_println {
-  ($interpreter:expr, $($arg:tt)*) => {};
+    ($interpreter:expr, $($arg:tt)*) => {};
 }
 
 #[cfg(feature = "functions")]
@@ -44,9 +44,8 @@ use crate::stdlib::vertcat::*;
 use mech_combinatorics::*;
 #[cfg(feature = "compare")]
 use mech_compare::*;
-use mech_core::kind::Kind;
-#[cfg(feature = "matrix")]
-use mech_core::matrix::{Matrix, ToMatrix};
+#[cfg(feature = "complex")]
+use mech_core::C64;
 #[cfg(feature = "enum")]
 use mech_core::MechEnum;
 #[cfg(feature = "map")]
@@ -59,13 +58,14 @@ use mech_core::MechSet;
 use mech_core::MechTable;
 #[cfg(feature = "tuple")]
 use mech_core::MechTuple;
-#[cfg(feature = "complex")]
-use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
+use mech_core::kind::Kind;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::*;
-use mech_core::{hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*, MResult};
 use mech_core::{Dictionary, Ref, ToValue, ValRef, Value, ValueKind};
+use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 #[cfg(feature = "logic")]
 use mech_logic::*;
 #[cfg(feature = "math")]
@@ -95,23 +95,20 @@ use indexmap::set::IndexSet;
 use na::DMatrix;
 use std::time::Duration;
 
-#[cfg(all(test, feature = "compiler"))]
-mod bytecode_test_context;
+#[cfg(all(feature = "functions", feature = "symbol_table",))]
+pub mod activation;
 #[cfg(feature = "functions")]
 pub mod builtins;
-#[cfg(feature = "functions")]
-pub mod modules;
+#[cfg(all(test, feature = "compiler"))]
+mod bytecode_test_context;
 pub mod expressions;
-#[cfg(all(
-  feature = "functions",
-  feature = "symbol_table",
-))]
-pub mod activation;
 #[cfg(feature = "functions")]
 pub mod functions;
 pub mod interpreter;
 pub mod literals;
 pub mod mechdown;
+#[cfg(feature = "functions")]
+pub mod modules;
 pub mod patterns;
 #[cfg(feature = "state_machines")]
 pub mod state_machines;
@@ -124,14 +121,14 @@ pub use mech_core::*;
 
 #[cfg(feature = "functions")]
 pub use crate::builtins::*;
-#[cfg(feature = "functions")]
-pub use crate::modules::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::functions::*;
 pub use crate::interpreter::*;
 pub use crate::literals::*;
 pub use crate::mechdown::*;
+#[cfg(feature = "functions")]
+pub use crate::modules::*;
 pub use crate::patterns::*;
 #[cfg(feature = "state_machines")]
 pub use crate::state_machines::*;
@@ -168,83 +165,86 @@ pub use mech_stats::*;
 use std::sync::Arc;
 
 pub fn load_stdkinds(kinds: &mut KindTable) {
-  #[cfg(feature = "u8")]
-  kinds.insert(hash_str("u8"), ValueKind::U8);
-  #[cfg(feature = "u16")]
-  kinds.insert(hash_str("u16"), ValueKind::U16);
-  #[cfg(feature = "u32")]
-  kinds.insert(hash_str("u32"), ValueKind::U32);
-  #[cfg(feature = "u64")]
-  kinds.insert(hash_str("u64"), ValueKind::U64);
-  #[cfg(feature = "u128")]
-  kinds.insert(hash_str("u128"), ValueKind::U128);
-  #[cfg(feature = "i8")]
-  kinds.insert(hash_str("i8"), ValueKind::I8);
-  #[cfg(feature = "i16")]
-  kinds.insert(hash_str("i16"), ValueKind::I16);
-  #[cfg(feature = "i32")]
-  kinds.insert(hash_str("i32"), ValueKind::I32);
-  #[cfg(feature = "i64")]
-  kinds.insert(hash_str("i64"), ValueKind::I64);
-  #[cfg(feature = "i128")]
-  kinds.insert(hash_str("i128"), ValueKind::I128);
-  #[cfg(feature = "f32")]
-  kinds.insert(hash_str("f32"), ValueKind::F32);
-  #[cfg(feature = "f64")]
-  kinds.insert(hash_str("f64"), ValueKind::F64);
-  #[cfg(feature = "c64")]
-  kinds.insert(hash_str("c64"), ValueKind::C64);
-  #[cfg(feature = "r64")]
-  kinds.insert(hash_str("r64"), ValueKind::R64);
-  #[cfg(feature = "string")]
-  kinds.insert(hash_str("string"), ValueKind::String);
-  #[cfg(feature = "bool")]
-  kinds.insert(hash_str("bool"), ValueKind::Bool);
+    #[cfg(feature = "u8")]
+    kinds.insert(hash_str("u8"), ValueKind::U8);
+    #[cfg(feature = "u16")]
+    kinds.insert(hash_str("u16"), ValueKind::U16);
+    #[cfg(feature = "u32")]
+    kinds.insert(hash_str("u32"), ValueKind::U32);
+    #[cfg(feature = "u64")]
+    kinds.insert(hash_str("u64"), ValueKind::U64);
+    #[cfg(feature = "u128")]
+    kinds.insert(hash_str("u128"), ValueKind::U128);
+    #[cfg(feature = "i8")]
+    kinds.insert(hash_str("i8"), ValueKind::I8);
+    #[cfg(feature = "i16")]
+    kinds.insert(hash_str("i16"), ValueKind::I16);
+    #[cfg(feature = "i32")]
+    kinds.insert(hash_str("i32"), ValueKind::I32);
+    #[cfg(feature = "i64")]
+    kinds.insert(hash_str("i64"), ValueKind::I64);
+    #[cfg(feature = "i128")]
+    kinds.insert(hash_str("i128"), ValueKind::I128);
+    #[cfg(feature = "f32")]
+    kinds.insert(hash_str("f32"), ValueKind::F32);
+    #[cfg(feature = "f64")]
+    kinds.insert(hash_str("f64"), ValueKind::F64);
+    #[cfg(feature = "c64")]
+    kinds.insert(hash_str("c64"), ValueKind::C64);
+    #[cfg(feature = "r64")]
+    kinds.insert(hash_str("r64"), ValueKind::R64);
+    #[cfg(feature = "string")]
+    kinds.insert(hash_str("string"), ValueKind::String);
+    #[cfg(feature = "bool")]
+    kinds.insert(hash_str("bool"), ValueKind::Bool);
 }
 
 #[cfg(feature = "functions")]
 pub fn load_stdlib(fxns: &mut Functions) {
-  for fxn_desc in inventory::iter::<FunctionDescriptor> {
-    fxns.insert_function(fxn_desc.clone());
-  }
+    for fxn_desc in inventory::iter::<FunctionDescriptor> {
+        fxns.insert_function(fxn_desc.clone());
+    }
 
-  for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
-    fxns.insert_function_compiler(fxn_comp.name, Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)));
-  }
+    for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
+        fxns.insert_function_compiler(
+            fxn_comp.name,
+            Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)),
+        );
+    }
 }
 
 fn format_duration(d: Duration) -> String {
-  let ns = d.as_nanos();
-  if ns < 1_000 {
-    format!("{}ns", ns)
-  } else if ns < 1_000_000 {
-    format!("{:.2}µs", ns as f64 / 1_000.0)
-  } else if ns < 1_000_000_000 {
-    format!("{:.2}ms", ns as f64 / 1_000_000.0)
-  } else {
-    format!("{:.2}s", ns as f64 / 1_000_000_000.0)
-  }
+    let ns = d.as_nanos();
+    if ns < 1_000 {
+        format!("{}ns", ns)
+    } else if ns < 1_000_000 {
+        format!("{:.2}µs", ns as f64 / 1_000.0)
+    } else if ns < 1_000_000_000 {
+        format!("{:.2}ms", ns as f64 / 1_000_000.0)
+    } else {
+        format!("{:.2}s", ns as f64 / 1_000_000_000.0)
+    }
 }
 
 fn print_histogram(total_durations: &[Duration]) {
-  let max_duration = total_durations
-    .iter()
-    .cloned()
-    .max()
-    .unwrap_or(Duration::ZERO);
-  let max_bar_len = 50; // max characters for the bar
+    let max_duration = total_durations
+        .iter()
+        .cloned()
+        .max()
+        .unwrap_or(Duration::ZERO);
+    let max_bar_len = 50; // max characters for the bar
 
-  println!("{:>5}  {:>10}  {}", "#", "Time", "Histogram");
-  println!("-----------------------------------------------");
+    println!("{:>5}  {:>10}  {}", "#", "Time", "Histogram");
+    println!("-----------------------------------------------");
 
-  for (idx, dur) in total_durations.iter().enumerate() {
-    let bar_len = if max_duration.as_nanos() == 0 {
-        0
-    } else {
-        ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
-    };
-    let bar = std::iter::repeat('░').take(bar_len).collect::<String>();
+    for (idx, dur) in total_durations.iter().enumerate() {
+        let bar_len = if max_duration.as_nanos() == 0 {
+            0
+        } else {
+            ((dur.as_nanos() * max_bar_len as u128) / max_duration.as_nanos()) as usize
+        };
+        let bar = std::iter::repeat('░').take(bar_len).collect::<String>();
 
-    println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
-  }
+        println!("{:>5}  {:>10}  {}", idx, format_duration(*dur), bar);
+    }
 }

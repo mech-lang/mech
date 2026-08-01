@@ -1,7 +1,5 @@
-use crate::{
-    InMemoryStore, MechRuntime, ObjectId, ObjectRecord, RuntimeEventKind, TransactionId,
-};
 use super::{event_count, new_runtime};
+use crate::{InMemoryStore, MechRuntime, ObjectId, ObjectRecord, RuntimeEventKind, TransactionId};
 
 #[test]
 fn transaction_commit_failure_is_atomic() {

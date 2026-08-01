@@ -5,45 +5,59 @@ use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub struct ConvertScalarToMat2<F, T> {
-  pub arg: Ref<F>,
-  pub out: Ref<T>,
+    pub arg: Ref<F>,
+    pub out: Ref<T>,
 }
 
 impl<F, T> MechFunctionImpl for ConvertScalarToMat2<F, T>
 where
-  Ref<T>: ToValue,
-  F: Debug + Scalar + Clone,
-  for<'a> &'a mut T: IntoIterator<Item = &'a mut F>,
-  T: Debug,
+    Ref<T>: ToValue,
+    F: Debug + Scalar + Clone,
+    for<'a> &'a mut T: IntoIterator<Item = &'a mut F>,
+    T: Debug,
 {
-  fn solve(&self) {
-    let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_mut_ptr();
-    unsafe {
-      let arg_ref: &F = &*arg_ptr;
-      let out_ref: &mut T = &mut *out_ptr;
-      for dst in (&mut *out_ref).into_iter() {
-        *dst = arg_ref.clone();
-      }
+    fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
+        unsafe {
+            let arg_ref: &F = &*arg_ptr;
+            let out_ref: &mut T = &mut *out_ptr;
+            for dst in (&mut *out_ref).into_iter() {
+                *dst = arg_ref.clone();
+            }
+        }
     }
-  }
-  fn out(&self) -> Value {self.out.to_value()}
-  fn to_string(&self) -> String { format!("{:#?}",self) }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T>
 where
-  T: CompileConst + ConstElem + AsValueKind,
-  F: ConstElem + CompileConst + AsValueKind,
+    T: CompileConst + ConstElem + AsValueKind,
+    F: ConstElem + CompileConst + AsValueKind,
 {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("ConvertScalarToMat2<{},{}>", F::as_value_kind(), T::as_value_kind());
-    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!(
+            "ConvertScalarToMat2<{},{}>",
+            F::as_value_kind(),
+            T::as_value_kind()
+        );
+        compile_unop!(
+            name,
+            self.out,
+            self.arg,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::Convert)
+        );
+    }
 }
 
 macro_rules! impl_conversion_scalar_to_mat_match_arms {
@@ -104,60 +118,75 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
   }
 }
 
-fn impl_conversion_scalar_to_mat_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
-  impl_conversion_scalar_to_mat_match_arms!(
-    (source_value, target_kind),
-    Bool => Bool, "bool";
-    U8 => U8, "u8";
-    U16 => U16, "u16";
-    U32 => U32, "u32";
-    U64 => U64, "u64";
-    U128 => U128, "u128";
-    I8 => I8, "i8";
-    I16 => I16, "i16";
-    I32 => I32, "i32";
-    I64 => I64, "i64";
-    I128 => I128, "i128";
-    F32 => F32, "f32";
-    F64 => F64, "f64";
-    String => String, "string";
-    R64 => R64, "rational";
-    C64 => C64, "complex";
-  )
+fn impl_conversion_scalar_to_mat_fxn(
+    source_value: Value,
+    target_kind: ValueKind,
+) -> MResult<Box<dyn MechFunction>> {
+    impl_conversion_scalar_to_mat_match_arms!(
+      (source_value, target_kind),
+      Bool => Bool, "bool";
+      U8 => U8, "u8";
+      U16 => U16, "u16";
+      U32 => U32, "u32";
+      U64 => U64, "u64";
+      U128 => U128, "u128";
+      I8 => I8, "i8";
+      I16 => I16, "i16";
+      I32 => I32, "i32";
+      I64 => I64, "i64";
+      I128 => I128, "i128";
+      F32 => F32, "f32";
+      F64 => F64, "f64";
+      String => String, "string";
+      R64 => R64, "rational";
+      C64 => C64, "complex";
+    )
 }
 
 pub struct ConvertScalarToMat {}
 
 impl NativeFunctionCompiler for ConvertScalarToMat {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let source_value = arguments[0].clone();
-    let source_kind = source_value.kind();
-    let target_kind = arguments[1].kind();
-    match impl_conversion_scalar_to_mat_fxn(source_value.clone(), target_kind.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match source_value {
-          Value::MutableReference(rhs) => impl_conversion_scalar_to_mat_fxn(rhs.borrow().clone(), target_kind.clone()),
-          x => Err(MechError::new(
-              UnhandledFunctionArgumentKind2 { arg: (arguments[0].kind(), arguments[1].kind()), fxn_name: "convert/scalar-to-mat".to_string() },
-              None,
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let source_value = arguments[0].clone();
+        let source_kind = source_value.kind();
+        let target_kind = arguments[1].kind();
+        match impl_conversion_scalar_to_mat_fxn(source_value.clone(), target_kind.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match source_value {
+                Value::MutableReference(rhs) => {
+                    impl_conversion_scalar_to_mat_fxn(rhs.borrow().clone(), target_kind.clone())
+                }
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind2 {
+                        arg: (arguments[0].kind(), arguments[1].kind()),
+                        fxn_name: "convert/scalar-to-mat".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 #[derive(Debug, Clone)]
 pub struct CannotReshapeMatrixToEmpty;
 
 impl MechErrorKind for CannotReshapeMatrixToEmpty {
-  fn name(&self) -> &str { "CannotReshapeMatrixToEmpty" }
-  fn message(&self) -> String {
-    "Cannot reshape matrix to empty dimensions".to_string()
-  }
+    fn name(&self) -> &str {
+        "CannotReshapeMatrixToEmpty"
+    }
+    fn message(&self) -> String {
+        "Cannot reshape matrix to empty dimensions".to_string()
+    }
 }

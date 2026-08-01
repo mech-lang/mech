@@ -1,6 +1,5 @@
 use crate::{
-    MechMap, MechSet, MechTuple, Ref, Value, ValueStateHashedCycleUnsupported,
-    ValueStateJournal,
+    MechMap, MechSet, MechTuple, Ref, Value, ValueStateHashedCycleUnsupported, ValueStateJournal,
 };
 
 fn assert_hashed_cycle(
@@ -10,16 +9,17 @@ fn assert_hashed_cycle(
     index: usize,
 ) {
     assert_eq!(error.kind_name(), "ValueStateHashedCycleUnsupported");
-    let cycle = error
-        .kind_as::<ValueStateHashedCycleUnsupported>()
-        .unwrap();
+    let cycle = error.kind_as::<ValueStateHashedCycleUnsupported>().unwrap();
     assert_eq!(cycle.phase, phase);
     assert_eq!(cycle.collection, collection);
     assert_eq!(cycle.index, index);
     let diagnostic = format!("{error:?}");
     assert!(diagnostic.contains(phase), "got {diagnostic}");
     assert!(diagnostic.contains(collection), "got {diagnostic}");
-    assert!(diagnostic.contains(&format!("index {index}")), "got {diagnostic}");
+    assert!(
+        diagnostic.contains(&format!("index {index}")),
+        "got {diagnostic}"
+    );
 }
 
 #[test]

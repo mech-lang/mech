@@ -12,8 +12,8 @@ use crate::{
 };
 
 use super::{
-    compensatable, effect, transactional, FailingEventIdGenerator, PanicEffectPhase,
-    PanickingCompensatableEffect, PanickingTransactionalEffect,
+    FailingEventIdGenerator, PanicEffectPhase, PanickingCompensatableEffect,
+    PanickingTransactionalEffect, compensatable, effect, transactional,
 };
 
 #[test]
@@ -52,18 +52,22 @@ fn prepared_effect_abort_failure_poisons_runtime() {
         RuntimeHealth::Poisoned(poison) => poison,
     };
     assert!(poison.original_error.contains("second prepare failed"));
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|failure| failure.contains("first abort failed")));
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|failure| failure.contains("first abort failed"))
+    );
     assert_eq!(
         *log.lock().unwrap(),
         vec!["first:prepare", "second:prepare", "first:abort"],
     );
 
-    assert!(runtime
-        .abort_runtime_transaction(&mut context, "abort failure cleanup")
-        .is_err());
+    assert!(
+        runtime
+            .abort_runtime_transaction(&mut context, "abort failure cleanup")
+            .is_err()
+    );
     assert_eq!(context.transaction, None);
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
 }
@@ -180,22 +184,26 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
             .collect::<Vec<_>>(),
         overlay_uses_before,
     );
-    assert!(runtime
-        .source_resolver()
-        .resolve(&SourceRequest::new("retained-source"))
-        .unwrap()
-        .is_some());
+    assert!(
+        runtime
+            .source_resolver()
+            .resolve(&SourceRequest::new("retained-source"))
+            .unwrap()
+            .is_some()
+    );
     poison_kinds.push(
         runtime
             .set_source_resolver(InMemorySourceResolver::new())
             .unwrap_err()
             .kind_name(),
     );
-    assert!(runtime
-        .source_resolver()
-        .resolve(&SourceRequest::new("retained-source"))
-        .unwrap()
-        .is_some());
+    assert!(
+        runtime
+            .source_resolver()
+            .resolve(&SourceRequest::new("retained-source"))
+            .unwrap()
+            .is_some()
+    );
     poison_kinds.push(
         runtime
             .grant_capability(Arc::new(BasicCapability::from_keys(
@@ -275,10 +283,12 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
         runtime.get_task(task_id).unwrap().unwrap().subject,
         "task:poison",
     );
-    assert!(!runtime
-        .capability_kernel()
-        .is_revoked(CapabilityId(901))
-        .unwrap());
+    assert!(
+        !runtime
+            .capability_kernel()
+            .is_revoked(CapabilityId(901))
+            .unwrap()
+    );
 
     runtime
         .abort_runtime_transaction(
@@ -287,9 +297,11 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
         )
         .unwrap();
     assert_eq!(cleanup_context.transaction, None);
-    assert!(!runtime
-        .active_transactions
-        .contains_key(&cleanup_transaction));
+    assert!(
+        !runtime
+            .active_transactions
+            .contains_key(&cleanup_transaction)
+    );
 }
 
 #[test]
@@ -389,9 +401,11 @@ fn explicit_abort_audit_failure_is_reported_and_poisons() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
-    assert!(error
-        .full_chain_message()
-        .contains("event publication failed"));
+    assert!(
+        error
+            .full_chain_message()
+            .contains("event publication failed")
+    );
     assert!(runtime.is_poisoned());
     assert_eq!(context.transaction, None);
 }

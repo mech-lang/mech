@@ -1,8 +1,8 @@
+use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 use crate::{
     CapabilityId, MechRuntime, PlannedRuntimeManagedHostFunction, RuntimeInvalidOperationError,
     RuntimeValueSnapshot,
 };
-use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 use mech_core::MechError;
 use std::sync::Arc;
 

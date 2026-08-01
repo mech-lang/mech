@@ -28,24 +28,40 @@ pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
 pub(crate) static STYLESHEET: &str = "No Embedded Stylesheet";
 
 #[cfg(has_file_wasm)]
-fn embedded_wasm() -> Option<&'static [u8]> { Some(MECHWASM) }
+fn embedded_wasm() -> Option<&'static [u8]> {
+    Some(MECHWASM)
+}
 #[cfg(not(has_file_wasm))]
-fn embedded_wasm() -> Option<&'static [u8]> { None }
+fn embedded_wasm() -> Option<&'static [u8]> {
+    None
+}
 
 #[cfg(has_file_js)]
-fn embedded_js() -> Option<&'static [u8]> { Some(MECHJS) }
+fn embedded_js() -> Option<&'static [u8]> {
+    Some(MECHJS)
+}
 #[cfg(not(has_file_js))]
-fn embedded_js() -> Option<&'static [u8]> { None }
+fn embedded_js() -> Option<&'static [u8]> {
+    None
+}
 
 #[cfg(has_file_project_js)]
-fn embedded_project_js() -> Option<&'static str> { Some(PROJECTJS) }
+fn embedded_project_js() -> Option<&'static str> {
+    Some(PROJECTJS)
+}
 #[cfg(not(has_file_project_js))]
-fn embedded_project_js() -> Option<&'static str> { None }
+fn embedded_project_js() -> Option<&'static str> {
+    None
+}
 
 #[cfg(has_file_document_js)]
-fn embedded_document_js() -> Option<&'static str> { Some(DOCUMENTJS) }
+fn embedded_document_js() -> Option<&'static str> {
+    Some(DOCUMENTJS)
+}
 #[cfg(not(has_file_document_js))]
-fn embedded_document_js() -> Option<&'static str> { None }
+fn embedded_document_js() -> Option<&'static str> {
+    None
+}
 
 #[derive(Clone, Debug)]
 pub(crate) struct WebResourceDefaults {
@@ -384,10 +400,12 @@ mod tests {
             Some(b"fallback"),
         ));
         assert!(result.is_err());
-        assert!(!result
-            .as_ref()
-            .map(|loaded| loaded.bytes.as_slice() == b"fallback")
-            .unwrap_or(false));
+        assert!(
+            !result
+                .as_ref()
+                .map(|loaded| loaded.bytes.as_slice() == b"fallback")
+                .unwrap_or(false)
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -427,8 +445,8 @@ mod tests {
 
     #[test]
     fn embedded_document_controller_is_safe_to_inline_in_a_script_element() {
-        let controller = embedded_document_js()
-            .expect("the shipped document controller must be embedded");
+        let controller =
+            embedded_document_js().expect("the shipped document controller must be embedded");
         assert!(
             !controller.to_ascii_lowercase().contains("</script"),
             "the controller is inserted into a script element and must not close it",

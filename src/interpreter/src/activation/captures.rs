@@ -1,30 +1,30 @@
-use crate::{
-    Interpreter, MResult, MechError, PatternBindingSink, PatternMatch, Ref, Value, ValueKind,
-    hash_str,
+use super::{
+    ActivationPatternCaptureKindUnsupported, ActivationPatternTransactionBoolStateUnsupported,
 };
-#[cfg(feature = "tuple")]
-use crate::MechTuple;
-#[cfg(feature = "matrix")]
-use mech_core::structures::matrix::Matrix;
-#[cfg(feature = "atom")]
-use crate::MechAtom;
 #[cfg(feature = "complex")]
 use crate::C64;
+#[cfg(feature = "atom")]
+use crate::MechAtom;
 #[cfg(feature = "enum")]
 use crate::MechEnum;
 #[cfg(feature = "map")]
 use crate::MechMap;
-#[cfg(feature = "rational")]
-use crate::R64;
 #[cfg(feature = "record")]
 use crate::MechRecord;
 #[cfg(feature = "set")]
 use crate::MechSet;
 #[cfg(feature = "table")]
 use crate::MechTable;
-use super::{
-    ActivationPatternCaptureKindUnsupported, ActivationPatternTransactionBoolStateUnsupported,
+#[cfg(feature = "tuple")]
+use crate::MechTuple;
+#[cfg(feature = "rational")]
+use crate::R64;
+use crate::{
+    Interpreter, MResult, MechError, PatternBindingSink, PatternMatch, Ref, Value, ValueKind,
+    hash_str,
 };
+#[cfg(feature = "matrix")]
+use mech_core::structures::matrix::Matrix;
 
 pub(super) fn generation() -> (Ref<usize>, Value) {
     let generation = Ref::new(0);
@@ -75,7 +75,10 @@ fn capture_matrix_dimensions(shape: &[usize]) -> MResult<(usize, usize)> {
     }
 }
 
-pub(super) fn create_capture_slot_for_kind(kind: &ValueKind, interpreter: &Interpreter) -> MResult<Value> {
+pub(super) fn create_capture_slot_for_kind(
+    kind: &ValueKind,
+    interpreter: &Interpreter,
+) -> MResult<Value> {
     match kind.deref_kind() {
         #[cfg(feature = "u8")]
         ValueKind::U8 => Ok(Value::U8(Ref::new(0))),
@@ -130,7 +133,10 @@ pub(super) fn create_capture_slot_for_kind(kind: &ValueKind, interpreter: &Inter
             let values = fields
                 .iter()
                 .map(|(name, kind)| {
-                    Ok(((hash_str(name), name.clone()), create_capture_slot_for_kind(kind, interpreter)?))
+                    Ok((
+                        (hash_str(name), name.clone()),
+                        create_capture_slot_for_kind(kind, interpreter)?,
+                    ))
                 })
                 .collect::<MResult<Vec<_>>>()?;
             Ok(Value::Record(Ref::new(MechRecord::from_vec(values))))
@@ -179,29 +185,77 @@ pub(super) fn create_capture_slot_for_kind(kind: &ValueKind, interpreter: &Inter
                     cols,
                 ))),
                 #[cfg(feature = "u8")]
-                ValueKind::U8 => Ok(Value::MatrixU8(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::U8 => Ok(Value::MatrixU8(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "u16")]
-                ValueKind::U16 => Ok(Value::MatrixU16(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::U16 => Ok(Value::MatrixU16(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "u32")]
-                ValueKind::U32 => Ok(Value::MatrixU32(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::U32 => Ok(Value::MatrixU32(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "u64")]
-                ValueKind::U64 => Ok(Value::MatrixU64(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::U64 => Ok(Value::MatrixU64(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "u128")]
-                ValueKind::U128 => Ok(Value::MatrixU128(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::U128 => Ok(Value::MatrixU128(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "i8")]
-                ValueKind::I8 => Ok(Value::MatrixI8(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::I8 => Ok(Value::MatrixI8(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "i16")]
-                ValueKind::I16 => Ok(Value::MatrixI16(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::I16 => Ok(Value::MatrixI16(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "i32")]
-                ValueKind::I32 => Ok(Value::MatrixI32(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::I32 => Ok(Value::MatrixI32(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "i64")]
-                ValueKind::I64 => Ok(Value::MatrixI64(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::I64 => Ok(Value::MatrixI64(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "i128")]
-                ValueKind::I128 => Ok(Value::MatrixI128(Matrix::from_vec(vec![0; count], rows, cols))),
+                ValueKind::I128 => Ok(Value::MatrixI128(Matrix::from_vec(
+                    vec![0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "f32")]
-                ValueKind::F32 => Ok(Value::MatrixF32(Matrix::from_vec(vec![0.0; count], rows, cols))),
+                ValueKind::F32 => Ok(Value::MatrixF32(Matrix::from_vec(
+                    vec![0.0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "f64")]
-                ValueKind::F64 => Ok(Value::MatrixF64(Matrix::from_vec(vec![0.0; count], rows, cols))),
+                ValueKind::F64 => Ok(Value::MatrixF64(Matrix::from_vec(
+                    vec![0.0; count],
+                    rows,
+                    cols,
+                ))),
                 #[cfg(feature = "string")]
                 ValueKind::String => Ok(Value::MatrixString(Matrix::from_vec(
                     vec![String::new(); count],
@@ -250,9 +304,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                     .elements
                     .iter()
                     .zip(&source.elements)
-                    .all(|(destination, source)| {
-                        capture_slot_accepts_payload(destination, source)
-                    })
+                    .all(|(destination, source)| capture_slot_accepts_payload(destination, source))
         }
         #[cfg(feature = "enum")]
         (Value::Enum(destination), Value::Enum(source)) => {
@@ -266,9 +318,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                     .variants
                     .iter()
                     .zip(&source.variants)
-                    .all(|((destination_id, _), (source_id, _))| {
-                        destination_id == source_id
-                    });
+                    .all(|((destination_id, _), (source_id, _))| destination_id == source_id);
             !same_variants
                 || destination.variants.iter().zip(&source.variants).all(
                     |((_, destination), (_, source))| match (destination, source) {
@@ -309,9 +359,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                     .map
                     .values()
                     .zip(source.map.values())
-                    .all(|(destination, source)| {
-                        capture_slot_accepts_payload(destination, source)
-                    })
+                    .all(|(destination, source)| capture_slot_accepts_payload(destination, source))
         }
         #[cfg(feature = "table")]
         (Value::Table(destination), Value::Table(source)) => {
@@ -672,9 +720,10 @@ impl PatternBindingSink for ReactiveBindingSink<'_> {
 
         // Validate every destination before mutating any stable capture cell.
         for binding in &pattern_match.bindings {
-            let capture = self.captures.get(binding.index).ok_or_else(|| {
-                MechError::new(ActivationPatternCaptureKindUnsupported, None)
-            })?;
+            let capture = self
+                .captures
+                .get(binding.index)
+                .ok_or_else(|| MechError::new(ActivationPatternCaptureKindUnsupported, None))?;
             let source = detached(&binding.value);
             if capture.id != binding.id
                 || !capture_kinds_are_storage_compatible(&capture.kind, &binding.kind)

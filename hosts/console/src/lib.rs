@@ -8,10 +8,10 @@ pub mod browser;
 #[cfg(feature = "native")]
 pub mod native;
 
-pub use module::{console_host_manifest, CONSOLE_HOST_MCFG};
+pub use module::{CONSOLE_HOST_MCFG, console_host_manifest};
 pub use provider::{
-  validate_console_settings, ConsoleBackend, ConsoleHostFactory, ConsoleResourceProvider,
-  RecordingConsoleBackend,
+    ConsoleBackend, ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend,
+    validate_console_settings,
 };
 
 #[cfg(feature = "browser")]
@@ -23,15 +23,25 @@ use mech_core::{MechError, MechErrorKind};
 
 #[derive(Debug, Clone)]
 pub struct ConsoleHostError {
-  pub resource: String,
-  pub reason: String,
+    pub resource: String,
+    pub reason: String,
 }
 
 impl MechErrorKind for ConsoleHostError {
-  fn name(&self) -> &str { "ConsoleHost" }
-  fn message(&self) -> String { format!("{}: {}", self.resource, self.reason) }
+    fn name(&self) -> &str {
+        "ConsoleHost"
+    }
+    fn message(&self) -> String {
+        format!("{}: {}", self.resource, self.reason)
+    }
 }
 
 pub(crate) fn console_error(resource: impl Into<String>, reason: impl Into<String>) -> MechError {
-  MechError::new(ConsoleHostError { resource: resource.into(), reason: reason.into() }, None)
+    MechError::new(
+        ConsoleHostError {
+            resource: resource.into(),
+            reason: reason.into(),
+        },
+        None,
+    )
 }

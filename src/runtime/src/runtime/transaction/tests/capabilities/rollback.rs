@@ -3,8 +3,8 @@ use crate::{
 };
 
 use super::{
-    capability, limited_capability, request, CapabilityPanicPhase, FailingCheckpointRestoreKernel,
-    PanickingCapabilityKernel,
+    CapabilityPanicPhase, FailingCheckpointRestoreKernel, PanickingCapabilityKernel, capability,
+    limited_capability, request,
 };
 
 #[test]
@@ -65,10 +65,11 @@ fn capability_checkpoint_restore_failure_poisons_runtime() {
     let RuntimeHealth::Poisoned(poison) = &runtime.health else {
         panic!("runtime must retain capability cleanup failure");
     };
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|failure| { failure.contains("deliberate capability checkpoint restore failure") }));
+    assert!(
+        poison.rollback_failures.iter().any(|failure| {
+            failure.contains("deliberate capability checkpoint restore failure")
+        })
+    );
 }
 
 #[test]
@@ -182,8 +183,10 @@ fn capability_restore_panic_poisons_after_store_failure() {
     let RuntimeHealth::Poisoned(poison) = &runtime.health else {
         panic!("runtime must retain capability restore panic");
     };
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|failure| { failure.contains("deliberate capability restore panic") }));
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|failure| { failure.contains("deliberate capability restore panic") })
+    );
 }

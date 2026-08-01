@@ -58,12 +58,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::VecDeque;
-    use mech_runtime::RuntimeHostInputValue;
     use crate::{new_shared_snapshot, timer_error};
+    use mech_runtime::RuntimeHostInputValue;
+    use std::collections::VecDeque;
 
     fn pending_ticks(ticks: &[u64]) -> VecDeque<TimerSnapshot> {
-        ticks.iter().map(|tick| TimerSnapshot::new(*tick, 100, 0)).collect()
+        ticks
+            .iter()
+            .map(|tick| TimerSnapshot::new(*tick, 100, 0))
+            .collect()
     }
 
     fn packet_tick(packet: &RuntimeHostInput) -> u64 {
@@ -83,10 +86,12 @@ mod tests {
         let snapshot = new_shared_snapshot(TimerSnapshot::new(0, 100, 0));
         let mut pending = pending_ticks(&[1, 2, 3]);
         let mut observed = Vec::new();
-        let (submitted, state) = submit_pending_with("physics", &snapshot, &mut pending, |packet| {
-            observed.push(packet_tick(&packet));
-            Ok(())
-        }).unwrap();
+        let (submitted, state) =
+            submit_pending_with("physics", &snapshot, &mut pending, |packet| {
+                observed.push(packet_tick(&packet));
+                Ok(())
+            })
+            .unwrap();
         assert_eq!(submitted, 3);
         assert_eq!(state, TimerSubmitState::Drained);
         assert_eq!(observed, vec![1, 2, 3]);
@@ -101,8 +106,13 @@ mod tests {
         let mut calls = 0;
         let (submitted, state) = submit_pending_with("physics", &snapshot, &mut pending, |_| {
             calls += 1;
-            if calls == 1 { Ok(()) } else { Err(timer_error("RuntimeIngressFull", "full")) }
-        }).unwrap();
+            if calls == 1 {
+                Ok(())
+            } else {
+                Err(timer_error("RuntimeIngressFull", "full"))
+            }
+        })
+        .unwrap();
         assert_eq!(submitted, 1);
         assert_eq!(state, TimerSubmitState::Full);
         assert_eq!(pending.front().unwrap().tick, 2);
@@ -115,7 +125,8 @@ mod tests {
         let mut pending = pending_ticks(&[1]);
         let (submitted, state) = submit_pending_with("physics", &snapshot, &mut pending, |_| {
             Err(timer_error("RuntimeIngressClosed", "closed"))
-        }).unwrap();
+        })
+        .unwrap();
         assert_eq!(submitted, 0);
         assert_eq!(state, TimerSubmitState::Closed);
         assert_eq!(pending.front().unwrap().tick, 1);
@@ -128,7 +139,8 @@ mod tests {
         let mut pending = pending_ticks(&[1]);
         let error = submit_pending_with("physics", &snapshot, &mut pending, |_| {
             Err(timer_error("InjectedTimerFailure", "boom"))
-        }).unwrap_err();
+        })
+        .unwrap_err();
         assert_eq!(error.kind_name(), "InjectedTimerFailure");
         assert_eq!(pending.front().unwrap().tick, 1);
         assert_eq!(snapshot.lock().unwrap().tick, 0);
@@ -141,7 +153,11 @@ mod tests {
         let mut calls = 0;
         let _ = submit_pending_with("physics", &snapshot, &mut pending, |_| {
             calls += 1;
-            if calls == 1 { Ok(()) } else { Err(timer_error("InjectedTimerFailure", "boom")) }
+            if calls == 1 {
+                Ok(())
+            } else {
+                Err(timer_error("InjectedTimerFailure", "boom"))
+            }
         });
         assert_eq!(snapshot.lock().unwrap().tick, 1);
         assert_eq!(pending.front().unwrap().tick, 2);

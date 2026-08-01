@@ -93,10 +93,8 @@ pub(super) fn elaborate_patterned_arm_guard(
                 .iter()
                 .any(|node| node.kind != ReactiveNodeKind::Combinational)
             {
-                return Err(
-                    MechError::new(ActivationPatternGuardMustBePure, None)
-                        .with_tokens(guard.tokens()),
-                );
+                return Err(MechError::new(ActivationPatternGuardMustBePure, None)
+                    .with_tokens(guard.tokens()));
             }
         }
         {
@@ -117,10 +115,11 @@ pub(super) fn elaborate_patterned_arm_guard(
                 for capture in captures {
                     let capture_cell = capture.proposed.reactive_root_cell_ids()[0];
                     if !plan_borrow.add_sampled_dependency(node, capture_cell) {
-                        return Err(
-                            MechError::new(ActivationPatternGuardDependencyInvariant, None)
-                                .with_tokens(guard.tokens()),
-                        );
+                        return Err(MechError::new(
+                            ActivationPatternGuardDependencyInvariant,
+                            None,
+                        )
+                        .with_tokens(guard.tokens()));
                     }
                 }
             }

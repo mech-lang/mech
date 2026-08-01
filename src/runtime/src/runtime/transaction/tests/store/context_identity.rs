@@ -1,7 +1,7 @@
+use super::new_runtime;
 use crate::{
     ActorId, ActorRecord, CapabilityRequest, HostCall, ObjectId, ObjectRecord, TransactionId,
 };
-use super::new_runtime;
 
 #[test]
 fn rejects_foreign_runtime_context_before_object_write_and_events() {

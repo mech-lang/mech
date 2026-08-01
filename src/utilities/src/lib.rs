@@ -3,19 +3,19 @@
 #![feature(get_mut_unchecked)]
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
-extern crate mech_core;
-extern crate hashbrown;
-extern crate crossbeam_channel;
 extern crate core as rust_core;
+extern crate crossbeam_channel;
+extern crate hashbrown;
+extern crate mech_core;
+extern crate serde;
 
-use rust_core::fmt;
-use std::sync::Arc;
+use crossbeam_channel::Sender;
 use hashbrown::{HashMap, HashSet};
 use mech_core::*;
-use crossbeam_channel::Sender;
-use std::rc::Rc;
+use rust_core::fmt;
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::Arc;
 
 // ## Client Message
 /*
@@ -98,12 +98,12 @@ pub enum RunLoopMessage {
 /*
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniTable {
-  pub id: u64,     
-  pub dynamic: bool,                      
-  pub rows: usize,                       
-  pub cols: usize,                       
-  pub col_kinds: Vec<ValueKind>,                 
-  pub col_map: (usize,Vec<Alias>,Vec<(Alias,TableIx)>),  
+  pub id: u64,
+  pub dynamic: bool,
+  pub rows: usize,
+  pub cols: usize,
+  pub col_kinds: Vec<ValueKind>,
+  pub col_map: (usize,Vec<Alias>,Vec<(Alias,TableIx)>),
   pub row_map: (usize,Vec<Alias>,Vec<(Alias,TableIx)>),
   pub data: Vec<Vec<Value>>,
   pub dictionary: Vec<(u64,String)>,
@@ -118,7 +118,7 @@ impl MiniTable {
       for j in 1..=table.rows {
         let value = table.get_by_index(TableIndex::Index(j),TableIndex::Index(i)).unwrap();
         col.push(value);
-      } 
+      }
       data.push(col);
     }
     let dictionary = table.dictionary.borrow().iter().map(|(k,v)| (*k,v.to_string())).collect::<Vec<(u64,String)>>();
@@ -148,7 +148,7 @@ impl MiniTable {
     let (_,_,ixes) = &mt.col_map;
     for (alias,ix) in ixes {
       table.set_col_alias(*ix,*alias);
-    } 
+    }
     table
   }
 }*/
@@ -217,7 +217,7 @@ pub struct MiniBlock {
 }*/
 
 /*impl MiniBlock {
-  pub fn new() -> MiniBlock { 
+  pub fn new() -> MiniBlock {
     MiniBlock {
       id: 0,
       ast: nodes::AstNode::Null,

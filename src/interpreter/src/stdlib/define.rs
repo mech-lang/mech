@@ -3,85 +3,112 @@ use crate::stdlib::*;
 
 #[macro_export]
 macro_rules! register_define {
-  ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
-    paste! {
-      register_descriptor! {
-        FunctionDescriptor {
-          name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
-          ptr: $fxn_name::<$scalar,$row1<$scalar>>::new,
+    ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
+        paste! {
+          register_descriptor! {
+            FunctionDescriptor {
+              name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
+              ptr: $fxn_name::<$scalar,$row1<$scalar>>::new,
+            }
+          }
         }
-      }
-    }
-  };
+    };
 }
 
 #[derive(Debug)]
 pub struct VariableDefineMatrix<T, MatA> {
-  pub id: u64,
-  pub name: Ref<String>,
-  pub mutable: Ref<bool>,
-  pub var: Ref<MatA>,
-  pub _marker: PhantomData<T>,
+    pub id: u64,
+    pub name: Ref<String>,
+    pub mutable: Ref<bool>,
+    pub var: Ref<MatA>,
+    pub _marker: PhantomData<T>,
 }
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
-  T: Debug + Clone + Sync + Send + 'static + 
-  ConstElem + AsValueKind,
-  #[cfg(feature = "compiler")]
-  T: CompileConst,
-  for<'a> &'a MatA: IntoIterator<Item = &'a T>,
-  for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  MatA: Debug + ConstElem + AsNaKind + 'static,
-  #[cfg(feature = "compiler")]
-  MatA: CompileConst,
-  Ref<MatA>: ToValue
+    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+    for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+    MatA: Debug + ConstElem + AsNaKind + 'static,
+    #[cfg(feature = "compiler")]
+    MatA: CompileConst,
+    Ref<MatA>: ToValue,
 {
-  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-      FunctionArgs::Binary(var, arg1, arg2) => {
-        let var: Ref<MatA> = unsafe { var.as_unchecked() }.clone();
-        let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
-        let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
-        let id = hash_str(&name.borrow());
-        Ok(Box::new(Self {id, name, mutable, var, _marker: PhantomData::default() }))
-      },
-      _ => Err(MechError::new(
-          IncorrectNumberOfArguments { expected: 3, found: args.len() },
-          None
-        ).with_compiler_loc()
-      ),
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(var, arg1, arg2) => {
+                let var: Ref<MatA> = unsafe { var.as_unchecked() }.clone();
+                let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
+                let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+                let id = hash_str(&name.borrow());
+                Ok(Box::new(Self {
+                    id,
+                    name,
+                    mutable,
+                    var,
+                    _marker: PhantomData::default(),
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
     }
-  }
 }
 impl<T, MatA> MechFunctionImpl for VariableDefineMatrix<T, MatA>
 where
-  Ref<MatA>: ToValue,
-  T: Debug + Clone + Sync + Send + 'static + 
-  ConstElem + AsValueKind,
-  MatA: Debug,
+    Ref<MatA>: ToValue,
+    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind,
+    MatA: Debug,
 {
-  fn solve(&self) {}
-  fn out(&self) -> Value {self.var.to_value()}
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn solve(&self) {}
+    fn out(&self) -> Value {
+        self.var.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
-impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA> 
+impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA>
 where
-  T: CompileConst + ConstElem + AsValueKind,
-  MatA: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + AsValueKind,
+    MatA: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let variable_register = compile_register_brrw!(self.var, ctx);
-    let variable_name = self.name.borrow().clone();
-    let variable_mutable = *self.mutable.borrow();
-    ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
-    let name = format!("VariableDefineMatrix<{}{}>", T::as_value_kind(), MatA::as_na_kind());
-    compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let variable_register = compile_register_brrw!(self.var, ctx);
+        let variable_name = self.name.borrow().clone();
+        let variable_mutable = *self.mutable.borrow();
+        ctx.define_symbol(
+            self.var.addr(),
+            variable_register,
+            &variable_name,
+            variable_mutable,
+        );
+        let name = format!(
+            "VariableDefineMatrix<{}{}>",
+            T::as_value_kind(),
+            MatA::as_na_kind()
+        );
+        compile_binop!(
+            name,
+            self.var,
+            self.name,
+            self.mutable,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::VariableDefine)
+        );
+    }
 }
 
 #[macro_export]
@@ -192,29 +219,45 @@ impl_variable_define_fxn!(MechEnum);
 
 #[derive(Debug, Clone)]
 pub struct VariableDefineEmpty {
-  id: u64,
-  name: Ref<String>,
-  mutable: Ref<bool>,
-  var: Ref<Value>,
+    id: u64,
+    name: Ref<String>,
+    mutable: Ref<bool>,
+    var: Ref<Value>,
 }
 impl MechFunctionImpl for VariableDefineEmpty {
-  fn solve(&self) {}
-  fn out(&self) -> Value { self.var.borrow().clone() }
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(vec![Value::MutableReference(self.var.clone())])
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn solve(&self) {}
+    fn out(&self) -> Value {
+        self.var.borrow().clone()
+    }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(vec![Value::MutableReference(self.var.clone())])
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let variable_register = compile_register_brrw!(self.var, ctx);
-    let variable_name = self.name.borrow().clone();
-    let variable_mutable = *self.mutable.borrow();
-    ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
-    let name = "VariableDefineEmpty".to_string();
-    compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let variable_register = compile_register_brrw!(self.var, ctx);
+        let variable_name = self.name.borrow().clone();
+        let variable_mutable = *self.mutable.borrow();
+        ctx.define_symbol(
+            self.var.addr(),
+            variable_register,
+            &variable_name,
+            variable_mutable,
+        );
+        let name = "VariableDefineEmpty".to_string();
+        compile_binop!(
+            name,
+            self.var,
+            self.name,
+            self.mutable,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::VariableDefine)
+        );
+    }
 }
 register_descriptor! {
   FunctionDescriptor {
@@ -239,24 +282,24 @@ register_descriptor! {
 
 #[cfg(test)]
 mod empty_transaction_state_tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn variable_define_empty_exposes_original_outer_value_cell() {
-    let var = Ref::new(Value::Empty);
-    let function = VariableDefineEmpty {
-      id: 1,
-      name: Ref::new("value".to_string()),
-      mutable: Ref::new(true),
-      var: var.clone(),
-    };
-    let values = function.transaction_state_values().unwrap();
-    assert_eq!(values.len(), 1);
-    match &values[0] {
-      Value::MutableReference(value) => assert_eq!(value.addr(), var.addr()),
-      value => panic!("expected mutable-reference transaction state, got {value:?}"),
+    #[test]
+    fn variable_define_empty_exposes_original_outer_value_cell() {
+        let var = Ref::new(Value::Empty);
+        let function = VariableDefineEmpty {
+            id: 1,
+            name: Ref::new("value".to_string()),
+            mutable: Ref::new(true),
+            var: var.clone(),
+        };
+        let values = function.transaction_state_values().unwrap();
+        assert_eq!(values.len(), 1);
+        match &values[0] {
+            Value::MutableReference(value) => assert_eq!(value.addr(), var.addr()),
+            value => panic!("expected mutable-reference transaction state, got {value:?}"),
+        }
     }
-  }
 }
 
 #[macro_export]
@@ -351,88 +394,183 @@ macro_rules! impl_variable_define_match_arms {
   };
 }
 
-fn impl_var_define_fxn(var: Value, name: Value, mutable: Value, id: u64) -> MResult<Box<dyn MechFunction>> {
-  let arg = (var.clone(), name.clone(), mutable.clone(), id);
-  match arg {
-    (Value::Kind(kind), name, mutable, id) => {
-      return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
-        var: Ref::new(Value::Kind(kind)),
-        name: name.as_string()?,
-        mutable: mutable.as_bool()?,
-        id,
-      })));
-    },
-    (Value::Empty, name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::Empty), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    (Value::Typed(value, kind), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::Typed(value.clone(), kind.clone())), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    (Value::EmptyKind(kind), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::EmptyKind(kind.clone())), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "matrix")]
-    (Value::MatrixValue(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineEmpty { var: Ref::new(Value::MatrixValue(sink.clone())), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "table")]
-    (Value::Table(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTable{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "set")]
-    (Value::Set(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechSet{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "tuple")]
-    (Value::Tuple(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechTuple{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "record")]
-    (Value::Record(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechRecord{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "map")]
-    (Value::Map(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechMap{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "atom")]
-    (Value::Atom(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechAtom{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    #[cfg(feature = "enum")]
-    (Value::Enum(sink), name, mutable, id) => return box_mech_fxn(Ok(Box::new(VariableDefineMechEnum{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id } ))),
-    _ => (),
-  }
+fn impl_var_define_fxn(
+    var: Value,
+    name: Value,
+    mutable: Value,
+    id: u64,
+) -> MResult<Box<dyn MechFunction>> {
+    let arg = (var.clone(), name.clone(), mutable.clone(), id);
+    match arg {
+        (Value::Kind(kind), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
+                var: Ref::new(Value::Kind(kind)),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        (Value::Empty, name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
+                var: Ref::new(Value::Empty),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        (Value::Typed(value, kind), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
+                var: Ref::new(Value::Typed(value.clone(), kind.clone())),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        (Value::EmptyKind(kind), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
+                var: Ref::new(Value::EmptyKind(kind.clone())),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "matrix")]
+        (Value::MatrixValue(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
+                var: Ref::new(Value::MatrixValue(sink.clone())),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechTable {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "set")]
+        (Value::Set(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechSet {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechTuple {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechRecord {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechMap {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "atom")]
+        (Value::Atom(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechAtom {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        #[cfg(feature = "enum")]
+        (Value::Enum(sink), name, mutable, id) => {
+            return box_mech_fxn(Ok(Box::new(VariableDefineMechEnum {
+                var: sink.clone(),
+                name: name.as_string()?,
+                mutable: mutable.as_bool()?,
+                id,
+            })));
+        }
+        _ => (),
+    }
 
-
-                 impl_variable_define_match_arms!(&arg, u8,   "u8")
-  .or_else(|_| impl_variable_define_match_arms!(&arg, u16,  "u16"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, u32,  "u32"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, u64,  "u64"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, u128, "u128"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, i8,   "i8"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, i16,  "i16"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, i32,  "i32"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, i64,  "i64"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, i128, "i128"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, f32,  "f32"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, f64,  "f64"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, R64,  "rational"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, C64,  "complex"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))
-  .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string"))
-  .map_err(|_| MechError::new(
-      UnhandledFunctionArgumentKind3 { arg: (var.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
-      None
-    ).with_compiler_loc()
-  )
+    impl_variable_define_match_arms!(&arg, u8, "u8")
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u16, "u16"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u32, "u32"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u64, "u64"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u128, "u128"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i8, "i8"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i16, "i16"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i32, "i32"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i64, "i64"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i128, "i128"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, f32, "f32"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, f64, "f64"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, R64, "rational"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, C64, "complex"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string"))
+        .map_err(|_| {
+            MechError::new(
+                UnhandledFunctionArgumentKind3 {
+                    arg: (var.kind(), name.kind(), mutable.kind()),
+                    fxn_name: "var/define".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
 }
 
-
-pub struct VarDefine{}
+pub struct VarDefine {}
 impl NativeFunctionCompiler for VarDefine {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 3 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let var = arguments[0].clone();
-    let name = &arguments[1].clone();
-    let mutable = &arguments[2].clone();
-    let name_string = name.as_string()?;
-    let id = hash_str(&name_string.borrow());
-    
-    match impl_var_define_fxn(var.clone(), name.clone(), mutable.clone(), id) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (var) {
-          (Value::MutableReference(input)) => {impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)}
-          _ => Err(MechError::new(
-              UnhandledFunctionArgumentKind3 { arg: (var.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 3 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let var = arguments[0].clone();
+        let name = &arguments[1].clone();
+        let mutable = &arguments[2].clone();
+        let name_string = name.as_string()?;
+        let id = hash_str(&name_string.borrow());
+
+        match impl_var_define_fxn(var.clone(), name.clone(), mutable.clone(), id) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (var) {
+                (Value::MutableReference(input)) => {
+                    impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)
+                }
+                _ => Err(MechError::new(
+                    UnhandledFunctionArgumentKind3 {
+                        arg: (var.kind(), name.kind(), mutable.kind()),
+                        fxn_name: "var/define".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }

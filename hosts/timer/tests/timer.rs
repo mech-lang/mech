@@ -7,8 +7,8 @@ use mech_host_timer::*;
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
-    ConfigValue, RuntimeHostInputDriver, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeBuilder,
+    ConfigValue, RuntimeBuilder, RuntimeHostInputDriver, RuntimeResourceProvider,
+    RuntimeResourceReadRequest,
 };
 
 fn settings(freq: i64, catch: i64) -> ConfigValue {
@@ -69,7 +69,11 @@ fn snapshot_tick(snapshot: &SharedTimerSnapshot) -> u64 {
 
 fn runtime_with_manual_timer(
     capacity: usize,
-) -> (mech_runtime::MechRuntime, ManualTimerInputDriver, SharedTimerSnapshot) {
+) -> (
+    mech_runtime::MechRuntime,
+    ManualTimerInputDriver,
+    SharedTimerSnapshot,
+) {
     let runtime = RuntimeBuilder::new()
         .host_input_capacity(capacity)
         .resource_provider(Box::new(TimerResourceProvider::new(
@@ -78,12 +82,8 @@ fn runtime_with_manual_timer(
         )))
         .build()
         .unwrap();
-    let mut driver = ManualTimerInputDriver::with_backend(
-        "physics",
-        ManualMonotonicTimerBackend::new(),
-        100,
-        8,
-    );
+    let mut driver =
+        ManualTimerInputDriver::with_backend("physics", ManualMonotonicTimerBackend::new(), 100, 8);
     driver.attach(runtime.ingress()).unwrap();
     driver.start().unwrap();
     let snapshot = driver.snapshot();
@@ -180,20 +180,32 @@ fn manual_publish_steps_preserves_order_under_backpressure() {
 fn native_wait_uses_next_scheduler_boundary() {
     let mut scheduler = FixedStepScheduler::new(100, 8);
     scheduler.due_steps(0.0);
-    assert_eq!(mech_host_timer::native::native_wait_duration(&scheduler, 4.0), Duration::from_millis(6));
+    assert_eq!(
+        mech_host_timer::native::native_wait_duration(&scheduler, 4.0),
+        Duration::from_millis(6)
+    );
 }
 
 #[cfg(feature = "browser")]
 #[test]
 fn browser_wake_interval_is_derived_from_frequency() {
-    assert_eq!(mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(120, 8)), 4);
+    assert_eq!(
+        mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(120, 8)),
+        4
+    );
 }
 
 #[cfg(feature = "browser")]
 #[test]
 fn browser_wake_interval_is_bounded() {
-    assert_eq!(mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1000, 8)), 1);
-    assert_eq!(mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1, 8)), 16);
+    assert_eq!(
+        mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1000, 8)),
+        1
+    );
+    assert_eq!(
+        mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1, 8)),
+        16
+    );
 }
 
 #[test]

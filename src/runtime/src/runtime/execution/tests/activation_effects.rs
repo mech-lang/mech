@@ -12,8 +12,7 @@ fn activation_effect_payload_snapshot_deeply_detaches_scene_values() {
             Value::F64(Ref::new(2.0)),
         ]))),
     )])));
-    let snapshot = snapshot_runtime_value(&scene)
-        .expect("acyclic fixture");
+    let snapshot = snapshot_runtime_value(&scene).expect("acyclic fixture");
     *live.borrow_mut() = 9.0;
 
     let Value::Record(snapshot) = snapshot else {

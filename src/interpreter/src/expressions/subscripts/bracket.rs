@@ -1,31 +1,29 @@
 use super::super::environment::expression_solves_deferred;
-use super::{Environment, subscript_formula, subscript_formula_ix, subscript_range};
 #[cfg(feature = "subscript_formula")]
 use super::string::{
-  current_string_access_expression_live, string_access_argument_is_live,
-  string_access_index_argument, string_access_source_argument,
+    current_string_access_expression_live, string_access_argument_is_live,
+    string_access_index_argument, string_access_source_argument,
 };
+use super::{Environment, subscript_formula, subscript_formula_ix, subscript_range};
 use crate::{AccessRange, AccessScalar};
+use crate::{InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind};
 #[cfg(feature = "matrix")]
 use crate::{
-  MatrixAccessAll, MatrixAccessAllRange, MatrixAccessAllScalar, MatrixAccessRangeAll,
-  MatrixAccessRangeRange, MatrixAccessRangeScalar, MatrixAccessScalarAll,
-  MatrixAccessScalarRange, MatrixAccessScalarScalar,
+    MatrixAccessAll, MatrixAccessAllRange, MatrixAccessAllScalar, MatrixAccessRangeAll,
+    MatrixAccessRangeRange, MatrixAccessRangeScalar, MatrixAccessScalarAll,
+    MatrixAccessScalarRange, MatrixAccessScalarScalar,
 };
 #[cfg(feature = "subscript_formula")]
 use crate::{StringAccessCompileMode, set_next_string_access_compile_mode};
-use crate::{
-  InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind,
-};
 
 pub(super) fn access(
-  sbscrpt: &Subscript,
-  val: &Value,
-  env: Option<&Environment>,
-  p: &InterpreterExecution<'_>,
+    sbscrpt: &Subscript,
+    val: &Value,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
-  let plan = p.plan();
-  match sbscrpt {
+    let plan = p.plan();
+    match sbscrpt {
         #[cfg(feature = "subscript_slice")]
         Subscript::Bracket(subs) => {
             let string_source_is_live = matches!(val.deref_kind(), ValueKind::String)
@@ -61,11 +59,17 @@ pub(super) fn access(
                     let shape = index_arg.shape();
                     fxn_input.push(index_arg);
                     match shape[..] {
-                        [1, 1] => { plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?); }
+                        [1, 1] => {
+                            plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
+                        [1, n] => {
+                            plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => { plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?); }
+                        [n, 1] => {
+                            plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                        }
                         _ => todo!(),
                     }
                 }
@@ -92,13 +96,25 @@ pub(super) fn access(
                     fxn_input.push(result);
                     match ((shape1[0], shape1[1]), (shape2[0], shape2[1])) {
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (1, 1)) => { plan.borrow_mut().push(MatrixAccessScalarScalar {}.compile(&fxn_input)?); }
+                        ((1, 1), (1, 1)) => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessScalarScalar {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (m, 1)) => { plan.borrow_mut().push(MatrixAccessScalarRange {}.compile(&fxn_input)?); }
+                        ((1, 1), (m, 1)) => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessScalarRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (1, 1)) => { plan.borrow_mut().push(MatrixAccessRangeScalar {}.compile(&fxn_input)?); }
+                        ((n, 1), (1, 1)) => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeScalar {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (m, 1)) => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
+                        ((n, 1), (m, 1)) => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeRange {}.compile(&fxn_input)?);
+                        }
                         _ => unreachable!(),
                     }
                 }
@@ -120,11 +136,20 @@ pub(super) fn access(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => { plan.borrow_mut().push(MatrixAccessAllScalar {}.compile(&fxn_input)?); }
+                        [1, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessAllScalar {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [1, n] => { plan.borrow_mut().push(MatrixAccessAllRange {}.compile(&fxn_input)?); }
+                        [1, n] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessAllRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => { plan.borrow_mut().push(MatrixAccessAllRange {}.compile(&fxn_input)?); }
+                        [n, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessAllRange {}.compile(&fxn_input)?);
+                        }
                         _ => todo!(),
                     }
                 }
@@ -136,11 +161,20 @@ pub(super) fn access(
                     fxn_input.push(Value::IndexAll);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => { plan.borrow_mut().push(MatrixAccessScalarAll {}.compile(&fxn_input)?); }
+                        [1, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessScalarAll {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeAll {}.compile(&fxn_input)?); }
+                        [1, n] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeAll {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeAll {}.compile(&fxn_input)?); }
+                        [n, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeAll {}.compile(&fxn_input)?);
+                        }
                         _ => todo!(),
                     }
                 }
@@ -153,11 +187,20 @@ pub(super) fn access(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => { plan.borrow_mut().push(MatrixAccessRangeScalar {}.compile(&fxn_input)?); }
+                        [1, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeScalar {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
+                        [1, n] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
+                        [n, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeRange {}.compile(&fxn_input)?);
+                        }
                         _ => todo!(),
                     }
                 }
@@ -170,11 +213,20 @@ pub(super) fn access(
                     fxn_input.push(result);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
-                        [1, 1] => { plan.borrow_mut().push(MatrixAccessScalarRange {}.compile(&fxn_input)?); }
+                        [1, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessScalarRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [1, n] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
+                        [1, n] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeRange {}.compile(&fxn_input)?);
+                        }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => { plan.borrow_mut().push(MatrixAccessRangeRange {}.compile(&fxn_input)?); }
+                        [n, 1] => {
+                            plan.borrow_mut()
+                                .push(MatrixAccessRangeRange {}.compile(&fxn_input)?);
+                        }
                         _ => todo!(),
                     }
                 }
@@ -201,11 +253,11 @@ pub(super) fn access(
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
             if !expression_solves_deferred(p) {
-              new_fxn.solve();
+                new_fxn.solve();
             }
             let res = new_fxn.out();
             return Ok(res);
         }
-    _ => unreachable!(),
-  }
+        _ => unreachable!(),
+    }
 }

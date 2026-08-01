@@ -39,7 +39,8 @@ fn assert_no_mech_code_errors(program: &Program) {
     for section in &program.body.sections {
         for element in &section.elements {
             match element {
-                SectionElement::MechCode(codes) | SectionElement::FencedMechCode(FencedMechCode { code: codes, .. }) => {
+                SectionElement::MechCode(codes)
+                | SectionElement::FencedMechCode(FencedMechCode { code: codes, .. }) => {
                     for (node, _) in codes {
                         if matches!(node, MechCode::Error(..)) {
                             panic!("unexpected MechCode::Error: {node:?}");
@@ -86,17 +87,18 @@ fn preserves_source_import_declarations() {
         "+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n+> http://example.com/dep.mec",
     );
     assert_eq!(stmts.len(), 7);
-    assert!(stmts
-        .iter()
-        .all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
+    assert!(
+        stmts
+            .iter()
+            .all(|stmt| matches!(stmt, Statement::ImportDeclaration(_)))
+    );
 }
 
 #[test]
 fn parses_extensionless_and_literal_percent_source_imports() {
     for source in ["+> ./dep", "+> ./package", "+> ./rate%.mec"] {
-        parser::parse(source).unwrap_or_else(|error| {
-            panic!("failed to parse `{source}`: {error:?}")
-        });
+        parser::parse(source)
+            .unwrap_or_else(|error| panic!("failed to parse `{source}`: {error:?}"));
     }
 }
 
@@ -166,7 +168,8 @@ fn examples_working_parse_without_mech_code_errors() {
         let entries = std::fs::read_dir(&path)
             .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
         for entry in entries {
-            let entry = entry.unwrap_or_else(|err| panic!("failed to read entry in {}: {err}", path.display()));
+            let entry = entry
+                .unwrap_or_else(|err| panic!("failed to read entry in {}: {err}", path.display()));
             let path = entry.path();
             if path.is_dir() {
                 stack.push(path);
@@ -183,7 +186,8 @@ fn examples_working_parse_without_mech_code_errors() {
 
 #[test]
 fn dynamic_module_imports_stay_mech_code_imports() {
-    let parsed = imports("+> combinatorics/n-choose-k\n+> userlib/tool\n+> math/sin\n+> browser/dom\n");
+    let parsed =
+        imports("+> combinatorics/n-choose-k\n+> userlib/tool\n+> math/sin\n+> browser/dom\n");
     assert_eq!(parsed.len(), 4);
     for import in &parsed {
         assert_eq!(import.kind, ModuleImportKind::Item);
@@ -221,7 +225,11 @@ fn source_imports_accept_generic_uris_bare_and_absolute_mec_paths() {
         "+> dep.mec\n+> lib/dep.mec\n+> ./dep.mec\n+> ../lib/dep.mec\n+> /tmp/lib.mec\n+> /workspace/app/main.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n+> s3://bucket/app.mec\n+> db://module/main.mec\n",
     );
     assert_eq!(stmts.len(), 12);
-    assert!(stmts.iter().all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
+    assert!(
+        stmts
+            .iter()
+            .all(|stmt| matches!(stmt, Statement::ImportDeclaration(_)))
+    );
 }
 
 #[test]
@@ -238,15 +246,18 @@ fn source_wildcard_import_specifiers_parse() {
         })
         .collect();
 
-    assert_eq!(specifiers, vec![
-        "dep.mec/*",
-        "lib/dep.mec/*",
-        "./dep.mec/*",
-        "../lib/dep.mec/*",
-        "/tmp/lib.mec/*",
-        "fs://lib/dep.mec/*",
-        "https://example.com/dep.mec/*",
-    ]);
+    assert_eq!(
+        specifiers,
+        vec![
+            "dep.mec/*",
+            "lib/dep.mec/*",
+            "./dep.mec/*",
+            "../lib/dep.mec/*",
+            "/tmp/lib.mec/*",
+            "fs://lib/dep.mec/*",
+            "https://example.com/dep.mec/*",
+        ]
+    );
 }
 
 #[test]
@@ -262,17 +273,28 @@ fn source_wildcard_import_specifiers_reject_invalid_placements() {
         "+> https://example.com/dep.mec/*/foo",
         "+> s3://bucket/app.mec*",
     ] {
-        assert!(parser::parse(invalid).is_err(), "expected parse failure for {invalid}");
+        assert!(
+            parser::parse(invalid).is_err(),
+            "expected parse failure for {invalid}"
+        );
     }
 }
 
 #[test]
 fn source_and_module_imports_remain_separate() {
-    let module_imports = imports("+> math/sin\n+> math/*\n+> combinatorics/n-choose-k\n+> browser/dom\n+> @ui := browser/dom\n");
+    let module_imports = imports(
+        "+> math/sin\n+> math/*\n+> combinatorics/n-choose-k\n+> browser/dom\n+> @ui := browser/dom\n",
+    );
     assert_eq!(module_imports.len(), 5);
-    let source_imports = statements("+> dep.mec\n+> ./dep.mec\n+> ../lib/dep.mec\n+> /tmp/lib.mec\n+> fs://lib/dep.mec\n+> s3://bucket/app.mec\n");
+    let source_imports = statements(
+        "+> dep.mec\n+> ./dep.mec\n+> ../lib/dep.mec\n+> /tmp/lib.mec\n+> fs://lib/dep.mec\n+> s3://bucket/app.mec\n",
+    );
     assert_eq!(source_imports.len(), 6);
-    assert!(source_imports.iter().all(|stmt| matches!(stmt, Statement::ImportDeclaration(_))));
+    assert!(
+        source_imports
+            .iter()
+            .all(|stmt| matches!(stmt, Statement::ImportDeclaration(_)))
+    );
 
     for invalid in [
         "+> @ui/main := browser/dom",
@@ -283,13 +305,18 @@ fn source_and_module_imports_remain_separate() {
         "+> @ui := fs://workspace",
         "+> @my_ui := browser/dom",
     ] {
-        assert!(parser::parse(invalid).is_err(), "expected parse failure for {invalid}");
+        assert!(
+            parser::parse(invalid).is_err(),
+            "expected parse failure for {invalid}"
+        );
     }
 }
 
 #[test]
 fn source_uri_import_specifiers_trim_trailing_whitespace() {
-    let stmts = statements("+> fs://lib/dep.mec   \n+> https://example.com/dep.mec   \n+> memory://scratch/dep   \n");
+    let stmts = statements(
+        "+> fs://lib/dep.mec   \n+> https://example.com/dep.mec   \n+> memory://scratch/dep   \n",
+    );
     let specifiers: Vec<String> = stmts
         .iter()
         .map(|stmt| match stmt {
@@ -297,9 +324,12 @@ fn source_uri_import_specifiers_trim_trailing_whitespace() {
             other => panic!("expected source import, got {other:?}"),
         })
         .collect();
-    assert_eq!(specifiers, vec![
-        "fs://lib/dep.mec",
-        "https://example.com/dep.mec",
-        "memory://scratch/dep",
-    ]);
+    assert_eq!(
+        specifiers,
+        vec![
+            "fs://lib/dep.mec",
+            "https://example.com/dep.mec",
+            "memory://scratch/dep",
+        ]
+    );
 }

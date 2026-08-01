@@ -94,7 +94,9 @@ fn nested_item_alias_import_works() {
 #[cfg(feature = "linked_stdlib")]
 #[test]
 fn grouped_item_import_enables_each_grouped_item() {
-    assert!(run("+> math/{sin, cos, tan}\nx := sin(1.23)\ny := cos(1.23)\nz := tan(1.23)"));
+    assert!(run(
+        "+> math/{sin, cos, tan}\nx := sin(1.23)\ny := cos(1.23)\nz := tan(1.23)"
+    ));
 }
 
 #[cfg(feature = "linked_stdlib")]
@@ -106,7 +108,9 @@ fn grouped_item_import_does_not_import_other_items() {
 #[cfg(feature = "linked_stdlib")]
 #[test]
 fn multiline_grouped_item_import_works() {
-    assert!(run("+> math/{\n  sin\n  cos\n  tan\n}\nx := sin(1.23)\ny := cos(1.23)\nz := tan(1.23)"));
+    assert!(run(
+        "+> math/{\n  sin\n  cos\n  tan\n}\nx := sin(1.23)\ny := cos(1.23)\nz := tan(1.23)"
+    ));
 }
 
 #[cfg(feature = "linked_stdlib")]

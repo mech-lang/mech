@@ -204,7 +204,11 @@ fn standalone_bundle_preserves_extension_fallback_resolution() {
 fn standalone_bundle_preserves_index_fallback_resolution() {
     let root = temp_root("index");
     std::fs::create_dir_all(root.join("package")).unwrap();
-    std::fs::write(root.join("main.mec"), "+> ./package\nanswer := package/value\n").unwrap();
+    std::fs::write(
+        root.join("main.mec"),
+        "+> ./package\nanswer := package/value\n",
+    )
+    .unwrap();
     std::fs::write(root.join("package/index.mec"), "value := 41\n<+ value\n").unwrap();
 
     let bundle = decode_bundle(&root.join("main.mec"));
@@ -234,11 +238,7 @@ fn standalone_bundle_preserves_unicode_request_spelling() {
 #[test]
 fn standalone_bundle_preserves_literal_percent_request_spelling() {
     let root = temp_root("literal-percent");
-    std::fs::write(
-        root.join("main.mec"),
-        "+> ./rate%.mec\nanswer := 1\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("main.mec"), "+> ./rate%.mec\nanswer := 1\n").unwrap();
     std::fs::write(root.join("rate%.mec"), "value := 41\n<+ value\n").unwrap();
 
     let bundle = decode_bundle(&root.join("main.mec"));
@@ -257,11 +257,7 @@ fn standalone_bundle_returns_include_expanded_root_source() {
         "{child.mec}\nanswer := child-value + nested-value\n",
     )
     .unwrap();
-    std::fs::write(
-        root.join("child.mec"),
-        "{nested.mec}\nchild-value := 17\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("child.mec"), "{nested.mec}\nchild-value := 17\n").unwrap();
     std::fs::write(root.join("nested.mec"), "nested-value := 25\n").unwrap();
 
     let resolved = resolve_document_source_bundle(&root.join("main.mec")).unwrap();

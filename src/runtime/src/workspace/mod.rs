@@ -1,25 +1,25 @@
-mod errors;
 mod config;
-mod load;
-mod snapshot;
-mod refresh;
-mod workspace;
 mod discovery;
+mod errors;
+mod load;
+mod refresh;
+mod snapshot;
 mod watch;
+mod workspace;
 
-pub use self::errors::*;
 pub use self::config::*;
+pub use self::errors::*;
 use self::load::*;
-pub use self::snapshot::*;
 pub use self::refresh::*;
-pub use self::workspace::*;
+pub use self::snapshot::*;
 pub use self::watch::*;
+pub use self::workspace::*;
 
 use std::{
-  collections::{BTreeMap, BTreeSet, VecDeque},
-  hash::{DefaultHasher, Hash, Hasher},
-  path::{Path, PathBuf},
-  time::SystemTime,
+    collections::{BTreeMap, BTreeSet, VecDeque},
+    hash::{DefaultHasher, Hash, Hasher},
+    path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 use mech_core::{MResult, MechError, MechErrorKind};
@@ -28,101 +28,98 @@ use crate::{MechRuntime, ModuleBuildOptions, ModuleVersionId};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeWorkspaceDiagnosticSeverity {
-  Error,
-  Warning,
-  Info,
+    Error,
+    Warning,
+    Info,
 }
 
 fn hash_content(content: Vec<u8>) -> u64 {
-  let mut hasher = DefaultHasher::new();
-  content.hash(&mut hasher);
-  hasher.finish()
+    let mut hasher = DefaultHasher::new();
+    content.hash(&mut hasher);
+    hasher.finish()
 }
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[cfg(not(windows))]
-  #[test]
-  fn file_uri_path_converts_unix_file_uri() {
-    assert_eq!(
-      file_uri_path("file:///tmp/project/main.mec").unwrap(),
-      PathBuf::from("/tmp/project/main.mec"),
-    );
-  }
+    #[cfg(not(windows))]
+    #[test]
+    fn file_uri_path_converts_unix_file_uri() {
+        assert_eq!(
+            file_uri_path("file:///tmp/project/main.mec").unwrap(),
+            PathBuf::from("/tmp/project/main.mec"),
+        );
+    }
 
-  #[cfg(not(windows))]
-  #[test]
-  fn file_uri_path_decodes_escaped_unix_file_uri() {
-    assert_eq!(
-      file_uri_path("file:///tmp/project/a%23b%20caf%C3%A9%25.mec").unwrap(),
-      PathBuf::from("/tmp/project/a#b café%.mec"),
-    );
-  }
+    #[cfg(not(windows))]
+    #[test]
+    fn file_uri_path_decodes_escaped_unix_file_uri() {
+        assert_eq!(
+            file_uri_path("file:///tmp/project/a%23b%20caf%C3%A9%25.mec").unwrap(),
+            PathBuf::from("/tmp/project/a#b café%.mec"),
+        );
+    }
 
-  #[cfg(windows)]
-  #[test]
-  fn file_uri_path_converts_windows_drive_file_uri() {
-    assert_eq!(
-      file_uri_path("file:///C:/Users/cmont/project/main.mec").unwrap(),
-      PathBuf::from(r"C:\Users\cmont\project\main.mec"),
-    );
-  }
+    #[cfg(windows)]
+    #[test]
+    fn file_uri_path_converts_windows_drive_file_uri() {
+        assert_eq!(
+            file_uri_path("file:///C:/Users/cmont/project/main.mec").unwrap(),
+            PathBuf::from(r"C:\Users\cmont\project\main.mec"),
+        );
+    }
 
-  #[cfg(windows)]
-  #[test]
-  fn file_uri_path_converts_windows_extended_file_uri() {
-    assert_eq!(
-      file_uri_path("file:////?/C:/Users/cmont/project/main.mec").unwrap(),
-      PathBuf::from(r"\\?\C:\Users\cmont\project\main.mec"),
-    );
-  }
+    #[cfg(windows)]
+    #[test]
+    fn file_uri_path_converts_windows_extended_file_uri() {
+        assert_eq!(
+            file_uri_path("file:////?/C:/Users/cmont/project/main.mec").unwrap(),
+            PathBuf::from(r"\\?\C:\Users\cmont\project\main.mec"),
+        );
+    }
 
-  #[cfg(windows)]
-  #[test]
-  fn file_uri_path_decodes_escaped_windows_file_uri() {
-    assert_eq!(
-      file_uri_path("file:///C:/Users/cmont/project/a%23b%20caf%C3%A9%25.mec").unwrap(),
-      PathBuf::from(r"C:\Users\cmont\project\a#b café%.mec"),
-    );
-  }
+    #[cfg(windows)]
+    #[test]
+    fn file_uri_path_decodes_escaped_windows_file_uri() {
+        assert_eq!(
+            file_uri_path("file:///C:/Users/cmont/project/a%23b%20caf%C3%A9%25.mec").unwrap(),
+            PathBuf::from(r"C:\Users\cmont\project\a#b café%.mec"),
+        );
+    }
 
-  #[test]
-  fn file_uri_path_rejects_non_file_uri() {
-    assert!(file_uri_path("http://example.com/main.mec").is_none());
-  }
+    #[test]
+    fn file_uri_path_rejects_non_file_uri() {
+        assert!(file_uri_path("http://example.com/main.mec").is_none());
+    }
 
-  #[test]
-  fn workspace_target_specifier_canonicalizes_absolute_local_path() {
-    let root = std::env::temp_dir().join(format!(
-      "mech-runtime-workspace-absolute-target-{}",
-      SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos()
-    ));
-    std::fs::create_dir_all(&root).unwrap();
-    let target = root.join("main.mec");
-    std::fs::write(&target, "result := true\n").unwrap();
-    let canonical_root = root.canonicalize().unwrap();
-    let canonical_target = target.canonicalize().unwrap();
+    #[test]
+    fn workspace_target_specifier_canonicalizes_absolute_local_path() {
+        let root = std::env::temp_dir().join(format!(
+            "mech-runtime-workspace-absolute-target-{}",
+            SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let target = root.join("main.mec");
+        std::fs::write(&target, "result := true\n").unwrap();
+        let canonical_root = root.canonicalize().unwrap();
+        let canonical_target = target.canonicalize().unwrap();
 
-    assert_eq!(
-      workspace_target_specifier(
-        &canonical_root,
-        target.to_string_lossy().as_ref(),
-      ).unwrap(),
-      canonical_target.to_string_lossy(),
-    );
-  }
+        assert_eq!(
+            workspace_target_specifier(&canonical_root, target.to_string_lossy().as_ref(),)
+                .unwrap(),
+            canonical_target.to_string_lossy(),
+        );
+    }
 
-  #[test]
-  fn workspace_target_specifier_passes_through_uri() {
-    assert_eq!(
-      workspace_target_specifier(Path::new("unused"), "memory://main.mec").unwrap(),
-      "memory://main.mec",
-    );
-  }
-
+    #[test]
+    fn workspace_target_specifier_passes_through_uri() {
+        assert_eq!(
+            workspace_target_specifier(Path::new("unused"), "memory://main.mec").unwrap(),
+            "memory://main.mec",
+        );
+    }
 }

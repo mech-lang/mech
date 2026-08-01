@@ -1,29 +1,55 @@
 use crate::*;
-use mech_core::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
 
 // MatMul ---------------------------------------------------------------------
 
 macro_rules! mul_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs * *$rhs; }
-  };}
-
-macro_rules! dot_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).dot(&*$rhs); }
-  };}
-
-macro_rules! impl_dot {
-  ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-    impl_binop!($name, $type1, $type2, $out_type, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
-    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
-  };
+    ($lhs:expr, $rhs:expr, $out:expr) => {
+        unsafe {
+            *$out = *$lhs * *$rhs;
+        }
+    };
 }
 
-impl_binop!(DotScalar, T, T, T, mul_op, FeatureFlag::Builtin(FeatureKind::Dot));
-register_fxn_descriptor!(DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
+macro_rules! dot_op {
+    ($lhs:expr, $rhs:expr, $out:expr) => {
+        unsafe {
+            *$out = (*$lhs).dot(&*$rhs);
+        }
+    };
+}
+
+macro_rules! impl_dot {
+    ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
+        impl_binop!(
+            $name,
+            $type1,
+            $type2,
+            $out_type,
+            dot_op,
+            FeatureFlag::Builtin(FeatureKind::Dot)
+        );
+        register_fxn_descriptor!(
+            $name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16,
+            "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64"
+        );
+    };
+}
+
+impl_binop!(
+    DotScalar,
+    T,
+    T,
+    T,
+    mul_op,
+    FeatureFlag::Builtin(FeatureKind::Dot)
+);
+register_fxn_descriptor!(
+    DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16",
+    i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64"
+);
 
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
@@ -137,23 +163,23 @@ macro_rules! impl_dot_match_arms {
 }
 
 fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_dot_match_arms!(
-    (lhs_value, rhs_value),
-    I8,   MatrixI8,   i8,   "i8";
-    I16,  MatrixI16,  i16,  "i16";
-    I32,  MatrixI32,  i32,  "i32";
-    I64,  MatrixI64,  i64,  "i64";
-    I128, MatrixI128, i128, "i128";
-    U8,   MatrixU8,   u8,   "u8";
-    U16,  MatrixU16,  u16,  "u16";
-    U32,  MatrixU32,  u32,  "u32";
-    U64,  MatrixU64,  u64,  "u64";
-    U128, MatrixU128, u128, "u128";
-    F32,  MatrixF32,  f32,  "f32";
-    F64,  MatrixF64,  f64,  "f64";
-    R64, MatrixR64, R64, "rational";
-    C64, MatrixC64, C64, "complex";
-  )
+    impl_dot_match_arms!(
+      (lhs_value, rhs_value),
+      I8,   MatrixI8,   i8,   "i8";
+      I16,  MatrixI16,  i16,  "i16";
+      I32,  MatrixI32,  i32,  "i32";
+      I64,  MatrixI64,  i64,  "i64";
+      I128, MatrixI128, i128, "i128";
+      U8,   MatrixU8,   u8,   "u8";
+      U16,  MatrixU16,  u16,  "u16";
+      U32,  MatrixU32,  u32,  "u32";
+      U64,  MatrixU64,  u64,  "u64";
+      U128, MatrixU128, u128, "u128";
+      F32,  MatrixF32,  f32,  "f32";
+      F64,  MatrixF64,  f64,  "f64";
+      R64, MatrixR64, R64, "rational";
+      C64, MatrixC64, C64, "complex";
+    )
 }
 
-impl_mech_binop_fxn!(MatrixDot,impl_dot_fxn,"matrix/dot");
+impl_mech_binop_fxn!(MatrixDot, impl_dot_fxn, "matrix/dot");

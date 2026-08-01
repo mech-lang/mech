@@ -2,11 +2,11 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, Value};
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost,
-    RuntimeEffectMetadata, RuntimeEffectSource,
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
+    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
+    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    materialize_host_manifest,
 };
 
 use crate::{
@@ -100,7 +100,10 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
         }
         Ok(())
     }
-    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+    fn prepare_write(
+        &self,
+        request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
@@ -137,30 +140,19 @@ impl<B: SceneBackend> RuntimeAfterCommitEffect for SceneReplaceEffect<B> {
             "replace",
         )
         .with_resource(self.resource.clone())
-        .with_cost(RuntimeEffectCost {
-            bytes: 0,
-            items: 1,
-        })
+        .with_cost(RuntimeEffectCost { bytes: 0, items: 1 })
     }
 
     fn deliver(&mut self) -> MResult<()> {
-        let mut last_accepted = self
-            .last_accepted
-            .lock()
-            .map_err(|_| scene_error(
-                "SceneResourceProvider",
-                "scene acceptance lock is poisoned",
-            ))?;
+        let mut last_accepted = self.last_accepted.lock().map_err(|_| {
+            scene_error("SceneResourceProvider", "scene acceptance lock is poisoned")
+        })?;
         if last_accepted.as_ref() == Some(&self.scene) {
             return Ok(());
         }
-        self
-            .backend
+        self.backend
             .lock()
-            .map_err(|_| scene_error(
-                "SceneResourceProvider",
-                "scene backend lock is poisoned",
-            ))?
+            .map_err(|_| scene_error("SceneResourceProvider", "scene backend lock is poisoned"))?
             .replace_scene(self.scene.clone())?;
         *last_accepted = Some(self.scene.clone());
         Ok(())

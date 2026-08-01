@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, Value};
 #[cfg(feature = "web_host")]
 use mech_core::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
 };
+use mech_core::{MResult, Value};
 #[cfg(feature = "web_host")]
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_host_cli::{CliBackend, CliResourceProvider};

@@ -1,11 +1,9 @@
-#[cfg(feature = "compiler")]
-use crate::{
-    BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register,
-};
 use crate::{
     ActivationArm, ActivationArmBody, Expression, Interpreter, InterpreterExecution, MResult,
     MechError, MechFunctionImpl, ReactiveCellId, ReactiveSolveStatus, Ref, SliceRef, Token, Value,
 };
+#[cfg(feature = "compiler")]
+use crate::{BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register};
 
 use super::{
     ActivationPatternBodyDependencyInvariant, ActivationPatternCapture,

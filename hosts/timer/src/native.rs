@@ -7,17 +7,16 @@ use std::time::{Duration, Instant};
 
 use mech_core::MResult;
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource,
-    RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
+    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver,
+    RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
 };
 
+use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 use crate::{
-    timer_source_matches,
     FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
     TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
-    timer_settings_from_config,
+    timer_settings_from_config, timer_source_matches,
 };
-use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
 
 #[derive(Clone, Debug)]
 pub struct NativeMonotonicTimerBackend {
@@ -190,19 +189,16 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         let worker = thread::spawn(move || {
             let _live_reset = WorkerLiveReset(live.clone());
             while live.load(Ordering::SeqCst) {
-                let state = pending
-                    .lock()
+                let state = pending.lock().map_err(|_| ()).and_then(|mut pending| {
+                    submit_pending_timer_snapshots(
+                        &instance,
+                        Some(&ingress),
+                        &snapshot,
+                        &mut pending,
+                    )
+                    .map(|(_, state)| state)
                     .map_err(|_| ())
-                    .and_then(|mut pending| {
-                        submit_pending_timer_snapshots(
-                            &instance,
-                            Some(&ingress),
-                            &snapshot,
-                            &mut pending,
-                        )
-                        .map(|(_, state)| state)
-                        .map_err(|_| ())
-                    });
+                });
                 match state {
                     Ok(TimerSubmitState::Drained) => {}
                     Ok(TimerSubmitState::Full) => {
@@ -249,19 +245,16 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                     live.store(false, Ordering::SeqCst);
                     break;
                 }
-                let state = pending
-                    .lock()
+                let state = pending.lock().map_err(|_| ()).and_then(|mut pending| {
+                    submit_pending_timer_snapshots(
+                        &instance,
+                        Some(&ingress),
+                        &snapshot,
+                        &mut pending,
+                    )
+                    .map(|(_, state)| state)
                     .map_err(|_| ())
-                    .and_then(|mut pending| {
-                        submit_pending_timer_snapshots(
-                            &instance,
-                            Some(&ingress),
-                            &snapshot,
-                            &mut pending,
-                        )
-                        .map(|(_, state)| state)
-                        .map_err(|_| ())
-                    });
+                });
                 if matches!(state, Ok(TimerSubmitState::Closed) | Err(())) {
                     live.store(false, Ordering::SeqCst);
                     break;
@@ -318,7 +311,9 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
 }
 
 pub fn native_wait_duration(scheduler: &FixedStepScheduler, now_ms: f64) -> Duration {
-    let millis = scheduler.time_until_next_boundary(now_ms).clamp(1.0, 1000.0);
+    let millis = scheduler
+        .time_until_next_boundary(now_ms)
+        .clamp(1.0, 1000.0);
     Duration::from_millis(millis.ceil() as u64)
 }
 impl<B: MonotonicTimerBackend + Send + Sync> Drop for NativeTimerInputDriver<B> {
@@ -479,7 +474,14 @@ mod tests {
         assert!(!driver.is_live());
         assert!(driver.worker.lock().unwrap().is_none());
         assert!(driver.stop_sender.lock().unwrap().is_none());
-        assert_eq!(driver.scheduler.lock().unwrap().time_until_next_boundary(10_000.0), 0.0);
+        assert_eq!(
+            driver
+                .scheduler
+                .lock()
+                .unwrap()
+                .time_until_next_boundary(10_000.0),
+            0.0
+        );
 
         driver.start().unwrap();
         wait_for_pending_inputs(&runtime, 1);
@@ -508,7 +510,11 @@ mod tests {
         driver.attach(runtime.ingress()).unwrap();
         runtime
             .ingress()
-            .submit(TimerSnapshot::new(0, 100, 0).into_host_input("filler").unwrap())
+            .submit(
+                TimerSnapshot::new(0, 100, 0)
+                    .into_host_input("filler")
+                    .unwrap(),
+            )
             .unwrap();
 
         driver.start().unwrap();
@@ -545,9 +551,23 @@ mod tests {
         driver.attach(runtime.ingress()).unwrap();
 
         driver.start().unwrap();
-        let first_thread = driver.worker.lock().unwrap().as_ref().unwrap().thread().id();
+        let first_thread = driver
+            .worker
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .thread()
+            .id();
         driver.start().unwrap();
-        let second_thread = driver.worker.lock().unwrap().as_ref().unwrap().thread().id();
+        let second_thread = driver
+            .worker
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .thread()
+            .id();
         assert_eq!(first_thread, second_thread);
         driver.stop().unwrap();
     }

@@ -1,6 +1,6 @@
 use super::super::{
-    CapabilityId, BytecodeCompilerContext, MResult, MechFunctionCompiler, MechFunctionImpl, MechRuntime,
-    Register, RuntimeConfig, Value,
+    BytecodeCompilerContext, CapabilityId, MResult, MechFunctionCompiler, MechFunctionImpl,
+    MechRuntime, Register, RuntimeConfig, Value,
 };
 use crate::runtime::host::RuntimeHostNativeFunction;
 use crate::{

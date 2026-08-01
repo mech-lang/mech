@@ -1,72 +1,102 @@
 use crate::*;
-use mech_core::*;
-use num_traits::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use num_traits::*;
 
 // Lgamma ------------------------------------------------------------------------
 
-use libm::{lgamma,lgammaf};
+use libm::{lgamma, lgammaf};
 macro_rules! lgamma_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = lgamma((*$arg));}
-  };}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = lgamma((*$arg));
+        }
+    };
+}
 
 macro_rules! lgamma_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = lgamma(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = lgamma(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 macro_rules! lgammaf_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = lgammaf((*$arg));}
-  };}  
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = lgammaf((*$arg));
+        }
+    };
+}
 
 macro_rules! lgammaf_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = lgammaf(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = lgammaf(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathLgamma, f32, lgammaf, FeatureFlag::Custom(hash_str("math/lgamma")));
+impl_math_unop!(
+    MathLgamma,
+    f32,
+    lgammaf,
+    FeatureFlag::Custom(hash_str("math/lgamma"))
+);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathLgamma, f64, lgamma, FeatureFlag::Custom(hash_str("math/lgamma")));
+impl_math_unop!(
+    MathLgamma,
+    f64,
+    lgamma,
+    FeatureFlag::Custom(hash_str("math/lgamma"))
+);
 
 fn impl_lgamma_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_urnop_match_arms2!(
-    MathLgamma,
-    (lhs_value),
-    F32 => MatrixF32, F32, f32::zero(), "f32";
-    F64 => MatrixF64, F64, f64::zero(), "f64";
-  )
+    impl_urnop_match_arms2!(
+      MathLgamma,
+      (lhs_value),
+      F32 => MatrixF32, F32, f32::zero(), "f32";
+      F64 => MatrixF64, F64, f64::zero(), "f64";
+    )
 }
 
 pub struct MathLgamma {}
 
 impl NativeFunctionCompiler for MathLgamma {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let input = arguments[0].clone();
-    match impl_lgamma_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {impl_lgamma_fxn(input.borrow().clone())}
-          x => Err(MechError::new(
-              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/lgamma".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let input = arguments[0].clone();
+        match impl_lgamma_fxn(input.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (input) {
+                (Value::MutableReference(input)) => impl_lgamma_fxn(input.borrow().clone()),
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: "math/lgamma".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

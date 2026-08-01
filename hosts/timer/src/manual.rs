@@ -4,12 +4,11 @@ use std::sync::{Arc, Mutex};
 use mech_core::MResult;
 use mech_runtime::{RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress};
 
-use crate::{
-    timer_source_matches,
-    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerSnapshot,
-    new_shared_snapshot, timer_error,
-};
 use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
+use crate::{
+    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerSnapshot,
+    new_shared_snapshot, timer_error, timer_source_matches,
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct ManualMonotonicTimerBackend {
@@ -102,8 +101,12 @@ impl ManualTimerInputDriver {
             return Ok(submitted);
         }
         let now = self.backend.now_ms()?;
-        self.pending
-            .extend(self.scheduler.due_steps(now).into_iter().map(|e| e.snapshot));
+        self.pending.extend(
+            self.scheduler
+                .due_steps(now)
+                .into_iter()
+                .map(|e| e.snapshot),
+        );
         submitted += self.flush_pending()?;
         Ok(submitted)
     }
@@ -140,10 +143,10 @@ impl ManualTimerInputDriver {
 
 impl RuntimeHostInputDriver for ManualTimerInputDriver {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-    timer_source_matches(&self.instance, source)
-  }
+        timer_source_matches(&self.instance, source)
+    }
 
-  fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
+    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
         if self.live {
             return Err(timer_error(
                 "TimerDriverAttach",

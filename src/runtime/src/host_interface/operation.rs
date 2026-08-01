@@ -52,8 +52,13 @@ mod tests {
         for operation in ["move", "grip", "home", "set-mode", "set-speed2"] {
             validate_host_operation_name(operation).unwrap();
         }
-        for operation in ["set_mode", "Move", "moveArm", "move/arm", "move.arm", "move arm", ""] {
-            assert!(validate_host_operation_name(operation).is_err(), "{operation} should be invalid");
+        for operation in [
+            "set_mode", "Move", "moveArm", "move/arm", "move.arm", "move arm", "",
+        ] {
+            assert!(
+                validate_host_operation_name(operation).is_err(),
+                "{operation} should be invalid"
+            );
         }
     }
 }

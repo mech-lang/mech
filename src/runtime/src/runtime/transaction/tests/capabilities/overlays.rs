@@ -49,14 +49,18 @@ fn failed_retained_operation_truncates_capability_overlay() {
     );
 
     assert_eq!(result.unwrap_err().kind_name(), "GenericError");
-    assert!(runtime
-        .active_execution_transaction(transaction_id)
-        .unwrap()
-        .capabilities
-        .is_empty());
-    assert!(runtime
-        .check_capability_with_context(&mut context, &request("task:1"))
-        .is_err());
+    assert!(
+        runtime
+            .active_execution_transaction(transaction_id)
+            .unwrap()
+            .capabilities
+            .is_empty()
+    );
+    assert!(
+        runtime
+            .check_capability_with_context(&mut context, &request("task:1"))
+            .is_err()
+    );
     assert!(runtime.get_capability(id).unwrap().is_none());
     runtime
         .abort_runtime_transaction(&mut context, "test cleanup")

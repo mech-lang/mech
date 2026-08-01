@@ -1,6 +1,5 @@
 // relations module (subset/superset etc.)
 #[macro_use]
-
 #[cfg(feature = "disjoint")]
 pub mod disjoint;
 #[cfg(feature = "equals")]

@@ -6,368 +6,478 @@ use std::time::Duration;
 
 use chrono::{Local, Timelike};
 use mech_core::MResult;
-use mech_runtime::{materialize_host_manifest, ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress};
+use mech_runtime::{
+    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInputDriver,
+    RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
+};
 
-use crate::{time_source_matches, new_shared_snapshot, time_error, time_host_manifest, time_settings_from_config, SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot};
+use crate::{
+    SharedTimeSnapshot, TimeBackend, TimeResourceProvider, TimeSnapshot, new_shared_snapshot,
+    time_error, time_host_manifest, time_settings_from_config, time_source_matches,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeTimeBackend;
 
 impl TimeBackend for NativeTimeBackend {
-  fn snapshot(&self) -> MResult<TimeSnapshot> {
-    let now = Local::now();
-    Ok(TimeSnapshot {
-      unix_ms: now.timestamp_millis() as f64,
-      hour: now.hour() as f64,
-      minute: now.minute() as f64,
-      second: now.second() as f64,
-      millisecond: (now.nanosecond() / 1_000_000) as f64,
-    })
-  }
+    fn snapshot(&self) -> MResult<TimeSnapshot> {
+        let now = Local::now();
+        Ok(TimeSnapshot {
+            unix_ms: now.timestamp_millis() as f64,
+            hour: now.hour() as f64,
+            minute: now.minute() as f64,
+            second: now.second() as f64,
+            millisecond: (now.nanosecond() / 1_000_000) as f64,
+        })
+    }
 }
 
 struct WorkerLiveReset(Arc<AtomicBool>);
 
 impl Drop for WorkerLiveReset {
-  fn drop(&mut self) {
-    self.0.store(false, Ordering::SeqCst);
-  }
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
+    }
 }
 
 pub struct NativeTimeInputDriver<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  instance: String,
-  backend: B,
-  ingress: Arc<Mutex<Option<RuntimeIngress>>>,
-  live: Arc<AtomicBool>,
-  snapshot: SharedTimeSnapshot,
-  interval: Duration,
-  worker: Arc<Mutex<Option<JoinHandle<()>>>>,
-  stop_sender: Arc<Mutex<Option<Sender<()>>>>,
+    instance: String,
+    backend: B,
+    ingress: Arc<Mutex<Option<RuntimeIngress>>>,
+    live: Arc<AtomicBool>,
+    snapshot: SharedTimeSnapshot,
+    interval: Duration,
+    worker: Arc<Mutex<Option<JoinHandle<()>>>>,
+    stop_sender: Arc<Mutex<Option<Sender<()>>>>,
 }
 
 impl<B> std::fmt::Debug for NativeTimeInputDriver<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("NativeTimeInputDriver")
-      .field("instance", &self.instance)
-      .field("backend", &self.backend)
-      .field("live", &self.is_live())
-      .field("interval", &self.interval)
-      .finish_non_exhaustive()
-  }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NativeTimeInputDriver")
+            .field("instance", &self.instance)
+            .field("backend", &self.backend)
+            .field("live", &self.is_live())
+            .field("interval", &self.interval)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<B> NativeTimeInputDriver<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  pub fn new(instance: impl Into<String>, backend: B, snapshot: SharedTimeSnapshot, interval: Duration) -> Self {
-    Self {
-      instance: instance.into(),
-      backend,
-      ingress: Arc::new(Mutex::new(None)),
-      live: Arc::new(AtomicBool::new(false)),
-      snapshot,
-      interval,
-      worker: Arc::new(Mutex::new(None)),
-      stop_sender: Arc::new(Mutex::new(None)),
-    }
-  }
-
-  fn prepare_worker_start(&mut self) -> MResult<bool> {
-    let mut stop_sender_guard = self.stop_sender.lock().map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))?;
-    let mut worker_guard = self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?;
-
-    if self.live.load(Ordering::SeqCst) && worker_guard.as_ref().is_some_and(|handle| !handle.is_finished()) {
-      return Ok(true);
+    pub fn new(
+        instance: impl Into<String>,
+        backend: B,
+        snapshot: SharedTimeSnapshot,
+        interval: Duration,
+    ) -> Self {
+        Self {
+            instance: instance.into(),
+            backend,
+            ingress: Arc::new(Mutex::new(None)),
+            live: Arc::new(AtomicBool::new(false)),
+            snapshot,
+            interval,
+            worker: Arc::new(Mutex::new(None)),
+            stop_sender: Arc::new(Mutex::new(None)),
+        }
     }
 
-    let stop_sender = stop_sender_guard.take();
-    let worker = worker_guard.take();
-    drop(worker_guard);
-    drop(stop_sender_guard);
+    fn prepare_worker_start(&mut self) -> MResult<bool> {
+        let mut stop_sender_guard = self
+            .stop_sender
+            .lock()
+            .map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))?;
+        let mut worker_guard = self
+            .worker
+            .lock()
+            .map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))?;
 
-    self.live.store(false, Ordering::SeqCst);
+        if self.live.load(Ordering::SeqCst)
+            && worker_guard
+                .as_ref()
+                .is_some_and(|handle| !handle.is_finished())
+        {
+            return Ok(true);
+        }
 
-    if let Some(sender) = stop_sender {
-      let _ = sender.send(());
+        let stop_sender = stop_sender_guard.take();
+        let worker = worker_guard.take();
+        drop(worker_guard);
+        drop(stop_sender_guard);
+
+        self.live.store(false, Ordering::SeqCst);
+
+        if let Some(sender) = stop_sender {
+            let _ = sender.send(());
+        }
+
+        if let Some(handle) = worker {
+            handle.join().map_err(|_| {
+                time_error(
+                    "TimeDriverStart",
+                    "native time worker panicked before restart",
+                )
+            })?;
+        }
+
+        Ok(false)
     }
-
-    if let Some(handle) = worker {
-      handle.join().map_err(|_| time_error("TimeDriverStart", "native time worker panicked before restart"))?;
-    }
-
-    Ok(false)
-  }
 }
 
 impl<B> RuntimeHostInputDriver for NativeTimeInputDriver<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-    time_source_matches(&self.instance, source)
-  }
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        time_source_matches(&self.instance, source)
+    }
 
-  fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
-    if self.is_live() {
-      return Err(time_error("TimeDriverAttach", "cannot attach native time driver while live"));
+    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
+        if self.is_live() {
+            return Err(time_error(
+                "TimeDriverAttach",
+                "cannot attach native time driver while live",
+            ));
+        }
+        let mut guard = self
+            .ingress
+            .lock()
+            .map_err(|_| time_error("TimeDriverAttach", "time ingress lock is poisoned"))?;
+        if guard.is_some() {
+            return Err(time_error(
+                "TimeDriverAttach",
+                "native time driver is already attached",
+            ));
+        }
+        *guard = Some(ingress);
+        Ok(())
     }
-    let mut guard = self.ingress.lock().map_err(|_| time_error("TimeDriverAttach", "time ingress lock is poisoned"))?;
-    if guard.is_some() {
-      return Err(time_error("TimeDriverAttach", "native time driver is already attached"));
-    }
-    *guard = Some(ingress);
-    Ok(())
-  }
 
-  fn start(&mut self) -> MResult<()> {
-    if self.prepare_worker_start()? {
-      return Ok(());
-    }
-    let ingress = self.ingress.lock().map_err(|_| time_error("TimeDriverStart", "time ingress lock is poisoned"))?
-      .clone()
-      .ok_or_else(|| time_error("TimeDriverStart", "native time driver must be attached before start"))?;
-    let (stop_sender, stop_receiver) = mpsc::channel();
-    *self.stop_sender.lock().map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))? = Some(stop_sender);
-    self.live.store(true, Ordering::SeqCst);
-    let live = self.live.clone();
-    let backend = self.backend.clone();
-    let snapshot = self.snapshot.clone();
-    let interval = self.interval;
-    let instance = self.instance.clone();
-    let worker = thread::spawn(move || {
-      let _live_reset = WorkerLiveReset(live.clone());
-      while live.load(Ordering::SeqCst) {
-        match backend.snapshot() {
-          Ok(next) => {
-            if let Ok(mut guard) = snapshot.lock() { *guard = next; }
-            match next.into_host_input(&instance).and_then(|packet| ingress.submit(packet)) {
-              Ok(()) => {}
-              Err(err) => match err.kind_name().as_str() {
-                "RuntimeIngressFull" => {
-                  // Skip this snapshot and let the next interval try again.
+    fn start(&mut self) -> MResult<()> {
+        if self.prepare_worker_start()? {
+            return Ok(());
+        }
+        let ingress = self
+            .ingress
+            .lock()
+            .map_err(|_| time_error("TimeDriverStart", "time ingress lock is poisoned"))?
+            .clone()
+            .ok_or_else(|| {
+                time_error(
+                    "TimeDriverStart",
+                    "native time driver must be attached before start",
+                )
+            })?;
+        let (stop_sender, stop_receiver) = mpsc::channel();
+        *self
+            .stop_sender
+            .lock()
+            .map_err(|_| time_error("TimeDriverStart", "time stop-signal lock is poisoned"))? =
+            Some(stop_sender);
+        self.live.store(true, Ordering::SeqCst);
+        let live = self.live.clone();
+        let backend = self.backend.clone();
+        let snapshot = self.snapshot.clone();
+        let interval = self.interval;
+        let instance = self.instance.clone();
+        let worker = thread::spawn(move || {
+            let _live_reset = WorkerLiveReset(live.clone());
+            while live.load(Ordering::SeqCst) {
+                match backend.snapshot() {
+                    Ok(next) => {
+                        if let Ok(mut guard) = snapshot.lock() {
+                            *guard = next;
+                        }
+                        match next
+                            .into_host_input(&instance)
+                            .and_then(|packet| ingress.submit(packet))
+                        {
+                            Ok(()) => {}
+                            Err(err) => match err.kind_name().as_str() {
+                                "RuntimeIngressFull" => {
+                                    // Skip this snapshot and let the next interval try again.
+                                }
+                                "RuntimeIngressClosed" => {
+                                    live.store(false, Ordering::SeqCst);
+                                    break;
+                                }
+                                _ => {
+                                    live.store(false, Ordering::SeqCst);
+                                    break;
+                                }
+                            },
+                        }
+                    }
+                    Err(_) => {
+                        live.store(false, Ordering::SeqCst);
+                        break;
+                    }
                 }
-                "RuntimeIngressClosed" => {
-                  live.store(false, Ordering::SeqCst);
-                  break;
+                match stop_receiver.recv_timeout(interval) {
+                    Ok(()) => break,
+                    Err(RecvTimeoutError::Disconnected) => break,
+                    Err(RecvTimeoutError::Timeout) => {}
                 }
-                _ => {
-                  live.store(false, Ordering::SeqCst);
-                  break;
-                }
-              },
             }
-          }
-          Err(_) => {
-            live.store(false, Ordering::SeqCst);
-            break;
-          }
-        }
-        match stop_receiver.recv_timeout(interval) {
-          Ok(()) => break,
-          Err(RecvTimeoutError::Disconnected) => break,
-          Err(RecvTimeoutError::Timeout) => {}
-        }
-      }
-    });
-    *self.worker.lock().map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))? = Some(worker);
-    Ok(())
-  }
-
-  fn stop(&mut self) -> MResult<()> {
-    self.live.store(false, Ordering::SeqCst);
-    let stop_sender = self.stop_sender.lock().map_err(|_| time_error("TimeDriverStop", "time stop-signal lock is poisoned"))?.take();
-    if let Some(sender) = stop_sender {
-      let _ = sender.send(());
+        });
+        *self
+            .worker
+            .lock()
+            .map_err(|_| time_error("TimeDriverStart", "time worker lock is poisoned"))? =
+            Some(worker);
+        Ok(())
     }
-    let handle = self.worker.lock().map_err(|_| time_error("TimeDriverStop", "time worker lock is poisoned"))?.take();
-    if let Some(handle) = handle {
-      handle.join().map_err(|_| time_error("TimeDriverStop", "native time worker panicked during shutdown"))?;
-    }
-    Ok(())
-  }
 
-  fn is_live(&self) -> bool { self.live.load(Ordering::SeqCst) }
+    fn stop(&mut self) -> MResult<()> {
+        self.live.store(false, Ordering::SeqCst);
+        let stop_sender = self
+            .stop_sender
+            .lock()
+            .map_err(|_| time_error("TimeDriverStop", "time stop-signal lock is poisoned"))?
+            .take();
+        if let Some(sender) = stop_sender {
+            let _ = sender.send(());
+        }
+        let handle = self
+            .worker
+            .lock()
+            .map_err(|_| time_error("TimeDriverStop", "time worker lock is poisoned"))?
+            .take();
+        if let Some(handle) = handle {
+            handle.join().map_err(|_| {
+                time_error(
+                    "TimeDriverStop",
+                    "native time worker panicked during shutdown",
+                )
+            })?;
+        }
+        Ok(())
+    }
+
+    fn is_live(&self) -> bool {
+        self.live.load(Ordering::SeqCst)
+    }
 }
 
 impl<B> Drop for NativeTimeInputDriver<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  fn drop(&mut self) { let _ = self.stop(); }
+    fn drop(&mut self) {
+        let _ = self.stop();
+    }
 }
 
 #[cfg(test)]
 mod tests {
-  use std::sync::atomic::AtomicUsize;
-  use std::time::Instant;
+    use std::sync::atomic::AtomicUsize;
+    use std::time::Instant;
 
-  use super::*;
+    use super::*;
 
-  fn snapshot() -> TimeSnapshot {
-    TimeSnapshot {
-      unix_ms: 1.0,
-      hour: 2.0,
-      minute: 3.0,
-      second: 4.0,
-      millisecond: 5.0,
+    fn snapshot() -> TimeSnapshot {
+        TimeSnapshot {
+            unix_ms: 1.0,
+            hour: 2.0,
+            minute: 3.0,
+            second: 4.0,
+            millisecond: 5.0,
+        }
     }
-  }
 
-  fn wait_for_finished_worker<B>(driver: &NativeTimeInputDriver<B>)
-  where
-    B: TimeBackend + Send + Sync,
-  {
-    let deadline = Instant::now() + Duration::from_secs(1);
-    loop {
-      let finished = driver.worker.lock().unwrap().as_ref().is_some_and(|handle| handle.is_finished());
-      if finished {
-        return;
-      }
-      assert!(Instant::now() < deadline, "timed out waiting for native time worker to finish");
-      thread::sleep(Duration::from_millis(5));
+    fn wait_for_finished_worker<B>(driver: &NativeTimeInputDriver<B>)
+    where
+        B: TimeBackend + Send + Sync,
+    {
+        let deadline = Instant::now() + Duration::from_secs(1);
+        loop {
+            let finished = driver
+                .worker
+                .lock()
+                .unwrap()
+                .as_ref()
+                .is_some_and(|handle| handle.is_finished());
+            if finished {
+                return;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "timed out waiting for native time worker to finish"
+            );
+            thread::sleep(Duration::from_millis(5));
+        }
     }
-  }
 
-  fn wait_for_pending_inputs(runtime: &mech_runtime::MechRuntime, count: usize) {
-    let deadline = Instant::now() + Duration::from_secs(1);
-    while runtime.pending_host_input_count().unwrap() < count {
-      assert!(Instant::now() < deadline, "timed out waiting for native time input");
-      thread::sleep(Duration::from_millis(5));
+    fn wait_for_pending_inputs(runtime: &mech_runtime::MechRuntime, count: usize) {
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while runtime.pending_host_input_count().unwrap() < count {
+            assert!(
+                Instant::now() < deadline,
+                "timed out waiting for native time input"
+            );
+            thread::sleep(Duration::from_millis(5));
+        }
     }
-  }
 
-  #[derive(Clone, Debug)]
-  struct FailingThenWorkingBackend {
-    calls: Arc<AtomicUsize>,
-  }
-
-  impl TimeBackend for FailingThenWorkingBackend {
-    fn snapshot(&self) -> MResult<TimeSnapshot> {
-      if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
-        Err(time_error("TimeBackend", "test backend failure"))
-      } else {
-        Ok(snapshot())
-      }
+    #[derive(Clone, Debug)]
+    struct FailingThenWorkingBackend {
+        calls: Arc<AtomicUsize>,
     }
-  }
 
-  #[derive(Clone, Debug)]
-  struct PanickingThenWorkingBackend {
-    calls: Arc<AtomicUsize>,
-  }
-
-  impl TimeBackend for PanickingThenWorkingBackend {
-    fn snapshot(&self) -> MResult<TimeSnapshot> {
-      if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
-        panic!("test time backend panic");
-      }
-      Ok(snapshot())
+    impl TimeBackend for FailingThenWorkingBackend {
+        fn snapshot(&self) -> MResult<TimeSnapshot> {
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                Err(time_error("TimeBackend", "test backend failure"))
+            } else {
+                Ok(snapshot())
+            }
+        }
     }
-  }
 
-  #[test]
-  fn restart_after_backend_error_replaces_exited_worker() {
-    let runtime = mech_runtime::MechRuntime::builder().host_input_capacity(4).build().unwrap();
-    let backend = FailingThenWorkingBackend { calls: Arc::new(AtomicUsize::new(0)) };
-    let mut driver = NativeTimeInputDriver::new(
-      "clock",
-      backend,
-      new_shared_snapshot(TimeSnapshot::default()),
-      Duration::from_millis(5),
-    );
-    driver.attach(runtime.ingress()).unwrap();
+    #[derive(Clone, Debug)]
+    struct PanickingThenWorkingBackend {
+        calls: Arc<AtomicUsize>,
+    }
 
-    driver.start().unwrap();
-    wait_for_finished_worker(&driver);
-    assert!(!driver.is_live());
-    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+    impl TimeBackend for PanickingThenWorkingBackend {
+        fn snapshot(&self) -> MResult<TimeSnapshot> {
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                panic!("test time backend panic");
+            }
+            Ok(snapshot())
+        }
+    }
 
-    driver.start().unwrap();
-    wait_for_pending_inputs(&runtime, 1);
-    driver.stop().unwrap();
-    assert!(!driver.is_live());
-  }
+    #[test]
+    fn restart_after_backend_error_replaces_exited_worker() {
+        let runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(4)
+            .build()
+            .unwrap();
+        let backend = FailingThenWorkingBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+        };
+        let mut driver = NativeTimeInputDriver::new(
+            "clock",
+            backend,
+            new_shared_snapshot(TimeSnapshot::default()),
+            Duration::from_millis(5),
+        );
+        driver.attach(runtime.ingress()).unwrap();
 
-  #[test]
-  fn panicked_worker_is_reported_once_and_can_restart() {
-    let runtime = mech_runtime::MechRuntime::builder().host_input_capacity(4).build().unwrap();
-    let backend = PanickingThenWorkingBackend { calls: Arc::new(AtomicUsize::new(0)) };
-    let mut driver = NativeTimeInputDriver::new(
-      "clock",
-      backend,
-      new_shared_snapshot(TimeSnapshot::default()),
-      Duration::from_millis(5),
-    );
-    driver.attach(runtime.ingress()).unwrap();
+        driver.start().unwrap();
+        wait_for_finished_worker(&driver);
+        assert!(!driver.is_live());
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
 
-    driver.start().unwrap();
-    wait_for_finished_worker(&driver);
-    assert!(!driver.is_live());
+        driver.start().unwrap();
+        wait_for_pending_inputs(&runtime, 1);
+        driver.stop().unwrap();
+        assert!(!driver.is_live());
+    }
 
-    let error = driver.start().unwrap_err();
-    assert_eq!(error.kind_name(), "TimeDriverStart");
-    assert!(format!("{error:?}").contains("native time worker panicked before restart"));
-    assert!(!driver.is_live());
-    assert!(driver.worker.lock().unwrap().is_none());
-    assert!(driver.stop_sender.lock().unwrap().is_none());
+    #[test]
+    fn panicked_worker_is_reported_once_and_can_restart() {
+        let runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(4)
+            .build()
+            .unwrap();
+        let backend = PanickingThenWorkingBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+        };
+        let mut driver = NativeTimeInputDriver::new(
+            "clock",
+            backend,
+            new_shared_snapshot(TimeSnapshot::default()),
+            Duration::from_millis(5),
+        );
+        driver.attach(runtime.ingress()).unwrap();
 
-    driver.start().unwrap();
-    wait_for_pending_inputs(&runtime, 1);
-    driver.stop().unwrap();
-  }
+        driver.start().unwrap();
+        wait_for_finished_worker(&driver);
+        assert!(!driver.is_live());
+
+        let error = driver.start().unwrap_err();
+        assert_eq!(error.kind_name(), "TimeDriverStart");
+        assert!(format!("{error:?}").contains("native time worker panicked before restart"));
+        assert!(!driver.is_live());
+        assert!(driver.worker.lock().unwrap().is_none());
+        assert!(driver.stop_sender.lock().unwrap().is_none());
+
+        driver.start().unwrap();
+        wait_for_pending_inputs(&runtime, 1);
+        driver.stop().unwrap();
+    }
 }
 
 #[derive(Debug)]
 pub struct NativeTimeHostFactory<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  backend: B,
-  manifest: HostManifestConfig,
+    backend: B,
+    manifest: HostManifestConfig,
 }
 
 impl NativeTimeHostFactory<NativeTimeBackend> {
-  pub fn new() -> MResult<Self> { Self::with_backend(NativeTimeBackend) }
+    pub fn new() -> MResult<Self> {
+        Self::with_backend(NativeTimeBackend)
+    }
 }
 
 impl<B> NativeTimeHostFactory<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  pub fn with_backend(backend: B) -> MResult<Self> {
-    Ok(Self { backend, manifest: time_host_manifest()? })
-  }
+    pub fn with_backend(backend: B) -> MResult<Self> {
+        Ok(Self {
+            backend,
+            manifest: time_host_manifest()?,
+        })
+    }
 }
 
 impl<B> RuntimeHostFactory for NativeTimeHostFactory<B>
 where
-  B: TimeBackend + Send + Sync,
+    B: TimeBackend + Send + Sync,
 {
-  fn provider_name(&self) -> &str { "time" }
-  fn manifest(&self) -> &HostManifestConfig { &self.manifest }
-  fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
-    time_settings_from_config(settings).map(|_| ())
-  }
-  fn instantiate(&self, instance_name: &str, settings: &ConfigValue) -> MResult<RuntimeHostInstallation> {
-    let settings = time_settings_from_config(settings)?;
-    let initial = self.backend.snapshot()?;
-    let snapshot = new_shared_snapshot(initial);
-    Ok(RuntimeHostInstallation {
-      interface: materialize_host_manifest(instance_name, &self.manifest)?,
-      resource_providers: vec![Box::new(TimeResourceProvider::new(instance_name, snapshot.clone()))],
-      input_drivers: vec![Box::new(NativeTimeInputDriver::new(
-        instance_name,
-        self.backend.clone(),
-        snapshot,
-        Duration::from_millis(settings.interval_ms),
-      ))],
-    })
-  }
+    fn provider_name(&self) -> &str {
+        "time"
+    }
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
+    fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+        time_settings_from_config(settings).map(|_| ())
+    }
+    fn instantiate(
+        &self,
+        instance_name: &str,
+        settings: &ConfigValue,
+    ) -> MResult<RuntimeHostInstallation> {
+        let settings = time_settings_from_config(settings)?;
+        let initial = self.backend.snapshot()?;
+        let snapshot = new_shared_snapshot(initial);
+        Ok(RuntimeHostInstallation {
+            interface: materialize_host_manifest(instance_name, &self.manifest)?,
+            resource_providers: vec![Box::new(TimeResourceProvider::new(
+                instance_name,
+                snapshot.clone(),
+            ))],
+            input_drivers: vec![Box::new(NativeTimeInputDriver::new(
+                instance_name,
+                self.backend.clone(),
+                snapshot,
+                Duration::from_millis(settings.interval_ms),
+            ))],
+        })
+    }
 }

@@ -1,393 +1,915 @@
 #![allow(warnings)]
-extern crate mech_syntax;
 extern crate mech_core;
-use std::cell::RefCell;
-use std::rc::Rc;
+extern crate mech_syntax;
+use indexmap::set::IndexSet;
 use mech_core::matrix::Matrix;
-use mech_syntax::*;
 use mech_core::*;
 use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
-use indexmap::set::IndexSet;
+use mech_syntax::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 macro_rules! bytecode_test {
-  ($name:ident, $code:expr, $expected:expr) => {
-    #[test]
-    fn $name() {
-      let mut prgrm = MechProgram::new(MechProgramConfig { name: stringify!($name).to_string(), environment: MechProgramEnvironment::default() });
+    ($name:ident, $code:expr, $expected:expr) => {
+        #[test]
+        fn $name() {
+            let mut prgrm = MechProgram::new(MechProgramConfig {
+                name: stringify!($name).to_string(),
+                environment: MechProgramEnvironment::default(),
+            });
 
-      prgrm.run_string($code)
-        .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
+            prgrm
+                .run_string($code)
+                .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
 
-      let bytecode = prgrm.compile_bytecode()
-        .unwrap_or_else(|err| panic!("Compile error: {:?}", err));
+            let bytecode = prgrm
+                .compile_bytecode()
+                .unwrap_or_else(|err| panic!("Compile error: {:?}", err));
 
-      let prog = ParsedProgram::from_bytes(&bytecode)
-        .unwrap_or_else(|err| panic!("Deserialize error: {:?}", err));
+            let prog = ParsedProgram::from_bytes(&bytecode)
+                .unwrap_or_else(|err| panic!("Deserialize error: {:?}", err));
 
+            let result = prgrm
+                .run_bytecode_program(&prog)
+                .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
 
-      let result = prgrm.run_bytecode_program(&prog)
-        .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
-
-      assert_eq!(result, $expected);
-    }
-  };
+            assert_eq!(result, $expected);
+        }
+    };
 }
 
-bytecode_test!(bytecode_define_string, "x := \"Hello World!\"", Value::String(Ref::new("Hello World!".to_string())));
-bytecode_test!(bytecode_var_def,"x := 10",Value::F64(Ref::new(10.0)));
-bytecode_test!(bytecode_math,"1 + 2",Value::F64(Ref::new(3.0)));
-bytecode_test!(bytecode_math_def,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(7.0)));
-bytecode_test!(bytecode_tuple_access,"tuple := (1, 2); tuple.2",Value::F64(Ref::new(2.0)));
-bytecode_test!(bytecode_math_mul,"x := 2 * 2; y := x * 4",Value::F64(Ref::new(16.0)));
-bytecode_test!(bytecode_math_add_assign,"~x := 10; x += 20",Value::F64(Ref::new(30.0)));
-bytecode_test!(bytecode_math_add_assign_vv, "~x := [1 2 3]; x += [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![11.0,22.0,33.0], 1, 3)));
-bytecode_test!(bytecode_math_add_assign_vr, "~x := [1 1]; y := [1 2]; z := [10 20]; x[y] += z;", Value::MatrixF64(Matrix::from_vec(vec![11.0,21.0], 1, 2)));
-bytecode_test!(bytecode_math_sub_assign,"~x := 30; x -= 20",Value::F64(Ref::new(10.0)));
-bytecode_test!(bytecode_math_sub_assign_vv, "~x := [10 20 30]; x -= [1 2 3]", Value::MatrixF64(Matrix::from_vec(vec![9.0,18.0,27.0], 1, 3)));
-bytecode_test!(bytecode_math_sub_assign_vr, "~x := [11 21]; y := [1 2]; z := [10 20]; x[y] -= z;", Value::MatrixF64(Matrix::from_vec(vec![1.0,1.0], 1, 2)));
-bytecode_test!(bytecode_math_mul_assign,"~x := 10; x *= 20",Value::F64(Ref::new(200.0)));
-bytecode_test!(bytecode_math_mul_assign_vv, "~x := [1 2 3]; x *= [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![10.0,40.0,90.0], 1, 3)));
-bytecode_test!(bytecode_math_mul_assign_vr, "~x := [1 2]; y := [1 2]; z := [10 20]; x[y] *= z;", Value::MatrixF64(Matrix::from_vec(vec![10.0,40.0], 1, 2)));
-bytecode_test!(bytecode_math_div_assign,"~x := 200; x /= 20",Value::F64(Ref::new(10.0)));
-bytecode_test!(bytecode_math_div_assign_vv, "~x := [10 20 30]; x /= [1 2 5]", Value::MatrixF64(Matrix::from_vec(vec![10.0,10.0,6.0], 1, 3)));
-bytecode_test!(bytecode_math_div_assign_vr, "~x := [10 20]; y := [1 2]; z := [10 4]; x[y] /= z;", Value::MatrixF64(Matrix::from_vec(vec![1.0,5.0], 1, 2)));
-bytecode_test!(bytecode_matrix_rowvector3,"[1 2 3]",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0], 1, 3)));
-bytecode_test!(bytecode_matrix_vector2,"[1; 2]",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0], 2, 1)));
-bytecode_test!(bytecode_matrix_matrix2x2,"[1 2; 3 4]",Value::MatrixF64(Matrix::from_vec(vec![1.0,3.0,2.0,4.0], 2, 2)));
+bytecode_test!(
+    bytecode_define_string,
+    "x := \"Hello World!\"",
+    Value::String(Ref::new("Hello World!".to_string()))
+);
+bytecode_test!(bytecode_var_def, "x := 10", Value::F64(Ref::new(10.0)));
+bytecode_test!(bytecode_math, "1 + 2", Value::F64(Ref::new(3.0)));
+bytecode_test!(
+    bytecode_math_def,
+    "x := 1 + 2; y := x + 4",
+    Value::F64(Ref::new(7.0))
+);
+bytecode_test!(
+    bytecode_tuple_access,
+    "tuple := (1, 2); tuple.2",
+    Value::F64(Ref::new(2.0))
+);
+bytecode_test!(
+    bytecode_math_mul,
+    "x := 2 * 2; y := x * 4",
+    Value::F64(Ref::new(16.0))
+);
+bytecode_test!(
+    bytecode_math_add_assign,
+    "~x := 10; x += 20",
+    Value::F64(Ref::new(30.0))
+);
+bytecode_test!(
+    bytecode_math_add_assign_vv,
+    "~x := [1 2 3]; x += [10 20 30]",
+    Value::MatrixF64(Matrix::from_vec(vec![11.0, 22.0, 33.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_math_add_assign_vr,
+    "~x := [1 1]; y := [1 2]; z := [10 20]; x[y] += z;",
+    Value::MatrixF64(Matrix::from_vec(vec![11.0, 21.0], 1, 2))
+);
+bytecode_test!(
+    bytecode_math_sub_assign,
+    "~x := 30; x -= 20",
+    Value::F64(Ref::new(10.0))
+);
+bytecode_test!(
+    bytecode_math_sub_assign_vv,
+    "~x := [10 20 30]; x -= [1 2 3]",
+    Value::MatrixF64(Matrix::from_vec(vec![9.0, 18.0, 27.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_math_sub_assign_vr,
+    "~x := [11 21]; y := [1 2]; z := [10 20]; x[y] -= z;",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2))
+);
+bytecode_test!(
+    bytecode_math_mul_assign,
+    "~x := 10; x *= 20",
+    Value::F64(Ref::new(200.0))
+);
+bytecode_test!(
+    bytecode_math_mul_assign_vv,
+    "~x := [1 2 3]; x *= [10 20 30]",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 40.0, 90.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_math_mul_assign_vr,
+    "~x := [1 2]; y := [1 2]; z := [10 20]; x[y] *= z;",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 40.0], 1, 2))
+);
+bytecode_test!(
+    bytecode_math_div_assign,
+    "~x := 200; x /= 20",
+    Value::F64(Ref::new(10.0))
+);
+bytecode_test!(
+    bytecode_math_div_assign_vv,
+    "~x := [10 20 30]; x /= [1 2 5]",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 10.0, 6.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_math_div_assign_vr,
+    "~x := [10 20]; y := [1 2]; z := [10 4]; x[y] /= z;",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0], 1, 2))
+);
+bytecode_test!(
+    bytecode_matrix_rowvector3,
+    "[1 2 3]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_vector2,
+    "[1; 2]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0], 2, 1))
+);
+bytecode_test!(
+    bytecode_matrix_matrix2x2,
+    "[1 2; 3 4]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_combinatorics_n_choose_k,"+> combinatorics\ncombinatorics/n-choose-k(10,2)",Value::F64(Ref::new(45.0)));
-bytecode_test!(bytecode_compare_gt,"1 > 2",Value::Bool(Ref::new(false)));
-bytecode_test!(bytecode_compare_eq,r#""foo" == "bar""#,Value::Bool(Ref::new(false)));
-bytecode_test!(bytecode_logic_and,"true && false",Value::Bool(Ref::new(false)));
-bytecode_test!(bytecode_logic_or,"true || false",Value::Bool(Ref::new(true)));
-bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
+bytecode_test!(
+    bytecode_combinatorics_n_choose_k,
+    "+> combinatorics\ncombinatorics/n-choose-k(10,2)",
+    Value::F64(Ref::new(45.0))
+);
+bytecode_test!(bytecode_compare_gt, "1 > 2", Value::Bool(Ref::new(false)));
+bytecode_test!(
+    bytecode_compare_eq,
+    r#""foo" == "bar""#,
+    Value::Bool(Ref::new(false))
+);
+bytecode_test!(
+    bytecode_logic_and,
+    "true && false",
+    Value::Bool(Ref::new(false))
+);
+bytecode_test!(
+    bytecode_logic_or,
+    "true || false",
+    Value::Bool(Ref::new(true))
+);
+bytecode_test!(bytecode_logic_not, "!true", Value::Bool(Ref::new(false)));
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_math_cos,"+> math\nmath/cos(0)",Value::F64(Ref::new(1.0)));
+bytecode_test!(
+    bytecode_math_cos,
+    "+> math\nmath/cos(0)",
+    Value::F64(Ref::new(1.0))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_math_sin,"+> math\nmath/sin(0)",Value::F64(Ref::new(0.0)));
+bytecode_test!(
+    bytecode_math_sin,
+    "+> math\nmath/sin(0)",
+    Value::F64(Ref::new(0.0))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_math_atan2,"+> math\nmath/atan2(1, 1)",Value::F64(Ref::new(std::f64::consts::FRAC_PI_4)));
+bytecode_test!(
+    bytecode_math_atan2,
+    "+> math\nmath/atan2(1, 1)",
+    Value::F64(Ref::new(std::f64::consts::FRAC_PI_4))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_math_atan22,"+> math\nmath/atan(1, 1)",Value::F64(Ref::new(std::f64::consts::FRAC_PI_4)));
-bytecode_test!(bytecode_matrix_matmul_transpose,"[1 2 3] ** [4 5 6]'",Value::MatrixF64(Matrix::from_vec(vec![32.0], 1, 1)));
-bytecode_test!(bytecode_matrix_dot,"[1 2 3] \u{00b7} [4 5 6]",Value::F64(Ref::new(32.0)));
-bytecode_test!(bytecode_range_inclusive,"1..=4",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0], 1, 4)));
-bytecode_test!(bytecode_range_inclusive_d,"1..=5",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0,5.0], 1, 5)));
-bytecode_test!(bytecode_range_inclusive_refs,"a := 1; b :=4 ; a..=b",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0], 1, 4)));
-bytecode_test!(bytecode_range_exclusive,"1..5",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,3.0,4.0], 1, 4)));
+bytecode_test!(
+    bytecode_math_atan22,
+    "+> math\nmath/atan(1, 1)",
+    Value::F64(Ref::new(std::f64::consts::FRAC_PI_4))
+);
+bytecode_test!(
+    bytecode_matrix_matmul_transpose,
+    "[1 2 3] ** [4 5 6]'",
+    Value::MatrixF64(Matrix::from_vec(vec![32.0], 1, 1))
+);
+bytecode_test!(
+    bytecode_matrix_dot,
+    "[1 2 3] \u{00b7} [4 5 6]",
+    Value::F64(Ref::new(32.0))
+);
+bytecode_test!(
+    bytecode_range_inclusive,
+    "1..=4",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 1, 4))
+);
+bytecode_test!(
+    bytecode_range_inclusive_d,
+    "1..=5",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0], 1, 5))
+);
+bytecode_test!(
+    bytecode_range_inclusive_refs,
+    "a := 1; b :=4 ; a..=b",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 1, 4))
+);
+bytecode_test!(
+    bytecode_range_exclusive,
+    "1..5",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 1, 4))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_stats_sum_column,"+> stats\nstats/sum/column([1 2 3])",Value::MatrixF64(Matrix::from_vec(vec![6.0], 1, 1)));
-bytecode_test!(bytecode_matrix_index_assign,"~x := [1 2 3]; x[1] = 10",Value::MatrixF64(Matrix::from_vec(vec![10.0,2.0,3.0], 1, 3)));
-bytecode_test!(bytecode_matrix_index_assign_bool,"~x := [1 2 3]; x[[true false true]] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![4.0,2.0,6.0], 1, 3)));
-bytecode_test!(bytecode_matrix_index_assign_bool_all,"~x := [1 2 3]; x[true] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![4.0,5.0,6.0], 1, 3)));
-bytecode_test!(bytecode_matrix_index_assign_bool_all_scalar,"~x := [1 2 3]; x[true] = 10",Value::MatrixF64(Matrix::from_vec(vec![10.0,10.0,10.0], 1, 3)));
-bytecode_test!(bytecode_matrix_index_assign_scalar,"~x := [1 2 3]; x[3] = 10",Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0,10.0], 1, 3)));
-bytecode_test!(bytecode_matrix_index_assign_all_scalar,"~x := [1 2 3]; x[:] = 10",Value::MatrixF64(Matrix::from_vec(vec![10.0,10.0,10.0], 1, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_scalar,"~x := [1 2 3; 4 5 6; 7 8 9]; x[1,3] = 10",Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,7.0,2.0,5.0,8.0,10.0,6.0,9.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_scalar_all,"~x := [1 2; 4 5]; x[:,1] = 10",Value::MatrixF64(Matrix::from_vec(vec![10.0,10.0,2.0,5.0], 2, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_all,"~x := [1 2; 4 5]; x[:,2] = [10 20]",Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,10.0,20.0], 2, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_all_rows,"~x := [1 2; 4 5]; x[1,:] = 10 ",Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,10.0,5.0], 2, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows,"~x := [1 2; 4 5; 6 7]; x[[1],2] = 53", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,6.0,53.0,5.0,7.0], 3, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_multi,"~x := [1 2; 4 5; 6 7]; x[[1 3],2] = 53", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,6.0,53.0,5.0,53.0], 3, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_multi2,"~x := [1 2; 4 5; 6 7]; x[[1 3],2] = [10 20]", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,6.0,10.0,5.0,20.0], 3, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_bool,"~x := [1 2; 4 5; 6 7]; x[[true false true],2] = 20", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,6.0,20.0,5.0,20.0], 3, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_bool2,"~x := [1 2; 4 5; 6 7]; x[[false true true],1] = [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![1.0,20.0,30.0,2.0,5.0,7.0], 3, 2)));
-bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector,"~x := [1 2 3; 4 5 6]; x[1, [2 3]] = 20", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,20.0,5.0,20.0,6.0], 2, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector2,"~x := [1 2 3; 4 5 6]; x[1, [2 3]] = [10 20]", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,10.0,5.0,20.0,6.0], 2, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector_bool,"~x := [1 2 3; 4 5 6]; x[1, [true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,2.0,5.0,10.0,6.0], 2, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector_bool2,"~x := [1 2 3; 4 5 6]; x[1, [true false true]] = [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,2.0,5.0,30.0,6.0], 2, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 3]] = 10", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,10.0,2.0,5.0,8.0,10.0,6.0,10.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_all,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = 10", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,10.0,10.0,5.0,10.0,10.0,6.0,10.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_all2,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = [10 20 30 40 50 60]", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,40.0, 20.0,5.0,50.0,30.0,6.0,60.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[false true false], [true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![1.0,10.0,7.0,2.0,5.0,8.0,3.0,10.0,9.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool2,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [false true false]] = [10 20 30; 40 50 60; 70 80 90]", Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,7.0,40.0,5.0,60.0,3.0,6.0,9.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool3,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = 10", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,10.0,10.0,5.0,10.0,3.0,6.0,9.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool4,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = [10 20; 40 50; 70 80]", Value::MatrixF64(Matrix::from_vec(vec![10.0,4.0,70.0,20.0,5.0,80.0,3.0,6.0,9.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool5,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3],[true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![10.0,10.0,7.0,2.0,5.0,8.0,10.0,10.0,9.0], 3, 3)));
-bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool6,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 2],[true false true]] = [10 20 30; 40 50 60; 70 80 90]", Value::MatrixF64(Matrix::from_vec(vec![10.0,40.0,7.0,2.0,5.0,8.0,30.0,60.0,9.0], 3, 3)));
-bytecode_test!(bytecode_string_matrix, r#"x := ["Hello" "World"]"#, Value::MatrixString(Matrix::from_vec(vec!["Hello".to_string(), "World".to_string()], 1, 2)));
-bytecode_test!(bytecode_string_matrix_index, r#"x := ["Hello" "World"]; x[2]"#, Value::String(Ref::new("World".to_string())));
-bytecode_test!(bytecode_matrix_index_bool_2d, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![3.0,6.0,9.0], 3, 1)));
-bytecode_test!(bytecode_matrix_index_scalar_2d, r#"ix := [1, 3]; x := [1 2 3 ; 4 5 6 ; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,7.0,3.0,6.0,9.0], 3, 2)));
-bytecode_test!(bytecode_matrix_index_bool_2d_all, r#"ix := [true, true, false]; x := [1 2 3]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,2.0], 1, 2)));
-bytecode_test!(bytecode_matrix_index_2d_vuu, r#"x := [1 2 3; 4 5 6;7 8 9]; ix1 := [1, 2]; x[ix1,ix1]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,4.0,2.0,5.0], 2, 2)));
-bytecode_test!(bytecode_matrix_index_2d_vbb, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false], [true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,3.0], 1, 2)));
-bytecode_test!(bytecode_matrix_index_2d_vbb2, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false false]]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,7.0], 2, 1)));
-bytecode_test!(bytecode_matrix_index_2d_vbb3, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false],[true false false]]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0], 1, 1)));
-bytecode_test!(bytecode_matrix_index_2d_vbb4, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![1.0,7.0,3.0,9.0], 2, 2)));
-bytecode_test!(bytecode_matrix_index_2d_vub, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]"#, Value::MatrixF64(Matrix::from_vec(vec![3.0,6.0,9.0,9.0], 4, 1)));
-bytecode_test!(bytecode_matrix_index_2d_vbu, r#"ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1,ix2]"#, Value::MatrixF64(Matrix::from_vec(vec![7.0,8.0,9.0,9.0], 1, 4)));
+bytecode_test!(
+    bytecode_stats_sum_column,
+    "+> stats\nstats/sum/column([1 2 3])",
+    Value::MatrixF64(Matrix::from_vec(vec![6.0], 1, 1))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign,
+    "~x := [1 2 3]; x[1] = 10",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 2.0, 3.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_bool,
+    "~x := [1 2 3]; x[[true false true]] = [4 5 6]",
+    Value::MatrixF64(Matrix::from_vec(vec![4.0, 2.0, 6.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_bool_all,
+    "~x := [1 2 3]; x[true] = [4 5 6]",
+    Value::MatrixF64(Matrix::from_vec(vec![4.0, 5.0, 6.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_bool_all_scalar,
+    "~x := [1 2 3]; x[true] = 10",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 10.0, 10.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_scalar,
+    "~x := [1 2 3]; x[3] = 10",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 10.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_all_scalar,
+    "~x := [1 2 3]; x[:] = 10",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 10.0, 10.0], 1, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_scalar,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[1,3] = 10",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 10.0, 6.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_scalar_all,
+    "~x := [1 2; 4 5]; x[:,1] = 10",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 10.0, 2.0, 5.0], 2, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_all,
+    "~x := [1 2; 4 5]; x[:,2] = [10 20]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 10.0, 20.0], 2, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_all_rows,
+    "~x := [1 2; 4 5]; x[1,:] = 10 ",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 4.0, 10.0, 5.0], 2, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_rows,
+    "~x := [1 2; 4 5; 6 7]; x[[1],2] = 53",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 6.0, 53.0, 5.0, 7.0], 3, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_rows_multi,
+    "~x := [1 2; 4 5; 6 7]; x[[1 3],2] = 53",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 6.0, 53.0, 5.0, 53.0], 3, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_rows_multi2,
+    "~x := [1 2; 4 5; 6 7]; x[[1 3],2] = [10 20]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 6.0, 10.0, 5.0, 20.0], 3, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_rows_bool,
+    "~x := [1 2; 4 5; 6 7]; x[[true false true],2] = 20",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 6.0, 20.0, 5.0, 20.0], 3, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_vector_rows_bool2,
+    "~x := [1 2; 4 5; 6 7]; x[[false true true],1] = [10 20 30]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 20.0, 30.0, 2.0, 5.0, 7.0], 3, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_scalar_vector,
+    "~x := [1 2 3; 4 5 6]; x[1, [2 3]] = 20",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 20.0, 5.0, 20.0, 6.0], 2, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_scalar_vector2,
+    "~x := [1 2 3; 4 5 6]; x[1, [2 3]] = [10 20]",
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 10.0, 5.0, 20.0, 6.0], 2, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_scalar_vector_bool,
+    "~x := [1 2 3; 4 5 6]; x[1, [true false true]] = 10",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 4.0, 2.0, 5.0, 10.0, 6.0], 2, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_scalar_vector_bool2,
+    "~x := [1 2 3; 4 5 6]; x[1, [true false true]] = [10 20 30]",
+    Value::MatrixF64(Matrix::from_vec(vec![10.0, 4.0, 2.0, 5.0, 30.0, 6.0], 2, 3))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 3]] = 10",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 4.0, 10.0, 2.0, 5.0, 8.0, 10.0, 6.0, 10.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_all,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = 10",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 4.0, 10.0, 10.0, 5.0, 10.0, 10.0, 6.0, 10.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_all2,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = [10 20 30 40 50 60]",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 4.0, 40.0, 20.0, 5.0, 50.0, 30.0, 6.0, 60.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_bool,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[false true false], [true false true]] = 10",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![1.0, 10.0, 7.0, 2.0, 5.0, 8.0, 3.0, 10.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_bool2,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [false true false]] = [10 20 30; 40 50 60; 70 80 90]",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![1.0, 4.0, 7.0, 40.0, 5.0, 60.0, 3.0, 6.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_bool3,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = 10",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 4.0, 10.0, 10.0, 5.0, 10.0, 3.0, 6.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_bool4,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = [10 20; 40 50; 70 80]",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 4.0, 70.0, 20.0, 5.0, 80.0, 3.0, 6.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_bool5,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3],[true false true]] = 10",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 10.0, 7.0, 2.0, 5.0, 8.0, 10.0, 10.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_matrix_index_assign_2d_range_range_bool6,
+    "~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 2],[true false true]] = [10 20 30; 40 50 60; 70 80 90]",
+    Value::MatrixF64(Matrix::from_vec(
+        vec![10.0, 40.0, 7.0, 2.0, 5.0, 8.0, 30.0, 60.0, 9.0],
+        3,
+        3
+    ))
+);
+bytecode_test!(
+    bytecode_string_matrix,
+    r#"x := ["Hello" "World"]"#,
+    Value::MatrixString(Matrix::from_vec(
+        vec!["Hello".to_string(), "World".to_string()],
+        1,
+        2
+    ))
+);
+bytecode_test!(
+    bytecode_string_matrix_index,
+    r#"x := ["Hello" "World"]; x[2]"#,
+    Value::String(Ref::new("World".to_string()))
+);
+bytecode_test!(
+    bytecode_matrix_index_bool_2d,
+    r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![3.0, 6.0, 9.0], 3, 1))
+);
+bytecode_test!(
+    bytecode_matrix_index_scalar_2d,
+    r#"ix := [1, 3]; x := [1 2 3 ; 4 5 6 ; 7 8 9]; x[:,ix]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 7.0, 3.0, 6.0, 9.0], 3, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_bool_2d_all,
+    r#"ix := [true, true, false]; x := [1 2 3]; x[:,ix]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0], 1, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vuu,
+    r#"x := [1 2 3; 4 5 6;7 8 9]; ix1 := [1, 2]; x[ix1,ix1]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 2.0, 5.0], 2, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vbb,
+    r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false], [true false true]]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0], 1, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vbb2,
+    r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false false]]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 7.0], 2, 1))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vbb3,
+    r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false],[true false false]]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0], 1, 1))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vbb4,
+    r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false true]]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![1.0, 7.0, 3.0, 9.0], 2, 2))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vub,
+    r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![3.0, 6.0, 9.0, 9.0], 4, 1))
+);
+bytecode_test!(
+    bytecode_matrix_index_2d_vbu,
+    r#"ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1,ix2]"#,
+    Value::MatrixF64(Matrix::from_vec(vec![7.0, 8.0, 9.0, 9.0], 1, 4))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_math_sqrt,"+> math\nmath/sqrt(9)",Value::F64(Ref::new(3.0)));
-bytecode_test!(bytecode_define_set,"x := {1 2 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
-bytecode_test!(bytecode_set,"{1 2 3 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))]))));
+bytecode_test!(
+    bytecode_math_sqrt,
+    "+> math\nmath/sqrt(9)",
+    Value::F64(Ref::new(3.0))
+);
+bytecode_test!(
+    bytecode_define_set,
+    "x := {1 2 3 4}",
+    Value::Set(Ref::new(MechSet::from_vec(vec![
+        Value::F64(Ref::new(1.0)),
+        Value::F64(Ref::new(2.0)),
+        Value::F64(Ref::new(3.0)),
+        Value::F64(Ref::new(4.0))
+    ])))
+);
+bytecode_test!(
+    bytecode_set,
+    "{1 2 3 3 4}",
+    Value::Set(Ref::new(MechSet::from_vec(vec![
+        Value::F64(Ref::new(1.0)),
+        Value::F64(Ref::new(2.0)),
+        Value::F64(Ref::new(3.0)),
+        Value::F64(Ref::new(4.0))
+    ])))
+);
 #[cfg(feature = "linked_stdlib")]
-bytecode_test!(bytecode_math_abs,"+> math\nmath/abs(-10)", Value::F64(Ref::new(10.0)));
-bytecode_test!(bytecode_define_table, "x := |x<f64> y<u64>| 1 2 | 3 4 |", Value::Table(Ref::new(MechTable::new_table(
-  vec!["x".to_string(), "y".to_string()],
-  vec![ValueKind::F64, ValueKind::U64],
-  vec![
-    vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(3.0))],
-    vec![Value::U64(Ref::new(2_u64)), Value::U64(Ref::new(4_u64))],
-  ],
-))));
-bytecode_test!(bytecode_define_table_eq, "x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y", Value::Bool(Ref::new(true)));
+bytecode_test!(
+    bytecode_math_abs,
+    "+> math\nmath/abs(-10)",
+    Value::F64(Ref::new(10.0))
+);
+bytecode_test!(
+    bytecode_define_table,
+    "x := |x<f64> y<u64>| 1 2 | 3 4 |",
+    Value::Table(Ref::new(MechTable::new_table(
+        vec!["x".to_string(), "y".to_string()],
+        vec![ValueKind::F64, ValueKind::U64],
+        vec![
+            vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(3.0))],
+            vec![Value::U64(Ref::new(2_u64)), Value::U64(Ref::new(4_u64))],
+        ],
+    )))
+);
+bytecode_test!(
+    bytecode_define_table_eq,
+    "x := |x<f64> y<bool>| 1 true | 3 false |; y := |x<f64> y<bool>| 1 true | 3 false |; x == y",
+    Value::Bool(Ref::new(true))
+);
 //bytecode_test!(bytecode_set_union, "x := {1 2 3}; y := {3 4 5}; x ∪ y", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(1.0)),Value::F64(Ref::new(2.0)),Value::F64(Ref::new(3.0)),Value::F64(Ref::new(4.0)),Value::F64(Ref::new(5.0))]))));
-fn compile_bytecode_strict_compare_returns_error_without_panic(source: &str, expected_message: &str) {
-  let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-    let mut prgrm = MechProgram::new(MechProgramConfig {
-      name: "strict_compare_no_panic".to_string(),
-      environment: MechProgramEnvironment::default(),
-    });
-    prgrm.run_string(source).unwrap();
-    prgrm.compile_bytecode()
-  }));
-  let compile_result = result.expect("strict compare bytecode compilation should not panic");
-  let error = compile_result.expect_err("strict compare bytecode compilation should return an error");
-  assert!(error.full_chain_message().contains(expected_message), "unexpected error: {:?}", error);
+fn compile_bytecode_strict_compare_returns_error_without_panic(
+    source: &str,
+    expected_message: &str,
+) {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut prgrm = MechProgram::new(MechProgramConfig {
+            name: "strict_compare_no_panic".to_string(),
+            environment: MechProgramEnvironment::default(),
+        });
+        prgrm.run_string(source).unwrap();
+        prgrm.compile_bytecode()
+    }));
+    let compile_result = result.expect("strict compare bytecode compilation should not panic");
+    let error =
+        compile_result.expect_err("strict compare bytecode compilation should return an error");
+    assert!(
+        error.full_chain_message().contains(expected_message),
+        "unexpected error: {:?}",
+        error
+    );
 }
 
 #[test]
 fn bytecode_strict_equality_returns_error_without_panic() {
-  compile_bytecode_strict_compare_returns_error_without_panic("x := 1 === 1", "dynamic strict equality");
+    compile_bytecode_strict_compare_returns_error_without_panic(
+        "x := 1 === 1",
+        "dynamic strict equality",
+    );
 }
 
 #[test]
 fn bytecode_strict_inequality_returns_error_without_panic() {
-  compile_bytecode_strict_compare_returns_error_without_panic("x := 1 !== 2", "dynamic strict inequality");
+    compile_bytecode_strict_compare_returns_error_without_panic(
+        "x := 1 !== 2",
+        "dynamic strict inequality",
+    );
 }
-
 
 #[test]
 fn bytecode_static_bound_string_access_compiles() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_static_bound_string_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("s := \"abc\"\nfirst := s[1]\n").unwrap();
-  prgrm.compile_bytecode().unwrap();
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_static_bound_string_access_compiles".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm.run_string("s := \"abc\"\nfirst := s[1]\n").unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_literal_string_immutable_index_symbol_compiles() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_literal_string_immutable_index_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("s := \"abc\"\ni := 1\nfirst := s[i]\n").unwrap();
-  prgrm.compile_bytecode().unwrap();
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_literal_string_immutable_index_symbol_compiles".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string("s := \"abc\"\ni := 1\nfirst := s[i]\n")
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
-
 
 #[test]
 fn bytecode_string_access_constant_string_aliases_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_constant_string_aliases_compile".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("s := \"abc\"\na := s\nb := a\nc := b\nd := c\nfirst := s[1]\n").unwrap();
-  prgrm.compile_bytecode().unwrap();
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_string_access_constant_string_aliases_compile".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string("s := \"abc\"\na := s\nb := a\nc := b\nd := c\nfirst := s[1]\n")
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_string_access_constant_index_aliases_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_access_constant_index_aliases_compile".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("i := 1\na := i\nb := a\ns := \"abc\"\nfirst := s[i]\n").unwrap();
-  prgrm.compile_bytecode().unwrap();
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_string_access_constant_index_aliases_compile".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string("i := 1\na := i\nb := a\ns := \"abc\"\nfirst := s[i]\n")
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_live_computed_string_index_rejects_stale_constant_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_computed_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("~p := 1\ni := p + 1\ns := \"abc\"\nfirst := s[i]\n").unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_live_computed_string_index_rejects_stale_constant_compile".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string("~p := 1\ni := p + 1\ns := \"abc\"\nfirst := s[i]\n")
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 }
-
 
 #[test]
 fn bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"~unused := 0
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_constant_string_plan_output_with_unrelated_mutable_symbol_compiles"
+            .to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"~unused := 0
 s := "a" + "bc"
 first := s[1]
-"#).unwrap();
-  prgrm.compile_bytecode().unwrap();
+"#,
+        )
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_string_plan_output_depending_on_mutable_symbol_rejects() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_string_plan_output_depending_on_mutable_symbol_rejects".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"~p := "a"
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_string_plan_output_depending_on_mutable_symbol_rejects".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"~p := "a"
 s := p + "bc"
 first := s[1]
-"#).unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+"#,
+        )
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 }
 
 #[test]
 fn bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"~unused := 0
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_constant_index_plan_output_with_unrelated_mutable_symbol_compiles"
+            .to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"~unused := 0
 i := 1 + 0
 s := "abc"
 first := s[i]
-"#).unwrap();
-  prgrm.compile_bytecode().unwrap();
+"#,
+        )
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_index_plan_output_depending_on_mutable_symbol_rejects() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_index_plan_output_depending_on_mutable_symbol_rejects".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"~i0 := 1
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_index_plan_output_depending_on_mutable_symbol_rejects".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"~i0 := 1
 i := i0 + 0
 s := "abc"
 first := s[i]
-"#).unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+"#,
+        )
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 }
 
 #[test]
 fn bytecode_live_markers_do_not_leak_between_programs_for_string_source() {
-  let mut live = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_live".to_string(), environment: MechProgramEnvironment::default() });
-  live.run_string(r#"~p := "a"
+    let mut live = MechProgram::new(MechProgramConfig {
+        name: "bytecode_live_markers_do_not_leak_between_programs_live".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    live.run_string(
+        r#"~p := "a"
 s := p + "bc"
 first := s[1]
-"#).unwrap();
-  let error = format!("{:?}", live.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+"#,
+    )
+    .unwrap();
+    let error = format!("{:?}", live.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 
-  let mut constant = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_constant".to_string(), environment: MechProgramEnvironment::default() });
-  constant.run_string(r#"s := "abc"
+    let mut constant = MechProgram::new(MechProgramConfig {
+        name: "bytecode_live_markers_do_not_leak_between_programs_constant".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    constant
+        .run_string(
+            r#"s := "abc"
 first := s[1]
-"#).unwrap();
-  constant.compile_bytecode().unwrap();
+"#,
+        )
+        .unwrap();
+    constant.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_live_markers_do_not_leak_between_programs_for_index() {
-  let mut live = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_index_live".to_string(), environment: MechProgramEnvironment::default() });
-  live.run_string(r#"~i0 := 1
+    let mut live = MechProgram::new(MechProgramConfig {
+        name: "bytecode_live_markers_do_not_leak_between_programs_index_live".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    live.run_string(
+        r#"~i0 := 1
 i := i0 + 0
 s := "abc"
 first := s[i]
-"#).unwrap();
-  let error = format!("{:?}", live.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+"#,
+    )
+    .unwrap();
+    let error = format!("{:?}", live.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 
-  let mut constant = MechProgram::new(MechProgramConfig { name: "bytecode_live_markers_do_not_leak_between_programs_index_constant".to_string(), environment: MechProgramEnvironment::default() });
-  constant.run_string(r#"i := 1 + 0
+    let mut constant = MechProgram::new(MechProgramConfig {
+        name: "bytecode_live_markers_do_not_leak_between_programs_index_constant".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    constant
+        .run_string(
+            r#"i := 1 + 0
 s := "abc"
 first := s[i]
-"#).unwrap();
-  constant.compile_bytecode().unwrap();
+"#,
+        )
+        .unwrap();
+    constant.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_inline_mutable_string_source_access_rejects() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_mutable_string_source_access_rejects".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"~p := "a"
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_inline_mutable_string_source_access_rejects".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"~p := "a"
 s := p + "bc"
 first := s[1]
-"#).unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+"#,
+        )
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 }
 
 #[test]
 fn bytecode_inline_mutable_index_access_rejects() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_mutable_index_access_rejects".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"~i0 := 1
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_inline_mutable_index_access_rejects".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"~i0 := 1
 s := "abc"
 first := s[i0 + 1]
-"#).unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+"#,
+        )
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet") || error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 }
 
 #[test]
 fn bytecode_inline_constant_string_source_access_compiles() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_constant_string_source_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"s := "a" + "bc"
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_inline_constant_string_source_access_compiles".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"s := "a" + "bc"
 first := s[1]
-"#).unwrap();
-  prgrm.compile_bytecode().unwrap();
+"#,
+        )
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_inline_constant_index_access_compiles() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_inline_constant_index_access_compiles".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"s := "abc"
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_inline_constant_index_access_compiles".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"s := "abc"
 first := s[1 + 0]
-"#).unwrap();
-  prgrm.compile_bytecode().unwrap();
+"#,
+        )
+        .unwrap();
+    prgrm.compile_bytecode().unwrap();
 }
 
 #[test]
 fn bytecode_live_direct_string_access_rejects_stale_constant_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_live_direct_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("~p := \"a\"\ns := p + \"bc\"\nch := s[1]\n").unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_live_direct_string_access_rejects_stale_constant_compile".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string("~p := \"a\"\ns := p + \"bc\"\nch := s[1]\n")
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(error.contains("string scalar access cannot be bytecode-compiled because its source or index may be live"), "got {error}");
 }
 
 #[test]
 fn bytecode_dynamic_string_index_rejects_stale_constant_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_index_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string(r#"s := "abc"
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_dynamic_string_index_rejects_stale_constant_compile".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm
+        .run_string(
+            r#"s := "abc"
 ~i := 1
 first := s[i]
-"#).unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+"#,
+        )
+        .unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(
+        error.contains("dynamic string scalar access is not bytecode-compilable yet"),
+        "got {error}"
+    );
 }
 
 #[test]
 fn bytecode_dynamic_string_access_rejects_stale_constant_compile() {
-  let mut prgrm = MechProgram::new(MechProgramConfig { name: "bytecode_dynamic_string_access_rejects_stale_constant_compile".to_string(), environment: MechProgramEnvironment::default() });
-  prgrm.run_string("~s := \"abc\"\nfirst := s[1]\n").unwrap();
-  let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
-  assert!(error.contains("dynamic string scalar access is not bytecode-compilable yet"), "got {error}");
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_dynamic_string_access_rejects_stale_constant_compile".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
+    prgrm.run_string("~s := \"abc\"\nfirst := s[1]\n").unwrap();
+    let error = format!("{:?}", prgrm.compile_bytecode().unwrap_err());
+    assert!(
+        error.contains("dynamic string scalar access is not bytecode-compilable yet"),
+        "got {error}"
+    );
 }
 
 #[test]
 fn bytecode_constant_string_access_after_live_statement_still_compiles() {
-  let code = r#"
+    let code = r#"
 ~i := 1
 i == 1
 s := "abc"
 ch := s[1]
 "#;
 
-  let mut prgrm = MechProgram::new(MechProgramConfig {
-    name: "bytecode_constant_string_access_after_live_statement_still_compiles".to_string(),
-    environment: MechProgramEnvironment::default(),
-  });
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_constant_string_access_after_live_statement_still_compiles".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
 
-  prgrm.run_string(code).unwrap();
-  prgrm.compile_bytecode()
-    .unwrap_or_else(|err| panic!("constant string access should compile after unrelated live statement: {:?}", err));
+    prgrm.run_string(code).unwrap();
+    prgrm.compile_bytecode().unwrap_or_else(|err| {
+        panic!(
+            "constant string access should compile after unrelated live statement: {:?}",
+            err
+        )
+    });
 }
 
 #[cfg(feature = "u8")]
 #[test]
 fn bytecode_rejects_live_u8_string_index_dependency() {
-  let code = r#"
+    let code = r#"
 ~i0 := 1<u8>
 i := i0 + 0<u8>
 s := "abc"
 ch := s[i]
 "#;
 
-  let mut prgrm = MechProgram::new(MechProgramConfig {
-    name: "bytecode_rejects_live_u8_string_index_dependency".to_string(),
-    environment: MechProgramEnvironment::default(),
-  });
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_rejects_live_u8_string_index_dependency".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
 
-  prgrm.run_string(code).unwrap();
-  let err = prgrm.compile_bytecode();
-  assert!(
-    err.is_err(),
-    "live u8-derived string index must not compile as a frozen constant"
-  );
+    prgrm.run_string(code).unwrap();
+    let err = prgrm.compile_bytecode();
+    assert!(
+        err.is_err(),
+        "live u8-derived string index must not compile as a frozen constant"
+    );
 }
 
 #[test]
 fn bytecode_rejects_live_function_input_index_result_dependency() {
-  let code = r#"
+    let code = r#"
 ~i0 := 1
 id(ix<f64>) = out<f64> :=
 out := ix + 0.
@@ -397,15 +919,15 @@ s := "abc"
 ch := s[i]
 "#;
 
-  let mut prgrm = MechProgram::new(MechProgramConfig {
-    name: "bytecode_rejects_live_function_input_index_result_dependency".to_string(),
-    environment: MechProgramEnvironment::default(),
-  });
+    let mut prgrm = MechProgram::new(MechProgramConfig {
+        name: "bytecode_rejects_live_function_input_index_result_dependency".to_string(),
+        environment: MechProgramEnvironment::default(),
+    });
 
-  prgrm.run_string(code).unwrap();
-  let err = prgrm.compile_bytecode();
-  assert!(
-    err.is_err(),
-    "live function-input-derived index result must not compile as a frozen string access"
-  );
+    prgrm.run_string(code).unwrap();
+    let err = prgrm.compile_bytecode();
+    assert!(
+        err.is_err(),
+        "live function-input-derived index result must not compile as a frozen string access"
+    );
 }

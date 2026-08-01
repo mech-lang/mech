@@ -139,9 +139,11 @@ fn provisional_capability_enforces_use_limit() {
             .unwrap(),
         id,
     );
-    assert!(runtime
-        .check_capability_with_context(&mut context, &request("task:1"))
-        .is_err());
+    assert!(
+        runtime
+            .check_capability_with_context(&mut context, &request("task:1"))
+            .is_err()
+    );
 }
 
 #[test]
@@ -166,9 +168,11 @@ fn provisional_revocation_does_not_consume_live_use_limit() {
     runtime
         .revoke_capability_with_context(&mut owner, id)
         .unwrap();
-    assert!(runtime
-        .check_capability_with_context(&mut owner, &request("task:1"))
-        .is_err());
+    assert!(
+        runtime
+            .check_capability_with_context(&mut owner, &request("task:1"))
+            .is_err()
+    );
     runtime
         .abort_runtime_transaction(&mut owner, "test abort")
         .unwrap();

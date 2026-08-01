@@ -1,109 +1,129 @@
 use crate::*;
-use mech_core::*;
-use libm::{atan2,atan2f};
-use num_traits::*;
+use libm::{atan2, atan2f};
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use num_traits::*;
 
 // Atan2 ------------------------------------------------------------------------
 
 macro_rules! atan2_op {
-  ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe{(*$out) = atan2((*$arg1),(*$arg2));}
-  };}
+    ($arg1:expr, $arg2:expr, $out:expr) => {
+        unsafe {
+            (*$out) = atan2((*$arg1), (*$arg2));
+        }
+    };
+}
 
 macro_rules! atan2_vec_op {
-  ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe {
-      let arg1_deref = &(*$arg1);
-      let arg2_deref = &(*$arg2);
-      let mut out_deref = (&mut *$out);
-      for i in 0..arg1_deref.len() {
-        (out_deref[i]) = atan2(arg1_deref[i],arg2_deref[i]);
-      }}};}
+    ($arg1:expr, $arg2:expr, $out:expr) => {
+        unsafe {
+            let arg1_deref = &(*$arg1);
+            let arg2_deref = &(*$arg2);
+            let mut out_deref = (&mut *$out);
+            for i in 0..arg1_deref.len() {
+                (out_deref[i]) = atan2(arg1_deref[i], arg2_deref[i]);
+            }
+        }
+    };
+}
 
 macro_rules! atan2f_op {
-  ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe{(*$out) = atan2f((*$arg1),(*$arg2));}
-  };}
+    ($arg1:expr, $arg2:expr, $out:expr) => {
+        unsafe {
+            (*$out) = atan2f((*$arg1), (*$arg2));
+        }
+    };
+}
 
 macro_rules! atan2f_vec_op {
-  ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe {
-      let arg1_deref = &(*$arg1);
-      let arg2_deref = &(*$arg2);
-      let mut out_deref = (&mut *$out);
-      for i in 0..arg1_deref.len() {
-        (out_deref[i]) = atan2f(arg1_deref[i],arg2_deref[i]);
-      }}};}
+    ($arg1:expr, $arg2:expr, $out:expr) => {
+        unsafe {
+            let arg1_deref = &(*$arg1);
+            let arg2_deref = &(*$arg2);
+            let mut out_deref = (&mut *$out);
+            for i in 0..arg1_deref.len() {
+                (out_deref[i]) = atan2f(arg1_deref[i], arg2_deref[i]);
+            }
+        }
+    };
+}
 
 macro_rules! impl_two_arg_fxn {
-  ($struct_name:ident, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident) => {
-    #[derive(Debug)]
-    struct $struct_name {
-      arg1: Ref<$kind1>,
-      arg2: Ref<$kind2>,
-      out: Ref<$out_kind>,
-    }
-    impl MechFunctionFactory for $struct_name {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Binary(out, arg1, arg2) => {
-            let arg1: Ref<$kind1> = unsafe{ arg1.as_unchecked().clone() };
-            let arg2: Ref<$kind2> = unsafe{ arg2.as_unchecked().clone() };
-            let out: Ref<$out_kind> = unsafe{ out.as_unchecked().clone() };
-            Ok(Box::new($struct_name {arg1, arg2, out}))
-          },
-          _ => Err(MechError::new(
-              IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
-              None
-            ).with_compiler_loc()
-          ),
+    ($struct_name:ident, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident) => {
+        #[derive(Debug)]
+        struct $struct_name {
+            arg1: Ref<$kind1>,
+            arg2: Ref<$kind2>,
+            out: Ref<$out_kind>,
         }
-      }
-    }
-    impl MechFunctionImpl for $struct_name {
-      fn solve(&self) {
-        let arg1_ptr = self.arg1.as_ptr();
-        let arg2_ptr = self.arg2.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        $op!(arg1_ptr,arg2_ptr,out_ptr);
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
+        impl MechFunctionFactory for $struct_name {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Binary(out, arg1, arg2) => {
+                        let arg1: Ref<$kind1> = unsafe { arg1.as_unchecked().clone() };
+                        let arg2: Ref<$kind2> = unsafe { arg2.as_unchecked().clone() };
+                        let out: Ref<$out_kind> = unsafe { out.as_unchecked().clone() };
+                        Ok(Box::new($struct_name { arg1, arg2, out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+        impl MechFunctionImpl for $struct_name {
+            fn solve(&self) {
+                let arg1_ptr = self.arg1.as_ptr();
+                let arg2_ptr = self.arg2.as_ptr();
+                let out_ptr = self.out.as_mut_ptr();
+                $op!(arg1_ptr, arg2_ptr, out_ptr);
+            }
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
 
-      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(self.reactive_output_values())
-      }
-    }
-    #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $struct_name {
-      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let mut registers = [0,0,0];
-  
-        registers[0] = compile_register_brrw!(self.out,  ctx);
-        registers[1] = compile_register_brrw!(self.arg1, ctx);
-        registers[2] = compile_register_brrw!(self.arg2, ctx);
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl MechFunctionCompiler for $struct_name {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let mut registers = [0, 0, 0];
 
-        ctx.require(FeatureFlag::Custom(hash_str("math/atan2")));
+                registers[0] = compile_register_brrw!(self.out, ctx);
+                registers[1] = compile_register_brrw!(self.arg1, ctx);
+                registers[2] = compile_register_brrw!(self.arg2, ctx);
 
-        ctx.emit_binop(
-          hash_str(stringify!($struct_name)),
-          registers[0],
-          registers[1],
-          registers[2],
-        );
+                ctx.require(FeatureFlag::Custom(hash_str("math/atan2")));
 
-        return Ok(registers[0])
-      }
-    }
-    register_descriptor!{
-      FunctionDescriptor {
-        name: stringify!($struct_name),
-        ptr: $struct_name::new,
-      }
-    }
-  };}
+                ctx.emit_binop(
+                    hash_str(stringify!($struct_name)),
+                    registers[0],
+                    registers[1],
+                    registers[2],
+                );
+
+                return Ok(registers[0]);
+            }
+        }
+        register_descriptor! {
+          FunctionDescriptor {
+            name: stringify!($struct_name),
+            ptr: $struct_name::new,
+          }
+        }
+    };
+}
 
 macro_rules! impl_atan2 {
   ($type:tt, $type_string:tt, $op:ident, $($struct_name:ident, $kind:ty, $feature:literal);* $(;)?) => {
@@ -233,37 +253,51 @@ macro_rules! impl_binop_atan2 {
 }
 
 pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_binop_atan2!(Atan2, arg1_value, arg2_value,
-    F32, f32::default(), "f32";
-    F64, f64::default(), "f64";
-  )
+    impl_binop_atan2!(Atan2, arg1_value, arg2_value,
+      F32, f32::default(), "f32";
+      F64, f64::default(), "f64";
+    )
 }
 
 pub struct MathAtan2 {}
 
 impl NativeFunctionCompiler for MathAtan2 {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
-    }
-    let arg1 = arguments[0].clone();
-    let arg2 = arguments[1].clone();
-    match impl_atan2_fxn(arg1.clone(), arg2.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (arg1,arg2) {
-          (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
-          (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
-          (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
-          (arg1,arg2) => Err(MechError::new(
-              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "math/atan2".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let arg1 = arguments[0].clone();
+        let arg2 = arguments[1].clone();
+        match impl_atan2_fxn(arg1.clone(), arg2.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (arg1, arg2) {
+                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                    impl_atan2_fxn(arg1.borrow().clone(), arg2.borrow().clone())
+                }
+                (Value::MutableReference(arg1), arg2) => {
+                    impl_atan2_fxn(arg1.borrow().clone(), arg2.clone())
+                }
+                (arg1, Value::MutableReference(arg2)) => {
+                    impl_atan2_fxn(arg1.clone(), arg2.borrow().clone())
+                }
+                (arg1, arg2) => Err(MechError::new(
+                    UnhandledFunctionArgumentKind2 {
+                        arg: (arg1.kind(), arg2.kind()),
+                        fxn_name: "math/atan2".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

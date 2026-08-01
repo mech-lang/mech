@@ -20,10 +20,7 @@ fn assert_integer_overflow(source: &str, operation: &str) {
 
 #[test]
 fn config_integer_addition_overflow_is_rejected() {
-    assert_integer_overflow(
-        "x := 9223372036854775807 + 1\nconfig := {:}\n",
-        "addition",
-    );
+    assert_integer_overflow("x := 9223372036854775807 + 1\nconfig := {:}\n", "addition");
 }
 
 #[test]
@@ -63,10 +60,18 @@ fn shipped_browser_bundle_example_configures_browser_host_and_grants() {
     assert_eq!(serve.shim, Some(PathBuf::from("index.html")));
     assert_eq!(serve.wasm, Some(PathBuf::from("../../src/wasm/pkg")));
 
-    assert!(project.hosts.iter().any(|host| host.name == "browser" && host.provider == "browser"));
+    assert!(
+        project
+            .hosts
+            .iter()
+            .any(|host| host.name == "browser" && host.provider == "browser")
+    );
 
     let grants = &project.run.as_ref().unwrap().grants;
-    assert_eq!(project.run.as_ref().unwrap().paths, vec![PathBuf::from("demo.mec")]);
+    assert_eq!(
+        project.run.as_ref().unwrap().paths,
+        vec![PathBuf::from("demo.mec")]
+    );
     assert_eq!(grants.len(), 2);
     assert!(grants.iter().any(|grant| {
         grant.target == "browser/dom"
@@ -76,8 +81,12 @@ fn shipped_browser_bundle_example_configures_browser_host_and_grants() {
     assert!(grants.iter().any(|grant| {
         grant.target == "browser/dom"
             && grant.operations == vec!["write".to_string()]
-            && grant.paths.contains(&"body/content/mech-sandbox/output/_value".to_string())
-            && grant.paths.contains(&"body/content/mech-sandbox/title".to_string())
+            && grant
+                .paths
+                .contains(&"body/content/mech-sandbox/output/_value".to_string())
+            && grant
+                .paths
+                .contains(&"body/content/mech-sandbox/title".to_string())
     }));
 }
 
@@ -93,7 +102,8 @@ fn shipped_browser_bundle_example_source_begins_with_browser_host_import() {
 #[test]
 fn browser_host_crate_does_not_depend_on_robot_arm_host() {
     let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let browser_cargo = std::fs::read_to_string(workspace_root.join("hosts/browser/Cargo.toml")).unwrap();
+    let browser_cargo =
+        std::fs::read_to_string(workspace_root.join("hosts/browser/Cargo.toml")).unwrap();
     assert!(
         !browser_cargo.contains("mech-host-robot-arm"),
         "hosts/browser/Cargo.toml must not depend on mech-host-robot-arm"
@@ -116,7 +126,10 @@ fn browser_host_crate_does_not_depend_on_robot_arm_host() {
     }
 
     let mut browser_source = String::new();
-    visit(&workspace_root.join("hosts/browser/src"), &mut browser_source);
+    visit(
+        &workspace_root.join("hosts/browser/src"),
+        &mut browser_source,
+    );
     assert!(
         !browser_source.contains(&["mech", "_host", "_robot", "_arm"].concat()),
         "hosts/browser source must not reference mech-host-robot-arm"
@@ -132,13 +145,17 @@ fn browser_host_crate_does_not_depend_on_robot_arm_host() {
 
     let root_cargo = std::fs::read_to_string(workspace_root.join("Cargo.toml")).unwrap();
     assert!(
-        !root_cargo.lines().any(|line| line.trim_start().starts_with("host-robot-arm =")),
+        !root_cargo
+            .lines()
+            .any(|line| line.trim_start().starts_with("host-robot-arm =")),
         "root Cargo.toml must not define a host-robot-arm feature"
     );
 
     let wasm_cargo = std::fs::read_to_string(workspace_root.join("src/wasm/Cargo.toml")).unwrap();
     assert!(
-        !wasm_cargo.lines().any(|line| line.trim_start().starts_with("host-robot-arm =")),
+        !wasm_cargo
+            .lines()
+            .any(|line| line.trim_start().starts_with("host-robot-arm =")),
         "src/wasm/Cargo.toml must not define a host-robot-arm feature"
     );
 }
@@ -154,7 +171,10 @@ fn robot_arm_demos_are_host_owned_not_top_level_examples() {
         "hosts/robot-arm/examples/browser-robot-arm-demo/demo.mec",
         "hosts/robot-arm/examples/browser-robot-arm-demo/demo.js",
     ] {
-        assert!(workspace_root.join(path).exists(), "{path} should exist under the robot-arm host package");
+        assert!(
+            workspace_root.join(path).exists(),
+            "{path} should exist under the robot-arm host package"
+        );
     }
 
     for path in [
@@ -164,7 +184,10 @@ fn robot_arm_demos_are_host_owned_not_top_level_examples() {
         "examples/browser-robot-arm-demo/demo.mec",
         "examples/browser-robot-arm-demo/demo.js",
     ] {
-        assert!(!workspace_root.join(path).exists(), "{path} should not exist in generic top-level examples");
+        assert!(
+            !workspace_root.join(path).exists(),
+            "{path} should not exist in generic top-level examples"
+        );
     }
 }
 
@@ -443,10 +466,10 @@ fn config_profile_named_call_argument_rejected() {
     assert!(msg.contains("named function-call arguments are not supported"));
 }
 
-
 #[test]
 fn config_profile_hosts_browser_settings_preserved() {
-    let doc = parse(r##"
+    let doc = parse(
+        r##"
 config := {
   hosts: [
     {
@@ -465,7 +488,9 @@ config := {
     }
   ]
 }
-"##).unwrap();
+"##,
+    )
+    .unwrap();
 
     assert_eq!(doc.hosts.len(), 1);
     assert_eq!(doc.hosts[0].name, "browser");
@@ -479,7 +504,8 @@ config := {
 
 #[test]
 fn config_profile_top_level_browser_is_rejected() {
-    let err = parse(r##"
+    let err = parse(
+        r##"
 config := {
   browser: {
     dom: [
@@ -487,30 +513,42 @@ config := {
     ]
   }
 }
-"##).unwrap_err();
+"##,
+    )
+    .unwrap_err();
 
     let error = format!("{err:?}");
-    assert!(error.contains("unknown top-level config field `browser`"), "got {error}");
+    assert!(
+        error.contains("unknown top-level config field `browser`"),
+        "got {error}"
+    );
 }
 
 #[test]
 fn browser_host_manifest_config_parses_and_lowers() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../hosts/browser/host.mcfg");
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../hosts/browser/host.mcfg");
     let source = std::fs::read_to_string(path).unwrap();
 
     let doc = parse_config_document(
         "hosts/browser/host.mcfg",
         &source,
         ConfigProfileOptions::default(),
-    ).unwrap();
+    )
+    .unwrap();
 
     let host = doc.host.unwrap();
     assert_eq!(host.provider, "browser");
     assert_eq!(host.contexts.len(), 1);
     assert_eq!(host.contexts[0].name, "dom");
-    assert_eq!(host.contexts[0].base_uri_template, "browser://{instance}/dom");
-    assert_eq!(host.contexts[0].operations, vec!["read".to_string(), "write".to_string()]);
+    assert_eq!(
+        host.contexts[0].base_uri_template,
+        "browser://{instance}/dom"
+    );
+    assert_eq!(
+        host.contexts[0].operations,
+        vec!["read".to_string(), "write".to_string()]
+    );
 }
 
 #[test]
@@ -536,8 +574,10 @@ config := {serve: {port: 2000}}
     options.max_eval_steps = 1;
     let error = parse_config_document("steps.mcfg", "config := {serve: {port: 2000}}\n", options)
         .expect_err("expected max_eval_steps to be enforced");
-    assert!(format!("{} {}", error.kind_name(), error.kind_message())
-        .contains("maximum evaluation steps exceeded"));
+    assert!(
+        format!("{} {}", error.kind_name(), error.kind_message())
+            .contains("maximum evaluation steps exceeded")
+    );
 
     let mut options = ConfigProfileOptions::default();
     options.max_function_depth = 1;
@@ -550,8 +590,10 @@ config := {serve: {paths: [wrap("docs")]}}
         options,
     )
     .expect_err("expected max_function_depth to be enforced");
-    assert!(format!("{} {}", error.kind_name(), error.kind_message())
-        .contains("maximum function depth exceeded"));
+    assert!(
+        format!("{} {}", error.kind_name(), error.kind_message())
+            .contains("maximum function depth exceeded")
+    );
 
     let mut options = ConfigProfileOptions::default();
     options.max_collection_items = 1;
@@ -561,8 +603,10 @@ config := {serve: {paths: [wrap("docs")]}}
         options,
     )
     .expect_err("expected max_collection_items to be enforced");
-    assert!(format!("{} {}", error.kind_name(), error.kind_message())
-        .contains("maximum collection items exceeded"));
+    assert!(
+        format!("{} {}", error.kind_name(), error.kind_message())
+            .contains("maximum collection items exceeded")
+    );
 
     let mut options = ConfigProfileOptions::default();
     options.max_string_bytes = 3;
@@ -572,6 +616,8 @@ config := {serve: {paths: [wrap("docs")]}}
         options,
     )
     .expect_err("expected max_string_bytes to be enforced");
-    assert!(format!("{} {}", error.kind_name(), error.kind_message())
-        .contains("maximum string bytes exceeded"));
+    assert!(
+        format!("{} {}", error.kind_name(), error.kind_message())
+            .contains("maximum string bytes exceeded")
+    );
 }

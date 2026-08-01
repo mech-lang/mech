@@ -2,103 +2,137 @@
 
 use std::sync::{Arc, Mutex};
 
-use mech_core::{BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, BROWSER_DOM_PROVIDER_URI, MResult, Ref, Value};
+use mech_core::{
+    BROWSER_DOM_PROVIDER_URI, BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry,
+    BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
+    MResult, Ref, Value,
+};
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
-use mech_runtime::{PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest};
+use mech_runtime::{
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+};
 
 #[derive(Debug, Clone)]
 struct TestDomBackend;
 
 impl BrowserDomBackend for TestDomBackend {
-  fn read_dom_string(&self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath) -> MResult<String> {
-    Ok(String::new())
-  }
+    fn read_dom_string(
+        &self,
+        _entry: &BrowserDomManifestEntry,
+        _requested_path: &BrowserDomPath,
+    ) -> MResult<String> {
+        Ok(String::new())
+    }
 
-  fn write_dom_string(&mut self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath, _value: &str) -> MResult<()> {
-    Ok(())
-  }
+    fn write_dom_string(
+        &mut self,
+        _entry: &BrowserDomManifestEntry,
+        _requested_path: &BrowserDomPath,
+        _value: &str,
+    ) -> MResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Default)]
 struct RecordingDomBackend {
-  writes: Arc<Mutex<Vec<String>>>,
+    writes: Arc<Mutex<Vec<String>>>,
 }
 
 impl BrowserDomBackend for RecordingDomBackend {
-  fn read_dom_string(&self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath) -> MResult<String> {
-    Ok(String::new())
-  }
+    fn read_dom_string(
+        &self,
+        _entry: &BrowserDomManifestEntry,
+        _requested_path: &BrowserDomPath,
+    ) -> MResult<String> {
+        Ok(String::new())
+    }
 
-  fn write_dom_string(&mut self, _entry: &BrowserDomManifestEntry, _requested_path: &BrowserDomPath, value: &str) -> MResult<()> {
-    self.writes.lock().unwrap().push(value.to_string());
-    Ok(())
-  }
+    fn write_dom_string(
+        &mut self,
+        _entry: &BrowserDomManifestEntry,
+        _requested_path: &BrowserDomPath,
+        value: &str,
+    ) -> MResult<()> {
+        self.writes.lock().unwrap().push(value.to_string());
+        Ok(())
+    }
 }
 
 fn authority() -> BrowserAuthority {
-  let selector = BrowserDomScope::new("#title").unwrap();
-  let mut authority = BrowserAuthority::default();
-  authority.bind_dom_path(BrowserDomManifestEntry::new(
-    BrowserDomPath::new("body/header/title").unwrap(),
-    selector.clone(),
-    BrowserDomProperty::Text,
-    [BrowserOperation::Read, BrowserOperation::Write],
-  ));
-  authority.grant(BrowserCapabilityGrant::new(
-    BrowserResource::Dom(selector),
-    [BrowserOperation::Read, BrowserOperation::Write],
-  ));
-  authority
+    let selector = BrowserDomScope::new("#title").unwrap();
+    let mut authority = BrowserAuthority::default();
+    authority.bind_dom_path(BrowserDomManifestEntry::new(
+        BrowserDomPath::new("body/header/title").unwrap(),
+        selector.clone(),
+        BrowserDomProperty::Text,
+        [BrowserOperation::Read, BrowserOperation::Write],
+    ));
+    authority.grant(BrowserCapabilityGrant::new(
+        BrowserResource::Dom(selector),
+        [BrowserOperation::Read, BrowserOperation::Write],
+    ));
+    authority
 }
 
 #[test]
 fn default_browser_provider_keeps_legacy_dom_base() {
-  let provider = BrowserResourceProvider::new(authority(), TestDomBackend);
-  let bases = provider.base_uris();
-  assert!(bases.iter().any(|base| base == BROWSER_DOM_PROVIDER_URI));
-  assert!(bases.iter().any(|base| base == "browser://dom/"));
-  assert!(bases.iter().any(|base| base == "browser://browser/dom"));
+    let provider = BrowserResourceProvider::new(authority(), TestDomBackend);
+    let bases = provider.base_uris();
+    assert!(bases.iter().any(|base| base == BROWSER_DOM_PROVIDER_URI));
+    assert!(bases.iter().any(|base| base == "browser://dom/"));
+    assert!(bases.iter().any(|base| base == "browser://browser/dom"));
 }
 
 #[test]
 fn instance_browser_provider_advertises_instance_dom_base() {
-  let provider = BrowserResourceProvider::for_instance("browser", authority(), TestDomBackend);
-  assert!(provider.base_uris().iter().any(|base| base == "browser://browser/dom"));
+    let provider = BrowserResourceProvider::for_instance("browser", authority(), TestDomBackend);
+    assert!(
+        provider
+            .base_uris()
+            .iter()
+            .any(|base| base == "browser://browser/dom")
+    );
 }
 
 #[test]
 fn default_browser_provider_preflights_legacy_dom_base() {
-  let provider = BrowserResourceProvider::new(authority(), TestDomBackend);
-  provider.preflight_write(RuntimeResourceWritePreflightRequest {
-    base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
-    path: "body/header/title".to_string(),
-    context_name: "ui".to_string(),
-    operation: RuntimeCapabilityOperation::Write,
-    intent: RuntimeResourceWriteIntent::Assign,
-  }).unwrap();
+    let provider = BrowserResourceProvider::new(authority(), TestDomBackend);
+    provider
+        .preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
+            path: "body/header/title".to_string(),
+            context_name: "ui".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Assign,
+        })
+        .unwrap();
 }
 
 #[test]
 fn browser_dom_write_is_deferred_until_delivery() {
-  let backend = RecordingDomBackend::default();
-  let observed = backend.clone();
-  let mut provider = BrowserResourceProvider::new(authority(), backend);
-  let effect = provider.prepare_write(RuntimeResourceWriteRequest {
-    base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
-    path: "body/header/title".to_string(),
-    context_name: "ui".to_string(),
-    operation: RuntimeCapabilityOperation::Write,
-    value: Value::String(Ref::new("deferred".to_string())),
-    intent: RuntimeResourceWriteIntent::Assign,
-  }).unwrap();
+    let backend = RecordingDomBackend::default();
+    let observed = backend.clone();
+    let mut provider = BrowserResourceProvider::new(authority(), backend);
+    let effect = provider
+        .prepare_write(RuntimeResourceWriteRequest {
+            base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
+            path: "body/header/title".to_string(),
+            context_name: "ui".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: Value::String(Ref::new("deferred".to_string())),
+            intent: RuntimeResourceWriteIntent::Assign,
+        })
+        .unwrap();
 
-  assert!(observed.writes.lock().unwrap().is_empty());
-  match effect {
-    PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver().unwrap(),
-    effect => panic!("expected browser after-commit effect, got {effect:?}"),
-  }
-  assert_eq!(
-    *observed.writes.lock().unwrap(),
-    vec!["deferred".to_string()],
-  );
+    assert!(observed.writes.lock().unwrap().is_empty());
+    match effect {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver().unwrap(),
+        effect => panic!("expected browser after-commit effect, got {effect:?}"),
+    }
+    assert_eq!(
+        *observed.writes.lock().unwrap(),
+        vec!["deferred".to_string()],
+    );
 }

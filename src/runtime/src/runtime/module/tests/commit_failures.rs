@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mech_core::{MResult, MechError, Value};
 
@@ -14,8 +14,8 @@ use crate::{
 };
 
 use super::support::{
-    counting_after_commit_effect, runtime_builder_with_sources, runtime_with_sources,
-    staged_test_capability, test_module_options, CountingSourceResolver,
+    CountingSourceResolver, counting_after_commit_effect, runtime_builder_with_sources,
+    runtime_with_sources, staged_test_capability, test_module_options,
 };
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
@@ -106,15 +106,19 @@ fn retryable_explicit_store_failure_keeps_graph_without_rebuilding() {
         )
         .unwrap();
 
-    assert!(runtime
-        .commit_runtime_transaction_detailed(&mut context)
-        .is_err(),);
+    assert!(
+        runtime
+            .commit_runtime_transaction_detailed(&mut context)
+            .is_err(),
+    );
     assert_eq!(context.transaction, Some(transaction_id));
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
     assert!(runtime.root_symbol_value("answer").is_ok());
     assert_eq!(calls.load(Ordering::SeqCst), calls_after_build);
 
@@ -127,11 +131,13 @@ fn retryable_explicit_store_failure_keeps_graph_without_rebuilding() {
         .unwrap();
 
     assert_eq!(calls.load(Ordering::SeqCst), calls_after_build);
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_some(),
+    );
     assert!(runtime.root_symbol_value("answer").is_ok());
 }
 
@@ -163,19 +169,23 @@ fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
         "module/stage_invalid_store_update",
     );
 
-    assert!(runtime
-        .resolve_and_run_root_module("root.mec", test_module_options(),)
-        .is_err(),);
+    assert!(
+        runtime
+            .resolve_and_run_root_module("root.mec", test_module_options(),)
+            .is_err(),
+    );
 
     assert!(!runtime.is_poisoned());
     assert!(runtime.active_transactions.is_empty());
     assert!(runtime.root_symbol_value("baseline").is_ok());
     assert!(runtime.root_symbol_value("answer").is_err());
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
 }
 
 #[test]
@@ -204,11 +214,13 @@ fn post_store_participant_failure_keeps_graph_and_program() {
     assert!(runtime.is_poisoned());
     assert_eq!(context.transaction, None);
     assert_eq!(aborts.load(Ordering::SeqCst), 0);
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_some(),
+    );
     assert!(runtime.root_symbol_value("answer").is_ok());
 }
 
@@ -237,11 +249,13 @@ fn after_commit_failure_keeps_graph_program_and_runtime_healthy() {
     assert_eq!(outcome.delivery_failures.len(), 1);
     assert_eq!(deliveries.load(Ordering::SeqCst), 1);
     assert!(!runtime.is_poisoned());
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_some(),
+    );
     assert!(runtime.root_symbol_value("answer").is_ok());
 }
 
@@ -320,15 +334,19 @@ fn store_failure_exposes_none_of_the_staged_categories() {
         )
         .unwrap();
 
-    assert!(runtime
-        .commit_runtime_transaction_detailed(&mut context)
-        .is_err(),);
+    assert!(
+        runtime
+            .commit_runtime_transaction_detailed(&mut context)
+            .is_err(),
+    );
 
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
     assert!(runtime.get_object(object.id).unwrap().is_none());
     assert!(runtime.check_capability(&request).is_err());
     assert_eq!(deliveries.load(Ordering::SeqCst), 0);
@@ -370,11 +388,13 @@ fn post_store_failure_preserves_every_durable_category() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeExternalCommitIndeterminate",);
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_some(),
+    );
     assert_eq!(runtime.get_object(object.id).unwrap(), Some(object));
     assert!(runtime.get_capability(capability.id()).unwrap().is_some(),);
     assert_eq!(aborts.load(Ordering::SeqCst), 0);
