@@ -1,8 +1,9 @@
 use crate::{
     ActivationArm, ActivationArmBody, ActivationScope, CompiledPattern, ComprehensionQualifier,
-    Expression, Factor, GuardFunctionSafety, Interpreter, MResult, MechCode, MechError,
-    MechErrorKind, Pattern, RangeExpression, ReactiveCellId, Slice, SliceRef, Statement, Structure,
-    Subscript, Token, Value, ValueKind, compile_pattern,
+    Expression, Factor, FunctionDefinition, FunctionResolver, GuardFunctionSafety, Interpreter,
+    MResult, MechCode, MechError, MechErrorKind, OperationId, Pattern, RangeExpression,
+    ReactiveCellId, ResolvedNamedFunction, Slice, SliceRef, Statement, Structure, Subscript, Token,
+    Value, ValueKind, compile_pattern,
 };
 use std::collections::HashSet;
 
@@ -322,20 +323,55 @@ fn guard_expression_is_not_static_pure(
                 return true;
             }
             let function_id = call.name.hash();
-            let functions = interpreter.functions();
-            let functions = functions.borrow();
-            let user_function = functions.user_functions.get(&function_id).cloned();
-            let has_precompiled_function = functions.functions.contains_key(&function_id);
-            let native_guard_safety = functions
-                .function_compilers
-                .get(&function_id)
-                .map(|compiler| compiler.guard_safety());
-            drop(functions);
+            let function_name = call.name.to_string();
+            let resolved = {
+                let state = interpreter.state.borrow();
+                FunctionResolver::new(
+                    interpreter.function_catalog(),
+                    &state.function_environment,
+                    &state.function_extensions,
+                    &state.user_functions,
+                )
+                .resolve_named(&function_name)
+                .map(|resolved| match resolved {
+                    ResolvedNamedFunction::User(definition) => {
+                        Ok::<FunctionDefinition, GuardFunctionSafety>(definition.clone())
+                    }
+                    ResolvedNamedFunction::Catalog(entry) => Err(entry.specializer.guard_safety()),
+                    ResolvedNamedFunction::Extension(entry) => {
+                        Err(entry.specializer.guard_safety())
+                    }
+                })
+            };
+
+            let user_function = match resolved {
+                Ok(Ok(user_function)) => Some(user_function),
+                Ok(Err(GuardFunctionSafety::PureStatic)) => return false,
+                Ok(Err(GuardFunctionSafety::Unsupported)) => return true,
+                Err(error) if error.kind_name() == "MissingFunction" => {
+                    let operation = OperationId::from_name(&function_name);
+                    if interpreter
+                        .legacy_function_boundary()
+                        .owns_named_operation(operation, &function_name)
+                    {
+                        return true;
+                    }
+                    None
+                }
+                Err(_) => return true,
+            };
+
             let Some(user_function) = user_function else {
-                if has_precompiled_function {
+                let legacy_functions = interpreter.functions();
+                let legacy_functions = legacy_functions.borrow();
+                if legacy_functions.functions.contains_key(&function_id) {
                     return true;
                 }
-                return match native_guard_safety {
+                return match legacy_functions
+                    .function_compilers
+                    .get(&function_id)
+                    .map(|compiler| compiler.guard_safety())
+                {
                     Some(GuardFunctionSafety::PureStatic) | None => false,
                     Some(GuardFunctionSafety::Unsupported) => true,
                 };

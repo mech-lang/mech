@@ -5,10 +5,18 @@ use super::{
     mark_string_access_value_live, string_access_input_is_live,
 };
 use crate::{
-    FunctionCall, InterpreterExecution, MResult, MechError, MissingFunctionError, OperationId,
-    Value, execute_native_function_compiler, execute_specialized_function, format_trace,
+    FunctionCall, FunctionDefinition, FunctionExtensionEntry, FunctionOperationNotVisible,
+    FunctionOperationUnavailable, FunctionResolver, FunctionSpecializerEntry, InterpreterExecution,
+    MResult, MechError, MissingFunctionError, OperationId, ResolvedNamedFunction, Value,
+    execute_native_function_compiler, execute_specialized_function, format_trace,
     format_trace_args,
 };
+
+enum OwnedResolvedNamedFunction {
+    User(FunctionDefinition),
+    Catalog(FunctionSpecializerEntry),
+    Extension(FunctionExtensionEntry),
+}
 
 fn evaluate_arguments(
     fxn_call: &FunctionCall,
@@ -32,52 +40,109 @@ pub fn function_call(
 ) -> MResult<Value> {
     let functions = p.functions();
     let fxn_name_id = fxn_call.name.hash();
-
-    // User-defined function: evaluate arguments then run the interpreted body.
-    if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
-        let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
-        #[cfg(feature = "subscript_formula")]
-        let output_is_live = current_string_access_expression_live(p)
-            || input_arg_values
-                .iter()
-                .any(|value| string_access_input_is_live(value, p));
-        let output = crate::functions::execute_user_function(&user_fxn, &input_arg_values, p)?;
-        #[cfg(feature = "subscript_formula")]
-        if output_is_live {
-            mark_current_string_access_expression_live(p);
-            mark_string_access_value_live(p, &output);
-        }
-        return Ok(output);
-    }
-
     let fxn_name = fxn_call.name.to_string();
-    let environment_operation = {
+
+    let resolved = {
         let state = p.state.borrow();
-        state.function_environment.resolve_name(&fxn_name)
-    };
-    let catalog_operation = environment_operation.or_else(|| {
-        let operation = OperationId::from_name(&fxn_name);
-        p.legacy_function_boundary()
-            .owns_named_operation(operation, &fxn_name)
-            .then_some(operation)
-    });
-    if let Some(operation) = catalog_operation {
-        let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
-        trace_println!(
-            p,
-            "{}",
-            format_trace(
-                "fn",
-                format!(
-                    "catalog {}({})",
-                    fxn_name,
-                    format_trace_args(&input_arg_values)
-                ),
-            )
+        let resolver = FunctionResolver::new(
+            p.function_catalog(),
+            &state.function_environment,
+            &state.function_extensions,
+            &state.user_functions,
         );
-        let function =
-            p.specialize_visible_operation_named(operation, Some(&fxn_name), &input_arg_values)?;
-        return execute_specialized_function(function, &input_arg_values, p);
+        match resolver.resolve_named(&fxn_name) {
+            Ok(ResolvedNamedFunction::User(definition)) => {
+                Some(OwnedResolvedNamedFunction::User(definition.clone()))
+            }
+            Ok(ResolvedNamedFunction::Catalog(entry)) => {
+                Some(OwnedResolvedNamedFunction::Catalog(entry.clone()))
+            }
+            Ok(ResolvedNamedFunction::Extension(entry)) => {
+                Some(OwnedResolvedNamedFunction::Extension(entry.clone()))
+            }
+            Err(error) if error.kind_name() == "MissingFunction" => {
+                let operation = OperationId::from_name(&fxn_name);
+                if p.legacy_function_boundary()
+                    .owns_named_operation(operation, &fxn_name)
+                {
+                    let boundary_error = if p.function_catalog().specializer(operation).is_some() {
+                        MechError::new(
+                            FunctionOperationNotVisible {
+                                operation,
+                                canonical_name: Some(fxn_name.clone()),
+                            },
+                            None,
+                        )
+                    } else {
+                        MechError::new(
+                            FunctionOperationUnavailable {
+                                operation,
+                                canonical_name: Some(fxn_name.clone()),
+                            },
+                            None,
+                        )
+                    };
+                    return Err(boundary_error
+                        .with_compiler_loc()
+                        .with_tokens(fxn_call.name.tokens()));
+                }
+                None
+            }
+            Err(error) => return Err(error.with_tokens(fxn_call.name.tokens())),
+        }
+    };
+
+    if let Some(resolved) = resolved {
+        let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
+        return match resolved {
+            OwnedResolvedNamedFunction::User(definition) => {
+                #[cfg(feature = "subscript_formula")]
+                let output_is_live = current_string_access_expression_live(p)
+                    || input_arg_values
+                        .iter()
+                        .any(|value| string_access_input_is_live(value, p));
+                let output =
+                    crate::functions::execute_user_function(&definition, &input_arg_values, p)?;
+                #[cfg(feature = "subscript_formula")]
+                if output_is_live {
+                    mark_current_string_access_expression_live(p);
+                    mark_string_access_value_live(p, &output);
+                }
+                Ok(output)
+            }
+            OwnedResolvedNamedFunction::Catalog(entry) => {
+                trace_println!(
+                    p,
+                    "{}",
+                    format_trace(
+                        "fn",
+                        format!(
+                            "catalog {}({})",
+                            fxn_name,
+                            format_trace_args(&input_arg_values)
+                        ),
+                    )
+                );
+                let function = entry.specializer.specialize(&input_arg_values)?;
+                execute_specialized_function(function, &input_arg_values, p)
+            }
+            OwnedResolvedNamedFunction::Extension(entry) => {
+                trace_println!(
+                    p,
+                    "{}",
+                    format_trace(
+                        "fn",
+                        format!(
+                            "extension {}({})",
+                            fxn_name,
+                            format_trace_args(&input_arg_values)
+                        ),
+                    )
+                );
+                let function = entry.specializer.specialize(&input_arg_values)?;
+                execute_specialized_function(function, &input_arg_values, p)
+            }
+        };
     }
 
     // Pre-compiled built-in functions.

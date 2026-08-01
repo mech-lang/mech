@@ -1642,7 +1642,7 @@ mod tests {
             .state
             .borrow_mut()
             .function_environment
-            .bind_export(&export, "marker")
+            .bind_catalog_export(&export, "marker")
             .unwrap();
         assert_eq!(
             program
@@ -1651,7 +1651,9 @@ mod tests {
                 .borrow()
                 .function_environment
                 .resolve_name("marker"),
-            Some(OperationId::from_name("test/marker")),
+            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
+                "test/marker",
+            ))),
         );
 
         program.restore(checkpoint).unwrap();

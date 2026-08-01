@@ -91,8 +91,7 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
-                let mut new_sub_interpreter = p.new_child_interpreter(code_id, 10_000);
-                new_sub_interpreter.set_functions(p.functions().clone());
+                let new_sub_interpreter = p.new_child_interpreter(code_id, 10_000);
 
                 let pp = sub_interpreters
                     .entry(code_id)
@@ -177,8 +176,7 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
             if let Some(mika_section) = s {
                 let mika_interp_id = mika_interpreter_id(p.id, m, s);
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
-                let mut new_sub_interpreter = p.new_child_interpreter(mika_interp_id, 10_000);
-                new_sub_interpreter.set_functions(p.functions().clone());
+                let new_sub_interpreter = p.new_child_interpreter(mika_interp_id, 10_000);
                 let pp = sub_interpreters
                     .entry(mika_interp_id)
                     .or_insert(Ref::new(Box::new(new_sub_interpreter)))

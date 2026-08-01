@@ -108,6 +108,12 @@ pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function_catalog;
 #[cfg(feature = "functions")]
+pub mod function_environment;
+#[cfg(feature = "functions")]
+pub mod function_extensions;
+#[cfg(feature = "functions")]
+pub mod function_resolver;
+#[cfg(feature = "functions")]
 pub mod functions;
 #[cfg(feature = "invariant_define")]
 pub mod integrity;
@@ -121,6 +127,7 @@ pub mod native;
 pub mod patterns;
 #[cfg(feature = "program")]
 pub mod program;
+pub mod program_state;
 #[cfg(feature = "state_machines")]
 pub mod state_machines;
 pub mod statements;
@@ -136,6 +143,12 @@ pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function_catalog::*;
 #[cfg(feature = "functions")]
+pub use crate::function_environment::*;
+#[cfg(feature = "functions")]
+pub use crate::function_extensions::*;
+#[cfg(feature = "functions")]
+pub use crate::function_resolver::*;
+#[cfg(feature = "functions")]
 pub use crate::functions::*;
 #[cfg(feature = "invariant_define")]
 pub use crate::integrity::*;
@@ -149,6 +162,7 @@ pub use crate::native::*;
 pub use crate::patterns::*;
 #[cfg(feature = "program")]
 pub use crate::program::*;
+pub use crate::program_state::*;
 #[cfg(feature = "state_machines")]
 pub use crate::state_machines::*;
 pub use crate::statements::*;

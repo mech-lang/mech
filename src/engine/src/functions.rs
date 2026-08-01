@@ -78,19 +78,11 @@ pub fn function_define(
             .insert(output_arg.name.hash(), output_arg.kind.clone());
     }
 
-    // Store the definition and register the human-readable name string in both
-    // dictionaries so error messages and debug output can print it.
-    let functions = p.functions();
-    let mut functions_brrw = functions.borrow_mut();
-    functions_brrw
-        .user_functions
-        .insert(fxn_name_id, new_fxn.clone());
-    functions_brrw
-        .dictionary
-        .borrow_mut()
-        .insert(fxn_name_id, fxn_def.name.to_string());
-    p.state
-        .borrow()
+    // User definitions are checkpointed program state, separate from legacy
+    // runtime factories and native compiler registries.
+    let mut state = p.state.borrow_mut();
+    state.user_functions.insert_or_replace(new_fxn.clone())?;
+    state
         .dictionary
         .borrow_mut()
         .insert(fxn_name_id, fxn_def.name.to_string());

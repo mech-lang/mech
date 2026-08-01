@@ -133,9 +133,8 @@ threshold := 5.0
     let threshold_cell = root_cell(&i, "threshold");
     let topology = plan_snapshot(&i);
     {
-        let functions = i.functions();
-        let functions = functions.borrow();
-        let passes = functions.user_functions.get(&hash_str("passes")).unwrap();
+        let state = i.state.borrow();
+        let passes = state.user_functions.resolve_name("passes").unwrap();
         assert_eq!(passes.code.match_arms.len(), 1);
         assert!(matches!(
             passes.code.match_arms[0].pattern,
