@@ -9,6 +9,11 @@
 
 use mech_core::*;
 pub use mech_interpreter::ExecutionServicesBorrowConflict;
+#[cfg(feature = "functions")]
+pub use mech_interpreter::{
+    FunctionSystem, LegacyFunctionBoundary, LegacyFunctionBoundaryBuilder,
+    default_function_catalog, default_function_system,
+};
 
 #[cfg(feature = "invariant_define")]
 pub mod integrity;

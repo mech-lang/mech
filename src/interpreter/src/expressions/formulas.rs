@@ -32,8 +32,6 @@ use crate::LogicNot;
 use crate::LogicOr;
 #[cfg(feature = "logic_xor")]
 use crate::LogicXor;
-#[cfg(feature = "math_add")]
-use crate::MathAdd;
 #[cfg(feature = "math_div")]
 use crate::MathDiv;
 #[cfg(feature = "math_mod")]
@@ -76,8 +74,8 @@ use crate::SetUnion;
 use crate::StringConcat;
 use crate::{
     AddSubOp, ComparisonOp, Factor, FormulaOperator, InterpreterExecution, LogicOp, MResult,
-    MechError, MechFunction, MulDivOp, NativeFunctionCompiler, PowerOp, ProgramState, Ref, SetOp,
-    TableOp, Term, Value, ValueKind, VecOp, detach_value,
+    MechError, MechFunction, MulDivOp, NativeFunctionCompiler, OperationId, PowerOp, ProgramState,
+    Ref, SetOp, TableOp, Term, Value, ValueKind, VecOp, detach_value,
 };
 #[cfg(feature = "table")]
 use crate::{
@@ -173,7 +171,14 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>)
                 StringConcat {}.compile(&vec![lhs, rhs])?
             }
             #[cfg(feature = "math_add")]
-            FormulaOperator::AddSub(AddSubOp::Add) => MathAdd {}.compile(&vec![lhs, rhs])?,
+            FormulaOperator::AddSub(AddSubOp::Add) => {
+                let arguments = [lhs, rhs];
+                p.specialize_visible_operation_named(
+                    OperationId::from_name("math/add"),
+                    Some("math/add"),
+                    &arguments,
+                )?
+            }
             #[cfg(feature = "math_sub")]
             FormulaOperator::AddSub(AddSubOp::Sub) => MathSub {}.compile(&vec![lhs, rhs])?,
             #[cfg(feature = "math_mul")]

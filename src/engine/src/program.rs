@@ -19,6 +19,8 @@ use mech_core::{
 #[cfg(feature = "compiler")]
 use mech_bytecode::CompileCtx;
 
+#[cfg(feature = "functions")]
+use mech_interpreter::FunctionSystem;
 use mech_interpreter::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 use mech_syntax::parser;
 
@@ -505,7 +507,7 @@ impl MechProgram {
     pub fn new(config: MechProgramConfig) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_catalog(config, mech_interpreter::default_function_catalog())
+            Self::with_function_system(config, mech_interpreter::default_function_system())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -522,10 +524,16 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
+    pub fn with_function_system(
+        config: MechProgramConfig,
+        function_system: FunctionSystem,
+    ) -> Self {
         let id = hash_str(&format!("program/{}", config.name));
-        let mut interpreter =
-            Interpreter::with_function_catalog(id, config.environment.rounds_per_step, catalog);
+        let mut interpreter = Interpreter::with_function_system(
+            id,
+            config.environment.rounds_per_step,
+            function_system,
+        );
 
         interpreter.set_trace_enabled(config.environment.trace_enabled);
 
@@ -536,8 +544,18 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
+    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
+        Self::with_function_system(config, FunctionSystem::from_catalog(catalog))
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_system(&self) -> &FunctionSystem {
+        self.interpreter.function_system()
+    }
+
+    #[cfg(feature = "functions")]
     pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
-        self.interpreter.function_catalog()
+        self.function_system().catalog()
     }
 
     /// Captures the complete structural and value state of this program.
@@ -1571,16 +1589,26 @@ mod tests {
 
     #[cfg(feature = "functions")]
     #[test]
-    fn program_uses_and_retains_an_explicit_catalog() {
+    fn program_uses_and_retains_an_explicit_function_system() {
         let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
+        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
         let mut program =
-            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
+            MechProgram::with_function_system(MechProgramConfig::default(), function_system);
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            program.function_system().legacy_boundary(),
+            &legacy_boundary,
+        ));
 
         program.interpreter_mut().clear();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            program.function_system().legacy_boundary(),
+            &legacy_boundary,
+        ));
     }
 
     #[cfg(feature = "functions")]
@@ -1600,8 +1628,10 @@ mod tests {
             })
             .unwrap();
         let catalog = Arc::new(builder.build().unwrap());
+        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
+        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
         let mut program =
-            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
+            MechProgram::with_function_system(MechProgramConfig::default(), function_system);
         let environment_before = program
             .interpreter()
             .state
@@ -1631,6 +1661,10 @@ mod tests {
         program.restore(checkpoint).unwrap();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            program.function_system().legacy_boundary(),
+            &legacy_boundary,
+        ));
         assert_eq!(
             program.interpreter().state.borrow().function_environment,
             environment_before,

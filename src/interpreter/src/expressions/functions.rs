@@ -5,9 +5,22 @@ use super::{
     mark_string_access_value_live, string_access_input_is_live,
 };
 use crate::{
-    FunctionCall, InterpreterExecution, MResult, MechError, MissingFunctionError, Value,
-    execute_native_function_compiler, format_trace, format_trace_args,
+    FunctionCall, InterpreterExecution, MResult, MechError, MissingFunctionError, OperationId,
+    Value, execute_native_function_compiler, execute_specialized_function, format_trace,
+    format_trace_args,
 };
+
+fn evaluate_arguments(
+    fxn_call: &FunctionCall,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Vec<Value>> {
+    fxn_call
+        .args
+        .iter()
+        .map(|(_, argument)| expression(argument, env, p))
+        .collect()
+}
 
 // Dispatches a function call to whichever implementation is available:
 // user-defined functions first, then built-in functions, then native compiled
@@ -22,10 +35,7 @@ pub fn function_call(
 
     // User-defined function: evaluate arguments then run the interpreted body.
     if let Some(user_fxn) = { functions.borrow().user_functions.get(&fxn_name_id).cloned() } {
-        let mut input_arg_values = vec![];
-        for (_, arg_expr) in fxn_call.args.iter() {
-            input_arg_values.push(expression(arg_expr, env, p)?);
-        }
+        let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
         #[cfg(feature = "subscript_formula")]
         let output_is_live = current_string_access_expression_live(p)
             || input_arg_values
@@ -38,6 +48,36 @@ pub fn function_call(
             mark_string_access_value_live(p, &output);
         }
         return Ok(output);
+    }
+
+    let fxn_name = fxn_call.name.to_string();
+    let environment_operation = {
+        let state = p.state.borrow();
+        state.function_environment.resolve_name(&fxn_name)
+    };
+    let catalog_operation = environment_operation.or_else(|| {
+        let operation = OperationId::from_name(&fxn_name);
+        p.legacy_function_boundary()
+            .owns_named_operation(operation, &fxn_name)
+            .then_some(operation)
+    });
+    if let Some(operation) = catalog_operation {
+        let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
+        trace_println!(
+            p,
+            "{}",
+            format_trace(
+                "fn",
+                format!(
+                    "catalog {}({})",
+                    fxn_name,
+                    format_trace_args(&input_arg_values)
+                ),
+            )
+        );
+        let function =
+            p.specialize_visible_operation_named(operation, Some(&fxn_name), &input_arg_values)?;
+        return execute_specialized_function(function, &input_arg_values, p);
     }
 
     // Pre-compiled built-in functions.
@@ -56,10 +96,7 @@ pub fn function_call(
     };
     match fxn_compiler {
         Some(fxn_compiler) => {
-            let mut input_arg_values = vec![];
-            for (_, arg_expr) in fxn_call.args.iter() {
-                input_arg_values.push(expression(arg_expr, env, p)?);
-            }
+            let input_arg_values = evaluate_arguments(fxn_call, env, p)?;
             trace_println!(
                 p,
                 "{}",
@@ -67,7 +104,7 @@ pub fn function_call(
                     "fn",
                     format!(
                         "native {}({})",
-                        fxn_call.name.to_string(),
+                        fxn_name,
                         format_trace_args(&input_arg_values)
                     ),
                 )

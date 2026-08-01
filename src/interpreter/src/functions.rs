@@ -109,42 +109,48 @@ pub fn execute_native_function_compiler(
     input_arg_values: &Vec<Value>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
+    let new_fxn = fxn_compiler.compile(input_arg_values)?;
+    execute_specialized_function(new_fxn, input_arg_values, p)
+}
+
+/// Runs and registers a function selected by either the explicit catalog or a
+/// legacy native compiler.
+pub fn execute_specialized_function(
+    new_fxn: Box<dyn MechFunction>,
+    input_arg_values: &Vec<Value>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
     let plan = p.plan();
-    match fxn_compiler.compile(input_arg_values) {
-        Ok(new_fxn) => {
-            trace_println!(
-                p,
-                "{}",
-                format_trace(
-                    "arm",
-                    format!(
-                        "selected {} args=[{}]",
-                        new_fxn
-                            .to_string()
-                            .lines()
-                            .next()
-                            .unwrap_or("<unknown-arm>"),
-                        format_trace_args(input_arg_values)
-                    ),
-                )
-            );
-            if !plan.activation_registration_active() {
-                p.with_services(|services| new_fxn.solve_result_with(services))?;
-            }
-            let result = new_fxn.out();
-            trace_println!(
-                p,
-                "{}",
-                format_trace(
-                    "arm",
-                    format!("result {}", summarize_function_value(&result))
-                )
-            );
-            plan.register_function(new_fxn, input_arg_values)?; // keep it in the plan for reactive re-evaluation
-            Ok(result)
-        }
-        Err(err) => Err(err),
+    trace_println!(
+        p,
+        "{}",
+        format_trace(
+            "arm",
+            format!(
+                "selected {} args=[{}]",
+                new_fxn
+                    .to_string()
+                    .lines()
+                    .next()
+                    .unwrap_or("<unknown-arm>"),
+                format_trace_args(input_arg_values)
+            ),
+        )
+    );
+    if !plan.activation_registration_active() {
+        p.with_services(|services| new_fxn.solve_result_with(services))?;
     }
+    let result = new_fxn.out();
+    trace_println!(
+        p,
+        "{}",
+        format_trace(
+            "arm",
+            format!("result {}", summarize_function_value(&result))
+        )
+    );
+    plan.register_function(new_fxn, input_arg_values)?;
+    Ok(result)
 }
 
 pub fn execute_initialized_indexed_compiler_with_registration_arguments(
