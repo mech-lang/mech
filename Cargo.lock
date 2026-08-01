@@ -2450,6 +2450,7 @@ dependencies = [
  "miniz_oxide",
  "serde",
  "serde-wasm-bindgen",
+ "serde_json",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",

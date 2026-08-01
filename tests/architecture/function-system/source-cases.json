@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "cross_target": [
+    {
+      "name": "scalar_add",
+      "source": "result := 1.0 + 2.0\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 3.0
+      }
+    },
+    {
+      "name": "comparison_and_logic",
+      "source": "less := 1.0 < 2.0\ngreater := 3.0 > 2.0\nresult := less && greater\nresult",
+      "expected": {
+        "kind": "bool",
+        "value": true
+      }
+    },
+    {
+      "name": "string_concat",
+      "source": "result := \"ab\" + \"cd\"\nresult",
+      "expected": {
+        "kind": "string",
+        "value": "abcd"
+      }
+    },
+    {
+      "name": "whole_value_add_assign",
+      "source": "~value := 1.0\nvalue += 2.0\nresult := value\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 3.0
+      }
+    },
+    {
+      "name": "inclusive_range_scalar_access",
+      "source": "values := 1.0..=3.0\nresult := values[2]\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 2.0
+      }
+    },
+    {
+      "name": "dynamic_matrix_add_scalar_access",
+      "source": "values<[f64]> := [1.0 2.0; 3.0 4.0]\nshifted := values + 1.0\nresult := shifted[4]\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 5.0
+      }
+    },
+    {
+      "name": "matrix_matmul_scalar_access",
+      "source": "left := [1.0 2.0; 3.0 4.0]\nright := [1.0 0.0; 0.0 1.0]\nproduct := left ** right\nresult := product[4]\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 4.0
+      }
+    },
+    {
+      "name": "set_union_membership",
+      "source": "left := {1.0, 2.0}\nright := {2.0, 3.0}\ncombined := left ∪ right\nresult := 3.0 ∈ combined\nresult",
+      "expected": {
+        "kind": "bool",
+        "value": true
+      }
+    }
+  ],
+  "native_modules": [
+    {
+      "name": "math_cos_module_import",
+      "source": "+> math\nresult := math/cos(0.0)\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 1.0,
+        "tolerance": 1e-12
+      }
+    },
+    {
+      "name": "stats_sum_column_module_import",
+      "source": "+> stats\ncolumn-sums := stats/sum/column([1.0 2.0; 3.0 4.0])\nresult := column-sums[1]\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 3.0
+      }
+    },
+    {
+      "name": "combinatorics_n_choose_k_module_import",
+      "source": "+> combinatorics\nresult := combinatorics/n-choose-k(5.0, 2.0)\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 10.0
+      }
+    },
+    {
+      "name": "module_item_alias",
+      "source": "+> cosine := math/cos\nresult := cosine(0.0)\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 1.0,
+        "tolerance": 1e-12
+      }
+    },
+    {
+      "name": "module_glob_import",
+      "source": "+> math/*\nresult := cos(0.0)\nresult",
+      "expected": {
+        "kind": "f64",
+        "value": 1.0,
+        "tolerance": 1e-12
+      }
+    }
+  ]
+}
