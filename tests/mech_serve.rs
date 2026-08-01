@@ -9,10 +9,12 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 static NEXT_TEMP_DIRECTORY: AtomicU64 = AtomicU64::new(0);
+static SERVER_START_LOCK: Mutex<()> = Mutex::new(());
 
 struct TestDirectory {
     path: PathBuf,
@@ -81,6 +83,13 @@ impl RunningServer {
         shim: Option<&Path>,
         stylesheet: Option<&Path>,
     ) -> Self {
+        // Selecting an ephemeral port and starting the child cannot be atomic
+        // across processes. Serialize that handoff inside this test binary so
+        // parallel serve tests cannot both select the same just-released port
+        // before either child has bound it (which Windows detects reliably).
+        let _start_guard = SERVER_START_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let port = available_port();
         let stdout_path = current_dir.join(format!("serve-{port}.stdout.log"));
         let stderr_path = current_dir.join(format!("serve-{port}.stderr.log"));
