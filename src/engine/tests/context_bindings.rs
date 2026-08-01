@@ -1,4 +1,4 @@
-use mech_interpreter::*;
+use mech_engine::*;
 use mech_syntax::parser;
 
 fn run(src: &str) -> mech_core::MResult<Interpreter> {
@@ -7,7 +7,7 @@ fn run(src: &str) -> mech_core::MResult<Interpreter> {
     let mut services = NoMechExecutionServices;
     {
         let execution = InterpreterExecution::new(&p, &mut services);
-        mech_interpreter::program(&program, &execution)?;
+        mech_engine::program(&program, &execution)?;
     }
     Ok(p)
 }

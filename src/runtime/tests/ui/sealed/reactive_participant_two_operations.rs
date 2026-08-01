@@ -2,7 +2,7 @@ use mech_core::{
   with_reactive_journal_participant,
   NoMechExecutionServices,
 };
-use mech_interpreter::Interpreter;
+use mech_engine::Interpreter;
 
 fn main() {
   let mut interpreter = Interpreter::new(1, 100);

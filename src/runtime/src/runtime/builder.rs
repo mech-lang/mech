@@ -19,9 +19,9 @@ use crate::{
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
-use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 #[cfg(feature = "functions")]
-use mech_interpreter::FunctionSystem;
+use mech_engine::FunctionSystem;
+use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -327,7 +327,7 @@ impl RuntimeBuilder {
         #[cfg(feature = "functions")]
         let function_system = select_function_system(
             self.function_system.take(),
-            mech_interpreter::default_function_system,
+            mech_engine::default_function_system,
         );
         #[cfg(feature = "functions")]
         let program = MechProgram::with_function_system(program_config, function_system.clone());
@@ -456,7 +456,7 @@ fn select_function_system(
 mod tests {
     use super::{MechProgramConfig, RuntimeBuilder, select_function_system};
     use mech_core::FunctionCatalogBuilder;
-    use mech_interpreter::FunctionSystem;
+    use mech_engine::FunctionSystem;
     use std::sync::Arc;
 
     #[test]

@@ -1,7 +1,7 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use mech_core::{GenericError, MResult, MechError, Ref, Value, hash_str};
+use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
-use mech_interpreter::Interpreter;
 use mech_runtime::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
     DeterministicHostFunction, HostArgumentValue, MechRuntime, ObjectRecord,

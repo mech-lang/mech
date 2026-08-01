@@ -63,13 +63,13 @@ if [ -n "$unexpected_name_hits" ]; then
 fi
 
 if rg -n '"math/add"' \
-  "$repository_root/src/interpreter/src/expressions/functions.rs"
+  "$repository_root/src/engine/src/expressions/functions.rs"
 then
   fail "generic named dispatch contains an operation-specific math/add literal"
 fi
 
 if rg -n 'migrated_runtime_function_ids' \
-  "$repository_root/src/interpreter/src"
+  "$repository_root/src/engine/src"
 then
   fail "interpreter still contains hidden default-derived migration ownership"
 fi
@@ -91,7 +91,7 @@ cargo +nightly-2026-03-03 test \
   ops::add::tests
 
 cargo +nightly-2026-03-03 test \
-  -p mech-interpreter \
+  -p mech-engine \
   --lib \
   catalog
 

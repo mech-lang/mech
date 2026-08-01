@@ -1,5 +1,5 @@
 use mech_core::NoMechExecutionServices;
-use mech_interpreter::Interpreter;
+use mech_engine::Interpreter;
 
 struct ForgedParticipant;
 

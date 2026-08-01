@@ -5,7 +5,7 @@ error[E0599]: no method named `advance_reactive_turn_with_journal` found for str
   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
 help: there is a method `advance_reactive_turn` with a similar name, but with different arguments
- --> $WORKSPACE/src/interpreter/src/interpreter.rs
+ --> $WORKSPACE/src/engine/src/engine.rs
   |
   | /     pub fn advance_reactive_turn(
   | |         &mut self,

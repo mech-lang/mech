@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use mech_core::{MechSourceCode, OperationId, RuntimeFunctionId, Value};
-use mech_interpreter::default_function_system;
+use mech_engine::default_function_system;
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot};
 use mech_wasm as _;
 use serde::Deserialize;

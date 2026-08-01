@@ -1,4 +1,4 @@
-use mech_interpreter as _;
+use mech_engine as _;
 use mech_engine::{MechProgram, MechProgramConfig};
 use std::env;
 use std::fs;

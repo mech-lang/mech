@@ -1,6 +1,6 @@
 use crate::MechProgram;
+use crate::{Interpreter, InterpreterRef};
 use mech_core::*;
-use mech_interpreter::{Interpreter, InterpreterRef};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IntegrityConstraintFailureReason {

@@ -20,7 +20,7 @@ bytecode execution. Bytecode compilation remains optional.
         math/add fragment
                │
                ▼
-         mech-interpreter
+         mech-engine
       FunctionSystem / syntax
                │
                ▼
@@ -88,7 +88,7 @@ contracts. Legacy inventory descriptors are not imported into
 `FunctionCatalog`, and linked-module catalog resolution is not introduced here.
 User-defined functions and dynamic modules also remain in their existing tables.
 
-Standard catalog composition currently lives in `mech-interpreter` and installs
+Standard catalog composition currently lives in `mech-engine` and installs
 only the migrated `math/add` fragment. The standard `FunctionSystem` is cached
 after its first construction; explicitly supplied systems bypass that default
 factory entirely. Standard composition will move to `mech-stdlib` in a later PR.
@@ -108,7 +108,7 @@ Later PRs will:
 1. migrate all remaining operation families;
 2. remove `LegacyFunctionBoundary` and the legacy `Functions` factory and
    specializer tables, leaving no standard-function fallback;
-3. absorb or eliminate the remaining `mech-interpreter` package boundary;
+3. absorb or eliminate the remaining `mech-engine` package boundary;
 4. move standard composition into `mech-stdlib`;
 5. split machine runtime, source, and compiler features; and
 6. build minimal native applications from `.mecb`.

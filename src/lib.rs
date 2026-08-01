@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------------------
 
 pub extern crate mech_core as core;
-pub extern crate mech_engine as program;
+pub extern crate mech_engine as engine;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_core::*;
@@ -294,10 +294,10 @@ fn pretty_print_tree(tree: &Program) -> String {
 }
 
 #[cfg(feature = "whos")]
-pub fn whos(program: &MechProgram, names: Vec<String>) -> String {
+pub fn whos(retained_program: &MechProgram, names: Vec<String>) -> String {
     let mut builder = Builder::default();
     builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
-    let state = program.interpreter().state.borrow();
+    let state = retained_program.interpreter().state.borrow();
     let symbol_table = state.symbol_table.borrow();
     let dictionary = symbol_table.dictionary.borrow();
     if names.is_empty() {
@@ -340,9 +340,9 @@ pub fn whos(program: &MechProgram, names: Vec<String>) -> String {
 }
 
 #[cfg(feature = "pretty_print")]
-fn pretty_print_symbols(program: &MechProgram) -> String {
+fn pretty_print_symbols(retained_program: &MechProgram) -> String {
     let mut builder = Builder::default();
-    let symbol_table = program.interpreter().pretty_print_symbols();
+    let symbol_table = retained_program.interpreter().pretty_print_symbols();
     builder.push_record(vec![format!("{}", symbol_table)]);
 
     let mut table = builder.build();

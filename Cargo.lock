@@ -2197,11 +2197,29 @@ dependencies = [
 name = "mech-engine"
 version = "0.3.5"
 dependencies = [
+ "bincode",
+ "byteorder",
  "criterion",
+ "grapheme",
+ "indexmap",
+ "inventory",
+ "libloading",
+ "mech-abi",
  "mech-bytecode",
+ "mech-combinatorics",
+ "mech-compare",
  "mech-core",
- "mech-interpreter",
+ "mech-logic",
+ "mech-math",
+ "mech-matrix",
+ "mech-range",
+ "mech-set",
+ "mech-stats",
+ "mech-string",
  "mech-syntax",
+ "nalgebra",
+ "num-traits",
+ "paste",
  "serde",
  "web-time",
 ]
@@ -2278,34 +2296,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-interpreter"
-version = "0.3.5"
-dependencies = [
- "bincode",
- "byteorder",
- "grapheme",
- "indexmap",
- "inventory",
- "libloading",
- "mech-abi",
- "mech-combinatorics",
- "mech-compare",
- "mech-core",
- "mech-logic",
- "mech-math",
- "mech-matrix",
- "mech-range",
- "mech-set",
- "mech-stats",
- "mech-string",
- "mech-syntax",
- "nalgebra",
- "num-traits",
- "paste",
- "web-time",
-]
-
-[[package]]
 name = "mech-logic"
 version = "0.3.5"
 dependencies = [
@@ -2361,7 +2351,6 @@ dependencies = [
  "mech-core",
  "mech-engine",
  "mech-host-cli",
- "mech-interpreter",
  "mech-syntax",
  "notify",
  "rand_core 0.6.4",
@@ -2433,12 +2422,12 @@ dependencies = [
  "gloo-net",
  "js-sys",
  "mech-core",
+ "mech-engine",
  "mech-host-browser",
  "mech-host-console",
  "mech-host-scene",
  "mech-host-time",
  "mech-host-timer",
- "mech-interpreter",
  "mech-runtime",
  "mech-syntax",
  "miniz_oxide",

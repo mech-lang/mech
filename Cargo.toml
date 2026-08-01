@@ -262,7 +262,6 @@ members = [
   "src/bytecode",
   "src/core",
   "src/syntax",
-  "src/interpreter",
   "src/engine",
   "src/runtime",
   "src/wasm",
@@ -286,7 +285,6 @@ LegalCopyright = "Copyright © 2026"
 mech-bytecode = { path = 'src/bytecode' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
-mech-interpreter = { path = 'src/interpreter'}
 mech-engine = { path = 'src/engine'}
 mech-runtime = { path = 'src/runtime'}
 mech-wasm = { path = 'src/wasm'}
@@ -313,9 +311,6 @@ mech-core = { path = 'src/core', version = '0.3.5' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
 mech-syntax = { path = 'src/syntax', version = '0.3.5' }
-
-[patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.3.5' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }
