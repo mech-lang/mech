@@ -11,7 +11,10 @@
 
 // Furthermore, this file defines two structs:
 
-// `RuntimeHostNativeFunctionCompiler`, which allows for host functions to be registered as native function compilers in the Mech program, enabling them to be called directly from Mech code. The `RuntimeHostNativeFunction` struct represents a compiled host function that can be executed within the Mech program.
+// `RuntimeHostFunctionSpecializer`, which installs host functions as
+// program-local extensions that can be called directly from Mech code. The
+// `RuntimeHostNativeFunction` struct represents a specialized host function
+// that can be executed within the Mech program.
 
 // For example, a function to compute an affine transformation could be registered as a host function, and then called from Mech code like this:
 /*
@@ -36,7 +39,7 @@
 
 use super::execution::{
     ACTIVATION_EFFECT_BARRIER_NAME, ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-    ActivationEffectBarrierCompiler, ActivationEffectPayloadCaptureCompiler,
+    ActivationEffectBarrierSpecializer, ActivationEffectPayloadCaptureSpecializer,
 };
 use super::extension::invoke_extension;
 use super::{MechRuntime, RuntimeHostFunctionNotBytecodeCompilableError};
@@ -47,38 +50,39 @@ use crate::{
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    GuardFunctionSafety, MResult, MechError, MechErrorKind, MechExecutionServices,
-    MechFunctionImpl, NativeFunctionCompiler, Ref, Value, ValueKind,
+    FunctionSpecializer, GuardFunctionSafety, MResult, MechError, MechErrorKind,
+    MechExecutionServices, MechFunctionImpl, Ref, Value, ValueKind,
 };
 use mech_engine::MechProgram;
 use std::sync::Arc;
 
 impl MechRuntime {
-    fn install_runtime_program_host_compilers(
+    fn install_runtime_program_host_extensions(
         program: &mut MechProgram,
         context: RuntimeCallContext,
         functions: Vec<RegisteredHostFunction>,
-    ) {
-        program.register_native_function_compiler(
+    ) -> MResult<()> {
+        program.register_function_extension(
             ACTIVATION_EFFECT_BARRIER_NAME,
-            Arc::new(ActivationEffectBarrierCompiler),
-        );
-        program.register_native_function_compiler(
+            Arc::new(ActivationEffectBarrierSpecializer),
+        )?;
+        program.register_function_extension(
             ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-            Arc::new(ActivationEffectPayloadCaptureCompiler),
-        );
+            Arc::new(ActivationEffectPayloadCaptureSpecializer),
+        )?;
         for function in functions {
             let name = function.name().to_string();
-            program.register_native_function_compiler(
+            program.register_function_extension(
                 name.clone(),
-                Arc::new(RuntimeHostNativeFunctionCompiler::new(
+                Arc::new(RuntimeHostFunctionSpecializer::new(
                     name.clone(),
                     name,
                     context.clone(),
                     function,
                 )),
-            );
+            )?;
         }
+        Ok(())
     }
 
     pub(super) fn register_retained_program_host_functions(
@@ -86,12 +90,11 @@ impl MechRuntime {
         context: &RuntimeContext,
     ) -> MResult<()> {
         let functions = self.registered_host_functions()?;
-        Self::install_runtime_program_host_compilers(
+        Self::install_runtime_program_host_extensions(
             &mut self.program,
             RuntimeCallContext::capture(context),
             functions,
-        );
-        Ok(())
+        )
     }
 
     pub(super) fn register_runtime_program_host_functions(
@@ -100,12 +103,11 @@ impl MechRuntime {
         program: &mut MechProgram,
     ) -> MResult<()> {
         let functions = self.registered_host_functions()?;
-        Self::install_runtime_program_host_compilers(
+        Self::install_runtime_program_host_extensions(
             program,
             RuntimeCallContext::capture(context),
             functions,
-        );
-        Ok(())
+        )
     }
 
     fn registered_host_functions(&self) -> MResult<Vec<RegisteredHostFunction>> {
@@ -218,14 +220,14 @@ impl MechRuntime {
 }
 
 #[derive(Clone, Debug)]
-pub struct RuntimeHostNativeFunctionCompiler {
+pub struct RuntimeHostFunctionSpecializer {
     pub mech_name: String,
     pub host_name: String,
     pub context: RuntimeCallContext,
     pub function: RegisteredHostFunction,
 }
 
-impl RuntimeHostNativeFunctionCompiler {
+impl RuntimeHostFunctionSpecializer {
     pub fn new(
         mech_name: impl Into<String>,
         host_name: impl Into<String>,
@@ -241,12 +243,12 @@ impl RuntimeHostNativeFunctionCompiler {
     }
 }
 
-impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
+impl FunctionSpecializer for RuntimeHostFunctionSpecializer {
     fn guard_safety(&self) -> GuardFunctionSafety {
         GuardFunctionSafety::Unsupported
     }
 
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
         let argument_snapshots = arguments
             .iter()
             .map(RuntimeValueSnapshot::try_capture)
@@ -259,7 +261,7 @@ impl NativeFunctionCompiler for RuntimeHostNativeFunctionCompiler {
         Ok(Box::new(RuntimeHostNativeFunction {
             name: self.mech_name.clone(),
             host_name: self.host_name.clone(),
-            arguments: arguments.clone(),
+            arguments: arguments.to_vec(),
             value: Ref::new(planned.into_value().try_deep_snapshot()?),
         }))
     }

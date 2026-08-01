@@ -1,6 +1,7 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
 use nalgebra::{DMatrix, DVector, RowDVector};
+use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "dynamic-modules")]
 use std::collections::{HashMap, HashSet};
 #[cfg(feature = "dynamic-modules")]
@@ -13,9 +14,35 @@ pub struct ModuleManifest {
     pub items: Vec<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DynamicFunctionExport {
+    pub item: String,
+    pub extension: ExtensionFunctionId,
+}
+
+#[derive(Clone)]
+pub struct DynamicFunctionModuleFragment {
+    pub module: String,
+    pub entries: Vec<FunctionExtensionEntry>,
+    pub exports: Vec<DynamicFunctionExport>,
+}
+
+impl DynamicFunctionModuleFragment {
+    fn manifest(&self) -> ModuleManifest {
+        ModuleManifest {
+            module: self.module.clone(),
+            items: self
+                .exports
+                .iter()
+                .map(|export| export.item.clone())
+                .collect(),
+        }
+    }
+}
+
 pub trait ModuleLoader {
     fn can_load(&self, module: &str) -> bool;
-    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest>;
+    fn load(&self, module: &str) -> MResult<DynamicFunctionModuleFragment>;
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -93,7 +120,7 @@ impl ModuleLoader for DynamicModuleLoader {
         Self::find_library(module).is_some()
     }
 
-    fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
+    fn load(&self, module: &str) -> MResult<DynamicFunctionModuleFragment> {
         let path = Self::find_library(module).ok_or_else(|| {
             MechError::new(
                 MissingFunctionError {
@@ -166,7 +193,6 @@ impl ModuleLoader for DynamicModuleLoader {
         }
 
         let library = Arc::new(library);
-        let mut items = Vec::new();
         let module_prefix = format!("{module}/");
         let export_count = unsafe { export_count_fn() };
         if export_count == 0 {
@@ -180,7 +206,8 @@ impl ModuleLoader for DynamicModuleLoader {
         ));
 
         let mut seen_exports = HashSet::<(String, mech_abi::MechKernelKindV1)>::new();
-        let mut dynamic_compilers = HashMap::<String, Vec<Arc<dyn NativeFunctionCompiler>>>::new();
+        let mut canonical_order = Vec::<String>::new();
+        let mut dynamic_specializers = HashMap::<String, Vec<Arc<dyn FunctionSpecializer>>>::new();
 
         for index in 0..export_count {
             let mut export = mech_abi::MechExportV1 {
@@ -223,91 +250,100 @@ impl ModuleLoader for DynamicModuleLoader {
             match Self::validate_dynamic_kernel_kind(export.kind)? {
                 ValidatedDynamicKernelKind::BinaryF64F64ToF64 => {
                     let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
-                    let compiler_name = export_name.clone();
+                    let specializer_name = export_name.clone();
 
-                    dynamic_compilers
-                        .entry(compiler_name.clone())
+                    if !dynamic_specializers.contains_key(&specializer_name) {
+                        canonical_order.push(specializer_name.clone());
+                    }
+                    dynamic_specializers
+                        .entry(specializer_name.clone())
                         .or_default()
-                        .push(Arc::new(DynamicBinaryF64F64ToF64Compiler {
-                            name: compiler_name.clone(),
+                        .push(Arc::new(DynamicBinaryF64F64ToF64Specializer {
+                            name: specializer_name.clone(),
                             kernel,
                             _library: library.clone(),
                         }));
 
                     dynamic_trace(format!(
                         "registered dynamic export `{}` as item `{}`",
-                        compiler_name, item
+                        specializer_name, item
                     ));
-
-                    if !items.iter().any(|existing| existing == &item) {
-                        items.push(item);
-                    }
                 }
                 ValidatedDynamicKernelKind::UnaryF64ToF64 => {
                     let kernel = unsafe { export.function.unary_f64_to_f64 };
-                    let compiler_name = export_name.clone();
+                    let specializer_name = export_name.clone();
 
-                    dynamic_compilers
-                        .entry(compiler_name.clone())
+                    if !dynamic_specializers.contains_key(&specializer_name) {
+                        canonical_order.push(specializer_name.clone());
+                    }
+                    dynamic_specializers
+                        .entry(specializer_name.clone())
                         .or_default()
-                        .push(Arc::new(DynamicUnaryF64ToF64Compiler {
-                            name: compiler_name.clone(),
+                        .push(Arc::new(DynamicUnaryF64ToF64Specializer {
+                            name: specializer_name.clone(),
                             kernel,
                             _library: library.clone(),
                         }));
 
                     dynamic_trace(format!(
                         "registered dynamic export `{}` as item `{}`",
-                        compiler_name, item
+                        specializer_name, item
                     ));
-
-                    if !items.iter().any(|existing| existing == &item) {
-                        items.push(item);
-                    }
                 }
                 ValidatedDynamicKernelKind::UnaryF64ViewToF64View => {
                     let kernel = unsafe { export.function.unary_f64_view_to_f64_view };
-                    let compiler_name = export_name.clone();
+                    let specializer_name = export_name.clone();
 
-                    dynamic_compilers
-                        .entry(compiler_name.clone())
+                    if !dynamic_specializers.contains_key(&specializer_name) {
+                        canonical_order.push(specializer_name.clone());
+                    }
+                    dynamic_specializers
+                        .entry(specializer_name.clone())
                         .or_default()
-                        .push(Arc::new(DynamicUnaryF64ViewToF64ViewCompiler {
-                            name: compiler_name.clone(),
+                        .push(Arc::new(DynamicUnaryF64ViewToF64ViewSpecializer {
+                            name: specializer_name.clone(),
                             kernel,
                             _library: library.clone(),
                         }));
 
                     dynamic_trace(format!(
                         "registered dynamic export `{}` as item `{}`",
-                        compiler_name, item
+                        specializer_name, item
                     ));
-
-                    if !items.iter().any(|existing| existing == &item) {
-                        items.push(item);
-                    }
                 }
             }
         }
 
-        for (compiler_name, compilers) in dynamic_compilers {
-            if compilers.len() == 1 {
-                let compiler = compilers.into_iter().next().expect("one compiler");
-                fxns.insert_function_compiler(compiler_name, compiler);
+        let mut entries = Vec::with_capacity(canonical_order.len());
+        let mut exports = Vec::with_capacity(canonical_order.len());
+        for canonical_name in canonical_order {
+            let mut specializers = dynamic_specializers
+                .remove(&canonical_name)
+                .expect("every ordered dynamic function has specializers");
+            let specializer: Arc<dyn FunctionSpecializer> = if specializers.len() == 1 {
+                specializers.pop().expect("one dynamic specializer")
             } else {
-                fxns.insert_function_compiler(
-                    compiler_name.clone(),
-                    Arc::new(DynamicOverloadedCompiler {
-                        name: compiler_name,
-                        compilers,
-                    }),
-                );
-            }
+                Arc::new(DynamicOverloadedSpecializer {
+                    name: canonical_name.clone(),
+                    specializers,
+                })
+            };
+            let entry = FunctionExtensionEntry::new(canonical_name.clone(), specializer);
+            let item = canonical_name
+                .strip_prefix(&module_prefix)
+                .expect("validated dynamic export belongs to its module")
+                .to_string();
+            exports.push(DynamicFunctionExport {
+                item,
+                extension: entry.id,
+            });
+            entries.push(entry);
         }
 
-        Ok(ModuleManifest {
+        Ok(DynamicFunctionModuleFragment {
             module: module.to_string(),
-            items,
+            entries,
+            exports,
         })
     }
 }
@@ -389,18 +425,18 @@ fn check_dynamic_kernel_status(function: &str, status: mech_abi::MechStatusV1) -
 }
 
 #[cfg(feature = "dynamic-modules")]
-struct DynamicOverloadedCompiler {
+struct DynamicOverloadedSpecializer {
     name: String,
-    compilers: Vec<Arc<dyn NativeFunctionCompiler>>,
+    specializers: Vec<Arc<dyn FunctionSpecializer>>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl NativeFunctionCompiler for DynamicOverloadedCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DynamicOverloadedSpecializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         let mut last_error = None;
 
-        for compiler in &self.compilers {
-            match compiler.compile(arguments) {
+        for specializer in &self.specializers {
+            match specializer.specialize(arguments) {
                 Ok(function) => return Ok(function),
                 Err(err) => last_error = Some(err),
             }
@@ -494,15 +530,15 @@ impl DynamicF64Arg {
 }
 
 #[cfg(feature = "dynamic-modules")]
-struct DynamicBinaryF64F64ToF64Compiler {
+struct DynamicBinaryF64F64ToF64Specializer {
     name: String,
     kernel: mech_abi::MechBinaryF64F64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -547,15 +583,15 @@ impl NativeFunctionCompiler for DynamicBinaryF64F64ToF64Compiler {
 }
 
 #[cfg(feature = "dynamic-modules")]
-struct DynamicUnaryF64ToF64Compiler {
+struct DynamicUnaryF64ToF64Specializer {
     name: String,
     kernel: mech_abi::MechUnaryF64ToF64KernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl NativeFunctionCompiler for DynamicUnaryF64ToF64Compiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DynamicUnaryF64ToF64Specializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -580,15 +616,15 @@ impl NativeFunctionCompiler for DynamicUnaryF64ToF64Compiler {
 }
 
 #[cfg(feature = "dynamic-modules")]
-struct DynamicUnaryF64ViewToF64ViewCompiler {
+struct DynamicUnaryF64ViewToF64ViewSpecializer {
     name: String,
     kernel: mech_abi::MechUnaryF64ViewToF64ViewKernelV1,
     _library: Arc<libloading::Library>,
 }
 
 #[cfg(feature = "dynamic-modules")]
-impl NativeFunctionCompiler for DynamicUnaryF64ViewToF64ViewCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1206,10 +1242,20 @@ impl ModuleRegistry {
         registry
     }
 
-    pub fn load(&self, fxns: &mut Functions, module: &str) -> MResult<ModuleManifest> {
+    pub fn load(&self, module: &str) -> MResult<DynamicFunctionModuleFragment> {
         for loader in &self.loaders {
             if loader.can_load(module) {
-                return loader.load(fxns, module);
+                let fragment = loader.load(module)?;
+                if fragment.module != module {
+                    return Err(invalid_dynamic_fragment(
+                        &fragment,
+                        format!(
+                            "loader returned module `{}` for request `{module}`",
+                            fragment.module,
+                        ),
+                    ));
+                }
+                return Ok(fragment);
             }
         }
 
@@ -1276,9 +1322,151 @@ fn bind_static_exports<'a>(
     Ok(())
 }
 
-fn load_dynamic_module(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
-    let functions = interpreter.functions();
-    ModuleRegistry::available().load(&mut functions.borrow_mut(), module)
+fn invalid_dynamic_fragment(
+    fragment: &DynamicFunctionModuleFragment,
+    reason: impl Into<String>,
+) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: format!(
+                "invalid dynamic function module fragment `{}`: {}",
+                fragment.module,
+                reason.into(),
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn validate_dynamic_fragment(
+    fragment: &DynamicFunctionModuleFragment,
+) -> MResult<BTreeMap<String, (ExtensionFunctionId, String)>> {
+    if fragment.module.is_empty() {
+        return Err(invalid_dynamic_fragment(
+            fragment,
+            "module name must not be empty",
+        ));
+    }
+    if fragment.entries.is_empty() || fragment.exports.is_empty() {
+        return Err(invalid_dynamic_fragment(
+            fragment,
+            "at least one exact function entry and export is required",
+        ));
+    }
+
+    let mut entries_by_id = BTreeMap::new();
+    let mut entry_names = BTreeSet::new();
+    for entry in &fragment.entries {
+        if entries_by_id.insert(entry.id, entry).is_some() {
+            return Err(invalid_dynamic_fragment(
+                fragment,
+                format!("duplicate extension entry ID 0x{:016x}", entry.id.raw()),
+            ));
+        }
+        if !entry_names.insert(entry.canonical_name.as_str()) {
+            return Err(invalid_dynamic_fragment(
+                fragment,
+                format!("duplicate extension entry `{}`", entry.canonical_name),
+            ));
+        }
+    }
+
+    let mut exports_by_item = BTreeMap::new();
+    let mut referenced_entries = BTreeSet::new();
+    for export in &fragment.exports {
+        if export.item.is_empty() {
+            return Err(invalid_dynamic_fragment(
+                fragment,
+                "export item names must not be empty",
+            ));
+        }
+        let Some(entry) = entries_by_id.get(&export.extension).copied() else {
+            return Err(invalid_dynamic_fragment(
+                fragment,
+                format!(
+                    "export `{}` references missing extension ID 0x{:016x}",
+                    export.item,
+                    export.extension.raw(),
+                ),
+            ));
+        };
+        let expected_name = format!("{}/{}", fragment.module, export.item);
+        if entry.canonical_name != expected_name {
+            return Err(invalid_dynamic_fragment(
+                fragment,
+                format!(
+                    "export `{}` references `{}` instead of exact canonical name `{expected_name}`",
+                    export.item, entry.canonical_name,
+                ),
+            ));
+        }
+        if exports_by_item
+            .insert(
+                export.item.clone(),
+                (export.extension, entry.canonical_name.clone()),
+            )
+            .is_some()
+        {
+            return Err(invalid_dynamic_fragment(
+                fragment,
+                format!("duplicate exact export item `{}`", export.item),
+            ));
+        }
+        referenced_entries.insert(export.extension);
+    }
+
+    if referenced_entries.len() != entries_by_id.len() {
+        let unexported = entries_by_id
+            .iter()
+            .find(|(id, _)| !referenced_entries.contains(id))
+            .map(|(_, entry)| entry.canonical_name.as_str())
+            .unwrap_or("<unknown>");
+        return Err(invalid_dynamic_fragment(
+            fragment,
+            format!("extension entry `{unexported}` has no exact module export"),
+        ));
+    }
+
+    Ok(exports_by_item)
+}
+
+fn install_dynamic_fragment(
+    interpreter: &Interpreter,
+    fragment: DynamicFunctionModuleFragment,
+    binding_requests: Vec<(String, String)>,
+) -> MResult<ModuleManifest> {
+    let exports_by_item = validate_dynamic_fragment(&fragment)?;
+    let mut bindings = Vec::with_capacity(binding_requests.len());
+    for (item, visible_name) in binding_requests {
+        let Some((extension, canonical_name)) = exports_by_item.get(&item) else {
+            return Err(missing_module_item(&fragment.module, &item));
+        };
+        bindings.push((*extension, canonical_name.clone(), visible_name));
+    }
+
+    let manifest = fragment.manifest();
+    let mut state = interpreter.state.borrow_mut();
+    let mut next_extensions = state.function_extensions.clone();
+    for entry in fragment.entries {
+        next_extensions.insert_or_replace(entry)?;
+    }
+    for export in fragment.exports {
+        next_extensions.insert_module_export_or_replace(
+            fragment.module.clone(),
+            export.item,
+            export.extension,
+        )?;
+    }
+
+    let mut next_environment = state.function_environment.clone();
+    for (extension, canonical_name, visible_name) in bindings {
+        next_environment.bind_extension(&canonical_name, &visible_name, extension)?;
+    }
+
+    state.function_extensions = next_extensions;
+    state.function_environment = next_environment;
+    Ok(manifest)
 }
 
 fn load_module_with_registry(
@@ -1299,8 +1487,13 @@ fn load_module_with_registry(
         return Ok(manifest);
     }
 
-    let functions = interpreter.functions();
-    registry.load(&mut functions.borrow_mut(), module)
+    let fragment = registry.load(module)?;
+    let binding_requests = fragment
+        .exports
+        .iter()
+        .map(|export| (export.item.clone(), format!("{module}/{}", export.item)))
+        .collect();
+    install_dynamic_fragment(interpreter, fragment, binding_requests)
 }
 
 pub fn load_module(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
@@ -1321,16 +1514,14 @@ pub fn import_module_item(interpreter: &Interpreter, module: &str, item: &str) -
         return bind_static_exports(interpreter, [(export, local_name.to_string())]);
     }
 
-    let manifest = load_dynamic_module(interpreter, module)?;
-    if !manifest
-        .items
-        .iter()
-        .any(|manifest_item| manifest_item == item)
-    {
-        return Err(missing_module_item(module, item));
-    }
-    let functions = interpreter.functions();
-    alias_dynamic_module_item(&mut functions.borrow_mut(), module, item)
+    let fragment = ModuleRegistry::available().load(module)?;
+    let local_name = item.rsplit('/').next().unwrap_or(item);
+    install_dynamic_fragment(
+        interpreter,
+        fragment,
+        vec![(item.to_string(), local_name.to_string())],
+    )?;
+    Ok(())
 }
 
 pub fn import_module_item_as(
@@ -1347,16 +1538,13 @@ pub fn import_module_item_as(
         return bind_static_exports(interpreter, [(export, alias.to_string())]);
     }
 
-    let manifest = load_dynamic_module(interpreter, module)?;
-    if !manifest
-        .items
-        .iter()
-        .any(|manifest_item| manifest_item == item)
-    {
-        return Err(missing_module_item(module, item));
-    }
-    let functions = interpreter.functions();
-    alias_dynamic_module_item_as(&mut functions.borrow_mut(), module, item, alias)
+    let fragment = ModuleRegistry::available().load(module)?;
+    install_dynamic_fragment(
+        interpreter,
+        fragment,
+        vec![(item.to_string(), alias.to_string())],
+    )?;
+    Ok(())
 }
 
 pub fn import_module_group(
@@ -1377,31 +1565,15 @@ pub fn import_module_group(
         return bind_static_exports(interpreter, bindings);
     }
 
-    let functions = interpreter.functions();
-    let checkpoint = FunctionsSnapshot::capture(&functions)?;
-    let result = (|| {
-        let manifest = load_dynamic_module(interpreter, module)?;
-        for item in items {
-            if !manifest
-                .items
-                .iter()
-                .any(|manifest_item| manifest_item == item)
-            {
-                return Err(missing_module_item(module, item));
-            }
-        }
-
-        let mut functions = functions.borrow_mut();
-        for item in items {
-            alias_dynamic_module_item(&mut functions, module, item)?;
-        }
-        Ok(())
-    })();
-
-    if let Err(error) = result {
-        checkpoint.restore()?;
-        return Err(error);
-    }
+    let fragment = ModuleRegistry::available().load(module)?;
+    let binding_requests = items
+        .iter()
+        .map(|item| {
+            let local_name = item.rsplit('/').next().unwrap_or(item);
+            (item.clone(), local_name.to_string())
+        })
+        .collect();
+    install_dynamic_fragment(interpreter, fragment, binding_requests)?;
     Ok(())
 }
 
@@ -1419,58 +1591,17 @@ pub fn import_module_glob(interpreter: &Interpreter, module: &str) -> MResult<()
         return bind_static_exports(interpreter, bindings);
     }
 
-    let manifest = load_dynamic_module(interpreter, module)?;
-    let functions = interpreter.functions();
-    let mut functions = functions.borrow_mut();
-    for item in &manifest.items {
-        alias_dynamic_module_item(&mut functions, module, item)?;
-    }
+    let fragment = ModuleRegistry::available().load(module)?;
+    let binding_requests = fragment
+        .exports
+        .iter()
+        .map(|export| {
+            let local_name = export.item.rsplit('/').next().unwrap_or(&export.item);
+            (export.item.clone(), local_name.to_string())
+        })
+        .collect();
+    install_dynamic_fragment(interpreter, fragment, binding_requests)?;
     Ok(())
-}
-
-fn alias_dynamic_module_item(fxns: &mut Functions, module: &str, item: &str) -> MResult<()> {
-    let local_name = item.rsplit('/').next().unwrap_or(item);
-    alias_dynamic_module_item_as(fxns, module, item, local_name)
-}
-
-fn alias_dynamic_module_item_as(
-    fxns: &mut Functions,
-    module: &str,
-    item: &str,
-    local_name: &str,
-) -> MResult<()> {
-    let qualified_name = format!("{module}/{item}");
-    let qualified_id = hash_str(&qualified_name);
-    let local_id = hash_str(local_name);
-    let mut found = false;
-
-    if let Some(ptr) = fxns.function_compilers.get(&qualified_id).cloned() {
-        fxns.function_compilers.insert(local_id, ptr);
-        fxns.dictionary
-            .borrow_mut()
-            .insert(local_id, local_name.to_string());
-        found = true;
-    }
-
-    if let Some(ptr) = fxns.functions.get(&qualified_id).copied() {
-        fxns.functions.insert(local_id, ptr);
-        fxns.dictionary
-            .borrow_mut()
-            .insert(local_id, local_name.to_string());
-        found = true;
-    }
-
-    if found {
-        Ok(())
-    } else {
-        Err(MechError::new(
-            MissingFunctionError {
-                function_id: qualified_id,
-            },
-            None,
-        )
-        .with_compiler_loc())
-    }
 }
 
 #[cfg(test)]
@@ -1571,8 +1702,41 @@ mod static_catalog_module_tests {
             true
         }
 
-        fn load(&self, _: &mut Functions, _: &str) -> MResult<ModuleManifest> {
+        fn load(&self, _: &str) -> MResult<DynamicFunctionModuleFragment> {
             unreachable!("an exact static module must take precedence")
+        }
+    }
+
+    struct FragmentLoader {
+        fragment: DynamicFunctionModuleFragment,
+    }
+
+    impl ModuleLoader for FragmentLoader {
+        fn can_load(&self, _: &str) -> bool {
+            true
+        }
+
+        fn load(&self, _: &str) -> MResult<DynamicFunctionModuleFragment> {
+            Ok(self.fragment.clone())
+        }
+    }
+
+    fn dynamic_fragment(module: &str, items: &[&str]) -> DynamicFunctionModuleFragment {
+        let mut entries = Vec::with_capacity(items.len());
+        let mut exports = Vec::with_capacity(items.len());
+        for item in items {
+            let entry =
+                FunctionExtensionEntry::new(format!("{module}/{item}"), Arc::new(TestSpecializer));
+            exports.push(DynamicFunctionExport {
+                item: (*item).to_string(),
+                extension: entry.id,
+            });
+            entries.push(entry);
+        }
+        DynamicFunctionModuleFragment {
+            module: module.to_string(),
+            entries,
+            exports,
         }
     }
 
@@ -1587,6 +1751,115 @@ mod static_catalog_module_tests {
         load_module_with_registry(&interpreter, "math", &registry).unwrap();
 
         assert!(!probed.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn dynamic_fragment_installs_exact_exports_and_qualified_bindings() {
+        let interpreter = interpreter();
+        let registry = ModuleRegistry::new().with_loader(Box::new(FragmentLoader {
+            fragment: dynamic_fragment("dynamic", &["sin", "sum/column"]),
+        }));
+
+        let manifest = load_module_with_registry(&interpreter, "dynamic", &registry).unwrap();
+
+        assert_eq!(manifest.module, "dynamic");
+        assert_eq!(manifest.items, ["sin", "sum/column"]);
+        let sin = ExtensionFunctionId::from_name("dynamic/sin");
+        let column = ExtensionFunctionId::from_name("dynamic/sum/column");
+        assert_eq!(
+            binding(&interpreter, "dynamic/sin"),
+            Some(FunctionBinding::Extension(sin)),
+        );
+        assert_eq!(
+            binding(&interpreter, "dynamic/sum/column"),
+            Some(FunctionBinding::Extension(column)),
+        );
+        assert_eq!(binding(&interpreter, "sin"), None);
+
+        let state = interpreter.state.borrow();
+        assert!(state.function_extensions.entry(sin).is_some());
+        assert!(state.function_extensions.entry(column).is_some());
+        assert_eq!(
+            state.function_extensions.module_export("dynamic", "sin"),
+            Some(sin),
+        );
+        assert_eq!(
+            state
+                .function_extensions
+                .module_export("dynamic", "sum/column"),
+            Some(column),
+        );
+    }
+
+    #[test]
+    fn failed_dynamic_binding_does_not_install_entries_exports_or_names() {
+        let interpreter = interpreter();
+        let extension = ExtensionFunctionId::from_name("dynamic/sin");
+
+        let error = install_dynamic_fragment(
+            &interpreter,
+            dynamic_fragment("dynamic", &["sin"]),
+            vec![(String::from("sin"), String::new())],
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "FunctionEnvironmentInvalidBinding");
+        let state = interpreter.state.borrow();
+        assert!(state.function_extensions.entry(extension).is_none());
+        assert_eq!(
+            state.function_extensions.module_export("dynamic", "sin"),
+            None,
+        );
+        assert_eq!(state.function_environment.resolve_name("dynamic/sin"), None);
+        assert_eq!(state.function_environment.resolve_name("sin"), None);
+    }
+
+    #[test]
+    fn checkpoint_restore_removes_a_loaded_dynamic_fragment_without_changing_the_catalog() {
+        let mut interpreter = interpreter();
+        let catalog = Arc::clone(interpreter.function_catalog());
+        let extension = ExtensionFunctionId::from_name("dynamic/sin");
+        let checkpoint = interpreter.checkpoint().unwrap();
+
+        install_dynamic_fragment(
+            &interpreter,
+            dynamic_fragment("dynamic", &["sin"]),
+            vec![(String::from("sin"), String::from("s"))],
+        )
+        .unwrap();
+        assert_eq!(
+            binding(&interpreter, "s"),
+            Some(FunctionBinding::Extension(extension)),
+        );
+
+        interpreter.restore(checkpoint).unwrap();
+
+        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        let state = interpreter.state.borrow();
+        assert!(state.function_extensions.entry(extension).is_none());
+        assert_eq!(
+            state.function_extensions.module_export("dynamic", "sin"),
+            None,
+        );
+        assert_eq!(state.function_environment.resolve_name("s"), None);
+    }
+
+    #[test]
+    fn registry_rejects_a_fragment_for_a_different_module() {
+        let registry = ModuleRegistry::new().with_loader(Box::new(FragmentLoader {
+            fragment: dynamic_fragment("other", &["sin"]),
+        }));
+
+        let error = match registry.load("requested") {
+            Ok(_) => panic!("mismatched dynamic fragment unexpectedly loaded"),
+            Err(error) => error,
+        };
+
+        assert!(
+            error
+                .full_chain_message()
+                .contains("loader returned module `other` for request `requested`")
+        );
     }
 
     #[test]

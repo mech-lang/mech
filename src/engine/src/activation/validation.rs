@@ -1,9 +1,9 @@
 use crate::{
     ActivationArm, ActivationArmBody, ActivationScope, CompiledPattern, ComprehensionQualifier,
     Expression, Factor, FunctionDefinition, FunctionResolver, GuardFunctionSafety, Interpreter,
-    MResult, MechCode, MechError, MechErrorKind, OperationId, Pattern, RangeExpression,
-    ReactiveCellId, ResolvedNamedFunction, Slice, SliceRef, Statement, Structure, Subscript, Token,
-    Value, ValueKind, compile_pattern,
+    MResult, MechCode, MechError, MechErrorKind, Pattern, RangeExpression, ReactiveCellId,
+    ResolvedNamedFunction, Slice, SliceRef, Statement, Structure, Subscript, Token, Value,
+    ValueKind, compile_pattern,
 };
 use std::collections::HashSet;
 
@@ -345,37 +345,13 @@ fn guard_expression_is_not_static_pure(
             };
 
             let user_function = match resolved {
-                Ok(Ok(user_function)) => Some(user_function),
+                Ok(Ok(user_function)) => user_function,
                 Ok(Err(GuardFunctionSafety::PureStatic)) => return false,
                 Ok(Err(GuardFunctionSafety::Unsupported)) => return true,
-                Err(error) if error.kind_name() == "MissingFunction" => {
-                    let operation = OperationId::from_name(&function_name);
-                    if interpreter
-                        .legacy_function_boundary()
-                        .owns_named_operation(operation, &function_name)
-                    {
-                        return true;
-                    }
-                    None
-                }
+                Err(error) if error.kind_name() == "MissingFunction" => return false,
                 Err(_) => return true,
             };
 
-            let Some(user_function) = user_function else {
-                let legacy_functions = interpreter.functions();
-                let legacy_functions = legacy_functions.borrow();
-                if legacy_functions.functions.contains_key(&function_id) {
-                    return true;
-                }
-                return match legacy_functions
-                    .function_compilers
-                    .get(&function_id)
-                    .map(|compiler| compiler.guard_safety())
-                {
-                    Some(GuardFunctionSafety::PureStatic) | None => false,
-                    Some(GuardFunctionSafety::Unsupported) => true,
-                };
-            };
             if !visiting_functions.insert(function_id) {
                 return true;
             }

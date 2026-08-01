@@ -11,7 +11,7 @@ use std::time::Instant;
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
-    MResult, MechError, MechErrorKind, MechFunction, MechSourceCode, NativeFunctionCompiler,
+    FunctionSpecializer, MResult, MechError, MechErrorKind, MechFunction, MechSourceCode,
     ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome, ValRef, Value,
     ValueKind, hash_str, val_ref_reactive_cell_ids, with_reactive_journal_participant,
 };
@@ -24,7 +24,7 @@ use crate::FunctionSystem;
 use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 use mech_syntax::parser;
 
-use crate::ClosureNativeFunctionCompiler;
+use crate::ClosureFunctionSpecializer;
 
 #[cfg(feature = "compiler")]
 pub struct BytecodeCompilation {
@@ -603,28 +603,38 @@ impl MechProgram {
         crate::import_module_glob(&self.interpreter, module)
     }
 
-    pub fn register_native_function_compiler(
+    pub fn register_function_extension(
         &mut self,
         name: impl Into<String>,
-        compiler: Arc<dyn NativeFunctionCompiler>,
-    ) {
-        self.interpreter
-            .functions()
-            .borrow_mut()
-            .insert_function_compiler(name, compiler);
+        specializer: Arc<dyn FunctionSpecializer>,
+    ) -> MResult<()> {
+        let canonical_name = name.into();
+        let entry = FunctionExtensionEntry::new(canonical_name.clone(), specializer);
+        let extension = entry.id;
+
+        // Registration spans two checkpointed stores. Validate and apply it to
+        // clones first so a collision cannot leave either store half-mutated.
+        let mut state = self.interpreter.state.borrow_mut();
+        let mut extensions = state.function_extensions.clone();
+        let mut environment = state.function_environment.clone();
+        extensions.insert_or_replace(entry)?;
+        environment.bind_extension(&canonical_name, &canonical_name, extension)?;
+        state.function_extensions = extensions;
+        state.function_environment = environment;
+        Ok(())
     }
 
     pub fn register_native_closure(
         &mut self,
         name: impl Into<String>,
         function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
-    ) {
+    ) -> MResult<()> {
         let name = name.into();
 
-        self.register_native_function_compiler(
+        self.register_function_extension(
             name.clone(),
-            Arc::new(ClosureNativeFunctionCompiler::new(name, function)),
-        );
+            Arc::new(ClosureFunctionSpecializer::new(name, function)),
+        )
     }
 
     pub fn from_environment(name: impl Into<String>, environment: MechProgramEnvironment) -> Self {
@@ -1665,6 +1675,130 @@ mod tests {
                 .function_environment
                 .resolve_name("marker"),
             None,
+        );
+    }
+
+    #[cfg(all(feature = "functions", feature = "f64"))]
+    fn extension_f64_value(value: &Value) -> f64 {
+        match value {
+            Value::F64(value) => *value.borrow(),
+            Value::MutableReference(value) => extension_f64_value(&value.borrow()),
+            other => panic!("expected f64 value, got {other:?}"),
+        }
+    }
+
+    #[cfg(all(feature = "functions", feature = "f64"))]
+    #[test]
+    fn native_closure_registration_replaces_exact_names_and_checkpoint_restores_the_original() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let catalog = Arc::clone(program.function_catalog());
+
+        program
+            .register_native_closure("host/checkpoint", |_| Ok(Value::F64(Ref::new(1.0))))
+            .unwrap();
+        program.run_string("before := host/checkpoint()").unwrap();
+        assert_eq!(
+            extension_f64_value(&program.root_symbol_value("before").unwrap()),
+            1.0,
+        );
+
+        let checkpoint = program.checkpoint().unwrap();
+        program
+            .register_native_closure("host/checkpoint", |_| Ok(Value::F64(Ref::new(2.0))))
+            .unwrap();
+        program
+            .run_string("replacement := host/checkpoint()")
+            .unwrap();
+        assert_eq!(
+            extension_f64_value(&program.root_symbol_value("replacement").unwrap()),
+            2.0,
+        );
+
+        program.restore(checkpoint).unwrap();
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+        assert!(program.root_symbol_value("replacement").is_err());
+        program.run_string("restored := host/checkpoint()").unwrap();
+        assert_eq!(
+            extension_f64_value(&program.root_symbol_value("restored").unwrap()),
+            1.0,
+        );
+    }
+
+    #[cfg(feature = "functions")]
+    #[test]
+    fn native_closure_registration_is_fallible_atomic_and_checkpointed() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let extension_count = program
+            .interpreter()
+            .state
+            .borrow()
+            .function_extensions
+            .len();
+
+        let error = program
+            .register_native_closure("", |_| Ok(Value::Empty))
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionExtensionInvalidEntry");
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_extensions
+                .len(),
+            extension_count,
+        );
+
+        let checkpoint = program.checkpoint().unwrap();
+        program
+            .register_native_closure("host/temporary", |_| Ok(Value::Index(Ref::new(3))))
+            .unwrap();
+        assert!(matches!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("host/temporary"),
+            Some(FunctionBinding::Extension(_)),
+        ));
+
+        program.restore(checkpoint).unwrap();
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("host/temporary"),
+            None,
+        );
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_extensions
+                .len(),
+            extension_count,
+        );
+    }
+
+    #[cfg(all(feature = "functions", feature = "compiler", feature = "f64"))]
+    #[test]
+    fn native_closure_bytecode_rejection_remains_structured() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        program
+            .register_native_closure("host/source-only", |_| Ok(Value::F64(Ref::new(4.0))))
+            .unwrap();
+        program
+            .run_string("source-only := host/source-only()")
+            .unwrap();
+
+        let error = program.compile_bytecode().unwrap_err();
+        assert_eq!(
+            error.kind_name(),
+            "ClosureNativeFunctionNotBytecodeCompilable",
         );
     }
 
