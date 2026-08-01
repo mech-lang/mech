@@ -8,12 +8,13 @@ pub(super) use super::super::{
 };
 pub(super) use crate::patterns::PatternBindingSink;
 pub(super) use crate::{
-    BytecodeCompilerContext, C64, CompiledPattern, Dictionary, GenericError, Interpreter, MResult,
-    Matrix, MechAtom, MechEnum, MechError, MechErrorKind, MechFunction, MechFunctionCompiler,
-    MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, NativeFunctionCompiler,
-    Pattern, PatternActivationRegistration, PatternBinding, PatternMatch, R64, ReactiveCellId,
-    ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveRegisterCommit,
-    ReactiveTurnOutcome, Ref, Register, SymbolTableSnapshot, ValRef, Value, ValueKind, hash_str,
+    BytecodeCompilerContext, C64, CompiledPattern, Dictionary, FunctionExtensionEntry,
+    FunctionSpecializer, GenericError, Interpreter, MResult, Matrix, MechAtom, MechEnum, MechError,
+    MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionImpl, MechMap, MechRecord,
+    MechSet, MechTable, MechTuple, Pattern, PatternActivationRegistration, PatternBinding,
+    PatternMatch, R64, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
+    ReactiveRegisterCommit, ReactiveTurnOutcome, Ref, Register, SymbolTableSnapshot, ValRef, Value,
+    ValueKind, hash_str,
 };
 pub(super) use std::collections::HashMap;
 pub(super) use std::sync::{
@@ -21,14 +22,14 @@ pub(super) use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-pub(super) struct EagerGuardTestCompiler {
+pub(super) struct EagerGuardTestSpecializer {
     pub(super) compile_calls: Arc<AtomicUsize>,
 }
 
-impl NativeFunctionCompiler for EagerGuardTestCompiler {
-    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for EagerGuardTestSpecializer {
+    fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         self.compile_calls.fetch_add(1, Ordering::SeqCst);
-        panic!("unsupported guard compiler must not run during preflight")
+        panic!("unsupported guard specializer must not run during preflight")
     }
 }
 
@@ -78,12 +79,12 @@ impl MechFunctionCompiler for FailingPatternRegister {
     }
 }
 
-pub(super) struct FailingPatternRegisterCompiler {
+pub(super) struct FailingPatternRegisterSpecializer {
     pub(super) solve_calls: Arc<AtomicUsize>,
     pub(super) stage_calls: Arc<AtomicUsize>,
 }
-impl NativeFunctionCompiler for FailingPatternRegisterCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for FailingPatternRegisterSpecializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         let argument = arguments.first().ok_or_else(|| {
             MechError::new(
                 GenericError {
@@ -99,6 +100,21 @@ impl NativeFunctionCompiler for FailingPatternRegisterCompiler {
             stage_calls: self.stage_calls.clone(),
         }))
     }
+}
+
+pub(super) fn install_function_extension(
+    interpreter: &Interpreter,
+    name: &str,
+    specializer: Arc<dyn FunctionSpecializer>,
+) {
+    let entry = FunctionExtensionEntry::new(name, specializer);
+    let extension = entry.id;
+    let mut state = interpreter.state.borrow_mut();
+    state.function_extensions.insert_or_replace(entry).unwrap();
+    state
+        .function_environment
+        .bind_extension(name, name, extension)
+        .unwrap();
 }
 
 pub(super) fn scalar_capture_cases() -> Vec<(ValueKind, Value)> {

@@ -2,7 +2,9 @@ use super::snapshot_runtime_value;
 use crate::runtime::RuntimeActivationEffectBarrierInvariantError;
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
-use mech_core::{MResult, MechError, MechFunctionImpl, NativeFunctionCompiler, Value};
+use mech_core::{
+    FunctionSpecializer, GuardFunctionSafety, MResult, MechError, MechFunctionImpl, Value,
+};
 
 // This name deliberately starts with a NUL byte.  It is an identifier we can
 // construct in the lowered tree, but it cannot be produced by the Mech lexer.
@@ -14,9 +16,9 @@ pub(in crate::runtime) const ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME: &str =
     "\0mech/runtime/activation-effect-payload-capture";
 
 #[derive(Clone, Debug)]
-pub(in crate::runtime) struct ActivationEffectBarrierCompiler;
-impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
+pub(in crate::runtime) struct ActivationEffectBarrierSpecializer;
+impl FunctionSpecializer for ActivationEffectBarrierSpecializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
         if !arguments.is_empty() {
             return Err(MechError::new(
                 RuntimeActivationEffectBarrierInvariantError {
@@ -29,6 +31,10 @@ impl NativeFunctionCompiler for ActivationEffectBarrierCompiler {
             ));
         }
         Ok(Box::new(ActivationEffectBarrier))
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+        GuardFunctionSafety::Unsupported
     }
 }
 #[derive(Clone, Debug)]
@@ -67,10 +73,10 @@ impl MechFunctionCompiler for ActivationEffectBarrier {
 }
 
 #[derive(Clone, Debug)]
-pub(in crate::runtime) struct ActivationEffectPayloadCaptureCompiler;
-impl NativeFunctionCompiler for ActivationEffectPayloadCaptureCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
-        let [payload] = arguments.as_slice() else {
+pub(in crate::runtime) struct ActivationEffectPayloadCaptureSpecializer;
+impl FunctionSpecializer for ActivationEffectPayloadCaptureSpecializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
+        let [payload] = arguments else {
             return Err(MechError::new(
                 RuntimeActivationEffectBarrierInvariantError {
                     reason: format!(
@@ -85,6 +91,10 @@ impl NativeFunctionCompiler for ActivationEffectPayloadCaptureCompiler {
             payload: payload.clone(),
             snapshot: mech_core::Ref::new(snapshot_runtime_value(payload)?),
         }))
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+        GuardFunctionSafety::Unsupported
     }
 }
 

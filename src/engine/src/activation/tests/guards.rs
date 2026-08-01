@@ -1,9 +1,10 @@
 use super::support::{
-    ActivationPatternGuardMustBePure, Arc, AtomicUsize, EagerGuardTestCompiler, Ordering, Pattern,
-    ReactiveDependencyKind, Ref, Value, arm_pulse_generation, assert_dispatch_turn,
-    body_output_f64, committed_capture_value, hash_str, interpret, interpret_more, plan_snapshot,
-    proposed_capture_value, registration, root_cell, selected_arm_index, set_atom_tuple_event,
-    set_f64_matrix_event, symbol, turn_changed_nodes, turn_executed_nodes, turn_unchanged_nodes,
+    ActivationPatternGuardMustBePure, Arc, AtomicUsize, EagerGuardTestSpecializer, Ordering,
+    Pattern, ReactiveDependencyKind, Ref, Value, arm_pulse_generation, assert_dispatch_turn,
+    body_output_f64, committed_capture_value, hash_str, install_function_extension, interpret,
+    interpret_more, plan_snapshot, proposed_capture_value, registration, root_cell,
+    selected_arm_index, set_atom_tuple_event, set_f64_matrix_event, symbol, turn_changed_nodes,
+    turn_executed_nodes, turn_unchanged_nodes,
 };
 
 #[test]
@@ -221,12 +222,13 @@ event := 20.0
 }
 
 #[test]
-fn activation_guard_rejects_unclassified_native_compiler_before_compile() {
+fn activation_guard_rejects_unsafe_extension_before_specialization() {
     let mut i = interpret("event := (:released, 1.0)");
     let compile_calls = Arc::new(AtomicUsize::new(0));
-    i.functions().borrow_mut().insert_function_compiler(
+    install_function_extension(
+        &i,
         "test/eager-guard",
-        Arc::new(EagerGuardTestCompiler {
+        Arc::new(EagerGuardTestSpecializer {
             compile_calls: compile_calls.clone(),
         }),
     );

@@ -1,36 +1,12 @@
 use std::sync::Arc;
 
-use mech::{
-    FunctionSystem, LegacyFunctionBoundaryBuilder, MechProgram, MechProgramConfig,
-    default_function_system,
-};
+use mech::{MechProgram, MechProgramConfig, default_function_system};
 use mech_core::{
-    FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, NativeFunctionCompiler,
-    OperationId, Value, hash_str,
+    FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, OperationId, Value,
+    hash_str,
 };
 
 const ADD_SOURCE: &str = "result := 1.0 + 2.0\nresult";
-
-struct LegacyCompilerMustNotRun;
-
-impl NativeFunctionCompiler for LegacyCompilerMustNotRun {
-    fn compile(&self, _: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        panic!("catalog-owned named operation reached the legacy compiler")
-    }
-}
-
-struct ExplicitLegacyMathAddCompiler;
-
-impl NativeFunctionCompiler for ExplicitLegacyMathAddCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        default_function_system()
-            .catalog()
-            .specializer(OperationId::from_name("math/add"))
-            .expect("standard catalog must contain math/add")
-            .specializer
-            .specialize(arguments)
-    }
-}
 
 struct UnreachableSpecializer;
 
@@ -156,61 +132,52 @@ fn named_math_add_uses_catalog_without_legacy_compiler() {
 }
 
 #[test]
-fn empty_catalog_and_boundary_allow_explicit_named_legacy_fallback() {
-    let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-    let function_system = FunctionSystem::from_catalog(catalog);
-    assert!(
-        !function_system
-            .legacy_boundary()
-            .owns_operation(OperationId::from_name("math/add"))
-    );
-    let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
-    assert!(
-        program
-            .interpreter()
-            .functions()
-            .borrow_mut()
-            .function_compilers
-            .insert(
-                hash_str("math/add"),
-                Arc::new(ExplicitLegacyMathAddCompiler),
-            )
-            .is_none(),
-        "custom program must begin without an implicit legacy stdlib",
-    );
-
+fn user_definition_shadows_named_catalog_binding_but_not_the_add_operator() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
     let result = program
-        .run_string("math/add(1.0, 2.0)")
-        .expect("an explicitly installed, unclaimed compiler remains eligible for fallback");
+        .run_string(
+            r#"math/add(left<f64>, right<f64>) => <f64>
+  | * => 40.0.
+named := math/add(1.0, 2.0)
+result := named + 2.0
+result"#,
+        )
+        .expect("user named-call precedence must not affect syntax operators");
 
-    assert_f64(result, 3.0);
+    assert_f64(result, 42.0);
 }
 
 #[test]
-fn claimed_named_operation_blocks_legacy_fallback_without_special_cases() {
-    const NAME: &str = "test/claimed";
-
+fn missing_named_function_returns_the_structured_resolver_error() {
+    const NAME: &str = "test/missing";
     let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-    let mut boundary = LegacyFunctionBoundaryBuilder::new();
-    boundary.claim_operation(NAME);
-    let function_system = FunctionSystem::new(catalog, Arc::new(boundary.build()));
-    let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
-    program
-        .interpreter()
-        .functions()
-        .borrow_mut()
-        .function_compilers
-        .insert(hash_str(NAME), Arc::new(LegacyCompilerMustNotRun));
+    let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
 
-    let error = program.run_string("test/claimed(1.0)").unwrap_err();
-    assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
+    let error = program.run_string("test/missing(1.0)").unwrap_err();
+
+    assert_eq!(error.kind_name(), "MissingFunction");
     assert_eq!(
         error.kind_message(),
-        format!(
-            "function operation `test/claimed` (0x{:016x}) is unavailable in the catalog",
-            OperationId::from_name(NAME).raw(),
-        ),
+        format!("Function with id {} not found", hash_str(NAME)),
+    );
+}
+
+#[test]
+fn unbound_catalog_specializer_cannot_rescue_a_named_call() {
+    const NAME: &str = "test/unbound";
+
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_specializer(NAME, Arc::new(UnreachableSpecializer))
+        .unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
+
+    let error = program.run_string("test/unbound(1.0)").unwrap_err();
+
+    assert_eq!(error.kind_name(), "MissingFunction");
+    assert_eq!(
+        error.kind_message(),
+        format!("Function with id {} not found", hash_str(NAME)),
     );
 }

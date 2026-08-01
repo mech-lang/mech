@@ -1,10 +1,11 @@
 use super::support::{
-    ActivationPatternDefinitionUnsupported, Arc, AtomicUsize, FailingPatternRegisterCompiler,
+    ActivationPatternDefinitionUnsupported, Arc, AtomicUsize, FailingPatternRegisterSpecializer,
     Ordering, PatternRegisterStageFailure, Ref, Value, arm_pulse_generation, arm_register_nodes,
     assert_dispatch_turn, assert_failed_elaboration_restored, body_output_f64,
-    committed_capture_value, f64_symbol, hash_str, interpret, interpret_more, plan_snapshot,
-    proposed_capture_value, registration, root_cell, set_atom_tuple_event, set_f64_symbol, symbol,
-    turn_changed_nodes, turn_executed_nodes, turn_unchanged_nodes,
+    committed_capture_value, f64_symbol, hash_str, install_function_extension, interpret,
+    interpret_more, plan_snapshot, proposed_capture_value, registration, root_cell,
+    set_atom_tuple_event, set_f64_symbol, symbol, turn_changed_nodes, turn_executed_nodes,
+    turn_unchanged_nodes,
 };
 
 #[test]
@@ -18,16 +19,14 @@ event := 0.0
     );
     let solve_calls = Arc::new(AtomicUsize::new(0));
     let stage_calls = Arc::new(AtomicUsize::new(0));
-    interpreter
-        .functions()
-        .borrow_mut()
-        .insert_function_compiler(
-            "test/failing-pattern-register",
-            Arc::new(FailingPatternRegisterCompiler {
-                solve_calls: solve_calls.clone(),
-                stage_calls: stage_calls.clone(),
-            }),
-        );
+    install_function_extension(
+        &interpreter,
+        "test/failing-pattern-register",
+        Arc::new(FailingPatternRegisterSpecializer {
+            solve_calls: solve_calls.clone(),
+            stage_calls: stage_calls.clone(),
+        }),
+    );
     interpret_more(
         &mut interpreter,
         r#"
