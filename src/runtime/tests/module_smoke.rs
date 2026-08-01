@@ -6,8 +6,8 @@ use mech_core::{
     MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
     Ref, Value, hash_str,
 };
+use mech_engine::{MechProgram, MechProgramConfig};
 use mech_host_cli::{CliBackend, CliResourceProvider};
-use mech_program::{MechProgram, MechProgramConfig};
 use mech_runtime::*;
 
 fn apply_prepared_effect(effect: PreparedRuntimeEffect) -> mech_core::MResult<()> {

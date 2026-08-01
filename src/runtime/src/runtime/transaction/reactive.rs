@@ -8,7 +8,7 @@ use crate::runtime::MechRuntime;
 use crate::runtime::state::ScopedRuntimeState;
 use crate::{RuntimeContext, RuntimeInvalidOperationError, TransactionId};
 use mech_core::{MResult, MechError, MechExecutionServices, Value};
-use mech_program::{
+use mech_engine::{
     ExecutionServicesBorrowConflict, MechProgram, ProgramInputUpdate, ProgramTurnFinalization,
 };
 use std::cell::RefCell;
@@ -126,7 +126,7 @@ impl MechRuntime {
             for program_input in bindings {
                 if !seen_targets.insert(*program_input) {
                     return Err(MechError::new(
-                        mech_program::ProgramInputDuplicateTarget {
+                        mech_engine::ProgramInputDuplicateTarget {
                             input: *program_input,
                         },
                         None,

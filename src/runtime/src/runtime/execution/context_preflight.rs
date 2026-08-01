@@ -19,7 +19,7 @@ use crate::{
     RuntimeResourceWriteRequest, SourceDeclaration, SourceIndex,
 };
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Value, hash_str};
-use mech_program::MechProgram;
+use mech_engine::MechProgram;
 
 impl MechRuntime {
     fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {

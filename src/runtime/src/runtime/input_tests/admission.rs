@@ -514,7 +514,7 @@ fn assert_rejected_activation_left_no_state(
     o: &RecordingTestOutput,
     p: &ActivationPlanSnapshot,
     s: usize,
-    b: &HashMap<RuntimeHostInputSource, Vec<mech_program::ProgramInputId>>,
+    b: &HashMap<RuntimeHostInputSource, Vec<mech_engine::ProgramInputId>>,
 ) {
     assert_eq!(activation_plan_snapshot(r), *p);
     assert_eq!(r.persistent_sends.len(), s);

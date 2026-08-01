@@ -17,7 +17,7 @@ use crate::{
     materialize_config_spec_grants, register_config_spec_resources,
 };
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
-use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;

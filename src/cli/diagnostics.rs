@@ -1,7 +1,7 @@
 use ariadne::{Color, Label, Report, ReportKind, sources};
 use mech_core::*;
 #[cfg(feature = "invariant_define")]
-use mech_program::{IntegrityConstraintFailureReason, IntegrityConstraintViolationSet};
+use mech_engine::{IntegrityConstraintFailureReason, IntegrityConstraintViolationSet};
 use mech_syntax::ParserErrorReport;
 
 use crate::WatchPathFailed;
@@ -156,7 +156,7 @@ pub(crate) fn format_integrity_constraint_error(_error: &MechError) -> Option<St
 mod tests {
     use super::*;
     #[cfg(feature = "invariant_define")]
-    use mech_program::IntegrityConstraintViolation;
+    use mech_engine::IntegrityConstraintViolation;
 
     #[cfg(feature = "invariant_define")]
     #[test]

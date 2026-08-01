@@ -14,7 +14,7 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
-no_std = ["mech-core/no_std", "mech-program/no_std"]
+no_std = ["mech-core/no_std", "mech-engine/no_std"]
 
 default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "u8", "u16", "u32", "u64", "u128", 
@@ -22,15 +22,15 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
       "watcher",
-      "mech-core/default", "mech-program/default"
+      "mech-core/default", "mech-engine/default"
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
       "watcher",
-      "mech-core/base", "mech-program/base"
+      "mech-core/base", "mech-engine/base"
       ]
 
-async = ["mech-program/async"]
+async = ["mech-engine/async"]
 watcher = ["ignore", "notify"]
 statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
@@ -51,8 +51,8 @@ stdlib = ["bool", "string",
       "functions", "formulas"
     ]
 
-sample_hold = ["mech-program/sample_hold"]
-state_step = ["mech-program/state_step"]
+sample_hold = ["mech-engine/sample_hold"]
+state_step = ["mech-engine/state_step"]
 
 baselib = ["bool", "string", 
       "f64", "c64", "r64",
@@ -66,89 +66,89 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["mech-program/compiler"]
-program = ["mech-program/program"]
-pretty_print = ["mech-program/pretty_print"]
-serde = ["dep:serde", "dep:serde_derive", "mech-program/serde"]
-mika = ["mech-program/mika"]
-linked_stdlib = ["mech-program/linked_stdlib"]
+compiler = ["mech-engine/compiler"]
+program = ["mech-engine/program"]
+pretty_print = ["mech-engine/pretty_print"]
+serde = ["dep:serde", "dep:serde_derive", "mech-engine/serde"]
+mika = ["mech-engine/mika"]
+linked_stdlib = ["mech-engine/linked_stdlib"]
 
-statements = ["mech-core/statements", "mech-program/statements"]
-variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-program/variables"]
-variable_define = ["statements", "functions", "mech-core/variable_define", "mech-program/variable_define"]
-invariant_define = ["variable_define", "mech-core/invariant_define", "mech-program/invariant_define"]
-variable_assign = ["statements", "mech-core/variable_assign", "mech-program/variable_assign"]
-kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-program/kind_define"]
-kind_annotation = ["functions", "mech-core/kind_annotation", "mech-program/kind_annotation"]
-formulas = ["mech-core/formulas", "mech-program/formulas"]
-functions = ["symbol_table", "mech-core/functions", "mech-program/functions"]
-state_machines = ["functions", "mech-program/state_machines"]
-symbol_table = ["mech-core/symbol_table", "mech-program/symbol_table"]
+statements = ["mech-core/statements", "mech-engine/statements"]
+variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-engine/variables"]
+variable_define = ["statements", "functions", "mech-core/variable_define", "mech-engine/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define", "mech-engine/invariant_define"]
+variable_assign = ["statements", "mech-core/variable_assign", "mech-engine/variable_assign"]
+kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-engine/kind_define"]
+kind_annotation = ["functions", "mech-core/kind_annotation", "mech-engine/kind_annotation"]
+formulas = ["mech-core/formulas", "mech-engine/formulas"]
+functions = ["symbol_table", "mech-core/functions", "mech-engine/functions"]
+state_machines = ["functions", "mech-engine/state_machines"]
+symbol_table = ["mech-core/symbol_table", "mech-engine/symbol_table"]
 
-bool = ["mech-core/bool", "mech-program/bool"]
-string = ["mech-core/string", "mech-program/string"]
+bool = ["mech-core/bool", "mech-engine/bool"]
+string = ["mech-core/string", "mech-engine/string"]
       
 # Numbers
-numbers = ["mech-core/numbers", "mech-program/numbers"]
-complex = ["f64", "numbers", "mech-core/complex", "mech-program/complex"]
-rational = ["i64", "numbers", "mech-core/rational", "mech-program/rational"]
-signed_ints = ["numbers", "mech-core/signed_ints", "mech-program/signed_ints"]
-unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-program/unsigned_ints"]
-floats = ["numbers", "mech-core/floats", "mech-program/floats"]
-u8 = ["unsigned_ints", "mech-core/u8", "mech-program/u8"]
-u16 = ["unsigned_ints", "mech-core/u16", "mech-program/u16"]
-u32 = ["unsigned_ints", "mech-core/u32", "mech-program/u32"]
-u64 = ["unsigned_ints", "mech-core/u64", "mech-program/u64"]
-u128 = ["unsigned_ints", "mech-core/u128", "mech-program/u128"]
-i8 = ["signed_ints", "mech-core/i8", "mech-program/i8"]
-i16 = ["signed_ints", "mech-core/i16", "mech-program/i16"]
-i32 = ["signed_ints", "mech-core/i32", "mech-program/i32"]
-i64 = ["signed_ints", "mech-core/i64", "mech-program/i64"]
-i128 = ["signed_ints", "mech-core/i128", "mech-program/i128"]
-f32 = ["floats", "mech-core/f32", "mech-program/f32"]
-f64 = ["floats", "mech-core/f64", "mech-program/f64"]
-c64 = ["complex", "mech-core/c64", "mech-program/c64"]
-r64 = ["rational", "mech-core/r64", "mech-program/r64"]
+numbers = ["mech-core/numbers", "mech-engine/numbers"]
+complex = ["f64", "numbers", "mech-core/complex", "mech-engine/complex"]
+rational = ["i64", "numbers", "mech-core/rational", "mech-engine/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints", "mech-engine/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-engine/unsigned_ints"]
+floats = ["numbers", "mech-core/floats", "mech-engine/floats"]
+u8 = ["unsigned_ints", "mech-core/u8", "mech-engine/u8"]
+u16 = ["unsigned_ints", "mech-core/u16", "mech-engine/u16"]
+u32 = ["unsigned_ints", "mech-core/u32", "mech-engine/u32"]
+u64 = ["unsigned_ints", "mech-core/u64", "mech-engine/u64"]
+u128 = ["unsigned_ints", "mech-core/u128", "mech-engine/u128"]
+i8 = ["signed_ints", "mech-core/i8", "mech-engine/i8"]
+i16 = ["signed_ints", "mech-core/i16", "mech-engine/i16"]
+i32 = ["signed_ints", "mech-core/i32", "mech-engine/i32"]
+i64 = ["signed_ints", "mech-core/i64", "mech-engine/i64"]
+i128 = ["signed_ints", "mech-core/i128", "mech-engine/i128"]
+f32 = ["floats", "mech-core/f32", "mech-engine/f32"]
+f64 = ["floats", "mech-core/f64", "mech-engine/f64"]
+c64 = ["complex", "mech-core/c64", "mech-engine/c64"]
+r64 = ["rational", "mech-core/r64", "mech-engine/r64"]
 
 # Structs
-set = ["mech-core/set", "mech-program/set"]
-map = ["mech-core/map", "mech-program/map"]
-table = ["vectord", "record", "kind_annotation", "mech-core/table", "mech-program/table"]
-tuple = ["mech-core/tuple", "mech-program/tuple"]
-enum = ["mech-core/enum", "mech-program/enum"]
-record = ["tuple", "kind_annotation", "mech-core/record", "mech-program/record"]
-atom = ["mech-core/atom", "mech-program/atom"]
+set = ["mech-core/set", "mech-engine/set"]
+map = ["mech-core/map", "mech-engine/map"]
+table = ["vectord", "record", "kind_annotation", "mech-core/table", "mech-engine/table"]
+tuple = ["mech-core/tuple", "mech-engine/tuple"]
+enum = ["mech-core/enum", "mech-engine/enum"]
+record = ["tuple", "kind_annotation", "mech-core/record", "mech-engine/record"]
+atom = ["mech-core/atom", "mech-engine/atom"]
 
 # Matrix
-matrix = ["mech-core/matrix", "mech-program/matrix"]
-fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-program/fixed_row_vector"]
-fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-program/fixed_vector"]
-fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-program/fixed_matrix"]
-dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-program/dynamic_matrix"]
-row_vector4 = ["matrix", "mech-core/row_vector4", "mech-program/row_vector4"]
-row_vector3 = ["matrix", "mech-core/row_vector3", "mech-program/row_vector3"]
-row_vector2 = ["matrix", "mech-core/row_vector2", "mech-program/row_vector2"]
-vector4 = ["matrix", "mech-core/vector4", "mech-program/vector4"]
-vector3 = ["matrix", "mech-core/vector3", "mech-program/vector3"]
-vector2 = ["matrix", "mech-core/vector2", "mech-program/vector2"]
-matrix4 = ["matrix", "mech-core/matrix4", "mech-program/matrix4"]
-matrix3 = ["matrix", "mech-core/matrix3", "mech-program/matrix3"]
-matrix2 = ["matrix", "mech-core/matrix2", "mech-program/matrix2"]
-matrix1 = ["matrix", "mech-core/matrix1", "mech-program/matrix1"]
-matrix2x3 = ["matrix", "mech-core/matrix2x3", "mech-program/matrix2x3"]
-matrix3x2 = ["matrix", "mech-core/matrix3x2", "mech-program/matrix3x2"]
-row_vectord =["matrix", "mech-core/row_vectord", "mech-program/row_vectord"]
-vectord = ["matrix", "mech-core/vectord", "mech-program/vectord"]
-matrixd = ["matrix", "mech-core/matrixd", "mech-program/matrixd"]
+matrix = ["mech-core/matrix", "mech-engine/matrix"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-engine/fixed_row_vector"]
+fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-engine/fixed_vector"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-engine/fixed_matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-engine/dynamic_matrix"]
+row_vector4 = ["matrix", "mech-core/row_vector4", "mech-engine/row_vector4"]
+row_vector3 = ["matrix", "mech-core/row_vector3", "mech-engine/row_vector3"]
+row_vector2 = ["matrix", "mech-core/row_vector2", "mech-engine/row_vector2"]
+vector4 = ["matrix", "mech-core/vector4", "mech-engine/vector4"]
+vector3 = ["matrix", "mech-core/vector3", "mech-engine/vector3"]
+vector2 = ["matrix", "mech-core/vector2", "mech-engine/vector2"]
+matrix4 = ["matrix", "mech-core/matrix4", "mech-engine/matrix4"]
+matrix3 = ["matrix", "mech-core/matrix3", "mech-engine/matrix3"]
+matrix2 = ["matrix", "mech-core/matrix2", "mech-engine/matrix2"]
+matrix1 = ["matrix", "mech-core/matrix1", "mech-engine/matrix1"]
+matrix2x3 = ["matrix", "mech-core/matrix2x3", "mech-engine/matrix2x3"]
+matrix3x2 = ["matrix", "mech-core/matrix3x2", "mech-engine/matrix3x2"]
+row_vectord =["matrix", "mech-core/row_vectord", "mech-engine/row_vectord"]
+vectord = ["matrix", "mech-core/vectord", "mech-engine/vectord"]
+matrixd = ["matrix", "mech-core/matrixd", "mech-engine/matrixd"]
 
 # Subscripts
-subscript = ["mech-core/subscript", "mech-program/subscript"]
-subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice", "mech-program/subscript_slice"]
-subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range", "mech-program/subscript_range"]
-subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula", "mech-program/subscript_formula"]
-logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", "mech-program/logical_indexing"]
-dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-program/dot_indexing"]
-swizzle = ["subscript", "mech-core/swizzle", "mech-program/swizzle"]
+subscript = ["mech-core/subscript", "mech-engine/subscript"]
+subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice", "mech-engine/subscript_slice"]
+subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range", "mech-engine/subscript_range"]
+subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula", "mech-engine/subscript_formula"]
+logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", "mech-engine/logical_indexing"]
+dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-engine/dot_indexing"]
+swizzle = ["subscript", "mech-core/swizzle", "mech-engine/swizzle"]
 notify = ["dep:notify"]
 host_delegation = ["serde"]
 host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_core"]
@@ -162,7 +162,7 @@ trybuild = "1.0.118"
 
 [dependencies]
 blake3 = "1.8.5"
-mech-program = { version = "0.3.5", default-features = false }
+mech-engine = { version = "0.3.5", default-features = false }
 mech-core = { version = "0.3.5", default-features = false }
 mech-syntax = { version = "0.3.5", default-features = false }
 serde = { version = "1.0.228", optional = true }

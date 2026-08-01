@@ -11,7 +11,7 @@ use crate::{
     SchedulerPolicy, SourceResolver, TransactionId,
 };
 use mech_core::{MResult, ModuleManifestCatalog};
-use mech_program::{MechProgram, ProgramInputId};
+use mech_engine::{MechProgram, ProgramInputId};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;

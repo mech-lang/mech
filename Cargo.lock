@@ -2100,13 +2100,13 @@ dependencies = [
  "indicatif",
  "libc",
  "mech-core",
+ "mech-engine",
  "mech-host-browser",
  "mech-host-cli",
  "mech-host-console",
  "mech-host-scene",
  "mech-host-time",
  "mech-host-timer",
- "mech-program",
  "mech-runtime",
  "mech-syntax",
  "nalgebra",
@@ -2191,6 +2191,19 @@ dependencies = [
  "tabled",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "mech-engine"
+version = "0.3.5"
+dependencies = [
+ "criterion",
+ "mech-bytecode",
+ "mech-core",
+ "mech-interpreter",
+ "mech-syntax",
+ "serde",
+ "web-time",
 ]
 
 [[package]]
@@ -2327,25 +2340,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-program"
-version = "0.3.5"
-dependencies = [
- "bincode",
- "colored",
- "criterion",
- "crossbeam-channel",
- "csv",
- "mech-bytecode",
- "mech-core",
- "mech-interpreter",
- "mech-syntax",
- "notify",
- "reqwest",
- "serde",
- "web-time",
-]
-
-[[package]]
 name = "mech-range"
 version = "0.3.5"
 dependencies = [
@@ -2365,9 +2359,9 @@ dependencies = [
  "ed25519-dalek",
  "ignore",
  "mech-core",
+ "mech-engine",
  "mech-host-cli",
  "mech-interpreter",
- "mech-program",
  "mech-syntax",
  "notify",
  "rand_core 0.6.4",

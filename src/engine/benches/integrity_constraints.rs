@@ -1,5 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use mech_program::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig};
 use std::hint::black_box;
 
 fn program(source: &str) -> MechProgram {

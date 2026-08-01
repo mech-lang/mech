@@ -16,7 +16,7 @@ use crossterm::{ExecutableCommand, cursor, style::Print};
 #[cfg(feature = "mika")]
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use mech_core::*;
-use mech_program::*;
+use mech_engine::*;
 #[cfg(feature = "mika")]
 use mech_syntax::MICROMIKA_WAVE;
 use mech_syntax::{ReplCommand, parse_repl_command};

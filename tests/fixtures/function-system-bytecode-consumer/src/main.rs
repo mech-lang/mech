@@ -1,7 +1,7 @@
 use mech_core::{DecodedInstr, ParsedProgram, Value, hash_str};
 use mech_interpreter as _;
 use mech_math as _;
-use mech_program::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig};
 use mech_range as _;
 use mech_string as _;
 use serde::Deserialize;
