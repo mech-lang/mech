@@ -499,12 +499,15 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
   let mut saw_empty = false;
   for col in &r.columns {
     let result = matrix_column(col, env, p)?;
-    saw_empty |= matches!(result.kind(), ValueKind::Empty);
+    let is_empty = matches!(result.kind(), ValueKind::Empty);
+    saw_empty |= is_empty;
     if shape == vec![0,0] {
-      shape = result.shape();
-      kind = result.kind();
+      if !is_empty {
+        shape = result.shape();
+        kind = result.kind();
+      }
       row.push(result);
-    } else if shape[0] == result.shape()[0] {
+    } else if is_empty || shape[0] == result.shape()[0] {
       row.push(result);
     } else {
       return Err(MechError::new(
@@ -514,7 +517,7 @@ pub fn matrix_row(r: &MatrixRow, env: Option<&Environment>, p: &Interpreter) -> 
       );
     }
   }
-  if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
+  if saw_empty && row.iter().all(|value| matches!(value.kind(), ValueKind::Empty) || value.shape() == vec![1, 1]) {
     return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, r.columns.len())));
   }
   let new_fxn = MatrixHorzCat{}.compile(&row)?;
