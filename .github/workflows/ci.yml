@@ -423,7 +423,7 @@ jobs:
             --chrome \
             src/wasm \
             --no-default-features \
-            --features browser_project \
+            --features "browser_project,set_union,set_element_of" \
             -- \
             --nocapture
 
