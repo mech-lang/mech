@@ -1,4 +1,7 @@
 #![allow(warnings)]
+#[path = "bytecode/dynamic_matrix_factory.rs"]
+mod dynamic_matrix_factory;
+
 extern crate mech_syntax;
 extern crate mech_core;
 use std::cell::RefCell;

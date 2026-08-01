@@ -206,6 +206,7 @@ matrix_vertcat = ["matrix"]
 [dev-dependencies]
 nalgebra = "0.34.1"
 indicatif = { version = "0.18.4", features = ["in_memory"] }
+mech-bytecode = { path = "src/bytecode", default-features = false }
 
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2"
