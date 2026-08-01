@@ -2099,7 +2099,6 @@ dependencies = [
  "indexmap",
  "indicatif",
  "libc",
- "mech-bytecode",
  "mech-core",
  "mech-host-browser",
  "mech-host-cli",
