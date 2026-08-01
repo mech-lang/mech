@@ -1431,8 +1431,6 @@ impl Interpreter {
                 .borrow_mut()
                 .insert(ans_id, "ans".to_string());
         }
-        #[cfg(feature = "functions")]
-        load_prelude(&mut state.legacy_functions.borrow_mut());
         Self {
             id,
             checkpoint_owner: Rc::new(()),
@@ -1529,18 +1527,6 @@ impl Interpreter {
         };
         self.bind_context(alias, base_uri);
         Ok(())
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn new_with_full_stdlib(id: u64) -> Self {
-        Self::new_with_full_stdlib_steps(id, 10_000)
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn new_with_full_stdlib_steps(id: u64, max_steps: usize) -> Self {
-        let intrp = Self::new(id, max_steps);
-        load_stdlib(&mut intrp.functions().borrow_mut());
-        intrp
     }
 
     #[cfg(feature = "symbol_table")]

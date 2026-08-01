@@ -19,6 +19,19 @@ impl NativeFunctionCompiler for LegacyCompilerMustNotRun {
     }
 }
 
+struct ExplicitLegacyMathAddCompiler;
+
+impl NativeFunctionCompiler for ExplicitLegacyMathAddCompiler {
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        default_function_system()
+            .catalog()
+            .specializer(OperationId::from_name("math/add"))
+            .expect("standard catalog must contain math/add")
+            .specializer
+            .specialize(arguments)
+    }
+}
+
 struct UnreachableSpecializer;
 
 impl FunctionSpecializer for UnreachableSpecializer {
@@ -27,13 +40,22 @@ impl FunctionSpecializer for UnreachableSpecializer {
     }
 }
 
-fn remove_legacy_math_add_compiler(program: &MechProgram) {
+fn assert_math_add_is_catalog_owned(program: &MechProgram) {
     let operation = hash_str("math/add");
     let functions = program.interpreter().functions();
-    let removed = functions.borrow_mut().function_compilers.remove(&operation);
     assert!(
-        removed.is_some(),
-        "source proof requires the legacy math/add compiler to be loaded first",
+        !functions
+            .borrow()
+            .function_compilers
+            .contains_key(&operation),
+        "standard source specializers must not be copied into the mutable legacy table",
+    );
+    assert!(
+        program
+            .function_catalog()
+            .specializer(OperationId::from_name("math/add"))
+            .is_some(),
+        "standard catalog must own math/add",
     );
 }
 
@@ -62,8 +84,7 @@ fn standard_catalog_source_addition_does_not_use_legacy_compiler() {
             .legacy_boundary()
             .owns_operation(OperationId::from_name("math/add"))
     );
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
+    assert_math_add_is_catalog_owned(&program);
 
     let result = program
         .run_string(ADD_SOURCE)
@@ -85,8 +106,7 @@ fn explicitly_injected_catalog_source_addition_does_not_use_legacy_compiler() {
         &legacy_boundary,
     ));
 
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
+    assert_math_add_is_catalog_owned(&program);
     let result = program
         .run_string(ADD_SOURCE)
         .expect("explicitly injected catalog must specialize source math/add");
@@ -98,9 +118,6 @@ fn explicitly_injected_catalog_source_addition_does_not_use_legacy_compiler() {
 fn empty_catalog_source_addition_reports_named_operation_unavailable() {
     let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
     let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
-
     let error = program.run_string(ADD_SOURCE).unwrap_err();
     assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
     assert_eq!(
@@ -117,7 +134,6 @@ fn non_visible_catalog_operation_reports_its_name_and_id() {
         .unwrap();
     let catalog = Arc::new(builder.build().unwrap());
     let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    program.load_full_stdlib();
 
     let error = program.run_string(ADD_SOURCE).unwrap_err();
     assert_eq!(error.kind_name(), "FunctionOperationNotVisible");
@@ -130,8 +146,7 @@ fn non_visible_catalog_operation_reports_its_name_and_id() {
 #[test]
 fn named_math_add_uses_catalog_without_legacy_compiler() {
     let mut program = MechProgram::new(MechProgramConfig::default());
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
+    assert_math_add_is_catalog_owned(&program);
 
     let result = program
         .run_string("math/add(1.0, 2.0)")
@@ -141,7 +156,7 @@ fn named_math_add_uses_catalog_without_legacy_compiler() {
 }
 
 #[test]
-fn empty_catalog_and_boundary_allow_named_legacy_fallback() {
+fn empty_catalog_and_boundary_allow_explicit_named_legacy_fallback() {
     let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
     let function_system = FunctionSystem::from_catalog(catalog);
     assert!(
@@ -151,11 +166,23 @@ fn empty_catalog_and_boundary_allow_named_legacy_fallback() {
     );
     let mut program =
         MechProgram::with_function_system(MechProgramConfig::default(), function_system);
-    program.load_full_stdlib();
+    assert!(
+        program
+            .interpreter()
+            .functions()
+            .borrow_mut()
+            .function_compilers
+            .insert(
+                hash_str("math/add"),
+                Arc::new(ExplicitLegacyMathAddCompiler),
+            )
+            .is_none(),
+        "custom program must begin without an implicit legacy stdlib",
+    );
 
     let result = program
         .run_string("math/add(1.0, 2.0)")
-        .expect("an unclaimed named operation must remain eligible for legacy fallback");
+        .expect("an explicitly installed, unclaimed compiler remains eligible for fallback");
 
     assert_f64(result, 3.0);
 }

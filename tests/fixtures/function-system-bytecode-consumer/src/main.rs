@@ -13,7 +13,6 @@ use std::process;
 const MANIFEST_SCHEMA: u64 = 1;
 const BYTECODE_VERSION: u64 = 1;
 const BASE_COMMIT: &str = "f7768e0c6bbde69d27410be6d1ecacbd08c238c5";
-const CATALOG_OWNED_FACTORIES: [&str; 2] = ["AddRDS<f64>", "AddSS<f64>"];
 
 #[derive(Deserialize)]
 struct Manifest {
@@ -95,7 +94,6 @@ fn run() -> Result<(), String> {
     }
 
     validate_corpus_files(&corpus_dir, &manifest.cases)?;
-    let mut catalog_owned_factories = BTreeSet::new();
     for case in manifest.cases {
         let bytecode_path = corpus_dir.join(&case.file);
         let bytecode = fs::read(&bytecode_path)
@@ -103,9 +101,8 @@ fn run() -> Result<(), String> {
         let parsed = ParsedProgram::from_bytes(&bytecode)
             .map_err(|error| format!("{}: invalid bytecode: {error:?}", case.name))?;
         let mut program = MechProgram::new(MechProgramConfig::default());
-        program.load_full_stdlib();
         validate_runtime_factories(&case, &parsed, &program)?;
-        enforce_dispatch_boundary(&case, &program, &mut catalog_owned_factories)?;
+        enforce_dispatch_boundary(&case, &program)?;
 
         let actual = program
             .run_bytecode_program(&parsed)
@@ -114,81 +111,43 @@ fn run() -> Result<(), String> {
         compare_result(&case.name, &actual, &case.expected)?;
     }
 
-    let expected_catalog_owned = CATALOG_OWNED_FACTORIES
-        .into_iter()
-        .map(String::from)
-        .collect::<BTreeSet<_>>();
-    if catalog_owned_factories != expected_catalog_owned {
-        return Err(format!(
-            "catalog-owned factory coverage mismatch: expected {expected_catalog_owned:?}, found {catalog_owned_factories:?}",
-        ));
-    }
-
     Ok(())
 }
 
-fn enforce_dispatch_boundary(
-    case: &Case,
-    program: &MechProgram,
-    catalog_owned_factories: &mut BTreeSet<String>,
-) -> Result<(), String> {
+fn enforce_dispatch_boundary(case: &Case, program: &MechProgram) -> Result<(), String> {
     let catalog = program.function_catalog();
     let boundary = program.function_system().legacy_boundary();
     let functions_ref = program.interpreter().functions();
-    let mut functions = functions_ref.borrow_mut();
+    let functions = functions_ref.borrow();
 
     for expected in &case.runtime_factory_ids {
         let id = RuntimeFunctionId::from_name(&expected.name);
-        let is_catalog_owned = CATALOG_OWNED_FACTORIES.contains(&expected.name.as_str());
-
-        if is_catalog_owned {
-            let entry = catalog.runtime_entry(id).ok_or_else(|| {
-                format!(
-                    "{}: migrated factory {:?} is missing from the catalog",
-                    case.name, expected.name,
-                )
-            })?;
-            if entry.name != expected.name {
-                return Err(format!(
-                    "{}: catalog factory ID {} names {:?}, expected {:?}",
-                    case.name,
-                    format_id(id.raw()),
-                    entry.name,
-                    expected.name,
-                ));
-            }
-            if !boundary.owns_runtime_function(id) {
-                return Err(format!(
-                    "{}: migrated factory {:?} is not catalog-owned by the transition boundary",
-                    case.name, expected.name,
-                ));
-            }
-            if functions.functions.remove(&id.raw()).is_none() {
-                return Err(format!(
-                    "{}: migrated factory {:?} was absent from the legacy table before the catalog-only execution check",
-                    case.name, expected.name,
-                ));
-            }
-            catalog_owned_factories.insert(expected.name.clone());
-        } else {
-            if catalog.runtime_entry(id).is_some() {
-                return Err(format!(
-                    "{}: unmigrated factory {:?} unexpectedly entered the PR1 catalog",
-                    case.name, expected.name,
-                ));
-            }
-            if boundary.owns_runtime_function(id) {
-                return Err(format!(
-                    "{}: unmigrated factory {:?} is unexpectedly catalog-owned",
-                    case.name, expected.name,
-                ));
-            }
-            if !functions.functions.contains_key(&id.raw()) {
-                return Err(format!(
-                    "{}: unmigrated factory {:?} is missing from the explicit legacy fallback",
-                    case.name, expected.name,
-                ));
-            }
+        let entry = catalog.runtime_entry(id).ok_or_else(|| {
+            format!(
+                "{}: static factory {:?} is missing from the catalog",
+                case.name, expected.name,
+            )
+        })?;
+        if entry.name != expected.name {
+            return Err(format!(
+                "{}: catalog factory ID {} names {:?}, expected {:?}",
+                case.name,
+                format_id(id.raw()),
+                entry.name,
+                expected.name,
+            ));
+        }
+        if !boundary.owns_runtime_function(id) {
+            return Err(format!(
+                "{}: static factory {:?} is not catalog-owned by the transition boundary",
+                case.name, expected.name,
+            ));
+        }
+        if functions.functions.contains_key(&id.raw()) {
+            return Err(format!(
+                "{}: catalog-owned factory {:?} was copied into the mutable legacy table",
+                case.name, expected.name,
+            ));
         }
     }
 
@@ -207,9 +166,7 @@ fn validate_runtime_factories(
         ));
     }
 
-    let functions_ref = program.interpreter().functions();
-    let functions = functions_ref.borrow();
-    let dictionary = functions.dictionary.borrow();
+    let catalog = program.function_catalog();
     let mut actual = Vec::new();
     for instruction in &parsed.instrs {
         let id = match instruction {
@@ -227,30 +184,25 @@ fn validate_runtime_factories(
                 ));
             }
         };
-        if !functions.functions.contains_key(&id) {
-            return Err(format!(
-                "{}: bytecode references runtime factory ID {} that is not loaded",
-                case.name,
-                format_id(id),
-            ));
-        }
-        let name = dictionary.get(&id).ok_or_else(|| {
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_raw(id))
+            .ok_or_else(|| {
             format!(
-                "{}: loaded runtime factory ID {} has no dictionary name",
+                "{}: bytecode references runtime factory ID {} that is absent from the catalog",
                 case.name,
                 format_id(id),
             )
         })?;
-        if hash_str(name) != id {
+        if hash_str(&entry.name) != id {
             return Err(format!(
                 "{}: runtime factory name {:?} does not hash to ID {}",
                 case.name,
-                name,
+                entry.name,
                 format_id(id),
             ));
         }
         actual.push(RuntimeFactory {
-            name: name.clone(),
+            name: entry.name.clone(),
             id_hex: format_id(id),
         });
     }

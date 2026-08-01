@@ -3,7 +3,7 @@ use crate::{Interpreter, ReactiveDependencyKind};
 #[test]
 fn variable_kind_cast_is_indexed() {
     let tree = mech_syntax::parser::parse("value := 1; value<f64>").unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 1.0);
     let output_cell = output.reactive_root_cell_ids()[0];

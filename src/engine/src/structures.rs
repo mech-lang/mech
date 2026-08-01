@@ -959,7 +959,7 @@ mod matrix_dependency_tests {
     #[test]
     fn indexed_matrix_literal_builds_dependency_chain() {
         let tree = mech_syntax::parser::parse("[1.0 2.0; 3.0 4.0]").unwrap();
-        let mut interpreter = Interpreter::new_with_full_stdlib(0);
+        let mut interpreter = Interpreter::new(0, 10_000);
         let output = interpreter.interpret(&tree).unwrap();
 
         assert_eq!(
@@ -1052,7 +1052,7 @@ mod set_dependency_tests {
     #[test]
     fn source_set_literal_registers_structural_node() {
         let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
-        let mut interpreter = Interpreter::new_with_full_stdlib(0);
+        let mut interpreter = Interpreter::new(0, 10_000);
         let output = interpreter.interpret(&tree).unwrap();
         assert_eq!(output.to_string(), "{\n  1,\n  2\n}");
         assert_structural_set_node(&interpreter.plan(), &output);

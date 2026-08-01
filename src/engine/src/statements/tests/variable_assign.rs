@@ -9,7 +9,7 @@ use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnS
 fn whole_variable_assignment_registers_state_node() {
     let source = "~x := 1.0; y := 2.0; x = y; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
     assert_eq!(
@@ -23,7 +23,7 @@ fn whole_variable_assignment_registers_state_node() {
 fn whole_matrix_assignment_uses_root_cells() {
     let source = "~x := [1.0 2.0]; y := [3.0 4.0]; x = y; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     let output = interpreter.interpret(&tree).unwrap();
     let x = symbol(&interpreter, "x");
     let y = symbol(&interpreter, "y");
@@ -60,7 +60,7 @@ fn whole_matrix_assignment_uses_root_cells() {
 #[test]
 fn register_commit_plain_assignment_updates_register_only() {
     let t = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx = y\nz := x + 1.0").unwrap();
-    let mut i = Interpreter::new_with_full_stdlib(0);
+    let mut i = Interpreter::new(0, 10_000);
     i.interpret(&t).unwrap();
     assert_eq!((value(&i, "x"), value(&i, "z")), (2., 3.));
     let (x, y) = (cell(&i, "x"), cell(&i, "y"));
@@ -82,7 +82,7 @@ fn register_commit_plain_assignment_updates_register_only() {
 #[test]
 fn reactive_turn_defers_second_register_layer() {
     let tree = mech_syntax::parser::parse("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();
-    let mut interpreter = Interpreter::new_with_full_stdlib(0);
+    let mut interpreter = Interpreter::new(0, 10_000);
     interpreter.interpret(&tree).unwrap();
     assert_eq!(
         (

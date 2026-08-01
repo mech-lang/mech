@@ -12,7 +12,7 @@ use super::support::{
 
 #[test]
 fn activation_capture_slot_supports_all_enabled_scalar_kinds() {
-    let interpreter = Interpreter::new_with_full_stdlib(0);
+    let interpreter = Interpreter::new(0, 10_000);
     for (kind, source) in scalar_capture_cases() {
         let slot = create_capture_slot_for_kind(&kind, &interpreter).unwrap();
         let cells_before = slot.reactive_root_cell_ids();
@@ -26,7 +26,7 @@ fn activation_capture_slot_supports_all_enabled_scalar_kinds() {
 #[cfg(any(feature = "string", feature = "variable_define"))]
 #[test]
 fn activation_capture_slot_preserves_identity_across_updates() {
-    let interpreter = Interpreter::new_with_full_stdlib(0);
+    let interpreter = Interpreter::new(0, 10_000);
     let slot = create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap();
     let cells = slot.reactive_root_cell_ids();
     commit_capture_slot(&slot, &Value::String(Ref::new("first".to_string()))).unwrap();
@@ -49,7 +49,7 @@ fn activation_capture_slot_preserves_identity_across_updates() {
 ))]
 #[test]
 fn activation_capture_slots_support_enabled_composite_value_kinds() {
-    let interpreter = Interpreter::new_with_full_stdlib(0);
+    let interpreter = Interpreter::new(0, 10_000);
     let enum_id = hash_str("capture-enum");
     let variant_id = hash_str("payload");
     let names = Ref::new(HashMap::from([
@@ -98,7 +98,7 @@ fn activation_capture_slots_support_enabled_composite_value_kinds() {
 #[cfg(all(feature = "f64", feature = "string"))]
 #[test]
 fn activation_capture_commit_validates_every_binding_before_mutation() {
-    let interpreter = Interpreter::new_with_full_stdlib(0);
+    let interpreter = Interpreter::new(0, 10_000);
     let number = ActivationPatternCapture {
         id: hash_str("number"),
         name: "number".to_string(),
@@ -236,7 +236,7 @@ event := :first
 #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
 #[test]
 fn activation_capture_slot_rejects_kind_mismatch() {
-    let interpreter = Interpreter::new_with_full_stdlib(0);
+    let interpreter = Interpreter::new(0, 10_000);
     let slot = create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap();
     let error =
         commit_capture_slot(&slot, &Value::String(Ref::new("wrong".to_string()))).unwrap_err();

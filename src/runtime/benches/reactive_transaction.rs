@@ -355,7 +355,7 @@ fn two_interpreter_fixture() -> TwoInterpreterFixture {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let mut updates = Vec::new();
     for interpreter_id in [101, 202] {
-        let mut interpreter = Interpreter::new_with_full_stdlib(interpreter_id);
+        let mut interpreter = Interpreter::new(interpreter_id, 10_000);
         interpreter
             .interpret(&mech_syntax::parser::parse("input := 1.0\noutput := input + 1.0").unwrap())
             .unwrap();

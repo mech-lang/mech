@@ -16,7 +16,7 @@ mod reactive_turn_interpreter_state_tests {
     };
     const SOURCE: &str = "input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0";
     fn interpreter() -> Interpreter {
-        let mut i = Interpreter::new_with_full_stdlib(1);
+        let mut i = Interpreter::new(1, 10_000);
         let t = mech_syntax::parser::parse(SOURCE).unwrap();
         i.interpret(&t).unwrap();
         i

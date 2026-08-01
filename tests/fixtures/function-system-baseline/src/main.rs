@@ -1,12 +1,13 @@
 use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
     DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionCompilerDescriptor,
-    FunctionDescriptor, Functions, MechSet, ModuleItemDescriptor, NativeFunctionCompiler,
-    ParsedProgram, Ref, RuntimeFunctionId, Value, ValueKind, hash_str,
+    FunctionDescriptor, FunctionExposure, MechSet, NativeFunctionCompiler, ParsedProgram, Ref,
+    RuntimeFunctionId, Value, ValueKind, hash_str,
 };
 use mech_engine as _;
-use mech_engine::Interpreter;
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_engine::{
+    FunctionBinding, FunctionEnvironment, MechProgram, MechProgramConfig, default_function_catalog,
+};
 use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "fixed-specialization-cases")]
 use nalgebra::{Matrix2, Vector2};
@@ -15,6 +16,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 const BASE_COMMIT: &str = "f7768e0c6bbde69d27410be6d1ecacbd08c238c5";
 const BYTECODE_VERSION: u8 = 1;
@@ -563,21 +565,27 @@ fn validate_distinct_name_collisions(
 fn generate_json_baselines(
     inventory: &RegistryInventory,
 ) -> AppResult<(FunctionSurface, SpecializationCases)> {
-    let mut functions = Functions::new();
-    mech_engine::load_stdlib(&mut functions);
+    let catalog = default_function_catalog();
+    let program = MechProgram::new(MechProgramConfig::default());
+    if !Arc::ptr_eq(&catalog, program.function_catalog()) {
+        return Err("fresh standard program did not retain the composed standard catalog".into());
+    }
+    let function_environment = program
+        .interpreter()
+        .state
+        .borrow()
+        .function_environment
+        .clone();
+    validate_default_function_environment(&catalog, &function_environment)?;
 
-    let full_source_specializers = effective_source_specializers(&functions, "full")?;
+    let full_source_specializers = effective_source_specializers(&catalog);
     validate_effective_source_names(&full_source_specializers, &inventory.source_names)?;
 
-    let interpreter = Interpreter::new(0, 10_000);
-    let interpreter_functions = interpreter.functions();
-    let prelude_source_specializers = {
-        let functions = interpreter_functions.borrow();
-        effective_source_specializers(&functions, "prelude")?
-    };
+    let prelude_source_specializers =
+        prelude_source_specializers(&catalog, &function_environment)?;
 
-    let module_exports = collect_module_exports(&full_source_specializers)?;
-    let cases = collect_specialization_cases(&functions, inventory)?;
+    let module_exports = collect_module_exports(&catalog)?;
+    let cases = collect_specialization_cases(&catalog, inventory)?;
 
     Ok((
         FunctionSurface {
@@ -596,37 +604,113 @@ fn generate_json_baselines(
     ))
 }
 
-fn effective_source_specializers(
-    functions: &Functions,
-    registry_label: &str,
-) -> AppResult<Vec<SourceSpecializer>> {
-    let dictionary = functions.dictionary.borrow();
-    let mut specializers = Vec::with_capacity(functions.function_compilers.len());
+fn effective_source_specializers(catalog: &FunctionCatalog) -> Vec<SourceSpecializer> {
+    let mut specializers = catalog
+        .all_specializers()
+        .map(|entry| SourceSpecializer {
+            name: entry.canonical_name.clone(),
+            id_hex: format_id(entry.operation.raw()),
+        })
+        .collect::<Vec<_>>();
+    specializers
+        .sort_by(|left, right| (&left.name, &left.id_hex).cmp(&(&right.name, &right.id_hex)));
+    specializers
+}
 
-    for id in functions.function_compilers.keys() {
-        let name = dictionary.get(id).ok_or_else(|| {
-            format!(
-                "{registry_label} source-specializer registry ID {} has no dictionary entry",
-                format_id(*id),
-            )
-        })?;
-        let actual_id = hash_str(name);
-        if actual_id != *id {
+fn prelude_source_specializers(
+    catalog: &FunctionCatalog,
+    environment: &FunctionEnvironment,
+) -> AppResult<Vec<SourceSpecializer>> {
+    let mut specializers = Vec::new();
+    for entry in catalog.all_specializers().filter(|entry| {
+        catalog
+            .exports_for_operation(entry.operation)
+            .iter()
+            .any(|export| export.exposure == FunctionExposure::Prelude)
+    }) {
+        if environment.resolve_name(&entry.canonical_name)
+            != Some(FunctionBinding::CatalogOperation(entry.operation))
+        {
             return Err(format!(
-                "{registry_label} dictionary entry {name:?} hashes to {}, not table ID {}",
-                format_id(actual_id),
-                format_id(*id),
+                "fresh standard FunctionEnvironment did not bind Prelude operation {} ({})",
+                entry.canonical_name,
+                format_id(entry.operation.raw()),
+            ));
+        }
+        if !environment.operation_is_enabled(entry.operation) {
+            return Err(format!(
+                "fresh standard FunctionEnvironment did not enable Prelude operation {} ({})",
+                entry.canonical_name,
+                format_id(entry.operation.raw()),
             ));
         }
         specializers.push(SourceSpecializer {
-            name: name.clone(),
-            id_hex: format_id(*id),
+            name: entry.canonical_name.clone(),
+            id_hex: format_id(entry.operation.raw()),
         });
     }
-
     specializers
         .sort_by(|left, right| (&left.name, &left.id_hex).cmp(&(&right.name, &right.id_hex)));
     Ok(specializers)
+}
+
+fn validate_default_function_environment(
+    catalog: &FunctionCatalog,
+    environment: &FunctionEnvironment,
+) -> AppResult<()> {
+    for intrinsic in catalog.intrinsic_specializer_entries() {
+        if !environment.operation_is_enabled(intrinsic.operation) {
+            return Err(format!(
+                "fresh standard FunctionEnvironment did not enable intrinsic {} ({})",
+                intrinsic.canonical_name,
+                format_id(intrinsic.operation.raw()),
+            ));
+        }
+        if environment.resolve_name(&intrinsic.canonical_name).is_some() {
+            return Err(format!(
+                "fresh standard FunctionEnvironment exposed intrinsic {} as a named function",
+                intrinsic.canonical_name,
+            ));
+        }
+    }
+
+    for export in catalog.all_exports() {
+        let operation_exports = catalog.exports_for_operation(export.operation);
+        let enabled_by_default = operation_exports.iter().any(|candidate| {
+            matches!(
+                candidate.exposure,
+                FunctionExposure::Internal | FunctionExposure::Prelude
+            )
+        });
+        if environment.operation_is_enabled(export.operation) != enabled_by_default {
+            return Err(format!(
+                "fresh standard FunctionEnvironment enabled-state mismatch for {} ({})",
+                export.canonical_name,
+                format_id(export.operation.raw()),
+            ));
+        }
+
+        let named_by_default = operation_exports.iter().any(|candidate| {
+            candidate.exposure == FunctionExposure::Prelude
+                && candidate.canonical_name == export.canonical_name
+        });
+        let binding = environment.resolve_name(&export.canonical_name);
+        if named_by_default {
+            if binding != Some(FunctionBinding::CatalogOperation(export.operation)) {
+                return Err(format!(
+                    "fresh standard FunctionEnvironment binding mismatch for Prelude export {}",
+                    export.canonical_name,
+                ));
+            }
+        } else if binding.is_some() {
+            return Err(format!(
+                "fresh standard FunctionEnvironment exposed non-Prelude export {} by name",
+                export.canonical_name,
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 fn validate_effective_source_names(
@@ -651,49 +735,20 @@ fn validate_effective_source_names(
     Ok(())
 }
 
-fn collect_module_exports(full: &[SourceSpecializer]) -> AppResult<Vec<ModuleExport>> {
-    let full_by_name = full
-        .iter()
-        .map(|specializer| (specializer.name.as_str(), specializer.id_hex.as_str()))
-        .collect::<BTreeMap<_, _>>();
-    let mut exports_by_pair = BTreeMap::<(String, String), String>::new();
-
-    for descriptor in inventory::iter::<ModuleItemDescriptor> {
-        if descriptor.module.is_empty() || descriptor.item.is_empty() {
-            return Err(format!(
-                "module export contains an empty module or item: module={:?}, item={:?}",
-                descriptor.module, descriptor.item,
-            ));
-        }
-
-        let module = descriptor.module.to_string();
-        let item = descriptor.item.to_string();
-        let canonical_name = format!("{module}/{item}");
-        let pair = (module, item);
-        if let Some(existing) = exports_by_pair.insert(pair.clone(), canonical_name.clone())
-            && existing != canonical_name
-        {
-            return Err(format!(
-                "module export {}/{} resolves to conflicting canonical names {existing:?} and {canonical_name:?}",
-                pair.0, pair.1,
-            ));
-        }
-    }
-
-    let mut exports = Vec::with_capacity(exports_by_pair.len());
-    for ((module, item), canonical_name) in exports_by_pair {
-        let id_hex = full_by_name.get(canonical_name.as_str()).ok_or_else(|| {
-      format!(
-        "module export {module}/{item} has no effective full source specializer named {canonical_name:?}",
-      )
-    })?;
-        exports.push(ModuleExport {
-            module,
-            item,
-            canonical_name,
-            id_hex: (*id_hex).to_string(),
-        });
-    }
+fn collect_module_exports(catalog: &FunctionCatalog) -> AppResult<Vec<ModuleExport>> {
+    let mut exports = catalog
+        .all_exports()
+        .filter_map(|export| match (&export.module, &export.item) {
+            (Some(module), Some(item)) => Some(ModuleExport {
+                module: module.clone(),
+                item: item.clone(),
+                canonical_name: export.canonical_name.clone(),
+                id_hex: format_id(export.operation.raw()),
+            }),
+            (None, None) => None,
+            _ => unreachable!("validated catalog exports have complete module/item pairs"),
+        })
+        .collect::<Vec<_>>();
 
     exports.sort_by(|left, right| {
         (&left.module, &left.item, &left.canonical_name).cmp(&(
@@ -706,7 +761,7 @@ fn collect_module_exports(full: &[SourceSpecializer]) -> AppResult<Vec<ModuleExp
 }
 
 fn collect_specialization_cases(
-    functions: &Functions,
+    catalog: &FunctionCatalog,
     inventory: &RegistryInventory,
 ) -> AppResult<Vec<SpecializationCase>> {
     let mut inputs = vec![
@@ -813,7 +868,7 @@ fn collect_specialization_cases(
     let mut cases = Vec::with_capacity(inputs.len());
     let mut failures = Vec::new();
     for input in inputs {
-        match compile_specialization_case(functions, inventory, input) {
+        match compile_specialization_case(catalog, inventory, input) {
             Ok(case) => cases.push(case),
             Err(error) => failures.push(error),
         }
@@ -839,15 +894,13 @@ fn collect_specialization_cases(
 }
 
 fn compile_specialization_case(
-    functions: &Functions,
+    catalog: &FunctionCatalog,
     inventory: &RegistryInventory,
     input: CaseInput,
 ) -> AppResult<SpecializationCase> {
     let operation_id = hash_str(input.operation);
-    let specializer = functions
-        .function_compilers
-        .get(&operation_id)
-        .cloned()
+    let specializer = catalog
+        .specializer(mech_core::OperationId::from_raw(operation_id))
         .ok_or_else(|| {
             format!(
                 "specialization case {} cannot find source operation {} ({})",
@@ -861,7 +914,10 @@ fn compile_specialization_case(
         .iter()
         .map(value_spec)
         .collect::<AppResult<Vec<_>>>()?;
-    let function = specializer.compile(&input.arguments).map_err(|error| {
+    let function = specializer
+        .specializer
+        .specialize(&input.arguments)
+        .map_err(|error| {
         format!(
             "specialization case {} failed to compile {}: {}",
             input.name,
@@ -1034,7 +1090,6 @@ fn write_legacy_bytecode(output: &Path, inventory: &RegistryInventory) -> AppRes
     let mut generated = Vec::<(LegacyCase, Vec<u8>)>::with_capacity(inputs.len());
     for input in inputs {
         let mut program = MechProgram::new(MechProgramConfig::default());
-        program.load_full_stdlib();
         if let Some(module) = input.module {
             program.load_function_module(module).map_err(|error| {
                 format!(

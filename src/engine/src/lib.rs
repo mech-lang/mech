@@ -100,8 +100,6 @@ use std::time::Duration;
 
 #[cfg(all(feature = "functions", feature = "symbol_table",))]
 pub mod activation;
-#[cfg(feature = "functions")]
-pub mod builtins;
 #[cfg(all(test, feature = "compiler"))]
 mod bytecode_test_context;
 pub mod expressions;
@@ -137,8 +135,6 @@ pub mod tracing;
 
 pub use mech_core::*;
 
-#[cfg(feature = "functions")]
-pub use crate::builtins::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function_catalog::*;
@@ -195,8 +191,6 @@ pub use mech_matrix::*;
 pub use mech_set::*;
 #[cfg(feature = "stats")]
 pub use mech_stats::*;
-use std::sync::Arc;
-
 pub fn load_stdkinds(kinds: &mut KindTable) {
     #[cfg(feature = "u8")]
     kinds.insert(hash_str("u8"), ValueKind::U8);
@@ -230,20 +224,6 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
     kinds.insert(hash_str("string"), ValueKind::String);
     #[cfg(feature = "bool")]
     kinds.insert(hash_str("bool"), ValueKind::Bool);
-}
-
-#[cfg(feature = "functions")]
-pub fn load_stdlib(fxns: &mut Functions) {
-    for fxn_desc in inventory::iter::<FunctionDescriptor> {
-        fxns.insert_function(fxn_desc.clone());
-    }
-
-    for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
-        fxns.insert_function_compiler(
-            fxn_comp.name,
-            Arc::new(StaticNativeFunctionCompiler::new(fxn_comp.ptr)),
-        );
-    }
 }
 
 fn format_duration(d: Duration) -> String {

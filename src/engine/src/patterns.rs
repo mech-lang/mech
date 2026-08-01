@@ -1373,7 +1373,7 @@ mod tests {
                 },
             ],
         };
-        let interpreter = Interpreter::new_with_full_stdlib(0);
+        let interpreter = Interpreter::new(0, 10_000);
         let mut services = NoMechExecutionServices;
         let execution = InterpreterExecution::new(&interpreter, &mut services);
         let mut env = Environment::from([(x_id, Value::U64(Ref::new(1)))]);
