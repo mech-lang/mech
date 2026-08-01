@@ -23,6 +23,7 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "subscript_primitives.rs",
   "pattern_primitives.rs",
   "control_operators.rs",
+  "structure_shell.rs",
 ];
 
 const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
@@ -35,6 +36,7 @@ const PHASE_2G_PRODUCTION_SOURCES: &[&str] = &[
   "pattern_primitives.rs",
   "control_operators.rs",
 ];
+const PHASE_2H_PRODUCTION_SOURCES: &[&str] = &["structure_shell.rs"];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -846,6 +848,96 @@ fn phase_2g_entry_points_bind_their_exact_generated_rule_ids() {
     ("control_operators.rs", "parse_guard_operator", "GUARD_OPERATOR"),
   ];
   assert_eq!(expected.len(), 15);
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
+  }
+}
+
+#[test]
+fn canonical_phase_2h_source_is_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2H_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in [
+      "nom",
+      "CoverageStore",
+      "CoverageGap",
+      "UnportedInline",
+      "to_contiguous_string",
+      "full_range",
+      "graphemes",
+    ] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not depend on {forbidden}"
+      );
+    }
+    assert!(
+      !contains_token_sequence(&source, &["crate", "::", "parse"]),
+      "{relative} must not invoke the legacy public parser"
+    );
+    for rule in [
+      "STRUCTURE",
+      "MATRIX",
+      "MATRIX_ROW",
+      "MATRIX_COLUMN",
+      "TABLE",
+      "INLINE_TABLE",
+      "REGULAR_TABLE",
+      "FANCY_TABLE",
+      "TABLE_HEADER",
+      "INLINE_TABLE_HEADER",
+      "FANCY_TABLE_HEADER",
+      "TABLE_ROW",
+      "TABLE_ROW2",
+      "TABLE_COLUMN",
+      "HEADER_FIELD",
+      "FIELD",
+      "MAP",
+      "MAPPING",
+      "SET",
+      "EXPRESSION",
+      "KIND_ANNOTATION",
+      "DOCUMENT",
+    ] {
+      assert!(
+        !contains_token_sequence(&source, &["rules", "::", rule]),
+        "{relative} must not claim the unported rules::{rule} parent"
+      );
+    }
+  }
+}
+
+#[test]
+fn phase_2h_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    ("structure_shell.rs", "parse_matrix_start", "MATRIX_START"),
+    ("structure_shell.rs", "parse_matrix_end", "MATRIX_END"),
+    ("structure_shell.rs", "parse_table_start", "TABLE_START"),
+    ("structure_shell.rs", "parse_table_end", "TABLE_END"),
+    ("structure_shell.rs", "parse_table_separator", "TABLE_SEPARATOR"),
+    ("structure_shell.rs", "parse_table_horz", "TABLE_HORZ"),
+    ("structure_shell.rs", "parse_table_top", "TABLE_TOP"),
+    ("structure_shell.rs", "parse_row_separator", "ROW_SEPARATOR"),
+    ("structure_shell.rs", "parse_empty_map", "EMPTY_MAP"),
+    ("structure_shell.rs", "parse_empty_set", "EMPTY_SET"),
+  ];
+  assert_eq!(expected.len(), 10);
   for (file, function, rule) in expected {
     let path = canonical.join(file);
     let source = fs::read_to_string(&path)

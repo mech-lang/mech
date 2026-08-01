@@ -114,9 +114,9 @@ emoji-grapheme	base	parity-verified	not-applicable	token	2A	Phase 2A canonical b
 emphasis	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 emphasis-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 empty	literals	parity-verified	parity-verified	node:EmptyLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-empty-map	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+empty-map	structures	parity-verified	parity-verified	node:EmptyMap	2H	Phase 2H closed structure shell
 empty-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-empty-set	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+empty-set	structures	parity-verified	parity-verified	node:EmptySet	2H	Phase 2H closed structure shell
 english-false-literal	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 english-true-literal	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 enum-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -295,12 +295,12 @@ match-expression	expressions	unported	pending	undecided		Deferred beyond Phase 2
 matrix	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 matrix-column	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 matrix-comprehension	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-matrix-end	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-end	structures	parity-verified	not-applicable	token	2H	Phase 2H closed structure shell
 matrix-multiply	expressions	parity-verified	parity-verified	node:MatrixMultiplyOperation	2D	Phase 2D closed expression-operator layer
 matrix-operator	expressions	parity-verified	parity-verified	node:MatrixOperator	2D	Phase 2D closed expression-operator layer
 matrix-row	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 matrix-solve	expressions	parity-verified	parity-verified	node:MatrixSolveOperation	2D	Phase 2D closed expression-operator layer
-matrix-start	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+matrix-start	structures	parity-verified	not-applicable	token	2H	Phase 2H closed structure shell
 mech-code	parser	unported	pending	undecided		Deferred beyond Phase 2A.
 mech-code-alt	parser	unported	pending	undecided		Deferred beyond Phase 2A.
 mechdown-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -425,7 +425,7 @@ right-brace	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base
 right-bracket	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 right-join	expressions	parity-verified	parity-verified	node:RightJoinOperation	2D	Phase 2D closed expression-operator layer
 right-parenthesis	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-row-separator	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+row-separator	structures	parity-verified	parity-verified	node:TableRowSeparator	2H	Phase 2H closed structure shell
 save-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 scientific-literal	literals	syntax-ported	pending	node:ScientificLiteral	2C	Phase 2C syntax port; typed scientific exponents preserve their suffix and lower deterministically while the legacy exponent branch crashes.
 section	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -485,15 +485,15 @@ synth-operator	base	parity-verified	not-applicable	token	2A	Phase 2A canonical b
 tab	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 table-column	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-table-end	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-end	structures	parity-verified	not-applicable	token	2H	Phase 2H closed structure shell
 table-header	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-table-horz	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-horz	structures	parity-verified	not-applicable	token	2H	Phase 2H closed structure shell
 table-operator	expressions	parity-verified	parity-verified	node:TableOperator	2D	Phase 2D closed expression-operator layer
 table-row	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 table-row2	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-table-separator	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-table-start	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-table-top	structures	unported	pending	undecided		Deferred beyond Phase 2A.
+table-separator	structures	parity-verified	not-applicable	token	2H	Phase 2H closed structure shell
+table-start	structures	parity-verified	not-applicable	token	2H	Phase 2H closed structure shell
+table-top	structures	parity-verified	not-applicable	transparent	2H	Phase 2H closed structure shell
 tag	parser	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
 text	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 thematic-break	mechdown	parity-verified	parity-verified	node:ThematicBreak	2B	Phase 2B closed Mechdown grammar island

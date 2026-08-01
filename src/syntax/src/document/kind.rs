@@ -324,6 +324,12 @@ define_syntax_kinds! {
   MulAssignOperation => node,
   DivAssignOperation => node,
   ExpAssignOperation => node,
+
+  // Phase 2H closed structure shell. Keep this append-only: persisted
+  // green-tree discriminants depend on every preceding kind.
+  TableRowSeparator => node,
+  EmptyMap => node,
+  EmptySet => node,
 }
 
 #[cfg(test)]
@@ -534,6 +540,19 @@ mod tests {
     ];
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 254 + offset as u16);
+      assert!(!kind.is_token());
+    }
+  }
+
+  #[test]
+  fn phase_2h_structure_shell_kinds_are_append_only() {
+    let appended = [
+      SyntaxKind::TableRowSeparator,
+      SyntaxKind::EmptyMap,
+      SyntaxKind::EmptySet,
+    ];
+    for (offset, kind) in appended.into_iter().enumerate() {
+      assert_eq!(kind as u16, 265 + offset as u16);
       assert!(!kind.is_token());
     }
   }
