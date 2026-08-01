@@ -7,129 +7,135 @@
 #![allow(warnings)]
 
 extern crate mech_core;
-#[cfg(feature="no-std")] #[macro_use] extern crate alloc;
-#[cfg(not(feature = "no-std"))] extern crate core;
+#[cfg(feature = "no-std")]
+#[macro_use]
+extern crate alloc;
+#[cfg(not(feature = "no-std"))]
+extern crate core;
 extern crate nom;
 extern crate nom_unicode;
 extern crate tabled;
 
-use mech_core::*;
 use mech_core::nodes::*;
+use mech_core::*;
+use num_traits::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use num_traits::*;
 use unicode_segmentation::UnicodeSegmentation;
 
-#[cfg(feature = "serde")] use serde::{Serialize, Deserialize};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
-#[cfg(not(feature = "no-std"))] use core::fmt;
-#[cfg(feature = "no-std")] use alloc::fmt;
-#[cfg(feature = "no-std")] use alloc::string::String;
-#[cfg(feature = "no-std")] use alloc::vec::Vec;
-use nom::{
-  IResult,
-  branch::alt,
-  sequence::tuple,
-  combinator::{opt, eof},
-  multi::{many1, many_till, many0, separated_list1},
-  Err,
-};
+#[cfg(feature = "no-std")]
+use alloc::fmt;
+#[cfg(feature = "no-std")]
+use alloc::string::String;
+#[cfg(feature = "no-std")]
+use alloc::vec::Vec;
+#[cfg(not(feature = "no-std"))]
+use core::fmt;
 use nom::Parser;
+use nom::{
+    Err, IResult,
+    branch::alt,
+    combinator::{eof, opt},
+    multi::{many_till, many0, many1, separated_list1},
+    sequence::tuple,
+};
 
-use std::collections::HashMap;
 use colored::*;
+use std::collections::HashMap;
 
 //#[cfg(feature = "mechdown")]
-pub mod mechdown;
-pub mod imports;
-pub mod expressions;
-pub mod statements;
 pub mod activation;
-pub mod structures;
 pub mod base;
-pub mod parser;
+pub mod expressions;
 #[cfg(feature = "formatter")]
 pub mod formatter;
+pub mod functions;
+pub mod grammar;
+pub mod imports;
+pub mod literals;
+pub mod mechdown;
 #[cfg(feature = "mika")]
 pub mod mika;
-pub mod grammar;
-pub mod literals;
+pub mod parser;
 pub mod patterns;
-pub mod state_machines;
-pub mod functions;
 pub mod repl;
+pub mod state_machines;
+pub mod statements;
+pub mod structures;
 
 pub use crate::imports::*;
 pub use crate::parser::*;
 //#[cfg(feature = "mechdown")]
-pub use crate::mechdown::*;
-pub use crate::expressions::*;
-pub use crate::statements::*;
 pub use crate::activation::*;
-pub use crate::structures::*;
 pub use crate::base::*;
+pub use crate::expressions::*;
 #[cfg(feature = "formatter")]
 pub use crate::formatter::*;
-#[cfg(feature = "mika")]
-pub use crate::mika::*;
+pub use crate::functions::*;
 pub use crate::grammar::*;
 pub use crate::literals::*;
+pub use crate::mechdown::*;
+#[cfg(feature = "mika")]
+pub use crate::mika::*;
 pub use crate::patterns::*;
-pub use crate::state_machines::*;
-pub use crate::functions::*;
 pub use crate::repl::*;
-
+pub use crate::state_machines::*;
+pub use crate::statements::*;
+pub use crate::structures::*;
 
 /// Unicode grapheme group utilities.
 /// Current implementation does not guarantee correct behavior for
 /// all possible unicode characters.
 pub mod graphemes {
-  use unicode_segmentation::UnicodeSegmentation;
+    use unicode_segmentation::UnicodeSegmentation;
 
-  /// Obtain unicode grapheme groups from input source, then make sure
-  /// it ends with new_line.  Many functions in the parser assume input
-  /// ends with new_line.
-  pub fn init_source(text: &str) -> Vec<&str> {
-    let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-    graphemes.push("\n");
-    graphemes
-  }
-
-  pub fn init_tag(tag: &str) -> Vec<&str> {
-    UnicodeSegmentation::graphemes(tag, true).collect::<Vec<&str>>()
-  }
-
-  pub fn is_new_line(grapheme: &str) -> bool {
-    match grapheme {
-      "\r" | "\n" | "\r\n" => true,
-      _ => false,
+    /// Obtain unicode grapheme groups from input source, then make sure
+    /// it ends with new_line.  Many functions in the parser assume input
+    /// ends with new_line.
+    pub fn init_source(text: &str) -> Vec<&str> {
+        let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+        graphemes.push("\n");
+        graphemes
     }
-  }
 
-  pub fn is_numeric(grapheme: &str) -> bool {
-    grapheme.chars().next().unwrap().is_numeric()
-  }
-
-  pub fn is_alpha(grapheme: &str) -> bool {
-    grapheme.chars().next().unwrap().is_alphabetic()
-  }
-
-  pub fn is_emoji(grapheme: &str) -> bool {
-    let ch = grapheme.chars().next().unwrap();
-    !(ch.is_alphanumeric() || ch.is_ascii())
-  }
-
-  pub fn width(grapheme: &str) -> usize {
-    // TODO: uniode width?
-    let ch = grapheme.chars().next().unwrap();
-    if ch == '\t' {
-      1
-    } else if ch.is_control() {
-      0
-    } else {
-      1
+    pub fn init_tag(tag: &str) -> Vec<&str> {
+        UnicodeSegmentation::graphemes(tag, true).collect::<Vec<&str>>()
     }
-  }
+
+    pub fn is_new_line(grapheme: &str) -> bool {
+        match grapheme {
+            "\r" | "\n" | "\r\n" => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_numeric(grapheme: &str) -> bool {
+        grapheme.chars().next().unwrap().is_numeric()
+    }
+
+    pub fn is_alpha(grapheme: &str) -> bool {
+        grapheme.chars().next().unwrap().is_alphabetic()
+    }
+
+    pub fn is_emoji(grapheme: &str) -> bool {
+        let ch = grapheme.chars().next().unwrap();
+        !(ch.is_alphanumeric() || ch.is_ascii())
+    }
+
+    pub fn width(grapheme: &str) -> usize {
+        // TODO: uniode width?
+        let ch = grapheme.chars().next().unwrap();
+        if ch == '\t' {
+            1
+        } else if ch.is_control() {
+            0
+        } else {
+            1
+        }
+    }
 }
 
 /// Just alias
@@ -140,199 +146,197 @@ pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 /// can be cloned at much lower cost.
 #[derive(Clone, Debug)]
 pub struct ParseString<'a> {
-  /// Source code
-  pub graphemes: &'a Vec<&'a str>,
-  /// Error report, a list of (error_location, error_context)
-  pub error_log: Vec<(SourceRange, ParseErrorDetail)>,
-  /// Point at the next grapheme to consume
-  pub cursor: usize,
-  /// Location of the grapheme pointed by cursor
-  pub location: SourceLocation,
+    /// Source code
+    pub graphemes: &'a Vec<&'a str>,
+    /// Error report, a list of (error_location, error_context)
+    pub error_log: Vec<(SourceRange, ParseErrorDetail)>,
+    /// Point at the next grapheme to consume
+    pub cursor: usize,
+    /// Location of the grapheme pointed by cursor
+    pub location: SourceLocation,
 }
 
 impl<'a> ParseString<'a> {
-  /// Must always point a an actual string
-  pub fn new(graphemes: &'a Vec<&'a str>) -> Self {
-    ParseString {
-      graphemes,
-      error_log: vec![],
-      cursor: 0,
-      location: SourceLocation { row: 1, col: 1 },
-    }
-  }
-
-  pub fn rest(&self) -> String {
-    // Return the rest of the string from current cursor
-    let mut s = String::new();
-    for i in self.cursor..self.graphemes.len() {
-      s.push_str(self.graphemes[i]);
-    }
-    s
-  }
-
-  pub fn peek(&self, n: usize) -> Option<&str> {
-    self.graphemes.get(self.cursor + n).copied()
-  }
-
-  pub fn current(&self) -> Option<&str> {
-    self.graphemes.get(self.cursor).copied()
-  }
-
-  pub fn next(&self) -> Option<&str> {
-    self.graphemes.get(self.cursor + 1).copied()
-  }
-
-  /// If current location matches the tag, consume the matched string.
-  fn consume_tag(&mut self, tag: &str) -> Option<String> {
-    if self.is_empty() {
-      return None;
-    }
-    // Try to match the tag without allocating a temporary grapheme vector.
-    let mut tmp_location = self.location;
-    let mut matched_len = 0usize;
-    for (i, expected) in UnicodeSegmentation::graphemes(tag, true).enumerate() {
-      let c = self.cursor + i;
-      let g = match self.graphemes.get(c) {
-        Some(g) => *g,
-        None => return None,
-      };
-      if g != expected {
-        return None;
-      }
-      if graphemes::is_new_line(g) {
-        if !self.is_last_grapheme(c) {
-          tmp_location.row += 1;
-          tmp_location.col = 1;
+    /// Must always point a an actual string
+    pub fn new(graphemes: &'a Vec<&'a str>) -> Self {
+        ParseString {
+            graphemes,
+            error_log: vec![],
+            cursor: 0,
+            location: SourceLocation { row: 1, col: 1 },
         }
-      } else {
-        tmp_location.col += graphemes::width(g);
-      }
-      matched_len += 1;
     }
-    if matched_len == 0 {
-      return None;
-    }
-    // Tag matched, commit change
-    self.cursor += matched_len;
-    self.location = tmp_location;
-    Some(tag.to_string())
-  }
 
-  /// Extract graphemes between two cursor indices without mutating self.
-  pub fn slice(&self, start_cursor: usize, end_cursor: usize) -> String {
-    let start = start_cursor.min(self.graphemes.len());
-    let end = end_cursor.min(self.graphemes.len());
-    self.graphemes[start..end].join("")
-  }
-
-  /// Mutate self by consuming one grapheme
-  fn consume_one(&mut self) -> Option<String> {
-    if self.is_empty() {
-      return None;
+    pub fn rest(&self) -> String {
+        // Return the rest of the string from current cursor
+        let mut s = String::new();
+        for i in self.cursor..self.graphemes.len() {
+            s.push_str(self.graphemes[i]);
+        }
+        s
     }
-    let g = self.graphemes[self.cursor];
-    if graphemes::is_new_line(g) {
-      if !self.is_last_grapheme(self.cursor) {
-        self.location.row += 1;
-        self.location.col = 1;
-      }
-    } else {
-      self.location.col += graphemes::width(g);
-    }
-    self.cursor += 1;
-    Some(g.to_string())
-  }
 
-
-  /// If current location matches any emoji, consume the matched string.
-  fn consume_emoji(&mut self) -> Option<String> {
-    if self.is_empty() {
-      return None;
+    pub fn peek(&self, n: usize) -> Option<&str> {
+        self.graphemes.get(self.cursor + n).copied()
     }
-    let g = self.graphemes[self.cursor];
-    
-    if graphemes::is_emoji(g) {
-      self.cursor += 1;
-      self.location.col += graphemes::width(g);
-      Some(g.to_string())
-    } else {
-      None
-    }
-  }
 
-  /// If current location matches any alpha char, consume the matched string.
-  fn consume_alpha(&mut self) -> Option<String> {
-    if self.is_empty() {
-      return None;
+    pub fn current(&self) -> Option<&str> {
+        self.graphemes.get(self.cursor).copied()
     }
-    let g = self.graphemes[self.cursor];
-    if graphemes::is_alpha(g) {
-      self.cursor += 1;
-      self.location.col += graphemes::width(g);
-      Some(g.to_string())
-    } else {
-      None
+
+    pub fn next(&self) -> Option<&str> {
+        self.graphemes.get(self.cursor + 1).copied()
     }
-  }
 
-  /// If current location matches any digit, consume the matched string.
-  fn consume_digit(&mut self) -> Option<String> {
-    if self.is_empty() {
-      return None;
+    /// If current location matches the tag, consume the matched string.
+    fn consume_tag(&mut self, tag: &str) -> Option<String> {
+        if self.is_empty() {
+            return None;
+        }
+        // Try to match the tag without allocating a temporary grapheme vector.
+        let mut tmp_location = self.location;
+        let mut matched_len = 0usize;
+        for (i, expected) in UnicodeSegmentation::graphemes(tag, true).enumerate() {
+            let c = self.cursor + i;
+            let g = match self.graphemes.get(c) {
+                Some(g) => *g,
+                None => return None,
+            };
+            if g != expected {
+                return None;
+            }
+            if graphemes::is_new_line(g) {
+                if !self.is_last_grapheme(c) {
+                    tmp_location.row += 1;
+                    tmp_location.col = 1;
+                }
+            } else {
+                tmp_location.col += graphemes::width(g);
+            }
+            matched_len += 1;
+        }
+        if matched_len == 0 {
+            return None;
+        }
+        // Tag matched, commit change
+        self.cursor += matched_len;
+        self.location = tmp_location;
+        Some(tag.to_string())
     }
-    let g = self.graphemes[self.cursor];
-    if graphemes::is_numeric(g) {
-      self.cursor += 1;
-      self.location.col += graphemes::width(g);
-      Some(g.to_string())
-    } else {
-      None
+
+    /// Extract graphemes between two cursor indices without mutating self.
+    pub fn slice(&self, start_cursor: usize, end_cursor: usize) -> String {
+        let start = start_cursor.min(self.graphemes.len());
+        let end = end_cursor.min(self.graphemes.len());
+        self.graphemes[start..end].join("")
     }
-  }
 
-  /// Get cursor's location in source code
-  fn loc(&self) -> SourceLocation {
-    self.location
-  }
-
-  /// Test whether the grapheme pointed by cursor is the last grapheme
-  fn is_last_grapheme(&self, c: usize) -> bool {
-    (self.graphemes.len() - 1 - c) == 0
-  }
-
-  /// Get remaining (unparsed) length
-  pub fn len(&self) -> usize {
-    self.graphemes.len() - self.cursor
-  }
-  
-  pub fn is_empty(&self) -> bool {
-    self.len() == 0
-  }
-
-  /// For debug purpose
-  fn output(&self) {
-              
-    println!("───────────────────{}", self.len());
-    for i in self.cursor..self.graphemes.len() {
-      print!("{}", self.graphemes[i]);
+    /// Mutate self by consuming one grapheme
+    fn consume_one(&mut self) -> Option<String> {
+        if self.is_empty() {
+            return None;
+        }
+        let g = self.graphemes[self.cursor];
+        if graphemes::is_new_line(g) {
+            if !self.is_last_grapheme(self.cursor) {
+                self.location.row += 1;
+                self.location.col = 1;
+            }
+        } else {
+            self.location.col += graphemes::width(g);
+        }
+        self.cursor += 1;
+        Some(g.to_string())
     }
-    println!();
-    println!("───────────────────");
-  }
+
+    /// If current location matches any emoji, consume the matched string.
+    fn consume_emoji(&mut self) -> Option<String> {
+        if self.is_empty() {
+            return None;
+        }
+        let g = self.graphemes[self.cursor];
+
+        if graphemes::is_emoji(g) {
+            self.cursor += 1;
+            self.location.col += graphemes::width(g);
+            Some(g.to_string())
+        } else {
+            None
+        }
+    }
+
+    /// If current location matches any alpha char, consume the matched string.
+    fn consume_alpha(&mut self) -> Option<String> {
+        if self.is_empty() {
+            return None;
+        }
+        let g = self.graphemes[self.cursor];
+        if graphemes::is_alpha(g) {
+            self.cursor += 1;
+            self.location.col += graphemes::width(g);
+            Some(g.to_string())
+        } else {
+            None
+        }
+    }
+
+    /// If current location matches any digit, consume the matched string.
+    fn consume_digit(&mut self) -> Option<String> {
+        if self.is_empty() {
+            return None;
+        }
+        let g = self.graphemes[self.cursor];
+        if graphemes::is_numeric(g) {
+            self.cursor += 1;
+            self.location.col += graphemes::width(g);
+            Some(g.to_string())
+        } else {
+            None
+        }
+    }
+
+    /// Get cursor's location in source code
+    fn loc(&self) -> SourceLocation {
+        self.location
+    }
+
+    /// Test whether the grapheme pointed by cursor is the last grapheme
+    fn is_last_grapheme(&self, c: usize) -> bool {
+        (self.graphemes.len() - 1 - c) == 0
+    }
+
+    /// Get remaining (unparsed) length
+    pub fn len(&self) -> usize {
+        self.graphemes.len() - self.cursor
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// For debug purpose
+    fn output(&self) {
+        println!("───────────────────{}", self.len());
+        for i in self.cursor..self.graphemes.len() {
+            print!("{}", self.graphemes[i]);
+        }
+        println!();
+        println!("───────────────────");
+    }
 }
 
 /// Required by nom
 impl<'a> nom::InputLength for ParseString<'a> {
-  fn input_len(&self) -> usize {
-    self.len()
-  }
+    fn input_len(&self) -> usize {
+        self.len()
+    }
 }
 
 /// The part of error context that's independent to its cause location.
 #[derive(Clone, Debug)]
 pub struct ParseErrorDetail {
-  pub message: &'static str,
-  pub annotation_rngs: Vec<SourceRange>,
+    pub message: &'static str,
+    pub annotation_rngs: Vec<SourceRange>,
 }
 
 /// The error type for the nom parser, which handles full error context
@@ -341,344 +345,384 @@ pub struct ParseErrorDetail {
 /// Eventually error context will be logged and ownership will be moved out.
 #[derive(Clone, Debug)]
 pub struct ParseError<'a> {
-  /// Cause range is defined as [start, end), where `start` points at the first
-  /// character that's catched by a label, and `end` points at the next 
-  /// character of the character that didn't match.
-  ///
-  /// Example:
-  ///   index:  1234567
-  ///   input:  abcdefg
-  ///   error:   ~~~^
-  ///   range:   |   |
-  ///           [2,  5)
-  ///
-  pub cause_range: SourceRange,
-  /// Hold ownership to the input ParseString
-  pub remaining_input: ParseString<'a>,
-  /// Detailed information about this error
-  pub error_detail: ParseErrorDetail,
+    /// Cause range is defined as [start, end), where `start` points at the first
+    /// character that's catched by a label, and `end` points at the next
+    /// character of the character that didn't match.
+    ///
+    /// Example:
+    ///   index:  1234567
+    ///   input:  abcdefg
+    ///   error:   ~~~^
+    ///   range:   |   |
+    ///           [2,  5)
+    ///
+    pub cause_range: SourceRange,
+    /// Hold ownership to the input ParseString
+    pub remaining_input: ParseString<'a>,
+    /// Detailed information about this error
+    pub error_detail: ParseErrorDetail,
 }
 
 impl<'a> ParseError<'a> {
-  /// Create a new error at current location of the input, with given message
-  /// and empty annotations.  Ownership of the input is also passed into this
-  /// error object.
-  pub fn new(input: ParseString<'a>, msg: &'static str) -> Self {
-    let start = input.loc();
-    let mut end = start;
-    end.col += 1;
-    ParseError {
-      cause_range: SourceRange { start, end },
-      remaining_input: input,
-      error_detail: ParseErrorDetail {
-        message: msg,
-        annotation_rngs: vec![],
-      }
+    /// Create a new error at current location of the input, with given message
+    /// and empty annotations.  Ownership of the input is also passed into this
+    /// error object.
+    pub fn new(input: ParseString<'a>, msg: &'static str) -> Self {
+        let start = input.loc();
+        let mut end = start;
+        end.col += 1;
+        ParseError {
+            cause_range: SourceRange { start, end },
+            remaining_input: input,
+            error_detail: ParseErrorDetail {
+                message: msg,
+                annotation_rngs: vec![],
+            },
+        }
     }
-  }
 
-  /// Add self to the error log of input string.
-  fn log(&mut self) {
-    self.remaining_input.error_log.push((self.cause_range.clone(), self.error_detail.clone()));
-  }
+    /// Add self to the error log of input string.
+    fn log(&mut self) {
+        self.remaining_input
+            .error_log
+            .push((self.cause_range.clone(), self.error_detail.clone()));
+    }
 }
 
 /// Required by nom
 impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
-  /// Not used, unless we have logical error
-  fn from_error_kind(input: ParseString<'a>,
-                      _kind: nom::error::ErrorKind) -> Self {
-    ParseError::new(input, format!("NomErrorKind: {:?}", _kind).leak())
-  }
-
-  /// Probably not used
-  fn append(_input: ParseString<'a>,
-            _kind: nom::error::ErrorKind,
-            other: Self) -> Self {
-    other
-  }
-
-  /// Barely used, but we do want to keep the error with larger depth.
-  fn or(self, other: Self) -> Self {
-    let self_start = self.cause_range.start;
-    let other_start = other.cause_range.start;
-    if self_start > other_start {
-      self
-    } else {
-      other
+    /// Not used, unless we have logical error
+    fn from_error_kind(input: ParseString<'a>, _kind: nom::error::ErrorKind) -> Self {
+        ParseError::new(input, format!("NomErrorKind: {:?}", _kind).leak())
     }
-  }
+
+    /// Probably not used
+    fn append(_input: ParseString<'a>, _kind: nom::error::ErrorKind, other: Self) -> Self {
+        other
+    }
+
+    /// Barely used, but we do want to keep the error with larger depth.
+    fn or(self, other: Self) -> Self {
+        let self_start = self.cause_range.start;
+        let other_start = other.cause_range.start;
+        if self_start > other_start {
+            self
+        } else {
+            other
+        }
+    }
 }
 
 /// This struct is responsible for analysing text, interpreting indices
 /// and ranges, and producing formatted messages.
 pub struct TextFormatter<'a> {
-  graphemes: Vec<&'a str>,
-  line_beginnings: Vec<usize>,
-  end_index: usize,
+    graphemes: Vec<&'a str>,
+    line_beginnings: Vec<usize>,
+    end_index: usize,
 }
 
 impl<'a> TextFormatter<'a> {
-  pub fn new(text: &'a str) -> Self {
-    let graphemes = graphemes::init_source(text);
-    let mut line_beginnings = vec![0];
-    for i in 0..graphemes.len() {
-      if graphemes::is_new_line(graphemes[i]) {
-        line_beginnings.push(i + 1);
-      }
-    }
-    line_beginnings.pop();
-    TextFormatter {
-      end_index: graphemes.len(),
-      graphemes,
-      line_beginnings,
-    }
-  }
-
-  // Index interpreter
-
-  fn get_line_range(&self, linenum: usize) -> Option<(usize, usize)> {
-    let line_index = linenum - 1;
-    if line_index >= self.line_beginnings.len() {
-      return None;
-    }
-    if linenum == self.line_beginnings.len() {  // asking for the last line
-      return Some((self.line_beginnings[line_index], self.end_index));
-    }
-    Some((self.line_beginnings[line_index], self.line_beginnings[linenum]))
-  }
-
-  fn get_text_by_linenum(&self, linenum: usize) -> String {
-    let (start, end) = match self.get_line_range(linenum) {
-      Some(v) => v,
-      None => return "\n".to_string(),
-    };
-    let mut s = self.graphemes[start..end].iter().map(|s| *s).collect::<String>();
-    if !s.ends_with("\n") {
-      s.push('\n');
-    }
-    s
-  }
-
-  fn get_textlen_by_linenum(&self, linenum: usize) -> usize {
-    let (start, end) = match self.get_line_range(linenum) {
-      Some(v) => v,
-      None => return 1,
-    };
-    let mut len = 0;
-    for i in start..end {
-      len += graphemes::width(self.graphemes[i]);
-    }
-    len + 1
-  }
-
-  // FormattedString printer
-
-  fn heading_color(s: &str) -> String {
-    s.truecolor(246, 192, 78).bold().to_string()
-  }
-
-  fn location_color(s: &str) -> String {
-    s.truecolor(0,187,204).bold().to_string()
-  }
-
-  fn linenum_color(s: &str) -> String {
-    s.truecolor(0,187,204).bold().to_string()
-  }
-
-  fn text_color(s: &str) -> String {
-    s.to_string()
-  }
-
-  fn annotation_color(s: &str) -> String {
-    s.truecolor(102,51,153).bold().to_string()
-  }
-
-  fn error_color(s: &str) -> String {
-    s.truecolor(170,51,85).bold().to_string()
-  }
-
-  fn ending_color(s: &str) -> String {
-    s.truecolor(246, 192, 78).bold().to_string()
-  }
-
-  fn err_heading(index: usize) -> String {
-    let n = index + 1;
-    let d = "────────────────────────";
-    let s = format!("{} syntax error #{} {}\n", d, n, d);
-    Self::heading_color(&s)
-  }
-
-  fn err_location(&self, ctx: &ParserErrorContext) -> String {
-    let err_end = ctx.cause_rng.end;
-    // error range will not ends at first column, so `minus 1` here is safe
-    let (row, col) = (err_end.row, err_end.col - 1);
-    let s = format!("@location:{}:{}\n", row, col);
-    Self::location_color(&s)
-  }
-
-  fn err_context(&self, ctx: &ParserErrorContext) -> String {
-    let mut result = String::new();
-
-    let mut annotation_rngs = ctx.annotation_rngs.clone();
-    annotation_rngs.push(ctx.cause_rng.clone());
-
-    // the lines to print (1-indexed)
-    let mut lines_to_print: Vec<usize> = vec![];
-    for rng in &annotation_rngs {
-      let r1 = rng.start.row;
-      // if range ends at first column, it doesn't reach that row
-      let r2 = if rng.end.col == 1 {
-        usize::max(rng.start.row, rng.end.row - 1)
-      } else {
-        rng.end.row
-      };
-      for i in r1..=r2 {
-        lines_to_print.push(i);
-      }
-    }
-    lines_to_print.sort();
-    lines_to_print.dedup();
-
-    // the annotations on each line
-    // <linenum, Vec<(start_col, rng_len, is_major, is_cause)>>
-    let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
-    for linenum in &lines_to_print {
-      range_table.insert(*linenum, vec![]);
-    }
-    let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
-    for (i, rng) in annotation_rngs.iter().enumerate() {
-      // c2 might be 0
-      let (r1, c1) = (rng.start.row, rng.start.col);
-      let (r2, c2) = (rng.end.row, rng.end.col - 1);
-      if r1 == r2 {  // the entire range is on one line
-        if c2 >= c1 {  // and the range has non-zero length
-          range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
+    pub fn new(text: &'a str) -> Self {
+        let graphemes = graphemes::init_source(text);
+        let mut line_beginnings = vec![0];
+        for i in 0..graphemes.len() {
+            if graphemes::is_new_line(graphemes[i]) {
+                line_beginnings.push(i + 1);
+            }
         }
-      } else {  // the range spans over multiple lines
-        range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, i != n, i == n));
-        for r in r1+1..r2 {
-          range_table.get_mut(&r).unwrap().push((1, usize::MAX, false, i == n));
+        line_beginnings.pop();
+        TextFormatter {
+            end_index: graphemes.len(),
+            graphemes,
+            line_beginnings,
         }
-        if c2 != 0 {  // only add the last line if it hfnas non-zero length
-          range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
-        }
-      }
     }
 
-    // other data for printing
-    let dots = "…";
-    let indentation = " ";
-    let vert_split1 = " │";
-    let vert_split2 = "  ";
-    let arrow = "^";
-    let tilde = "~";
-    let lines_str: Vec<String> = lines_to_print.iter().map(|i| i.to_string()).collect();
-    let row_str_len = usize::max(lines_str.last().unwrap().len(), dots.len());
+    // Index interpreter
 
-    // print source code
-    for i in 0..lines_to_print.len() {
-      // [... | ]
-      if i != 0 && (lines_to_print[i] - lines_to_print[i-1] != 1) {
+    fn get_line_range(&self, linenum: usize) -> Option<(usize, usize)> {
+        let line_index = linenum - 1;
+        if line_index >= self.line_beginnings.len() {
+            return None;
+        }
+        if linenum == self.line_beginnings.len() {
+            // asking for the last line
+            return Some((self.line_beginnings[line_index], self.end_index));
+        }
+        Some((
+            self.line_beginnings[line_index],
+            self.line_beginnings[linenum],
+        ))
+    }
+
+    fn get_text_by_linenum(&self, linenum: usize) -> String {
+        let (start, end) = match self.get_line_range(linenum) {
+            Some(v) => v,
+            None => return "\n".to_string(),
+        };
+        let mut s = self.graphemes[start..end]
+            .iter()
+            .map(|s| *s)
+            .collect::<String>();
+        if !s.ends_with("\n") {
+            s.push('\n');
+        }
+        s
+    }
+
+    fn get_textlen_by_linenum(&self, linenum: usize) -> usize {
+        let (start, end) = match self.get_line_range(linenum) {
+            Some(v) => v,
+            None => return 1,
+        };
+        let mut len = 0;
+        for i in start..end {
+            len += graphemes::width(self.graphemes[i]);
+        }
+        len + 1
+    }
+
+    // FormattedString printer
+
+    fn heading_color(s: &str) -> String {
+        s.truecolor(246, 192, 78).bold().to_string()
+    }
+
+    fn location_color(s: &str) -> String {
+        s.truecolor(0, 187, 204).bold().to_string()
+    }
+
+    fn linenum_color(s: &str) -> String {
+        s.truecolor(0, 187, 204).bold().to_string()
+    }
+
+    fn text_color(s: &str) -> String {
+        s.to_string()
+    }
+
+    fn annotation_color(s: &str) -> String {
+        s.truecolor(102, 51, 153).bold().to_string()
+    }
+
+    fn error_color(s: &str) -> String {
+        s.truecolor(170, 51, 85).bold().to_string()
+    }
+
+    fn ending_color(s: &str) -> String {
+        s.truecolor(246, 192, 78).bold().to_string()
+    }
+
+    fn err_heading(index: usize) -> String {
+        let n = index + 1;
+        let d = "────────────────────────";
+        let s = format!("{} syntax error #{} {}\n", d, n, d);
+        Self::heading_color(&s)
+    }
+
+    fn err_location(&self, ctx: &ParserErrorContext) -> String {
+        let err_end = ctx.cause_rng.end;
+        // error range will not ends at first column, so `minus 1` here is safe
+        let (row, col) = (err_end.row, err_end.col - 1);
+        let s = format!("@location:{}:{}\n", row, col);
+        Self::location_color(&s)
+    }
+
+    fn err_context(&self, ctx: &ParserErrorContext) -> String {
+        let mut result = String::new();
+
+        let mut annotation_rngs = ctx.annotation_rngs.clone();
+        annotation_rngs.push(ctx.cause_rng.clone());
+
+        // the lines to print (1-indexed)
+        let mut lines_to_print: Vec<usize> = vec![];
+        for rng in &annotation_rngs {
+            let r1 = rng.start.row;
+            // if range ends at first column, it doesn't reach that row
+            let r2 = if rng.end.col == 1 {
+                usize::max(rng.start.row, rng.end.row - 1)
+            } else {
+                rng.end.row
+            };
+            for i in r1..=r2 {
+                lines_to_print.push(i);
+            }
+        }
+        lines_to_print.sort();
+        lines_to_print.dedup();
+
+        // the annotations on each line
+        // <linenum, Vec<(start_col, rng_len, is_major, is_cause)>>
+        let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
+        for linenum in &lines_to_print {
+            range_table.insert(*linenum, vec![]);
+        }
+        let n = annotation_rngs.len() - 1; // if i == n, it's the last rng, i.e. the cause rng
+        for (i, rng) in annotation_rngs.iter().enumerate() {
+            // c2 might be 0
+            let (r1, c1) = (rng.start.row, rng.start.col);
+            let (r2, c2) = (rng.end.row, rng.end.col - 1);
+            if r1 == r2 {
+                // the entire range is on one line
+                if c2 >= c1 {
+                    // and the range has non-zero length
+                    range_table
+                        .get_mut(&r1)
+                        .unwrap()
+                        .push((c1, c2 - c1 + 1, true, i == n));
+                }
+            } else {
+                // the range spans over multiple lines
+                range_table
+                    .get_mut(&r1)
+                    .unwrap()
+                    .push((c1, usize::MAX, i != n, i == n));
+                for r in r1 + 1..r2 {
+                    range_table
+                        .get_mut(&r)
+                        .unwrap()
+                        .push((1, usize::MAX, false, i == n));
+                }
+                if c2 != 0 {
+                    // only add the last line if it hfnas non-zero length
+                    range_table
+                        .get_mut(&r2)
+                        .unwrap()
+                        .push((1, c2, i == n, i == n));
+                }
+            }
+        }
+
+        // other data for printing
+        let dots = "…";
+        let indentation = " ";
+        let vert_split1 = " │";
+        let vert_split2 = "  ";
+        let arrow = "^";
+        let tilde = "~";
+        let lines_str: Vec<String> = lines_to_print.iter().map(|i| i.to_string()).collect();
+        let row_str_len = usize::max(lines_str.last().unwrap().len(), dots.len());
+
+        // print source code
+        for i in 0..lines_to_print.len() {
+            // [... | ]
+            if i != 0 && (lines_to_print[i] - lines_to_print[i - 1] != 1) {
+                result.push_str(indentation);
+                for _ in 3..row_str_len {
+                    result.push(' ');
+                }
+                result.push_str(&Self::linenum_color(dots));
+                result.push_str(&Self::linenum_color(vert_split1));
+                result.push('\n');
+            }
+
+            // [    | ]
+            result.push_str(indentation);
+            for _ in 0..row_str_len {
+                result.push(' ');
+            }
+            result.push_str(&Self::linenum_color(vert_split1));
+            result.push('\n');
+
+            // [row |  program text...]
+            let text = self.get_text_by_linenum(lines_to_print[i]);
+            result.push_str(indentation);
+            for _ in 0..row_str_len - lines_str[i].len() {
+                result.push(' ');
+            }
+            result.push_str(&Self::linenum_color(&lines_str[i]));
+            result.push_str(&Self::linenum_color(vert_split1));
+            result.push_str(&Self::text_color(&text));
+
+            // [    |    ^~~~]
+            result.push_str(indentation);
+            for _ in 0..row_str_len {
+                result.push(' ');
+            }
+            result.push_str(&Self::linenum_color(vert_split1));
+            let mut curr_col = 1;
+            let line_len = self.get_textlen_by_linenum(lines_to_print[i]);
+            let rngs = range_table.get(&lines_to_print[i]).unwrap();
+            for (start, len, major, cause) in rngs {
+                let max_len = usize::max(1, usize::min(*len, line_len - curr_col + 1));
+                for _ in curr_col..*start {
+                    result.push(' ');
+                }
+                if *cause {
+                    for _ in 0..max_len - 1 {
+                        result.push_str(&Self::error_color(tilde));
+                    }
+                    if *major {
+                        result.push_str(&Self::error_color(arrow));
+                    } else {
+                        result.push_str(&Self::error_color(tilde));
+                    }
+                } else {
+                    if *major {
+                        result.push_str(&Self::annotation_color(arrow));
+                    } else {
+                        result.push_str(&Self::annotation_color(tilde));
+                    }
+                    for _ in 0..max_len - 1 {
+                        result.push_str(&Self::annotation_color(tilde));
+                    }
+                }
+                curr_col = start + max_len;
+            }
+            result.push('\n');
+        }
+
+        // print error message;
+        // error range never ends at first column, so it's safe to `minus 1` here
+        let cause_col = ctx.cause_rng.end.col - 1;
         result.push_str(indentation);
-        for _ in 3..row_str_len { result.push(' '); }
-        result.push_str(&Self::linenum_color(dots));
-        result.push_str(&Self::linenum_color(vert_split1));
-        result.push('\n');
-      }
-
-      // [    | ]
-      result.push_str(indentation);
-      for _ in 0..row_str_len { result.push(' '); }
-      result.push_str(&Self::linenum_color(vert_split1));
-      result.push('\n');
-
-      // [row |  program text...]
-      let text = self.get_text_by_linenum(lines_to_print[i]);
-      result.push_str(indentation);
-      for _ in 0..row_str_len-lines_str[i].len() { result.push(' '); }
-      result.push_str(&Self::linenum_color(&lines_str[i]));
-      result.push_str(&Self::linenum_color(vert_split1));
-      result.push_str(&Self::text_color(&text));
-
-      // [    |    ^~~~]
-      result.push_str(indentation);
-      for _ in 0..row_str_len { result.push(' '); }
-      result.push_str(&Self::linenum_color(vert_split1));
-      let mut curr_col = 1;
-      let line_len = self.get_textlen_by_linenum(lines_to_print[i]);
-      let rngs = range_table.get(&lines_to_print[i]).unwrap();
-      for (start, len, major, cause) in rngs {
-        let max_len = usize::max(1, usize::min(*len, line_len - curr_col + 1));
-        for _ in curr_col..*start { result.push(' '); }
-        if *cause {
-          for _ in 0..max_len-1 {
-            result.push_str(&Self::error_color(tilde));
-          }
-          if *major {
-            result.push_str(&Self::error_color(arrow));
-          } else {
-            result.push_str(&Self::error_color(tilde));
-          }
-        } else {
-          if *major {
-            result.push_str(&Self::annotation_color(arrow));
-          } else {
-            result.push_str(&Self::annotation_color(tilde));
-          }
-          for _ in 0..max_len-1 {
-            result.push_str(&Self::annotation_color(tilde));
-          }
+        for _ in 0..row_str_len {
+            result.push(' ');
         }
-        curr_col = start + max_len;
-      }
-      result.push('\n');
+        result.push_str(vert_split2);
+        for _ in 0..cause_col - 1 {
+            result.push(' ');
+        }
+        result.push_str(&Self::error_color(&ctx.err_message));
+        result.push('\n');
+
+        result
     }
 
-    // print error message;
-    // error range never ends at first column, so it's safe to `minus 1` here
-    let cause_col = ctx.cause_rng.end.col - 1;
-    result.push_str(indentation);
-    for _ in 0..row_str_len { result.push(' '); }
-    result.push_str(vert_split2);
-    for _ in 0..cause_col-1 { result.push(' '); }
-    result.push_str(&Self::error_color(&ctx.err_message));
-    result.push('\n');
-
-    result
-  }
-
-  fn err_ending(d: usize) -> String {
-    let s = format!("… and {} other error{} not shown\n", d, if d == 1 {""} else {"s"});
-    Self::heading_color(&s)
-  }
-
-  /// Get formatted error message.
-  pub fn format_error(&self, errors: &ParserErrorReport) -> String {
-    let n = usize::min(errors.1.len(), 10);
-    let mut result = String::new();
-    result.push('\n');
-    for i in 0..n {
-      let ctx = &errors.1[i];
-      result.push_str(&Self::err_heading(i));
-      result.push_str(&self.err_location(ctx));
-      result.push_str(&self.err_context(ctx));
-      result.push_str("\n\n");
+    fn err_ending(d: usize) -> String {
+        let s = format!(
+            "… and {} other error{} not shown\n",
+            d,
+            if d == 1 { "" } else { "s" }
+        );
+        Self::heading_color(&s)
     }
-    let d = errors.0.len() - n;
-    if d != 0 {
-      result.push_str(&Self::err_ending(d));
+
+    /// Get formatted error message.
+    pub fn format_error(&self, errors: &ParserErrorReport) -> String {
+        let n = usize::min(errors.1.len(), 10);
+        let mut result = String::new();
+        result.push('\n');
+        for i in 0..n {
+            let ctx = &errors.1[i];
+            result.push_str(&Self::err_heading(i));
+            result.push_str(&self.err_location(ctx));
+            result.push_str(&self.err_context(ctx));
+            result.push_str("\n\n");
+        }
+        let d = errors.0.len() - n;
+        if d != 0 {
+            result.push_str(&Self::err_ending(d));
+        }
+        result
     }
-    result
-  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ParserErrorContext {
-  pub cause_rng: SourceRange,
-  pub err_message: String,
-  pub annotation_rngs: Vec<SourceRange>,
+    pub cause_rng: SourceRange,
+    pub err_message: String,
+    pub annotation_rngs: Vec<SourceRange>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -686,156 +730,162 @@ pub struct ParserErrorContext {
 pub struct ParserErrorReport(pub String, pub Vec<ParserErrorContext>);
 
 impl MechErrorKind for ParserErrorReport {
-  fn name(&self) -> &str {
-    "ParserErrorContext"
-  }
-  fn message(&self) -> String {
-    let source = &self.0;
-    let lines: Vec<&str> = source.lines().collect();
+    fn name(&self) -> &str {
+        "ParserErrorContext"
+    }
+    fn message(&self) -> String {
+        let source = &self.0;
+        let lines: Vec<&str> = source.lines().collect();
 
-    self.1
-      .iter()
-      .map(|e| {
-        let cause_snippet = extract_snippet(&lines, &e.cause_rng);
+        self.1
+            .iter()
+            .map(|e| {
+                let cause_snippet = extract_snippet(&lines, &e.cause_rng);
 
-        let annotation_snippets = e.annotation_rngs
-          .iter()
-          .map(|rng| extract_snippet(&lines, rng))
-          .collect::<Vec<_>>()
-          .join("\n");
+                let annotation_snippets = e
+                    .annotation_rngs
+                    .iter()
+                    .map(|rng| extract_snippet(&lines, rng))
+                    .collect::<Vec<_>>()
+                    .join("\n");
 
-        format!(
-          "{}: {} (Annotations: [{}])\n\nSource:\n{}\n\nAnnotations:\n{}",
-          format!(
-            "[{}:{}-{}:{}]",
-            e.cause_rng.start.row,
-            e.cause_rng.start.col,
-            e.cause_rng.end.row,
-            e.cause_rng.end.col
-          ),
-          e.err_message,
-          e.annotation_rngs.iter()
-            .map(|rng| format!(
-              "[{}:{}-{}:{}]",
-              rng.start.row, rng.start.col, rng.end.row, rng.end.col
-            ))
+                format!(
+                    "{}: {} (Annotations: [{}])\n\nSource:\n{}\n\nAnnotations:\n{}",
+                    format!(
+                        "[{}:{}-{}:{}]",
+                        e.cause_rng.start.row,
+                        e.cause_rng.start.col,
+                        e.cause_rng.end.row,
+                        e.cause_rng.end.col
+                    ),
+                    e.err_message,
+                    e.annotation_rngs
+                        .iter()
+                        .map(|rng| format!(
+                            "[{}:{}-{}:{}]",
+                            rng.start.row, rng.start.col, rng.end.row, rng.end.col
+                        ))
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    indent(&cause_snippet),
+                    indent(&annotation_snippets)
+                )
+            })
             .collect::<Vec<_>>()
-            .join(", "),
-          indent(&cause_snippet),
-          indent(&annotation_snippets)
-        )
-      })
-      .collect::<Vec<_>>()
-      .join("\n\n---\n\n")
-  }
+            .join("\n\n---\n\n")
+    }
 }
 
 fn extract_snippet(lines: &[&str], range: &SourceRange) -> String {
-  let mut out = String::new();
+    let mut out = String::new();
 
-  for row in range.start.row..=range.end.row {
-    if let Some(row_index) = row.checked_sub(1) {
-      if let Some(line) = lines.get(row_index) {
-        let start_col = if row == range.start.row { range.start.col } else { 1 };
-        let end_col = if row == range.end.row {
-          range.end.col
-        } else {
-          line.chars().count() + 1
-        };
+    for row in range.start.row..=range.end.row {
+        if let Some(row_index) = row.checked_sub(1) {
+            if let Some(line) = lines.get(row_index) {
+                let start_col = if row == range.start.row {
+                    range.start.col
+                } else {
+                    1
+                };
+                let end_col = if row == range.end.row {
+                    range.end.col
+                } else {
+                    line.chars().count() + 1
+                };
 
-        out.push_str(&slice_by_char_cols(line, start_col, end_col));
-        out.push('\n');
-      }
+                out.push_str(&slice_by_char_cols(line, start_col, end_col));
+                out.push('\n');
+            }
+        }
     }
-  }
 
-  out
+    out
 }
 
 fn slice_by_char_cols(line: &str, start_col: usize, end_col: usize) -> String {
-  let start_idx = start_col.saturating_sub(1);
-  let end_idx = end_col.saturating_sub(1);
+    let start_idx = start_col.saturating_sub(1);
+    let end_idx = end_col.saturating_sub(1);
 
-  if start_idx >= end_idx {
-    return String::new();
-  }
+    if start_idx >= end_idx {
+        return String::new();
+    }
 
-  line.chars()
-    .skip(start_idx)
-    .take(end_idx - start_idx)
-    .collect()
+    line.chars()
+        .skip(start_idx)
+        .take(end_idx - start_idx)
+        .collect()
 }
 
 fn indent(s: &str) -> String {
-  s.lines()
-    .map(|line| format!("  {}", line))
-    .collect::<Vec<_>>()
-    .join("\n")
+    s.lines()
+        .map(|line| format!("  {}", line))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Try a list of parsers in order, tracking successes, failures, and errors.
 /// Returns the best success if any, else best failure, else best error.
 pub fn alt_best<'a, O>(
-  input: ParseString<'a>,
-  parsers: &[(&'static str, Box<dyn Fn(ParseString) -> ParseResult<O>>)],
+    input: ParseString<'a>,
+    parsers: &[(&'static str, Box<dyn Fn(ParseString) -> ParseResult<O>>)],
 ) -> ParseResult<'a, O> {
-  let start_cursor = input.cursor;
+    let start_cursor = input.cursor;
 
-  let mut best_success: Option<(ParseString, O, usize, &'static str)> = None;
-  let mut best_failure: Option<(nom::Err<ParseError>, usize, &'static str)> = None;
-  let mut best_error:   Option<(nom::Err<ParseError>, usize, &'static str)> = None;
+    let mut best_success: Option<(ParseString, O, usize, &'static str)> = None;
+    let mut best_failure: Option<(nom::Err<ParseError>, usize, &'static str)> = None;
+    let mut best_error: Option<(nom::Err<ParseError>, usize, &'static str)> = None;
 
-  for (name, parser) in parsers {
-    match parser(input.clone()) {
-      Ok((next_input, val)) => {
-        if *name == "mech_code" {
-          return Ok((next_input, val));
+    for (name, parser) in parsers {
+        match parser(input.clone()) {
+            Ok((next_input, val)) => {
+                if *name == "mech_code" {
+                    return Ok((next_input, val));
+                }
+                let consumed = next_input.cursor;
+                if best_success.is_none() || consumed > best_success.as_ref().unwrap().2 {
+                    best_success = Some((next_input, val, consumed, name));
+                }
+            }
+
+            Err(nom::Err::Failure(e)) => {
+                let reached = e.remaining_input.cursor;
+                if best_failure.is_none() || reached > best_failure.as_ref().unwrap().1 {
+                    best_failure = Some((nom::Err::Failure(e), reached, name));
+                }
+            }
+
+            Err(nom::Err::Error(e)) => {
+                let reached = e.remaining_input.cursor;
+                if best_error.is_none() || reached > best_error.as_ref().unwrap().1 {
+                    best_error = Some((nom::Err::Error(e), reached, name));
+                }
+            }
+
+            Err(e @ nom::Err::Incomplete(_)) => {
+                return Err(e);
+            }
         }
-        let consumed = next_input.cursor;
-        if best_success.is_none() || consumed > best_success.as_ref().unwrap().2 {
-          best_success = Some((next_input, val, consumed, name));
-        }
-      }
-
-      Err(nom::Err::Failure(e)) => {
-        let reached = e.remaining_input.cursor;
-        if best_failure.is_none() || reached > best_failure.as_ref().unwrap().1 {
-          best_failure = Some((nom::Err::Failure(e), reached, name));
-        }
-      }
-
-      Err(nom::Err::Error(e)) => {
-        let reached = e.remaining_input.cursor;
-        if best_error.is_none() || reached > best_error.as_ref().unwrap().1 {
-          best_error = Some((nom::Err::Error(e), reached, name));
-        }
-      }
-
-      Err(e @ nom::Err::Incomplete(_)) => {
-        return Err(e);
-      }
     }
-  }
 
-  // Determine the best result based on the given conditions
-  if let Some((next_input, val, success_cursor, _)) = best_success {
-    if let Some((nom::Err::Failure(failure), failure_cursor, _)) = best_failure {
-      if success_cursor > failure_cursor {
-        Ok((next_input, val))
-      } else {
+    // Determine the best result based on the given conditions
+    if let Some((next_input, val, success_cursor, _)) = best_success {
+        if let Some((nom::Err::Failure(failure), failure_cursor, _)) = best_failure {
+            if success_cursor > failure_cursor {
+                Ok((next_input, val))
+            } else {
+                Err(nom::Err::Failure(failure))
+            }
+        } else {
+            Ok((next_input, val))
+        }
+    } else if let Some((nom::Err::Failure(failure), _, _)) = best_failure {
         Err(nom::Err::Failure(failure))
-      }
+    } else if let Some((err, _, _)) = best_error {
+        Err(err)
     } else {
-      Ok((next_input, val))
+        Err(nom::Err::Error(ParseError::new(
+            input,
+            "No parser matched in alt_best",
+        )))
     }
-  } else if let Some((nom::Err::Failure(failure), _, _)) = best_failure {
-    Err(nom::Err::Failure(failure))
-  } else if let Some((err, _, _)) = best_error {
-    Err(err)
-  } else {
-    Err(nom::Err::Error(ParseError::new(
-      input,
-      "No parser matched in alt_best",
-    )))
-  }
 }

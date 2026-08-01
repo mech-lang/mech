@@ -1,16 +1,14 @@
 use mech_core::{
-    ActivationArmBody, ActivationBody, ComprehensionQualifier, ContextBase,
-    ContextCapabilityScope, Expression, Factor, FsmArm, FsmImplementation, FunctionDefine,
-    MResult, MechCode, MechError, Pattern, Program,
-    RangeExpression, SectionElement, SourceRange, Statement, Structure, Subscript, Term, Token,
-    Transition,
+    ActivationArmBody, ActivationBody, ComprehensionQualifier, ContextBase, ContextCapabilityScope,
+    Expression, Factor, FsmArm, FsmImplementation, FunctionDefine, MResult, MechCode, MechError,
+    Pattern, Program, RangeExpression, SectionElement, SourceRange, Statement, Structure,
+    Subscript, Term, Token, Transition,
 };
 
 use super::{
-    classify_import_specifier, module_import_declarations, AddressTargetNameConflict,
-    SourceAddressReference, SourceContextBase, SourceContextCapability,
+    AddressTargetNameConflict, SourceAddressReference, SourceContextBase, SourceContextCapability,
     SourceContextCapabilityScope, SourceContextDeclaration, SourceExportDeclaration,
-    SourceImportDeclaration,
+    SourceImportDeclaration, classify_import_specifier, module_import_declarations,
 };
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -415,11 +413,15 @@ fn index_mech_code_address_references(
                         match &arm.body {
                             ActivationArmBody::Block(body) => {
                                 for (body_code, _) in body {
-                                    index_mech_code_address_references(index, scope, order, body_code);
+                                    index_mech_code_address_references(
+                                        index, scope, order, body_code,
+                                    );
                                 }
                             }
                             ActivationArmBody::Expression(expression) => {
-                                index_expression_address_references(index, scope, order, expression);
+                                index_expression_address_references(
+                                    index, scope, order, expression,
+                                );
                             }
                         }
                     }
@@ -1025,15 +1027,19 @@ result := x?
     #[test]
     fn source_index_records_activation_body_and_arm_address_references() {
         let activation = MechCode::ActivationScope(mech_core::ActivationScope {
-            operator: Token::new(mech_core::TokenKind::AsyncTransitionOperator, SourceRange::default(), vec!['~', '>']),
+            operator: Token::new(
+                mech_core::TokenKind::AsyncTransitionOperator,
+                SourceRange::default(),
+                vec!['~', '>'],
+            ),
             trigger: addressed_var("trigger", "EVENT"),
             body: ActivationBody::PatternArms(vec![
                 mech_core::ActivationArm {
                     // This nested pattern expression must be visited too; patterns are
                     // expressions in their own right and can contain addressed reads.
-                    pattern: Pattern::Tuple(mech_core::PatternTuple(vec![
-                        Pattern::Expression(addressed_var("pattern", "NESTED")),
-                    ])),
+                    pattern: Pattern::Tuple(mech_core::PatternTuple(vec![Pattern::Expression(
+                        addressed_var("pattern", "NESTED"),
+                    )])),
                     guard: Some(addressed_var("guard", "ENABLED")),
                     body: ActivationArmBody::Block(vec![(
                         MechCode::Expression(addressed_var("block", "VALUE")),
@@ -1048,7 +1054,11 @@ result := x?
             ]),
         });
         let fixed = MechCode::ActivationScope(mech_core::ActivationScope {
-            operator: Token::new(mech_core::TokenKind::AsyncTransitionOperator, SourceRange::default(), vec!['~', '>']),
+            operator: Token::new(
+                mech_core::TokenKind::AsyncTransitionOperator,
+                SourceRange::default(),
+                vec!['~', '>'],
+            ),
             trigger: addressed_var("fixed_trigger", "EVENT"),
             body: ActivationBody::Block(vec![(
                 MechCode::Expression(addressed_var("fixed", "VALUE")),
@@ -1070,9 +1080,13 @@ result := x?
             ("expression", "VALUE"),
             ("pattern", "NESTED"),
         ] {
-            assert!(index.program_address_references().iter().any(|reference| {
-                reference.target == target && reference.name == name
-            }), "expected activation reference @{target}/{name} to be indexed");
+            assert!(
+                index
+                    .program_address_references()
+                    .iter()
+                    .any(|reference| { reference.target == target && reference.name == name }),
+                "expected activation reference @{target}/{name} to be indexed"
+            );
         }
     }
 

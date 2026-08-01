@@ -11,8 +11,7 @@ use mech_core::{Ref, Value};
 use super::support::RecordingHostEffect;
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
-    RuntimeValueSnapshot::try_capture(&value)
-        .expect("acyclic fixture")
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
 #[test]

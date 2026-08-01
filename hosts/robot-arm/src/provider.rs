@@ -2,11 +2,11 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
-    PreparedRuntimeEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
-    RuntimeEffectMetadata, RuntimeEffectSource,
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeCompensatableEffect,
+    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
+    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    materialize_host_manifest,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -84,14 +84,13 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
                 "robot commands require context send (`<-`)",
             ));
         }
-        validate_command_target(
-            request.base_uri,
-            request.operation.name(),
-            &request.path,
-        )
+        validate_command_target(request.base_uri, request.operation.name(), &request.path)
     }
 
-    fn prepare_write(&self, request: RuntimeResourceWriteRequest) -> MResult<PreparedRuntimeEffect> {
+    fn prepare_write(
+        &self,
+        request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri.clone(),
             path: request.path.clone(),
@@ -133,10 +132,7 @@ impl RuntimeCompensatableEffect for RobotCommandEffect {
             self.operation.clone(),
         )
         .with_resource(format!("{}/{}", self.base_uri, self.path))
-        .with_cost(RuntimeEffectCost {
-            bytes: 0,
-            items: 1,
-        })
+        .with_cost(RuntimeEffectCost { bytes: 0, items: 1 })
     }
 
     fn apply(&mut self) -> MResult<()> {
@@ -351,8 +347,14 @@ mod tests {
     #[test]
     fn robot_provider_rejects_command_subpaths() {
         let mut provider = RobotArmResourceProvider::new("arm");
-        for (operation, path) in [("move", "move/typo"), ("grip", "grip/closed"), ("home", "home/reset")] {
-            let error = provider.prepare_write(send_request(operation, path)).expect_err("subpath should be rejected");
+        for (operation, path) in [
+            ("move", "move/typo"),
+            ("grip", "grip/closed"),
+            ("home", "home/reset"),
+        ] {
+            let error = provider
+                .prepare_write(send_request(operation, path))
+                .expect_err("subpath should be rejected");
             let message = error.display_message();
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
@@ -363,7 +365,9 @@ mod tests {
     fn robot_provider_rejects_mismatched_operation_and_path() {
         let mut provider = RobotArmResourceProvider::new("arm");
         for (operation, path) in [("move", "grip"), ("grip", "move")] {
-            let error = provider.prepare_write(send_request(operation, path)).expect_err("mismatch should be rejected");
+            let error = provider
+                .prepare_write(send_request(operation, path))
+                .expect_err("mismatch should be rejected");
             let message = error.display_message();
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
@@ -402,8 +406,7 @@ mod tests {
     #[test]
     fn robot_effect_compensation_restores_mock_state() {
         let mut provider = RobotArmResourceProvider::new("arm");
-        let mut effect =
-            apply_write(&mut provider, send_request("move", "move")).unwrap();
+        let mut effect = apply_write(&mut provider, send_request("move", "move")).unwrap();
         assert_eq!(
             provider.state.lock().unwrap().last_command.as_deref(),
             Some("move"),

@@ -32,10 +32,8 @@ fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
 
 #[test]
 fn runtime_run_tree_defers_inline_document_expression_in_the_formatter_root_namespace() {
-    let tree = parser::parse(
-        "The document evaluates {answer + 1} inline.\n\nanswer := 41",
-    )
-    .unwrap();
+    let tree =
+        parser::parse("The document evaluates {answer + 1} inline.\n\nanswer := 41").unwrap();
     let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
 
     runtime.run_tree(&tree).unwrap();
@@ -55,12 +53,7 @@ fn runtime_delegates_root_symbol_value() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     runtime.run_string("answer := 42.0").unwrap();
     assert_eq!(
-        f64_value(
-            &runtime
-                .root_symbol_value("answer")
-                .unwrap()
-                .to_value(),
-        ),
+        f64_value(&runtime.root_symbol_value("answer").unwrap().to_value(),),
         42.0,
     );
 }
@@ -79,9 +72,7 @@ fn runtime_delegates_root_symbol_values() {
 #[test]
 fn runtime_named_interpreter_lookup_uses_retained_document_metadata() {
     let mut runtime = MechRuntime::builder().build().unwrap();
-    runtime
-        .run_string("~~~mech:foo\nanswer := 7\n~~~")
-        .unwrap();
+    runtime.run_string("~~~mech:foo\nanswer := 7\n~~~").unwrap();
 
     let id = runtime.interpreter_id_by_name("foo").unwrap();
     assert_eq!(id, Some(mech_core::hash_str("foo")));

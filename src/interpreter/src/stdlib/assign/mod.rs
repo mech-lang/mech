@@ -1,25 +1,25 @@
 #[macro_use]
 use crate::stdlib::*;
 
+#[cfg(feature = "map")]
+pub mod map;
 #[cfg(feature = "matrix")]
 pub mod matrix;
 #[cfg(feature = "record")]
 pub mod record;
 #[cfg(feature = "table")]
 pub mod table;
-#[cfg(feature = "map")]
-pub mod map;
 #[cfg(feature = "tuple")]
 pub mod tuple;
 
+#[cfg(feature = "map")]
+pub use self::map::*;
 #[cfg(feature = "matrix")]
 pub use self::matrix::*;
 #[cfg(feature = "record")]
 pub use self::record::*;
 #[cfg(feature = "table")]
 pub use self::table::*;
-#[cfg(feature = "map")]
-pub use self::map::*;
 #[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
@@ -31,95 +31,92 @@ pub use self::tuple::*;
 
 #[derive(Debug)]
 struct Assign<T> {
-  sink: Ref<T>,
-  source: Ref<T>,
+    sink: Ref<T>,
+    source: Ref<T>,
 }
 impl<T> MechFunctionFactory for Assign<T>
 where
-  T: Clone + Debug + Sync + Send + 'static,
-  Ref<T>: ToValue,
-  #[cfg(feature = "compiler")]
-  T: ConstElem + AsValueKind,
-  #[cfg(feature = "compiler")]
-  T: CompileConst,
+    T: Clone + Debug + Sync + Send + 'static,
+    Ref<T>: ToValue,
+    #[cfg(feature = "compiler")]
+    T: ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
 {
-  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-      FunctionArgs::Unary(out, source) => {
-        let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
-        let source: Ref<T> = unsafe { source.as_unchecked() }.clone();
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, source) => {
+                let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
+                let source: Ref<T> = unsafe { source.as_unchecked() }.clone();
 
-        Ok(Box::new(Self {
-          sink,
-          source,
-        }))
-      }
-      _ => Err(
-        MechError::new(
-          IncorrectNumberOfArguments {
-            expected: 2,
-            found: args.len(),
-          },
-          None,
-        )
-        .with_compiler_loc(),
-      ),
+                Ok(Box::new(Self { sink, source }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
     }
-  }
 }
 impl<T> MechFunctionImpl for Assign<T>
 where
-  T: Clone + Debug + 'static,
-  Ref<T>: ToValue
+    T: Clone + Debug + 'static,
+    Ref<T>: ToValue,
 {
-  fn solve(&self) {
-    let source_ptr = self.source.as_ptr();
-    let sink_ptr = self.sink.as_mut_ptr();
-    unsafe {
-      *sink_ptr = (*source_ptr).clone();
+    fn solve(&self) {
+        let source_ptr = self.source.as_ptr();
+        let sink_ptr = self.sink.as_mut_ptr();
+        unsafe {
+            *sink_ptr = (*source_ptr).clone();
+        }
     }
-  }
-  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-    let next = self.source.borrow().clone();
-    let output_cells = self.reactive_output_cell_ids();
-    Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, output_cells)))
-  }
-  fn out(&self) -> Value { self.sink.to_value() }
-  fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        let next = self.source.borrow().clone();
+        let output_cells = self.reactive_output_cell_ids();
+        Ok(Box::new(ReactiveRegisterWrite::new(
+            self.sink.clone(),
+            next,
+            output_cells,
+        )))
+    }
+    fn out(&self) -> Value {
+        self.sink.to_value()
+    }
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for Assign<T>
 where
-  T: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + AsValueKind,
 {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("Assign<{}>", T::as_value_kind());
-    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("Assign<{}>", T::as_value_kind());
+        compile_unop!(
+            name,
+            self.sink,
+            self.source,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::Assign)
+        );
+    }
 }
 register_fxn_descriptor!(
-  Assign,
-  u8, "u8",
-  u16, "u16",
-  u32, "u32",
-  u64, "u64",
-  u128, "u128",
-  i8, "i8",
-  i16, "i16",
-  i32, "i32",
-  i64, "i64",
-  i128, "i128",
-  f32, "f32",
-  f64, "f64",
-  bool, "bool",
-  String, "string",
-  R64, "r64",
-  C64, "c64",
+    Assign, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32,
+    "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64", bool, "bool", String, "string", R64,
+    "r64", C64, "c64",
 );
 
 register_descriptor! {
@@ -132,41 +129,43 @@ register_descriptor! {
 #[derive(Debug, Clone)]
 pub struct EmptyAssignmentNotBytecodeCompilable;
 impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
-  fn name(&self) -> &str {
-    "EmptyAssignmentNotBytecodeCompilable"
-  }
+    fn name(&self) -> &str {
+        "EmptyAssignmentNotBytecodeCompilable"
+    }
 
-  fn message(&self) -> String {
-    "empty stable assignment is not currently bytecode-compilable".to_string()
-  }
+    fn message(&self) -> String {
+        "empty stable assignment is not currently bytecode-compilable".to_string()
+    }
 }
 
 #[derive(Debug)]
 struct AssignEmpty;
 impl MechFunctionImpl for AssignEmpty {
-  fn solve(&self) {}
-  fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-    Ok(Box::new(ReactiveRegisterNoopCommit::new(self.reactive_output_cell_ids())))
-  }
-  fn out(&self) -> Value { Value::Empty }
-  fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
-  fn to_string(&self) -> String { "AssignEmpty".to_string() }
+    fn solve(&self) {}
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        Ok(Box::new(ReactiveRegisterNoopCommit::new(
+            self.reactive_output_cell_ids(),
+        )))
+    }
+    fn out(&self) -> Value {
+        Value::Empty
+    }
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+    fn to_string(&self) -> String {
+        "AssignEmpty".to_string()
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for AssignEmpty {
-  fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    Err(
-      MechError::new(
-        EmptyAssignmentNotBytecodeCompilable,
-        None,
-      )
-      .with_compiler_loc()
-    )
-  }
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(EmptyAssignmentNotBytecodeCompilable, None).with_compiler_loc())
+    }
 }
 
 #[macro_export]
@@ -219,152 +218,191 @@ macro_rules! impl_assign_value_match_arms {
 }
 
 fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
-  match (&sink, &source) {
-    (Value::Typed(sink_inner, sink_annotation), Value::Typed(source_inner, source_annotation))
-      if sink_annotation == source_annotation =>
-    {
-      return assign_value_fxn(
-        sink_inner.as_ref().clone(),
-        source_inner.as_ref().clone(),
-      );
+    match (&sink, &source) {
+        (
+            Value::Typed(sink_inner, sink_annotation),
+            Value::Typed(source_inner, source_annotation),
+        ) if sink_annotation == source_annotation => {
+            return assign_value_fxn(sink_inner.as_ref().clone(), source_inner.as_ref().clone());
+        }
+        (Value::Empty, Value::Empty) => {
+            return Ok(Box::new(AssignEmpty));
+        }
+        (Value::Index(sink), Value::Index(source)) => {
+            return Ok(Box::new(Assign {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        _ => {}
     }
-    (Value::Empty, Value::Empty) => {
-      return Ok(Box::new(AssignEmpty));
-    }
-    (Value::Index(sink), Value::Index(source)) => {
-      return Ok(Box::new(Assign {
-        sink: sink.clone(),
-        source: source.clone(),
-      }));
-    }
-    _ => {}
-  }
-  impl_assign_value_match_arms!(
-    (sink, source),
-    Bool,   "bool";
-    String, "string";
-    U8,     "u8";
-    U16,    "u16";
-    U32,    "u32";
-    U64,    "u64";
-    U128,   "u128";
-    I8,     "i8";
-    I16,    "i16";
-    I32,    "i32";
-    I64,    "i64";
-    I128,   "i128";
-    F32,    "f32";
-    F64,    "f64";
-    R64, "rational";
-    C64, "complex";
-  )
+    impl_assign_value_match_arms!(
+      (sink, source),
+      Bool,   "bool";
+      String, "string";
+      U8,     "u8";
+      U16,    "u16";
+      U32,    "u32";
+      U64,    "u64";
+      U128,   "u128";
+      I8,     "i8";
+      I16,    "i16";
+      I32,    "i32";
+      I64,    "i64";
+      I128,   "i128";
+      F32,    "f32";
+      F64,    "f64";
+      R64, "rational";
+      C64, "complex";
+    )
 }
 
 pub struct AssignValue {}
 impl NativeFunctionCompiler for AssignValue {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() <= 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let sink = arguments[0].clone();
-    let source = arguments[1].clone();
-    match assign_value_fxn(sink.clone(),source.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(x) => {
-        match (sink,source) {
-          (Value::MutableReference(sink),Value::MutableReference(source)) => { assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
-          (sink,Value::MutableReference(source)) => { assign_value_fxn(sink.clone(),source.borrow().clone()) },
-          (Value::MutableReference(sink),source) => { assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          (sink,source) => Err(MechError::new(
-              UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() <= 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let sink = arguments[0].clone();
+        let source = arguments[1].clone();
+        match assign_value_fxn(sink.clone(), source.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(x) => match (sink, source) {
+                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                    assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
+                }
+                (sink, Value::MutableReference(source)) => {
+                    assign_value_fxn(sink.clone(), source.borrow().clone())
+                }
+                (Value::MutableReference(sink), source) => {
+                    assign_value_fxn(sink.borrow().clone(), source.clone())
+                }
+                (sink, source) => Err(MechError::new(
+                    UnhandledFunctionArgumentKind2 {
+                        arg: (sink.kind(), source.kind()),
+                        fxn_name: "assign".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 pub struct AssignColumn {}
 impl NativeFunctionCompiler for AssignColumn {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() < 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() < 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        let src = &arguments[0];
+        match src.kind().deref_kind() {
+            #[cfg(feature = "table")]
+            ValueKind::Table(_, _) => AssignTableColumn {}.compile(&arguments),
+            #[cfg(feature = "record")]
+            ValueKind::Record(_) => AssignRecordField {}.compile(&arguments),
+            _ => Err(MechError::new(
+                UnhandledFunctionArgumentKind1 {
+                    arg: src.kind(),
+                    fxn_name: "assign/column".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
     }
-    let src = &arguments[0];
-    match src.kind().deref_kind() {
-      #[cfg(feature = "table")]
-      ValueKind::Table(_,_) => AssignTableColumn{}.compile(&arguments),
-      #[cfg(feature = "record")]
-      ValueKind::Record(_) => AssignRecordField{}.compile(&arguments),
-      _ => Err(MechError::new(
-          UnhandledFunctionArgumentKind1 { arg: src.kind(), fxn_name: "assign/column".to_string() },
-          None
-        ).with_compiler_loc()
-      ),
-    }
-  }
 }
 
 // x += y ----------------------------------------------------------------------
 
 pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
-  match sink {
-    #[cfg(feature = "table")]
-    Value::Table(_) => add_assign_table_fxn(sink, source),
-    #[cfg(feature = "math_add_assign")]
-    _ => add_assign_math_fxn(sink, source),
-    _ => Err(MechError::new(
-        UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign/add".to_string() },
-        None
-      ).with_compiler_loc()
-    ),
-  }
+    match sink {
+        #[cfg(feature = "table")]
+        Value::Table(_) => add_assign_table_fxn(sink, source),
+        #[cfg(feature = "math_add_assign")]
+        _ => add_assign_math_fxn(sink, source),
+        _ => Err(MechError::new(
+            UnhandledFunctionArgumentKind2 {
+                arg: (sink.kind(), source.kind()),
+                fxn_name: "assign/add".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
 }
 
 pub struct AddAssignValue {}
 impl NativeFunctionCompiler for AddAssignValue {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() <= 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let sink = arguments[0].clone();
-    let source = arguments[1].clone();
-    match add_assign_value_fxn(sink.clone(),source.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(x) => {
-        match (sink,source) {
-          (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
-          (sink,Value::MutableReference(source)) => { add_assign_value_fxn(sink.clone(),source.borrow().clone()) },
-          (Value::MutableReference(sink),source) => { add_assign_value_fxn(sink.borrow().clone(),source.clone()) },
-          (sink,source) => Err(MechError::new(
-              UnhandledFunctionArgumentKind2 { arg: (sink.kind(), source.kind()), fxn_name: "assign/add".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() <= 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let sink = arguments[0].clone();
+        let source = arguments[1].clone();
+        match add_assign_value_fxn(sink.clone(), source.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(x) => match (sink, source) {
+                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                    add_assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
+                }
+                (sink, Value::MutableReference(source)) => {
+                    add_assign_value_fxn(sink.clone(), source.borrow().clone())
+                }
+                (Value::MutableReference(sink), source) => {
+                    add_assign_value_fxn(sink.borrow().clone(), source.clone())
+                }
+                (sink, source) => Err(MechError::new(
+                    UnhandledFunctionArgumentKind2 {
+                        arg: (sink.kind(), source.kind()),
+                        fxn_name: "assign/add".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[cfg(feature = "compiler")]
-  #[test]
-  fn empty_stable_assignment_bytecode_compile_returns_error() {
-    use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+    #[cfg(feature = "compiler")]
+    #[test]
+    fn empty_stable_assignment_bytecode_compile_returns_error() {
+        use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
 
-    let assignment = AssignEmpty;
-    let mut context = RecordingBytecodeCompilerContext::default();
-    let error = assignment.compile(&mut context).unwrap_err();
-    let rendered = format!("{error:?}");
-    assert!(
-      rendered.contains("EmptyAssignmentNotBytecodeCompilable"),
-      "{rendered}",
-    );
-  }
+        let assignment = AssignEmpty;
+        let mut context = RecordingBytecodeCompilerContext::default();
+        let error = assignment.compile(&mut context).unwrap_err();
+        let rendered = format!("{error:?}");
+        assert!(
+            rendered.contains("EmptyAssignmentNotBytecodeCompilable"),
+            "{rendered}",
+        );
+    }
 }

@@ -1,9 +1,7 @@
+use super::{event_count, new_runtime};
 use crate::runtime::test_support::effects::{EffectLifecycleLog, TransactionalEffectProbe};
 use crate::runtime::test_support::stores::AppendEventFailureProbe;
-use crate::{
-    MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, RuntimeEventKind,
-};
-use super::{event_count, new_runtime};
+use crate::{MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, RuntimeEventKind};
 
 fn runtime_with_append_failure_probe() -> (MechRuntime, AppendEventFailureProbe) {
     let (store, probe) = AppendEventFailureProbe::new();
@@ -108,10 +106,12 @@ fn failed_abort_marker_still_clears_transaction_ownership() {
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(context.transaction, None);
     assert_eq!(runtime.program_transaction_owner, None);
-    assert!(runtime
-        .program
-        .root_symbol_value("abort-marker-owner")
-        .is_err());
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("abort-marker-owner")
+            .is_err()
+    );
 }
 
 #[test]

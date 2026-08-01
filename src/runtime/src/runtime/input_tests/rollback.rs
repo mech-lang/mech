@@ -6,11 +6,11 @@ use std::sync::{
 use mech_core::{MechError, Ref, Value, hash_str};
 
 use super::super::RuntimeBuilder;
-use crate::RuntimeConfig;
 use super::scheduling::{
     activation_plan_snapshot, activation_send_count, apply_f64_input, only_reactive_turn,
     recorded_f64,
 };
+use crate::RuntimeConfig;
 use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read, grant_read_to, grant_resource, grant_write},
     providers::{
@@ -364,18 +364,14 @@ fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
     let host = PlannedPureHostFunction::new(
         "demo/patterned-body-fail-second",
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
-                &args[0],
-            )))))
+            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
         },
         move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
             let call = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
             if call == 1 {
                 return Err(MechError::new(DeliberateHostCallError, None));
             }
-            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
-                &args[0],
-            )))))
+            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
         },
     );
     let (mut runtime, output) = test_runtime_with_output_host(provider, host);
@@ -450,18 +446,14 @@ fn activation_send_reactive_failure_produces_no_writes() {
         PlannedPureHostFunction::new(
             "demo/activation-fail-second",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
-                    &args[0],
-                )))))
+                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
                 if call_number == 1 {
                     return Err(MechError::new(DeliberateHostCallError, None));
                 }
-                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(
-                    &args[0],
-                )))))
+                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
             },
         ),
     );

@@ -341,5 +341,4 @@ mod checkpoint_tests {
         assert_eq!(grandchild.ip, 9);
         assert_eq!(*grandchild_backing.borrow(), 30.0);
     }
-
 }

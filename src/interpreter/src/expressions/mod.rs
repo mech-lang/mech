@@ -1,15 +1,15 @@
 #![forbid(unsafe_code)]
 
 use crate::{
-  Expression, FeatureNotEnabledError, InterpreterExecution, MResult, MechError, Value, literal,
-  structure,
+    Expression, FeatureNotEnabledError, InterpreterExecution, MResult, MechError, Value, literal,
+    structure,
 };
 
 use std::collections::HashMap;
 
-mod environment;
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 mod comprehensions;
+mod environment;
 mod errors;
 #[cfg(feature = "formulas")]
 mod formulas;
@@ -21,28 +21,28 @@ mod ranges;
 #[cfg(feature = "functions")]
 mod registration;
 #[cfg(any(
-  all(feature = "subscript_slice", feature = "access"),
-  feature = "subscript_formula",
-  feature = "subscript_range",
-  all(feature = "subscript", feature = "access")
+    all(feature = "subscript_slice", feature = "access"),
+    feature = "subscript_formula",
+    feature = "subscript_range",
+    all(feature = "subscript", feature = "access")
 ))]
 mod subscripts;
 mod variables;
 
 #[cfg(feature = "matrix_comprehensions")]
 pub use comprehensions::{
-  MatrixComprehensionDefine, ValueMatrixComprehension, matrix_comprehension,
+    MatrixComprehensionDefine, ValueMatrixComprehension, matrix_comprehension,
 };
 #[cfg(feature = "set_comprehensions")]
 pub use comprehensions::{SetComprehensionDefine, ValueSetComprehension, set_comprehension};
-pub use errors::{
-  ArityMismatchError, ComprehensionGeneratorError, InvalidGuardExpressionError,
-  InvalidIndexKindError, MatchArmKindMismatchError, MatchNoArmMatchedError,
-  MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, PatternExpectedTupleError,
-  PatternMatchError, UndefinedVariableError, UnhandledFormulaOperatorError,
-};
-pub(crate) use errors::SetComprehensionOutputKindMismatchError;
 pub(crate) use environment::DeferredExpressionSolveScope;
+pub(crate) use errors::SetComprehensionOutputKindMismatchError;
+pub use errors::{
+    ArityMismatchError, ComprehensionGeneratorError, InvalidGuardExpressionError,
+    InvalidIndexKindError, MatchArmKindMismatchError, MatchNoArmMatchedError,
+    MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, PatternExpectedTupleError,
+    PatternMatchError, UndefinedVariableError, UnhandledFormulaOperatorError,
+};
 #[cfg(feature = "formulas")]
 pub use formulas::{factor, term};
 #[cfg(feature = "functions")]
@@ -52,24 +52,22 @@ pub(crate) use matches::validate_guard_expression_result;
 #[cfg(feature = "range")]
 pub use ranges::range;
 #[cfg(feature = "functions")]
-use registration::{
-  register_expression_function_batch, register_initialized_expression_function,
-};
-#[cfg(all(feature = "subscript", feature = "access"))]
-pub use subscripts::subscript;
-#[cfg(feature = "subscript_formula")]
-pub use subscripts::{subscript_formula, subscript_formula_ix};
-#[cfg(feature = "subscript_range")]
-pub use subscripts::subscript_range;
+use registration::{register_expression_function_batch, register_initialized_expression_function};
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
 pub use subscripts::slice;
+#[cfg(all(feature = "subscript", feature = "access"))]
+pub use subscripts::subscript;
+#[cfg(feature = "subscript_range")]
+pub use subscripts::subscript_range;
 #[cfg(feature = "subscript_formula")]
 pub(crate) use subscripts::{
-  current_string_access_expression_live, mark_current_string_access_expression_live,
-  mark_string_access_value_live, reset_current_string_access_expression_live,
-  string_access_input_is_live, string_access_value_is_marked_live,
-  take_current_string_access_expression_live,
+    current_string_access_expression_live, mark_current_string_access_expression_live,
+    mark_string_access_value_live, reset_current_string_access_expression_live,
+    string_access_input_is_live, string_access_value_is_marked_live,
+    take_current_string_access_expression_live,
 };
+#[cfg(feature = "subscript_formula")]
+pub use subscripts::{subscript_formula, subscript_formula_ix};
 #[cfg(feature = "symbol_table")]
 pub use variables::var;
 
@@ -81,7 +79,11 @@ mod tests;
 
 pub type Environment = HashMap<u64, Value>;
 
-pub fn expression(expr: &Expression, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn expression(
+    expr: &Expression,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
     match &expr {
         #[cfg(feature = "variables")]
         Expression::Var(v) => var(v, env, p),

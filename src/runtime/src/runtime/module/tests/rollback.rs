@@ -1,13 +1,12 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mech_core::Value;
 
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
-    module_id, CapabilityId, ObjectId, ObjectRecord, PlannedStagedHostFunction,
-    PreparedRuntimeEffect, RuntimeEventKind, RuntimePreparedHostCall,
-    RuntimeValueSnapshot,
+    CapabilityId, ObjectId, ObjectRecord, PlannedStagedHostFunction, PreparedRuntimeEffect,
+    RuntimeEventKind, RuntimePreparedHostCall, RuntimeValueSnapshot, module_id,
 };
 
 use super::support::{
@@ -33,11 +32,13 @@ fn explicit_abort_discards_provisional_graph() {
         .abort_runtime_transaction(&mut context, "discard graph")
         .unwrap();
 
-    assert!(runtime
-        .store
-        .get_module(module_id("memory:main.mec"))
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .get_module(module_id("memory:main.mec"))
+            .unwrap()
+            .is_none(),
+    );
     assert!(runtime.store.get_module_version(version).unwrap().is_none(),);
 }
 
@@ -51,11 +52,13 @@ fn retained_root_failure_rolls_back_graph_events_and_program() {
         .unwrap_err();
 
     assert!(format!("{error:?}").contains("missing"));
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
     assert!(runtime.root_symbol_value("baseline").is_ok());
     assert!(runtime.root_symbol_value("answer").is_err());
     let events = runtime.list_events(None).unwrap();
@@ -63,12 +66,16 @@ fn retained_root_failure_rolls_back_graph_events_and_program() {
         event.kind,
         RuntimeEventKind::SourceResolved { .. } | RuntimeEventKind::ModuleCompiled { .. }
     )));
-    assert!(events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
-    assert!(events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::ModuleExecutionFailed { .. })));
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. }))
+    );
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::ModuleExecutionFailed { .. }))
+    );
     assert!(!runtime.is_poisoned());
 }
 
@@ -79,9 +86,11 @@ fn retained_root_dependency_execution_failure_commits_no_graph() {
         ("dep.mec", "value := missing\n<+ value\n"),
     ]);
 
-    assert!(runtime
-        .resolve_and_run_root_module("root.mec", test_module_options(),)
-        .is_err(),);
+    assert!(
+        runtime
+            .resolve_and_run_root_module("root.mec", test_module_options(),)
+            .is_err(),
+    );
 
     for uri in ["memory:root.mec", "memory:dep.mec"] {
         assert!(
@@ -116,16 +125,20 @@ fn failed_root_does_not_deliver_dependency_after_commit_effect() {
     .unwrap();
     grant_host_call(&mut runtime, CapabilityId(910), "dependency/after_commit");
 
-    assert!(runtime
-        .resolve_and_run_root_module("root.mec", test_module_options(),)
-        .is_err(),);
+    assert!(
+        runtime
+            .resolve_and_run_root_module("root.mec", test_module_options(),)
+            .is_err(),
+    );
 
     assert_eq!(deliveries.load(Ordering::SeqCst), 0);
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:dep.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:dep.mec")
+            .unwrap()
+            .is_none(),
+    );
 }
 
 #[test]
@@ -140,21 +153,25 @@ fn explicit_retained_root_is_provisional_and_abort_restores_baseline() {
         .unwrap();
 
     assert!(runtime.root_symbol_value("answer").is_ok());
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
     runtime
         .abort_runtime_transaction(&mut owner, "discard provisional retained root")
         .unwrap();
     assert!(runtime.root_symbol_value("baseline").is_ok());
     assert!(runtime.root_symbol_value("answer").is_err());
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
 }
 
 #[test]
@@ -188,11 +205,13 @@ fn outer_abort_discards_graph_object_capability_effect_and_program() {
         .abort_runtime_transaction(&mut context, "discard all")
         .unwrap();
 
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:root.mec")
-        .unwrap()
-        .is_none(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:root.mec")
+            .unwrap()
+            .is_none(),
+    );
     assert!(runtime.get_object(object.id).unwrap().is_none());
     assert!(runtime.check_capability(&request).is_err());
     assert_eq!(deliveries.load(Ordering::SeqCst), 0);

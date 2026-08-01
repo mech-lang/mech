@@ -1,5 +1,5 @@
-use crate::{CompiledPattern, ValueKind};
 use super::ActivationPatternCapture;
+use crate::{CompiledPattern, ValueKind};
 
 #[derive(Clone)]
 pub(super) struct PreflightActivationArm {

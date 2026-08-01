@@ -1,7 +1,6 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use mech_core::{
-    CommittedValueStateDelta, MechMap, MechRecord, MechSet, Ref, ToMatrix, Value,
-    ValueStateJournal,
+    CommittedValueStateDelta, MechMap, MechRecord, MechSet, Ref, ToMatrix, Value, ValueStateJournal,
 };
 use std::hint::black_box;
 
@@ -49,14 +48,8 @@ fn scalar_set_root(count: usize) -> (Value, Vec<Ref<f64>>) {
     let cells = (0..count)
         .map(|index| Ref::new(index as f64))
         .collect::<Vec<_>>();
-    let members = cells
-        .iter()
-        .map(|cell| Value::F64(cell.clone()))
-        .collect();
-    (
-        Value::Set(Ref::new(MechSet::from_vec(members))),
-        cells,
-    )
+    let members = cells.iter().map(|cell| Value::F64(cell.clone())).collect();
+    (Value::Set(Ref::new(MechSet::from_vec(members))), cells)
 }
 
 fn scalar_map_root(count: usize) -> (Value, Vec<Ref<f64>>) {
@@ -68,10 +61,7 @@ fn scalar_map_root(count: usize) -> (Value, Vec<Ref<f64>>) {
         .enumerate()
         .map(|(index, cell)| (Value::F64(cell.clone()), Value::Id(index as u64)))
         .collect();
-    (
-        Value::Map(Ref::new(MechMap::from_vec(entries))),
-        cells,
-    )
+    (Value::Map(Ref::new(MechMap::from_vec(entries))), cells)
 }
 
 fn hashed_set_journal() -> ValueStateJournal {

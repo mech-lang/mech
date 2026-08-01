@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use crate::{LoadedMechConfig, resolve_config_path};
-use clap::{Arg, ArgAction, Command};
 use clap::parser::ValueSource;
+use clap::{Arg, ArgAction, Command};
 use mech_core::*;
 use mech_runtime::{
     ConfigCapabilityKind, DefaultIdGenerator, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
@@ -60,11 +60,16 @@ pub fn add_filesystem_capability_args(command: Command) -> Command {
 }
 
 pub(crate) fn filesystem_capability_args_present(matches: &clap::ArgMatches) -> bool {
-    ["cap_root", "allow_read", "allow_watch", "allow_serve", "no_default_capabilities"]
-        .iter()
-        .any(|id| matches.value_source(id) == Some(ValueSource::CommandLine))
+    [
+        "cap_root",
+        "allow_read",
+        "allow_watch",
+        "allow_serve",
+        "no_default_capabilities",
+    ]
+    .iter()
+    .any(|id| matches.value_source(id) == Some(ValueSource::CommandLine))
 }
-
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct FilesystemCapabilityArgs {
@@ -472,9 +477,12 @@ mod filesystem_capability_tests {
             );
             let matches = cli(&["mech", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config))
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                Some(&config),
+            )
+            .unwrap()
+            .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
             assert!(delegate_all(&authority, &outside).is_err());
         }
@@ -493,9 +501,12 @@ mod filesystem_capability_tests {
             );
             let matches = cli(&["mech", "--no-default-capabilities", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config))
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                Some(&config),
+            )
+            .unwrap()
+            .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
         }
         std::fs::remove_dir_all(root).unwrap();
@@ -516,9 +527,12 @@ mod filesystem_capability_tests {
                 "allowed",
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), None)
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                None,
+            )
+            .unwrap()
+            .authority;
             assert!(delegate_all(&authority, &allowed).is_err());
         }
         std::fs::remove_dir_all(root).unwrap();
@@ -542,9 +556,12 @@ mod filesystem_capability_tests {
                 "serve",
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config))
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                Some(&config),
+            )
+            .unwrap()
+            .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
             let mut kernel = authority.kernel().clone();
             assert!(check_fs_capability(&mut kernel, MECH_TOOL_SUBJECT, FS_READ, &allowed).is_ok());
@@ -561,7 +578,13 @@ mod filesystem_capability_tests {
                 parse_config(r#"config := {capabilities: [{allow: "cap-root", path: "missing"}]}"#);
             let matches = cli(&["mech", "serve"]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            assert!(build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&config)).is_err());
+            assert!(
+                build_mech_filesystem_authority(
+                    &FilesystemCapabilityArgs::from_matches(serve_matches),
+                    Some(&config)
+                )
+                .is_err()
+            );
         }
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -595,9 +618,12 @@ mod filesystem_capability_tests {
             let loaded = crate::cli::config::load_cli_config(serve_matches)
                 .unwrap()
                 .unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&loaded))
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                Some(&loaded),
+            )
+            .unwrap()
+            .authority;
             assert!(delegate_all(&authority, &config_allowed).is_ok());
             assert!(delegate_all(&authority, &cwd_allowed).is_err());
             assert!(delegate_all(&authority, &outside).is_err());
@@ -623,9 +649,12 @@ mod filesystem_capability_tests {
             let loaded = crate::cli::config::load_cli_config(serve_matches)
                 .unwrap()
                 .unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&loaded))
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                Some(&loaded),
+            )
+            .unwrap()
+            .authority;
             assert!(delegate_all(&authority, &allowed).is_ok());
         }
         std::fs::remove_dir_all(root).unwrap();
@@ -662,9 +691,12 @@ mod filesystem_capability_tests {
             let loaded = crate::cli::config::load_cli_config(serve_matches)
                 .unwrap()
                 .unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), Some(&loaded))
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                Some(&loaded),
+            )
+            .unwrap()
+            .authority;
 
             let mut ids = DefaultIdGenerator::new();
             assert!(
@@ -721,9 +753,12 @@ mod filesystem_capability_tests {
                 "main.mec",
             ]);
             let serve_matches = matches.subcommand_matches("serve").unwrap();
-            let authority = build_mech_filesystem_authority(&FilesystemCapabilityArgs::from_matches(serve_matches), None)
-                .unwrap()
-                .authority;
+            let authority = build_mech_filesystem_authority(
+                &FilesystemCapabilityArgs::from_matches(serve_matches),
+                None,
+            )
+            .unwrap()
+            .authority;
             let mut ids = DefaultIdGenerator::new();
             assert!(
                 authority

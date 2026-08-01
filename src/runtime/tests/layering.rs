@@ -3,7 +3,10 @@ fn workspace_root() -> std::path::PathBuf {
 }
 
 fn assert_not_contains(path: &str, haystack: &str, needle: &str) {
-    assert!(!haystack.contains(needle), "{path} must not contain `{needle}`");
+    assert!(
+        !haystack.contains(needle),
+        "{path} must not contain `{needle}`"
+    );
 }
 
 fn visit_rs_files(path: &std::path::Path, files: &mut Vec<std::path::PathBuf>) {

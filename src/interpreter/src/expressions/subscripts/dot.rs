@@ -1,5 +1,5 @@
-use super::super::registration::register_initialized_expression_function;
 use super::super::environment::expression_solves_deferred;
+use super::super::registration::register_initialized_expression_function;
 #[cfg(feature = "table")]
 use crate::AccessColumn;
 #[cfg(feature = "swizzle")]
@@ -9,16 +9,16 @@ use crate::MatrixAccessScalar;
 #[cfg(feature = "tuple")]
 use crate::TupleAccess;
 use crate::{
-  InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind, real,
+    InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind, real,
 };
 
 pub(super) fn access(
-  sbscrpt: &Subscript,
-  val: &Value,
-  p: &InterpreterExecution<'_>,
+    sbscrpt: &Subscript,
+    val: &Value,
+    p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
-  let plan = p.plan();
-  match sbscrpt {
+    let plan = p.plan();
+    match sbscrpt {
         #[cfg(feature = "table")]
         Subscript::Dot(x) => {
             let key = x.hash();
@@ -30,7 +30,7 @@ pub(super) fn access(
             }
             let new_fxn = AccessColumn {}.compile(&fxn_input)?;
             if !expression_solves_deferred(p) {
-              new_fxn.solve();
+                new_fxn.solve();
             }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
@@ -45,7 +45,7 @@ pub(super) fn access(
                 ValueKind::Matrix(..) => {
                     let new_fxn = MatrixAccessScalar {}.compile(&fxn_input)?;
                     if !expression_solves_deferred(p) {
-                      new_fxn.solve();
+                        new_fxn.solve();
                     }
                     let res = new_fxn.out();
                     plan.borrow_mut().push(new_fxn);
@@ -76,12 +76,12 @@ pub(super) fn access(
             fxn_input.append(&mut keys);
             let new_fxn = AccessSwizzle {}.compile(&fxn_input)?;
             if !expression_solves_deferred(p) {
-              new_fxn.solve();
+                new_fxn.solve();
             }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
         }
-    _ => unreachable!(),
-  }
+        _ => unreachable!(),
+    }
 }

@@ -1,7 +1,7 @@
 use crate::{
-    module_id, InMemorySourceResolver, MechRuntime, ModuleRecord, ModuleVersionRecord,
+    InMemorySourceResolver, MechRuntime, ModuleRecord, ModuleVersionRecord,
     ResourceBudgetExceededError, RuntimeConfig, RuntimeEventKind,
-    RuntimeModuleDependencyCycleError, RuntimeModuleDependencyMissingError,
+    RuntimeModuleDependencyCycleError, RuntimeModuleDependencyMissingError, module_id,
 };
 
 use super::support::{runtime_with_sources, test_module_options};
@@ -32,11 +32,13 @@ fn missing_later_dependency_commits_no_graph() {
             "failed graph exposed {uri}",
         );
     }
-    assert!(runtime
-        .list_events(None)
-        .unwrap()
-        .iter()
-        .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. })),);
+    assert!(
+        runtime
+            .list_events(None)
+            .unwrap()
+            .iter()
+            .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleCompiled { .. })),
+    );
 }
 
 #[test]
@@ -47,9 +49,11 @@ fn deep_parse_failure_commits_no_graph() {
         ("leaf.mec", "value := [1, 2\n"),
     ]);
 
-    assert!(runtime
-        .resolve_and_store_module_source("main.mec", test_module_options(),)
-        .is_err(),);
+    assert!(
+        runtime
+            .resolve_and_store_module_source("main.mec", test_module_options(),)
+            .is_err(),
+    );
 
     for uri in ["memory:main.mec", "memory:middle.mec", "memory:leaf.mec"] {
         assert!(
@@ -99,9 +103,11 @@ fn retained_root_missing_later_dependency_has_no_partial_graph_or_version_audit(
         .resolve_and_run_root_module("root.mec", test_module_options())
         .unwrap_err();
 
-    assert!(error
-        .kind_as::<RuntimeModuleDependencyMissingError>()
-        .is_some(),);
+    assert!(
+        error
+            .kind_as::<RuntimeModuleDependencyMissingError>()
+            .is_some(),
+    );
     for uri in ["memory:root.mec", "memory:first.mec"] {
         assert!(
             runtime.store.find_module_by_name(uri).unwrap().is_none(),
@@ -109,12 +115,16 @@ fn retained_root_missing_later_dependency_has_no_partial_graph_or_version_audit(
         );
     }
     let events = runtime.list_events(None).unwrap();
-    assert!(events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. })));
-    assert!(events
-        .iter()
-        .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleExecutionFailed { .. })));
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::ProgramFailed { .. }))
+    );
+    assert!(
+        events
+            .iter()
+            .all(|event| !matches!(event.kind, RuntimeEventKind::ModuleExecutionFailed { .. }))
+    );
 }
 
 #[test]
@@ -125,9 +135,11 @@ fn valid_dependency_then_parse_failure_leaves_no_graph() {
         ("broken.mec", "value := [1, 2\n"),
     ]);
 
-    assert!(runtime
-        .resolve_and_store_module_source("root.mec", test_module_options(),)
-        .is_err(),);
+    assert!(
+        runtime
+            .resolve_and_store_module_source("root.mec", test_module_options(),)
+            .is_err(),
+    );
 
     for uri in ["memory:root.mec", "memory:valid.mec", "memory:broken.mec"] {
         assert!(
@@ -205,11 +217,13 @@ fn diamond_graph_reuses_one_shared_version() {
     assert_eq!(left.dependencies.len(), 1);
     assert_eq!(right.dependencies.len(), 1);
     assert_eq!(left.dependencies[0], right.dependencies[0]);
-    assert!(runtime
-        .store
-        .find_module_by_name("memory:shared.mec")
-        .unwrap()
-        .is_some(),);
+    assert!(
+        runtime
+            .store
+            .find_module_by_name("memory:shared.mec")
+            .unwrap()
+            .is_some(),
+    );
 }
 
 #[test]

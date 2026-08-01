@@ -1,14 +1,10 @@
-use super::{Environment, InvalidIndexKindError, factor, range};
 use super::variables::{addressed_identifier_hash, addressed_identifier_name};
+use super::{Environment, InvalidIndexKindError, factor, range};
 use crate::{InterpreterExecution, MResult, MechError, Slice, Subscript, ToValue, Value};
 
 #[cfg(all(feature = "subscript", feature = "access"))]
 mod brace;
-#[cfg(all(
-  feature = "subscript",
-  feature = "access",
-  feature = "subscript_slice"
-))]
+#[cfg(all(feature = "subscript", feature = "access", feature = "subscript_slice"))]
 mod bracket;
 #[cfg(all(feature = "subscript", feature = "access"))]
 mod dot;
@@ -17,18 +13,22 @@ mod string;
 
 #[cfg(feature = "subscript_formula")]
 pub(crate) use string::{
-  current_string_access_expression_live, mark_current_string_access_expression_live,
-  mark_string_access_value_live, reset_current_string_access_expression_live,
-  string_access_input_is_live, string_access_value_is_marked_live,
-  take_current_string_access_expression_live,
+    current_string_access_expression_live, mark_current_string_access_expression_live,
+    mark_string_access_value_live, reset_current_string_access_expression_live,
+    string_access_input_is_live, string_access_value_is_marked_live,
+    take_current_string_access_expression_live,
 };
 #[cfg(feature = "subscript_formula")]
 use string::{
-  string_access_argument_is_live, string_access_index_argument, string_access_source_argument,
+    string_access_argument_is_live, string_access_index_argument, string_access_source_argument,
 };
 
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
-pub fn slice(slc: &Slice, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn slice(
+    slc: &Slice,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
     let id = addressed_identifier_hash(&slc.name, &slc.context);
     let name = addressed_identifier_name(&slc.name, &slc.context);
     let val: Value = if let Some(env) = env {
@@ -45,9 +45,15 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &InterpreterExecution<'_
                         None => val.borrow().clone(),
                     },
                     None => {
-                        return Err(MechError::new(super::UndefinedVariableError { id, name: name.clone() }, None)
-                            .with_compiler_loc()
-                            .with_tokens(slc.tokens()));
+                        return Err(MechError::new(
+                            super::UndefinedVariableError {
+                                id,
+                                name: name.clone(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                        .with_tokens(slc.tokens()));
                     }
                 }
             }
@@ -61,9 +67,15 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &InterpreterExecution<'_
                 None => val.borrow().clone(),
             },
             None => {
-                return Err(MechError::new(super::UndefinedVariableError { id, name: name.clone() }, None)
-                    .with_compiler_loc()
-                    .with_tokens(slc.tokens()));
+                return Err(MechError::new(
+                    super::UndefinedVariableError {
+                        id,
+                        name: name.clone(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(slc.tokens()));
             }
         }
     };
@@ -100,7 +112,6 @@ pub fn subscript_formula_ix(
         _ => unreachable!(),
     }
 }
-
 
 #[cfg(feature = "subscript_range")]
 pub fn subscript_range(

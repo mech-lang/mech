@@ -147,9 +147,7 @@ impl ConfigEvaluator {
                     .checked_neg()
                     .map(ConfigValue::Integer)
                     .ok_or_else(|| {
-                        ConfigProfileViolation::error(
-                            "integer overflow in Mech config negation",
-                        )
+                        ConfigProfileViolation::error("integer overflow in Mech config negation")
                     }),
                 ConfigValue::Float(value) => Ok(ConfigValue::Float(-value)),
                 _ => Err(ConfigProfileViolation::error(
@@ -167,15 +165,12 @@ impl ConfigEvaluator {
 
     fn add(&mut self, lhs: ConfigValue, rhs: ConfigValue) -> MResult<ConfigValue> {
         match (lhs, rhs) {
-            (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => {
-                lhs.checked_add(rhs)
-                    .map(ConfigValue::Integer)
-                    .ok_or_else(|| {
-                        ConfigProfileViolation::error(
-                            "integer overflow in Mech config addition",
-                        )
-                    })
-            }
+            (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => lhs
+                .checked_add(rhs)
+                .map(ConfigValue::Integer)
+                .ok_or_else(|| {
+                    ConfigProfileViolation::error("integer overflow in Mech config addition")
+                }),
             (ConfigValue::Float(lhs), ConfigValue::Float(rhs)) => Ok(ConfigValue::Float(lhs + rhs)),
             (ConfigValue::Integer(lhs), ConfigValue::Float(rhs)) => {
                 Ok(ConfigValue::Float(lhs as f64 + rhs))
@@ -196,15 +191,12 @@ impl ConfigEvaluator {
 
     fn sub(&self, lhs: ConfigValue, rhs: ConfigValue) -> MResult<ConfigValue> {
         match (lhs, rhs) {
-            (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => {
-                lhs.checked_sub(rhs)
-                    .map(ConfigValue::Integer)
-                    .ok_or_else(|| {
-                        ConfigProfileViolation::error(
-                            "integer overflow in Mech config subtraction",
-                        )
-                    })
-            }
+            (ConfigValue::Integer(lhs), ConfigValue::Integer(rhs)) => lhs
+                .checked_sub(rhs)
+                .map(ConfigValue::Integer)
+                .ok_or_else(|| {
+                    ConfigProfileViolation::error("integer overflow in Mech config subtraction")
+                }),
             (ConfigValue::Float(lhs), ConfigValue::Float(rhs)) => Ok(ConfigValue::Float(lhs - rhs)),
             (ConfigValue::Integer(lhs), ConfigValue::Float(rhs)) => {
                 Ok(ConfigValue::Float(lhs as f64 - rhs))

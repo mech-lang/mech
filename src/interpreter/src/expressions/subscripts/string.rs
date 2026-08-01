@@ -1,8 +1,8 @@
 use super::super::variables::addressed_identifier_hash;
 use super::{Environment, factor};
 use crate::{
-  Expression, Factor, InterpreterExecution, MResult, MutableReference, Subscript, Value,
-  ValueKind,
+    Expression, Factor, InterpreterExecution, MResult, MutableReference, Subscript, Value,
+    ValueKind,
 };
 
 #[cfg(feature = "subscript_formula")]
@@ -74,7 +74,10 @@ pub(crate) fn mark_string_access_value_live(p: &InterpreterExecution<'_>, value:
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn string_access_value_is_marked_live(p: &InterpreterExecution<'_>, value: &Value) -> bool {
+pub(crate) fn string_access_value_is_marked_live(
+    p: &InterpreterExecution<'_>,
+    value: &Value,
+) -> bool {
     string_access_scalar_addr(value)
         .map(|addr| p.string_access_live_values.borrow().contains(&addr))
         .unwrap_or(false)
@@ -105,7 +108,10 @@ fn subscript_formula_is_mutable_symbol(
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mutable_reference_is_mutable_symbol(reference: &MutableReference, p: &InterpreterExecution<'_>) -> bool {
+fn mutable_reference_is_mutable_symbol(
+    reference: &MutableReference,
+    p: &InterpreterExecution<'_>,
+) -> bool {
     let state_brrw = p.state.borrow();
     let symbols_brrw = state_brrw.symbol_table.borrow();
     symbols_brrw
@@ -123,16 +129,16 @@ fn value_is_mutable_symbol_reference(value: &Value, p: &InterpreterExecution<'_>
 }
 
 #[cfg(feature = "subscript_formula")]
-fn mutable_reference_is_live_plan_output(reference: &MutableReference, p: &InterpreterExecution<'_>) -> bool {
+fn mutable_reference_is_live_plan_output(
+    reference: &MutableReference,
+    p: &InterpreterExecution<'_>,
+) -> bool {
     let current = reference.borrow();
     string_access_value_is_marked_live(p, &current)
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(super) fn string_access_argument_is_live(
-    value: &Value,
-    p: &InterpreterExecution<'_>,
-) -> bool {
+pub(super) fn string_access_argument_is_live(value: &Value, p: &InterpreterExecution<'_>) -> bool {
     string_access_value_is_marked_live(p, value)
 }
 
@@ -142,10 +148,7 @@ pub(crate) fn string_access_input_is_live(value: &Value, p: &InterpreterExecutio
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(super) fn string_access_source_argument(
-    value: &Value,
-    p: &InterpreterExecution<'_>,
-) -> Value {
+pub(super) fn string_access_source_argument(value: &Value, p: &InterpreterExecution<'_>) -> Value {
     match value {
         Value::MutableReference(reference)
             if matches!(value.deref_kind(), ValueKind::String)

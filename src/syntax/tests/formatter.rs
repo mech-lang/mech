@@ -103,25 +103,32 @@ fn formatter_renders_context_qualified_assignment_target_with_prefix_context() {
             context: Some(ident("browser")),
             subscript: None,
         },
-        expression: Expression::Literal(Literal::String(MechString { text: token(TokenKind::String, "hello") })),
+        expression: Expression::Literal(Literal::String(MechString {
+            text: token(TokenKind::String, "hello"),
+        })),
     };
 
-    assert_eq!(formatter.variable_assign(&assign), "@browser/body/content/output/_value = \"hello\"");
+    assert_eq!(
+        formatter.variable_assign(&assign),
+        "@browser/body/content/output/_value = \"hello\""
+    );
 }
 
 #[test]
 fn formatter_uses_the_stable_root_namespace_for_inline_output_addresses() {
-    let tree = mech_syntax::parser::parse(
-        "The document evaluates {answer + 1} inline.\n\nanswer := 41",
-    )
-    .unwrap();
+    let tree =
+        mech_syntax::parser::parse("The document evaluates {answer + 1} inline.\n\nanswer := 41")
+            .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
     let expected = format!(
         "id=\"{}:0\" class=\"mech-inline-mech-code\"",
         hash_str("inline-eval:0:0"),
     );
 
-    assert!(html.contains(&expected), "missing formatter inline address: {html}");
+    assert!(
+        html.contains(&expected),
+        "missing formatter inline address: {html}"
+    );
 }
 
 fn first_statement(src: &str) -> Statement {
@@ -145,7 +152,10 @@ fn formatter_preserves_new_prefix_context_resource_read() {
     let mut formatter = Formatter::new();
     let statement = first_statement("name := @browser/body/content/input/_value");
 
-    assert_eq!(formatter.statement(&statement), "name := @browser/body/content/input/_value");
+    assert_eq!(
+        formatter.statement(&statement),
+        "name := @browser/body/content/input/_value"
+    );
 }
 
 fn plain_paragraph(text: &str) -> Paragraph {
@@ -200,10 +210,16 @@ fn html_shim_static_slots_render_once() {
         &extra_slots,
     );
 
-    assert!(render
-        .html
-        .starts_with("/* {{TITLE}} */|Extra title|{{TITLE}}|"));
-    assert!(render.html.contains("class=\"console-scroll mech-repl hidden\""));
+    assert!(
+        render
+            .html
+            .starts_with("/* {{TITLE}} */|Extra title|{{TITLE}}|")
+    );
+    assert!(
+        render
+            .html
+            .contains("class=\"console-scroll mech-repl hidden\"")
+    );
     assert!(render.html.contains("id=\"mech-output\""));
     assert!(render.html.contains("data-mech-repl-mount"));
     assert!(render.html.contains("aria-live=\"polite\""));
@@ -222,10 +238,7 @@ fn html_shim_static_slots_render_once() {
 
 #[test]
 fn html_shim_preserves_literal_placeholders_in_document_content() {
-    let tree = html_fixture(&[(
-        "Literal section",
-        "{{TITLE}} {{AUTHOR}} {{SECTION1}}",
-    )]);
+    let tree = html_fixture(&[("Literal section", "{{TITLE}} {{AUTHOR}} {{SECTION1}}")]);
     let mut formatter = Formatter::new();
     let render = formatter.format_html_with_slots(
         &tree,
@@ -303,7 +316,10 @@ fn html_shim_section_slots_render_by_index() {
         .html
         .find("first-section-marker")
         .expect("first section should render");
-    assert!(second < first, "section placeholders should preserve their indices");
+    assert!(
+        second < first,
+        "section placeholders should preserve their indices"
+    );
     assert!(render.consumed_slots.contains("SECTION1"));
     assert!(render.consumed_slots.contains("SECTION2"));
     assert!(render.unresolved_mech_slots.is_empty());
@@ -354,8 +370,7 @@ fn shipped_document_shims_consume_required_slots() {
             );
         }
         assert!(
-            render.consumed_slots.contains("CONTENT")
-                || render.consumed_slots.contains("CONTENTS"),
+            render.consumed_slots.contains("CONTENT") || render.consumed_slots.contains("CONTENTS"),
             "{shim_name} did not consume a document-content slot"
         );
         assert!(render.html.contains("encoded-source-key"));

@@ -1,13 +1,13 @@
 use crate::{
     ActivationArm, ActivationArmBody, ActivationScope, CompiledPattern, ComprehensionQualifier,
     Expression, Factor, GuardFunctionSafety, Interpreter, MResult, MechCode, MechError,
-    MechErrorKind, Pattern, RangeExpression, ReactiveCellId, Slice, SliceRef, Statement,
-    Structure, Subscript, Token, Value, ValueKind, compile_pattern,
+    MechErrorKind, Pattern, RangeExpression, ReactiveCellId, Slice, SliceRef, Statement, Structure,
+    Subscript, Token, Value, ValueKind, compile_pattern,
 };
 use std::collections::HashSet;
 
 use super::{
-    ActivationPatternCapture, ActivationPatternArmsNonExhaustive,
+    ActivationPatternArmsNonExhaustive, ActivationPatternCapture,
     ActivationPatternCaptureKindUnsupported, ActivationPatternContextEffectUnsupported,
     ActivationPatternDefinitionUnsupported, ActivationPatternGuardMustBePure,
     ActivationPatternRegisterWriteUnsupported, ActivationPatternTriggerInvariant,
@@ -25,9 +25,7 @@ fn pattern_is_irrefutable(pattern: &CompiledPattern, trigger_kind: &ValueKind) -
     ) -> bool {
         match pattern {
             CompiledPattern::Wildcard => true,
-            CompiledPattern::Binding { binding_index, .. } => {
-                bindings.insert(*binding_index)
-            }
+            CompiledPattern::Binding { binding_index, .. } => bindings.insert(*binding_index),
             CompiledPattern::ExpressionValue { .. }
             | CompiledPattern::EnumVariant { .. }
             | CompiledPattern::AtomTuple { .. } => false,
@@ -98,10 +96,8 @@ pub(super) fn preflight_patterned_activation(
     let trigger_id = match &scope.trigger {
         Expression::Var(var) => var.name.hash(),
         _ => {
-            return Err(
-                MechError::new(ActivationPatternTriggerInvariant, None)
-                    .with_tokens(scope.trigger.tokens()),
-            );
+            return Err(MechError::new(ActivationPatternTriggerInvariant, None)
+                .with_tokens(scope.trigger.tokens()));
         }
     };
     for arm in arms {
@@ -155,8 +151,7 @@ pub(super) fn preflight_patterned_activation(
         .any(|arm| arm.guard.is_none() && matches!(arm.pattern, Pattern::Wildcard))
     {
         return Err(
-            MechError::new(ActivationPatternWildcardMustBeLast, None)
-                .with_tokens(scope.tokens()),
+            MechError::new(ActivationPatternWildcardMustBeLast, None).with_tokens(scope.tokens())
         );
     }
     Ok(PreflightPatternedActivation {
@@ -300,11 +295,7 @@ pub(super) fn validate_patterned_guard_expression(
     interpreter: &Interpreter,
 ) -> MResult<()> {
     validate_patterned_expression(expression)?;
-    if guard_expression_is_not_static_pure(
-        expression,
-        interpreter,
-        &mut HashSet::new(),
-    ) {
+    if guard_expression_is_not_static_pure(expression, interpreter, &mut HashSet::new()) {
         validation_error(ActivationPatternGuardMustBePure, expression.tokens())
     } else {
         Ok(())
@@ -318,26 +309,15 @@ fn guard_expression_is_not_static_pure(
 ) -> bool {
     match expression {
         Expression::Literal(_) | Expression::Var(_) => false,
-        Expression::Slice(slice) => slice
-            .subscript
-            .iter()
-            .any(|subscript| {
-                guard_subscript_is_not_static_pure(
-                    subscript,
-                    interpreter,
-                    visiting_functions,
-                )
-            }),
+        Expression::Slice(slice) => slice.subscript.iter().any(|subscript| {
+            guard_subscript_is_not_static_pure(subscript, interpreter, visiting_functions)
+        }),
         Expression::Formula(factor) => {
             guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
         }
         Expression::FunctionCall(call) => {
             if call.args.iter().any(|(_, expression)| {
-                guard_expression_is_not_static_pure(
-                    expression,
-                    interpreter,
-                    visiting_functions,
-                )
+                guard_expression_is_not_static_pure(expression, interpreter, visiting_functions)
             }) {
                 return true;
             }
@@ -395,11 +375,9 @@ fn guard_factor_is_not_static_pure(
     visiting_functions: &mut HashSet<u64>,
 ) -> bool {
     match factor {
-        Factor::Expression(expression) => guard_expression_is_not_static_pure(
-            expression,
-            interpreter,
-            visiting_functions,
-        ),
+        Factor::Expression(expression) => {
+            guard_expression_is_not_static_pure(expression, interpreter, visiting_functions)
+        }
         Factor::Negate(factor)
         | Factor::Not(factor)
         | Factor::Parenthetical(factor)
@@ -407,17 +385,10 @@ fn guard_factor_is_not_static_pure(
             guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
         }
         Factor::Term(term) => {
-            guard_factor_is_not_static_pure(
-                &term.lhs,
-                interpreter,
-                visiting_functions,
-            ) || term.rhs.iter().any(|(_, factor)| {
-                guard_factor_is_not_static_pure(
-                    factor,
-                    interpreter,
-                    visiting_functions,
-                )
-            })
+            guard_factor_is_not_static_pure(&term.lhs, interpreter, visiting_functions)
+                || term.rhs.iter().any(|(_, factor)| {
+                    guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
+                })
         }
     }
 }
@@ -428,21 +399,10 @@ fn guard_range_is_not_static_pure(
     visiting_functions: &mut HashSet<u64>,
 ) -> bool {
     guard_factor_is_not_static_pure(&range.start, interpreter, visiting_functions)
-        || range
-            .increment
-            .as_ref()
-            .map_or(false, |(_, increment)| {
-                guard_factor_is_not_static_pure(
-                    increment,
-                    interpreter,
-                    visiting_functions,
-                )
-            })
-        || guard_factor_is_not_static_pure(
-            &range.terminal,
-            interpreter,
-            visiting_functions,
-        )
+        || range.increment.as_ref().map_or(false, |(_, increment)| {
+            guard_factor_is_not_static_pure(increment, interpreter, visiting_functions)
+        })
+        || guard_factor_is_not_static_pure(&range.terminal, interpreter, visiting_functions)
 }
 
 fn guard_subscript_is_not_static_pure(
@@ -451,15 +411,11 @@ fn guard_subscript_is_not_static_pure(
     visiting_functions: &mut HashSet<u64>,
 ) -> bool {
     match subscript {
-        Subscript::Brace(subscripts) | Subscript::Bracket(subscripts) => subscripts
-            .iter()
-            .any(|subscript| {
-                guard_subscript_is_not_static_pure(
-                    subscript,
-                    interpreter,
-                    visiting_functions,
-                )
-            }),
+        Subscript::Brace(subscripts) | Subscript::Bracket(subscripts) => {
+            subscripts.iter().any(|subscript| {
+                guard_subscript_is_not_static_pure(subscript, interpreter, visiting_functions)
+            })
+        }
         Subscript::Formula(factor) => {
             guard_factor_is_not_static_pure(factor, interpreter, visiting_functions)
         }
@@ -478,74 +434,42 @@ fn guard_structure_is_not_static_pure(
     match structure {
         Structure::Empty => false,
         Structure::Map(map) => map.elements.iter().any(|mapping| {
-            guard_expression_is_not_static_pure(
-                &mapping.key,
-                interpreter,
-                visiting_functions,
-            ) || guard_expression_is_not_static_pure(
-                &mapping.value,
-                interpreter,
-                visiting_functions,
-            )
+            guard_expression_is_not_static_pure(&mapping.key, interpreter, visiting_functions)
+                || guard_expression_is_not_static_pure(
+                    &mapping.value,
+                    interpreter,
+                    visiting_functions,
+                )
         }),
         Structure::Matrix(matrix) => matrix.rows.iter().any(|row| {
-            row.columns
-                .iter()
-                .any(|column| {
-                    guard_expression_is_not_static_pure(
-                        &column.element,
-                        interpreter,
-                        visiting_functions,
-                    )
-                })
+            row.columns.iter().any(|column| {
+                guard_expression_is_not_static_pure(
+                    &column.element,
+                    interpreter,
+                    visiting_functions,
+                )
+            })
         }),
-        Structure::Record(record) => record
-            .bindings
-            .iter()
-            .any(|binding| {
-                guard_expression_is_not_static_pure(
-                    &binding.value,
-                    interpreter,
-                    visiting_functions,
-                )
-            }),
-        Structure::Set(set) => set
-            .elements
-            .iter()
-            .any(|expression| {
-                guard_expression_is_not_static_pure(
-                    expression,
-                    interpreter,
-                    visiting_functions,
-                )
-            }),
+        Structure::Record(record) => record.bindings.iter().any(|binding| {
+            guard_expression_is_not_static_pure(&binding.value, interpreter, visiting_functions)
+        }),
+        Structure::Set(set) => set.elements.iter().any(|expression| {
+            guard_expression_is_not_static_pure(expression, interpreter, visiting_functions)
+        }),
         Structure::Table(table) => table.rows.iter().any(|row| {
-            row.columns
-                .iter()
-                .any(|column| {
-                    guard_expression_is_not_static_pure(
-                        &column.element,
-                        interpreter,
-                        visiting_functions,
-                    )
-                })
-        }),
-        Structure::Tuple(tuple) => tuple
-            .elements
-            .iter()
-            .any(|expression| {
+            row.columns.iter().any(|column| {
                 guard_expression_is_not_static_pure(
-                    expression,
+                    &column.element,
                     interpreter,
                     visiting_functions,
                 )
-            }),
+            })
+        }),
+        Structure::Tuple(tuple) => tuple.elements.iter().any(|expression| {
+            guard_expression_is_not_static_pure(expression, interpreter, visiting_functions)
+        }),
         Structure::TupleStruct(tuple) => {
-            guard_expression_is_not_static_pure(
-                &tuple.value,
-                interpreter,
-                visiting_functions,
-            )
+            guard_expression_is_not_static_pure(&tuple.value, interpreter, visiting_functions)
         }
     }
 }

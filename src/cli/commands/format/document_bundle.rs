@@ -149,10 +149,7 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
             SourceResolutionEntry::new(referrer, specifier, target)
         })
         .collect::<Vec<_>>();
-    validate_source_resolution_entries(
-        sources.keys().map(String::as_str),
-        &resolutions,
-    )?;
+    validate_source_resolution_entries(sources.keys().map(String::as_str), &resolutions)?;
     let root_source = sources
         .get(&root_specifier)
         .map(|entry| entry.source.clone())

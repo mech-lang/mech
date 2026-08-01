@@ -7,8 +7,8 @@ use crate::{
 
 use super::super::RuntimeExecutionTransactionState;
 use super::{
-    after_commit, transactional, PanicEffectPhase, PanickingAfterCommitEffect,
-    PanickingTransactionalEffect,
+    PanicEffectPhase, PanickingAfterCommitEffect, PanickingTransactionalEffect, after_commit,
+    transactional,
 };
 
 #[test]
@@ -51,14 +51,17 @@ fn prepare_failure_aborts_prepared_participants_and_stays_retryable() {
         RuntimeExecutionTransactionState::Active,
     );
     assert!(!runtime.is_poisoned());
-    assert!(context
-        .events
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::EffectPreparationFailed { .. }) }));
-    assert!(context
-        .events
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::EffectAborted { .. }) }));
+    assert!(
+        context.events.iter().any(|event| {
+            matches!(event.kind, RuntimeEventKind::EffectPreparationFailed { .. })
+        })
+    );
+    assert!(
+        context
+            .events
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::EffectAborted { .. }) })
+    );
 
     runtime
         .abort_runtime_transaction(&mut context, "prepare test cleanup")
@@ -197,14 +200,18 @@ fn every_prepared_participant_receives_commit_and_all_failures_are_reported() {
         RuntimeHealth::Healthy => panic!("runtime should be poisoned"),
         RuntimeHealth::Poisoned(poison) => poison,
     };
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|outcome| outcome.contains("second commit failed")));
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|outcome| outcome.contains("third commit failed")));
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|outcome| outcome.contains("second commit failed"))
+    );
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|outcome| outcome.contains("third commit failed"))
+    );
     assert_eq!(context.transaction, None);
     assert!(runtime.get_transaction(transaction_id).unwrap().is_some());
     assert_eq!(

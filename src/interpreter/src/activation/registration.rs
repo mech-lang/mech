@@ -1,24 +1,22 @@
+use crate::patterns::PatternBindingSink;
 use crate::{
     ActivationArm, ActivationArmBody, ActivationScope, Interpreter, InterpreterExecution, MResult,
     MechError, PatternActivationArmRegistration, PatternActivationCaptureRegistration,
     PatternActivationGuardRegistration, PatternActivationRegistration, ReactiveCellId, Ref, Value,
     match_compiled_pattern_with_values,
 };
-use crate::patterns::PatternBindingSink;
 
 use super::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternCapture, ActivationPatternTriggerInvariant,
-    Finalize, MatchGate,
-    Matcher, ReactiveBindingSink, ScopePulse, Select, UnmatchedFinalize,
-    arms::PreflightPatternedActivation, commit_proposed_captures,
-    elaborate_patterned_arm_guard, generation,
+    ActivationPatternArmsNonExhaustive, ActivationPatternCapture,
+    ActivationPatternTriggerInvariant, Finalize, MatchGate, Matcher, ReactiveBindingSink,
+    ScopePulse, Select, UnmatchedFinalize,
+    arms::PreflightPatternedActivation,
+    commit_proposed_captures, elaborate_patterned_arm_guard, generation,
     registers::{Gate, elaborate_patterned_arm_body},
     validation::preflight_patterned_activation,
 };
 
-pub(crate) fn activation_scope_entry_cells(
-    interpreter: &Interpreter,
-) -> Vec<ReactiveCellId> {
+pub(crate) fn activation_scope_entry_cells(interpreter: &Interpreter) -> Vec<ReactiveCellId> {
     let symbols = interpreter.symbols();
     let symbols = symbols.borrow();
     let mut cells = Vec::new();

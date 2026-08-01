@@ -2,10 +2,10 @@
 pub use crate::*;
 #[cfg(feature = "exp")]
 pub mod exp;
-#[cfg(feature = "exp2")]
-pub mod exp2;
 #[cfg(feature = "exp10")]
 pub mod exp10;
+#[cfg(feature = "exp2")]
+pub mod exp2;
 #[cfg(feature = "expm1")]
 pub mod expm1;
 

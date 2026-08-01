@@ -1,9 +1,9 @@
-use crate::*;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
+use crate::*;
 use indexmap::map::*;
-use std::cmp::Ordering;
 use nalgebra::{DMatrix, DVector, RowDVector};
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
 // Table ------------------------------------------------------------------
@@ -11,46 +11,46 @@ use std::collections::{HashMap, HashSet};
 #[cfg(feature = "table")]
 #[derive(Clone, Debug)]
 pub struct MechTable {
-  pub rows: usize,
-  pub cols: usize,
-  pub data: IndexMap<u64,(ValueKind,Matrix<Value>)>,
-  pub col_names: HashMap<u64,String>,
+    pub rows: usize,
+    pub cols: usize,
+    pub data: IndexMap<u64, (ValueKind, Matrix<Value>)>,
+    pub col_names: HashMap<u64, String>,
 }
 
 #[cfg(feature = "table")]
 impl PartialEq for MechTable {
-  fn eq(&self, other: &Self) -> bool {
-    // Compare rows
-    if self.rows != other.rows {
-      return false;
+    fn eq(&self, other: &Self) -> bool {
+        // Compare rows
+        if self.rows != other.rows {
+            return false;
+        }
+        // For each column in self
+        for (col_id, col_name) in &self.col_names {
+            // Find a column with the same name in the other table
+            let other_col_id = match other.col_names.iter().find(|(_, n)| *n == col_name) {
+                Some((id, _)) => *id, // take the ID from the other table
+                None => return false,
+            };
+            // Get the data
+            let (self_kind, self_column) = match self.data.get(col_id) {
+                Some(entry) => entry,
+                None => return false,
+            };
+            let (other_kind, other_column) = match other.data.get(&other_col_id) {
+                Some(entry) => entry,
+                None => return false,
+            };
+            // Compare ValueKind
+            if self_kind != other_kind {
+                return false;
+            }
+            // Compare Matrix element-wise
+            if self_column != other_column {
+                return false;
+            }
+        }
+        true
     }
-    // For each column in self
-    for (col_id, col_name) in &self.col_names {
-      // Find a column with the same name in the other table
-      let other_col_id = match other.col_names.iter().find(|(_, n)| *n == col_name) {
-        Some((id, _)) => *id, // take the ID from the other table
-        None => return false,
-      };
-      // Get the data
-      let (self_kind, self_column) = match self.data.get(col_id) {
-        Some(entry) => entry,
-        None => return false,
-      };
-      let (other_kind, other_column) = match other.data.get(&other_col_id) {
-        Some(entry) => entry,
-        None => return false,
-      };
-      // Compare ValueKind
-      if self_kind != other_kind {
-        return false;
-      }
-      // Compare Matrix element-wise
-      if self_column != other_column {
-        return false;
-      }
-    }
-    true
-  }
 }
 
 #[cfg(feature = "table")]
@@ -58,457 +58,512 @@ impl Eq for MechTable {}
 
 #[cfg(feature = "table")]
 impl MechTable {
-
-  pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
-    if records.is_empty() {
-      return Err(
-        MechError::new(
-          CannotCreateTableFromEmptyRecordListError,
-          None
-        ).with_compiler_loc()
-      );
-    }
-
-    let first = &records[0];
-    let rows = records.len();
-    let cols = first.cols;
-
-    let mut col_data: IndexMap<u64, Vec<Value>> = IndexMap::new();
-
-    for (&col_id, value) in &first.data {
-      col_data.insert(col_id, vec![value.clone()]);
-    }
-
-    let mut kinds = IndexMap::new();
-    for (col_id, kind) in first.data.keys().zip(&first.kinds) {
-      kinds.insert(*col_id, kind.clone());
-    }
-
-    let col_names = first.field_names.clone();
-
-    for record in records.iter().skip(1) {
-      first.check_record_schema(record)?;
-      for (&col_id, value) in &record.data {
-        col_data.entry(col_id).or_insert_with(Vec::new).push(value.clone());
-      }
-    }
-
-    let data: IndexMap<u64, (ValueKind, Matrix<Value>)> = col_data
-      .into_iter()
-      .map(|(col_id, values)| {
-        let kind = kinds[&col_id].clone();
-        let matrix = Matrix::DVector(Ref::new(DVector::from_vec(values)));
-        (col_id, (kind, matrix))
-      })
-      .collect();
-
-    Ok(MechTable {rows,cols,data,col_names})
-  }
-
-  pub fn from_kind(kind: ValueKind) -> MResult<MechTable> {
-    match kind {
-      ValueKind::Table(tbl, sze) => {
-        let mut data = IndexMap::new();
-        let mut col_names = HashMap::new();
-        for (col_id, col_kind) in &tbl {
-          let matrix = Matrix::DVector(Ref::new(DVector::from_vec(vec![Value::Empty; sze])));
-          col_names.insert(hash_str(col_id), col_id.clone());
-          data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
-        }
-        Ok(MechTable { rows: sze, cols: tbl.len(), data, col_names })
-      }
-      _ => {
-        return Err(
-          MechError::new(
-            CannotCreateTableFromNonTableKindError,
-            None
-          ).with_compiler_loc()
-        );
-      }
-    }
-  }
-
-  pub fn empty_table(&self, rows: usize) -> MechTable {
-    let mut data = IndexMap::new();
-    for col in self.data.iter() {
-      let (key, (kind, matrix)) = col;
-      // make a new vector the length of ix with values Value::Empty
-      let elements = vec![Value::Empty; rows];
-      let new_matrix = Matrix::DVector(Ref::new(DVector::from_vec(elements)));
-      data.insert(*key, (kind.clone(), new_matrix));
-    }
-    MechTable { rows: rows, cols: self.cols, data, col_names: self.col_names.clone() }
-  }
-
-  pub fn check_record_schema(&self, record: &MechRecord) -> MResult<bool> {
-    for (&col_id, record_value) in &record.data {
-      // Check that the column exists in the table
-      let (expected_kind, _column_matrix) = match self.data.get(&col_id) {
-        Some(data) => data,
-        None => continue,
-      };
-
-      // Check actual value kind
-      let actual_kind = record_value.kind();
-      if expected_kind != &actual_kind {
-        return Err(
-          MechError::new(
-            TableColumnKindMismatchError {
-              column_id: col_id,
-              expected_kind: expected_kind.clone(),
-              actual_kind: actual_kind.clone(),
-            },
-            None
-          ).with_compiler_loc()
-        );
-      }
-
-      // Check column name
-      if let Some(expected_name) = self.col_names.get(&col_id) {
-        if let Some(field_name) = record.field_names.get(&col_id) {
-          if expected_name != field_name {
+    pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
+        if records.is_empty() {
             return Err(
-              MechError::new(
-                TableColumnNameMismatchError {
-                  column_id: col_id,
-                  expected_name: expected_name.clone(),
-                  actual_name: field_name.clone(),
-                },
-                None
-              ).with_compiler_loc()
+                MechError::new(CannotCreateTableFromEmptyRecordListError, None).with_compiler_loc(),
             );
-          }
         }
-      }
-    }
 
-    Ok(true)
-  }
-  
-  pub fn check_table_schema(&self, record: &MechTable) -> MResult<bool> {
-    // Check that the column names match
-    for (&col_id, col_name) in &self.col_names {
-      match record.col_names.get(&col_id) {
-        Some(record_name) if col_name != record_name => {
-          return Err(MechError::new(
-            TableColumnNameMismatchError {
-              column_id: col_id,
-              expected_name: col_name.clone(),
-              actual_name: record_name.clone(),
-            },
-            None
-          ).with_compiler_loc());
+        let first = &records[0];
+        let rows = records.len();
+        let cols = first.cols;
+
+        let mut col_data: IndexMap<u64, Vec<Value>> = IndexMap::new();
+
+        for (&col_id, value) in &first.data {
+            col_data.insert(col_id, vec![value.clone()]);
         }
-        None => {
-          return Err(MechError::new(
-            TableColumnNotFoundError { column_id: col_id },
-            None
-          ).with_compiler_loc());
+
+        let mut kinds = IndexMap::new();
+        for (col_id, kind) in first.data.keys().zip(&first.kinds) {
+            kinds.insert(*col_id, kind.clone());
         }
-        _ => {}
-      }
-    }
 
-    // Check that the data kinds match
-    for (&col_id, (expected_kind, _)) in &self.data {
-      match record.data.get(&col_id) {
-        Some((record_kind, _)) if expected_kind != record_kind => {
-          return Err(MechError::new(
-            TableColumnKindMismatchError {
-              column_id: col_id,
-              expected_kind: expected_kind.clone(),
-              actual_kind: record_kind.clone(),
-            },
-            None
-          ).with_compiler_loc());
+        let col_names = first.field_names.clone();
+
+        for record in records.iter().skip(1) {
+            first.check_record_schema(record)?;
+            for (&col_id, value) in &record.data {
+                col_data
+                    .entry(col_id)
+                    .or_insert_with(Vec::new)
+                    .push(value.clone());
+            }
         }
-        None => {
-          return Err(MechError::new(
-            TableColumnNotFoundError { column_id: col_id },
-            None
-          ).with_compiler_loc());
+
+        let data: IndexMap<u64, (ValueKind, Matrix<Value>)> = col_data
+            .into_iter()
+            .map(|(col_id, values)| {
+                let kind = kinds[&col_id].clone();
+                let matrix = Matrix::DVector(Ref::new(DVector::from_vec(values)));
+                (col_id, (kind, matrix))
+            })
+            .collect();
+
+        Ok(MechTable {
+            rows,
+            cols,
+            data,
+            col_names,
+        })
+    }
+
+    pub fn from_kind(kind: ValueKind) -> MResult<MechTable> {
+        match kind {
+            ValueKind::Table(tbl, sze) => {
+                let mut data = IndexMap::new();
+                let mut col_names = HashMap::new();
+                for (col_id, col_kind) in &tbl {
+                    let matrix =
+                        Matrix::DVector(Ref::new(DVector::from_vec(vec![Value::Empty; sze])));
+                    col_names.insert(hash_str(col_id), col_id.clone());
+                    data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
+                }
+                Ok(MechTable {
+                    rows: sze,
+                    cols: tbl.len(),
+                    data,
+                    col_names,
+                })
+            }
+            _ => {
+                return Err(MechError::new(CannotCreateTableFromNonTableKindError, None)
+                    .with_compiler_loc());
+            }
         }
-        _ => {}
-      }
     }
 
-    Ok(true)
-  }
-
-  pub fn append_table(&mut self, other: &MechTable) -> MResult<()> {
-    self.check_table_schema(other)?;
-
-    for (&col_id, (_, other_matrix)) in &other.data {
-      let (_, self_matrix) = self.data.get_mut(&col_id).ok_or_else(|| 
-        MechError::new(
-          TableColumnNotFoundError { column_id: col_id },
-          None
-        ).with_compiler_loc()
-      )?;
-
-      self_matrix.append(other_matrix).map_err(|err| 
-        MechError::new(
-          MatrixAppendToTableError { column_id: col_id },
-          None
-        ).with_compiler_loc()
-      )?;
+    pub fn empty_table(&self, rows: usize) -> MechTable {
+        let mut data = IndexMap::new();
+        for col in self.data.iter() {
+            let (key, (kind, matrix)) = col;
+            // make a new vector the length of ix with values Value::Empty
+            let elements = vec![Value::Empty; rows];
+            let new_matrix = Matrix::DVector(Ref::new(DVector::from_vec(elements)));
+            data.insert(*key, (kind.clone(), new_matrix));
+        }
+        MechTable {
+            rows: rows,
+            cols: self.cols,
+            data,
+            col_names: self.col_names.clone(),
+        }
     }
 
-    self.rows += other.rows;
-    Ok(())
-  }
+    pub fn check_record_schema(&self, record: &MechRecord) -> MResult<bool> {
+        for (&col_id, record_value) in &record.data {
+            // Check that the column exists in the table
+            let (expected_kind, _column_matrix) = match self.data.get(&col_id) {
+                Some(data) => data,
+                None => continue,
+            };
 
-  pub fn append_record(&mut self, record: MechRecord) -> MResult<()> {
-    // Validate schema (this includes column count, types, and optional name checks)
-    self.check_record_schema(&record)?;
+            // Check actual value kind
+            let actual_kind = record_value.kind();
+            if expected_kind != &actual_kind {
+                return Err(MechError::new(
+                    TableColumnKindMismatchError {
+                        column_id: col_id,
+                        expected_kind: expected_kind.clone(),
+                        actual_kind: actual_kind.clone(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
 
-    // Append each value to the corresponding column in the matrix
-    for (&col_id, value) in &record.data {
-      if let Some((_kind, column_matrix)) = self.data.get_mut(&col_id) {
-        let result = column_matrix.push(value.clone());
-      } else {
-        continue;
-      }
+            // Check column name
+            if let Some(expected_name) = self.col_names.get(&col_id) {
+                if let Some(field_name) = record.field_names.get(&col_id) {
+                    if expected_name != field_name {
+                        return Err(MechError::new(
+                            TableColumnNameMismatchError {
+                                column_id: col_id,
+                                expected_name: expected_name.clone(),
+                                actual_name: field_name.clone(),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+            }
+        }
+
+        Ok(true)
     }
 
-    // Increment row count
-    self.rows += 1;
+    pub fn check_table_schema(&self, record: &MechTable) -> MResult<bool> {
+        // Check that the column names match
+        for (&col_id, col_name) in &self.col_names {
+            match record.col_names.get(&col_id) {
+                Some(record_name) if col_name != record_name => {
+                    return Err(MechError::new(
+                        TableColumnNameMismatchError {
+                            column_id: col_id,
+                            expected_name: col_name.clone(),
+                            actual_name: record_name.clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                None => {
+                    return Err(MechError::new(
+                        TableColumnNotFoundError { column_id: col_id },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                _ => {}
+            }
+        }
 
-    Ok(())
-  }
+        // Check that the data kinds match
+        for (&col_id, (expected_kind, _)) in &self.data {
+            match record.data.get(&col_id) {
+                Some((record_kind, _)) if expected_kind != record_kind => {
+                    return Err(MechError::new(
+                        TableColumnKindMismatchError {
+                            column_id: col_id,
+                            expected_kind: expected_kind.clone(),
+                            actual_kind: record_kind.clone(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                None => {
+                    return Err(MechError::new(
+                        TableColumnNotFoundError { column_id: col_id },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                _ => {}
+            }
+        }
 
-  pub fn get_record(&self, ix: usize) -> Option<MechRecord> {
-    if ix > self.rows {
-      return None;
+        Ok(true)
     }
 
-    let mut data: IndexMap<u64, Value> = IndexMap::new();
-    data = self.data.iter().map(|(key, (kind, matrix))| {
-      let value = matrix.index1d(ix);
-      let name = self.col_names.get(key).unwrap();
-      (hash_str(name), value.clone())
-    }).collect();
+    pub fn append_table(&mut self, other: &MechTable) -> MResult<()> {
+        self.check_table_schema(other)?;
 
-    let mut kinds = Vec::with_capacity(self.cols);
-    kinds = self.data.iter().map(|(_, (kind, _))| kind.clone()).collect();
+        for (&col_id, (_, other_matrix)) in &other.data {
+            let (_, self_matrix) = self.data.get_mut(&col_id).ok_or_else(|| {
+                MechError::new(TableColumnNotFoundError { column_id: col_id }, None)
+                    .with_compiler_loc()
+            })?;
 
-    let mut field_names = self.col_names.clone();
-   
-    Some(MechRecord{cols: self.cols, kinds, data, field_names})
-  }
+            self_matrix.append(other_matrix).map_err(|err| {
+                MechError::new(MatrixAppendToTableError { column_id: col_id }, None)
+                    .with_compiler_loc()
+            })?;
+        }
 
-  #[cfg(feature = "pretty_print")]
-  pub fn to_html(&self) -> String {
-    let mut html = String::new();
+        self.rows += other.rows;
+        Ok(())
+    }
 
-    // Start table
-    html.push_str("<table class=\"mech-table\">");
+    pub fn append_record(&mut self, record: MechRecord) -> MResult<()> {
+        // Validate schema (this includes column count, types, and optional name checks)
+        self.check_record_schema(&record)?;
 
-    // Build thead
-    html.push_str("<thead class=\"mech-table-header\"><tr>");
-    for (key, (kind, _matrix)) in self.data.iter() {
-        let col_name = self
-            .col_names
-            .get(key)
-            .cloned()
-            .unwrap_or_else(|| key.to_string());
+        // Append each value to the corresponding column in the matrix
+        for (&col_id, value) in &record.data {
+            if let Some((_kind, column_matrix)) = self.data.get_mut(&col_id) {
+                let result = column_matrix.push(value.clone());
+            } else {
+                continue;
+            }
+        }
 
-        let kind_str = format!(
-            "<span class=\"mech-kind-annotation\"><span class=\"mech-kind-annotation-open\">&lt;</span><span class=\"mech-kind\">{}</span><span class=\"mech-kind-annotation-close\">&gt;</span></span>",
-            kind
-        );
+        // Increment row count
+        self.rows += 1;
 
-        html.push_str(&format!(
-r#"<th class="mech-table-field">
+        Ok(())
+    }
+
+    pub fn get_record(&self, ix: usize) -> Option<MechRecord> {
+        if ix > self.rows {
+            return None;
+        }
+
+        let mut data: IndexMap<u64, Value> = IndexMap::new();
+        data = self
+            .data
+            .iter()
+            .map(|(key, (kind, matrix))| {
+                let value = matrix.index1d(ix);
+                let name = self.col_names.get(key).unwrap();
+                (hash_str(name), value.clone())
+            })
+            .collect();
+
+        let mut kinds = Vec::with_capacity(self.cols);
+        kinds = self
+            .data
+            .iter()
+            .map(|(_, (kind, _))| kind.clone())
+            .collect();
+
+        let mut field_names = self.col_names.clone();
+
+        Some(MechRecord {
+            cols: self.cols,
+            kinds,
+            data,
+            field_names,
+        })
+    }
+
+    #[cfg(feature = "pretty_print")]
+    pub fn to_html(&self) -> String {
+        let mut html = String::new();
+
+        // Start table
+        html.push_str("<table class=\"mech-table\">");
+
+        // Build thead
+        html.push_str("<thead class=\"mech-table-header\"><tr>");
+        for (key, (kind, _matrix)) in self.data.iter() {
+            let col_name = self
+                .col_names
+                .get(key)
+                .cloned()
+                .unwrap_or_else(|| key.to_string());
+
+            let kind_str = format!(
+                "<span class=\"mech-kind-annotation\"><span class=\"mech-kind-annotation-open\">&lt;</span><span class=\"mech-kind\">{}</span><span class=\"mech-kind-annotation-close\">&gt;</span></span>",
+                kind
+            );
+
+            html.push_str(&format!(
+                r#"<th class="mech-table-field">
   <div class="mech-field">
     <span class="mech-field-name">{}</span>
     <span class="mech-field-kind">{}</span>
   </div>
 </th>"#,
-            col_name, kind_str
-        ));
-    }
-    html.push_str("</tr></thead>");
-
-    // Build tbody
-    html.push_str("<tbody class=\"mech-table-body\">");
-    for row_idx in 1..=self.rows {
-        html.push_str("<tr class=\"mech-table-row\">");
-        for (_key, (_kind, matrix)) in self.data.iter() {
-            let value = matrix.index1d(row_idx);
-            html.push_str(&format!(
-                "<td class=\"mech-table-column\">{}</td>",
-                value.to_html()
+                col_name, kind_str
             ));
         }
-        html.push_str("</tr>");
+        html.push_str("</tr></thead>");
+
+        // Build tbody
+        html.push_str("<tbody class=\"mech-table-body\">");
+        for row_idx in 1..=self.rows {
+            html.push_str("<tr class=\"mech-table-row\">");
+            for (_key, (_kind, matrix)) in self.data.iter() {
+                let value = matrix.index1d(row_idx);
+                html.push_str(&format!(
+                    "<td class=\"mech-table-column\">{}</td>",
+                    value.to_html()
+                ));
+            }
+            html.push_str("</tr>");
+        }
+        html.push_str("</tbody></table>");
+        html
     }
-    html.push_str("</tbody></table>");
-    html
-  }
 
-  pub fn new_table(names: Vec<String>, kinds: Vec<ValueKind>, cols: Vec<Vec<Value>>) -> MechTable {
-    let col_count = names.len();
-    let row_count = if !cols.is_empty() { cols[0].len() } else { 0 };
-    let mut col_names = HashMap::new();
-    for (i, name) in names.iter().enumerate() {
-      col_names.insert(i as u64, name.clone());
+    pub fn new_table(
+        names: Vec<String>,
+        kinds: Vec<ValueKind>,
+        cols: Vec<Vec<Value>>,
+    ) -> MechTable {
+        let col_count = names.len();
+        let row_count = if !cols.is_empty() { cols[0].len() } else { 0 };
+        let mut col_names = HashMap::new();
+        for (i, name) in names.iter().enumerate() {
+            col_names.insert(i as u64, name.clone());
+        }
+        let mut data = IndexMap::new();
+        for (col_idx, (kind, values)) in kinds.iter().zip(cols.iter()).enumerate() {
+            assert_eq!(
+                values.len(),
+                row_count,
+                "Column {} has inconsistent length (expected {} rows, got {})",
+                col_idx,
+                row_count,
+                values.len()
+            );
+            let matrix = Matrix::DVector(Ref::new(DVector::from_vec(values.clone())));
+            data.insert(col_idx as u64, (kind.clone(), matrix));
+        }
+        MechTable::new(row_count, col_count, data, col_names)
     }
-    let mut data = IndexMap::new();
-    for (col_idx, (kind, values)) in kinds.iter().zip(cols.iter()).enumerate() {
-      assert_eq!(
-        values.len(),
-        row_count,
-        "Column {} has inconsistent length (expected {} rows, got {})",
-        col_idx,
-        row_count,
-        values.len()
-      );
-      let matrix = Matrix::DVector(Ref::new(DVector::from_vec(values.clone())));
-      data.insert(col_idx as u64, (kind.clone(), matrix));
+
+    pub fn new(
+        rows: usize,
+        cols: usize,
+        data: IndexMap<u64, (ValueKind, Matrix<Value>)>,
+        col_names: HashMap<u64, String>,
+    ) -> MechTable {
+        MechTable {
+            rows,
+            cols,
+            data,
+            col_names,
+        }
     }
-    MechTable::new(row_count, col_count, data, col_names)
-  }
 
-  pub fn new(rows: usize, cols: usize, data: IndexMap<u64,(ValueKind,Matrix<Value>)>, col_names: HashMap<u64,String>) -> MechTable {
-    MechTable{rows, cols, data, col_names}
-  }
+    pub fn kind(&self) -> ValueKind {
+        let column_kinds: Vec<(String, ValueKind)> = self
+            .data
+            .iter()
+            .filter_map(|(key, (kind, _))| {
+                let col_name = self.col_names.get(key)?;
+                Some((col_name.clone(), kind.clone()))
+            })
+            .collect();
+        ValueKind::Table(column_kinds, self.rows)
+    }
 
-  pub fn kind(&self) -> ValueKind {
-    let column_kinds: Vec<(String, ValueKind)> = self.data.iter()
-      .filter_map(|(key, (kind, _))| {
-        let col_name = self.col_names.get(key)?;
-        Some((col_name.clone(), kind.clone()))
-      })
-      .collect();
-    ValueKind::Table(column_kinds, self.rows)
-  }
-  
-  pub fn size_of(&self) -> usize {
-    self.data.iter().map(|(_,(_,v))| v.size_of()).sum()
-  }
+    pub fn size_of(&self) -> usize {
+        self.data.iter().map(|(_, (_, v))| v.size_of()).sum()
+    }
 
-  pub fn rows(&self) -> usize {
-    self.rows
-  }
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
 
-  pub fn cols(&self) -> usize {
-    self.cols
-  }
+    pub fn cols(&self) -> usize {
+        self.cols
+    }
 
-  pub fn get(&self, key: &u64) -> Option<&(ValueKind,Matrix<Value>)> {
-    self.data.get(key)
-  }
+    pub fn get(&self, key: &u64) -> Option<&(ValueKind, Matrix<Value>)> {
+        self.data.get(key)
+    }
 
-   pub fn shape(&self) -> Vec<usize> {
-    vec![self.rows,self.cols]
-  }
+    pub fn shape(&self) -> Vec<usize> {
+        vec![self.rows, self.cols]
+    }
 }
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechTable {
-  fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    for (k,(knd,val)) in &self.data {
-      let name = self.col_names.get(k).unwrap();
-      let val_string: String = val.as_vec().iter()
-        .map(|x| x.pretty_print())
-        .collect::<Vec<String>>()
-        .join("\n");
-      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val_string];
-      builder.push_column(col_string);
+    fn pretty_print(&self) -> String {
+        let mut builder = Builder::default();
+        for (k, (knd, val)) in &self.data {
+            let name = self.col_names.get(k).unwrap();
+            let val_string: String = val
+                .as_vec()
+                .iter()
+                .map(|x| x.pretty_print())
+                .collect::<Vec<String>>()
+                .join("\n");
+            let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val_string];
+            builder.push_column(col_string);
+        }
+        let mut table = builder.build();
+        table.with(Style::modern_rounded());
+        format!("{table}")
     }
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
-  }
 }
 
 #[cfg(feature = "table")]
 impl Hash for MechTable {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    for (k,(knd,val)) in self.data.iter() {
-      k.hash(state);
-      knd.hash(state);
-      val.hash(state);
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for (k, (knd, val)) in self.data.iter() {
+            k.hash(state);
+            knd.hash(state);
+            val.hash(state);
+        }
     }
-  }
 }
 
 #[derive(Debug, Clone)]
 pub struct CannotCreateTableFromEmptyRecordListError;
 
 impl MechErrorKind for CannotCreateTableFromEmptyRecordListError {
-  fn name(&self) -> &str {
-    "EmptyRecordList"
-  }
-  fn message(&self) -> String {
-    "Cannot create MechTable from an empty record list.".to_string()
-  }
+    fn name(&self) -> &str {
+        "EmptyRecordList"
+    }
+    fn message(&self) -> String {
+        "Cannot create MechTable from an empty record list.".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct CannotCreateTableFromNonTableKindError;
 
 impl MechErrorKind for CannotCreateTableFromNonTableKindError {
-  fn name(&self) -> &str {
-    "CannotCreateTableFromNonTableKind"
-  }
-  fn message(&self) -> String {
-    "Cannot create MechTable from non-table kind.".to_string()
-  }
+    fn name(&self) -> &str {
+        "CannotCreateTableFromNonTableKind"
+    }
+    fn message(&self) -> String {
+        "Cannot create MechTable from non-table kind.".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableColumnKindMismatchError {
-  pub column_id: u64,
-  pub expected_kind: ValueKind,
-  pub actual_kind: ValueKind,
+    pub column_id: u64,
+    pub expected_kind: ValueKind,
+    pub actual_kind: ValueKind,
 }
 
 impl MechErrorKind for TableColumnKindMismatchError {
-  fn name(&self) -> &str { "ColumnKindMismatch" }
-  fn message(&self) -> String {
-    format!("Schema mismatch: column {} kind mismatch (expected: {}, found: {}).",
-            self.column_id, self.expected_kind, self.actual_kind)
-  }
+    fn name(&self) -> &str {
+        "ColumnKindMismatch"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Schema mismatch: column {} kind mismatch (expected: {}, found: {}).",
+            self.column_id, self.expected_kind, self.actual_kind
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableColumnNameMismatchError {
-  pub column_id: u64,
-  pub expected_name: String,
-  pub actual_name: String,
+    pub column_id: u64,
+    pub expected_name: String,
+    pub actual_name: String,
 }
 
 impl MechErrorKind for TableColumnNameMismatchError {
-  fn name(&self) -> &str { "ColumnNameMismatch" }
-  fn message(&self) -> String {
-    format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}').",
-            self.column_id, self.expected_name, self.actual_name)
-  }
+    fn name(&self) -> &str {
+        "ColumnNameMismatch"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Schema mismatch: column {} name mismatch (expected: '{}', found: '{}').",
+            self.column_id, self.expected_name, self.actual_name
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableColumnNotFoundError {
-  pub column_id: u64,
+    pub column_id: u64,
 }
 
 impl MechErrorKind for TableColumnNotFoundError {
-  fn name(&self) -> &str { "ColumnNotFound" }
-  fn message(&self) -> String {
-    format!("Schema mismatch: column {} not found in table.", self.column_id)
-  }
+    fn name(&self) -> &str {
+        "ColumnNotFound"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Schema mismatch: column {} not found in table.",
+            self.column_id
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct MatrixAppendToTableError {
-  pub column_id: u64,
+    pub column_id: u64,
 }
 
 impl MechErrorKind for MatrixAppendToTableError {
-  fn name(&self) -> &str { "MatrixAppendToTableError" }
-  fn message(&self) -> String {
-    format!("Failed to append matrix for column {}.", self.column_id)
-  }
+    fn name(&self) -> &str {
+        "MatrixAppendToTableError"
+    }
+    fn message(&self) -> String {
+        format!("Failed to append matrix for column {}.", self.column_id)
+    }
 }

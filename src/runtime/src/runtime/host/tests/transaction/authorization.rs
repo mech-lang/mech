@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::runtime::test_support::capabilities::grant_host_call_with_limit;
 use crate::{
@@ -12,8 +12,7 @@ use mech_core::{Ref, Value};
 use super::support::{CountingAfterCommitEffect, PreviewUnsupportedCapability};
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
-    RuntimeValueSnapshot::try_capture(&value)
-        .expect("acyclic fixture")
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
 #[test]
@@ -40,9 +39,11 @@ fn pure_host_planning_does_not_consume_single_use_capability() {
         .run_string("pure-limited-result := demo/pure-limited()")
         .unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
-    assert!(runtime
-        .call_host(HostCall::new("demo/pure-limited", Vec::new()))
-        .is_err());
+    assert!(
+        runtime
+            .call_host(HostCall::new("demo/pure-limited", Vec::new()))
+            .is_err()
+    );
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 }
 
@@ -70,9 +71,11 @@ fn runtime_managed_planning_does_not_consume_single_use_capability() {
         .run_string("managed-limited-result := demo/managed-limited()")
         .unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
-    assert!(runtime
-        .call_host(HostCall::new("demo/managed-limited", Vec::new()))
-        .is_err());
+    assert!(
+        runtime
+            .call_host(HostCall::new("demo/managed-limited", Vec::new()))
+            .is_err()
+    );
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 }
 
@@ -111,9 +114,11 @@ fn staged_planning_does_not_consume_single_use_capability() {
         .unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert_eq!(deliveries.load(Ordering::SeqCst), 1);
-    assert!(runtime
-        .call_host(HostCall::new("demo/staged-limited", Vec::new()))
-        .is_err());
+    assert!(
+        runtime
+            .call_host(HostCall::new("demo/staged-limited", Vec::new()))
+            .is_err()
+    );
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 }
 

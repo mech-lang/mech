@@ -1,11 +1,9 @@
 use super::{Environment, UndefinedVariableError};
 #[cfg(all(feature = "kind_annotation", feature = "convert"))]
 use crate::{ConvertKind, execute_initialized_indexed_compiler, kind_annotation};
-use crate::{
-    Identifier, InterpreterExecution, MResult, MutableReference, Value, Var, hash_str,
-};
 #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
 use crate::{FeatureNotEnabledError, MechError};
+use crate::{Identifier, InterpreterExecution, MResult, MutableReference, Value, Var, hash_str};
 
 fn maybe_cast_variable_to_kind(
     variable: &Var,
@@ -34,11 +32,9 @@ fn maybe_cast_variable_to_kind(
     #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
     {
         let _ = value;
-        Err(
-            MechError::new(FeatureNotEnabledError, None)
-                .with_compiler_loc()
-                .with_tokens(annotation.tokens()),
-        )
+        Err(MechError::new(FeatureNotEnabledError, None)
+            .with_compiler_loc()
+            .with_tokens(annotation.tokens()))
     }
 }
 

@@ -1,72 +1,102 @@
 use crate::*;
-use mech_core::*;
-use num_traits::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use num_traits::*;
 
 // Floor ------------------------------------------------------------------------
 
-use libm::{floor,floorf};
+use libm::{floor, floorf};
 macro_rules! floor_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = floor((*$arg));}
-  };}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = floor((*$arg));
+        }
+    };
+}
 
 macro_rules! floor_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = floor(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = floor(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 macro_rules! floorf_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = floorf((*$arg));}
-  };}  
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = floorf((*$arg));
+        }
+    };
+}
 
 macro_rules! floorf_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = floorf(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = floorf(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathFloor, f32, floorf, FeatureFlag::Custom(hash_str("math/floor")));
+impl_math_unop!(
+    MathFloor,
+    f32,
+    floorf,
+    FeatureFlag::Custom(hash_str("math/floor"))
+);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathFloor, f64, floor, FeatureFlag::Custom(hash_str("math/floor")));
+impl_math_unop!(
+    MathFloor,
+    f64,
+    floor,
+    FeatureFlag::Custom(hash_str("math/floor"))
+);
 
 fn impl_floor_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_urnop_match_arms2!(
-    MathFloor,
-    (lhs_value),
-    F32 => MatrixF32, F32, f32::zero(), "f32";
-    F64 => MatrixF64, F64, f64::zero(), "f64";
-  )
+    impl_urnop_match_arms2!(
+      MathFloor,
+      (lhs_value),
+      F32 => MatrixF32, F32, f32::zero(), "f32";
+      F64 => MatrixF64, F64, f64::zero(), "f64";
+    )
 }
 
 pub struct MathFloor {}
 
 impl NativeFunctionCompiler for MathFloor {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let input = arguments[0].clone();
-    match impl_floor_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {impl_floor_fxn(input.borrow().clone())}
-          x => Err(MechError::new(
-              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/floor".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let input = arguments[0].clone();
+        match impl_floor_fxn(input.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (input) {
+                (Value::MutableReference(input)) => impl_floor_fxn(input.borrow().clone()),
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: "math/floor".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

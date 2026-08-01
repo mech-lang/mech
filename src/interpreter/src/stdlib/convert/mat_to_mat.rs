@@ -88,9 +88,9 @@ where
         format!("{:#?}", self)
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
 impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler

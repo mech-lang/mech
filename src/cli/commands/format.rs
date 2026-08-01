@@ -5,12 +5,11 @@ use std::path::{Path, PathBuf};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
+use mech_runtime::{
+    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
+};
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
-use mech_runtime::{
-    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT,
-    SharedCapabilityKernel,
-};
 
 mod document_bundle;
 mod publication;
@@ -20,8 +19,8 @@ use publication::{PlannedOutput, publish_outputs_recoverably};
 
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
-    LoadedStylesheets, ResourceEvent, ResourceFallback,
-    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
+    LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
+    load_resource, load_stylesheets,
 };
 use crate::fs_paths::{
     absolute_path, extension_allowed, paths_equivalent, source_extension,
@@ -174,23 +173,35 @@ fn format_error(message: impl Into<String>) -> MechError {
 }
 
 fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
-    let first = paths.first().ok_or_else(|| format_error(
-        "cannot determine a source bundle directory without source paths",
-    ))?;
+    let first = paths.first().ok_or_else(|| {
+        format_error("cannot determine a source bundle directory without source paths")
+    })?;
     let first = absolute_path(first)?;
-    let mut ancestor = first.parent().ok_or_else(|| format_error(
-        format!("source path `{}` has no parent directory", first.display()),
-    ))?.to_path_buf();
+    let mut ancestor = first
+        .parent()
+        .ok_or_else(|| {
+            format_error(format!(
+                "source path `{}` has no parent directory",
+                first.display()
+            ))
+        })?
+        .to_path_buf();
 
     for path in paths.iter().skip(1) {
         let path = absolute_path(path)?;
-        let parent = path.parent().ok_or_else(|| format_error(
-            format!("source path `{}` has no parent directory", path.display()),
-        ))?;
+        let parent = path.parent().ok_or_else(|| {
+            format_error(format!(
+                "source path `{}` has no parent directory",
+                path.display()
+            ))
+        })?;
         while !parent.starts_with(&ancestor) {
-            ancestor = ancestor.parent().ok_or_else(|| format_error(
-                "formatted document sources have no common filesystem ancestor",
-            ))?.to_path_buf();
+            ancestor = ancestor
+                .parent()
+                .ok_or_else(|| {
+                    format_error("formatted document sources have no common filesystem ancestor")
+                })?
+                .to_path_buf();
         }
     }
     Ok(ancestor)
@@ -199,15 +210,19 @@ fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
 fn relative_asset_url(output_file: &Path, asset_file: &Path) -> MResult<String> {
     let output_parent = absolute_path(output_file)?
         .parent()
-        .ok_or_else(|| format_error(format!(
-            "formatted output `{}` has no parent directory",
-            output_file.display(),
-        )))?
+        .ok_or_else(|| {
+            format_error(format!(
+                "formatted output `{}` has no parent directory",
+                output_file.display(),
+            ))
+        })?
         .to_path_buf();
     let asset_file = absolute_path(asset_file)?;
     let output_parts = output_parent.components().collect::<Vec<_>>();
     let asset_parts = asset_file.components().collect::<Vec<_>>();
-    let shared = output_parts.iter().zip(&asset_parts)
+    let shared = output_parts
+        .iter()
+        .zip(&asset_parts)
         .take_while(|(left, right)| left == right)
         .count();
     let mut url = String::new();
@@ -218,15 +233,20 @@ fn relative_asset_url(output_file: &Path, asset_file: &Path) -> MResult<String> 
         if !url.is_empty() && !url.ends_with('/') {
             url.push('/');
         }
-        let text = component.as_os_str().to_str().ok_or_else(|| format_error(
-            "runtime asset path must be valid UTF-8",
-        ))?;
+        let text = component
+            .as_os_str()
+            .to_str()
+            .ok_or_else(|| format_error("runtime asset path must be valid UTF-8"))?;
         url.push_str(text);
         if index + 1 < asset_parts[shared..].len() {
             url.push('/');
         }
     }
-    Ok(if url.starts_with("../") { url } else { format!("./{url}") })
+    Ok(if url.starts_with("../") {
+        url
+    } else {
+        format!("./{url}")
+    })
 }
 
 fn formatter_asset_package_directory(
@@ -238,10 +258,12 @@ fn formatter_asset_package_directory(
     let root = if is_output_file {
         absolute_path(output_path)?
             .parent()
-            .ok_or_else(|| format_error(format!(
-                "formatted output `{}` has no parent directory",
-                output_path.display(),
-            )))?
+            .ok_or_else(|| {
+                format_error(format!(
+                    "formatted output `{}` has no parent directory",
+                    output_path.display(),
+                ))
+            })?
             .to_path_buf()
     } else if writes_in_place {
         common_parent_directory(outputs)?
@@ -251,9 +273,7 @@ fn formatter_asset_package_directory(
     Ok(root.join("_mech").join("pkg"))
 }
 
-fn shipped_shim_name(
-    source: &crate::cli::resources::ResourceSource,
-) -> Option<&'static str> {
+fn shipped_shim_name(source: &crate::cli::resources::ResourceSource) -> Option<&'static str> {
     match source {
         crate::cli::resources::ResourceSource::EmbeddedDefault
         | crate::cli::resources::ResourceSource::EmptyPathFallback => {
@@ -275,7 +295,6 @@ fn shipped_shim_name(
         crate::cli::resources::ResourceSource::RemoteUrl(_) => None,
     }
 }
-
 
 const FORMAT_EXTENSIONS: &[&str] = &["mec", "🤖", "html", "htm", "mdoc"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
@@ -555,7 +574,10 @@ fn collect_format_targets(
             .cmp(&b.relative_path)
             .then_with(|| a.path.cmp(&b.path))
     });
-    Ok(CollectedFormatTargets { targets: out, events })
+    Ok(CollectedFormatTargets {
+        targets: out,
+        events,
+    })
 }
 fn format_output_matches_input_dir(
     mech_paths: &[String],
@@ -709,7 +731,8 @@ fn build_format_resource_authority(
     shim_path: &str,
 ) -> MResult<HostFilesystemAuthority> {
     let mut ids = DefaultIdGenerator::new();
-    let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+    let mut authority =
+        HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
     let mut paths = BTreeSet::<PathBuf>::new();
     for path in stylesheet_paths {
         if !path.is_empty() {
@@ -766,7 +789,12 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         css: stylesheet_str,
         events,
         ..
-    } = load_stylesheets(&resource_authority, &stylesheet_paths, &options.resources.stylesheet_backup_url).await?;
+    } = load_stylesheets(
+        &resource_authority,
+        &stylesheet_paths,
+        &options.resources.stylesheet_backup_url,
+    )
+    .await?;
     render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     // Load shim HTML
@@ -830,15 +858,17 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             uses_document_controller && shim_str.contains("{{WASM_MODULE_URL}}");
         let controller_outputs = loaded_sources
             .iter()
-            .filter_map(|(target, source)| matches!(source, MechSourceCode::String(_)).then(|| {
-                format_output_file_for_target(
-                    target,
-                    &output_path,
-                    is_output_file,
-                    writes_in_place,
-                    true,
-                )
-            }))
+            .filter_map(|(target, source)| {
+                matches!(source, MechSourceCode::String(_)).then(|| {
+                    format_output_file_for_target(
+                        target,
+                        &output_path,
+                        is_output_file,
+                        writes_in_place,
+                        true,
+                    )
+                })
+            })
             .collect::<Vec<_>>();
         let runtime_assets = if needs_bundled_wasm && !controller_outputs.is_empty() {
             let package = formatter_asset_package_directory(
@@ -933,7 +963,9 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                 return Err(format_error("embedded mech_wasm.js is empty"));
             }
             if !wasm.starts_with(b"\0asm") {
-                return Err(format_error("embedded mech_wasm_bg.wasm is not a WebAssembly binary"));
+                return Err(format_error(
+                    "embedded mech_wasm_bg.wasm is not a WebAssembly binary",
+                ));
             }
             planned_outputs.push(PlannedOutput {
                 path: js_path,
@@ -948,17 +980,15 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             .iter()
             .map(|(path, _)| path.clone())
             .collect::<Vec<_>>();
-        planned_outputs.extend(html_items.into_iter().map(|(path, content)| {
-            PlannedOutput {
-                path,
-                bytes: content.into_bytes(),
-            }
+        planned_outputs.extend(html_items.into_iter().map(|(path, content)| PlannedOutput {
+            path,
+            bytes: content.into_bytes(),
         }));
         publish_outputs_recoverably(planned_outputs)?;
         for output_file in html_output_paths {
             println!(
                 "{} Saving file to {}…Done.",
-                "[Save]".truecolor(153,221,85),
+                "[Save]".truecolor(153, 221, 85),
                 output_file.display(),
             );
         }

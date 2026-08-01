@@ -5,7 +5,7 @@ use crate::{
     RuntimeEventKind, SourceRequest, TransactionId,
 };
 
-use super::{after_commit, SensitiveAfterCommit};
+use super::{SensitiveAfterCommit, after_commit};
 
 #[test]
 fn transaction_history_persists_effect_metadata_without_payload() {
@@ -77,11 +77,13 @@ fn source_resolver_replacement_is_rejected_while_an_effect_phase_is_active() {
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeEffectOperationReentrant");
-    assert!(runtime
-        .source_resolver()
-        .resolve(&SourceRequest::new("retained-source"))
-        .unwrap()
-        .is_some());
+    assert!(
+        runtime
+            .source_resolver()
+            .resolve(&SourceRequest::new("retained-source"))
+            .unwrap()
+            .is_some()
+    );
 }
 
 #[test]

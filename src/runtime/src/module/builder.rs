@@ -1,12 +1,8 @@
 use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::{
-  module_id,
-  module_version_id,
-  ModuleVersionId,
-  ResolvedSource,
-  RuntimeModuleRecord,
-  CapabilityRequest
+    CapabilityRequest, ModuleVersionId, ResolvedSource, RuntimeModuleRecord, module_id,
+    module_version_id,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -14,238 +10,228 @@ pub struct ModuleBuilder;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ModuleBuildOptions<'a> {
-  pub compiler_version: &'a str,
-  pub language_edition: &'a str,
-  pub target: &'a str,
-  pub feature_flags: &'a [&'a str],
-  pub capability_requirements: &'a [&'a str],
+    pub compiler_version: &'a str,
+    pub language_edition: &'a str,
+    pub target: &'a str,
+    pub feature_flags: &'a [&'a str],
+    pub capability_requirements: &'a [&'a str],
 }
 
 impl<'a> ModuleBuildOptions<'a> {
-  pub fn new(
-    compiler_version: &'a str,
-    language_edition: &'a str,
-    target: &'a str,
-    feature_flags: &'a [&'a str],
-    capability_requirements: &'a [&'a str],
-  ) -> Self {
-    Self {
-      compiler_version,
-      language_edition,
-      target,
-      feature_flags,
-      capability_requirements,
+    pub fn new(
+        compiler_version: &'a str,
+        language_edition: &'a str,
+        target: &'a str,
+        feature_flags: &'a [&'a str],
+        capability_requirements: &'a [&'a str],
+    ) -> Self {
+        Self {
+            compiler_version,
+            language_edition,
+            target,
+            feature_flags,
+            capability_requirements,
+        }
     }
-  }
 }
 
 impl ModuleBuilder {
-  pub fn new() -> Self {
-    Self
-  }
-
-  pub fn build_resolved_source(
-    &mut self,
-    resolved: ResolvedSource,
-    compiler_version: impl Into<String>,
-    language_edition: impl Into<String>,
-    target: impl Into<String>,
-    feature_flags: &[String],
-    dependency_versions: &[ModuleVersionId],
-    capability_requirements: &[CapabilityRequest],
-  ) -> MResult<RuntimeModuleRecord> {
-    resolved.validate()?;
-
-    if !resolved.is_executable_mech_source() {
-      return Err(MechError::new(
-        NonExecutableModuleSource {
-          canonical_uri: resolved.canonical_uri.clone(),
-        },
-        None,
-      ));
+    pub fn new() -> Self {
+        Self
     }
 
-    let compiler_version = compiler_version.into();
-    let language_edition = language_edition.into();
-    let target = target.into();
+    pub fn build_resolved_source(
+        &mut self,
+        resolved: ResolvedSource,
+        compiler_version: impl Into<String>,
+        language_edition: impl Into<String>,
+        target: impl Into<String>,
+        feature_flags: &[String],
+        dependency_versions: &[ModuleVersionId],
+        capability_requirements: &[CapabilityRequest],
+    ) -> MResult<RuntimeModuleRecord> {
+        resolved.validate()?;
 
-    let feature_flag_refs = feature_flags
-      .iter()
-      .map(|flag| flag.as_str())
-      .collect::<Vec<_>>();
+        if !resolved.is_executable_mech_source() {
+            return Err(MechError::new(
+                NonExecutableModuleSource {
+                    canonical_uri: resolved.canonical_uri.clone(),
+                },
+                None,
+            ));
+        }
 
-    let capability_requirement_keys = capability_requirements
-      .iter()
-      .map(|request| {
-        format!(
-          "{}:{}:{}",
-          request.subject,
-          request.operation,
-          request.resource,
-        )
-      })
-      .collect::<Vec<_>>();
+        let compiler_version = compiler_version.into();
+        let language_edition = language_edition.into();
+        let target = target.into();
 
-    let capability_refs = capability_requirement_keys
-      .iter()
-      .map(|capability| capability.as_str())
-      .collect::<Vec<_>>();
+        let feature_flag_refs = feature_flags
+            .iter()
+            .map(|flag| flag.as_str())
+            .collect::<Vec<_>>();
 
-    let module_id = module_id(&resolved.canonical_uri);
+        let capability_requirement_keys = capability_requirements
+            .iter()
+            .map(|request| {
+                format!(
+                    "{}:{}:{}",
+                    request.subject, request.operation, request.resource,
+                )
+            })
+            .collect::<Vec<_>>();
 
-    let module_version = module_version_id(
-      module_id,
-      &source_version_input(&resolved),
-      &compiler_version,
-      &language_edition,
-      &target,
-      &feature_flag_refs,
-      dependency_versions,
-      &capability_refs,
-    );
+        let capability_refs = capability_requirement_keys
+            .iter()
+            .map(|capability| capability.as_str())
+            .collect::<Vec<_>>();
 
-    Ok(RuntimeModuleRecord::new(
-      module_id,
-      module_version,
-      resolved.name,
-      resolved.canonical_uri,
-      resolved.kind,
-      resolved.source,
-      compiler_version,
-      language_edition,
-      target,
-      feature_flags.to_vec(),
-      resolved.exports,
-      resolved.imports,
-      resolved.contexts,
-      resolved.address_references,
-      resolved.scopes,
-      dependency_versions.to_vec(),
-      capability_requirements.to_vec(),
-      capability_requirement_keys,
-    ))
-  }
+        let module_id = module_id(&resolved.canonical_uri);
+
+        let module_version = module_version_id(
+            module_id,
+            &source_version_input(&resolved),
+            &compiler_version,
+            &language_edition,
+            &target,
+            &feature_flag_refs,
+            dependency_versions,
+            &capability_refs,
+        );
+
+        Ok(RuntimeModuleRecord::new(
+            module_id,
+            module_version,
+            resolved.name,
+            resolved.canonical_uri,
+            resolved.kind,
+            resolved.source,
+            compiler_version,
+            language_edition,
+            target,
+            feature_flags.to_vec(),
+            resolved.exports,
+            resolved.imports,
+            resolved.contexts,
+            resolved.address_references,
+            resolved.scopes,
+            dependency_versions.to_vec(),
+            capability_requirements.to_vec(),
+            capability_requirement_keys,
+        ))
+    }
 }
 
 fn source_version_input(resolved: &ResolvedSource) -> String {
-  // For now this makes version identity depend on source content shape.
-  // Later this should probably become a ContentHash over normalized source bytes.
-  format!(
-    "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}\naddress_references={:?}",
-    resolved.source,
-    resolved.imports,
-    resolved.exports,
-    resolved.contexts,
-    resolved.address_references,
-  )
+    // For now this makes version identity depend on source content shape.
+    // Later this should probably become a ContentHash over normalized source bytes.
+    format!(
+        "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}\naddress_references={:?}",
+        resolved.source,
+        resolved.imports,
+        resolved.exports,
+        resolved.contexts,
+        resolved.address_references,
+    )
 }
 
 #[derive(Debug, Clone)]
 pub struct NonExecutableModuleSource {
-  pub canonical_uri: String,
+    pub canonical_uri: String,
 }
 
 impl MechErrorKind for NonExecutableModuleSource {
-  fn name(&self) -> &str {
-    "NonExecutableModuleSource"
-  }
+    fn name(&self) -> &str {
+        "NonExecutableModuleSource"
+    }
 
-  fn message(&self) -> String {
-    format!(
-      "Resolved source `{}` is not an executable Mech module source",
-      self.canonical_uri,
-    )
-  }
+    fn message(&self) -> String {
+        format!(
+            "Resolved source `{}` is not an executable Mech module source",
+            self.canonical_uri,
+        )
+    }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use mech_core::MechSourceCode;
+    use super::*;
+    use mech_core::MechSourceCode;
 
-  fn build(resolved: ResolvedSource) -> MResult<RuntimeModuleRecord> {
-    ModuleBuilder::new().build_resolved_source(
-      resolved,
-      "test",
-      "v0.3",
-      "native",
-      &[],
-      &[],
-      &[],
-    )
-  }
+    fn build(resolved: ResolvedSource) -> MResult<RuntimeModuleRecord> {
+        ModuleBuilder::new().build_resolved_source(
+            resolved,
+            "test",
+            "v0.3",
+            "native",
+            &[],
+            &[],
+            &[],
+        )
+    }
 
-  #[test]
-  fn rejects_non_executable_source_kind() {
-    let error = build(
-      ResolvedSource::new(
-        "style.css",
-        "memory://style.css",
-        MechSourceCode::String("body { color: red; }".to_string()),
-      )
-      .with_kind(crate::SourceKind::Css),
-    )
-    .unwrap_err();
+    #[test]
+    fn rejects_non_executable_source_kind() {
+        let error = build(
+            ResolvedSource::new(
+                "style.css",
+                "memory://style.css",
+                MechSourceCode::String("body { color: red; }".to_string()),
+            )
+            .with_kind(crate::SourceKind::Css),
+        )
+        .unwrap_err();
 
-    assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
-  }
+        assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+    }
 
-  #[test]
-  fn rejects_non_executable_source_representation() {
-    let error = build(
-      ResolvedSource::new(
-        "main.mec",
-        "memory://main.mec",
-        MechSourceCode::Html("<p>not Mech code</p>".to_string()),
-      )
-      .with_kind(crate::SourceKind::Mech),
-    )
-    .unwrap_err();
+    #[test]
+    fn rejects_non_executable_source_representation() {
+        let error = build(
+            ResolvedSource::new(
+                "main.mec",
+                "memory://main.mec",
+                MechSourceCode::Html("<p>not Mech code</p>".to_string()),
+            )
+            .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap_err();
 
-    assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
-  }
+        assert!(error.kind_as::<NonExecutableModuleSource>().is_some());
+    }
 
-  #[test]
-  fn identical_builds_for_one_uri_reuse_version_identity() {
-    let source = MechSourceCode::String("value := 41".to_string());
-    let first = build(
-      ResolvedSource::new("lib.mec", "memory://lib.mec", source.clone())
-        .with_kind(crate::SourceKind::Mech),
-    )
-    .unwrap();
-    let second = build(
-      ResolvedSource::new("lib.mec", "memory://lib.mec", source)
-        .with_kind(crate::SourceKind::Mech),
-    )
-    .unwrap();
+    #[test]
+    fn identical_builds_for_one_uri_reuse_version_identity() {
+        let source = MechSourceCode::String("value := 41".to_string());
+        let first = build(
+            ResolvedSource::new("lib.mec", "memory://lib.mec", source.clone())
+                .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap();
+        let second = build(
+            ResolvedSource::new("lib.mec", "memory://lib.mec", source)
+                .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap();
 
-    assert_eq!(first.module_id, second.module_id);
-    assert_eq!(first.module_version, second.module_version);
-  }
+        assert_eq!(first.module_id, second.module_id);
+        assert_eq!(first.module_version, second.module_version);
+    }
 
-  #[test]
-  fn identical_source_at_distinct_uris_has_distinct_version_identity() {
-    let source = MechSourceCode::String("value := 41".to_string());
-    let first = build(
-      ResolvedSource::new(
-        "lib.mec",
-        "memory://first/lib.mec",
-        source.clone(),
-      )
-      .with_kind(crate::SourceKind::Mech),
-    )
-    .unwrap();
-    let second = build(
-      ResolvedSource::new(
-        "lib.mec",
-        "memory://second/lib.mec",
-        source,
-      )
-      .with_kind(crate::SourceKind::Mech),
-    )
-    .unwrap();
+    #[test]
+    fn identical_source_at_distinct_uris_has_distinct_version_identity() {
+        let source = MechSourceCode::String("value := 41".to_string());
+        let first = build(
+            ResolvedSource::new("lib.mec", "memory://first/lib.mec", source.clone())
+                .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap();
+        let second = build(
+            ResolvedSource::new("lib.mec", "memory://second/lib.mec", source)
+                .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap();
 
-    assert_ne!(first.module_id, second.module_id);
-    assert_ne!(first.module_version, second.module_version);
-  }
+        assert_ne!(first.module_id, second.module_id);
+        assert_ne!(first.module_version, second.module_version);
+    }
 }

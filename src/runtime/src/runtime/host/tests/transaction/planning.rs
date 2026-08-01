@@ -10,8 +10,7 @@ use crate::{
 use mech_core::{NativeFunctionCompiler, Ref, Value};
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
-    RuntimeValueSnapshot::try_capture(&value)
-        .expect("acyclic fixture")
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
 #[test]

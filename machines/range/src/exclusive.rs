@@ -1,85 +1,130 @@
 #![feature(step_trait)]
 use crate::*;
-use mech_core::*;
-use std::iter::Step;
-use nalgebra::{
-  base::{Matrix as naMatrix, Storage, StorageMut},
-  Dim, Scalar,
-};
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use nalgebra::{
+    Dim, Scalar,
+    base::{Matrix as naMatrix, Storage, StorageMut},
+};
+use std::iter::Step;
 use std::marker::PhantomData;
 
 // Exclusive ------------------------------------------------------------------
 
 #[derive(Debug)]
 pub struct RangeExclusiveScalar<T, MatA> {
-  pub from: Ref<T>,
-  pub to: Ref<T>,
-  pub out: Ref<MatA>,
-  phantom: PhantomData<T>,
+    pub from: Ref<T>,
+    pub to: Ref<T>,
+    pub out: Ref<MatA>,
+    phantom: PhantomData<T>,
 }
 impl<T, R1, C1, S1> MechFunctionFactory for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-  T: Copy + Debug + Clone + Sync + Send + 
-  ConstElem + AsValueKind +
-  PartialOrd + 'static + One + Add<Output = T>,
-  #[cfg(feature = "compiler")]
-  T: CompileConst,
-  Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
-  #[cfg(feature = "compiler")]
-  naMatrix<T, R1, C1, S1>: CompileConst,
-  R1: Dim + 'static, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
+    T: Copy
+        + Debug
+        + Clone
+        + Sync
+        + Send
+        + ConstElem
+        + AsValueKind
+        + PartialOrd
+        + 'static
+        + One
+        + Add<Output = T>,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
+    #[cfg(feature = "compiler")]
+    naMatrix<T, R1, C1, S1>: CompileConst,
+    R1: Dim + 'static,
+    C1: Dim,
+    S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
-  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-      FunctionArgs::Binary(out, from, to) => {
-        let from: Ref<T> = unsafe { from.as_unchecked() }.clone();
-        let to: Ref<T> = unsafe { to.as_unchecked() }.clone();
-        let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
-        Ok(Box::new(Self { from, to, out, phantom: PhantomData::default() }))
-      },
-      _ => Err(MechError::new(
-          IncorrectNumberOfArguments { expected: 3, found: args.len() },
-          None
-        ).with_compiler_loc()
-      ),
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, from, to) => {
+                let from: Ref<T> = unsafe { from.as_unchecked() }.clone();
+                let to: Ref<T> = unsafe { to.as_unchecked() }.clone();
+                let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    from,
+                    to,
+                    out,
+                    phantom: PhantomData::default(),
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
     }
-  }
 }
 impl<T, R1, C1, S1> MechFunctionImpl for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-  Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  T: Copy + Scalar + Clone + Debug + Sync + Send + 'static + PartialOrd + One + Add<Output = T> + 'static,
-  R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    T: Copy
+        + Scalar
+        + Clone
+        + Debug
+        + Sync
+        + Send
+        + 'static
+        + PartialOrd
+        + One
+        + Add<Output = T>
+        + 'static,
+    R1: Dim,
+    C1: Dim,
+    S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-  fn solve(&self) {
-    unsafe {
-      let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
-      let mut current = *self.from.as_ptr();
-      for i in 0..(*out_ptr).len() {
-        (&mut (*out_ptr))[i] = current;
-        current = current + T::one();
-      }
+    fn solve(&self) {
+        unsafe {
+            let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
+            let mut current = *self.from.as_ptr();
+            for i in 0..(*out_ptr).len() {
+                (&mut (*out_ptr))[i] = current;
+                current = current + T::one();
+            }
+        }
     }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(feature = "compiler")]
-impl<T, R1, C1, S1> MechFunctionCompiler for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>> 
+impl<T, R1, C1, S1> MechFunctionCompiler for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
-  T: CompileConst + ConstElem + AsValueKind,
-  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+    T: CompileConst + ConstElem + AsValueKind,
+    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
 {
-  fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-    let name = format!("RangeExclusiveScalar<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
-    compile_binop!(name, self.out, self.from, self.to, ctx, FeatureFlag::Builtin(FeatureKind::RangeExclusive) );
-  }
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!(
+            "RangeExclusiveScalar<{}{}>",
+            T::as_value_kind(),
+            naMatrix::<T, R1, C1, S1>::as_na_kind()
+        );
+        compile_binop!(
+            name,
+            self.out,
+            self.from,
+            self.to,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::RangeExclusive)
+        );
+    }
 }
 
 #[macro_export]
@@ -122,7 +167,7 @@ macro_rules! impl_range_exclusive_match_arms {
                 Ok(Box::new($fxn::<$ty,RowVector2<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(RowVector2::from_vec(vec)), phantom: PhantomData::default()}))
               }
               #[cfg(feature = "row_vector3")]
-              3 => {              
+              3 => {
                 register_range!($fxn, $ty, $feat, RowVector3);
                 Ok(Box::new($fxn::<$ty,RowVector3<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(RowVector3::from_vec(vec)), phantom: PhantomData::default()}))
               }
@@ -148,48 +193,65 @@ macro_rules! impl_range_exclusive_match_arms {
   }
 }
 
-fn impl_range_exclusive_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_range_exclusive_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
-    f32, "f32";
-    f64, "f64";
-    i8,  "i8";
-    i16, "i16";
-    i32, "i32";
-    i64, "i64";
-    i128,"i128";
-    u8,  "u8";
-    u16, "u16";
-    u32, "u32";
-    u64, "u64";
-    u128,"u128";
-  )
+fn impl_range_exclusive_fxn(
+    arg1_value: Value,
+    arg2_value: Value,
+) -> MResult<Box<dyn MechFunction>> {
+    impl_range_exclusive_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
+      f32, "f32";
+      f64, "f64";
+      i8,  "i8";
+      i16, "i16";
+      i32, "i32";
+      i64, "i64";
+      i128,"i128";
+      u8,  "u8";
+      u16, "u16";
+      u32, "u32";
+      u64, "u64";
+      u128,"u128";
+    )
 }
 
 pub struct RangeExclusive {}
 
 impl NativeFunctionCompiler for RangeExclusive {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: arguments.len() },None).with_compiler_loc());
-    }
-    let arg1 = arguments[0].clone();
-    let arg2 = arguments[1].clone();
-    match impl_range_exclusive_fxn(arg1.clone(), arg2.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (arg1,arg2) {
-          (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
-          (Value::MutableReference(arg1),arg2) => {impl_range_exclusive_fxn(arg1.borrow().clone(),arg2.clone())}
-          (arg1,Value::MutableReference(arg2)) => {impl_range_exclusive_fxn(arg1.clone(),arg2.borrow().clone())}
-          (arg1,arg2) => Err(MechError::new(
-              UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: "range/exclusive".to_string() },
-              None
-            ).with_compiler_loc()
-          ),        
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 2 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let arg1 = arguments[0].clone();
+        let arg2 = arguments[1].clone();
+        match impl_range_exclusive_fxn(arg1.clone(), arg2.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (arg1, arg2) {
+                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                    impl_range_exclusive_fxn(arg1.borrow().clone(), arg2.borrow().clone())
+                }
+                (Value::MutableReference(arg1), arg2) => {
+                    impl_range_exclusive_fxn(arg1.borrow().clone(), arg2.clone())
+                }
+                (arg1, Value::MutableReference(arg2)) => {
+                    impl_range_exclusive_fxn(arg1.clone(), arg2.borrow().clone())
+                }
+                (arg1, arg2) => Err(MechError::new(
+                    UnhandledFunctionArgumentKind2 {
+                        arg: (arg1.kind(), arg2.kind()),
+                        fxn_name: "range/exclusive".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

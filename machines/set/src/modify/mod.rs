@@ -1,6 +1,5 @@
 // modify module (insert/remove etc.)
 #[macro_use]
-
 #[cfg(feature = "insert")]
 pub mod insert;
 #[cfg(feature = "remove")]

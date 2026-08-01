@@ -235,8 +235,15 @@ fn collect_dir(
         let read_path = entry.path();
         let is_directory_symlink = match is_directory_symlink(&read_path) {
             Ok(value) => value,
-            Err(_error) if matches!(options.missing_path_policy, MissingPathPolicy::SkipBrokenSymlink) => {
-                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink { path: read_path.clone() });
+            Err(_error)
+                if matches!(
+                    options.missing_path_policy,
+                    MissingPathPolicy::SkipBrokenSymlink
+                ) =>
+            {
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                    path: read_path.clone(),
+                });
                 continue;
             }
             Err(error) => return Err(error),
@@ -249,8 +256,15 @@ fn collect_dir(
         }
         let is_dir = match read_path.canonicalize() {
             Ok(path) => path.is_dir(),
-            Err(_error) if matches!(options.missing_path_policy, MissingPathPolicy::SkipBrokenSymlink) => {
-                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink { path: read_path.clone() });
+            Err(_error)
+                if matches!(
+                    options.missing_path_policy,
+                    MissingPathPolicy::SkipBrokenSymlink
+                ) =>
+            {
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                    path: read_path.clone(),
+                });
                 continue;
             }
             Err(error) => return Err(error.into()),

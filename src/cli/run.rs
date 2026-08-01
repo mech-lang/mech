@@ -2,8 +2,8 @@ use clap::{Arg, ArgAction};
 use mech_core::*;
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, ModuleBuildOptions, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeValueSnapshot,
-    SourceRequest, SourceResolver, parse_host_context_target,
+    RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeValueSnapshot, SourceRequest,
+    SourceResolver, parse_host_context_target,
 };
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
@@ -617,13 +617,7 @@ pub fn run_cli_source_code_with_events(
 }
 
 pub fn cli_module_options() -> ModuleBuildOptions<'static> {
-    ModuleBuildOptions::new(
-        env!("CARGO_PKG_VERSION"),
-        "v0.3",
-        "native",
-        &[],
-        &[],
-    )
+    ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
 }
 
 pub fn run_cli_root_module_with_events(
@@ -632,14 +626,12 @@ pub fn run_cli_root_module_with_events(
     options: ModuleBuildOptions<'_>,
 ) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
     let mut context = runtime.runtime_context()?;
-    let result = runtime.resolve_and_run_root_module_with_context(&mut context, request, options)?;
+    let result =
+        runtime.resolve_and_run_root_module_with_context(&mut context, request, options)?;
     Ok((result, context.events().to_vec()))
 }
 
-pub fn run_cli_source(
-    runtime: &mut MechRuntime,
-    source: &str,
-) -> MResult<RuntimeValueSnapshot> {
+pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<RuntimeValueSnapshot> {
     run_cli_source_with_events(runtime, source).map(|(value, _)| value)
 }
 

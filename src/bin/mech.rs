@@ -1,3 +1,3 @@
 fn main() -> Result<(), mech::MechError> {
-  mech::cli::app::run()
+    mech::cli::app::run()
 }

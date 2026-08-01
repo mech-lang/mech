@@ -108,7 +108,14 @@ trait FromRecord: Sized {
 impl FromRecord for CircleElement {
     const KIND: &'static str = "circle";
     const REQUIRED: &'static [&'static str] = &[
-        "id", "x", "y", "radius", "fill", "stroke", "stroke-width", "opacity",
+        "id",
+        "x",
+        "y",
+        "radius",
+        "fill",
+        "stroke",
+        "stroke-width",
+        "opacity",
     ];
     fn from_record(record: &MechRecord) -> MResult<Self> {
         reject_unknown_fields(record, Self::REQUIRED, Self::KIND)?;
@@ -131,8 +138,14 @@ impl FromRecord for CircleElement {
         validate_opacity(&id, opacity)?;
         Ok(Self {
             id: id.clone(),
-            x: finite_number(required_number(record, "x", &format!("circle `{id}` x"))?, &format!("circle `{id}` x"))?,
-            y: finite_number(required_number(record, "y", &format!("circle `{id}` y"))?, &format!("circle `{id}` y"))?,
+            x: finite_number(
+                required_number(record, "x", &format!("circle `{id}` x"))?,
+                &format!("circle `{id}` x"),
+            )?,
+            y: finite_number(
+                required_number(record, "y", &format!("circle `{id}` y"))?,
+                &format!("circle `{id}` y"),
+            )?,
             radius,
             fill: required_string(record, "fill", &format!("circle `{id}` fill"))?,
             stroke: required_string(record, "stroke", &format!("circle `{id}` stroke"))?,
@@ -145,8 +158,18 @@ impl FromRecord for CircleElement {
 impl FromRecord for LineElement {
     const KIND: &'static str = "line";
     const REQUIRED: &'static [&'static str] = &[
-        "id", "x1", "y1", "x2", "y2", "stroke", "stroke-width", "line-cap", "opacity",
-        "rotation", "origin-x", "origin-y",
+        "id",
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "stroke",
+        "stroke-width",
+        "line-cap",
+        "opacity",
+        "rotation",
+        "origin-x",
+        "origin-y",
     ];
     fn from_record(record: &MechRecord) -> MResult<Self> {
         reject_unknown_fields(record, Self::REQUIRED, Self::KIND)?;
@@ -161,17 +184,38 @@ impl FromRecord for LineElement {
         validate_line_cap(&id, &line_cap)?;
         Ok(Self {
             id: id.clone(),
-            x1: finite_number(required_number(record, "x1", &format!("line `{id}` x1"))?, &format!("line `{id}` x1"))?,
-            y1: finite_number(required_number(record, "y1", &format!("line `{id}` y1"))?, &format!("line `{id}` y1"))?,
-            x2: finite_number(required_number(record, "x2", &format!("line `{id}` x2"))?, &format!("line `{id}` x2"))?,
-            y2: finite_number(required_number(record, "y2", &format!("line `{id}` y2"))?, &format!("line `{id}` y2"))?,
+            x1: finite_number(
+                required_number(record, "x1", &format!("line `{id}` x1"))?,
+                &format!("line `{id}` x1"),
+            )?,
+            y1: finite_number(
+                required_number(record, "y1", &format!("line `{id}` y1"))?,
+                &format!("line `{id}` y1"),
+            )?,
+            x2: finite_number(
+                required_number(record, "x2", &format!("line `{id}` x2"))?,
+                &format!("line `{id}` x2"),
+            )?,
+            y2: finite_number(
+                required_number(record, "y2", &format!("line `{id}` y2"))?,
+                &format!("line `{id}` y2"),
+            )?,
             stroke: required_string(record, "stroke", &format!("line `{id}` stroke"))?,
             stroke_width,
             line_cap,
             opacity,
-            rotation: finite_number(required_number(record, "rotation", &format!("line `{id}` rotation"))?, &format!("line `{id}` rotation"))?,
-            origin_x: finite_number(required_number(record, "origin-x", &format!("line `{id}` origin-x"))?, &format!("line `{id}` origin-x"))?,
-            origin_y: finite_number(required_number(record, "origin-y", &format!("line `{id}` origin-y"))?, &format!("line `{id}` origin-y"))?,
+            rotation: finite_number(
+                required_number(record, "rotation", &format!("line `{id}` rotation"))?,
+                &format!("line `{id}` rotation"),
+            )?,
+            origin_x: finite_number(
+                required_number(record, "origin-x", &format!("line `{id}` origin-x"))?,
+                &format!("line `{id}` origin-x"),
+            )?,
+            origin_y: finite_number(
+                required_number(record, "origin-y", &format!("line `{id}` origin-y"))?,
+                &format!("line `{id}` origin-y"),
+            )?,
         })
     }
 }

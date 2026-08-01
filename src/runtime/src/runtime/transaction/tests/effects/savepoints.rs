@@ -6,7 +6,7 @@ use mech_core::MResult;
 use crate::{MechRuntime, PreparedRuntimeEffect, RuntimeEffectId, RuntimeEventKind, TransactionId};
 
 use super::super::RuntimeEffectJournal;
-use super::{effect, synthetic_error, transactional, CostedAfterCommit, FailOnceAbortEffect};
+use super::{CostedAfterCommit, FailOnceAbortEffect, effect, synthetic_error, transactional};
 
 #[test]
 fn journal_rollback_does_not_reuse_effect_sequences() {
@@ -84,15 +84,19 @@ fn savepoint_rollback_discards_effect_and_staging_event() {
     );
 
     assert_eq!(result.unwrap_err().kind_name(), "SyntheticEffectError");
-    assert!(runtime
-        .active_execution_transaction(transaction_id)
-        .unwrap()
-        .effects
-        .is_empty());
-    assert!(!context
-        .events
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::EffectStaged { .. }) }));
+    assert!(
+        runtime
+            .active_execution_transaction(transaction_id)
+            .unwrap()
+            .effects
+            .is_empty()
+    );
+    assert!(
+        !context
+            .events
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::EffectStaged { .. }) })
+    );
     runtime
         .abort_runtime_transaction(&mut context, "test cleanup")
         .unwrap();

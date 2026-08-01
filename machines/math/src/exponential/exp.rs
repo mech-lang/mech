@@ -1,72 +1,102 @@
 use crate::*;
-use mech_core::*;
-use num_traits::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use num_traits::*;
 
 // Exponential -----------------------------------------------------------------
 
 use libm::{exp, expf};
 macro_rules! exponential_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = exp((*$arg));}
-  };}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = exp((*$arg));
+        }
+    };
+}
 
 macro_rules! exponential_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = exp(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = exp(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 macro_rules! exponentialf_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = expf((*$arg));}
-  };}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = expf((*$arg));
+        }
+    };
+}
 
 macro_rules! exponentialf_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = expf(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = expf(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 #[cfg(feature = "f64")]
-impl_math_unop!(MathExp, f64, exponential, FeatureFlag::Custom(hash_str("math/exp")));
+impl_math_unop!(
+    MathExp,
+    f64,
+    exponential,
+    FeatureFlag::Custom(hash_str("math/exp"))
+);
 #[cfg(feature = "f32")]
-impl_math_unop!(MathExp, f32, exponentialf, FeatureFlag::Custom(hash_str("math/exp")));
+impl_math_unop!(
+    MathExp,
+    f32,
+    exponentialf,
+    FeatureFlag::Custom(hash_str("math/exp"))
+);
 
 fn impl_exponential_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_urnop_match_arms2!(
-    MathExp,
-    lhs_value,
-    F32 => MatrixF32, F32, f32::default(), "f32";
-    F64 => MatrixF64, F64, f64::default(), "f64";
-  )
+    impl_urnop_match_arms2!(
+      MathExp,
+      lhs_value,
+      F32 => MatrixF32, F32, f32::default(), "f32";
+      F64 => MatrixF64, F64, f64::default(), "f64";
+    )
 }
 
 pub struct MathExp {}
 
 impl NativeFunctionCompiler for MathExp {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let input = arguments[0].clone();
-    match impl_exponential_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match input {
-          Value::MutableReference(input) => impl_exponential_fxn(input.borrow().clone()),
-          x => Err(MechError::new(
-              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/exponential".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let input = arguments[0].clone();
+        match impl_exponential_fxn(input.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match input {
+                Value::MutableReference(input) => impl_exponential_fxn(input.borrow().clone()),
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: "math/exponential".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

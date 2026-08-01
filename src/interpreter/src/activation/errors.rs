@@ -1,4 +1,4 @@
-use crate::{MechErrorKind};
+use crate::MechErrorKind;
 
 macro_rules! activation_error {
     ($n:ident,$m:expr) => {

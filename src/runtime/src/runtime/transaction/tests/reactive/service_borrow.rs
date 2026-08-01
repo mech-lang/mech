@@ -1,6 +1,4 @@
-use super::super::{
-    arm_coordinated_service_reentry,
-};
+use super::super::arm_coordinated_service_reentry;
 use super::ReactiveTransactionalProbe;
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 use crate::{
@@ -8,8 +6,8 @@ use crate::{
     PreparedRuntimeEffect, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 use mech_core::{
-    BytecodeCompilerContext, MResult, MechExecutionServices, MechFunctionCompiler, MechFunctionImpl,
-    ReactiveSolveStatus, Ref, Register, Value,
+    BytecodeCompilerContext, MResult, MechExecutionServices, MechFunctionCompiler,
+    MechFunctionImpl, ReactiveSolveStatus, Ref, Register, Value,
 };
 use mech_program::ExecutionServicesBorrowConflict;
 use std::sync::{Arc, Mutex};

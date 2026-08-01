@@ -1,7 +1,7 @@
 use super::support::{CommitDecisionEffect, savepoint_effect};
-use crate::runtime::transaction::RuntimeExecutionTransactionState;
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
+use crate::runtime::transaction::RuntimeExecutionTransactionState;
 use crate::{
     CapabilityId, EventId, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeEventKind, RuntimeIntegrityConstraintFailureReason, RuntimePreparedHostCall,

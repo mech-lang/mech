@@ -1,59 +1,58 @@
 #![allow(warnings)]
 use std::{
-  env,
-  error::Error,
-  fs::{self, File},
-  io::Write,
-  path::Path,
+    env,
+    error::Error,
+    fs::{self, File},
+    io::Write,
+    path::Path,
 };
 extern crate winres;
 
 const SOURCE_DIR: &str = r"project";
 
 fn main() -> Result<(), Box<dyn Error>> {
-  
-  if cfg!(target_os = "windows") {
-    let mut res = winres::WindowsResource::new();
-    res.set_icon("mech.ico");
-    res.compile().unwrap();
-  }
+    if cfg!(target_os = "windows") {
+        let mut res = winres::WindowsResource::new();
+        res.set_icon("mech.ico");
+        res.compile().unwrap();
+    }
 
-  if Path::new("src/wasm/pkg/mech_wasm_bg.wasm").exists() {
-    println!("cargo:rustc-cfg=has_file_wasm");
-  }
+    if Path::new("src/wasm/pkg/mech_wasm_bg.wasm").exists() {
+        println!("cargo:rustc-cfg=has_file_wasm");
+    }
 
-  if Path::new("src/wasm/pkg/mech_wasm.js").exists() {
-    println!("cargo:rustc-cfg=has_file_js");
-  }
+    if Path::new("src/wasm/pkg/mech_wasm.js").exists() {
+        println!("cargo:rustc-cfg=has_file_js");
+    }
 
-  println!("cargo::rustc-check-cfg=cfg(has_file_project_js)");
-  println!("cargo::rustc-check-cfg=cfg(has_file_document_js)");
-  println!("cargo::rustc-check-cfg=cfg(has_file_shim)");
-  println!("cargo::rustc-check-cfg=cfg(has_file_stylesheet)");
-  println!("cargo::rustc-check-cfg=cfg(has_file_wasm)");
-  println!("cargo::rustc-check-cfg=cfg(has_file_js)");
-  println!("cargo::rerun-if-changed=include/project.js");
-  println!("cargo::rerun-if-changed=include/document.js");
-  println!("cargo::rerun-if-changed=include/index.html");
-  println!("cargo::rerun-if-changed=include/style.css");
-  println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm.js");
-  println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm_bg.wasm");
+    println!("cargo::rustc-check-cfg=cfg(has_file_project_js)");
+    println!("cargo::rustc-check-cfg=cfg(has_file_document_js)");
+    println!("cargo::rustc-check-cfg=cfg(has_file_shim)");
+    println!("cargo::rustc-check-cfg=cfg(has_file_stylesheet)");
+    println!("cargo::rustc-check-cfg=cfg(has_file_wasm)");
+    println!("cargo::rustc-check-cfg=cfg(has_file_js)");
+    println!("cargo::rerun-if-changed=include/project.js");
+    println!("cargo::rerun-if-changed=include/document.js");
+    println!("cargo::rerun-if-changed=include/index.html");
+    println!("cargo::rerun-if-changed=include/style.css");
+    println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm.js");
+    println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm_bg.wasm");
 
-  if Path::new("include/project.js").exists() {
-    println!("cargo:rustc-cfg=has_file_project_js");
-  }
+    if Path::new("include/project.js").exists() {
+        println!("cargo:rustc-cfg=has_file_project_js");
+    }
 
-  if Path::new("include/document.js").exists() {
-    println!("cargo:rustc-cfg=has_file_document_js");
-  }
+    if Path::new("include/document.js").exists() {
+        println!("cargo:rustc-cfg=has_file_document_js");
+    }
 
-  if Path::new("include/index.html").exists() {
-    println!("cargo:rustc-cfg=has_file_shim");
-  }
+    if Path::new("include/index.html").exists() {
+        println!("cargo:rustc-cfg=has_file_shim");
+    }
 
-  if Path::new("include/style.css").exists() {
-    println!("cargo:rustc-cfg=has_file_stylesheet");
-  }
+    if Path::new("include/style.css").exists() {
+        println!("cargo:rustc-cfg=has_file_stylesheet");
+    }
 
-  Ok(())
+    Ok(())
 }

@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use crate::{MechRuntime, PreparedRuntimeEffect, RuntimeEffectFailurePhase, RuntimeEventKind};
 
 use super::{
-    after_commit, transactional, FailingEventIdGenerator, PanicEffectPhase,
-    PanickingAfterCommitEffect,
+    FailingEventIdGenerator, PanicEffectPhase, PanickingAfterCommitEffect, after_commit,
+    transactional,
 };
 
 #[test]
@@ -97,9 +97,11 @@ fn after_commit_delivery_failure_keeps_committed_runtime_healthy() {
     assert_eq!(context.transaction, None);
     assert!(runtime.get_transaction(transaction_id).unwrap().is_some());
     let events = runtime.list_events(None).unwrap();
-    assert!(events
-        .iter()
-        .any(|event| { matches!(event.kind, RuntimeEventKind::EffectDelivered { .. }) }));
+    assert!(
+        events
+            .iter()
+            .any(|event| { matches!(event.kind, RuntimeEventKind::EffectDelivered { .. }) })
+    );
     assert!(events.iter().any(|event| {
         matches!(
           event.kind,

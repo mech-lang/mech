@@ -1,8 +1,8 @@
-mod support;
-mod registration;
+mod captures;
 mod dispatch;
 mod exhaustiveness;
 mod guards;
-mod captures;
 mod registers;
+mod registration;
 mod rollback;
+mod support;

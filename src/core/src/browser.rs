@@ -67,8 +67,7 @@ impl BrowserAuthority {
             return Some(exact);
         }
 
-        self
-            .dom_manifest
+        self.dom_manifest
             .iter()
             .filter(|entry| entry.path.is_wildcard() && entry.path.matches(path))
             .max_by_key(|entry| entry.path.as_str().trim_end_matches("/*").len())
@@ -425,7 +424,10 @@ impl BrowserDomPath {
     }
 
     pub fn dom_property(&self) -> BrowserDomProperty {
-        let leaf = self.path.rsplit_once('/').map_or(self.path.as_str(), |(_, leaf)| leaf);
+        let leaf = self
+            .path
+            .rsplit_once('/')
+            .map_or(self.path.as_str(), |(_, leaf)| leaf);
         BrowserDomProperty::from_path_segment(leaf)
     }
 }
@@ -489,25 +491,33 @@ impl BrowserDomProperty {
         match property {
             Some("text") => {
                 if attribute.is_some() {
-                    return Err(invalid("DOM property `text` cannot include `attribute`".to_string()));
+                    return Err(invalid(
+                        "DOM property `text` cannot include `attribute`".to_string(),
+                    ));
                 }
                 Ok(Self::Text)
             }
             Some("value") => {
                 if attribute.is_some() {
-                    return Err(invalid("DOM property `value` cannot include `attribute`".to_string()));
+                    return Err(invalid(
+                        "DOM property `value` cannot include `attribute`".to_string(),
+                    ));
                 }
                 Ok(Self::Value)
             }
             Some("inner-html") | Some("innerHtml") | Some("html") => {
                 if attribute.is_some() {
-                    return Err(invalid("DOM property `inner-html` cannot include `attribute`".to_string()));
+                    return Err(invalid(
+                        "DOM property `inner-html` cannot include `attribute`".to_string(),
+                    ));
                 }
                 Ok(Self::InnerHtml)
             }
             Some("attribute") => {
                 let Some(attribute) = attribute else {
-                    return Err(invalid("DOM property `attribute` requires an `attribute` name".to_string()));
+                    return Err(invalid(
+                        "DOM property `attribute` requires an `attribute` name".to_string(),
+                    ));
                 };
                 validate_dom_attribute_name(attribute)?;
                 Ok(Self::Attribute(attribute.to_string()))
@@ -525,7 +535,6 @@ impl BrowserDomProperty {
             }
         }
     }
-
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -1029,7 +1038,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn dom_manifest_exact_path_beats_wildcard() {
         let mut authority = BrowserAuthority::default();
@@ -1085,9 +1093,11 @@ mod tests {
             BrowserDomProperty::Text,
             [BrowserOperation::Read, BrowserOperation::Write],
         ));
-        assert!(authority
-            .dom_entry_for_path(&BrowserDomPath::new("body/sidebar/title").unwrap())
-            .is_none());
+        assert!(
+            authority
+                .dom_entry_for_path(&BrowserDomPath::new("body/sidebar/title").unwrap())
+                .is_none()
+        );
     }
 
     #[test]

@@ -17,15 +17,15 @@ fn staged_host_call_returns_value_before_effect_delivery() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(
-                    &Value::String(Ref::new("provisional".to_string())),
-                )
+                RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(
+                    "provisional".to_string(),
+                )))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 Ok(RuntimePreparedHostCall {
-                    value: RuntimeValueSnapshot::try_capture(
-                        &Value::String(Ref::new("provisional".to_string())),
-                    )?,
+                    value: RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(
+                        "provisional".to_string(),
+                    )))?,
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(RecordingHostEffect {
                         log: effect_log.clone(),
                         entry: "delivered".to_string(),
@@ -62,15 +62,11 @@ fn staged_planning_does_not_create_effects() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-lifecycle",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(
-                    &Value::F64(Ref::new(1.0)),
-                )
+                RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(1.0)))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 Ok(RuntimePreparedHostCall {
-                    value: RuntimeValueSnapshot::try_capture(
-                        &Value::F64(Ref::new(1.0)),
-                    )?,
+                    value: RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(1.0)))?,
                     effect: PreparedRuntimeEffect::Transactional(Box::new(
                         PreviewLifecycleEffect {
                             log: effect_log.clone(),

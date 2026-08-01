@@ -160,9 +160,9 @@ impl ValueStateHashedCycleDetector {
             #[cfg(any(feature = "bool", feature = "variable_define"))]
             Value::Bool(value) => self.visit_leaf(value),
             #[cfg(feature = "atom")]
-            Value::Atom(value) => self.visit_ref(value, |detector, atom| {
-                detector.visit_leaf(&atom.0.1)
-            }),
+            Value::Atom(value) => {
+                self.visit_ref(value, |detector, atom| detector.visit_leaf(&atom.0.1))
+            }
             Value::Index(value) => self.visit_leaf(value),
             #[cfg(feature = "matrix")]
             Value::MatrixIndex(matrix) => self.validate_matrix(matrix),
@@ -246,9 +246,9 @@ impl ValueStateHashedCycleDetector {
                 }
                 Ok(())
             }),
-            Value::MutableReference(value) => self.visit_ref(value, |detector, value| {
-                detector.validate_value(value)
-            }),
+            Value::MutableReference(value) => {
+                self.visit_ref(value, |detector, value| detector.validate_value(value))
+            }
             Value::Typed(value, _) => self.validate_value(value),
             Value::Id(_)
             | Value::Kind(_)
@@ -349,8 +349,7 @@ impl ValueStateHashedCycleDetector {
 #[cfg(feature = "set")]
 fn canonical_set_snapshot(set: &MechSet, phase: &'static str) -> MResult<MechSet> {
     for (index, element) in set.set.iter().enumerate() {
-        ValueStateHashedCycleDetector::new(phase, "set element", index)
-            .validate_value(element)?;
+        ValueStateHashedCycleDetector::new(phase, "set element", index).validate_value(element)?;
     }
 
     let values = set.set.iter().cloned().collect::<Vec<_>>();
@@ -386,11 +385,14 @@ fn canonical_set_snapshot(set: &MechSet, phase: &'static str) -> MResult<MechSet
 #[cfg(feature = "map")]
 fn canonical_map_snapshot(map: &MechMap, phase: &'static str) -> MResult<MechMap> {
     for (index, key) in map.map.keys().enumerate() {
-        ValueStateHashedCycleDetector::new(phase, "map key", index)
-            .validate_value(key)?;
+        ValueStateHashedCycleDetector::new(phase, "map key", index).validate_value(key)?;
     }
 
-    let values = map.map.iter().map(|(key, value)| (key.clone(), value.clone())).collect::<Vec<_>>();
+    let values = map
+        .map
+        .iter()
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect::<Vec<_>>();
     for second_index in 0..values.len() {
         if let Some(first_index) = values[..second_index]
             .iter()
@@ -1438,7 +1440,10 @@ impl MechErrorKind for ValueStateBorrowConflict {
     }
 
     fn message(&self) -> String {
-        format!("Cannot borrow {} cell during {}.", self.type_name, self.phase)
+        format!(
+            "Cannot borrow {} cell during {}.",
+            self.type_name, self.phase
+        )
     }
 }
 

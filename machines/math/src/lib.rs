@@ -11,40 +11,40 @@ use mech_core::*;
 #[cfg(all(not(feature = "dynamic-module"), feature = "functions"))]
 use paste::paste;
 
-#[cfg(feature = "vector2")]
-use na::Vector2;
-#[cfg(feature = "vector3")]
-use na::Vector3;
-#[cfg(feature = "vector4")]
-use na::Vector4;
+#[cfg(feature = "matrixd")]
+use na::DMatrix;
 #[cfg(feature = "vectord")]
 use na::DVector;
 #[cfg(feature = "matrix1")]
 use na::Matrix1;
 #[cfg(feature = "matrix2")]
 use na::Matrix2;
-#[cfg(feature = "matrix3")]
-use na::Matrix3;
-#[cfg(feature = "matrix4")]
-use na::Matrix4;
 #[cfg(feature = "matrix2x3")]
 use na::Matrix2x3;
+#[cfg(feature = "matrix3")]
+use na::Matrix3;
 #[cfg(feature = "matrix3x2")]
 use na::Matrix3x2;
-#[cfg(feature = "matrixd")]
-use na::DMatrix;
+#[cfg(feature = "matrix4")]
+use na::Matrix4;
+#[cfg(feature = "row_vectord")]
+use na::RowDVector;
 #[cfg(feature = "row_vector2")]
 use na::RowVector2;
 #[cfg(feature = "row_vector3")]
 use na::RowVector3;
 #[cfg(feature = "row_vector4")]
 use na::RowVector4;
-#[cfg(feature = "row_vectord")]
-use na::RowDVector;
+#[cfg(feature = "vector2")]
+use na::Vector2;
+#[cfg(feature = "vector3")]
+use na::Vector3;
+#[cfg(feature = "vector4")]
+use na::Vector4;
 
-use std::ops::*;
-use std::fmt::{Display, Debug};
+use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
+use std::ops::*;
 
 #[cfg(any(feature = "round", feature = "dynamic-module"))]
 pub mod kernels;
@@ -62,10 +62,10 @@ pub mod exponential;
 pub mod gamma;
 #[cfg(feature = "logarithm")]
 pub mod logarithm;
-#[cfg(feature = "ops")]
-pub mod ops;
 #[cfg(feature = "op_assign")]
 pub mod op_assign;
+#[cfg(feature = "ops")]
+pub mod ops;
 #[cfg(feature = "root")]
 pub mod root;
 #[cfg(feature = "rounding")]
@@ -85,10 +85,10 @@ pub use self::exponential::*;
 pub use self::gamma::*;
 #[cfg(feature = "logarithm")]
 pub use self::logarithm::*;
-#[cfg(feature = "ops")]
-pub use self::ops::*;
 #[cfg(feature = "op_assign")]
 pub use self::op_assign::*;
+#[cfg(feature = "ops")]
+pub use self::ops::*;
 #[cfg(feature = "root")]
 pub use self::root::*;
 #[cfg(feature = "rounding")]
@@ -104,9 +104,10 @@ pub use self::trig::*;
 
 #[macro_export]
 macro_rules! impl_math_fxns {
-  ($lib:ident) => {
-    impl_fxns!($lib,T,T,impl_binop);
-  }}
+    ($lib:ident) => {
+        impl_fxns!($lib, T, T, impl_binop);
+    };
+}
 
 #[macro_export]
 macro_rules! impl_urnop_match_arms2 {
@@ -126,9 +127,9 @@ macro_rules! impl_urnop_match_arms2 {
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
             (Value::$matrix_kind(Matrix::Matrix4(arg))) => Ok(Box::new([<$lib $lhs_type:camel M4>]{arg, out: Ref::new(Matrix4::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(arg))) => Ok(Box::new([<$lib $lhs_type:camel M2x3>]{arg, out: Ref::new(Matrix2x3::from_element($default))})),         
+            (Value::$matrix_kind(Matrix::Matrix2x3(arg))) => Ok(Box::new([<$lib $lhs_type:camel M2x3>]{arg, out: Ref::new(Matrix2x3::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(arg))) => Ok(Box::new([<$lib $lhs_type:camel M3x2>]{arg, out: Ref::new(Matrix3x2::from_element($default))})),         
+            (Value::$matrix_kind(Matrix::Matrix3x2(arg))) => Ok(Box::new([<$lib $lhs_type:camel M3x2>]{arg, out: Ref::new(Matrix3x2::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
             (Value::$matrix_kind(Matrix::RowVector2(arg))) => Ok(Box::new([<$lib $lhs_type:camel R2>]{arg: arg.clone(), out: Ref::new(RowVector2::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]

@@ -1,89 +1,164 @@
 use crate::*;
-use mech_core::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
 use nalgebra::ComplexField;
 
 // Solve  ------------------------------------------------------------------
 
 #[macro_export]
 macro_rules! impl_binop_solve {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
-    #[derive(Debug)]
-    pub struct $struct_name<T> {
-      pub lhs: Ref<$arg1_type>,
-      pub rhs: Ref<$arg2_type>,
-      pub out: Ref<$out_type>,
-    }
-    impl<T> MechFunctionFactory for $struct_name<T> 
-    where
-      #[cfg(feature = "compiler")]      T: Copy + Debug + Display + Clone + Sync + Send + 'static + PartialEq + PartialOrd + ComplexField + AsValueKind + Add<Output = T> + AddAssign +Sub<Output = T> + SubAssign +Mul<Output = T> + MulAssign +Div<Output = T> + DivAssign +Zero + One + ConstElem + CompileConst + AsValueKind,
-      #[cfg(not(feature = "compiler"))] T: Copy + Debug + Display + Clone + Sync + Send + 'static + PartialEq + PartialOrd + ComplexField + AsValueKind + Add<Output = T> + AddAssign +Sub<Output = T> + SubAssign +Mul<Output = T> + MulAssign +Div<Output = T> + DivAssign +Zero + One,
-      Ref<$out_type>: ToValue,
-    {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Binary(out, arg1, arg2) => {
-            let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
-            let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
-            let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(Self {lhs, rhs, out }))
-          },
-          _ => Err(MechError::new(
-              IncorrectNumberOfArguments { expected: 2, found: args.len() }, 
-              None
-            ).with_compiler_loc()
-          ),
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+        #[derive(Debug)]
+        pub struct $struct_name<T> {
+            pub lhs: Ref<$arg1_type>,
+            pub rhs: Ref<$arg2_type>,
+            pub out: Ref<$out_type>,
         }
-      }
-    }
-    impl<T> MechFunctionImpl for $struct_name<T>
-    where
-      T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + ComplexField +
-      Add<Output = T> + AddAssign +
-      Sub<Output = T> + SubAssign +
-      Mul<Output = T> + MulAssign +
-      Div<Output = T> + DivAssign +
-      Zero + One,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-          let lhs_ptr = self.lhs.as_ptr();
-          let rhs_ptr = self.rhs.as_ptr();
-          let out_ptr = self.out.as_mut_ptr();
-          $op!(lhs_ptr,rhs_ptr,out_ptr);
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
+        impl<T> MechFunctionFactory for $struct_name<T>
+        where
+            #[cfg(feature = "compiler")]
+            T: Copy
+                + Debug
+                + Display
+                + Clone
+                + Sync
+                + Send
+                + 'static
+                + PartialEq
+                + PartialOrd
+                + ComplexField
+                + AsValueKind
+                + Add<Output = T>
+                + AddAssign
+                + Sub<Output = T>
+                + SubAssign
+                + Mul<Output = T>
+                + MulAssign
+                + Div<Output = T>
+                + DivAssign
+                + Zero
+                + One
+                + ConstElem
+                + CompileConst
+                + AsValueKind,
+            #[cfg(not(feature = "compiler"))]
+            T: Copy
+                + Debug
+                + Display
+                + Clone
+                + Sync
+                + Send
+                + 'static
+                + PartialEq
+                + PartialOrd
+                + ComplexField
+                + AsValueKind
+                + Add<Output = T>
+                + AddAssign
+                + Sub<Output = T>
+                + SubAssign
+                + Mul<Output = T>
+                + MulAssign
+                + Div<Output = T>
+                + DivAssign
+                + Zero
+                + One,
+            Ref<$out_type>: ToValue,
+        {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Binary(out, arg1, arg2) => {
+                        let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
+                        let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
+                        let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+                        Ok(Box::new(Self { lhs, rhs, out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+        impl<T> MechFunctionImpl for $struct_name<T>
+        where
+            T: Copy
+                + Debug
+                + Display
+                + Clone
+                + Sync
+                + Send
+                + 'static
+                + PartialEq
+                + PartialOrd
+                + ComplexField
+                + Add<Output = T>
+                + AddAssign
+                + Sub<Output = T>
+                + SubAssign
+                + Mul<Output = T>
+                + MulAssign
+                + Div<Output = T>
+                + DivAssign
+                + Zero
+                + One,
+            Ref<$out_type>: ToValue,
+        {
+            fn solve(&self) {
+                let lhs_ptr = self.lhs.as_ptr();
+                let rhs_ptr = self.rhs.as_ptr();
+                let out_ptr = self.out.as_mut_ptr();
+                $op!(lhs_ptr, rhs_ptr, out_ptr);
+            }
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
 
-      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(self.reactive_output_values())
-      }
-    }   
-    #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $struct_name<T> 
-    where
-      T: ConstElem + CompileConst + AsValueKind
-    {
-      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-        compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
-      }
-    }
-  };
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $struct_name<T>
+        where
+            T: ConstElem + CompileConst + AsValueKind,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
+            }
+        }
+    };
 }
 
 macro_rules! solve_op {
-  ($a:expr, $b:expr, $out:expr) => {
-    unsafe { *$out = (*$a).clone().lu().solve(&*$b).unwrap(); }
-  };}
+    ($a:expr, $b:expr, $out:expr) => {
+        unsafe {
+            *$out = (*$a).clone().lu().solve(&*$b).unwrap();
+        }
+    };
+}
 
 macro_rules! impl_solve {
-  ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-    impl_binop_solve!($name, $type1, $type2, $out_type, solve_op, FeatureFlag::Builtin(FeatureKind::Solve));
-    register_fxn_descriptor!($name, f64, "f64");
-  };
+    ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
+        impl_binop_solve!(
+            $name,
+            $type1,
+            $type2,
+            $out_type,
+            solve_op,
+            FeatureFlag::Builtin(FeatureKind::Solve)
+        );
+        register_fxn_descriptor!($name, f64, "f64");
+    };
 }
 
 #[cfg(all(feature = "matrixd", feature = "vectord"))]
@@ -132,13 +207,13 @@ macro_rules! impl_solve_match_arms {
 }
 
 fn impl_solve_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_solve_match_arms!(
-    (lhs_value, rhs_value),
-    MatrixF32,  f32,  "f32";
-    MatrixF64,  f64,  "f64";
-    //R64, MatrixR64, R64, "rational";
-    //C64, MatrixC64, C64, "complex";
-  )
+    impl_solve_match_arms!(
+      (lhs_value, rhs_value),
+      MatrixF32,  f32,  "f32";
+      MatrixF64,  f64,  "f64";
+      //R64, MatrixR64, R64, "rational";
+      //C64, MatrixC64, C64, "complex";
+    )
 }
 
 impl_mech_binop_fxn!(MatrixSolve, impl_solve_fxn, "matrix/solve");

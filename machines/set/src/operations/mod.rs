@@ -1,6 +1,5 @@
 // operations module (union/intersect etc.)
 #[macro_use]
-
 #[cfg(feature = "cartesian_product")]
 pub mod cartesian_product;
 //#[cfg(feature = "complement")]

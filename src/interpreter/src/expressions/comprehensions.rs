@@ -1,22 +1,22 @@
 use super::{
-  ComprehensionGeneratorError, Environment, SetComprehensionOutputKindMismatchError, expression,
+    ComprehensionGeneratorError, Environment, SetComprehensionOutputKindMismatchError, expression,
 };
+use crate::patterns::PatternBindingSink;
 #[cfg(feature = "compiler")]
 use crate::{
-  BytecodeCompilerContext, CompileConst, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
+    BytecodeCompilerContext, CompileConst, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
 };
+use crate::{
+    ComprehensionQualifier, FunctionArgs, IncorrectNumberOfArguments, Interpreter,
+    InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
+    MissingFunctionError, NativeFunctionCompiler, Ref, ToValue, Value,
+    execute_native_function_compiler, hash_str,
+};
+use crate::{FunctionCompilerDescriptor, FunctionDescriptor};
 #[cfg(feature = "matrix_comprehensions")]
 use crate::{Matrix, MatrixComprehension, MatrixHorzCat};
 #[cfg(feature = "set_comprehensions")]
 use crate::{MechSet, SetComprehension};
-use crate::{
-  ComprehensionQualifier, FunctionArgs, IncorrectNumberOfArguments, Interpreter,
-  InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
-  MissingFunctionError, NativeFunctionCompiler, Ref, ToValue, Value,
-  execute_native_function_compiler, hash_str,
-};
-use crate::{FunctionCompilerDescriptor, FunctionDescriptor};
-use crate::patterns::PatternBindingSink;
 use std::collections::HashMap;
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
@@ -35,27 +35,16 @@ fn comprehension_environments(
                 let compiled = crate::patterns::compile_pattern(pttrn, None, &new_p)?;
                 let mut new_envs = Vec::new();
                 for env in &envs {
-                    let collection = p.with_interpreter(
-                        &new_p,
-                        |execution| expression(
-                            expr,
-                            Some(env),
-                            execution,
-                        ),
-                    )?;
+                    let collection = p.with_interpreter(&new_p, |execution| {
+                        expression(expr, Some(env), execution)
+                    })?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
-                        let pattern_match = p.with_interpreter(
-                            &new_p,
-                            |execution| {
-                                crate::patterns::match_compiled_pattern_with_environment_constraints(
-                                    &compiled,
-                                    &elmnt,
-                                    &new_env,
-                                    execution,
-                                )
-                            },
-                        )?;
+                        let pattern_match = p.with_interpreter(&new_p, |execution| {
+                            crate::patterns::match_compiled_pattern_with_environment_constraints(
+                                &compiled, &elmnt, &new_env, execution,
+                            )
+                        })?;
                         if pattern_match.matched {
                             crate::patterns::EnvironmentBindingSink::new(&mut new_env)
                                 .commit(&pattern_match)?;
@@ -68,14 +57,9 @@ fn comprehension_environments(
             ComprehensionQualifier::Filter(expr) => envs
                 .into_iter()
                 .filter(|env| {
-                    let result = p.with_interpreter(
-                        &new_p,
-                        |execution| expression(
-                            expr,
-                            Some(env),
-                            execution,
-                        ),
-                    );
+                    let result = p.with_interpreter(&new_p, |execution| {
+                        expression(expr, Some(env), execution)
+                    });
                     match result {
                         Ok(Value::Bool(v)) => v.borrow().clone(),
                         Ok(_) => false,
@@ -86,14 +70,9 @@ fn comprehension_environments(
             ComprehensionQualifier::Let(var_def) => envs
                 .into_iter()
                 .map(|mut env| -> MResult<_> {
-                    let val = p.with_interpreter(
-                        &new_p,
-                        |execution| expression(
-                            &var_def.expression,
-                            Some(&env),
-                            execution,
-                        ),
-                    )?;
+                    let val = p.with_interpreter(&new_p, |execution| {
+                        expression(&var_def.expression, Some(&env), execution)
+                    })?;
                     env.insert(var_def.var.name.hash(), val);
                     Ok(env)
                 })
@@ -195,9 +174,9 @@ impl MechFunctionImpl for ValueSetComprehension {
         format!("{:#?}", self)
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
@@ -360,19 +339,17 @@ register_descriptor! {
 }
 
 #[cfg(feature = "set_comprehensions")]
-pub fn set_comprehension(set_comp: &SetComprehension, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn set_comprehension(
+    set_comp: &SetComprehension,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
     let comprehension_id = hash_str(&format!("{:?}", set_comp));
     let (envs, new_p) = comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
     for env in envs {
-        let val = p.with_interpreter(
-            &new_p,
-            |execution| expression(
-                &set_comp.expression,
-                Some(&env),
-                execution,
-            ),
-        )?;
+        let val = p.with_interpreter(&new_p, |execution| {
+            expression(&set_comp.expression, Some(&env), execution)
+        })?;
         values.push(val);
     }
     let functions = p.functions();
@@ -397,19 +374,17 @@ pub fn set_comprehension(set_comp: &SetComprehension, p: &InterpreterExecution<'
 }
 
 #[cfg(feature = "matrix_comprehensions")]
-pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn matrix_comprehension(
+    matrix_comp: &MatrixComprehension,
+    p: &InterpreterExecution<'_>,
+) -> MResult<Value> {
     let comprehension_id = hash_str(&format!("{:?}", matrix_comp));
     let (envs, new_p) = comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
     for env in envs {
-        values.push(p.with_interpreter(
-            &new_p,
-            |execution| expression(
-                &matrix_comp.expression,
-                Some(&env),
-                execution,
-            ),
-        )?);
+        values.push(p.with_interpreter(&new_p, |execution| {
+            expression(&matrix_comp.expression, Some(&env), execution)
+        })?);
     }
     let functions = p.functions();
     let horzcat_id = hash_str("matrix/comprehension");

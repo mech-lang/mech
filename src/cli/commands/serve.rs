@@ -9,8 +9,7 @@ use crate::cli::resources::{
 };
 use crate::cli::{capabilities, config, serve_options};
 use crate::{
-    ConfiguredProjectOverlay, MechError, MechServer, ServeInputPlan,
-    plan_cli_serve_inputs,
+    ConfiguredProjectOverlay, MechError, MechServer, ServeInputPlan, plan_cli_serve_inputs,
 };
 
 fn render_capability_events(badge: &str, events: &[capabilities::FilesystemCapabilityEvent]) {
@@ -86,10 +85,7 @@ fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
     }
 }
 
-fn document_controller_for_shim(
-    shim: &str,
-    document_js: Option<&str>,
-) -> MResult<Option<String>> {
+fn document_controller_for_shim(shim: &str, document_js: Option<&str>) -> MResult<Option<String>> {
     if !shim.contains("{{DOCUMENT_SCRIPT}}") {
         return Ok(None);
     }
@@ -126,7 +122,6 @@ fn shipped_document_shim_name(source: &ResourceSource) -> Option<String> {
         ResourceSource::RemoteUrl(_) => None,
     }
 }
-
 
 pub(crate) fn command() -> Command {
     Command::new("serve")
@@ -288,7 +283,9 @@ pub(crate) fn prepare(
     };
     let workspace_plan = plan_cli_serve_inputs(
         &effective.paths,
-        project_overlay.as_ref().map(|project| project.root.as_path()),
+        project_overlay
+            .as_ref()
+            .map(|project| project.root.as_path()),
     )?;
 
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
@@ -353,7 +350,6 @@ pub(crate) fn prepare(
     })
 }
 
-
 #[derive(Debug)]
 struct LoadedBrowserAssets {
     project_js: Option<&'static str>,
@@ -369,15 +365,44 @@ async fn load_browser_assets(
     let project_js = resources.project_js;
     let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
     let js_path = format!("{}/mech_wasm.js", wasm_pkg);
-    let wasm = load_resource(authority, &wasm_path, &resources.wasm_backup_url, resources.mech_wasm).await?;
-    let js = load_resource(authority, &js_path, &resources.js_backup_url, resources.mech_js).await?;
+    let wasm = load_resource(
+        authority,
+        &wasm_path,
+        &resources.wasm_backup_url,
+        resources.mech_wasm,
+    )
+    .await?;
+    let js = load_resource(
+        authority,
+        &js_path,
+        &resources.js_backup_url,
+        resources.mech_js,
+    )
+    .await?;
     if !wasm.bytes.starts_with(b"\0asm") {
-        return Err(MechError::new(GenericError { msg: "browser WASM asset is not a raw WebAssembly module (missing \\0asm magic)".to_string() }, None).with_compiler_loc());
+        return Err(MechError::new(
+            GenericError {
+                msg: "browser WASM asset is not a raw WebAssembly module (missing \\0asm magic)"
+                    .to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
     }
     if js.bytes.is_empty() {
-        return Err(MechError::new(GenericError { msg: "browser JavaScript wrapper is empty".to_string() }, None).with_compiler_loc());
+        return Err(MechError::new(
+            GenericError {
+                msg: "browser JavaScript wrapper is empty".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
     }
-    Ok(LoadedBrowserAssets { project_js, wasm, js })
+    Ok(LoadedBrowserAssets {
+        project_js,
+        wasm,
+        js,
+    })
 }
 
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
@@ -408,7 +433,12 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         css: stylesheet_str,
         events,
         local_paths: stylesheet_backing_paths,
-    } = load_stylesheets(&options.authority, &options.stylesheet_paths, &resources.stylesheet_backup_url).await?;
+    } = load_stylesheets(
+        &options.authority,
+        &options.stylesheet_paths,
+        &resources.stylesheet_backup_url,
+    )
+    .await?;
     render_resource_events(&badge.to_string(), "stylesheet", &events);
 
     print!("{badge} Loading HTML shim…");
@@ -434,13 +464,14 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         )
         .with_compiler_loc()
     })?;
-    let document_controller = document_controller_for_shim(
-        &shim_str,
-        resources.document_js,
-    )?;
+    let document_controller = document_controller_for_shim(&shim_str, resources.document_js)?;
 
     print!("{badge} Loading WASM…");
-    let LoadedBrowserAssets { project_js, wasm, js } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
+    let LoadedBrowserAssets {
+        project_js,
+        wasm,
+        js,
+    } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
     render_resource_events(&badge.to_string(), "WASM", &wasm.events);
     let wasm_backing_paths = match &wasm.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -501,11 +532,24 @@ fn serve_host_delegation_injection(
     let public_key = matches
         .get_one::<String>("host_delegation_public_key")
         .ok_or_else(|| {
-            MechError::new(GenericError { msg: "--host-delegation-public-key is required with --host-delegation-key".to_string() }, None).with_compiler_loc()
+            MechError::new(
+                GenericError {
+                    msg: "--host-delegation-public-key is required with --host-delegation-key"
+                        .to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
         })?;
 
     let Some(loaded_config) = loaded_config else {
-        return Err(MechError::new(GenericError { msg: "host delegation signing requires a loaded config".to_string() }, None).with_compiler_loc());
+        return Err(MechError::new(
+            GenericError {
+                msg: "host delegation signing requires a loaded config".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
     };
 
     let current_dir = std::env::current_dir()?;
@@ -534,7 +578,13 @@ fn serve_host_delegation_injection(
             .map(|value| value.parse())
             .transpose()
             .map_err(|_| {
-                MechError::new(GenericError { msg: "--host-delegation-expires-ms must be an integer".to_string() }, None).with_compiler_loc()
+                MechError::new(
+                    GenericError {
+                        msg: "--host-delegation-expires-ms must be an integer".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
             })?,
     };
 
@@ -552,16 +602,26 @@ fn serve_host_delegation_injection(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::{DefaultIdGenerator, HostFilesystemAuthority, SharedCapabilityKernel, FS_READ, MECH_TOOL_SUBJECT};
+    use mech_runtime::{
+        DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT,
+        SharedCapabilityKernel,
+    };
 
     fn authority_for(path: &std::path::Path) -> HostFilesystemAuthority {
-        let mut authority = HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+        let mut authority =
+            HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
         let mut ids = DefaultIdGenerator::new();
-        authority.grant_path(&mut ids, path, true, [FS_READ]).unwrap();
+        authority
+            .grant_path(&mut ids, path, true, [FS_READ])
+            .unwrap();
         authority
     }
 
-    fn defaults(project_js: Option<&'static str>, mech_wasm: Option<&'static [u8]>, mech_js: Option<&'static [u8]>) -> WebResourceDefaults {
+    fn defaults(
+        project_js: Option<&'static str>,
+        mech_wasm: Option<&'static [u8]>,
+        mech_js: Option<&'static [u8]>,
+    ) -> WebResourceDefaults {
         WebResourceDefaults {
             stylesheet_backup_url: "http://unused/style.css".to_string(),
             shim_backup_url: "http://unused/shim.html".to_string(),
@@ -583,7 +643,14 @@ mod tests {
         std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0").unwrap();
         std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
         let authority = authority_for(root.path());
-        let assets = tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(Some("project"), None, None))).unwrap();
+        let assets = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(load_browser_assets(
+                &authority,
+                pkg.to_str().unwrap(),
+                &defaults(Some("project"), None, None),
+            ))
+            .unwrap();
         assert_eq!(assets.project_js, Some("project"));
         assert_eq!(assets.wasm.bytes, b"\0asm\x01\0\0\0");
         assert_eq!(assets.js.bytes, b"local-js");
@@ -593,8 +660,21 @@ mod tests {
     fn missing_local_and_embedded_wasm_fails() {
         let root = tempfile::tempdir().unwrap();
         let authority = authority_for(root.path());
-        let error = format!("{:?}", tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, root.path().join("missing").to_str().unwrap(), &defaults(Some("project"), None, Some(b"js")))).unwrap_err());
-        assert!(error.contains("mech_wasm_bg.wasm") || error.contains("unused"), "{error}");
+        let error = format!(
+            "{:?}",
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(load_browser_assets(
+                    &authority,
+                    root.path().join("missing").to_str().unwrap(),
+                    &defaults(Some("project"), None, Some(b"js"))
+                ))
+                .unwrap_err()
+        );
+        assert!(
+            error.contains("mech_wasm_bg.wasm") || error.contains("unused"),
+            "{error}"
+        );
     }
 
     #[test]
@@ -605,7 +685,14 @@ mod tests {
         std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0").unwrap();
         std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
         let authority = authority_for(root.path());
-        let assets = tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, pkg.to_str().unwrap(), &defaults(None, None, None))).unwrap();
+        let assets = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(load_browser_assets(
+                &authority,
+                pkg.to_str().unwrap(),
+                &defaults(None, None, None),
+            ))
+            .unwrap();
         assert_eq!(assets.project_js, None);
     }
 
@@ -613,7 +700,17 @@ mod tests {
     fn compressed_or_invalid_wasm_is_rejected() {
         let root = tempfile::tempdir().unwrap();
         let authority = authority_for(root.path());
-        let error = format!("{:?}", tokio::runtime::Runtime::new().unwrap().block_on(load_browser_assets(&authority, "", &defaults(Some("project"), Some(b"not-wasm"), Some(b"js")))).unwrap_err());
+        let error = format!(
+            "{:?}",
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(load_browser_assets(
+                    &authority,
+                    "",
+                    &defaults(Some("project"), Some(b"not-wasm"), Some(b"js"))
+                ))
+                .unwrap_err()
+        );
         assert!(error.contains("raw WebAssembly"), "{error}");
     }
 }

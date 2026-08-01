@@ -1,9 +1,7 @@
 use super::captures::transaction_bool_state;
 use super::{ActivationPatternCapture, GuardFinalize, ReactiveBindingSink};
 #[cfg(feature = "compiler")]
-use crate::{
-    BytecodeCompilerContext, GenericError, MechError, MechFunctionCompiler, Register,
-};
+use crate::{BytecodeCompilerContext, GenericError, MechError, MechFunctionCompiler, Register};
 use crate::{
     CompiledPattern, MResult, MechFunctionImpl, PatternBindingSink, ReactiveDependencyKind,
     ReactiveDependencyScope, ReactiveSolveStatus, Ref, Value, match_compiled_pattern_with_values,
@@ -28,9 +26,9 @@ impl MechFunctionImpl for ScopePulse {
         "ActivationPatternScopePulse".into()
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 pub(super) struct Matcher {
     pub(super) pattern: CompiledPattern,
@@ -69,7 +67,10 @@ impl MechFunctionImpl for Matcher {
         values.push(transaction_bool_state(&self.matched)?);
         Ok(values)
     }
-    fn reactive_dependency_kinds(&self, argument_count: usize) -> Option<Vec<ReactiveDependencyKind>> {
+    fn reactive_dependency_kinds(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyKind>> {
         let mut kinds = vec![ReactiveDependencyKind::Sampled; argument_count];
         if let Some(scope_pulse) = kinds.first_mut() {
             *scope_pulse = ReactiveDependencyKind::Reactive;
@@ -125,9 +126,9 @@ impl MechFunctionImpl for MatchGate {
         "ActivationPatternGuardMatchGate".into()
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 pub(super) struct UnmatchedFinalize {
     pub(super) matched: Ref<bool>,

@@ -1,9 +1,7 @@
 use super::super::super::program::{
     reset_runtime_program_checkpoint_count, runtime_program_checkpoint_count,
 };
-use super::{
-    ReactiveTransactionalProbe, add_panicking_test_function, add_test_function,
-};
+use super::{ReactiveTransactionalProbe, add_panicking_test_function, add_test_function};
 use crate::runtime::test_support::{
     capabilities::grant_read,
     providers::{test_provider_with, test_runtime},
@@ -85,7 +83,10 @@ fn implicit_reactive_panic_cleans_transaction_before_unwind() {
     assert_eq!(runtime.program_transaction_owner, None);
     assert_eq!(context.transaction, None);
     assert!(runtime.active_program_operation.get().is_none());
-    assert!(matches!(runtime.runtime_health(), RuntimeHealth::Poisoned(_)));
+    assert!(matches!(
+        runtime.runtime_health(),
+        RuntimeHealth::Poisoned(_)
+    ));
 
     let error = runtime.run_string("after-panic := 1").unwrap_err();
     assert_eq!(error.kind_name(), "RuntimePoisoned");
@@ -124,7 +125,10 @@ fn explicit_reactive_panic_aborts_transaction_before_unwind() {
     assert_eq!(context.transaction, None);
     assert_eq!(runtime.program_transaction_owner, None);
     assert_eq!(*log.lock().unwrap(), vec!["abort"]);
-    assert!(matches!(runtime.runtime_health(), RuntimeHealth::Poisoned(_)));
+    assert!(matches!(
+        runtime.runtime_health(),
+        RuntimeHealth::Poisoned(_)
+    ));
 }
 
 #[test]
@@ -146,9 +150,10 @@ fn host_input_reactive_panic_cleans_transaction_before_unwind() {
     let input_cell = source_cell(&runtime, &source);
     let plan = runtime.program.interpreter().plan();
     let panic_node = plan.borrow().len() - 1;
-    assert!(plan
-        .borrow_mut()
-        .add_reactive_dependency(panic_node, input_cell));
+    assert!(
+        plan.borrow_mut()
+            .add_reactive_dependency(panic_node, input_cell)
+    );
     let events_before = runtime.list_events(None).unwrap().len();
 
     let panic = catch_unwind(AssertUnwindSafe(|| {
@@ -166,14 +171,21 @@ fn host_input_reactive_panic_cleans_transaction_before_unwind() {
     assert_eq!(runtime.program_transaction_owner, None);
     assert_eq!(context.transaction, None);
     assert!(runtime.active_program_operation.get().is_none());
-    assert!(matches!(runtime.runtime_health(), RuntimeHealth::Poisoned(_)));
+    assert!(matches!(
+        runtime.runtime_health(),
+        RuntimeHealth::Poisoned(_)
+    ));
     let operation_events = &runtime.list_events(None).unwrap()[events_before..];
-    assert!(operation_events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::TransactionAborted { .. })));
-    assert!(!operation_events
-        .iter()
-        .any(|event| matches!(event.kind, RuntimeEventKind::TransactionCommitted { .. })));
+    assert!(
+        operation_events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::TransactionAborted { .. }))
+    );
+    assert!(
+        !operation_events
+            .iter()
+            .any(|event| matches!(event.kind, RuntimeEventKind::TransactionCommitted { .. }))
+    );
     assert!(!operation_events.iter().any(|event| matches!(
         event.kind,
         RuntimeEventKind::TransactionalEffectCommitted { .. }
@@ -216,10 +228,12 @@ fn reactive_panic_cleanup_failure_poisons_before_unwind() {
         panic!("runtime must be poisoned after panic cleanup failure");
     };
     assert!(poison.original_error.contains(PANIC_MESSAGE));
-    assert!(poison
-        .rollback_failures
-        .iter()
-        .any(|failure| failure.contains("deliberate reactive abort failure")));
+    assert!(
+        poison
+            .rollback_failures
+            .iter()
+            .any(|failure| failure.contains("deliberate reactive abort failure"))
+    );
     assert!(poison.rollback_failures.iter().any(|failure| failure.contains(
         "retained program state is not trusted after panic unwound through the compact reactive journal",
     )));

@@ -10,45 +10,45 @@ extern crate paste;
 
 use paste::paste;
 
-#[cfg(feature = "vector3")]
-use nalgebra::Vector3;
+#[cfg(feature = "matrixd")]
+use nalgebra::DMatrix;
 #[cfg(feature = "vectord")]
 use nalgebra::DVector;
-#[cfg(feature = "vector2")]
-use nalgebra::Vector2;
-#[cfg(feature = "vector4")]
-use nalgebra::Vector4;
+#[cfg(feature = "matrix1")]
+use nalgebra::Matrix1;
+#[cfg(feature = "matrix2")]
+use nalgebra::Matrix2;
+#[cfg(feature = "matrix2x3")]
+use nalgebra::Matrix2x3;
+#[cfg(feature = "matrix3")]
+use nalgebra::Matrix3;
+#[cfg(feature = "matrix3x2")]
+use nalgebra::Matrix3x2;
+#[cfg(feature = "matrix4")]
+use nalgebra::Matrix4;
 #[cfg(feature = "rowdvector")]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;
-#[cfg(feature = "matrix1")]
-use nalgebra::Matrix1;
-#[cfg(feature = "matrix3")]
-use nalgebra::Matrix3;
-#[cfg(feature = "matrix4")]
-use nalgebra::Matrix4;
+#[cfg(feature = "row_vector2")]
+use nalgebra::RowVector2;
 #[cfg(feature = "row_vector3")]
 use nalgebra::RowVector3;
 #[cfg(feature = "row_vector4")]
 use nalgebra::RowVector4;
-#[cfg(feature = "row_vector2")]
-use nalgebra::RowVector2;
-#[cfg(feature = "matrixd")]
-use nalgebra::DMatrix;
-#[cfg(feature = "matrix2x3")]
-use nalgebra::Matrix2x3;
-#[cfg(feature = "matrix3x2")]
-use nalgebra::Matrix3x2;
-#[cfg(feature = "matrix2")]
-use nalgebra::Matrix2;
+#[cfg(feature = "vector2")]
+use nalgebra::Vector2;
+#[cfg(feature = "vector3")]
+use nalgebra::Vector3;
+#[cfg(feature = "vector4")]
+use nalgebra::Vector4;
 
-use std::ops::*;
-#[cfg(feature = "range")]
-use num_traits::{Zero, One};
-use std::fmt::Debug;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+#[cfg(feature = "range")]
+use num_traits::{One, Zero};
+use std::fmt::Debug;
+use std::ops::*;
 
 #[cfg(feature = "exclusive")]
 pub mod exclusive;
@@ -76,68 +76,65 @@ use mech_core::MechErrorKind;
 
 #[macro_export]
 macro_rules! register_range {
-  ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
-    paste! {
-      register_descriptor! {
-        FunctionDescriptor {
-          name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
-          ptr: $fxn_name::<$scalar, $row1<$scalar>>::new,
+    ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
+        paste! {
+          register_descriptor! {
+            FunctionDescriptor {
+              name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
+              ptr: $fxn_name::<$scalar, $row1<$scalar>>::new,
+            }
+          }
         }
-      }
-    }
-  };
+    };
 }
 
 #[derive(Debug, Clone)]
 pub struct EmptyRangeError;
 impl MechErrorKind for EmptyRangeError {
-  fn name(&self) -> &str { "EmptyRange" }
-  fn message(&self) -> String {
-    "Range size must be > 0".to_string()
-  }
+    fn name(&self) -> &str {
+        "EmptyRange"
+    }
+    fn message(&self) -> String {
+        "Range size must be > 0".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct RangeSizeOverflowError;
 
 impl MechErrorKind for RangeSizeOverflowError {
-  fn name(&self) -> &str { "RangeSizeOverflow" }
-  fn message(&self) -> String {
-    "Range size overflow".to_string()
-  }
+    fn name(&self) -> &str {
+        "RangeSizeOverflow"
+    }
+    fn message(&self) -> String {
+        "Range size overflow".to_string()
+    }
 }
 
 #[macro_export]
 macro_rules! range_size_to_usize {
-  // Float f32 branch
-  ($diff:expr, f32) => {{
-    let v: f32 = $diff;
-    if v < 0.0 {
-      return Err(MechError::new(
-        RangeSizeOverflowError {},
-        None
-      ).with_compiler_loc());
-    }
-    v as usize
-  }};
-  
-  // Float f64 branch
-  ($diff:expr, f64) => {{
-    let v: f64 = $diff;
-    if v < 0.0 {
-      return Err(MechError::new(
-        RangeSizeOverflowError {},
-        None
-      ).with_compiler_loc());
-    }
-    v as usize
-  }};
-  
-  // Integer branch
-  ($diff:expr, $ty:ty) => {{
-    $diff.try_into().map_err(|_| MechError::new(
-      RangeSizeOverflowError {},
-      None
-    ).with_compiler_loc())?
-  }};
+    // Float f32 branch
+    ($diff:expr, f32) => {{
+        let v: f32 = $diff;
+        if v < 0.0 {
+            return Err(MechError::new(RangeSizeOverflowError {}, None).with_compiler_loc());
+        }
+        v as usize
+    }};
+
+    // Float f64 branch
+    ($diff:expr, f64) => {{
+        let v: f64 = $diff;
+        if v < 0.0 {
+            return Err(MechError::new(RangeSizeOverflowError {}, None).with_compiler_loc());
+        }
+        v as usize
+    }};
+
+    // Integer branch
+    ($diff:expr, $ty:ty) => {{
+        $diff
+            .try_into()
+            .map_err(|_| MechError::new(RangeSizeOverflowError {}, None).with_compiler_loc())?
+    }};
 }

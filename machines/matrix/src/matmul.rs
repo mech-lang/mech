@@ -1,29 +1,78 @@
 use crate::*;
-use mech_core::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
 
 // MatMul ---------------------------------------------------------------------
 
 macro_rules! mul_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs * *$rhs; }
-  };}
-
-macro_rules! matmul_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
-  };}
-
-macro_rules! impl_matmul {
-  ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-    impl_binop!($name, $type1, $type2, $out_type, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
-    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
-  };
+    ($lhs:expr, $rhs:expr, $out:expr) => {
+        unsafe {
+            *$out = *$lhs * *$rhs;
+        }
+    };
 }
 
-impl_binop!(MatMulScalar, T,T,T,mul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
-register_fxn_descriptor!(MatMulScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64");
+macro_rules! matmul_op {
+    ($lhs:expr, $rhs:expr, $out:expr) => {
+        unsafe {
+            (*$lhs).mul_to(&*$rhs, &mut *$out);
+        }
+    };
+}
+
+macro_rules! impl_matmul {
+    ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
+        impl_binop!(
+            $name,
+            $type1,
+            $type2,
+            $out_type,
+            matmul_op,
+            FeatureFlag::Builtin(FeatureKind::MatMul)
+        );
+        register_fxn_descriptor!(
+            $name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16,
+            "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64"
+        );
+    };
+}
+
+impl_binop!(
+    MatMulScalar,
+    T,
+    T,
+    T,
+    mul_op,
+    FeatureFlag::Builtin(FeatureKind::MatMul)
+);
+register_fxn_descriptor!(
+    MatMulScalar,
+    u8,
+    "u8",
+    u16,
+    "u16",
+    u32,
+    "u32",
+    u64,
+    "u64",
+    u128,
+    "u128",
+    i8,
+    "i8",
+    i16,
+    "i16",
+    i32,
+    "i32",
+    i64,
+    "i64",
+    i128,
+    "i128",
+    f32,
+    "f32",
+    f64,
+    "f64"
+);
 
 #[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))]
 impl_matmul!(MatMulR4V4, RowVector4<T>, Vector4<T>, Matrix1<T>);
@@ -45,14 +94,23 @@ impl_matmul!(MatMulR3MD, RowVector3<T>, DMatrix<T>, RowDVector<T>);
 impl_matmul!(MatMulR2V2, RowVector2<T>, Vector2<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "row_vector2"))]
 impl_matmul!(MatMulR2M2, RowVector2<T>, Matrix2<T>, RowVector2<T>);
-#[cfg(all(feature = "row_vector2", feature = "matrix2x3", feature = "row_vector3"))]
+#[cfg(all(
+    feature = "row_vector2",
+    feature = "matrix2x3",
+    feature = "row_vector3"
+))]
 impl_matmul!(MatMulR2M2x3, RowVector2<T>, Matrix2x3<T>, RowVector3<T>);
 #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulR2MD, RowVector2<T>, DMatrix<T>, RowDVector<T>);
 
 #[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
 impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
-#[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
+#[cfg(all(
+    feature = "row_vectord",
+    feature = "vectord",
+    feature = "matrixd",
+    not(feature = "matrix1")
+))]
 impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, DMatrix<T>);
 #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
 impl_matmul!(MatMulRDMD, RowDVector<T>, DMatrix<T>, RowDVector<T>);
@@ -65,7 +123,7 @@ impl_matmul!(MatMulV3R3, Vector3<T>, RowVector3<T>, Matrix3<T>);
 impl_matmul!(MatMulV2R2, Vector2<T>, RowVector2<T>, Matrix2<T>);
 
 #[cfg(all(feature = "vectord", feature = "row_vectord", feature = "matrixd"))]
-impl_matmul!(MatMulVDRD, DVector<T>,RowDVector<T>,DMatrix<T>);
+impl_matmul!(MatMulVDRD, DVector<T>, RowDVector<T>, DMatrix<T>);
 
 #[cfg(all(feature = "matrix4", feature = "vector4"))]
 impl_matmul!(MatMulM4V4, Matrix4<T>, Vector4<T>, Vector4<T>);
@@ -114,13 +172,13 @@ impl_matmul!(MatMulM3x2M2x3, Matrix3x2<T>, Matrix2x3<T>, Matrix3<T>);
 impl_matmul!(MatMulM3x2MD, Matrix3x2<T>, DMatrix<T>, DMatrix<T>);
 
 #[cfg(feature = "matrixd")]
-impl_matmul!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>);
+impl_matmul!(MatMulMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
 #[cfg(all(feature = "matrixd", feature = "matrix3x2"))]
-impl_matmul!(MatMulMDM3x2, DMatrix<T>,Matrix3x2<T>,DMatrix<T>);
+impl_matmul!(MatMulMDM3x2, DMatrix<T>, Matrix3x2<T>, DMatrix<T>);
 #[cfg(all(feature = "matrixd", feature = "vectord"))]
-impl_matmul!(MatMulMDVD, DMatrix<T>,DVector<T>,DVector<T>);
+impl_matmul!(MatMulMDVD, DMatrix<T>, DVector<T>, DVector<T>);
 #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
-impl_matmul!(MatMulMDRD, DMatrix<T>,RowDVector<T>,DMatrix<T>);
+impl_matmul!(MatMulMDRD, DMatrix<T>, RowDVector<T>, DMatrix<T>);
 
 macro_rules! impl_matmul_match_arms {
   ($arg:expr, $($lhs_type:tt, $($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
@@ -302,23 +360,23 @@ macro_rules! impl_matmul_match_arms {
 }
 
 fn impl_matmul_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_matmul_match_arms!(
-    (lhs_value, rhs_value),
-    I8,   MatrixI8,   i8,   "i8";
-    I16,  MatrixI16,  i16,  "i16";
-    I32,  MatrixI32,  i32,  "i32";
-    I64,  MatrixI64,  i64,  "i64";
-    I128, MatrixI128, i128, "i128";
-    U8,   MatrixU8,   u8,   "u8";
-    U16,  MatrixU16,  u16,  "u16";
-    U32,  MatrixU32,  u32,  "u32";
-    U64,  MatrixU64,  u64,  "u64";
-    U128, MatrixU128, u128, "u128";
-    F32,  MatrixF32,  f32,  "f32";
-    F64,  MatrixF64,  f64,  "f64";
-    R64, MatrixR64, R64, "rational";
-    C64, MatrixC64, C64, "complex";
-  )
+    impl_matmul_match_arms!(
+      (lhs_value, rhs_value),
+      I8,   MatrixI8,   i8,   "i8";
+      I16,  MatrixI16,  i16,  "i16";
+      I32,  MatrixI32,  i32,  "i32";
+      I64,  MatrixI64,  i64,  "i64";
+      I128, MatrixI128, i128, "i128";
+      U8,   MatrixU8,   u8,   "u8";
+      U16,  MatrixU16,  u16,  "u16";
+      U32,  MatrixU32,  u32,  "u32";
+      U64,  MatrixU64,  u64,  "u64";
+      U128, MatrixU128, u128, "u128";
+      F32,  MatrixF32,  f32,  "f32";
+      F64,  MatrixF64,  f64,  "f64";
+      R64, MatrixR64, R64, "rational";
+      C64, MatrixC64, C64, "complex";
+    )
 }
 
-impl_mech_binop_fxn!(MatrixMatMul,impl_matmul_fxn,"matrix/matmul");
+impl_mech_binop_fxn!(MatrixMatMul, impl_matmul_fxn, "matrix/matmul");

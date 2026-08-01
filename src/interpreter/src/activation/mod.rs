@@ -8,8 +8,8 @@ mod guards;
 mod registers;
 
 use captures::{
-    ActivationPatternCapture, ReactiveBindingSink, commit_capture_slot,
-    commit_proposed_captures, create_capture_slot_for_kind, detached, generation,
+    ActivationPatternCapture, ReactiveBindingSink, commit_capture_slot, commit_proposed_captures,
+    create_capture_slot_for_kind, detached, generation,
 };
 use dispatch::{Finalize, MatchGate, Matcher, ScopePulse, Select, UnmatchedFinalize};
 use guards::{GuardFinalize, elaborate_patterned_arm_guard};

@@ -7,7 +7,7 @@ mod support;
 mod transactional;
 
 use support::{
-    after_commit, compensatable, effect, synthetic_error, transactional, CostedAfterCommit,
-    FailOnceAbortEffect, FailingEventIdGenerator, PanicEffectPhase, PanickingAfterCommitEffect,
-    PanickingCompensatableEffect, PanickingTransactionalEffect, SensitiveAfterCommit,
+    CostedAfterCommit, FailOnceAbortEffect, FailingEventIdGenerator, PanicEffectPhase,
+    PanickingAfterCommitEffect, PanickingCompensatableEffect, PanickingTransactionalEffect,
+    SensitiveAfterCommit, after_commit, compensatable, effect, synthetic_error, transactional,
 };

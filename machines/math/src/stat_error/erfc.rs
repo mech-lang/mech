@@ -1,72 +1,102 @@
 use crate::*;
-use mech_core::*;
-use num_traits::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use num_traits::*;
 
 // Erfc ------------------------------------------------------------------------
 
-use libm::{erfc,erfcf};
+use libm::{erfc, erfcf};
 macro_rules! erfc_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = erfc((*$arg));}
-  };}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = erfc((*$arg));
+        }
+    };
+}
 
 macro_rules! erfc_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = erfc(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = erfc(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 macro_rules! erfcf_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = erfcf((*$arg));}
-  };}  
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = erfcf((*$arg));
+        }
+    };
+}
 
 macro_rules! erfcf_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = erfcf(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = erfcf(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathErfc, f32, erfcf, FeatureFlag::Custom(hash_str("math/erfc")));
+impl_math_unop!(
+    MathErfc,
+    f32,
+    erfcf,
+    FeatureFlag::Custom(hash_str("math/erfc"))
+);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathErfc, f64, erfc, FeatureFlag::Custom(hash_str("math/erfc")));
+impl_math_unop!(
+    MathErfc,
+    f64,
+    erfc,
+    FeatureFlag::Custom(hash_str("math/erfc"))
+);
 
 fn impl_erfc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_urnop_match_arms2!(
-    MathErfc,
-    (lhs_value),
-    F32 => MatrixF32, F32, f32::zero(), "f32";
-    F64 => MatrixF64, F64, f64::zero(), "f64";
-  )
+    impl_urnop_match_arms2!(
+      MathErfc,
+      (lhs_value),
+      F32 => MatrixF32, F32, f32::zero(), "f32";
+      F64 => MatrixF64, F64, f64::zero(), "f64";
+    )
 }
 
 pub struct MathErfc {}
 
 impl NativeFunctionCompiler for MathErfc {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let input = arguments[0].clone();
-    match impl_erfc_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {impl_erfc_fxn(input.borrow().clone())}
-          x => Err(MechError::new(
-              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/erfc".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let input = arguments[0].clone();
+        match impl_erfc_fxn(input.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (input) {
+                (Value::MutableReference(input)) => impl_erfc_fxn(input.borrow().clone()),
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: "math/erfc".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

@@ -2,12 +2,12 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use mech_core::*;
+#[cfg(feature = "test")]
+use mech_program::IntegrityConstraintReport;
 use mech_runtime::{
     FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
     SourceRequest,
 };
-#[cfg(feature = "test")]
-use mech_program::IntegrityConstraintReport;
 
 #[cfg(feature = "test")]
 pub(crate) struct SourceModuleExecution {
@@ -141,8 +141,7 @@ pub(crate) fn execute_source_module_roots(
     config: RuntimeConfig,
     roots: &[PathBuf],
 ) -> MResult<MechRuntime> {
-    execute_source_module_roots_internal(config, roots)
-        .map(|execution| execution.runtime)
+    execute_source_module_roots_internal(config, roots).map(|execution| execution.runtime)
 }
 
 #[cfg(feature = "test")]
@@ -150,11 +149,9 @@ pub(crate) fn execute_source_module_roots_with_report(
     config: RuntimeConfig,
     roots: &[PathBuf],
 ) -> MResult<SourceModuleExecution> {
-    execute_source_module_roots_internal(config, roots).map(|execution| {
-        SourceModuleExecution {
-            runtime: execution.runtime,
-            integrity: execution.integrity,
-        }
+    execute_source_module_roots_internal(config, roots).map(|execution| SourceModuleExecution {
+        runtime: execution.runtime,
+        integrity: execution.integrity,
     })
 }
 
@@ -178,24 +175,17 @@ fn execute_source_module_roots_internal(
         let request = SourceRequest::from_filesystem_path(&root)?;
         #[cfg(feature = "test")]
         {
-            let report = runtime.resolve_and_run_root_module_report(
-                request,
-                module_build_options(),
-            )?;
+            let report =
+                runtime.resolve_and_run_root_module_report(request, module_build_options())?;
             integrity_evaluations.extend(report.integrity.evaluations);
         }
         #[cfg(not(feature = "test"))]
-        runtime.resolve_and_run_root_module(
-            request,
-            module_build_options(),
-        )?;
+        runtime.resolve_and_run_root_module(request, module_build_options())?;
     }
     Ok(SourceModuleExecutionInternal {
         runtime,
         #[cfg(feature = "test")]
-        integrity: IntegrityConstraintReport::from_evaluations(
-            integrity_evaluations,
-        ),
+        integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
     })
 }
 
@@ -394,17 +384,13 @@ mod tests {
         )
         .unwrap();
 
-        let execution =
-            execute_source_module_roots_with_report(config(), &[source]).unwrap();
+        let execution = execute_source_module_roots_with_report(config(), &[source]).unwrap();
 
         assert_eq!(execution.integrity.evaluations.len(), 1);
         let evaluation = &execution.integrity.evaluations[0];
         assert!(evaluation.passed);
         assert!(evaluation.name.contains("non-utf8-root-pass!"));
-        assert_f64(
-            execution.runtime.root_symbol_value("answer").unwrap(),
-            42.0,
-        );
+        assert_f64(execution.runtime.root_symbol_value("answer").unwrap(), 42.0);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

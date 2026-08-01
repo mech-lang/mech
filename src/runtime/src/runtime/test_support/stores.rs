@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::VecDeque;
+use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{InMemoryAppendEventFailureKind, InMemoryStore};
 
@@ -30,8 +30,7 @@ pub(crate) struct AppendEventFailureProbe {
 impl AppendEventFailureProbe {
     pub(crate) fn new() -> (InMemoryStore, Self) {
         let failures = Arc::new(Mutex::new(VecDeque::new()));
-        let store = InMemoryStore::new()
-            .with_append_event_failures_for_test(failures.clone());
+        let store = InMemoryStore::new().with_append_event_failures_for_test(failures.clone());
         (store, Self { failures })
     }
 

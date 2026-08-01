@@ -1,35 +1,47 @@
 use crate::*;
-use mech_core::*;
-use num_traits::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+use mech_core::*;
+use num_traits::*;
 
 // J0 ------------------------------------------------------------------------
 
-use libm::{j0,j0f};
+use libm::{j0, j0f};
 macro_rules! j0_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = j0((*$arg));}
-  };}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = j0((*$arg));
+        }
+    };
+}
 
 macro_rules! j0_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = j0(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = j0(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 macro_rules! j0f_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out) = j0f((*$arg));}
-  };}  
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            (*$out) = j0f((*$arg));
+        }
+    };
+}
 
 macro_rules! j0f_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((&mut (*$out))[i]) = j0f(((&(*$arg))[i]));
-      }}};}
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            for i in 0..(*$arg).len() {
+                ((&mut (*$out))[i]) = j0f(((&(*$arg))[i]));
+            }
+        }
+    };
+}
 
 #[cfg(feature = "f32")]
 impl_math_unop!(MathJ0, f32, j0f, FeatureFlag::Custom(hash_str("math/j0")));
@@ -37,36 +49,44 @@ impl_math_unop!(MathJ0, f32, j0f, FeatureFlag::Custom(hash_str("math/j0")));
 impl_math_unop!(MathJ0, f64, j0, FeatureFlag::Custom(hash_str("math/j0")));
 
 fn impl_j0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_urnop_match_arms2!(
-    MathJ0,
-    (lhs_value),
-    F32 => MatrixF32, F32, f32::zero(), "f32";
-    F64 => MatrixF64, F64, f64::zero(), "f64";
-  )
+    impl_urnop_match_arms2!(
+      MathJ0,
+      (lhs_value),
+      F32 => MatrixF32, F32, f32::zero(), "f32";
+      F64 => MatrixF64, F64, f64::zero(), "f64";
+    )
 }
 
 pub struct MathJ0 {}
 
 impl NativeFunctionCompiler for MathJ0 {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
-    }
-    let input = arguments[0].clone();
-    match impl_j0_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {impl_j0_fxn(input.borrow().clone())}
-          x => Err(MechError::new(
-              UnhandledFunctionArgumentKind1 { arg: x.kind(), fxn_name: "math/bessel/j0".to_string() },
-              None
-            ).with_compiler_loc()
-          ),
+    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 1 {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: arguments.len(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         }
-      }
+        let input = arguments[0].clone();
+        match impl_j0_fxn(input.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => match (input) {
+                (Value::MutableReference(input)) => impl_j0_fxn(input.borrow().clone()),
+                x => Err(MechError::new(
+                    UnhandledFunctionArgumentKind1 {
+                        arg: x.kind(),
+                        fxn_name: "math/bessel/j0".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
     }
-  }
 }
 
 register_descriptor! {

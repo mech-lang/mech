@@ -1,9 +1,7 @@
-use crate::{
-    MechRuntime, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect,
-};
+use crate::{MechRuntime, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect};
 use mech_core::{
-    BytecodeCompilerContext, GenericError, MResult, MechError, MechFunctionCompiler, MechFunctionImpl,
-    ReactiveSolveStatus, Ref, Register, Value,
+    BytecodeCompilerContext, GenericError, MResult, MechError, MechFunctionCompiler,
+    MechFunctionImpl, ReactiveSolveStatus, Ref, Register, Value,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -178,10 +176,7 @@ fn add_test_function(
     (output, calls)
 }
 
-fn add_panicking_test_function(
-    runtime: &mut MechRuntime,
-    message: &'static str,
-) -> Ref<usize> {
+fn add_panicking_test_function(runtime: &mut MechRuntime, message: &'static str) -> Ref<usize> {
     let output = Ref::new(0usize);
     runtime
         .program

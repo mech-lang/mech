@@ -992,9 +992,9 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
         format!("dynamic {}", self.name)
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
@@ -1068,9 +1068,9 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
         format!("dynamic {}", self.name)
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
@@ -1132,9 +1132,9 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
         format!("dynamic {}", self.name)
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
@@ -1225,9 +1225,9 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
         format!("dynamic {}", self.name)
     }
 
-  fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-    Ok(self.reactive_output_values())
-  }
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
