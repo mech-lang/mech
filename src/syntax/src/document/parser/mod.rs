@@ -101,6 +101,12 @@ pub(crate) struct Parser<'a> {
   stats: ParseStats,
 }
 
+pub(crate) struct CleanSubtree {
+  start: TextSize,
+  end: TextSize,
+  node: Arc<GreenNode>,
+}
+
 impl<'a> Parser<'a> {
   fn new(
     source: &'a TextSnapshot,
@@ -314,6 +320,58 @@ impl<'a> Parser<'a> {
     self.covered_end = checkpoint.covered_end;
     self.rules.truncate(checkpoint.rule_depth);
     self.nesting = checkpoint.nesting;
+  }
+
+  pub(crate) fn cache_clean_subtree(
+    &mut self,
+    start: ParserCheckpoint,
+    end: ParserCheckpoint,
+  ) -> Option<CleanSubtree> {
+    if start.cursor.offset >= end.cursor.offset
+      || start.events >= end.events
+      || start.diagnostics != end.diagnostics
+      || start.open_markers != end.open_markers
+      || start.rule_depth != end.rule_depth
+      || start.nesting != end.nesting
+    {
+      return None;
+    }
+    let node = sink(
+      self.events.get(start.events..end.events)?,
+      self.source,
+      self.ids,
+    )
+    .ok()?
+    .root;
+    (node.text_len == end.cursor.offset - start.cursor.offset).then_some(CleanSubtree {
+      start: start.cursor.offset,
+      end: end.cursor.offset,
+      node,
+    })
+  }
+
+  pub(crate) fn reuse_clean_subtree(&mut self, subtree: &CleanSubtree) -> bool {
+    if self.offset() != subtree.start || self.halted || self.resource_finalizing {
+      return false;
+    }
+    let open_after = self.open_markers.len();
+    if self
+      .emit(
+        Event::Reuse {
+          node: subtree.node.clone(),
+        },
+        open_after,
+      )
+      .is_none()
+    {
+      return false;
+    }
+    self.cursor.rewind(CursorCheckpoint {
+      offset: subtree.end,
+    });
+    self.covered_end = self.covered_end.max(subtree.end);
+    self.stats.reused_node_count = self.stats.reused_node_count.saturating_add(1);
+    true
   }
 
   pub(crate) fn with_rule<T>(

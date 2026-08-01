@@ -12,27 +12,29 @@ pub(crate) mod operators;
 pub(crate) mod paths;
 pub(crate) mod pattern_primitives;
 mod ports;
+pub(crate) mod recursive_core;
 pub(crate) mod roots;
 pub(crate) mod source_imports;
 pub(crate) mod statements;
-pub(crate) mod subscript_primitives;
 pub(crate) mod structure_shell;
-mod test_support;
+pub(crate) mod subscript_primitives;
 pub mod terminal_spec;
+mod test_support;
 
 pub use mechdown::{CanonicalMechdownRuleSnapshot, parse_canonical_mechdown_rule_for_test};
 pub use ports::{
     CanonicalRuleSnapshot, canonical_base_rule_supported, parse_canonical_base_rule_for_test,
     parse_canonical_tag_for_test,
 };
+pub(crate) use recursive_core::PHASE_2I_RULES;
+pub use terminal_spec::{
+    FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,
+};
+pub(crate) use test_support::PHASE_2G_RULES;
+pub(crate) use test_support::PHASE_2H_RULES;
 pub use test_support::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2c_rule_for_test,
     parse_canonical_phase_2d_rule_for_test, parse_canonical_phase_2e_rule_for_test,
     parse_canonical_phase_2f_rule_for_test, parse_canonical_phase_2g_rule_for_test,
-    parse_canonical_phase_2h_rule_for_test,
-};
-pub(crate) use test_support::PHASE_2G_RULES;
-pub(crate) use test_support::PHASE_2H_RULES;
-pub use terminal_spec::{
-    FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,
+    parse_canonical_phase_2h_rule_for_test, parse_canonical_phase_2i_rule_for_test,
 };
