@@ -754,6 +754,7 @@ macro_rules! impl_binop_match_arms {
               #[cfg(all(feature = $value_string, feature = "matrixd"))]
             (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)), Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {lhs.borrow().shape()};
+              $registrar!([<$lib MDMD>], $target_type, $value_string);
               Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
             },
             // Row Row
