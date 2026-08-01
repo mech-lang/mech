@@ -2,7 +2,7 @@ use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
-use mech_program::ProgramInputTurnOutcome;
+use mech_engine::ProgramInputTurnOutcome;
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 

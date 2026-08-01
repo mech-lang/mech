@@ -8,7 +8,7 @@ use mech_core::{MResult, MechError, Value, ValueKind};
 use crate::{CapabilityId, ModuleVersionId};
 
 #[cfg(feature = "invariant_define")]
-use mech_program::IntegrityConstraintReport;
+use mech_engine::IntegrityConstraintReport;
 
 #[cfg(test)]
 #[path = "snapshot/tests.rs"]

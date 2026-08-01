@@ -1,5 +1,5 @@
 use mech_core::{GenericError, MechError, NoMechExecutionServices, nodes::*};
-use mech_program::{MechProgram, MechProgramConfig, ProgramTurnFinalization};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramTurnFinalization};
 
 fn statements(src: &str) -> Vec<Statement> {
     let program = mech_syntax::parser::parse(src).expect("parse failed");

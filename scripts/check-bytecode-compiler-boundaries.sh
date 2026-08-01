@@ -74,27 +74,27 @@ cargo +nightly-2026-03-03 check \
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
   --target-dir "$root_target" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "program functions symbol_table f64"
 
 runtime_program_tree=$(cargo +nightly-2026-03-03 tree \
   --manifest-path "$repository_root/Cargo.toml" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "program functions symbol_table f64" \
   -e features)
 runtime_program_tree="$runtime_program_tree
 $(cargo +nightly-2026-03-03 tree \
   --manifest-path "$repository_root/Cargo.toml" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "program functions symbol_table f64" \
   -e features \
   -i mech-core)
 $(cargo +nightly-2026-03-03 tree \
   --manifest-path "$repository_root/Cargo.toml" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "program functions symbol_table f64" \
   -e features \
@@ -106,27 +106,27 @@ reject_tree_entry "$runtime_program_tree" 'mech-interpreter feature "compiler"' 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
   --target-dir "$root_target" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "compiler functions symbol_table f64"
 
 compiler_program_tree=$(cargo +nightly-2026-03-03 tree \
   --manifest-path "$repository_root/Cargo.toml" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "compiler functions symbol_table f64" \
   -e features)
 compiler_program_tree="$compiler_program_tree
 $(cargo +nightly-2026-03-03 tree \
   --manifest-path "$repository_root/Cargo.toml" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "compiler functions symbol_table f64" \
   -e features \
   -i mech-core)
 $(cargo +nightly-2026-03-03 tree \
   --manifest-path "$repository_root/Cargo.toml" \
-  -p mech-program \
+  -p mech-engine \
   --no-default-features \
   --features "compiler functions symbol_table f64" \
   -e features \
@@ -170,7 +170,7 @@ reject_tree_entry "$runtime_runtime_tree" 'mech-interpreter feature "compiler"' 
 cargo +nightly-2026-03-03 test \
   --manifest-path "$repository_root/Cargo.toml" \
   --target-dir "$root_target" \
-  -p mech-program \
+  -p mech-engine \
   --test bytecode_plan_topology
 
 producer_tree=$(cargo +nightly-2026-03-03 tree \

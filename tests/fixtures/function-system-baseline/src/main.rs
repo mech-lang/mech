@@ -5,7 +5,7 @@ use mech_core::{
 };
 use mech_interpreter as _;
 use mech_interpreter::Interpreter;
-use mech_program::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig};
 use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "fixed-specialization-cases")]
 use nalgebra::{Matrix2, Vector2};

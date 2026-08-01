@@ -9,7 +9,7 @@ use mech_core::{
     BytecodeCompilerContext, MResult, MechExecutionServices, MechFunctionCompiler,
     MechFunctionImpl, ReactiveSolveStatus, Ref, Register, Value,
 };
-use mech_program::ExecutionServicesBorrowConflict;
+use mech_engine::ExecutionServicesBorrowConflict;
 use std::sync::{Arc, Mutex};
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {

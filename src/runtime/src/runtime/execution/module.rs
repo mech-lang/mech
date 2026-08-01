@@ -20,8 +20,8 @@ use crate::store::ModuleVersionRecord;
 use crate::{RuntimeContext, RuntimeModuleResult, RuntimeValueSnapshot};
 use mech_core::{MResult, MechError, MechSourceCode, Value, hash_str};
 #[cfg(feature = "invariant_define")]
-use mech_program::{IntegrityConstraintEvaluation, IntegrityConstraintReport};
-use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{IntegrityConstraintEvaluation, IntegrityConstraintReport};
+use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::collections::{HashMap, HashSet};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;

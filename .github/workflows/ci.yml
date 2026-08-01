@@ -60,7 +60,7 @@ jobs:
           cargo check -p mech-core --no-default-features --features "mika serde"
           cargo check -p mech-syntax --no-default-features --features mika
           cargo check -p mech-interpreter --no-default-features --features program
-          cargo check -p mech-program --no-default-features --features program
+          cargo check -p mech-engine --no-default-features --features program
 
       - name: Run serve executable HTTP suite
         run: cargo test -p mech --test mech_serve -- --nocapture
@@ -155,7 +155,7 @@ jobs:
         run: cargo test -p mech-core -p mech-interpreter
 
       - name: Run complete program library suite
-        run: cargo test -p mech-program --lib --tests
+        run: cargo test -p mech-engine --lib --tests
 
       - name: Run non-UTF-8 source-root regressions
         run: |

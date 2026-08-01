@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use mech_core::*;
 #[cfg(feature = "test")]
-use mech_program::IntegrityConstraintReport;
+use mech_engine::IntegrityConstraintReport;
 use mech_runtime::{
     FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
     SourceRequest,

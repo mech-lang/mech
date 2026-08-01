@@ -239,7 +239,7 @@ fn runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
 fn bind_single_mock_input(runtime: &mut MechRuntime) {
     runtime.live_input_bindings.insert(
         RuntimeHostInputSource::new(MOCK_DRIVER_BASE_URI, MOCK_DRIVER_PATH).unwrap(),
-        vec![mech_program::ProgramInputId {
+        vec![mech_engine::ProgramInputId {
             interpreter_id: 1,
             symbol_id: 1,
         }],

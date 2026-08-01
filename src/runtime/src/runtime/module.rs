@@ -27,7 +27,7 @@ use crate::{
 };
 use mech_core::{MResult, MechError, MechSourceCode};
 #[cfg(feature = "invariant_define")]
-use mech_program::IntegrityConstraintReport;
+use mech_engine::IntegrityConstraintReport;
 use std::collections::{HashMap, HashSet};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;

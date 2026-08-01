@@ -6,7 +6,7 @@ use crate::resolver::SourceScope;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, RuntimeProgramBusy};
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
 use mech_core::{MResult, MechError, MechSourceCode, ValRef, Value, hash_str};
-use mech_program::MechProgram;
+use mech_engine::MechProgram;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]

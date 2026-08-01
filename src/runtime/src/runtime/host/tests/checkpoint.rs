@@ -1,6 +1,6 @@
 use crate::runtime::host::RuntimeHostNativeFunction;
 use mech_core::{Ref, Value};
-use mech_program::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig};
 
 #[test]
 fn runtime_host_native_function_output_round_trips_through_program_checkpoint() {

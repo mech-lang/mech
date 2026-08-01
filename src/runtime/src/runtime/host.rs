@@ -50,7 +50,7 @@ use mech_core::{
     GuardFunctionSafety, MResult, MechError, MechErrorKind, MechExecutionServices,
     MechFunctionImpl, NativeFunctionCompiler, Ref, Value, ValueKind,
 };
-use mech_program::MechProgram;
+use mech_engine::MechProgram;
 use std::sync::Arc;
 
 impl MechRuntime {
@@ -301,7 +301,7 @@ impl RuntimeHostNativeFunction {
         }
         let next = next.try_deep_snapshot()?;
         let actual = next.kind();
-        mech_program::apply_stable_value_update(self.value.clone(), next)
+        mech_engine::apply_stable_value_update(self.value.clone(), next)
             .map(|_| ())
             .map_err(|error| {
                 MechError::new(

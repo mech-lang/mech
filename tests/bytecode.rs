@@ -7,7 +7,7 @@ extern crate mech_syntax;
 use indexmap::set::IndexSet;
 use mech_core::matrix::Matrix;
 use mech_core::*;
-use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use mech_syntax::*;
 use std::cell::RefCell;
 use std::rc::Rc;

@@ -23,8 +23,8 @@ mech-interpreter = {
     "matrix_horzcat",
   ],
 }
-mech-program = {
-  path = "../../../src/program",
+mech-engine = {
+  path = "../../../src/engine",
   default-features = false,
   features = [
     "program",
@@ -54,7 +54,7 @@ serde_json = "1"
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-interpreter = { path = "../../../src/interpreter" }
-mech-program = { path = "../../../src/program" }
+mech-engine = { path = "../../../src/engine" }
 mech-compare = { path = "../../../machines/compare" }
 mech-logic = { path = "../../../machines/logic" }
 mech-math = { path = "../../../machines/math" }

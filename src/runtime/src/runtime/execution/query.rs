@@ -4,7 +4,7 @@ use mech_core::{MResult, MechError, MechSourceCode, Program, SectionElement, Val
 
 impl MechRuntime {
     #[cfg(feature = "invariant_define")]
-    pub fn integrity_constraint_report(&self) -> MResult<mech_program::IntegrityConstraintReport> {
+    pub fn integrity_constraint_report(&self) -> MResult<mech_engine::IntegrityConstraintReport> {
         self.program.integrity_constraint_report()
     }
 

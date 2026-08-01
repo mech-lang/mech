@@ -11,7 +11,7 @@ use crate::fs_paths::{extension_allowed, unsupported_source_path_error};
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources_with_events,
 };
-use mech_program::{
+use mech_engine::{
     IntegrityConstraintEvaluation, IntegrityConstraintFailureReason, IntegrityConstraintViolation,
     IntegrityConstraintViolationSet,
 };

@@ -169,7 +169,7 @@ fn integrity_invalid_host_input_is_restored_before_output_audit_and_recovery() {
 
     assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
     let failures = error
-        .kind_as::<mech_program::IntegrityConstraintViolationSet>()
+        .kind_as::<mech_engine::IntegrityConstraintViolationSet>()
         .unwrap();
     assert_eq!(failures.violations.len(), 1);
     assert_eq!(failures.violations[0].actual.as_deref(), Some("150"));
@@ -385,14 +385,14 @@ safe-target! := receiver-result <= maximum-target
         ))
         .unwrap_err();
     let failures = error
-        .kind_as::<mech_program::IntegrityConstraintViolationSet>()
+        .kind_as::<mech_engine::IntegrityConstraintViolationSet>()
         .expect("invalid candidate returns integrity violations");
     assert_eq!(failures.violations.len(), 1);
     let violation = &failures.violations[0];
     assert_eq!(violation.name, "safe-target!");
     assert_eq!(
         violation.reason,
-        mech_program::IntegrityConstraintFailureReason::EvaluatedFalse,
+        mech_engine::IntegrityConstraintFailureReason::EvaluatedFalse,
     );
     assert_eq!(violation.actual.as_deref(), Some("150"));
     assert_eq!(violation.expected.as_deref(), Some("120"));

@@ -6,7 +6,7 @@ use crate::{
     RuntimeContext, RuntimeContextBinding, RuntimeId, TaskId,
 };
 use mech_core::{MResult, MechError, ValRef};
-use mech_program::ProgramInputId;
+use mech_engine::ProgramInputId;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
