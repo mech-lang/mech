@@ -1,19 +1,7 @@
 #[cfg(feature = "no_std")]
-use alloc::{
-    boxed::Box,
-    collections::{BTreeMap, BTreeSet},
-    string::String,
-    sync::Arc,
-    vec::Vec,
-};
+use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{
-    boxed::Box,
-    collections::{BTreeMap, BTreeSet},
-    string::String,
-    sync::Arc,
-    vec::Vec,
-};
+use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
     FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction, Value,
@@ -508,7 +496,6 @@ impl FunctionCatalogBuilder {
             exports_by_operation: self.exports_by_operation,
         };
 
-        FunctionEnvironment::from_catalog_prelude(&catalog)?;
         Ok(catalog)
     }
 
@@ -643,102 +630,6 @@ fn validate_export(export: &FunctionExport) -> MResult<()> {
             export,
             String::from("module and item must either both be present or both be absent"),
         )),
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct FunctionEnvironment {
-    visible_operations: BTreeSet<OperationId>,
-    bindings: BTreeMap<u64, OperationId>,
-    dictionary: BTreeMap<u64, String>,
-}
-
-impl FunctionEnvironment {
-    pub fn from_catalog_prelude(catalog: &FunctionCatalog) -> MResult<Self> {
-        let mut environment = Self::default();
-        for exports in catalog.exports_by_operation.values() {
-            for export in exports {
-                if export.exposure == FunctionExposure::Prelude {
-                    environment.bind_export(export, &export.canonical_name)?;
-                }
-            }
-        }
-        Ok(environment)
-    }
-
-    pub fn is_visible(&self, operation: OperationId) -> bool {
-        self.visible_operations.contains(&operation)
-    }
-
-    pub fn require_visible(&self, operation: OperationId) -> MResult<()> {
-        self.require_visible_named(operation, None)
-    }
-
-    pub fn require_visible_named(
-        &self,
-        operation: OperationId,
-        canonical_name: Option<&str>,
-    ) -> MResult<()> {
-        if self.is_visible(operation) {
-            Ok(())
-        } else {
-            Err(MechError::new(
-                FunctionOperationNotVisible {
-                    operation,
-                    canonical_name: canonical_name.map(String::from),
-                },
-                None,
-            )
-            .with_compiler_loc())
-        }
-    }
-
-    pub fn resolve_name(&self, name: &str) -> Option<OperationId> {
-        let name_id = hash_str(name);
-        match (self.dictionary.get(&name_id), self.bindings.get(&name_id)) {
-            (Some(stored_name), Some(operation)) if stored_name == name => Some(*operation),
-            _ => None,
-        }
-    }
-
-    pub fn bind_export(&mut self, export: &FunctionExport, visible_name: &str) -> MResult<()> {
-        validate_export(export)?;
-        if visible_name.is_empty() {
-            return Err(invalid_export_error(
-                export,
-                String::from("visible name must not be empty"),
-            ));
-        }
-
-        let name_id = hash_str(visible_name);
-        if let Some(existing_name) = self.dictionary.get(&name_id)
-            && existing_name != visible_name
-        {
-            return Err(invalid_export_error(
-                export,
-                format!(
-                    "visible name {:?} collides with {:?} at ID 0x{:016x}",
-                    visible_name, existing_name, name_id,
-                ),
-            ));
-        }
-        if let Some(existing_operation) = self.bindings.get(&name_id)
-            && *existing_operation != export.operation
-        {
-            return Err(invalid_export_error(
-                export,
-                format!(
-                    "visible name {:?} is already bound to operation 0x{:016x}",
-                    visible_name,
-                    existing_operation.raw(),
-                ),
-            ));
-        }
-
-        self.visible_operations.insert(export.operation);
-        self.bindings.insert(name_id, export.operation);
-        self.dictionary.insert(name_id, String::from(visible_name));
-        Ok(())
     }
 }
 
@@ -969,23 +860,6 @@ mod tests {
     }
 
     #[test]
-    fn prelude_exports_are_visible_by_canonical_name() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let operation = builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export("math/add", None, None, FunctionExposure::Prelude))
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let environment = FunctionEnvironment::from_catalog_prelude(&catalog).unwrap();
-
-        assert!(environment.is_visible(operation));
-        assert_eq!(environment.resolve_name("math/add"), Some(operation));
-        environment.require_visible(operation).unwrap();
-    }
-
-    #[test]
     fn operation_diagnostics_include_names_when_available() {
         let operation = OperationId::from_name("math/add");
         assert_eq!(
@@ -1012,85 +886,6 @@ mod tests {
             .message(),
             "function operation 0x00cc529041cb60c3 is not visible in this program",
         );
-    }
-
-    #[test]
-    fn module_only_exports_are_not_prelude_visible() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let operation = builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export(
-                "math/add",
-                Some("math"),
-                Some("add"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let environment = FunctionEnvironment::from_catalog_prelude(&catalog).unwrap();
-
-        assert!(!environment.is_visible(operation));
-        assert_eq!(environment.resolve_name("math/add"), None);
-        let error = environment.require_visible(operation).unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionOperationNotVisible");
-    }
-
-    #[test]
-    fn environment_clones_preserve_exact_program_local_state() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        let subtract = builder
-            .insert_specializer("math/subtract", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export("math/add", None, None, FunctionExposure::Prelude))
-            .unwrap();
-        builder
-            .insert_export(export(
-                "math/subtract",
-                Some("math"),
-                Some("subtract"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let environment = FunctionEnvironment::from_catalog_prelude(&catalog).unwrap();
-
-        assert_eq!(environment.clone(), environment);
-
-        let mut imported_environment = environment.clone();
-        imported_environment
-            .bind_export(
-                catalog.module_export("math", "subtract").unwrap(),
-                "subtract",
-            )
-            .unwrap();
-
-        assert!(imported_environment.is_visible(subtract));
-        assert_eq!(
-            imported_environment.resolve_name("subtract"),
-            Some(subtract)
-        );
-        assert!(!environment.is_visible(subtract));
-        assert_eq!(environment.resolve_name("subtract"), None);
-    }
-
-    #[test]
-    fn name_resolution_checks_the_collision_dictionary() {
-        let requested = "math/add";
-        let name_id = hash_str(requested);
-        let operation = OperationId::from_name(requested);
-        let mut environment = FunctionEnvironment::default();
-        environment.bindings.insert(name_id, operation);
-        environment
-            .dictionary
-            .insert(name_id, String::from("a different colliding name"));
-
-        assert_eq!(environment.resolve_name(requested), None);
     }
 
     #[test]

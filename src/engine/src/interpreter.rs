@@ -1,7 +1,7 @@
 use crate::*;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::cell::RefCell as StdRefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read, Write};
 use std::ops::Deref;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -316,6 +316,160 @@ impl FrameCellCheckpoint {
     }
 }
 
+#[cfg(feature = "functions")]
+#[derive(Debug, Clone)]
+pub struct UserFunctionsCheckpointBorrowConflictError {
+    pub phase: &'static str,
+    pub component: &'static str,
+}
+
+#[cfg(feature = "functions")]
+impl MechErrorKind for UserFunctionsCheckpointBorrowConflictError {
+    fn name(&self) -> &str {
+        "UserFunctionsCheckpointBorrowConflict"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Cannot borrow user-function {} during {}.",
+            self.component, self.phase,
+        )
+    }
+}
+
+#[cfg(feature = "functions")]
+#[derive(Clone)]
+struct UserFunctionDefinitionCheckpoint {
+    symbols_target: SymbolTableRef,
+    symbols: SymbolTableSnapshot,
+    symbol_dictionary_target: Ref<Dictionary>,
+    out_target: Ref<Value>,
+    plan_target: Plan,
+    plan: PlanCheckpoint,
+}
+
+#[cfg(feature = "functions")]
+#[derive(Clone)]
+struct UserFunctionsCheckpoint {
+    table: UserFunctionTable,
+    definitions: Vec<UserFunctionDefinitionCheckpoint>,
+}
+
+#[cfg(feature = "functions")]
+impl UserFunctionsCheckpoint {
+    fn borrow_conflict(phase: &'static str, component: &'static str) -> MechError {
+        MechError::new(
+            UserFunctionsCheckpointBorrowConflictError { phase, component },
+            None,
+        )
+        .with_compiler_loc()
+    }
+
+    fn capture(table: &UserFunctionTable) -> MResult<Self> {
+        let mut definitions = Vec::with_capacity(table.len());
+        for definition in table.definitions() {
+            let symbols = definition
+                .symbols
+                .try_borrow()
+                .map_err(|_| Self::borrow_conflict("capture", "symbol table"))?;
+            let symbol_dictionary_target = symbols.dictionary.clone();
+            let symbol_dictionary = symbol_dictionary_target
+                .try_borrow()
+                .map_err(|_| Self::borrow_conflict("capture", "symbol dictionary"))?;
+            let symbol_snapshot = symbols.snapshot();
+            drop(symbol_dictionary);
+            drop(symbols);
+
+            let plan = definition.plan.try_checkpoint()?;
+
+            definitions.push(UserFunctionDefinitionCheckpoint {
+                symbols_target: definition.symbols.clone(),
+                symbols: symbol_snapshot,
+                symbol_dictionary_target,
+                out_target: definition.out.clone(),
+                plan_target: definition.plan.clone(),
+                plan,
+            });
+        }
+
+        Ok(Self {
+            table: table.clone(),
+            definitions,
+        })
+    }
+
+    fn preflight_restore(&self) -> MResult<()> {
+        for definition in &self.definitions {
+            {
+                let _symbols = definition
+                    .symbols_target
+                    .try_borrow_mut()
+                    .map_err(|_| Self::borrow_conflict("restore", "symbol table"))?;
+                let _dictionary = definition
+                    .symbol_dictionary_target
+                    .try_borrow_mut()
+                    .map_err(|_| Self::borrow_conflict("restore", "symbol dictionary"))?;
+            }
+            definition
+                .plan_target
+                .preflight_rollback(&definition.plan)?;
+        }
+        Ok(())
+    }
+
+    fn apply_restore_structure(&self) {
+        for definition in &self.definitions {
+            {
+                let mut symbols = definition.symbols_target.borrow_mut();
+                symbols.dictionary = definition.symbol_dictionary_target.clone();
+                symbols.restore(definition.symbols.clone());
+            }
+            definition
+                .plan_target
+                .apply_rollback_structure(&definition.plan);
+        }
+    }
+
+    fn rebuild_checkpoint_indexes(&self) {
+        for definition in &self.definitions {
+            definition.plan_target.rebuild_checkpoint_indexes();
+        }
+    }
+
+    fn validate_checkpoint_invariants(&self) -> MResult<()> {
+        for definition in &self.definitions {
+            definition.plan_target.validate_checkpoint_invariants()?;
+        }
+        Ok(())
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        let mut values = Vec::new();
+        let mut seen_refs = HashSet::new();
+        for definition in &self.definitions {
+            if seen_refs.insert(definition.out_target.addr()) {
+                values.push(Value::MutableReference(definition.out_target.clone()));
+            }
+            let symbols = definition
+                .symbols_target
+                .try_borrow()
+                .map_err(|_| Self::borrow_conflict("transaction-state", "symbol table"))?;
+            for value in symbols
+                .symbols
+                .values()
+                .chain(symbols.mutable_variables.values())
+            {
+                if seen_refs.insert(value.addr()) {
+                    values.push(Value::MutableReference(value.clone()));
+                }
+            }
+            drop(symbols);
+            values.extend(definition.plan_target.transaction_state_values()?);
+        }
+        Ok(values)
+    }
+}
+
 struct ProgramStateCheckpoint {
     target: Ref<ProgramState>,
     #[cfg(feature = "symbol_table")]
@@ -328,6 +482,10 @@ struct ProgramStateCheckpoint {
     functions_snapshot: FunctionsSnapshot,
     #[cfg(feature = "functions")]
     function_environment: FunctionEnvironment,
+    #[cfg(feature = "functions")]
+    function_extensions: FunctionExtensions,
+    #[cfg(feature = "functions")]
+    user_functions: UserFunctionsCheckpoint,
     #[cfg(feature = "functions")]
     plan: Plan,
     #[cfg(feature = "functions")]
@@ -366,13 +524,17 @@ impl ProgramStateCheckpoint {
         };
 
         #[cfg(feature = "functions")]
-        let functions = state.functions.clone();
+        let functions = state.legacy_functions.clone();
         #[cfg(feature = "functions")]
         let functions_snapshot = FunctionsSnapshot::capture(&functions)?;
         #[cfg(feature = "functions")]
         let function_environment = state.function_environment.clone();
         #[cfg(feature = "functions")]
-        for value in functions_snapshot.transaction_state_values()? {
+        let function_extensions = state.function_extensions.clone();
+        #[cfg(feature = "functions")]
+        let user_functions = UserFunctionsCheckpoint::capture(&state.user_functions)?;
+        #[cfg(feature = "functions")]
+        for value in user_functions.transaction_state_values()? {
             journal.capture_value(&value)?;
         }
 
@@ -428,6 +590,10 @@ impl ProgramStateCheckpoint {
             #[cfg(feature = "functions")]
             function_environment,
             #[cfg(feature = "functions")]
+            function_extensions,
+            #[cfg(feature = "functions")]
+            user_functions,
+            #[cfg(feature = "functions")]
             plan,
             #[cfg(feature = "functions")]
             plan_checkpoint,
@@ -453,6 +619,8 @@ impl ProgramStateCheckpoint {
         #[cfg(feature = "functions")]
         self.functions_snapshot.preflight_restore()?;
         #[cfg(feature = "functions")]
+        self.user_functions.preflight_restore()?;
+        #[cfg(feature = "functions")]
         self.plan.preflight_rollback(&self.plan_checkpoint)?;
         #[cfg(feature = "enum")]
         for dictionary in &self.enum_dictionaries {
@@ -474,8 +642,10 @@ impl ProgramStateCheckpoint {
             }
             #[cfg(feature = "functions")]
             {
-                state.functions = self.functions.clone();
+                state.legacy_functions = self.functions.clone();
                 state.function_environment = self.function_environment.clone();
+                state.function_extensions = self.function_extensions.clone();
+                state.user_functions = self.user_functions.table.clone();
                 state.plan = self.plan.clone();
             }
             state.kinds = self.kinds.clone();
@@ -499,6 +669,8 @@ impl ProgramStateCheckpoint {
         #[cfg(feature = "functions")]
         self.functions_snapshot.apply_restore_structure();
         #[cfg(feature = "functions")]
+        self.user_functions.apply_restore_structure();
+        #[cfg(feature = "functions")]
         self.plan.apply_rollback_structure(&self.plan_checkpoint);
         #[cfg(feature = "enum")]
         for dictionary in &self.enum_dictionaries {
@@ -510,10 +682,14 @@ impl ProgramStateCheckpoint {
     #[cfg(feature = "functions")]
     fn rebuild_checkpoint_indexes(&self, turn_state: &ReactiveTurnState) {
         self.functions_snapshot.rebuild_checkpoint_indexes();
+        self.user_functions.rebuild_checkpoint_indexes();
         self.plan.rebuild_checkpoint_indexes();
         self.functions_snapshot
             .validate_checkpoint_invariants()
             .expect("function checkpoint preflight guarantees restored plan invariants");
+        self.user_functions
+            .validate_checkpoint_invariants()
+            .expect("user-function checkpoint preflight guarantees restored plan invariants");
         self.plan
             .validate_checkpoint_invariants()
             .expect("program checkpoint preflight guarantees restored plan invariants");
@@ -1225,8 +1401,8 @@ impl Interpreter {
     ) -> Self {
         let mut state = ProgramState::new();
         state.function_environment =
-            FunctionEnvironment::from_catalog_prelude(function_system.catalog())
-                .expect("validated function catalog prelude must initialize");
+            FunctionEnvironment::from_catalog_defaults(function_system.catalog())
+                .expect("validated function catalog defaults must initialize");
         Self::initialize(id, max_steps, state, function_system)
     }
 
@@ -1256,7 +1432,7 @@ impl Interpreter {
                 .insert(ans_id, "ans".to_string());
         }
         #[cfg(feature = "functions")]
-        load_prelude(&mut state.functions.borrow_mut());
+        load_prelude(&mut state.legacy_functions.borrow_mut());
         Self {
             id,
             checkpoint_owner: Rc::new(()),
@@ -1316,7 +1492,16 @@ impl Interpreter {
 
     #[cfg(feature = "functions")]
     pub(crate) fn new_child_interpreter(&self, id: u64, max_steps: usize) -> Self {
-        Self::with_function_system(id, max_steps, self.function_system.clone())
+        let child = Self::with_function_system(id, max_steps, self.function_system.clone());
+        {
+            let parent_state = self.state.borrow();
+            let mut child_state = child.state.borrow_mut();
+            child_state.legacy_functions = parent_state.legacy_functions.clone();
+            child_state.function_environment = parent_state.function_environment.clone();
+            child_state.function_extensions = parent_state.function_extensions.clone();
+            child_state.user_functions = parent_state.user_functions.clone();
+        }
+        child
     }
 
     pub fn default() -> Self {
@@ -1555,12 +1740,12 @@ impl Interpreter {
 
     #[cfg(feature = "functions")]
     pub fn functions(&self) -> FunctionsRef {
-        self.state.borrow().functions.clone()
+        self.state.borrow().legacy_functions.clone()
     }
 
     #[cfg(feature = "functions")]
     pub fn set_functions(&mut self, functions: FunctionsRef) {
-        self.state.borrow_mut().functions = functions;
+        self.state.borrow_mut().legacy_functions = functions;
     }
 
     #[cfg(feature = "functions")]
@@ -1781,7 +1966,17 @@ impl Interpreter {
         legacy_functions: &Functions,
         id: RuntimeFunctionId,
     ) -> MResult<Option<RuntimeFunctionFactory>> {
-        if let Some(factory) = self.function_catalog().runtime_factory(id) {
+        let catalog_factory = {
+            let state = self.state.borrow();
+            FunctionResolver::new(
+                self.function_catalog(),
+                &state.function_environment,
+                &state.function_extensions,
+                &state.user_functions,
+            )
+            .runtime_factory(id)
+        };
+        if let Some(factory) = catalog_factory {
             return Ok(Some(factory));
         }
         if self.legacy_function_boundary().owns_runtime_function(id) {
@@ -1813,7 +2008,7 @@ impl Interpreter {
         // Load the instructions
         {
             let state_brrw = self.state.borrow();
-            let functions_table = state_brrw.functions.borrow();
+            let functions_table = state_brrw.legacy_functions.borrow();
             while self.ip < program.instrs.len() {
                 let instr = &program.instrs[self.ip];
                 match instr {
@@ -2256,27 +2451,14 @@ impl<'a> InterpreterExecution<'a> {
         canonical_name: Option<&str>,
         arguments: &[Value],
     ) -> MResult<Box<dyn MechFunction>> {
-        let entry = self
-            .function_catalog()
-            .specializer(operation)
-            .ok_or_else(|| {
-                MechError::new(
-                    FunctionOperationUnavailable {
-                        operation,
-                        canonical_name: canonical_name.map(String::from),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?;
-
-        {
-            let state = self.state.borrow();
-            state
-                .function_environment
-                .require_visible_named(operation, Some(&entry.canonical_name))?;
-        }
-        entry.specializer.specialize(arguments)
+        let state = self.state.borrow();
+        FunctionResolver::new(
+            self.function_catalog(),
+            &state.function_environment,
+            &state.function_extensions,
+            &state.user_functions,
+        )
+        .specialize_operation_named(operation, canonical_name, arguments)
     }
 
     pub fn with_services<T>(

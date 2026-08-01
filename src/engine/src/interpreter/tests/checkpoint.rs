@@ -1,9 +1,12 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSystem, Interpreter,
-        MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
+        Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
+        FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
+        FunctionSpecializer, FunctionSystem, Interpreter, MResult, MechFunction, MechSourceCode,
+        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
         RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict, hash_str,
+        internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -11,12 +14,40 @@ mod checkpoint_tests {
     #[cfg(feature = "invariant_define")]
     use super::super::super::{ComparisonOp, FormulaOperator, IntegrityConstraint};
     #[cfg(feature = "state_machines")]
-    use super::super::super::{
-        FsmImplementation, FsmSpecification, Pattern, internal_pattern_value_identifier,
-    };
+    use super::super::super::{FsmImplementation, FsmSpecification, Pattern};
 
     fn f64_value(value: &Ref<f64>) -> Value {
         Value::F64(value.clone())
+    }
+
+    struct CheckpointSpecializer(u8);
+
+    impl FunctionSpecializer for CheckpointSpecializer {
+        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            unreachable!("checkpoint store tests do not specialize marker {}", self.0)
+        }
+    }
+
+    fn empty_user_function(name: &str) -> FunctionDefinition {
+        FunctionDefinition::new(
+            hash_str(name),
+            name.to_string(),
+            FunctionDefine {
+                name: internal_pattern_value_identifier(name),
+                input: Vec::new(),
+                output: Vec::new(),
+                statements: Vec::new(),
+                match_arms: Vec::new(),
+            },
+        )
+    }
+
+    fn index_payload(value: &Ref<Value>) -> usize {
+        let value = value.borrow();
+        let Value::Index(index) = &*value else {
+            panic!("expected retained index value, got {value:?}")
+        };
+        *index.borrow()
     }
 
     fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValRef, Ref<f64>) {
@@ -62,8 +93,30 @@ mod checkpoint_tests {
                 .state
                 .borrow()
                 .function_environment
-                .is_visible(operation)
+                .operation_is_enabled(operation)
         );
+
+        let extension_name = "host/child-marker";
+        let extension = ExtensionFunctionId::from_name(extension_name);
+        let user_name = "user/child-marker";
+        {
+            let mut state = interpreter.state.borrow_mut();
+            state
+                .function_extensions
+                .insert_or_replace(FunctionExtensionEntry::new(
+                    extension_name,
+                    Arc::new(CheckpointSpecializer(0)),
+                ))
+                .unwrap();
+            state
+                .function_environment
+                .bind_extension(extension_name, "child-marker", extension)
+                .unwrap();
+            state
+                .user_functions
+                .insert_or_replace(empty_user_function(user_name))
+                .unwrap();
+        }
 
         let cloned = interpreter.clone();
         assert!(Arc::ptr_eq(cloned.function_catalog(), &catalog));
@@ -83,7 +136,38 @@ mod checkpoint_tests {
                 .state
                 .borrow()
                 .function_environment
-                .is_visible(operation)
+                .operation_is_enabled(operation)
+        );
+        assert_eq!(
+            child
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("child-marker"),
+            Some(FunctionBinding::Extension(extension)),
+        );
+        assert!(
+            child
+                .state
+                .borrow()
+                .function_extensions
+                .entry(extension)
+                .is_some()
+        );
+        assert!(
+            child
+                .state
+                .borrow()
+                .user_functions
+                .resolve_name(user_name)
+                .is_some()
+        );
+        assert!(
+            child
+                .state
+                .borrow()
+                .legacy_functions
+                .same_handle(&interpreter.state.borrow().legacy_functions)
         );
 
         let environment_before = interpreter.state.borrow().function_environment.clone();
@@ -94,7 +178,7 @@ mod checkpoint_tests {
             .state
             .borrow_mut()
             .function_environment
-            .bind_export(&module_only_export, "plus")
+            .bind_catalog_export(&module_only_export, "plus")
             .unwrap();
         assert_eq!(
             interpreter
@@ -102,7 +186,7 @@ mod checkpoint_tests {
                 .borrow()
                 .function_environment
                 .resolve_name("plus"),
-            Some(operation),
+            Some(FunctionBinding::CatalogOperation(operation)),
         );
         assert_ne!(
             interpreter.state.borrow().function_environment,
@@ -139,8 +223,233 @@ mod checkpoint_tests {
                 .state
                 .borrow()
                 .function_environment
-                .is_visible(operation)
+                .operation_is_enabled(operation)
         );
+    }
+
+    #[test]
+    fn checkpoint_restores_extension_entries_exports_bindings_and_arc_identity() {
+        let mut interpreter = Interpreter::new(43, 100);
+        let canonical_name = "host/read";
+        let extension = ExtensionFunctionId::from_name(canonical_name);
+        let original: Arc<dyn FunctionSpecializer> = Arc::new(CheckpointSpecializer(1));
+        {
+            let mut state = interpreter.state.borrow_mut();
+            state
+                .function_extensions
+                .insert_or_replace(FunctionExtensionEntry::new(
+                    canonical_name,
+                    Arc::clone(&original),
+                ))
+                .unwrap();
+            state
+                .function_extensions
+                .insert_module_export_or_replace("dynamic-host", "read", extension)
+                .unwrap();
+            state
+                .function_environment
+                .bind_extension(canonical_name, "read", extension)
+                .unwrap();
+        }
+
+        let catalog = Arc::clone(interpreter.function_catalog());
+        let checkpoint = interpreter.checkpoint().unwrap();
+        let replacement: Arc<dyn FunctionSpecializer> = Arc::new(CheckpointSpecializer(2));
+        let added_name = "dynamic-host/write";
+        let added = ExtensionFunctionId::from_name(added_name);
+        {
+            let mut state = interpreter.state.borrow_mut();
+            state
+                .function_extensions
+                .insert_or_replace(FunctionExtensionEntry::new(
+                    canonical_name,
+                    Arc::clone(&replacement),
+                ))
+                .unwrap();
+            state
+                .function_extensions
+                .insert_or_replace(FunctionExtensionEntry::new(
+                    added_name,
+                    Arc::new(CheckpointSpecializer(3)),
+                ))
+                .unwrap();
+            state
+                .function_extensions
+                .insert_module_export_or_replace("dynamic-host", "write", added)
+                .unwrap();
+            state
+                .function_environment
+                .bind_extension(added_name, "write", added)
+                .unwrap();
+        }
+
+        interpreter.restore(checkpoint).unwrap();
+
+        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        let state = interpreter.state.borrow();
+        assert!(Arc::ptr_eq(
+            &state
+                .function_extensions
+                .entry(extension)
+                .unwrap()
+                .specializer,
+            &original,
+        ));
+        assert!(!Arc::ptr_eq(
+            &state
+                .function_extensions
+                .entry(extension)
+                .unwrap()
+                .specializer,
+            &replacement,
+        ));
+        assert_eq!(
+            state
+                .function_extensions
+                .module_export("dynamic-host", "read"),
+            Some(extension),
+        );
+        assert_eq!(
+            state
+                .function_extensions
+                .module_export("dynamic-host", "write"),
+            None,
+        );
+        assert!(state.function_extensions.entry(added).is_none());
+        assert_eq!(
+            state.function_environment.resolve_name("read"),
+            Some(FunctionBinding::Extension(extension)),
+        );
+        assert_eq!(state.function_environment.resolve_name("write"), None);
+    }
+
+    #[test]
+    fn checkpoint_restores_user_function_definitions_and_retained_state() {
+        let mut interpreter = Interpreter::new(44, 100);
+        let function_name = "user/checkpoint";
+        let added_name = "user/added-after-checkpoint";
+        let symbol_id = hash_str("retained");
+        let mut definition = empty_user_function(function_name);
+        *definition.out.borrow_mut() = Value::Index(Ref::new(10));
+        let symbol =
+            definition
+                .symbols
+                .borrow_mut()
+                .insert(symbol_id, Value::Index(Ref::new(20)), true);
+        let original_symbol_dictionary = definition.symbols.borrow().dictionary.clone();
+        original_symbol_dictionary
+            .borrow_mut()
+            .insert(symbol_id, "retained".to_string());
+        definition
+            .plan
+            .push_activation_registration_scope(vec![ReactiveCellId::new(1)]);
+        let original_symbols = definition.symbols.clone();
+        let original_out = definition.out.clone();
+        let original_plan = definition.plan.clone();
+        let original_plan_checkpoint = original_plan.checkpoint();
+        interpreter
+            .state
+            .borrow_mut()
+            .user_functions
+            .insert_or_replace(definition)
+            .unwrap();
+
+        let checkpoint = interpreter.checkpoint().unwrap();
+
+        *original_out.borrow_mut() = Value::Index(Ref::new(99));
+        *symbol.borrow_mut() = Value::Index(Ref::new(98));
+        {
+            let mut symbols = original_symbols.borrow_mut();
+            symbols.symbols.clear();
+            symbols.mutable_variables.clear();
+            symbols.dictionary = Ref::new(Dictionary::new());
+        }
+        original_plan.push_activation_registration_scope(vec![ReactiveCellId::new(2)]);
+        {
+            let mut state = interpreter.state.borrow_mut();
+            state
+                .user_functions
+                .insert_or_replace(empty_user_function(function_name))
+                .unwrap();
+            state
+                .user_functions
+                .insert_or_replace(empty_user_function(added_name))
+                .unwrap();
+        }
+
+        interpreter.restore(checkpoint).unwrap();
+
+        let state = interpreter.state.borrow();
+        assert!(state.user_functions.resolve_name(added_name).is_none());
+        let restored = state.user_functions.resolve_name(function_name).unwrap();
+        assert_eq!(restored.symbols.addr(), original_symbols.addr());
+        assert_eq!(restored.out.addr(), original_out.addr());
+        assert_eq!(restored.plan.0.addr(), original_plan.0.addr());
+        assert_eq!(
+            restored.symbols.borrow().dictionary.addr(),
+            original_symbol_dictionary.addr(),
+        );
+        assert_eq!(restored.plan.checkpoint(), original_plan_checkpoint);
+        assert_eq!(index_payload(&restored.out), 10);
+        let restored_symbol = restored
+            .symbols
+            .borrow()
+            .symbols
+            .get(&symbol_id)
+            .unwrap()
+            .clone();
+        assert_eq!(restored_symbol.addr(), symbol.addr());
+        assert_eq!(index_payload(&restored_symbol), 20);
+        assert_eq!(
+            restored
+                .symbols
+                .borrow()
+                .dictionary
+                .borrow()
+                .get(&symbol_id),
+            Some(&"retained".to_string()),
+        );
+    }
+
+    #[test]
+    fn user_function_restore_preflight_failure_is_atomic() {
+        let mut interpreter = Interpreter::new(45, 100);
+        let function_name = "user/atomic";
+        let definition = empty_user_function(function_name);
+        let original_symbols = definition.symbols.clone();
+        interpreter
+            .state
+            .borrow_mut()
+            .user_functions
+            .insert_or_replace(definition)
+            .unwrap();
+        let checkpoint = interpreter.checkpoint().unwrap();
+
+        let replacement = empty_user_function(function_name);
+        let replacement_symbols = replacement.symbols.clone();
+        interpreter
+            .state
+            .borrow_mut()
+            .user_functions
+            .insert_or_replace(replacement)
+            .unwrap();
+        let held_symbols = original_symbols.borrow();
+
+        let error = interpreter.restore(checkpoint).unwrap_err();
+
+        assert_eq!(error.kind_name(), "UserFunctionsCheckpointBorrowConflict");
+        assert_eq!(
+            interpreter
+                .state
+                .borrow()
+                .user_functions
+                .resolve_name(function_name)
+                .unwrap()
+                .symbols
+                .addr(),
+            replacement_symbols.addr(),
+        );
+        drop(held_symbols);
     }
 
     #[test]
