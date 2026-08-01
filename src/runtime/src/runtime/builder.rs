@@ -16,11 +16,17 @@ use crate::{
     RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver,
     materialize_config_spec_grants, register_config_spec_resources,
 };
+#[cfg(feature = "functions")]
+use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
-use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+#[cfg(feature = "functions")]
+use mech_interpreter::FunctionSystem;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
+#[cfg(feature = "functions")]
+use std::sync::Arc;
 
 // -----------------------------------------------------------------------------
 // Runtime Builder
@@ -28,6 +34,8 @@ use std::rc::Rc;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
+    #[cfg(feature = "functions")]
+    function_system: Option<FunctionSystem>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
     capability_kernel: Box<dyn CapabilityKernel>,
@@ -52,8 +60,18 @@ pub struct RuntimeBuilder {
 
 impl std::fmt::Debug for RuntimeBuilder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        #[cfg(feature = "functions")]
+        let function_system = if self.function_system.is_some() {
+            "<configured FunctionSystem>"
+        } else {
+            "<default FunctionSystem>"
+        };
+        #[cfg(not(feature = "functions"))]
+        let function_system = "<functions disabled>";
+
         f.debug_struct("RuntimeBuilder")
             .field("config", &self.config)
+            .field("function_system", &function_system)
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
             .field("capability_kernel", &"<dyn CapabilityKernel>")
@@ -80,6 +98,8 @@ impl Default for RuntimeBuilder {
     fn default() -> Self {
         Self {
             config: RuntimeConfig::default(),
+            #[cfg(feature = "functions")]
+            function_system: None,
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
                 InMemoryStore::new(),
@@ -116,6 +136,17 @@ impl RuntimeBuilder {
     pub fn config(mut self, config: RuntimeConfig) -> Self {
         self.config = config;
         self
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_system(mut self, function_system: FunctionSystem) -> Self {
+        self.function_system = Some(function_system);
+        self
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_catalog(self, catalog: Arc<FunctionCatalog>) -> Self {
+        self.function_system(FunctionSystem::from_catalog(catalog))
     }
 
     pub fn id_generator(mut self, id_generator: impl IdGenerator + 'static) -> Self {
@@ -293,11 +324,23 @@ impl RuntimeBuilder {
             .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
         self.store.configure_event_retention(max_events)?;
 
+        #[cfg(feature = "functions")]
+        let function_system = select_function_system(
+            self.function_system.take(),
+            mech_interpreter::default_function_system,
+        );
+        #[cfg(feature = "functions")]
+        let program = MechProgram::with_function_system(program_config, function_system.clone());
+        #[cfg(not(feature = "functions"))]
+        let program = MechProgram::new(program_config);
+
         let mut runtime = MechRuntime {
             id: runtime_id,
             event_sequence: 0,
             config: self.config,
-            program: MechProgram::new(program_config),
+            #[cfg(feature = "functions")]
+            function_system,
+            program,
             id_generator: self.id_generator,
             store: self.store,
             capability_kernel: self.capability_kernel,
@@ -398,5 +441,86 @@ impl RuntimeBuilder {
         )?;
 
         Ok(runtime)
+    }
+}
+
+#[cfg(feature = "functions")]
+fn select_function_system(
+    configured: Option<FunctionSystem>,
+    default: impl FnOnce() -> FunctionSystem,
+) -> FunctionSystem {
+    configured.unwrap_or_else(default)
+}
+
+#[cfg(all(test, feature = "functions"))]
+mod tests {
+    use super::{MechProgramConfig, RuntimeBuilder, select_function_system};
+    use mech_core::FunctionCatalogBuilder;
+    use mech_interpreter::FunctionSystem;
+    use std::sync::Arc;
+
+    #[test]
+    fn custom_function_system_reaches_retained_and_runtime_created_programs() {
+        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
+        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
+        let runtime = RuntimeBuilder::new()
+            .function_system(function_system)
+            .build()
+            .unwrap();
+
+        assert!(Arc::ptr_eq(runtime.function_system.catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            runtime.function_system.legacy_boundary(),
+            &legacy_boundary,
+        ));
+        assert!(Arc::ptr_eq(runtime.program().function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            runtime.program().function_system().legacy_boundary(),
+            &legacy_boundary,
+        ));
+
+        let isolated = runtime.new_program(MechProgramConfig::default());
+        assert!(Arc::ptr_eq(isolated.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            isolated.function_system().legacy_boundary(),
+            &legacy_boundary,
+        ));
+    }
+
+    #[test]
+    fn function_catalog_wrapper_derives_only_the_supplied_catalog_boundary() {
+        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let runtime = RuntimeBuilder::new()
+            .function_catalog(Arc::clone(&catalog))
+            .build()
+            .unwrap();
+
+        assert!(Arc::ptr_eq(runtime.function_system.catalog(), &catalog));
+        assert_eq!(
+            runtime.function_system.legacy_boundary().operation_count(),
+            0
+        );
+        assert_eq!(
+            runtime
+                .function_system
+                .legacy_boundary()
+                .runtime_function_count(),
+            0,
+        );
+    }
+
+    #[test]
+    fn configured_function_system_does_not_invoke_default_factory() {
+        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let configured = FunctionSystem::from_catalog(Arc::clone(&catalog));
+        let legacy_boundary = Arc::clone(configured.legacy_boundary());
+
+        let selected = select_function_system(Some(configured), || {
+            panic!("configured function system must bypass the default factory")
+        });
+
+        assert!(Arc::ptr_eq(selected.catalog(), &catalog));
+        assert!(Arc::ptr_eq(selected.legacy_boundary(), &legacy_boundary));
     }
 }

@@ -9,6 +9,11 @@
 
 use mech_core::*;
 pub use mech_interpreter::ExecutionServicesBorrowConflict;
+#[cfg(feature = "functions")]
+pub use mech_interpreter::{
+    FunctionSystem, LegacyFunctionBoundary, LegacyFunctionBoundaryBuilder,
+    default_function_catalog, default_function_system,
+};
 
 #[cfg(feature = "invariant_define")]
 pub mod integrity;
@@ -16,10 +21,6 @@ pub mod integrity;
 pub mod native;
 #[cfg(feature = "program")]
 pub mod program;
-//#[cfg(feature = "runloop")]
-//pub mod runloop;
-//#[cfg(feature = "persister")]
-//pub mod persister;
 
 #[cfg(feature = "invariant_define")]
 pub use crate::integrity::*;
@@ -27,10 +28,6 @@ pub use crate::integrity::*;
 pub use crate::native::*;
 #[cfg(feature = "program")]
 pub use crate::program::*;
-//#[cfg(feature = "runloop")]
-//pub use crate::runloop::*;
-//#[cfg(feature = "persister")]
-//pub use crate::persister::*;
 
 #[macro_export]
 macro_rules! print_tree {

@@ -12,7 +12,7 @@ use crate::{
     RuntimeTransactionNotFoundError, RuntimeValueSnapshot, default_host_capability_request,
 };
 use mech_core::{MResult, MechError, MechExecutionServices, Value};
-use mech_program::MechProgram;
+use mech_engine::MechProgram;
 
 pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) runtime_id: RuntimeId,

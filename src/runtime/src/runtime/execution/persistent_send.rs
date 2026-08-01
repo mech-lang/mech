@@ -12,7 +12,7 @@ impl MechRuntime {
     pub(super) fn execute_persistent_sends(
         &mut self,
         context: &mut RuntimeContext,
-        turn: &mech_program::ProgramInputTurnOutcome,
+        turn: &mech_engine::ProgramInputTurnOutcome,
     ) -> MResult<()> {
         for send in self.persistent_sends.clone() {
             let should_send = match send.schedule {

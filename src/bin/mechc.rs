@@ -31,7 +31,7 @@ use zip::ZipWriter;
 use zip::write::FileOptions;
 
 use mech_core::*;
-use mech_program::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use mech_syntax::*;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -1,7 +1,7 @@
 use super::RuntimeContextCheckpoint;
 use crate::RuntimeTransaction;
 use crate::runtime::live_state::RuntimeLiveStateSnapshot;
-use mech_program::MechProgramCheckpoint;
+use mech_engine::MechProgramCheckpoint;
 
 #[derive(Clone)]
 pub(in crate::runtime) struct RuntimeOperationSavepoint {

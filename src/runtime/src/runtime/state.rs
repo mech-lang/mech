@@ -11,7 +11,9 @@ use crate::{
     SchedulerPolicy, SourceResolver, TransactionId,
 };
 use mech_core::{MResult, ModuleManifestCatalog};
-use mech_program::{MechProgram, ProgramInputId};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId};
+#[cfg(feature = "functions")]
+use mech_interpreter::FunctionSystem;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -39,6 +41,8 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
+    #[cfg(feature = "functions")]
+    pub(super) function_system: FunctionSystem,
     pub(super) program: MechProgram,
     pub(super) id_generator: Box<dyn IdGenerator>,
     pub(super) store: Box<dyn MechStore>,
@@ -75,6 +79,7 @@ impl std::fmt::Debug for MechRuntime {
             .field("id", &self.id)
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
+            .field("function_system", &"<FunctionSystem>")
             .field("program", &"<MechProgram>")
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
@@ -127,6 +132,17 @@ impl MechRuntime {
     /// Runtime internals must not use it to bypass the program coordinator.
     pub(crate) fn program_mut(&mut self) -> &mut MechProgram {
         &mut self.program
+    }
+
+    pub(in crate::runtime) fn new_program(&self, config: MechProgramConfig) -> MechProgram {
+        #[cfg(feature = "functions")]
+        {
+            MechProgram::with_function_system(config, self.function_system.clone())
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            MechProgram::new(config)
+        }
     }
 
     pub(crate) fn health(&self) -> &RuntimeHealth {

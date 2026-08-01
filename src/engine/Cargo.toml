@@ -1,8 +1,8 @@
 [package]
-name = "mech-program"
+name = "mech-engine"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
-description = "Program orchestration layer for Mech runtimes."
+description = "Retained program execution, reactive coordination, and bytecode integration for Mech."
 documentation = "https://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-lang/mech"
@@ -22,18 +22,15 @@ default = ["baselib", "pretty_print", "serde", "program", "compiler", "mika",
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "mechfs", "async", "trace", "profile", "persister", "runloop", "native",
+      "async", "trace", "profile", "native",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
 base = ["baselib", "pretty_print", "serde", "program", "compiler", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "mechfs", "async", "trace", "profile", "persister", "runloop", "native",
+      "async", "trace", "profile", "native",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 
-persister = ["mechfs"]
-runloop = ["program"]
-mechfs = ["bincode", "notify", "csv", "reqwest", "mech-syntax/formatter", "colored"]
 async = []
 trace = []
 profile = []
@@ -178,13 +175,7 @@ mech-bytecode = { version = "0.3.5", default-features = false, optional = true }
 mech-core = { version = "0.3.5", default-features = false }
 mech-syntax = { version = "0.3.5", default-features = false }
 mech-interpreter = { version = "0.3.5", default-features = false }
-crossbeam-channel = "0.5.15"
 serde = { version = "1.0.228", features = ["derive"] }
-bincode = { version = "2.0.1", features = ["serde"], optional = true }
-notify = { version = "8.2.0", optional = true }
-csv = { version = "1.4.0", optional = true }
-colored = {version = "3.1.1", optional = true }
-reqwest = { version = "0.13.2", features = ["blocking"], optional = true }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 web-time = "1.1.0"

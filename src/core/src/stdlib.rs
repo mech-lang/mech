@@ -420,6 +420,209 @@ macro_rules! impl_unop {
     };
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_install_binop_runtime_factory {
+    ($builder:expr, $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal) => {
+        paste! {
+            $builder.insert_runtime_factory(
+                concat!(
+                    stringify!($lib),
+                    stringify!($suffix),
+                    "<",
+                    $scalar_name,
+                    ">"
+                ),
+                <[<$lib $suffix>]<$scalar> as $crate::MechFunctionFactory>::new,
+            )?;
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_install_binop_runtime_factory_group {
+    ($builder:expr, $lib:ident, $scalar:ty, $scalar_name:literal; $($suffix:ident),+ $(,)?) => {
+        $(
+            $crate::__mech_install_binop_runtime_factory!(
+                $builder,
+                $lib,
+                $suffix,
+                $scalar,
+                $scalar_name
+            );
+        )+
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_install_binop_runtime_factories_for_type {
+    ($builder:expr, $lib:ident, $scalar:ty, $scalar_name:literal) => {{
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SS
+        );
+
+        #[cfg(feature = "matrix1")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SM1, M1S, M1M1
+        );
+        #[cfg(feature = "matrix2")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SM2, M2S, M2M2
+        );
+        #[cfg(feature = "matrix3")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SM3, M3S, M3M3
+        );
+        #[cfg(feature = "matrix4")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SM4, M4S, M4M4
+        );
+        #[cfg(feature = "matrix2x3")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SM2x3, M2x3S, M2x3M2x3
+        );
+        #[cfg(feature = "matrix3x2")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SM3x2, M3x2S, M3x2M3x2
+        );
+        #[cfg(feature = "matrixd")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SMD, MDS, MDMD
+        );
+
+        #[cfg(feature = "row_vector2")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SR2, R2S, R2R2
+        );
+        #[cfg(feature = "row_vector3")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SR3, R3S, R3R3
+        );
+        #[cfg(feature = "row_vector4")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SR4, R4S, R4R4
+        );
+        #[cfg(feature = "row_vectord")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SRD, RDS, RDRD
+        );
+
+        #[cfg(feature = "vector2")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SV2, V2S, V2V2
+        );
+        #[cfg(feature = "vector3")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SV3, V3S, V3V3
+        );
+        #[cfg(feature = "vector4")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SV4, V4S, V4V4
+        );
+        #[cfg(feature = "vectord")]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; SVD, VDS, VDVD
+        );
+
+        #[cfg(all(feature = "matrix2", feature = "vector2"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M2V2, V2M2
+        );
+        #[cfg(all(feature = "matrix3", feature = "vector3"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M3V3, V3M3
+        );
+        #[cfg(all(feature = "matrix4", feature = "vector4"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M4V4, V4M4
+        );
+        #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M2x3V2, V2M2x3
+        );
+        #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M3x2V3, V3M3x2
+        );
+        #[cfg(all(feature = "matrixd", feature = "vectord"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDVD, VDMD
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector2"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDV2, V2MD
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector3"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDV3, V3MD
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector4"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDV4, V4MD
+        );
+
+        #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M2R2, R2M2
+        );
+        #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M3R3, R3M3
+        );
+        #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M4R4, R4M4
+        );
+        #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M2x3R3, R3M2x3
+        );
+        #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; M3x2R2, R2M3x2
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDRD, RDMD
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector2"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDR2, R2MD
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector3"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDR3, R3MD
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
+        $crate::__mech_install_binop_runtime_factory_group!(
+            $builder, $lib, $scalar, $scalar_name; MDR4, R4MD
+        );
+
+        Ok::<(), $crate::MechError>(())
+    }};
+}
+
+/// Installs every enabled concrete runtime factory generated for a binary
+/// operation across the supplied scalar kinds.
+#[macro_export]
+macro_rules! install_binop_runtime_factories {
+    ($builder:expr, $lib:ident; $(($feature:literal, $scalar:ty, $scalar_name:literal)),+ $(,)?) => {{
+        $(
+            #[cfg(feature = $feature)]
+            $crate::__mech_install_binop_runtime_factories_for_type!(
+                $builder,
+                $lib,
+                $scalar,
+                $scalar_name
+            )?;
+        )+
+
+        Ok::<(), $crate::MechError>(())
+    }};
+}
+
 #[macro_export]
 macro_rules! impl_fxns {
   ($lib:ident, $in:ident, $out:ident, $op:ident) => {

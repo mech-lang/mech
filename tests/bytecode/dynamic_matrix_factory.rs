@@ -1,6 +1,6 @@
 use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{DecodedInstr, MResult, ParsedProgram, Value, hash_str};
-use mech_program::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig};
 
 #[test]
 fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<()> {

@@ -7,11 +7,11 @@
 // ----------------------------------------------------------------------------
 
 pub extern crate mech_core as core;
-pub extern crate mech_program as program;
+pub extern crate mech_engine as program;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_core::*;
-pub use mech_program::*;
+pub use mech_engine::*;
 
 use mech_core::nodes::Program;
 

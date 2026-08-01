@@ -3,8 +3,8 @@ use mech_core::{
     MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId,
     ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
 };
+use mech_engine::{MechProgram, MechProgramConfig};
 use mech_interpreter::Interpreter;
-use mech_program::{MechProgram, MechProgramConfig};
 
 fn symbol(interpreter: &Interpreter, name: &str) -> Value {
     interpreter
