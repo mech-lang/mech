@@ -406,7 +406,7 @@ pub fn set_comprehension(set_comp: &SetComprehension, p: &Interpreter) -> MResul
             .borrow()
             .function_compilers
             .get(&set_define_id)
-            .copied()
+            .cloned()
     };
     match set_define {
         Some(compiler) => execute_native_function_compiler(compiler, &values, p),
@@ -435,7 +435,7 @@ pub fn matrix_comprehension(matrix_comp: &MatrixComprehension, p: &Interpreter) 
             .borrow()
             .function_compilers
             .get(&horzcat_id)
-            .copied()
+            .cloned()
     };
     match horzcat {
         Some(compiler) => execute_native_function_compiler(compiler, &values, p),
@@ -496,7 +496,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
             match p.symbols().borrow().get(id) {
                 Some(val) => Value::MutableReference(val.clone()),
                 None => {
-                    return Err(MechError::new(UndefinedVariableError { id }, None)
+                    return Err(MechError::new(UndefinedVariableError { id, name: slc.name.to_string() }, None)
                         .with_compiler_loc()
                         .with_tokens(slc.tokens()));
                 }
@@ -506,7 +506,7 @@ pub fn slice(slc: &Slice, env: Option<&Environment>, p: &Interpreter) -> MResult
         match p.symbols().borrow().get(id) {
             Some(val) => Value::MutableReference(val.clone()),
             None => {
-                return Err(MechError::new(UndefinedVariableError { id }, None)
+                return Err(MechError::new(UndefinedVariableError { id, name: slc.name.to_string() }, None)
                     .with_compiler_loc()
                     .with_tokens(slc.tokens()));
             }
@@ -893,7 +893,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
                 drop(state_brrw);
                 match symbol_value {
                     Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                    None => Err(MechError::new(UndefinedVariableError { id }, None)
+                    None => Err(MechError::new(UndefinedVariableError { id, name: v.name.to_string() }, None)
                         .with_compiler_loc()
                         .with_tokens(v.tokens())),
                 }
@@ -907,7 +907,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &Interpreter) -> MResult<Value
             drop(state_brrw);
             match symbol_value {
                 Some(value) => maybe_cast_to_kind(Value::MutableReference(value)),
-                None => Err(MechError::new(UndefinedVariableError { id }, None)
+                None => Err(MechError::new(UndefinedVariableError { id, name: v.name.to_string() }, None)
                     .with_compiler_loc()
                     .with_tokens(v.tokens())),
             }
@@ -1094,7 +1094,7 @@ fn infer_missing_enum_match_patterns(
         candidates[0]
     };
     let variant_ids: HashSet<u64> = enum_def.variants.iter().map(|(id, _)| *id).collect();
-    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).copied().collect();
+    let missing_ids: Vec<u64> = variant_ids.difference(&arm_tags).cloned().collect();
     let names_brrw = enum_def.names.borrow();
     let missing_patterns = enum_def
         .variants
@@ -1401,11 +1401,11 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &Interpreter) -> MResult<V
       #[cfg(feature = "compare_eq")]
       FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_seq")]
-      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::StrictEqual) => CompareStrictEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_neq")]
       FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_sneq")]
-      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => CompareStrictNotEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_lte")]
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual {}.compile(&vec![lhs, rhs])?,
       #[cfg(feature = "compare_gte")]
@@ -1620,6 +1620,7 @@ impl MechErrorKind for UnhandledFormulaOperatorError {
 #[derive(Debug, Clone)]
 pub struct UndefinedVariableError {
   pub id: u64,
+  pub name: String,
 }
 impl MechErrorKind for UndefinedVariableError {
   fn name(&self) -> &str {
@@ -1627,7 +1628,7 @@ impl MechErrorKind for UndefinedVariableError {
   }
 
   fn message(&self) -> String {
-    format!("Undefined variable: {}", self.id)
+    format!("Undefined variable `{}` (id: {})", self.name, self.id)
   }
 }
 #[derive(Debug, Clone)]

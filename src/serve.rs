@@ -5,6 +5,8 @@ use base64::{encode, decode};
 use chrono::Local;
 use mech_core::*;
 use crate::*;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
     
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -14,7 +16,7 @@ pub struct MechServer {
   stylesheet: String,
   html_shim: String,
   full_address: String,
-  mechfs: MechFileSystem,
+  sources: Arc<RwLock<HashMap<String, MechSourceCode>>>,
   js: Vec<u8>,
   wasm: Vec<u8>,
 }
@@ -22,8 +24,6 @@ pub struct MechServer {
 impl MechServer {
 
   pub fn new(name: String, full_address: String, stylesheet: String, html_shim: String, wasm: Vec<u8>, js: Vec<u8>) -> Self {
-    let mut mechfs = MechFileSystem::new();
-
     Self {
       badge: format!("[{}] Server", name).truecolor(34, 204, 187),
       init: false,
@@ -32,20 +32,34 @@ impl MechServer {
       js,
       wasm,
       full_address: full_address,
-      mechfs,
+      sources: Arc::new(RwLock::new(HashMap::new())),
     }
   }
 
   pub async fn init(&mut self) -> MResult<()> {
-    self.mechfs.set_stylesheet(&self.stylesheet)?;
-    self.mechfs.set_shim(&self.html_shim)?;
+    let mut sources = self.sources.write().unwrap();
+    if !self.html_shim.is_empty() {
+      sources.insert("index.html".to_string(), MechSourceCode::Html(self.html_shim.clone()));
+    }
+    if !self.stylesheet.is_empty() {
+      sources.insert("style.css".to_string(), MechSourceCode::String(self.stylesheet.clone()));
+    }
     self.init = true;
     Ok(())
   }
 
   pub fn load_sources(&mut self, paths: &Vec<String>) -> MResult<()> {
     for path in paths {
-      self.mechfs.watch_source(&path)?;
+      let source = std::fs::read_to_string(path)?;
+      let key = std::path::Path::new(path)
+        .file_name()
+        .map(|name| name.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.clone());
+      let code = match std::path::Path::new(path).extension().and_then(|ext| ext.to_str()) {
+        Some("html") => MechSourceCode::Html(source),
+        _ => MechSourceCode::String(source),
+      };
+      self.sources.write().unwrap().insert(key, code);
     }
     Ok(())
   }
@@ -72,7 +86,7 @@ impl MechServer {
     }).expect("Error setting Ctrl-C handler");
 
 
-    let code_source = self.mechfs.sources();
+    let code_source = self.sources.clone();
 
     let index = warp::get()
       .and(warp::filters::addr::remote())
@@ -93,13 +107,9 @@ impl MechServer {
               let url = url.strip_prefix("code/").unwrap();
 
               // If it's code, serve it
-              match sources.get_tree(url) {
-                Some(tree) => {
-                  let tree: Program = if let MechSourceCode::Tree(tree) = tree {
-                    tree
-                  } else {
-                    todo!("{} Error getting tree from sources", server_badge());
-                  };
+              match sources.get(url) {
+                Some(MechSourceCode::Tree(tree)) => {
+                  let tree: Program = tree.clone();
                   #[cfg(feature = "serde")]
                   match compress_and_encode(&tree) {
                     Ok(encoded) => {
@@ -131,10 +141,17 @@ impl MechServer {
                   )
                   .into_response();
                 }
+                _ => {
+                  return warp::reply::with_status(
+                    warp::reply::with_header("Invalid code source".to_string(), "content-type", "text/plain"),
+                    warp::http::StatusCode::BAD_REQUEST,
+                  )
+                  .into_response();
+                }
               }
             // serve images from images folder
             } else if url.starts_with("images/") {
-              match sources.get_image(url) {
+              match sources.get(url) {
                 Some(MechSourceCode::Image(extension, img_data)) => {
                   let content_type = match extension.as_str() {
                     "png" => "image/png",
@@ -184,8 +201,8 @@ impl MechServer {
               );
             }
 
-            let mech_html = match sources.get_html(url) {
-              Some(MechSourceCode::Html(source)) => source,
+            let mech_html = match sources.get(url) {
+              Some(MechSourceCode::Html(source)) => source.clone(),
               _ => {
               let mech_html = format!(
                 "<html><head><title>404 Not Found</title></head>\

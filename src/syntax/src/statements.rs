@@ -145,6 +145,20 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{mutable, var, expression}))
 }
 
+#[cfg(feature = "invariant_define")]
+// invariant-define := identifier, "!", define-operator, expression ;
+pub fn invariant_define(input: ParseString) -> ParseResult<InvariantDefine> {
+  let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
+  let (input, mut name) = identifier(input)?;
+  let (input, exclam) = exclamation(input)?;
+  name.name.chars.extend(exclam.chars.clone());
+  let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, InvariantDefine{name, expression}))
+}
+
 // variable-assign := slice-ref, !define-operator, assign-operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
@@ -193,10 +207,45 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   Ok((input, TupleDestructure{vars, expression}))
 }
 
+// import-declaration := "+>", module-import-specifier ;
+pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = module_import_sigil(input)?;
+  let (input, _) = whitespace1(input)?;
+  let start = input.loc();
+  let spec_start = input.cursor;
+  let (input, _) = many1(nom_tuple((is_not(alt((new_line, semicolon))), any_token)))(input)?;
+  let specifier = input.slice(spec_start, input.cursor).trim().to_string();
+  if specifier == "*" || specifier.contains("/*/") || specifier.contains('*') && !specifier.ends_with("/*") {
+    return Err(nom::Err::Failure(ParseError::new(input, "Invalid wildcard placement in import specifier")));
+  }
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  let token = Token {
+    kind: TokenKind::Any,
+    chars: specifier.chars().collect(),
+    src_range,
+  };
+  Ok((input, ImportDeclaration { specifier: MechString { text: token } }))
+}
+
+// export-declaration := "<+", export-name ;
+pub fn export_declaration(input: ParseString) -> ParseResult<ExportDeclaration> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = module_export_sigil(input)?;
+  let (input, _) = whitespace1(input)?;
+  let (input, name) = identifier(input)?;
+  Ok((input, ExportDeclaration { name }))
+}
+
 // statement := variable-define | variable-assign | op-assign | enum-define | tuple-destructure | kind-define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let parsers: Vec<(&'static str,Box<dyn Fn(ParseString) -> ParseResult<Statement>>)> = vec![
+    ("import_declaration", Box::new(|i| import_declaration(i).map(|(i, v)| (i, Statement::ImportDeclaration(v))))),
+    ("export_declaration", Box::new(|i| export_declaration(i).map(|(i, v)| (i, Statement::ExportDeclaration(v))))),
     ("fsm_declare", Box::new(|i| fsm_declare(i).map(|(i, v)| (i, Statement::FsmDeclare(v))))),
+    #[cfg(feature = "invariant_define")]
+    ("invariant_define", Box::new(|i| invariant_define(i).map(|(i, v)| (i, Statement::InvariantDefine(v))))),
     ("variable_define", Box::new(|i| variable_define(i).map(|(i, v)| (i, Statement::VariableDefine(v))))),
     ("variable_assign", Box::new(|i| variable_assign(i).map(|(i, v)| (i, Statement::VariableAssign(v))))),
     ("op_assign", Box::new(|i| op_assign(i).map(|(i, v)| (i, Statement::OpAssign(v))))),
@@ -209,9 +258,9 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
 
 // enum-define := "<", identifier, ">", define-operator, list1(enum-separator, enum-variant);
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
-  let (input, _) = left_angle(input)?;
+  let (input, (_, r)) = range(left_angle)(input)?;
   let (input, name) = identifier(input)?;
-  let (input, _) = right_angle(input)?;
+  let (input, _) = label!(right_angle, "Expects right angle", r)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, variants) = separated_list1(enum_separator, enum_variant)(input)?;
   Ok((input, EnumDefine{name, variants}))
@@ -242,9 +291,9 @@ pub fn enum_variant_inline_kind(input: ParseString) -> ParseResult<KindAnnotatio
 
 // kind-define := "<", identifier, ">", define-operator, kind-annotation ;
 pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
-  let (input, _) = left_angle(input)?;
+  let (input, (_, r)) = range(left_angle)(input)?;
   let (input, name) = identifier(input)?;
-  let (input, _) = right_angle(input)?;
+  let (input, _) = label!(right_angle, "Expects right angle", r)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,kind:knd}))

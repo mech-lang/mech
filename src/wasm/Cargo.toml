@@ -41,7 +41,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
       ]
 
-statements_default = ["variable_assign","variable_define","kind_define"]
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
 baselib = ["bool", "string", 
@@ -80,6 +80,7 @@ code = []
 statements = ["mech-core/statements", "mech-interpreter/statements", "mech-syntax/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-interpreter/variables", "mech-syntax/variables"]
 variable_define = ["statements", "functions", "mech-core/variable_define", "mech-interpreter/variable_define", "mech-syntax/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define", "mech-interpreter/invariant_define", "mech-syntax/invariant_define"]
 variable_assign = ["statements", "mech-core/variable_assign", "mech-interpreter/variable_assign", "mech-syntax/variable_assign"]
 kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-interpreter/kind_define", "mech-syntax/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation", "mech-interpreter/kind_annotation", "mech-syntax/kind_annotation"]

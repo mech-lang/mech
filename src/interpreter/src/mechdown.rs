@@ -91,7 +91,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       } else {
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
-        let mut new_sub_interpreter =  Interpreter::new(code_id);
+        let mut new_sub_interpreter =  Interpreter::new(code_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
 
         let mut pp = sub_interpreters
@@ -171,7 +171,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       if let Some(mika_section) = s {
         let mika_interp_id = mika_interpreter_id(p.id, m, s);
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
-        let mut new_sub_interpreter = Interpreter::new(mika_interp_id);
+        let mut new_sub_interpreter = Interpreter::new(mika_interp_id, 10_000);
         new_sub_interpreter.set_functions(p.functions().clone());
         let pp = sub_interpreters
           .entry(mika_interp_id)

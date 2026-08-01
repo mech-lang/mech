@@ -41,7 +41,7 @@ formatter = []
 mechdown = []
 mika = ["mech-core/mika"]
 
-statements_default = ["variable_assign","variable_define","kind_define"]
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
 stdlib = ["bool", "string", 
@@ -81,6 +81,7 @@ serde = ["mech-core/serde"]
 statements = ["mech-core/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables"]
 variable_define = ["statements", "functions", "mech-core/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define"]
 variable_assign = ["statements", "mech-core/variable_assign"]
 kind_define = ["kind_annotation", "statements", "mech-core/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation"]

@@ -314,17 +314,17 @@ impl MechTable {
             .unwrap_or_else(|| key.to_string());
 
         let kind_str = format!(
-            "<span class=\"mech-kind-annotation\">&lt;<span class=\"mech-kind\">{}</span>&gt;</span>",
+            "<span class=\"mech-kind-annotation\"><span class=\"mech-kind-annotation-open\">&lt;</span><span class=\"mech-kind\">{}</span><span class=\"mech-kind-annotation-close\">&gt;</span></span>",
             kind
         );
 
         html.push_str(&format!(
-            "<th class=\"mech-table-field\">\
-                <div class=\"mech-field\">\
-                  <span class=\"mech-field-name\">{}</span>\
-                  <span class=\"mech-field-kind\">{}</span>\
-                </div>\
-            </th>",
+r#"<th class="mech-table-field">
+  <div class="mech-field">
+    <span class="mech-field-name">{}</span>
+    <span class="mech-field-kind">{}</span>
+  </div>
+</th>"#,
             col_name, kind_str
         ));
     }
