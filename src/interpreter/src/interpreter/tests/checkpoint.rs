@@ -1,8 +1,8 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        FunctionCatalogBuilder, FunctionExport, FunctionExposure, Interpreter, MechSourceCode,
-        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
+        FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSystem, Interpreter,
+        MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
         RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict, hash_str,
     };
     use std::collections::HashMap;
@@ -48,9 +48,15 @@ mod checkpoint_tests {
             })
             .unwrap();
         let catalog = Arc::new(builder.build().unwrap());
-        let mut interpreter = Interpreter::with_function_catalog(41, 100, Arc::clone(&catalog));
+        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
+        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
+        let mut interpreter = Interpreter::with_function_system(41, 100, function_system);
 
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            interpreter.legacy_function_boundary(),
+            &legacy_boundary,
+        ));
         assert!(
             interpreter
                 .state
@@ -61,9 +67,17 @@ mod checkpoint_tests {
 
         let cloned = interpreter.clone();
         assert!(Arc::ptr_eq(cloned.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            cloned.legacy_function_boundary(),
+            &legacy_boundary,
+        ));
 
         let child = interpreter.new_child_interpreter(42, 100);
         assert!(Arc::ptr_eq(child.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            child.legacy_function_boundary(),
+            &legacy_boundary,
+        ));
         assert!(
             child
                 .state
@@ -97,6 +111,10 @@ mod checkpoint_tests {
 
         interpreter.restore(checkpoint).unwrap();
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            interpreter.legacy_function_boundary(),
+            &legacy_boundary,
+        ));
         assert_eq!(
             interpreter.state.borrow().function_environment,
             environment_before,
@@ -112,6 +130,10 @@ mod checkpoint_tests {
 
         interpreter.clear();
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
+        assert!(Arc::ptr_eq(
+            interpreter.legacy_function_boundary(),
+            &legacy_boundary,
+        ));
         assert!(
             interpreter
                 .state
