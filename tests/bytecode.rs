@@ -1,4 +1,7 @@
 #![allow(warnings)]
+#[path = "bytecode/dynamic_matrix_factory.rs"]
+mod dynamic_matrix_factory;
+
 extern crate mech_core;
 extern crate mech_syntax;
 use indexmap::set::IndexSet;
