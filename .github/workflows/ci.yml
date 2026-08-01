@@ -38,6 +38,7 @@ jobs:
       - name: Check feature boundaries and examples
         run: |
           bash scripts/check-bytecode-compiler-boundaries.sh
+          bash scripts/check-function-system-contracts.sh
           bash scripts/check-standard-machine-library-tests.sh
 
           # Linked-stdlib CLI build for examples that import named modules.
