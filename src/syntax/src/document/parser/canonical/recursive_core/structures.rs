@@ -202,7 +202,17 @@ pub(super) fn parse_inline_table(parser: &mut Parser<'_>) -> Attempt {
         if let Some(result) = child_result(parser, node, SyntaxKind::InlineTable, child) {
             return result;
         }
-        while parse_inline_table_row(parser) == Attempt::Matched {}
+        loop {
+            let before = parser.offset();
+            match parse_inline_table_row(parser) {
+                Attempt::Matched if parser.offset() > before => {}
+                Attempt::Matched | Attempt::NoMatch => break,
+                Attempt::Committed => {
+                    node.complete(parser, SyntaxKind::InlineTable);
+                    return Attempt::Committed;
+                }
+            }
+        }
         node.complete(parser, SyntaxKind::InlineTable);
         Attempt::Matched
     })
@@ -224,7 +234,17 @@ pub(super) fn parse_inline_table_row(parser: &mut Parser<'_>) -> Attempt {
         if let Some(result) = child_result(parser, node, SyntaxKind::InlineTableRow, first) {
             return result;
         }
-        while inline_table_item(parser) == Attempt::Matched {}
+        loop {
+            let before = parser.offset();
+            match inline_table_item(parser) {
+                Attempt::Matched if parser.offset() > before => {}
+                Attempt::Matched | Attempt::NoMatch => break,
+                Attempt::Committed => {
+                    node.complete(parser, SyntaxKind::InlineTableRow);
+                    return Attempt::Committed;
+                }
+            }
+        }
         if !base::parse_rule(parser, rules::SPACE_TAB0)
             || structure_shell::parse_table_separator(parser) != Attempt::Matched
         {
@@ -434,7 +454,14 @@ pub(super) fn parse_record(parser: &mut Parser<'_>) -> Attempt {
             if first != Attempt::Matched {
                 return first;
             }
-            while parse_binding(parser) == Attempt::Matched {}
+            loop {
+                let before = parser.offset();
+                match parse_binding(parser) {
+                    Attempt::Matched if parser.offset() > before => {}
+                    Attempt::Matched | Attempt::NoMatch => break,
+                    Attempt::Committed => return Attempt::Committed,
+                }
+            }
             if !base::parse_rule(parser, rules::WHITESPACE0) {
                 return Attempt::NoMatch;
             }
@@ -1443,7 +1470,14 @@ fn delimited_repeated(
             if first != Attempt::Matched {
                 return first;
             }
-            while item(parser) == Attempt::Matched {}
+            loop {
+                let before = parser.offset();
+                match item(parser) {
+                    Attempt::Matched if parser.offset() > before => {}
+                    Attempt::Matched | Attempt::NoMatch => break,
+                    Attempt::Committed => return Attempt::Committed,
+                }
+            }
             if !base::parse_rule(parser, rules::WHITESPACE0) || !base::parse_rule(parser, close) {
                 Attempt::NoMatch
             } else {
