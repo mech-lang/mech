@@ -47,7 +47,7 @@ impls_stas!(StatsSumColumnRD, RowDVector<T>, Matrix1<T>, sum_column_op);
 
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
 #[derive(Debug)]
-struct StatsSumColumnRD2<T> {
+pub(crate) struct StatsSumColumnRD2<T> {
     arg: Ref<RowDVector<T>>,
     out: Ref<DMatrix<T>>,
 }

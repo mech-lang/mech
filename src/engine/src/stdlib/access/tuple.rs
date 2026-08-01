@@ -44,6 +44,11 @@ register_descriptor! {
     ptr: TupleAccessElement::new,
   }
 }
+
+pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    builder.insert_runtime_factory("TupleAccessElement", TupleAccessElement::new)
+}
+
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TupleAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {

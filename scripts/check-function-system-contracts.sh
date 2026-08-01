@@ -38,6 +38,13 @@ check_surface() {
     --target-dir "$baseline_target" \
     -- \
     --check "$repository_root/tests/architecture/function-system"
+
+  CARGO_PROFILE_DEV_DEBUG=0 cargo +nightly-2026-03-03 run \
+    --manifest-path "$baseline_manifest" \
+    --target-dir "$baseline_target" \
+    --no-default-features \
+    -- \
+    --check-runtime "$repository_root/tests/architecture/function-system"
 }
 
 check_machines() {

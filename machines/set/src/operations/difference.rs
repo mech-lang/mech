@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Difference ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetDifferenceFxn {
+pub(crate) struct SetDifferenceFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<MechSet>,

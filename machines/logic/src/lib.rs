@@ -9,6 +9,11 @@ extern crate paste;
 
 use mech_core::*;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
 #[cfg(feature = "vectord")]
@@ -72,7 +77,7 @@ pub use self::xor::*;
 macro_rules! impl_logic_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name {
+        pub(crate) struct $struct_name {
             lhs: Ref<$arg1_type>,
             rhs: Ref<$arg2_type>,
             out: Ref<$out_type>,

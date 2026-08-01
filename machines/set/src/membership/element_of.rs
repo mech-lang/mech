@@ -9,7 +9,7 @@ use mech_core::set::MechSet;
 //
 
 #[derive(Debug)]
-struct SetElementOfFxn {
+pub(crate) struct SetElementOfFxn {
     elem: Ref<Value>,
     set: Ref<MechSet>,
     out: Ref<bool>,

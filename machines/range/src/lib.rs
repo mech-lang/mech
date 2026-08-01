@@ -50,6 +50,11 @@ use num_traits::{One, Zero};
 use std::fmt::Debug;
 use std::ops::*;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "exclusive")]
 pub mod exclusive;
 #[cfg(feature = "exclusive")]

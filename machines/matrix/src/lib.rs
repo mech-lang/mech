@@ -53,6 +53,11 @@ use std::ops::*;
 
 use std::fmt::Display;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "dot")]
 pub mod dot;
 #[cfg(feature = "matmul")]

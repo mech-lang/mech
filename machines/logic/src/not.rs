@@ -13,7 +13,7 @@ use std::ops::Not;
 // NotS -----------------------------------------------------------------------
 
 #[derive(Debug)]
-struct NotS<T> {
+pub(crate) struct NotS<T> {
     pub arg: Ref<T>,
     pub out: Ref<T>,
     pub _marker: PhantomData<T>,

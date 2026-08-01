@@ -249,7 +249,7 @@ pub fn record(
         #[cfg(feature = "convert")]
         if knd != val.kind() {
             let arguments = vec![val.clone(), Value::Kind(knd.clone())];
-            match execute_initialized_indexed_compiler(p, &plan, &ConvertKind {}, arguments) {
+            match execute_catalog_operation(p, &plan, "convert/kind", arguments) {
                 Ok(converted_result) => {
                     data.insert(name_hash, converted_result);
                 }
@@ -362,15 +362,33 @@ register_descriptor! {
 }
 
 #[cfg(feature = "set")]
-pub struct SetDefine {
-    pub kind: ValueKind,
-}
+pub struct SetDefine {}
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
 impl NativeFunctionCompiler for SetDefine {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let mut element_kind = arguments
+            .first()
+            .map(Value::kind)
+            .unwrap_or(ValueKind::Empty);
+        for element in arguments {
+            let actual_kind = element.kind();
+            if actual_kind != element_kind {
+                element_kind =
+                    join_set_element_kinds(&element_kind, &actual_kind).ok_or_else(|| {
+                        MechError::new(
+                            SetKindMismatchError {
+                                expected_kind: element_kind.clone(),
+                                actual_kind,
+                            },
+                            None,
+                        )
+                        .with_compiler_loc()
+                    })?;
+            }
+        }
         let mut set = MechSet::from_vec(arguments.clone());
-        set.kind = self.kind.clone();
+        set.kind = element_kind;
         Ok(Box::new(ValueSet { out: Ref::new(set) }))
     }
 }
@@ -379,7 +397,7 @@ impl NativeFunctionCompiler for SetDefine {
 register_descriptor! {
   FunctionCompilerDescriptor {
     name: "set/define",
-    ptr: &SetDefine{ kind: ValueKind::Empty },
+    ptr: &SetDefine{},
   }
 }
 
@@ -417,7 +435,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
     }
     #[cfg(feature = "functions")]
     {
-        execute_initialized_indexed_compiler(p, &plan, &SetDefine { kind: element_kind }, elements)
+        execute_catalog_operation(p, &plan, "set/define", elements)
     }
     #[cfg(not(feature = "functions"))]
     {
@@ -732,7 +750,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) 
             )));
         }
 
-        return execute_initialized_indexed_compiler(p, &plan, &MatrixVertCat {}, col);
+        return execute_catalog_operation(p, &plan, "matrix/vertcat", col);
     }
     return Err(MechError::new(
         FeatureNotEnabledError,
@@ -780,7 +798,7 @@ pub fn matrix_row(
             r.columns.len(),
         )));
     }
-    execute_initialized_indexed_compiler(p, &plan, &MatrixHorzCat {}, row)
+    execute_catalog_operation(p, &plan, "matrix/horzcat", row)
 }
 pub fn matrix_column(
     r: &MatrixColumn,
@@ -1013,9 +1031,7 @@ mod set_dependency_tests {
         let output = execute_initialized_indexed_compiler(
             &execution,
             &plan,
-            &SetDefine {
-                kind: ValueKind::F64,
-            },
+            &SetDefine {},
             vec![first, second],
         )
         .unwrap();

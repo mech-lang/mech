@@ -1,13 +1,5 @@
 use super::{Environment, factor};
-#[cfg(feature = "range_exclusive")]
-use crate::RangeExclusive;
-#[cfg(feature = "range_inclusive")]
-use crate::RangeInclusive;
-#[cfg(feature = "range_exclusive")]
-use crate::RangeIncrementExclusive;
-#[cfg(feature = "range_inclusive")]
-use crate::RangeIncrementInclusive;
-use crate::{InterpreterExecution, MResult, RangeExpression, RangeOp, Value};
+use crate::{InterpreterExecution, MResult, OperationId, RangeExpression, RangeOp, Value};
 
 #[cfg(feature = "range")]
 pub fn range(
@@ -16,8 +8,6 @@ pub fn range(
     p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
     use super::registration::register_initialized_expression_function;
-    use crate::NativeFunctionCompiler;
-
     let plan = p.plan();
     let start = factor(&rng.start, env, p)?;
     let terminal = factor(&rng.terminal, env, p)?;
@@ -25,24 +15,34 @@ pub fn range(
         Some((_, increment)) => {
             let step = factor(increment, env, p)?;
             let arguments = vec![start, step, terminal];
-            let function = match &rng.operator {
+            let canonical_name = match &rng.operator {
                 #[cfg(feature = "range_exclusive")]
-                RangeOp::Exclusive => RangeIncrementExclusive {}.compile(&arguments)?,
+                RangeOp::Exclusive => "range/exclusive-increment",
                 #[cfg(feature = "range_inclusive")]
-                RangeOp::Inclusive => RangeIncrementInclusive {}.compile(&arguments)?,
+                RangeOp::Inclusive => "range/inclusive-increment",
                 _ => unreachable!(),
             };
+            let function = p.specialize_visible_operation_named(
+                OperationId::from_name(canonical_name),
+                Some(canonical_name),
+                &arguments,
+            )?;
             (function, arguments)
         }
         None => {
             let arguments = vec![start, terminal];
-            let function = match &rng.operator {
+            let canonical_name = match &rng.operator {
                 #[cfg(feature = "range_exclusive")]
-                RangeOp::Exclusive => RangeExclusive {}.compile(&arguments)?,
+                RangeOp::Exclusive => "range/exclusive",
                 #[cfg(feature = "range_inclusive")]
-                RangeOp::Inclusive => RangeInclusive {}.compile(&arguments)?,
+                RangeOp::Inclusive => "range/inclusive",
                 _ => unreachable!(),
             };
+            let function = p.specialize_visible_operation_named(
+                OperationId::from_name(canonical_name),
+                Some(canonical_name),
+                &arguments,
+            )?;
             (function, arguments)
         }
     };

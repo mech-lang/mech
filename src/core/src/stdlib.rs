@@ -363,7 +363,7 @@ macro_rules! impl_binop {
 macro_rules! impl_unop {
     ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name {
+        pub(crate) struct $struct_name {
             arg: Ref<$arg_type>,
             out: Ref<$out_type>,
         }
@@ -617,6 +617,110 @@ macro_rules! install_binop_runtime_factories {
                 $scalar,
                 $scalar_name
             )?;
+        )+
+
+        Ok::<(), $crate::MechError>(())
+    }};
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_install_unop_runtime_factory {
+    ($builder:expr, $lib:ident, $scalar:ident, $suffix:ident) => {
+        paste! {
+            $builder.insert_runtime_factory(
+                stringify!([<$lib $scalar:camel $suffix>]),
+                <[<$lib $scalar:camel $suffix>] as $crate::MechFunctionFactory>::new,
+            )?;
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_install_unop_runtime_factories_for_type {
+    ($builder:expr, $lib:ident, $scalar:ident) => {{
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, S);
+
+        #[cfg(feature = "matrix1")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, M1);
+        #[cfg(feature = "matrix2")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, M2);
+        #[cfg(feature = "matrix3")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, M3);
+        #[cfg(feature = "matrix4")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, M4);
+        #[cfg(feature = "matrix2x3")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, M2x3);
+        #[cfg(feature = "matrix3x2")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, M3x2);
+        #[cfg(feature = "matrixd")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, MD);
+
+        #[cfg(feature = "row_vector2")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, R2);
+        #[cfg(feature = "row_vector3")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, R3);
+        #[cfg(feature = "row_vector4")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, R4);
+        #[cfg(feature = "row_vectord")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, RD);
+
+        #[cfg(feature = "vector2")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, V2);
+        #[cfg(feature = "vector3")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, V3);
+        #[cfg(feature = "vector4")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, V4);
+        #[cfg(feature = "vectord")]
+        $crate::__mech_install_unop_runtime_factory!($builder, $lib, $scalar, VD);
+
+        Ok::<(), $crate::MechError>(())
+    }};
+}
+
+/// Installs every enabled concrete runtime factory generated for a unary
+/// operation across the supplied scalar kinds.
+#[macro_export]
+macro_rules! install_unop_runtime_factories {
+    ($builder:expr, $lib:ident; $(($feature:literal, $scalar:ident)),+ $(,)?) => {{
+        $(
+            #[cfg(feature = $feature)]
+            $crate::__mech_install_unop_runtime_factories_for_type!(
+                $builder,
+                $lib,
+                $scalar
+            )?;
+        )+
+
+        Ok::<(), $crate::MechError>(())
+    }};
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_install_typed_runtime_factory {
+    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal) => {
+        $builder.insert_runtime_factory(
+            concat!(stringify!($factory), "<", $scalar_name, ">"),
+            <$factory<$scalar> as $crate::MechFunctionFactory>::new,
+        )?;
+    };
+}
+
+/// Installs enabled one-type generic factories whose legacy names have the
+/// form `Factory<scalar>`.
+#[macro_export]
+macro_rules! install_typed_runtime_factories {
+    ($builder:expr, $factory:ident; $(($feature:literal, $scalar:ty, $scalar_name:literal)),+ $(,)?) => {{
+        $(
+            #[cfg(feature = $feature)]
+            $crate::__mech_install_typed_runtime_factory!(
+                $builder,
+                $factory,
+                $scalar,
+                $scalar_name
+            );
         )+
 
         Ok::<(), $crate::MechError>(())

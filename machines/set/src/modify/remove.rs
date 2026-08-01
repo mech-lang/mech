@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Remove ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetRemoveFxn {
+pub(crate) struct SetRemoveFxn {
     arg1: Ref<MechSet>,
     arg2: Ref<Value>,
     out: Ref<MechSet>,

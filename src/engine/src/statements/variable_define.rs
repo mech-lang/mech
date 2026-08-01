@@ -32,25 +32,16 @@ use super::enums::value_matches_enum_variant;
 use super::{AddressedAssignmentUnsupported, VariableAlreadyDefinedError};
 use crate::Value;
 #[cfg(feature = "variable_define")]
-use crate::stdlib::define::VarDefine;
+use crate::{
+    InterpreterExecution, MResult, MechError, OperationId, Ref, VariableDefine,
+    execute_catalog_operation, expression,
+};
 #[cfg(all(
     feature = "variable_define",
     feature = "kind_annotation",
     feature = "convert"
 ))]
-use crate::{ConvertKind, ValueKind, kind_annotation};
-#[cfg(all(
-    feature = "variable_define",
-    feature = "kind_annotation",
-    feature = "convert",
-    feature = "matrix"
-))]
-use crate::{ConvertMatToMat, ConvertScalarToMat};
-#[cfg(feature = "variable_define")]
-use crate::{
-    InterpreterExecution, MResult, MechError, NativeFunctionCompiler, Ref, VariableDefine,
-    execute_initialized_indexed_compiler, expression,
-};
+use crate::{ValueKind, kind_annotation};
 #[cfg(all(feature = "variable_define", feature = "subscript_formula"))]
 use crate::{
     mark_string_access_value_live, reset_current_string_access_expression_live,
@@ -85,15 +76,17 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
     #[cfg(all(feature = "kind_annotation", feature = "convert"))]
     if let Some(knd_anntn) = &var_def.var.kind {
         let knd = kind_annotation(&knd_anntn.kind, p)?;
-        let mut state_brrw = &mut p.state.borrow_mut();
-        let target_knd = knd.to_value_kind(&mut state_brrw.kinds)?;
+        let target_knd = {
+            let mut state = p.state.borrow_mut();
+            knd.to_value_kind(&mut state.kinds)?
+        };
         // Do kind checking
         match (&result, &target_knd) {
             // Atom is a variant of an enum
             #[cfg(all(feature = "atom", feature = "enum"))]
             (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
                 let atom_name = atom_variant.borrow().name();
-                if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
+                if !value_matches_enum_variant(&result, *enum_id, p) {
                     return Err(MechError::new(
                         UnableToConvertAtomToEnumVariantError {
                             atom_name: atom_name.clone(),
@@ -108,7 +101,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
             #[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
             (Value::Tuple(tuple_val), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
                 let atom_name = format!("{:?}", tuple_val);
-                if !value_matches_enum_variant(&result, *enum_id, &*state_brrw) {
+                if !value_matches_enum_variant(&result, *enum_id, p) {
                     return Err(MechError::new(
                         UnableToConvertAtomToEnumVariantError {
                             atom_name,
@@ -152,10 +145,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
             (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd, _)) => {
                 let value = v.borrow().clone();
                 if value.is_matrix() {
-                    result = execute_initialized_indexed_compiler(
+                    result = execute_catalog_operation(
                         p,
                         &plan,
-                        &ConvertMatToMat {},
+                        "convert/kind",
                         vec![result.clone(), Value::Kind(target_knd.clone())],
                     )?;
                 } else {
@@ -163,20 +156,20 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                     if value_kind.deref_kind() != target_matrix_knd.as_ref().clone()
                         && value_kind != *target_matrix_knd.clone()
                     {
-                        result = execute_initialized_indexed_compiler(
+                        result = execute_catalog_operation(
                             p,
                             &plan,
-                            &ConvertKind {},
+                            "convert/kind",
                             vec![
                                 result.clone(),
                                 Value::Kind(target_matrix_knd.as_ref().clone()),
                             ],
                         )?;
                     };
-                    result = execute_initialized_indexed_compiler(
+                    result = execute_catalog_operation(
                         p,
                         &plan,
-                        &ConvertScalarToMat {},
+                        "convert/kind",
                         vec![result.clone(), Value::Kind(target_knd.clone())],
                     )?;
                 }
@@ -184,10 +177,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
             #[cfg(feature = "matrix")]
             (value, ValueKind::Matrix(target_matrix_knd, _)) => {
                 if value.is_matrix() {
-                    result = execute_initialized_indexed_compiler(
+                    result = execute_catalog_operation(
                         p,
                         &plan,
-                        &ConvertMatToMat {},
+                        "convert/kind",
                         vec![result.clone(), Value::Kind(target_knd.clone())],
                     )?;
                 } else {
@@ -195,30 +188,30 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                     if value_kind.deref_kind() != target_matrix_knd.as_ref().clone()
                         && value_kind != *target_matrix_knd.clone()
                     {
-                        result = execute_initialized_indexed_compiler(
+                        result = execute_catalog_operation(
                             p,
                             &plan,
-                            &ConvertKind {},
+                            "convert/kind",
                             vec![
                                 result.clone(),
                                 Value::Kind(target_matrix_knd.as_ref().clone()),
                             ],
                         )?;
                     };
-                    result = execute_initialized_indexed_compiler(
+                    result = execute_catalog_operation(
                         p,
                         &plan,
-                        &ConvertScalarToMat {},
+                        "convert/kind",
                         vec![result.clone(), Value::Kind(target_knd.clone())],
                     )?;
                 }
             }
             // Kind isn't checked
             x => {
-                result = execute_initialized_indexed_compiler(
+                result = execute_catalog_operation(
                     p,
                     &plan,
-                    &ConvertKind {},
+                    "convert/kind",
                     vec![result.clone(), Value::Kind(target_knd)],
                 )?;
             }
@@ -229,19 +222,25 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
             mark_string_access_value_live(p, &detached_result);
         }
         // Save symbol to interpreter
-        let val_ref = state_brrw.save_symbol(
+        let mut state = p.state.borrow_mut();
+        let val_ref = state.save_symbol(
             var_id,
             var_name.clone(),
             detached_result.clone(),
             var_def.mutable,
         );
+        drop(state);
         // Add variable define step to plan
         let var_define_arguments = vec![
             detached_result.clone(),
             Value::String(Ref::new(var_name.clone())),
             Value::Bool(Ref::new(var_def.mutable)),
         ];
-        let var_def_fxn = VarDefine {}.compile(&var_define_arguments)?;
+        let var_def_fxn = p.specialize_visible_operation_named(
+            OperationId::from_name("var/define"),
+            Some("var/define"),
+            &var_define_arguments,
+        )?;
         plan.register_function(var_def_fxn, &[])?;
         return Ok(detached_result);
     }
@@ -258,13 +257,18 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
         detached_result.clone(),
         var_def.mutable,
     );
+    drop(state_brrw);
     // Add variable define step to plan
     let var_define_arguments = vec![
         detached_result.clone(),
         Value::String(Ref::new(var_name.clone())),
         Value::Bool(Ref::new(var_def.mutable)),
     ];
-    let var_def_fxn = VarDefine {}.compile(&var_define_arguments)?;
+    let var_def_fxn = p.specialize_visible_operation_named(
+        OperationId::from_name("var/define"),
+        Some("var/define"),
+        &var_define_arguments,
+    )?;
     plan.register_function(var_def_fxn, &[])?;
     return Ok(detached_result);
 }

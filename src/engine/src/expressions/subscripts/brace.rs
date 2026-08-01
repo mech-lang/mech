@@ -1,9 +1,6 @@
 use super::super::environment::expression_solves_deferred;
-use super::{Environment, subscript_formula, subscript_range};
-use crate::{
-    AccessRange, AccessScalar, InterpreterExecution, MResult, NativeFunctionCompiler, Subscript,
-    Value,
-};
+use super::{Environment, catalog_access_function, subscript_formula, subscript_range};
+use crate::{InterpreterExecution, MResult, Subscript, Value};
 
 pub(super) fn access(
     sbscrpt: &Subscript,
@@ -23,15 +20,27 @@ pub(super) fn access(
                     fxn_input.push(result);
                     match shape[..] {
                         [1, 1] => {
-                            plan.borrow_mut().push(AccessScalar {}.compile(&fxn_input)?);
+                            plan.borrow_mut().push(catalog_access_function(
+                                p,
+                                "access/scalar",
+                                &fxn_input,
+                            )?);
                         }
                         #[cfg(feature = "subscript_range")]
                         [n, 1] => {
-                            plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                            plan.borrow_mut().push(catalog_access_function(
+                                p,
+                                "access/range",
+                                &fxn_input,
+                            )?);
                         }
                         #[cfg(feature = "subscript_range")]
                         [1, n] => {
-                            plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                            plan.borrow_mut().push(catalog_access_function(
+                                p,
+                                "access/range",
+                                &fxn_input,
+                            )?);
                         }
                         _ => todo!(),
                     }
@@ -40,7 +49,8 @@ pub(super) fn access(
                 [Subscript::Range(ix)] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
-                    plan.borrow_mut().push(AccessRange {}.compile(&fxn_input)?);
+                    plan.borrow_mut()
+                        .push(catalog_access_function(p, "access/range", &fxn_input)?);
                 }
                 /*[Subscript::All] => {
                   fxn_input.push(Value::IndexAll);

@@ -1,9 +1,9 @@
 use super::{Environment, UndefinedVariableError};
-#[cfg(all(feature = "kind_annotation", feature = "convert"))]
-use crate::{ConvertKind, execute_initialized_indexed_compiler, kind_annotation};
 #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
 use crate::{FeatureNotEnabledError, MechError};
 use crate::{Identifier, InterpreterExecution, MResult, MutableReference, Value, Var, hash_str};
+#[cfg(all(feature = "kind_annotation", feature = "convert"))]
+use crate::{execute_catalog_operation, kind_annotation};
 
 fn maybe_cast_variable_to_kind(
     variable: &Var,
@@ -21,10 +21,10 @@ fn maybe_cast_variable_to_kind(
             kind_annotation(&annotation.kind, interpreter)?.to_value_kind(&state.kinds)?
         };
 
-        return execute_initialized_indexed_compiler(
+        return execute_catalog_operation(
             interpreter,
             &interpreter.plan(),
-            &ConvertKind {},
+            "convert/kind",
             vec![value, Value::Kind(target_kind)],
         );
     }

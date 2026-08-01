@@ -2505,6 +2505,232 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     .with_compiler_loc())
 }
 
+macro_rules! install_vertcat_factories {
+    ($builder:expr, $factory:ident) => {{
+        #[inline(never)]
+        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+            mech_core::install_typed_runtime_factories!(
+                builder,
+                $factory;
+                ("bool", bool, "bool"),
+                ("string", String, "string"),
+                ("u8", u8, "u8"),
+                ("u16", u16, "u16"),
+                ("u32", u32, "u32"),
+                ("u64", u64, "u64"),
+                ("u128", u128, "u128"),
+                ("i8", i8, "i8"),
+                ("i16", i16, "i16"),
+                ("i32", i32, "i32"),
+                ("i64", i64, "i64"),
+                ("i128", i128, "i128"),
+                ("f32", f32, "f32"),
+                ("f64", f64, "f64"),
+                ("c64", C64, "c64"),
+                ("r64", R64, "r64"),
+            )?;
+            Ok(())
+        }
+        install($builder)?;
+    }};
+}
+
+macro_rules! install_vertcat_binary_factory {
+    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $e0:ident, $e1:ident, $out:ident) => {
+        $builder.insert_runtime_factory(
+            concat!(
+                stringify!($factory),
+                "<",
+                $scalar_name,
+                stringify!($out),
+                stringify!($e0),
+                stringify!($e1),
+                ">"
+            ),
+            <$factory<$scalar> as MechFunctionFactory>::new,
+        )?;
+    };
+}
+
+macro_rules! install_vertcat_binary_factories {
+    ($builder:expr, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {{
+        #[inline(never)]
+        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+            #[cfg(feature = "bool")]
+            install_vertcat_binary_factory!(builder, $factory, bool, "bool", $e0, $e1, $out);
+            #[cfg(feature = "string")]
+            install_vertcat_binary_factory!(builder, $factory, String, "string", $e0, $e1, $out);
+            #[cfg(feature = "u8")]
+            install_vertcat_binary_factory!(builder, $factory, u8, "u8", $e0, $e1, $out);
+            #[cfg(feature = "u16")]
+            install_vertcat_binary_factory!(builder, $factory, u16, "u16", $e0, $e1, $out);
+            #[cfg(feature = "u32")]
+            install_vertcat_binary_factory!(builder, $factory, u32, "u32", $e0, $e1, $out);
+            #[cfg(feature = "u64")]
+            install_vertcat_binary_factory!(builder, $factory, u64, "u64", $e0, $e1, $out);
+            #[cfg(feature = "u128")]
+            install_vertcat_binary_factory!(builder, $factory, u128, "u128", $e0, $e1, $out);
+            #[cfg(feature = "i8")]
+            install_vertcat_binary_factory!(builder, $factory, i8, "i8", $e0, $e1, $out);
+            #[cfg(feature = "i16")]
+            install_vertcat_binary_factory!(builder, $factory, i16, "i16", $e0, $e1, $out);
+            #[cfg(feature = "i32")]
+            install_vertcat_binary_factory!(builder, $factory, i32, "i32", $e0, $e1, $out);
+            #[cfg(feature = "i64")]
+            install_vertcat_binary_factory!(builder, $factory, i64, "i64", $e0, $e1, $out);
+            #[cfg(feature = "i128")]
+            install_vertcat_binary_factory!(builder, $factory, i128, "i128", $e0, $e1, $out);
+            #[cfg(feature = "f32")]
+            install_vertcat_binary_factory!(builder, $factory, f32, "f32", $e0, $e1, $out);
+            #[cfg(feature = "f64")]
+            install_vertcat_binary_factory!(builder, $factory, f64, "f64", $e0, $e1, $out);
+            #[cfg(feature = "c64")]
+            install_vertcat_binary_factory!(builder, $factory, C64, "c64", $e0, $e1, $out);
+            #[cfg(feature = "r64")]
+            install_vertcat_binary_factory!(builder, $factory, R64, "r64", $e0, $e1, $out);
+            Ok(())
+        }
+        install($builder)?;
+    }};
+}
+
+/// Installs every enabled legacy runtime factory emitted by this module.
+pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrixd")]
+    {
+        install_vertcat_factories!(builder, VerticalConcatenateMD);
+        install_vertcat_factories!(builder, VerticalConcatenateTwoArgs);
+        install_vertcat_factories!(builder, VerticalConcatenateThreeArgs);
+        install_vertcat_factories!(builder, VerticalConcatenateFourArgs);
+        install_vertcat_factories!(builder, VerticalConcatenateNArgs);
+    }
+    #[cfg(feature = "vectord")]
+    {
+        install_vertcat_factories!(builder, VerticalConcatenateVD);
+        install_vertcat_factories!(builder, VerticalConcatenateVD2);
+        install_vertcat_factories!(builder, VerticalConcatenateVD3);
+        install_vertcat_factories!(builder, VerticalConcatenateVD4);
+        install_vertcat_factories!(builder, VerticalConcatenateVDN);
+        install_vertcat_factories!(builder, VerticalConcatenateSD);
+    }
+    #[cfg(feature = "matrix1")]
+    install_vertcat_factories!(builder, VerticalConcatenateS1);
+
+    #[cfg(all(feature = "matrix1", feature = "vector2"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateM1M1, Matrix1, Matrix1, Vector2);
+    #[cfg(all(feature = "vector2", feature = "vector4"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateV2V2, Vector2, Vector2, Vector4);
+    #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateM1V3, Matrix1, Vector3, Vector4);
+    #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateV3M1, Vector3, Matrix1, Vector4);
+    #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateM1V2, Matrix1, Vector2, Vector3);
+    #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateV2M1, Vector2, Matrix1, Vector3);
+    #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateR2R2,
+        RowVector2,
+        RowVector2,
+        Matrix2
+    );
+    #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateR3R3,
+        RowVector3,
+        RowVector3,
+        Matrix2x3
+    );
+    #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateR2M2,
+        RowVector2,
+        Matrix2,
+        Matrix3x2
+    );
+    #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateM2R2,
+        Matrix2,
+        RowVector2,
+        Matrix3x2
+    );
+    #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateM2x3R3,
+        Matrix2x3,
+        RowVector3,
+        Matrix3
+    );
+    #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateR3M2x3,
+        RowVector3,
+        Matrix2x3,
+        Matrix3
+    );
+    #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateMDR4,
+        DMatrix,
+        RowVector4,
+        Matrix4
+    );
+    #[cfg(all(feature = "matrixd", feature = "matrix4"))]
+    install_vertcat_binary_factories!(builder, VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4);
+    #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
+    install_vertcat_binary_factories!(
+        builder,
+        VerticalConcatenateR4MD,
+        RowVector4,
+        DMatrix,
+        Matrix4
+    );
+
+    #[cfg(all(feature = "matrix1", feature = "vector3"))]
+    install_vertcat_factories!(builder, VerticalConcatenateM1M1M1);
+    #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
+    {
+        install_vertcat_factories!(builder, VerticalConcatenateM1M1V2);
+        install_vertcat_factories!(builder, VerticalConcatenateM1V2M1);
+        install_vertcat_factories!(builder, VerticalConcatenateV2M1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "vector4"))]
+    install_vertcat_factories!(builder, VerticalConcatenateM1M1M1M1);
+    #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
+    install_vertcat_factories!(builder, VerticalConcatenateR2R2R2);
+    #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
+    install_vertcat_factories!(builder, VerticalConcatenateR3R3R3);
+    #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))]
+    install_vertcat_factories!(builder, VerticalConcatenateR4R4MD);
+    #[cfg(all(
+        feature = "row_vector4",
+        feature = "matrixd",
+        feature = "row_vector4",
+        feature = "matrix4"
+    ))]
+    install_vertcat_factories!(builder, VerticalConcatenateR4MDR4);
+    #[cfg(all(
+        feature = "matrixd",
+        feature = "row_vector4",
+        feature = "row_vector4",
+        feature = "matrix4"
+    ))]
+    install_vertcat_factories!(builder, VerticalConcatenateMDR4R4);
+    #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
+    install_vertcat_factories!(builder, VerticalConcatenateR4R4R4R4);
+
+    Ok(())
+}
+
 pub struct MatrixVertCat {}
 impl NativeFunctionCompiler for MatrixVertCat {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2533,5 +2759,52 @@ impl MechErrorKind for VerticalConcatenateDimensionMismatch {
             "Cannot vertically concatenate matrices/vectors with dimensions ({}, {})",
             self.rows, self.cols
         )
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod runtime_catalog_tests {
+    use super::*;
+    use mech_core::{FunctionDescriptor, RuntimeFunctionId};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    #[test]
+    fn explicit_runtime_catalog_matches_legacy_inventory() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let explicit = catalog
+            .runtime_entries()
+            .map(|entry| (entry.name.clone(), entry.factory as usize))
+            .collect::<BTreeMap<_, _>>();
+        let mut legacy = BTreeMap::new();
+        for descriptor in inventory::iter::<FunctionDescriptor>
+            .into_iter()
+            .filter(|descriptor| descriptor.name.starts_with("VerticalConcatenate"))
+        {
+            if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
+                assert_eq!(existing, descriptor.ptr as usize, "{0}", descriptor.name);
+            }
+        }
+
+        assert_eq!(
+            explicit.keys().cloned().collect::<BTreeSet<_>>(),
+            legacy
+                .keys()
+                .map(ToString::to_string)
+                .collect::<BTreeSet<_>>()
+        );
+        for (name, pointer) in legacy {
+            let id = RuntimeFunctionId::from_name(name);
+            let entry = catalog
+                .runtime_entry(id)
+                .unwrap_or_else(|| panic!("missing explicit vertcat factory {name}"));
+            assert_eq!(entry.id, id, "runtime ID mismatch for {name}");
+            assert_eq!(entry.name, name);
+            assert_eq!(
+                entry.factory as usize, pointer,
+                "factory mismatch for {name}"
+            );
+        }
     }
 }

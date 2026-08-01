@@ -1,7 +1,8 @@
 use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
-    DecodedInstr, FunctionCompilerDescriptor, FunctionDescriptor, Functions, MechSet,
-    ModuleItemDescriptor, NativeFunctionCompiler, ParsedProgram, Ref, Value, ValueKind, hash_str,
+    DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionCompilerDescriptor,
+    FunctionDescriptor, Functions, MechSet, ModuleItemDescriptor, NativeFunctionCompiler,
+    ParsedProgram, Ref, RuntimeFunctionId, Value, ValueKind, hash_str,
 };
 use mech_engine as _;
 use mech_engine::Interpreter;
@@ -17,7 +18,9 @@ use std::path::{Path, PathBuf};
 
 const BASE_COMMIT: &str = "f7768e0c6bbde69d27410be6d1ecacbd08c238c5";
 const BYTECODE_VERSION: u8 = 1;
-const USAGE: &str = "usage: function-system-baseline (--write <function-system-dir> | --check <function-system-dir> | --write-bytecode <legacy-bytecode-dir>)";
+const USAGE: &str = "usage: function-system-baseline (--write <function-system-dir> | --check <function-system-dir> | --write-runtime <function-system-dir> | --check-runtime <function-system-dir> | --write-bytecode <legacy-bytecode-dir>)";
+const RUNTIME_SURFACE_FILE: &str = "runtime-factory-surface.json";
+const RUNTIME_SURFACE_PROFILE: &str = "standard-linked-dynamic-shape";
 
 type AppResult<T> = Result<T, String>;
 
@@ -54,6 +57,21 @@ struct ValueSpec {
 struct RuntimeFactory {
     name: String,
     id_hex: String,
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+struct RuntimeFactorySurfaceEntry {
+    name: String,
+    id_hex: String,
+    owner: String,
+}
+
+#[derive(Debug, Serialize)]
+struct RuntimeFactorySurface {
+    schema: u32,
+    base_commit: &'static str,
+    profile: &'static str,
+    runtime_factories: Vec<RuntimeFactorySurfaceEntry>,
 }
 
 #[derive(Debug, Serialize)]
@@ -120,6 +138,7 @@ struct DuplicateRegistration {
 
 struct RegistryInventory {
     runtime_names: BTreeMap<u64, BTreeSet<String>>,
+    runtime_factories: BTreeMap<u64, (&'static str, usize)>,
     source_names: BTreeMap<u64, BTreeSet<String>>,
     duplicates: Vec<DuplicateRegistration>,
 }
@@ -128,12 +147,24 @@ impl RegistryInventory {
     fn collect() -> AppResult<Self> {
         let mut runtime_names = BTreeMap::<u64, BTreeSet<String>>::new();
         let mut runtime_counts = BTreeMap::<(u64, String), usize>::new();
+        let mut runtime_factories = BTreeMap::<u64, (&'static str, usize)>::new();
         for descriptor in inventory::iter::<FunctionDescriptor> {
             let id = hash_str(descriptor.name);
             runtime_names
                 .entry(id)
                 .or_default()
                 .insert(descriptor.name.to_string());
+            let incoming = (descriptor.name, descriptor.ptr as usize);
+            if let Some(existing) = runtime_factories.insert(id, incoming)
+                && existing != incoming
+            {
+                return Err(format!(
+                    "conflicting legacy runtime factory registration for {}: name/pointer {:?} versus {:?}",
+                    format_id(id),
+                    existing,
+                    incoming,
+                ));
+            }
             *runtime_counts
                 .entry((id, descriptor.name.to_string()))
                 .or_default() += 1;
@@ -180,6 +211,7 @@ impl RegistryInventory {
 
         Ok(Self {
             runtime_names,
+            runtime_factories,
             source_names,
             duplicates,
         })
@@ -275,8 +307,230 @@ fn run() -> AppResult<()> {
             check_json(&output.join("specialization-cases.json"), &cases)?;
             Ok(())
         }
+        "--write-runtime" => {
+            require_dynamic_runtime_profile()?;
+            let surface = generate_runtime_factory_surface(&inventory)?;
+            fs::create_dir_all(&output).map_err(|error| {
+                format!(
+                    "failed to create baseline directory {}: {error}",
+                    output.display()
+                )
+            })?;
+            write_json(&output.join(RUNTIME_SURFACE_FILE), &surface)?;
+            println!(
+                "wrote {} runtime factories for profile {RUNTIME_SURFACE_PROFILE}",
+                surface.runtime_factories.len(),
+            );
+            Ok(())
+        }
+        "--check-runtime" => {
+            require_dynamic_runtime_profile()?;
+            let surface = generate_runtime_factory_surface(&inventory)?;
+            check_json(&output.join(RUNTIME_SURFACE_FILE), &surface)?;
+            println!(
+                "checked {} runtime factories for profile {RUNTIME_SURFACE_PROFILE}",
+                surface.runtime_factories.len(),
+            );
+            Ok(())
+        }
         "--write-bytecode" => write_legacy_bytecode(&output, &inventory),
         _ => Err(USAGE.to_string()),
+    }
+}
+
+fn require_dynamic_runtime_profile() -> AppResult<()> {
+    if cfg!(feature = "fixed-specialization-cases") {
+        Err(
+            "the runtime-factory surface must use the standard linked dynamic-shape profile; \
+             rerun this command with `--no-default-features`"
+                .to_string(),
+        )
+    } else {
+        Ok(())
+    }
+}
+
+type RuntimeInstaller = fn(&mut FunctionCatalogBuilder) -> mech_core::MResult<()>;
+
+#[derive(Clone)]
+struct OwnedRuntimeFactory {
+    name: String,
+    id: RuntimeFunctionId,
+    pointer: usize,
+    owner: &'static str,
+}
+
+fn generate_runtime_factory_surface(
+    inventory: &RegistryInventory,
+) -> AppResult<RuntimeFactorySurface> {
+    let fragments: [(&str, RuntimeInstaller); 10] = [
+        (
+            "mech-engine::stdlib",
+            mech_engine::stdlib::catalog::install_runtime,
+        ),
+        ("mech-math", mech_math::install_runtime),
+        ("mech-compare", mech_compare::install_runtime),
+        ("mech-logic", mech_logic::install_runtime),
+        ("mech-range", mech_range::install_runtime),
+        ("mech-matrix", mech_matrix::install_runtime),
+        ("mech-set", mech_set::install_runtime),
+        ("mech-string", mech_string::install_runtime),
+        ("mech-stats", mech_stats::install_runtime),
+        ("mech-combinatorics", mech_combinatorics::install_runtime),
+    ];
+
+    let mut explicit = BTreeMap::<RuntimeFunctionId, OwnedRuntimeFactory>::new();
+    for (owner, installer) in fragments {
+        let catalog = runtime_fragment(owner, installer)?;
+        for entry in catalog.runtime_entries() {
+            let incoming = OwnedRuntimeFactory {
+                name: entry.name.clone(),
+                id: entry.id,
+                pointer: entry.factory as usize,
+                owner,
+            };
+            if RuntimeFunctionId::from_name(&incoming.name) != incoming.id {
+                return Err(format!(
+                    "explicit runtime factory {:?} in {owner} has ID {}, but its name hashes to {}",
+                    incoming.name,
+                    format_id(incoming.id.raw()),
+                    format_id(RuntimeFunctionId::from_name(&incoming.name).raw()),
+                ));
+            }
+            if let Some(existing) = explicit.insert(incoming.id, incoming.clone()) {
+                return Err(format!(
+                    "runtime factory {} ({}) is owned by both {} and {}",
+                    incoming.name,
+                    format_id(incoming.id.raw()),
+                    existing.owner,
+                    incoming.owner,
+                ));
+            }
+        }
+    }
+
+    validate_composed_runtime_catalog(&explicit)?;
+    validate_legacy_runtime_inventory(&explicit, inventory)?;
+
+    let mut runtime_factories = explicit
+        .into_values()
+        .map(|entry| RuntimeFactorySurfaceEntry {
+            name: entry.name,
+            id_hex: format_id(entry.id.raw()),
+            owner: entry.owner.to_string(),
+        })
+        .collect::<Vec<_>>();
+    runtime_factories.sort();
+
+    Ok(RuntimeFactorySurface {
+        schema: 1,
+        base_commit: BASE_COMMIT,
+        profile: RUNTIME_SURFACE_PROFILE,
+        runtime_factories,
+    })
+}
+
+fn runtime_fragment(owner: &str, installer: RuntimeInstaller) -> AppResult<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    installer(&mut builder).map_err(|error| {
+        format!(
+            "failed to install explicit runtime catalog fragment {owner}: {}",
+            error.full_chain_message(),
+        )
+    })?;
+    builder.build().map_err(|error| {
+        format!(
+            "failed to build explicit runtime catalog fragment {owner}: {}",
+            error.full_chain_message(),
+        )
+    })
+}
+
+fn validate_composed_runtime_catalog(
+    explicit: &BTreeMap<RuntimeFunctionId, OwnedRuntimeFactory>,
+) -> AppResult<()> {
+    let composed = mech_engine::default_function_catalog();
+    if composed.runtime_factory_count() != explicit.len() {
+        return Err(format!(
+            "the composed standard catalog has {} runtime factories, but its explicit fragments have {}",
+            composed.runtime_factory_count(),
+            explicit.len(),
+        ));
+    }
+
+    for entry in composed.runtime_entries() {
+        let owned = explicit.get(&entry.id).ok_or_else(|| {
+            format!(
+                "composed standard catalog contains factory {} ({}) that has no owning fragment",
+                entry.name,
+                format_id(entry.id.raw()),
+            )
+        })?;
+        if entry.name != owned.name || entry.factory as usize != owned.pointer {
+            return Err(format!(
+                "composed standard catalog factory {} ({}) does not match owning fragment {} exactly",
+                entry.name,
+                format_id(entry.id.raw()),
+                owned.owner,
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_legacy_runtime_inventory(
+    explicit: &BTreeMap<RuntimeFunctionId, OwnedRuntimeFactory>,
+    inventory: &RegistryInventory,
+) -> AppResult<()> {
+    let mut failures = Vec::new();
+
+    for (id, entry) in explicit {
+        match inventory.runtime_factories.get(&id.raw()) {
+            None => failures.push(format!(
+                "explicit-only {} ({}) owned by {}",
+                entry.name,
+                format_id(id.raw()),
+                entry.owner,
+            )),
+            Some((legacy_name, legacy_pointer))
+                if *legacy_name != entry.name || *legacy_pointer != entry.pointer =>
+            {
+                failures.push(format!(
+                    "mismatch for {} ({}): explicit owner {}, legacy name {:?}, factory pointers {:#x} versus {:#x}",
+                    entry.name,
+                    format_id(id.raw()),
+                    entry.owner,
+                    legacy_name,
+                    entry.pointer,
+                    legacy_pointer,
+                ));
+            }
+            Some(_) => {}
+        }
+    }
+
+    for (id, (name, _)) in &inventory.runtime_factories {
+        if !explicit.contains_key(&RuntimeFunctionId::from_raw(*id)) {
+            failures.push(format!("legacy-only {name} ({})", format_id(*id)));
+        }
+    }
+
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        const DIAGNOSTIC_LIMIT: usize = 25;
+        let omitted = failures.len().saturating_sub(DIAGNOSTIC_LIMIT);
+        failures.truncate(DIAGNOSTIC_LIMIT);
+        let mut message = format!(
+            "explicit runtime fragments do not exactly match the legacy FunctionDescriptor inventory ({} explicit, {} legacy):\n- {}",
+            explicit.len(),
+            inventory.runtime_factories.len(),
+            failures.join("\n- "),
+        );
+        if omitted > 0 {
+            message.push_str(&format!("\n- ... and {omitted} more mismatch(es)"));
+        }
+        Err(message)
     }
 }
 

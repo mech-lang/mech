@@ -407,7 +407,7 @@ macro_rules! impl_assign_scalar_scalar {
   ($op_name:tt, $op_fn:tt) => {
     paste::paste! {
       #[derive(Debug)]
-      struct [<$op_name AssignSS>]<T> {
+      pub(crate) struct [<$op_name AssignSS>]<T> {
         sink: Ref<T>,
         source: Ref<T>,
       }

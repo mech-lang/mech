@@ -136,17 +136,37 @@ fn cross_target_source_contract() {
 }
 
 #[wasm_bindgen_test]
-fn standard_function_system_contains_the_complete_profile() {
+fn enabled_standard_profile_is_fully_catalog_owned() {
     let system = default_function_system();
     let catalog = system.catalog();
 
-    assert_eq!(catalog.specializer_count(), 1);
-    assert_eq!(catalog.runtime_factory_count(), 56);
+    assert!(catalog.specializer_count() > 1);
+    assert!(catalog.intrinsic_specializer_count() > 0);
+    assert!(catalog.runtime_factory_count() > 56);
     assert!(catalog.module_export("math", "add").is_none());
-    assert!(
-        system
-            .legacy_boundary()
-            .owns_operation(OperationId::from_name("math/add"))
+    for canonical_name in [
+        "math/add",
+        "compare/eq",
+        "logic/and",
+        "range/inclusive",
+        "matrix/transpose",
+        "set/union",
+        "string/concat",
+    ] {
+        let operation = OperationId::from_name(canonical_name);
+        assert_eq!(
+            catalog.specializer(operation).unwrap().canonical_name,
+            canonical_name,
+        );
+        assert!(system.legacy_boundary().owns_operation(operation));
+    }
+    assert_eq!(
+        system.legacy_boundary().operation_count(),
+        catalog.specializer_count() + catalog.intrinsic_specializer_count(),
+    );
+    assert_eq!(
+        system.legacy_boundary().runtime_function_count(),
+        catalog.runtime_factory_count(),
     );
     assert!(
         system

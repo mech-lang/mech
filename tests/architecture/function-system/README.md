@@ -34,6 +34,29 @@ cargo +nightly-2026-03-03 run \
   --check tests/architecture/function-system
 ```
 
+The additive runtime-factory surface uses the standard linked profile with
+dynamic matrix shapes only. Generate and validate it separately so the
+fixture's Matrix2/Vector2 specialization cases cannot enlarge the runtime
+surface:
+
+```bash
+cargo +nightly-2026-03-03 run \
+  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
+  --no-default-features \
+  -- \
+  --write-runtime tests/architecture/function-system
+
+cargo +nightly-2026-03-03 run \
+  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
+  --no-default-features \
+  -- \
+  --check-runtime tests/architecture/function-system
+```
+
+While legacy descriptors remain, both runtime commands require exact factory
+name, ID, and function-pointer equality between every explicit catalog
+fragment and the linked `FunctionDescriptor` inventory.
+
 Run the complete native compatibility contract, including all standalone
 standard machines and the compiler-free bytecode consumer, with:
 

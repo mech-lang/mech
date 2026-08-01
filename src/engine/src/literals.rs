@@ -1,5 +1,3 @@
-#[cfg(feature = "convert")]
-use crate::stdlib::convert::ConvertKind;
 use crate::*;
 
 // Literals
@@ -134,7 +132,7 @@ pub fn typed_literal(
     let kind = kind_annotation(&knd_attn.kind, p)?;
     let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
     let plan = p.plan();
-    execute_initialized_indexed_compiler(p, &plan, &ConvertKind {}, args)
+    execute_catalog_operation(p, &plan, "convert/kind", args)
 }
 
 #[cfg(feature = "atom")]

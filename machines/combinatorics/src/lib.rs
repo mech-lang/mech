@@ -8,6 +8,11 @@ extern crate nalgebra as na;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 
+#[cfg(all(feature = "functions", not(feature = "dynamic-module")))]
+pub mod catalog;
+#[cfg(all(feature = "functions", not(feature = "dynamic-module")))]
+pub use self::catalog::*;
+
 #[cfg(any(feature = "n_choose_k", feature = "dynamic-module"))]
 pub mod kernels;
 

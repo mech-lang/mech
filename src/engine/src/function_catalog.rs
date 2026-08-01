@@ -19,6 +19,7 @@ impl LegacyFunctionBoundary {
         Self {
             catalog_operations: catalog
                 .specializer_entries()
+                .chain(catalog.intrinsic_specializer_entries())
                 .map(|entry| (entry.operation, entry.canonical_name.clone()))
                 .collect(),
             catalog_runtime_functions: catalog.runtime_entries().map(|entry| entry.id).collect(),
@@ -77,6 +78,7 @@ impl LegacyFunctionBoundaryBuilder {
         self.boundary.catalog_operations.extend(
             catalog
                 .specializer_entries()
+                .chain(catalog.intrinsic_specializer_entries())
                 .map(|entry| (entry.operation, entry.canonical_name.clone())),
         );
         self.boundary
@@ -126,9 +128,33 @@ impl FunctionSystem {
 fn build_default_function_system() -> FunctionSystem {
     let mut builder = FunctionCatalogBuilder::new();
 
-    #[cfg(feature = "math_add")]
-    mech_math::install_math_add_catalog(&mut builder)
-        .expect("static math/add catalog must be valid");
+    crate::stdlib::catalog::install_catalog(&mut builder)
+        .expect("engine function catalog fragment must be valid");
+    #[cfg(feature = "mech-math")]
+    mech_math::install_catalog(&mut builder).expect("math function catalog fragment must be valid");
+    #[cfg(feature = "mech-compare")]
+    mech_compare::install_catalog(&mut builder)
+        .expect("compare function catalog fragment must be valid");
+    #[cfg(feature = "mech-logic")]
+    mech_logic::install_catalog(&mut builder)
+        .expect("logic function catalog fragment must be valid");
+    #[cfg(feature = "mech-range")]
+    mech_range::install_catalog(&mut builder)
+        .expect("range function catalog fragment must be valid");
+    #[cfg(feature = "mech-matrix")]
+    mech_matrix::install_catalog(&mut builder)
+        .expect("matrix function catalog fragment must be valid");
+    #[cfg(feature = "mech-set")]
+    mech_set::install_catalog(&mut builder).expect("set function catalog fragment must be valid");
+    #[cfg(feature = "mech-string")]
+    mech_string::install_catalog(&mut builder)
+        .expect("string function catalog fragment must be valid");
+    #[cfg(feature = "stats")]
+    mech_stats::install_catalog(&mut builder)
+        .expect("stats function catalog fragment must be valid");
+    #[cfg(feature = "combinatorics")]
+    mech_combinatorics::install_catalog(&mut builder)
+        .expect("combinatorics function catalog fragment must be valid");
 
     let catalog = Arc::new(
         builder
@@ -140,8 +166,8 @@ fn build_default_function_system() -> FunctionSystem {
 
 /// Returns the explicit function composition for the standard distribution.
 ///
-/// PR1 intentionally contains only the migrated `math/add` slice. Standard
-/// composition moves to `mech-stdlib` in a later transition.
+/// Standard composition moves to `mech-stdlib` in PR3. PR2 keeps the explicit
+/// composition here while eliminating all discovery through registries.
 pub fn default_function_system() -> FunctionSystem {
     static SYSTEM: OnceLock<FunctionSystem> = OnceLock::new();
     SYSTEM.get_or_init(build_default_function_system).clone()
@@ -156,30 +182,102 @@ pub fn default_function_catalog() -> Arc<FunctionCatalog> {
 mod tests {
     use super::*;
 
-    #[cfg(feature = "math_add")]
+    fn static_exports(catalog: &FunctionCatalog) -> Vec<&mech_core::FunctionExport> {
+        catalog
+            .specializer_entries()
+            .flat_map(|entry| catalog.exports_for_operation(entry.operation))
+            .collect()
+    }
+
     #[test]
-    fn default_system_owns_only_the_migrated_math_add_slice() {
+    fn default_system_owns_every_explicit_catalog_entry() {
         let system = default_function_system();
         let catalog = system.catalog();
-        let operation = OperationId::from_name("math/add");
 
-        assert_eq!(catalog.specializer_count(), 1);
         assert_eq!(
-            catalog.specializer(operation).unwrap().canonical_name,
-            "math/add",
+            system.legacy_boundary().operation_count(),
+            catalog.specializer_count() + catalog.intrinsic_specializer_count(),
         );
-        assert!(catalog.module_export("math", "add").is_none());
-        assert!(catalog.runtime_factory_count() > 0);
-        assert!(system.legacy_boundary().owns_operation(operation));
-        assert_eq!(system.legacy_boundary().operation_count(), 1);
         assert_eq!(
             system.legacy_boundary().runtime_function_count(),
             catalog.runtime_factory_count(),
         );
+        assert!(catalog.specializer_entries().all(|entry| {
+            system
+                .legacy_boundary()
+                .owns_named_operation(entry.operation, &entry.canonical_name)
+        }));
+        assert!(catalog.intrinsic_specializer_entries().all(|entry| {
+            system
+                .legacy_boundary()
+                .owns_named_operation(entry.operation, &entry.canonical_name)
+        }));
         assert!(
             catalog
                 .runtime_entries()
                 .all(|entry| system.legacy_boundary().owns_runtime_function(entry.id))
+        );
+    }
+
+    #[cfg(feature = "linked_stdlib")]
+    #[test]
+    fn linked_standard_catalog_matches_the_frozen_source_surface_counts() {
+        let catalog = default_function_catalog();
+        let exports = static_exports(&catalog);
+
+        assert_eq!(catalog.specializer_count(), 119);
+        assert_eq!(catalog.intrinsic_specializer_count(), 10);
+        assert_eq!(
+            exports
+                .iter()
+                .filter(|export| export.exposure == mech_core::FunctionExposure::Prelude)
+                .count(),
+            52,
+        );
+        assert_eq!(
+            exports
+                .iter()
+                .filter(|export| export.module.is_some())
+                .count(),
+            50,
+        );
+        assert_eq!(exports.len(), 120);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn explicit_runtime_catalog_matches_the_linked_legacy_inventory() {
+        use mech_core::FunctionDescriptor;
+
+        let catalog = default_function_catalog();
+        let mut legacy = BTreeMap::<RuntimeFunctionId, (&'static str, usize)>::new();
+        for descriptor in inventory::iter::<FunctionDescriptor> {
+            let id = RuntimeFunctionId::from_name(descriptor.name);
+            let incoming = (descriptor.name, descriptor.ptr as usize);
+            if let Some(existing) = legacy.insert(id, incoming) {
+                assert_eq!(
+                    existing, incoming,
+                    "conflicting duplicate legacy runtime factory {}",
+                    descriptor.name,
+                );
+            }
+        }
+
+        assert_eq!(catalog.runtime_factory_count(), legacy.len());
+        for entry in catalog.runtime_entries() {
+            let (legacy_name, legacy_factory) = legacy
+                .remove(&entry.id)
+                .unwrap_or_else(|| panic!("explicit-only runtime factory {}", entry.name));
+            assert_eq!(entry.name, legacy_name);
+            assert_eq!(
+                entry.factory as usize, legacy_factory,
+                "runtime factory pointer mismatch for {}",
+                entry.name,
+            );
+        }
+        assert!(
+            legacy.is_empty(),
+            "unmigrated legacy runtime factories: {legacy:?}",
         );
     }
 

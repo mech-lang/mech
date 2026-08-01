@@ -75,6 +75,9 @@ pub mod stat_error;
 #[cfg(feature = "trig")]
 pub mod trig;
 
+#[cfg(all(feature = "functions", not(feature = "dynamic-module")))]
+pub mod catalog;
+
 #[cfg(feature = "arithmetic")]
 pub use self::arithmetic::*;
 #[cfg(feature = "bessel")]
@@ -97,6 +100,9 @@ pub use self::rounding::*;
 pub use self::stat_error::*;
 #[cfg(feature = "trig")]
 pub use self::trig::*;
+
+#[cfg(all(feature = "functions", not(feature = "dynamic-module")))]
+pub use self::catalog::*;
 
 // ----------------------------------------------------------------------------
 // Math Library

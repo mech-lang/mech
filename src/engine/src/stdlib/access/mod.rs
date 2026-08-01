@@ -31,10 +31,62 @@ pub use self::tuple::*;
 #[macro_use]
 use crate::stdlib::*;
 
+/// Installs every enabled concrete access factory without consulting the
+/// legacy distributed inventory.
+pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrix")]
+    matrix::install_runtime(builder)?;
+    #[cfg(feature = "tuple")]
+    tuple::install_runtime(builder)?;
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_access_index_is_scalar(index: &Value) -> bool {
+    index.shape().as_slice() == [1, 1]
+}
+
+#[cfg(feature = "matrix")]
+fn compile_matrix_access(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    match arguments.as_slice().get(1..).unwrap_or_default() {
+        [Value::IndexAll] => MatrixAccessAll {}.compile(arguments),
+        [index] if matrix_access_index_is_scalar(index) => MatrixAccessScalar {}.compile(arguments),
+        [_] => MatrixAccessRange {}.compile(arguments),
+        [Value::IndexAll, index] if matrix_access_index_is_scalar(index) => {
+            MatrixAccessAllScalar {}.compile(arguments)
+        }
+        [Value::IndexAll, _] => MatrixAccessAllRange {}.compile(arguments),
+        [index, Value::IndexAll] if matrix_access_index_is_scalar(index) => {
+            MatrixAccessScalarAll {}.compile(arguments)
+        }
+        [_, Value::IndexAll] => MatrixAccessRangeAll {}.compile(arguments),
+        [left, right]
+            if matrix_access_index_is_scalar(left) && matrix_access_index_is_scalar(right) =>
+        {
+            MatrixAccessScalarScalar {}.compile(arguments)
+        }
+        [left, _] if matrix_access_index_is_scalar(left) => {
+            MatrixAccessScalarRange {}.compile(arguments)
+        }
+        [_, right] if matrix_access_index_is_scalar(right) => {
+            MatrixAccessRangeScalar {}.compile(arguments)
+        }
+        [_, _] => MatrixAccessRangeRange {}.compile(arguments),
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 1,
+                found: arguments.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
 pub struct AccessScalar {}
 impl NativeFunctionCompiler for AccessScalar {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
+        if !(2..=3).contains(&arguments.len()) {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 1,
@@ -48,13 +100,15 @@ impl NativeFunctionCompiler for AccessScalar {
         let index = &arguments[1];
         match src.kind().deref_kind() {
             #[cfg(feature = "matrix")]
-            ValueKind::Matrix(mat, _) => MatrixAccessScalar {}.compile(&arguments),
+            ValueKind::Matrix(..) => compile_matrix_access(arguments),
             #[cfg(feature = "table")]
-            ValueKind::Table(tble, _) => TableAccessScalar {}.compile(&arguments),
+            ValueKind::Table(..) => TableAccessScalar {}.compile(arguments),
             #[cfg(feature = "map")]
-            ValueKind::Map(..) => MapAccess {}.compile(&arguments),
+            ValueKind::Map(..) => MapAccess {}.compile(arguments),
             #[cfg(feature = "string")]
-            ValueKind::String => StringAccessScalar {}.compile(&arguments),
+            ValueKind::String => StringAccessScalar {}.compile(arguments),
+            #[cfg(feature = "tuple")]
+            ValueKind::Tuple(..) => TupleAccess {}.compile(arguments),
             _ => Err(MechError::new(
                 UnhandledFunctionArgumentKind2 {
                     arg: (src.kind(), index.kind()),
@@ -70,7 +124,7 @@ impl NativeFunctionCompiler for AccessScalar {
 pub struct AccessRange {}
 impl NativeFunctionCompiler for AccessRange {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
+        if !(2..=3).contains(&arguments.len()) {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 1,
@@ -84,9 +138,9 @@ impl NativeFunctionCompiler for AccessRange {
         let index = &arguments[1];
         match src.kind().deref_kind() {
             #[cfg(feature = "matrix")]
-            ValueKind::Matrix(mat, _) => MatrixAccessRange {}.compile(&arguments),
+            ValueKind::Matrix(..) => compile_matrix_access(arguments),
             #[cfg(feature = "table")]
-            ValueKind::Table(tble, _) => TableAccessRange {}.compile(&arguments),
+            ValueKind::Table(..) => TableAccessRange {}.compile(arguments),
             _ => Err(MechError::new(
                 UnhandledFunctionArgumentKind2 {
                     arg: (src.kind(), index.kind()),
@@ -271,5 +325,43 @@ impl NativeFunctionCompiler for AccessColumn {
                 .with_compiler_loc()),
             },
         }
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod runtime_catalog_tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn explicit_runtime_factories_match_access_inventory_names_ids_and_pointers() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+
+        let mut legacy = BTreeMap::new();
+        for descriptor in inventory::iter::<FunctionDescriptor>
+            .into_iter()
+            .filter(|descriptor| {
+                descriptor.name.starts_with("Access") || descriptor.name == "TupleAccessElement"
+            })
+        {
+            if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
+                assert_eq!(existing, descriptor.ptr as usize, "{}", descriptor.name);
+            }
+        }
+
+        assert_eq!(catalog.runtime_factory_count(), legacy.len());
+        for entry in catalog.runtime_entries() {
+            assert_eq!(entry.id, RuntimeFunctionId::from_name(&entry.name));
+            let legacy_factory = legacy
+                .remove(entry.name.as_str())
+                .unwrap_or_else(|| panic!("missing legacy access factory {}", entry.name));
+            assert_eq!(entry.factory as usize, legacy_factory, "{}", entry.name);
+        }
+        assert!(
+            legacy.is_empty(),
+            "unmigrated legacy access factories: {legacy:?}"
+        );
     }
 }

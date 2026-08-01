@@ -52,7 +52,7 @@ macro_rules! atan2f_vec_op {
 macro_rules! impl_two_arg_fxn {
     ($struct_name:ident, $kind1:ty, $kind2:ty, $out_kind:ty, $op:ident) => {
         #[derive(Debug)]
-        struct $struct_name {
+        pub(crate) struct $struct_name {
             arg1: Ref<$kind1>,
             arg2: Ref<$kind2>,
             out: Ref<$out_kind>,

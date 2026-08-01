@@ -17,7 +17,7 @@ macro_rules! transpose_op {
 macro_rules! impl_transpose {
     ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name<T> {
+        pub(crate) struct $struct_name<T> {
             arg: Ref<$arg_type>,
             out: Ref<$out_type>,
         }

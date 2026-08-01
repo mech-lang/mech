@@ -1,6 +1,9 @@
 #[macro_use]
 use crate::stdlib::*;
 
+pub mod catalog;
+pub use self::catalog::install_runtime;
+
 #[cfg(feature = "map")]
 pub mod map;
 #[cfg(feature = "matrix")]
@@ -258,6 +261,78 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
 }
 
 pub struct AssignValue {}
+
+#[cfg(feature = "matrix")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AssignmentIndexKind {
+    Scalar,
+    Range,
+    All,
+}
+
+#[cfg(feature = "matrix")]
+fn assignment_index_kind(value: &Value) -> AssignmentIndexKind {
+    match value {
+        Value::IndexAll => AssignmentIndexKind::All,
+        Value::Index(_) => AssignmentIndexKind::Scalar,
+        Value::MatrixIndex(_) => AssignmentIndexKind::Range,
+        _ if value.shape() == [1, 1] => AssignmentIndexKind::Scalar,
+        _ => AssignmentIndexKind::Range,
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn compile_matrix_assignment(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    match arguments.as_slice() {
+        [_, _, index] => match assignment_index_kind(index) {
+            AssignmentIndexKind::Scalar => MatrixAssignScalar {}.compile(arguments),
+            AssignmentIndexKind::Range => MatrixAssignRange {}.compile(arguments),
+            AssignmentIndexKind::All => MatrixAssignAll {}.compile(arguments),
+        },
+        [_, _, row, column] => match (assignment_index_kind(row), assignment_index_kind(column)) {
+            (AssignmentIndexKind::Scalar, AssignmentIndexKind::Scalar) => {
+                MatrixAssignScalarScalar {}.compile(arguments)
+            }
+            (AssignmentIndexKind::Scalar, AssignmentIndexKind::Range) => {
+                MatrixAssignScalarRange {}.compile(arguments)
+            }
+            (AssignmentIndexKind::Range, AssignmentIndexKind::Scalar) => {
+                MatrixAssignRangeScalar {}.compile(arguments)
+            }
+            (AssignmentIndexKind::Range, AssignmentIndexKind::Range) => {
+                MatrixAssignRangeRange {}.compile(arguments)
+            }
+            (AssignmentIndexKind::All, AssignmentIndexKind::Scalar) => {
+                MatrixAssignAllScalar {}.compile(arguments)
+            }
+            (AssignmentIndexKind::All, AssignmentIndexKind::Range) => {
+                MatrixAssignAllRange {}.compile(arguments)
+            }
+            (AssignmentIndexKind::Scalar, AssignmentIndexKind::All) => {
+                MatrixAssignScalarAll {}.compile(arguments)
+            }
+            (AssignmentIndexKind::Range, AssignmentIndexKind::All) => {
+                MatrixAssignRangeAll {}.compile(arguments)
+            }
+            (AssignmentIndexKind::All, AssignmentIndexKind::All) => Err(MechError::new(
+                GenericError {
+                    msg: "two-dimensional all/all assignment is not implemented".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        },
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 3,
+                found: arguments.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
 impl NativeFunctionCompiler for AssignValue {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -270,6 +345,23 @@ impl NativeFunctionCompiler for AssignValue {
             )
             .with_compiler_loc());
         }
+
+        if arguments.len() > 2 {
+            let sink_kind = arguments[0].kind().deref_kind();
+            #[cfg(feature = "matrix")]
+            if matches!(sink_kind, ValueKind::Matrix(_, _)) {
+                return compile_matrix_assignment(arguments);
+            }
+            #[cfg(feature = "map")]
+            if matches!(sink_kind, ValueKind::Map(_, _)) {
+                return MapAssignScalar {}.compile(arguments);
+            }
+            #[cfg(feature = "tuple")]
+            if matches!(sink_kind, ValueKind::Tuple(_)) {
+                return TupleAssignScalar {}.compile(arguments);
+            }
+        }
+
         let sink = arguments[0].clone();
         let source = arguments[1].clone();
         match assign_value_fxn(sink.clone(), source.clone()) {

@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // CartesianProduct ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetCartesianProductFxn {
+pub(crate) struct SetCartesianProductFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<MechSet>,

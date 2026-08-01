@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Superset ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetSupersetFxn {
+pub(crate) struct SetSupersetFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,

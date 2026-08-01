@@ -1,6 +1,8 @@
 use super::variables::{addressed_identifier_hash, addressed_identifier_name};
 use super::{Environment, InvalidIndexKindError, factor, range};
 use crate::{InterpreterExecution, MResult, MechError, Slice, Subscript, ToValue, Value};
+#[cfg(all(feature = "subscript", feature = "access"))]
+use crate::{MechFunction, OperationId};
 
 #[cfg(all(feature = "subscript", feature = "access"))]
 mod brace;
@@ -10,6 +12,19 @@ mod bracket;
 mod dot;
 #[cfg(feature = "subscript_formula")]
 mod string;
+
+#[cfg(all(feature = "subscript", feature = "access"))]
+fn catalog_access_function(
+    p: &InterpreterExecution<'_>,
+    canonical_name: &str,
+    arguments: &[Value],
+) -> MResult<Box<dyn MechFunction>> {
+    p.specialize_visible_operation_named(
+        OperationId::from_name(canonical_name),
+        Some(canonical_name),
+        arguments,
+    )
+}
 
 #[cfg(feature = "subscript_formula")]
 pub(crate) use string::{

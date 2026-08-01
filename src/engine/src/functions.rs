@@ -177,6 +177,40 @@ pub(crate) fn execute_initialized_indexed_compiler(
     )
 }
 
+pub fn execute_catalog_operation_with_registration_arguments(
+    p: &InterpreterExecution<'_>,
+    plan: &Plan,
+    canonical_name: &str,
+    compile_arguments: Vec<Value>,
+    registration_arguments: Vec<Value>,
+) -> MResult<Value> {
+    let operation = OperationId::from_name(canonical_name);
+    let function =
+        p.specialize_visible_operation_named(operation, Some(canonical_name), &compile_arguments)?;
+    if !plan.activation_registration_active() {
+        p.with_services(|services| function.solve_result_with(services))?;
+    }
+    let output = function.out();
+    plan.register_function(function, &registration_arguments)?;
+    Ok(output)
+}
+
+pub(crate) fn execute_catalog_operation(
+    p: &InterpreterExecution<'_>,
+    plan: &Plan,
+    canonical_name: &str,
+    arguments: Vec<Value>,
+) -> MResult<Value> {
+    let registration_arguments = arguments.clone();
+    execute_catalog_operation_with_registration_arguments(
+        p,
+        plan,
+        canonical_name,
+        arguments,
+        registration_arguments,
+    )
+}
+
 // Executes a user-defined function. Handles argument count validation,
 // optional matrix broadcasting, match-arm dispatch, and plain statement bodies.
 // Logs entry/exit (or failure) via the trace machinery.
