@@ -48,7 +48,7 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
         .collect::<BTreeSet<_>>();
 
     let mut ids = BTreeSet::new();
-    let mut import_correction_applied = false;
+    let mut applied = BTreeSet::new();
     for (index, line) in lines.enumerate() {
         assert!(
             !line.is_empty(),
@@ -89,12 +89,13 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
                 case
             );
         }
-        if fields[0] == "IMPORT-001" {
+        if matches!(fields[0], "IMPORT-001" | "MATCH-001") {
             assert_eq!(fields[2], "applied");
-            import_correction_applied = true;
+            applied.insert(fields[0]);
         }
     }
-    assert!(import_correction_applied, "IMPORT-001 must be applied");
+    assert_eq!(applied, BTreeSet::from(["IMPORT-001", "MATCH-001"]));
+    assert_eq!(ids, BTreeSet::from(["IMPORT-001", "MATCH-001"]));
 
     let specification = fs::read_to_string(root.join("docs/design/specification.mec"))
         .expect("read canonical specification");
