@@ -10,6 +10,11 @@ use paste::paste;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "membership")]
 pub mod membership;
 #[cfg(feature = "modify")]

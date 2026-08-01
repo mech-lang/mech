@@ -9,7 +9,7 @@ use mech_core::set::MechSet;
 //
 
 #[derive(Debug)]
-struct SetNotEqualsFxn {
+pub(crate) struct SetNotEqualsFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,

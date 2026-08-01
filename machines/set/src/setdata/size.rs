@@ -9,7 +9,7 @@ use mech_core::set::MechSet;
 //
 
 #[derive(Debug)]
-struct SetSizeFxn {
+pub(crate) struct SetSizeFxn {
     input: Ref<MechSet>,
     out: Ref<u64>,
 }

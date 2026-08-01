@@ -33,7 +33,7 @@ use crate::subscript_range;
 use crate::{AddAssignRange, AddAssignRangeAll, AddAssignValue};
 #[cfg(feature = "math_div_assign")]
 use crate::{DivAssignRange, DivAssignRangeAll, DivAssignValue};
-use crate::{Environment, InterpreterExecution, MResult, Value};
+use crate::{Environment, InterpreterExecution, MResult, MechFunction, OperationId, Value};
 #[cfg(all(
     any(
         feature = "math_add_assign",
@@ -46,8 +46,8 @@ use crate::{Environment, InterpreterExecution, MResult, Value};
 use crate::{MatrixAssignScalar, MatrixAssignScalarAll, subscript_formula_ix};
 #[cfg(feature = "math")]
 use crate::{
-    MechError, OpAssign, OpAssignOp,
-    execute_initialized_indexed_compiler_with_registration_arguments, expression,
+    MechError, OpAssign, OpAssignOp, execute_catalog_operation_with_registration_arguments,
+    expression,
 };
 #[cfg(feature = "math_mul_assign")]
 use crate::{MulAssignRange, MulAssignRangeAll, MulAssignValue};
@@ -118,45 +118,37 @@ pub fn op_assign(
             let registration_arguments = vec![registration_source];
             return match op_assgn.op {
                 #[cfg(feature = "math_add_assign")]
-                OpAssignOp::Add => {
-                    execute_initialized_indexed_compiler_with_registration_arguments(
-                        p,
-                        &plan,
-                        &AddAssignValue {},
-                        compile_arguments,
-                        registration_arguments,
-                    )
-                }
+                OpAssignOp::Add => execute_catalog_operation_with_registration_arguments(
+                    p,
+                    &plan,
+                    "assign/add",
+                    compile_arguments,
+                    registration_arguments,
+                ),
                 #[cfg(feature = "math_sub_assign")]
-                OpAssignOp::Sub => {
-                    execute_initialized_indexed_compiler_with_registration_arguments(
-                        p,
-                        &plan,
-                        &SubAssignValue {},
-                        compile_arguments,
-                        registration_arguments,
-                    )
-                }
+                OpAssignOp::Sub => execute_catalog_operation_with_registration_arguments(
+                    p,
+                    &plan,
+                    "math/sub-assign",
+                    compile_arguments,
+                    registration_arguments,
+                ),
                 #[cfg(feature = "math_div_assign")]
-                OpAssignOp::Div => {
-                    execute_initialized_indexed_compiler_with_registration_arguments(
-                        p,
-                        &plan,
-                        &DivAssignValue {},
-                        compile_arguments,
-                        registration_arguments,
-                    )
-                }
+                OpAssignOp::Div => execute_catalog_operation_with_registration_arguments(
+                    p,
+                    &plan,
+                    "math/div-assign",
+                    compile_arguments,
+                    registration_arguments,
+                ),
                 #[cfg(feature = "math_mul_assign")]
-                OpAssignOp::Mul => {
-                    execute_initialized_indexed_compiler_with_registration_arguments(
-                        p,
-                        &plan,
-                        &MulAssignValue {},
-                        compile_arguments,
-                        registration_arguments,
-                    )
-                }
+                OpAssignOp::Mul => execute_catalog_operation_with_registration_arguments(
+                    p,
+                    &plan,
+                    "math/mul-assign",
+                    compile_arguments,
+                    registration_arguments,
+                ),
                 _ => todo!(),
             };
         }
@@ -164,8 +156,29 @@ pub fn op_assign(
     unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
+fn catalog_op_assignment_function(
+    p: &InterpreterExecution<'_>,
+    canonical_name: &str,
+    arguments: &[Value],
+) -> MResult<Box<dyn MechFunction>> {
+    p.specialize_visible_operation_named(
+        OperationId::from_name(canonical_name),
+        Some(canonical_name),
+        arguments,
+    )
+}
+
 macro_rules! op_assign {
-  ($fxn_name:ident, $op:tt) => {
+  ($fxn_name:ident, $op:tt, $range_operation:literal, $range_all_operation:literal) => {
     paste!{
       pub fn $fxn_name(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
         let plan = p.plan();
@@ -189,9 +202,9 @@ macro_rules! op_assign {
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
-                  [1,1] => { plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?); }
-                  [1,n] => { plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?); }
-                  [n,1] => { plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?); }
+                  [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
+                  [1,n] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
+                  [n,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
                   _ => todo!(),
                 }
               },
@@ -203,9 +216,9 @@ macro_rules! op_assign {
                 fxn_input.push(ix);
                 fxn_input.push(Value::IndexAll);
                 match shape[..] {
-                  [1,1] => { plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?); }
-                  [1,n] => { plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?); }
-                  [n,1] => { plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?); }
+                  [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
+                  [1,n] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
+                  [n,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
                   _ => todo!(),
                 }
               },
@@ -214,7 +227,7 @@ macro_rules! op_assign {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
-                plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?);
+                plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?);
               },
               #[cfg(feature = "subscript_range")]
               [Subscript::Range(ix), Subscript::All] => {
@@ -222,7 +235,7 @@ macro_rules! op_assign {
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
                 fxn_input.push(Value::IndexAll);
-                plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?);
+                plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?);
               },
               x => todo!("{:?}", x),
             };
@@ -241,12 +254,32 @@ macro_rules! op_assign {
 }
 
 #[cfg(feature = "math_add_assign")]
-op_assign!(add_assign, Add);
+op_assign!(
+    add_assign,
+    Add,
+    "math/add-assign/range",
+    "math/add-assign/range-all"
+);
 #[cfg(feature = "math_sub_assign")]
-op_assign!(sub_assign, Sub);
+op_assign!(
+    sub_assign,
+    Sub,
+    "math/sub-assign/range",
+    "math/sub-assign/range-all"
+);
 #[cfg(feature = "math_mul_assign")]
-op_assign!(mul_assign, Mul);
+op_assign!(
+    mul_assign,
+    Mul,
+    "math/mul-assign/range",
+    "math/mul-assign/range-all"
+);
 #[cfg(feature = "math_div_assign")]
-op_assign!(div_assign, Div);
+op_assign!(
+    div_assign,
+    Div,
+    "math/div-assign/range",
+    "math/div-assign/range-all"
+);
 //#[cfg(feature = "math_pow")]
 //op_assign!(pow_assign, Pow);

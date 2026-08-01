@@ -17,6 +17,10 @@ mech-core = {
   path = "../../../src/core",
   default-features = false,
 }
+mech-compare = {
+  path = "../../../machines/compare",
+  default-features = false,
+}
 mech-combinatorics = {
   path = "../../../machines/combinatorics",
   default-features = false,
@@ -26,6 +30,34 @@ mech-engine = {
   path = "../../../src/engine",
   default-features = true,
   features = ["linked_stdlib"],
+}
+mech-logic = {
+  path = "../../../machines/logic",
+  default-features = false,
+}
+mech-math = {
+  path = "../../../machines/math",
+  default-features = false,
+}
+mech-matrix = {
+  path = "../../../machines/matrix",
+  default-features = false,
+}
+mech-range = {
+  path = "../../../machines/range",
+  default-features = false,
+}
+mech-set = {
+  path = "../../../machines/set",
+  default-features = false,
+}
+mech-stats = {
+  path = "../../../machines/stats",
+  default-features = false,
+}
+mech-string = {
+  path = "../../../machines/string",
+  default-features = false,
 }
 inventory = "0.3.22"
 nalgebra = "0.34.1"

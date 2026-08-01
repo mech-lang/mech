@@ -2564,3 +2564,438 @@ impl NativeFunctionCompiler for MatrixAccessScalarRange {
         }
     }
 }
+
+// Runtime catalog -----------------------------------------------------------
+
+// Keep the scalar list in one place so the explicit catalog follows the same
+// feature and legacy-name quirks as the source dispatch macros above. In
+// particular, C64/R64 use c64/r64 in the one-type factory names, but the
+// older multi-shape factories use complex/rational.
+macro_rules! for_each_access_scalar {
+    ($callback:ident, ($($args:tt)*)) => {
+        #[cfg(feature = "bool")]
+        $callback!($($args)*; bool, "bool", "bool");
+        #[cfg(feature = "i8")]
+        $callback!($($args)*; i8, "i8", "i8");
+        #[cfg(feature = "i16")]
+        $callback!($($args)*; i16, "i16", "i16");
+        #[cfg(feature = "i32")]
+        $callback!($($args)*; i32, "i32", "i32");
+        #[cfg(feature = "i64")]
+        $callback!($($args)*; i64, "i64", "i64");
+        #[cfg(feature = "i128")]
+        $callback!($($args)*; i128, "i128", "i128");
+        #[cfg(feature = "u8")]
+        $callback!($($args)*; u8, "u8", "u8");
+        #[cfg(feature = "u16")]
+        $callback!($($args)*; u16, "u16", "u16");
+        #[cfg(feature = "u32")]
+        $callback!($($args)*; u32, "u32", "u32");
+        #[cfg(feature = "u64")]
+        $callback!($($args)*; u64, "u64", "u64");
+        #[cfg(feature = "u128")]
+        $callback!($($args)*; u128, "u128", "u128");
+        #[cfg(feature = "f32")]
+        $callback!($($args)*; f32, "f32", "f32");
+        #[cfg(feature = "f64")]
+        $callback!($($args)*; f64, "f64", "f64");
+        #[cfg(feature = "string")]
+        $callback!($($args)*; String, "string", "string");
+        #[cfg(feature = "complex")]
+        $callback!($($args)*; C64, "c64", "complex");
+        #[cfg(feature = "rational")]
+        $callback!($($args)*; R64, "r64", "rational");
+    };
+}
+
+macro_rules! install_access_typed_scalar {
+    ($builder:expr, $factory:ident; $scalar:ty, $runtime_name:literal, $assign_name:literal) => {
+        $builder.insert_runtime_factory(
+            concat!(stringify!($factory), "<", $runtime_name, ">"),
+            <$factory<$scalar> as MechFunctionFactory>::new,
+        )?;
+    };
+}
+
+macro_rules! install_access_typed_scalars {
+    ($builder:expr, $factory:ident) => {
+        for_each_access_scalar!(install_access_typed_scalar, ($builder, $factory));
+    };
+}
+
+macro_rules! install_access_shape {
+    ($builder:expr, $feature:literal, $family:ident, $shape:ident) => {
+        #[cfg(feature = $feature)]
+        paste! {
+            install_access_typed_scalars!($builder, [<$family $shape>]);
+        }
+    };
+}
+
+macro_rules! install_access_all_shapes {
+    ($builder:expr, $family:ident) => {
+        install_access_shape!($builder, "matrix1", $family, M1);
+        install_access_shape!($builder, "matrix2", $family, M2);
+        install_access_shape!($builder, "matrix3", $family, M3);
+        install_access_shape!($builder, "matrix4", $family, M4);
+        install_access_shape!($builder, "matrix2x3", $family, M2x3);
+        install_access_shape!($builder, "matrix3x2", $family, M3x2);
+        install_access_shape!($builder, "matrixd", $family, MD);
+        install_access_shape!($builder, "vector2", $family, V2);
+        install_access_shape!($builder, "vector3", $family, V3);
+        install_access_shape!($builder, "vector4", $family, V4);
+        install_access_shape!($builder, "vectord", $family, VD);
+        install_access_shape!($builder, "row_vector2", $family, R2);
+        install_access_shape!($builder, "row_vector3", $family, R3);
+        install_access_shape!($builder, "row_vector4", $family, R4);
+        install_access_shape!($builder, "row_vectord", $family, RD);
+    };
+}
+
+macro_rules! install_access_shapes_without_matrix1 {
+    ($builder:expr, $family:ident) => {
+        install_access_shape!($builder, "matrix2", $family, M2);
+        install_access_shape!($builder, "matrix3", $family, M3);
+        install_access_shape!($builder, "matrix4", $family, M4);
+        install_access_shape!($builder, "matrix2x3", $family, M2x3);
+        install_access_shape!($builder, "matrix3x2", $family, M3x2);
+        install_access_shape!($builder, "matrixd", $family, MD);
+        install_access_shape!($builder, "vector2", $family, V2);
+        install_access_shape!($builder, "vector3", $family, V3);
+        install_access_shape!($builder, "vector4", $family, V4);
+        install_access_shape!($builder, "vectord", $family, VD);
+        install_access_shape!($builder, "row_vector2", $family, R2);
+        install_access_shape!($builder, "row_vector3", $family, R3);
+        install_access_shape!($builder, "row_vector4", $family, R4);
+        install_access_shape!($builder, "row_vectord", $family, RD);
+    };
+}
+
+macro_rules! install_access_matrix_shapes {
+    ($builder:expr, $family:ident) => {
+        install_access_shape!($builder, "matrix2", $family, M2);
+        install_access_shape!($builder, "matrix3", $family, M3);
+        install_access_shape!($builder, "matrix4", $family, M4);
+        install_access_shape!($builder, "matrix2x3", $family, M2x3);
+        install_access_shape!($builder, "matrix3x2", $family, M3x2);
+        install_access_shape!($builder, "matrixd", $family, MD);
+    };
+}
+
+macro_rules! install_access_range_range_scalar {
+    (
+        $builder:expr,
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix1:ident,
+        $ix1_scalar:ty,
+        $ix2:ident,
+        $ix2_scalar:ty;
+        $scalar:ty,
+        $runtime_name:literal,
+        $assign_name:literal
+    ) => {
+        $builder.insert_runtime_factory(
+            concat!(
+                stringify!($factory),
+                "<",
+                $assign_name,
+                stringify!($output),
+                stringify!($input),
+                stringify!($ix1),
+                stringify!($ix2),
+                ">"
+            ),
+            <$factory<
+                $scalar,
+                $output<$scalar>,
+                $input<$scalar>,
+                $ix1<$ix1_scalar>,
+                $ix2<$ix2_scalar>,
+            > as MechFunctionFactory>::new,
+        )?;
+    };
+}
+
+macro_rules! install_access_all_range_scalar {
+    (
+        $builder:expr,
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix:ident,
+        $ix_scalar:ty;
+        $scalar:ty,
+        $runtime_name:literal,
+        $assign_name:literal
+    ) => {
+        $builder.insert_runtime_factory(
+            concat!(
+                stringify!($factory),
+                "<",
+                $assign_name,
+                stringify!($output),
+                stringify!($input),
+                stringify!($ix),
+                ">"
+            ),
+            <$factory<$scalar, $output<$scalar>, $input<$scalar>, $ix<$ix_scalar>> as MechFunctionFactory>::new,
+        )?;
+    };
+}
+
+macro_rules! install_access_dynamic_for_shape {
+    ($builder:expr, $shape:ident) => {
+        #[cfg(all(feature = "matrixd", feature = "vectord"))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVUU,
+                DMatrix,
+                $shape,
+                DVector,
+                usize,
+                DVector,
+                usize
+            )
+        );
+
+        // The legacy bool/bool match arm required all three dynamic output
+        // shapes even though it registered each output independently.
+        #[cfg(all(
+            feature = "matrixd",
+            feature = "vectord",
+            feature = "row_vectord",
+            feature = "logical_indexing"
+        ))]
+        {
+            for_each_access_scalar!(
+                install_access_range_range_scalar,
+                (
+                    $builder,
+                    Access2DRRVBB,
+                    DMatrix,
+                    $shape,
+                    DVector,
+                    bool,
+                    DVector,
+                    bool
+                )
+            );
+            for_each_access_scalar!(
+                install_access_range_range_scalar,
+                (
+                    $builder,
+                    Access2DRRVBB,
+                    DVector,
+                    $shape,
+                    DVector,
+                    bool,
+                    DVector,
+                    bool
+                )
+            );
+            for_each_access_scalar!(
+                install_access_range_range_scalar,
+                (
+                    $builder,
+                    Access2DRRVBB,
+                    RowDVector,
+                    $shape,
+                    DVector,
+                    bool,
+                    DVector,
+                    bool
+                )
+            );
+        }
+
+        #[cfg(all(feature = "matrixd", feature = "vectord", feature = "logical_indexing"))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVUB,
+                DMatrix,
+                $shape,
+                DVector,
+                usize,
+                DVector,
+                bool
+            )
+        );
+        #[cfg(all(feature = "vectord", feature = "logical_indexing"))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVUB,
+                DVector,
+                $shape,
+                DVector,
+                usize,
+                DVector,
+                bool
+            )
+        );
+        #[cfg(all(
+            feature = "vectord",
+            feature = "row_vectord",
+            feature = "logical_indexing"
+        ))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVUB,
+                RowDVector,
+                $shape,
+                DVector,
+                usize,
+                DVector,
+                bool
+            )
+        );
+
+        #[cfg(all(feature = "matrixd", feature = "vectord", feature = "logical_indexing"))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVBU,
+                DMatrix,
+                $shape,
+                DVector,
+                bool,
+                DVector,
+                usize
+            )
+        );
+        #[cfg(all(feature = "vectord", feature = "logical_indexing"))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVBU,
+                DVector,
+                $shape,
+                DVector,
+                bool,
+                DVector,
+                usize
+            )
+        );
+        #[cfg(all(
+            feature = "vectord",
+            feature = "row_vectord",
+            feature = "logical_indexing"
+        ))]
+        for_each_access_scalar!(
+            install_access_range_range_scalar,
+            (
+                $builder,
+                Access2DRRVBU,
+                RowDVector,
+                $shape,
+                DVector,
+                bool,
+                DVector,
+                usize
+            )
+        );
+
+        #[cfg(all(feature = "row_vectord", feature = "vectord"))]
+        for_each_access_scalar!(
+            install_access_all_range_scalar,
+            ($builder, Access2DARV, RowDVector, $shape, DVector, usize)
+        );
+        #[cfg(all(feature = "matrixd", feature = "vectord"))]
+        for_each_access_scalar!(
+            install_access_all_range_scalar,
+            ($builder, Access2DARV, DMatrix, $shape, DVector, usize)
+        );
+
+        // This row-vector bool case intentionally lacked logical_indexing in
+        // the legacy registration; preserve that source-visible quirk.
+        #[cfg(all(feature = "row_vectord", feature = "vectord"))]
+        for_each_access_scalar!(
+            install_access_all_range_scalar,
+            ($builder, Access2DARVB, RowDVector, $shape, DVector, bool)
+        );
+        #[cfg(all(feature = "matrixd", feature = "vectord", feature = "logical_indexing"))]
+        {
+            for_each_access_scalar!(
+                install_access_all_range_scalar,
+                ($builder, Access2DARVB, DVector, $shape, DVector, bool)
+            );
+            for_each_access_scalar!(
+                install_access_all_range_scalar,
+                ($builder, Access2DARVB, DMatrix, $shape, DVector, bool)
+            );
+        }
+    };
+}
+
+macro_rules! install_access_dynamic_shape {
+    ($builder:expr, $feature:literal, $shape:ident) => {
+        #[cfg(feature = $feature)]
+        install_access_dynamic_for_shape!($builder, $shape);
+    };
+}
+
+pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_access_all_shapes!(builder, Access1DS);
+    install_access_shapes_without_matrix1!(builder, Access2DSS);
+    install_access_all_shapes!(builder, Access1DVD);
+    install_access_shapes_without_matrix1!(builder, Access1DA);
+
+    #[cfg(feature = "logical_indexing")]
+    install_access_all_shapes!(builder, Access1DVDb);
+
+    install_access_matrix_shapes!(builder, Access2DAS);
+    install_access_matrix_shapes!(builder, Access2DVDA);
+    install_access_matrix_shapes!(builder, Access2DVDS);
+    install_access_matrix_shapes!(builder, Access2DSVD);
+
+    #[cfg(feature = "logical_indexing")]
+    {
+        install_access_matrix_shapes!(builder, Access2DVDbA);
+        install_access_matrix_shapes!(builder, Access2DVDbS);
+        install_access_matrix_shapes!(builder, Access2DSVDb);
+    }
+
+    #[cfg(feature = "matrix1")]
+    install_access_typed_scalars!(builder, Access2DSAM1);
+    #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
+    install_access_typed_scalars!(builder, Access2DSAM2);
+    #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
+    install_access_typed_scalars!(builder, Access2DSAM3);
+    #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
+    install_access_typed_scalars!(builder, Access2DSAM4);
+    #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
+    install_access_typed_scalars!(builder, Access2DSAM2x3);
+    #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
+    install_access_typed_scalars!(builder, Access2DSAM3x2);
+    #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
+    install_access_typed_scalars!(builder, Access2DSAMD);
+
+    install_access_dynamic_shape!(builder, "matrix1", Matrix1);
+    install_access_dynamic_shape!(builder, "matrix2", Matrix2);
+    install_access_dynamic_shape!(builder, "matrix3", Matrix3);
+    install_access_dynamic_shape!(builder, "matrix4", Matrix4);
+    install_access_dynamic_shape!(builder, "matrix2x3", Matrix2x3);
+    install_access_dynamic_shape!(builder, "matrix3x2", Matrix3x2);
+    install_access_dynamic_shape!(builder, "matrixd", DMatrix);
+    install_access_dynamic_shape!(builder, "vector2", Vector2);
+    install_access_dynamic_shape!(builder, "vector3", Vector3);
+    install_access_dynamic_shape!(builder, "vector4", Vector4);
+    install_access_dynamic_shape!(builder, "vectord", DVector);
+    install_access_dynamic_shape!(builder, "row_vector2", RowVector2);
+    install_access_dynamic_shape!(builder, "row_vector3", RowVector3);
+    install_access_dynamic_shape!(builder, "row_vector4", RowVector4);
+    install_access_dynamic_shape!(builder, "row_vectord", RowDVector);
+
+    Ok(())
+}

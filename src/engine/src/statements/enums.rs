@@ -1,8 +1,8 @@
 use crate::Value;
-#[cfg(all(feature = "enum", feature = "atom"))]
-use crate::{ConvertKind, NativeFunctionCompiler, ProgramState, ValueKind};
 #[cfg(feature = "enum")]
 use crate::{EnumDefine, InterpreterExecution, MResult, MechEnum, Ref, kind_annotation};
+#[cfg(all(feature = "enum", feature = "atom"))]
+use crate::{OperationId, ValueKind};
 
 #[cfg(feature = "enum")]
 pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResult<()> {
@@ -47,9 +47,9 @@ pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResul
 pub(super) fn value_matches_enum_variant(
     value: &Value,
     enum_id: u64,
-    state: &ProgramState,
+    p: &InterpreterExecution<'_>,
 ) -> bool {
-    let my_enum = match state.enums.get(&enum_id) {
+    let my_enum = match p.state.borrow().enums.get(&enum_id).cloned() {
         Some(enm) => enm,
         None => return false,
     };
@@ -88,16 +88,16 @@ pub(super) fn value_matches_enum_variant(
                 (None, None) => true,
                 (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
                     ValueKind::Enum(inner_enum_id, _) => {
-                        value_matches_enum_variant(payload_value, *inner_enum_id, state)
+                        value_matches_enum_variant(payload_value, *inner_enum_id, p)
                     }
                     _ => {
                         payload_value.kind() == expected_kind.clone()
-                            || ConvertKind {}
-                                .compile(&vec![
-                                    payload_value.clone(),
-                                    Value::Kind(expected_kind.clone()),
-                                ])
-                                .is_ok()
+                            || p.specialize_visible_operation_named(
+                                OperationId::from_name("convert/kind"),
+                                Some("convert/kind"),
+                                &[payload_value.clone(), Value::Kind(expected_kind.clone())],
+                            )
+                            .is_ok()
                     }
                 },
                 _ => false,
@@ -138,13 +138,16 @@ pub(super) fn value_matches_enum_variant(
             match declared_payload_kind {
                 Some(Value::Kind(expected_kind)) => match expected_kind {
                     ValueKind::Enum(inner_enum_id, _) => {
-                        value_matches_enum_variant(payload, *inner_enum_id, state)
+                        value_matches_enum_variant(payload, *inner_enum_id, p)
                     }
                     _ => {
                         payload.kind() == expected_kind.clone()
-                            || ConvertKind {}
-                                .compile(&vec![payload.clone(), Value::Kind(expected_kind.clone())])
-                                .is_ok()
+                            || p.specialize_visible_operation_named(
+                                OperationId::from_name("convert/kind"),
+                                Some("convert/kind"),
+                                &[payload.clone(), Value::Kind(expected_kind.clone())],
+                            )
+                            .is_ok()
                     }
                 },
                 _ => false,

@@ -9,7 +9,7 @@ use mech_core::set::MechSet;
 //
 
 #[derive(Debug)]
-struct SetProperSubsetFxn {
+pub(crate) struct SetProperSubsetFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,

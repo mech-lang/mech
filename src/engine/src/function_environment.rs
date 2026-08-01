@@ -22,6 +22,10 @@ impl FunctionEnvironment {
     pub fn from_catalog_defaults(catalog: &FunctionCatalog) -> MResult<Self> {
         let mut environment = Self::default();
 
+        for entry in catalog.intrinsic_specializer_entries() {
+            environment.enabled_operations.insert(entry.operation);
+        }
+
         for entry in catalog.specializer_entries() {
             for export in catalog.exports_for_operation(entry.operation) {
                 match export.exposure {
@@ -272,6 +276,9 @@ mod tests {
 
     fn catalog_with_all_exposures() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_intrinsic_specializer("assign", Arc::new(TestSpecializer))
+            .unwrap();
         for name in ["syntax/internal", "math/add", "stats/mean"] {
             builder
                 .insert_specializer(name, Arc::new(TestSpecializer))
@@ -314,7 +321,10 @@ mod tests {
         let internal = OperationId::from_name("syntax/internal");
         let prelude = OperationId::from_name("math/add");
         let module_only = OperationId::from_name("stats/mean");
+        let intrinsic = OperationId::from_name("assign");
 
+        assert!(environment.operation_is_enabled(intrinsic));
+        assert_eq!(environment.resolve_name("assign"), None);
         assert!(environment.operation_is_enabled(internal));
         assert_eq!(environment.resolve_name("syntax/internal"), None);
         assert!(environment.operation_is_enabled(prelude));

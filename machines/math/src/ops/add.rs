@@ -629,12 +629,7 @@ mod tests {
             "AddMDMD",
             "AddMDMD<f64>",
         );
-        assert_catalog_specializes_to(
-            specializer,
-            [vector, scalar],
-            "AddV2S",
-            "AddV2S<f64>",
-        );
+        assert_catalog_specializes_to(specializer, [vector, scalar], "AddV2S", "AddV2S<f64>");
     }
 
     #[test]

@@ -42,6 +42,11 @@ use nalgebra::Vector4;
 
 use paste::paste;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "eq")]
 pub mod eq;
 #[cfg(feature = "gt")]
@@ -92,7 +97,7 @@ pub use self::sneq::*;
 macro_rules! impl_compare_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name<T> {
+        pub(crate) struct $struct_name<T> {
             lhs: Ref<$arg1_type>,
             rhs: Ref<$arg2_type>,
             out: Ref<$out_type>,

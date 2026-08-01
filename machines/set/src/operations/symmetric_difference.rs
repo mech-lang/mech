@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Symmetric Difference ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetSymDifferenceFxn {
+pub(crate) struct SetSymDifferenceFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<MechSet>,

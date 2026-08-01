@@ -4,8 +4,8 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction, Value,
-    hash_str,
+    FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction,
+    NativeFunctionCompiler, Value, hash_str,
 };
 
 #[repr(transparent)]
@@ -54,6 +54,41 @@ pub trait FunctionSpecializer: Send + Sync {
     }
 }
 
+/// Transitional adapter used while static source compilers move from the
+/// legacy registry into explicit catalog fragments.
+///
+/// PR2 deletes this adapter together with [`NativeFunctionCompiler`] after all
+/// concrete specializers implement the catalog interface directly.
+pub struct LegacySourceSpecializer<T> {
+    compiler: T,
+}
+
+impl<T> LegacySourceSpecializer<T> {
+    pub fn new(compiler: T) -> Self {
+        Self { compiler }
+    }
+}
+
+impl<T> FunctionSpecializer for LegacySourceSpecializer<T>
+where
+    T: NativeFunctionCompiler,
+{
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        self.compiler.compile(&arguments.to_vec())
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+        self.compiler.guard_safety()
+    }
+}
+
+pub fn legacy_source_specializer<T>(compiler: T) -> Arc<dyn FunctionSpecializer>
+where
+    T: NativeFunctionCompiler + 'static,
+{
+    Arc::new(LegacySourceSpecializer::new(compiler))
+}
+
 #[derive(Clone)]
 pub struct RuntimeFunctionEntry {
     pub id: RuntimeFunctionId,
@@ -87,6 +122,7 @@ pub struct FunctionExport {
 pub struct FunctionCatalog {
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
+    intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
 }
@@ -108,10 +144,34 @@ impl FunctionCatalog {
         self.specializers.get(&operation)
     }
 
+    /// Resolves a parser-only language intrinsic. Intrinsics are deliberately
+    /// absent from named source lookup and the frozen named-specializer count.
+    pub fn intrinsic_specializer(
+        &self,
+        operation: OperationId,
+    ) -> Option<&FunctionSpecializerEntry> {
+        self.intrinsic_specializers.get(&operation)
+    }
+
+    /// Resolves either a named static specializer or a parser-only intrinsic.
+    pub fn operation_specializer(
+        &self,
+        operation: OperationId,
+    ) -> Option<&FunctionSpecializerEntry> {
+        self.specializer(operation)
+            .or_else(|| self.intrinsic_specializer(operation))
+    }
+
     pub fn specializer_entries(
         &self,
     ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
         self.specializers.values()
+    }
+
+    pub fn intrinsic_specializer_entries(
+        &self,
+    ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
+        self.intrinsic_specializers.values()
     }
 
     pub fn exports_for_operation(&self, operation: OperationId) -> &[FunctionExport] {
@@ -132,6 +192,10 @@ impl FunctionCatalog {
 
     pub fn specializer_count(&self) -> usize {
         self.specializers.len()
+    }
+
+    pub fn intrinsic_specializer_count(&self) -> usize {
+        self.intrinsic_specializers.len()
     }
 }
 
@@ -356,6 +420,7 @@ impl MechErrorKind for RuntimeFunctionUnavailable {
 pub struct FunctionCatalogBuilder {
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
+    intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
 }
@@ -371,6 +436,7 @@ impl FunctionCatalogBuilder {
         Self {
             runtime_factories: BTreeMap::new(),
             specializers: BTreeMap::new(),
+            intrinsic_specializers: BTreeMap::new(),
             exports_by_module_item: BTreeMap::new(),
             exports_by_operation: BTreeMap::new(),
         }
@@ -394,6 +460,20 @@ impl FunctionCatalogBuilder {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
         self.insert_specializer_entry(FunctionSpecializerEntry {
+            operation,
+            canonical_name,
+            specializer,
+        })
+    }
+
+    pub fn insert_intrinsic_specializer(
+        &mut self,
+        canonical_name: impl Into<String>,
+        specializer: Arc<dyn FunctionSpecializer>,
+    ) -> MResult<OperationId> {
+        let canonical_name = canonical_name.into();
+        let operation = OperationId::from_name(&canonical_name);
+        self.insert_intrinsic_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name,
             specializer,
@@ -492,6 +572,7 @@ impl FunctionCatalogBuilder {
         let catalog = FunctionCatalog {
             runtime_factories: self.runtime_factories,
             specializers: self.specializers,
+            intrinsic_specializers: self.intrinsic_specializers,
             exports_by_module_item: self.exports_by_module_item,
             exports_by_operation: self.exports_by_operation,
         };
@@ -554,7 +635,11 @@ impl FunctionCatalogBuilder {
             .with_compiler_loc());
         }
 
-        if let Some(existing) = self.specializers.get(&entry.operation) {
+        if let Some(existing) = self
+            .specializers
+            .get(&entry.operation)
+            .or_else(|| self.intrinsic_specializers.get(&entry.operation))
+        {
             let kind = if existing.canonical_name == entry.canonical_name {
                 MechError::new(
                     FunctionCatalogDuplicateSpecializer {
@@ -578,6 +663,53 @@ impl FunctionCatalogBuilder {
 
         let operation = entry.operation;
         self.specializers.insert(operation, entry);
+        Ok(operation)
+    }
+
+    fn insert_intrinsic_specializer_entry(
+        &mut self,
+        entry: FunctionSpecializerEntry,
+    ) -> MResult<OperationId> {
+        if entry.canonical_name.is_empty() {
+            return Err(MechError::new(
+                FunctionCatalogInvalidName {
+                    category: "function intrinsic",
+                    name: entry.canonical_name,
+                    id: entry.operation.raw(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        if let Some(existing) = self
+            .intrinsic_specializers
+            .get(&entry.operation)
+            .or_else(|| self.specializers.get(&entry.operation))
+        {
+            let kind = if existing.canonical_name == entry.canonical_name {
+                MechError::new(
+                    FunctionCatalogDuplicateSpecializer {
+                        operation: entry.operation,
+                        canonical_name: entry.canonical_name,
+                    },
+                    None,
+                )
+            } else {
+                MechError::new(
+                    FunctionCatalogOperationIdCollision {
+                        operation: entry.operation,
+                        existing_name: existing.canonical_name.clone(),
+                        incoming_name: entry.canonical_name,
+                    },
+                    None,
+                )
+            };
+            return Err(kind.with_compiler_loc());
+        }
+
+        let operation = entry.operation;
+        self.intrinsic_specializers.insert(operation, entry);
         Ok(operation)
     }
 }
@@ -755,6 +887,51 @@ mod tests {
         let error = builder
             .insert_specializer("math/add", test_specializer())
             .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateSpecializer");
+    }
+
+    #[test]
+    fn parser_intrinsics_are_separate_from_named_specializers() {
+        let mut builder = FunctionCatalogBuilder::new();
+        let intrinsic = builder
+            .insert_intrinsic_specializer("assign", test_specializer())
+            .unwrap();
+        builder
+            .insert_specializer("math/add", test_specializer())
+            .unwrap();
+
+        let catalog = builder.build().unwrap();
+
+        assert_eq!(catalog.specializer_count(), 1);
+        assert_eq!(catalog.intrinsic_specializer_count(), 1);
+        assert!(catalog.specializer(intrinsic).is_none());
+        assert_eq!(
+            catalog
+                .intrinsic_specializer(intrinsic)
+                .unwrap()
+                .canonical_name,
+            "assign",
+        );
+        assert_eq!(
+            catalog
+                .operation_specializer(intrinsic)
+                .unwrap()
+                .canonical_name,
+            "assign",
+        );
+    }
+
+    #[test]
+    fn named_and_intrinsic_specializers_cannot_claim_the_same_operation() {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_intrinsic_specializer("assign", test_specializer())
+            .unwrap();
+
+        let error = builder
+            .insert_specializer("assign", test_specializer())
+            .unwrap_err();
+
         assert_eq!(error.kind_name(), "FunctionCatalogDuplicateSpecializer");
     }
 

@@ -9,12 +9,11 @@ use crate::{
 use crate::{
     ComprehensionQualifier, FunctionArgs, IncorrectNumberOfArguments, Interpreter,
     InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
-    MissingFunctionError, NativeFunctionCompiler, Ref, ToValue, Value,
-    execute_native_function_compiler, hash_str,
+    NativeFunctionCompiler, Ref, ToValue, Value, execute_catalog_operation, hash_str,
 };
 use crate::{FunctionCompilerDescriptor, FunctionDescriptor};
 #[cfg(feature = "matrix_comprehensions")]
-use crate::{Matrix, MatrixComprehension, MatrixHorzCat};
+use crate::{Matrix, MatrixComprehension};
 #[cfg(feature = "set_comprehensions")]
 use crate::{MechSet, SetComprehension};
 use std::collections::HashMap;
@@ -256,8 +255,7 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         let out = if args.is_empty() {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
-            let fxn = MatrixHorzCat {}
-                .compile(&args)
+            let fxn = crate::stdlib::horzcat::impl_horzcat_fxn(&args)
                 .expect("matrix/comprehension input kinds changed to incompatible values");
             fxn.solve();
             fxn.out()
@@ -320,7 +318,7 @@ impl NativeFunctionCompiler for MatrixComprehensionDefine {
         let out = if arguments.is_empty() {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
-            let fxn = MatrixHorzCat {}.compile(arguments)?;
+            let fxn = crate::stdlib::horzcat::impl_horzcat_fxn(arguments)?;
             fxn.solve();
             fxn.out()
         };
@@ -352,25 +350,8 @@ pub fn set_comprehension(
         })?;
         values.push(val);
     }
-    let functions = p.functions();
-    let set_define_id = hash_str("set/comprehension");
-    let set_define = {
-        functions
-            .borrow()
-            .function_compilers
-            .get(&set_define_id)
-            .cloned()
-    };
-    match set_define {
-        Some(compiler) => execute_native_function_compiler(compiler, &values, p),
-        None => Err(MechError::new(
-            MissingFunctionError {
-                function_id: set_define_id,
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
+    let plan = p.plan();
+    execute_catalog_operation(p, &plan, "set/comprehension", values)
 }
 
 #[cfg(feature = "matrix_comprehensions")]
@@ -386,23 +367,6 @@ pub fn matrix_comprehension(
             expression(&matrix_comp.expression, Some(&env), execution)
         })?);
     }
-    let functions = p.functions();
-    let horzcat_id = hash_str("matrix/comprehension");
-    let horzcat = {
-        functions
-            .borrow()
-            .function_compilers
-            .get(&horzcat_id)
-            .cloned()
-    };
-    match horzcat {
-        Some(compiler) => execute_native_function_compiler(compiler, &values, p),
-        None => Err(MechError::new(
-            MissingFunctionError {
-                function_id: horzcat_id,
-            },
-            None,
-        )
-        .with_compiler_loc()),
-    }
+    let plan = p.plan();
+    execute_catalog_operation(p, &plan, "matrix/comprehension", values)
 }

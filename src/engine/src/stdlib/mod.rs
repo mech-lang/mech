@@ -15,6 +15,8 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::*;
 
+pub mod catalog;
+
 #[cfg(feature = "access")]
 pub mod access;
 #[cfg(feature = "assign")]

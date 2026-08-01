@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Insert ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetInsertFxn {
+pub(crate) struct SetInsertFxn {
     arg1: Ref<MechSet>,
     arg2: Ref<Value>,
     out: Ref<MechSet>,

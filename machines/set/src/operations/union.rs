@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Union ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetUnionFxn {
+pub(crate) struct SetUnionFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<MechSet>,

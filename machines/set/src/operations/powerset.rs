@@ -8,7 +8,7 @@ use mech_core::set::MechSet;
 // Powerset ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetPowersetFxn {
+pub(crate) struct SetPowersetFxn {
     input: Ref<MechSet>,
     out: Ref<MechSet>,
 }

@@ -87,16 +87,19 @@ impl<'a> FunctionResolver<'a> {
         canonical_name: Option<&str>,
         arguments: &[Value],
     ) -> MResult<Box<dyn MechFunction>> {
-        let entry = self.catalog.specializer(operation).ok_or_else(|| {
-            MechError::new(
-                FunctionOperationUnavailable {
-                    operation,
-                    canonical_name: canonical_name.map(String::from),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })?;
+        let entry = self
+            .catalog
+            .operation_specializer(operation)
+            .ok_or_else(|| {
+                MechError::new(
+                    FunctionOperationUnavailable {
+                        operation,
+                        canonical_name: canonical_name.map(String::from),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
 
         self.environment
             .require_operation_enabled(operation, Some(&entry.canonical_name))?;

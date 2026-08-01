@@ -224,6 +224,31 @@ pub struct VariableDefineEmpty {
     mutable: Ref<bool>,
     var: Ref<Value>,
 }
+
+fn variable_define_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+        FunctionArgs::Binary(var, arg1, arg2) => {
+            let var: Ref<Value> = unsafe { var.as_unchecked() }.clone();
+            let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
+            let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+            let id = hash_str(&name.borrow());
+            Ok(Box::new(VariableDefineEmpty {
+                id,
+                name,
+                mutable,
+                var,
+            }))
+        }
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 3,
+                found: args.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
 impl MechFunctionImpl for VariableDefineEmpty {
     fn solve(&self) {}
     fn out(&self) -> Value {
@@ -262,21 +287,7 @@ impl MechFunctionCompiler for VariableDefineEmpty {
 register_descriptor! {
   FunctionDescriptor {
     name: "VariableDefineEmpty",
-    ptr: |args: FunctionArgs| -> MResult<Box<dyn MechFunction>> {
-      match args {
-        FunctionArgs::Binary(var, arg1, arg2) => {
-          let var: Ref<Value> = unsafe { var.as_unchecked() }.clone();
-          let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
-          let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
-          let id = hash_str(&name.borrow());
-          Ok(Box::new(VariableDefineEmpty { id, name, mutable, var }))
-        }
-        _ => Err(MechError::new(
-          IncorrectNumberOfArguments { expected: 3, found: args.len() },
-          None
-        ).with_compiler_loc()),
-      }
-    },
+    ptr: variable_define_empty_factory,
   }
 }
 
@@ -535,6 +546,127 @@ fn impl_var_define_fxn(
             )
             .with_compiler_loc()
         })
+}
+
+macro_rules! install_variable_define_scalar_runtime {
+    ($builder:expr, $kind:ident) => {
+        paste! {
+            $builder.insert_runtime_factory(
+                stringify!([<VariableDefine $kind:camel>]),
+                [<VariableDefine $kind:camel>]::new,
+            )?;
+        }
+    };
+}
+
+macro_rules! install_variable_define_matrix_shape {
+    ($builder:expr, $kind:ty, $kind_name:literal, $shape:ident, $shape_feature:literal) => {
+        #[cfg(feature = $shape_feature)]
+        $builder.insert_runtime_factory(
+            concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
+            VariableDefineMatrix::<$kind, $shape<$kind>>::new,
+        )?;
+    };
+}
+
+macro_rules! install_variable_define_matrix_runtime {
+    ($builder:expr, $kind:ty, $kind_name:literal) => {
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix1, "matrix1");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix2, "matrix2");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix2x3, "matrix2x3");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix3x2, "matrix3x2");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix3, "matrix3");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix4, "matrix4");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, DMatrix, "matrixd");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Vector2, "vector2");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Vector3, "vector3");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Vector4, "vector4");
+        install_variable_define_matrix_shape!($builder, $kind, $kind_name, DVector, "vectord");
+        install_variable_define_matrix_shape!(
+            $builder,
+            $kind,
+            $kind_name,
+            RowVector2,
+            "row_vector2"
+        );
+        install_variable_define_matrix_shape!(
+            $builder,
+            $kind,
+            $kind_name,
+            RowVector3,
+            "row_vector3"
+        );
+        install_variable_define_matrix_shape!(
+            $builder,
+            $kind,
+            $kind_name,
+            RowVector4,
+            "row_vector4"
+        );
+        install_variable_define_matrix_shape!(
+            $builder,
+            $kind,
+            $kind_name,
+            RowDVector,
+            "row_vectord"
+        );
+    };
+}
+
+pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    macro_rules! install_kind {
+        ($feature:literal, $kind:ty, $kind_token:ident, $kind_name:literal) => {
+            #[cfg(feature = $feature)]
+            {
+                install_variable_define_scalar_runtime!(builder, $kind_token);
+                #[cfg(feature = "matrix")]
+                install_variable_define_matrix_runtime!(builder, $kind, $kind_name);
+            }
+        };
+    }
+
+    install_kind!("u8", u8, u8, "u8");
+    install_kind!("u16", u16, u16, "u16");
+    install_kind!("u32", u32, u32, "u32");
+    install_kind!("u64", u64, u64, "u64");
+    install_kind!("u128", u128, u128, "u128");
+    install_kind!("i8", i8, i8, "i8");
+    install_kind!("i16", i16, i16, "i16");
+    install_kind!("i32", i32, i32, "i32");
+    install_kind!("i64", i64, i64, "i64");
+    install_kind!("i128", i128, i128, "i128");
+    install_kind!("f32", f32, f32, "f32");
+    install_kind!("f64", f64, f64, "f64");
+    #[cfg(feature = "r64")]
+    install_variable_define_scalar_runtime!(builder, R64);
+    #[cfg(all(feature = "matrix", feature = "rational"))]
+    install_variable_define_matrix_runtime!(builder, R64, "rational");
+
+    #[cfg(feature = "c64")]
+    install_variable_define_scalar_runtime!(builder, C64);
+    #[cfg(all(feature = "matrix", feature = "complex"))]
+    install_variable_define_matrix_runtime!(builder, C64, "complex");
+
+    install_kind!("bool", bool, bool, "bool");
+    install_kind!("string", String, String, "string");
+
+    #[cfg(feature = "table")]
+    install_variable_define_scalar_runtime!(builder, MechTable);
+    #[cfg(feature = "set")]
+    install_variable_define_scalar_runtime!(builder, MechSet);
+    #[cfg(feature = "tuple")]
+    install_variable_define_scalar_runtime!(builder, MechTuple);
+    #[cfg(feature = "record")]
+    install_variable_define_scalar_runtime!(builder, MechRecord);
+    #[cfg(feature = "map")]
+    install_variable_define_scalar_runtime!(builder, MechMap);
+    #[cfg(feature = "atom")]
+    install_variable_define_scalar_runtime!(builder, MechAtom);
+    #[cfg(feature = "enum")]
+    install_variable_define_scalar_runtime!(builder, MechEnum);
+
+    builder.insert_runtime_factory("VariableDefineEmpty", variable_define_empty_factory)?;
+    Ok(())
 }
 
 pub struct VarDefine {}

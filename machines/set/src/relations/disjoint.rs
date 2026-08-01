@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Disjoint ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetDisjointFxn {
+pub(crate) struct SetDisjointFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,

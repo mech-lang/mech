@@ -3,12 +3,10 @@ use super::VariableAlreadyDefinedError;
 #[cfg(feature = "invariant_define")]
 use super::variable_define::detach_variable_value;
 #[cfg(feature = "invariant_define")]
-use crate::stdlib::define::VarDefine;
-#[cfg(feature = "invariant_define")]
 use crate::{
     ComparisonOp, Expression, Factor, FormulaOperator, IntegrityConstraint, InterpreterExecution,
-    InvariantDefine, Literal, MResult, MechError, NativeFunctionCompiler, Ref, Token, ValRef,
-    Value, expression, literal,
+    InvariantDefine, Literal, MResult, MechError, OperationId, Ref, Token, ValRef, Value,
+    expression, literal,
 };
 
 #[cfg(feature = "invariant_define")]
@@ -44,7 +42,11 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>)
         Value::String(Ref::new(invariant_name.clone())),
         Value::Bool(Ref::new(false)),
     ];
-    let var_def_fxn = VarDefine {}.compile(&var_define_arguments)?;
+    let var_def_fxn = p.specialize_visible_operation_named(
+        OperationId::from_name("var/define"),
+        Some("var/define"),
+        &var_define_arguments,
+    )?;
     plan.register_function(var_def_fxn, &[])?;
 
     let (lhs, operator, rhs) = integrity_constraint_operands(inv_def, p);

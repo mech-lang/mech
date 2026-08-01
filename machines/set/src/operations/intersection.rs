@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Intersection ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetIntersectionFxn {
+pub(crate) struct SetIntersectionFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<MechSet>,

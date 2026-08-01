@@ -8,7 +8,7 @@ use simba::scalar::ClosedNeg;
 // Negate ---------------------------------------------------------------------
 
 #[derive(Debug)]
-struct NegateV<O> {
+pub(crate) struct NegateV<O> {
     arg: Ref<O>,
     out: Ref<O>,
     _marker: PhantomData<O>,
@@ -97,7 +97,7 @@ register_fxn_descriptor!(
 );
 
 #[derive(Debug)]
-struct NegateS<O> {
+pub(crate) struct NegateS<O> {
     arg: Ref<O>,
     out: Ref<O>,
     _marker: PhantomData<O>,

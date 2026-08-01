@@ -1,16 +1,7 @@
 use super::super::environment::expression_solves_deferred;
 use super::super::registration::register_initialized_expression_function;
-#[cfg(feature = "table")]
-use crate::AccessColumn;
-#[cfg(feature = "swizzle")]
-use crate::AccessSwizzle;
-#[cfg(feature = "matrix")]
-use crate::MatrixAccessScalar;
-#[cfg(feature = "tuple")]
-use crate::TupleAccess;
-use crate::{
-    InterpreterExecution, MResult, NativeFunctionCompiler, Subscript, Value, ValueKind, real,
-};
+use super::catalog_access_function;
+use crate::{InterpreterExecution, MResult, Subscript, Value, ValueKind, real};
 
 pub(super) fn access(
     sbscrpt: &Subscript,
@@ -25,10 +16,10 @@ pub(super) fn access(
             let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
             #[cfg(feature = "record")]
             if matches!(val.deref_kind(), ValueKind::Record(..)) {
-                let function = AccessColumn {}.compile(&fxn_input)?;
+                let function = catalog_access_function(p, "access/column", &fxn_input)?;
                 return register_initialized_expression_function(&plan, function, &[]);
             }
-            let new_fxn = AccessColumn {}.compile(&fxn_input)?;
+            let new_fxn = catalog_access_function(p, "access/column", &fxn_input)?;
             if !expression_solves_deferred(p) {
                 new_fxn.solve();
             }
@@ -43,7 +34,7 @@ pub(super) fn access(
             match val.deref_kind() {
                 #[cfg(feature = "matrix")]
                 ValueKind::Matrix(..) => {
-                    let new_fxn = MatrixAccessScalar {}.compile(&fxn_input)?;
+                    let new_fxn = catalog_access_function(p, "access/scalar", &fxn_input)?;
                     if !expression_solves_deferred(p) {
                         new_fxn.solve();
                     }
@@ -53,7 +44,7 @@ pub(super) fn access(
                 }
                 #[cfg(feature = "tuple")]
                 ValueKind::Tuple(..) => {
-                    let function = TupleAccess {}.compile(&fxn_input)?;
+                    let function = catalog_access_function(p, "access/scalar", &fxn_input)?;
                     return register_initialized_expression_function(&plan, function, &[]);
                 }
                 /*ValueKind::Record(_) => {
@@ -74,7 +65,7 @@ pub(super) fn access(
                 .collect::<Vec<Value>>();
             let mut fxn_input: Vec<Value> = vec![val.clone()];
             fxn_input.append(&mut keys);
-            let new_fxn = AccessSwizzle {}.compile(&fxn_input)?;
+            let new_fxn = catalog_access_function(p, "access/swizzle", &fxn_input)?;
             if !expression_solves_deferred(p) {
                 new_fxn.solve();
             }

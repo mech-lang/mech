@@ -66,6 +66,23 @@ struct ConvertSEmpty {
     out: Ref<Value>,
 }
 
+fn convert_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+        FunctionArgs::Nullary(out) => {
+            let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(ConvertSEmpty { out }))
+        }
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 0,
+                found: args.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
 impl MechFunctionImpl for ConvertSEmpty {
     fn solve(&self) {}
     fn out(&self) -> Value {
@@ -93,20 +110,15 @@ impl MechFunctionCompiler for ConvertSEmpty {
 register_descriptor! {
   FunctionDescriptor {
     name: "ConvertSEmpty<empty>",
-    ptr: |args: FunctionArgs| -> MResult<Box<dyn MechFunction>> {
-      match args {
-        FunctionArgs::Nullary(out) => {
-          let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
-          Ok(Box::new(ConvertSEmpty { out }))
-        },
-        _ => Err(MechError::new(
-            IncorrectNumberOfArguments { expected: 0, found: args.len() },
-            None
-          ).with_compiler_loc()
-        ),
-      }
-    },
+    ptr: convert_empty_factory,
   }
+}
+
+pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "enum")]
+    builder.insert_runtime_factory("ConvertSEnum<enum>", ConvertSEnum::new)?;
+    builder.insert_runtime_factory("ConvertSEmpty<empty>", convert_empty_factory)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -735,51 +747,95 @@ impl NativeFunctionCompiler for ConvertKind {
         }
         let source_value = arguments[0].clone();
         let target_kind = arguments[1].clone();
+
         match impl_conversion_fxn(source_value.clone(), target_kind.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match source_value {
-                Value::MutableReference(rhs) => {
-                    impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
+            Err(_) => {
+                if let Value::MutableReference(rhs) = &source_value {
+                    if let Ok(fxn) = impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
+                    {
+                        return Ok(fxn);
+                    }
                 }
-                #[cfg(feature = "atom")]
-                Value::Atom(ref atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "u8"))]
-                Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "u16"))]
-                Value::MatrixU16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "u32"))]
-                Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "u64"))]
-                Value::MatrixU64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "u128"))]
-                Value::MatrixU128(ref mat) => {
-                    impl_conversion_fxn(source_value, target_kind.clone())
+
+                #[cfg(feature = "matrix")]
+                if matches!(&target_kind, Value::Kind(ValueKind::Matrix(_, _))) {
+                    let source_kind = match &source_value {
+                        Value::MutableReference(source) => source.borrow().kind(),
+                        source => source.kind(),
+                    };
+                    if matches!(source_kind, ValueKind::Matrix(_, _)) {
+                        return ConvertMatToMat {}.compile(arguments);
+                    }
+                    return ConvertScalarToMat {}.compile(arguments);
                 }
-                #[cfg(all(feature = "matrix", feature = "i8"))]
-                Value::MatrixI8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "i16"))]
-                Value::MatrixI16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "i32"))]
-                Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "i64"))]
-                Value::MatrixI64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "i128"))]
-                Value::MatrixI128(ref mat) => {
-                    impl_conversion_fxn(source_value, target_kind.clone())
+
+                match source_value {
+                    Value::MutableReference(rhs) => {
+                        impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
+                    }
+                    #[cfg(feature = "atom")]
+                    Value::Atom(ref atom_id) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "u8"))]
+                    Value::MatrixU8(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "u16"))]
+                    Value::MatrixU16(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "u32"))]
+                    Value::MatrixU32(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "u64"))]
+                    Value::MatrixU64(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "u128"))]
+                    Value::MatrixU128(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "i8"))]
+                    Value::MatrixI8(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "i16"))]
+                    Value::MatrixI16(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "i32"))]
+                    Value::MatrixI32(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "i64"))]
+                    Value::MatrixI64(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "i128"))]
+                    Value::MatrixI128(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "f32"))]
+                    Value::MatrixF32(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    #[cfg(all(feature = "matrix", feature = "f64"))]
+                    Value::MatrixF64(ref mat) => {
+                        impl_conversion_fxn(source_value, target_kind.clone())
+                    }
+                    x => Err(MechError::new(
+                        UnhandledFunctionArgumentKind2 {
+                            arg: (arguments[0].kind(), arguments[1].kind()),
+                            fxn_name: "convert/scalar".to_string(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
                 }
-                #[cfg(all(feature = "matrix", feature = "f32"))]
-                Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                #[cfg(all(feature = "matrix", feature = "f64"))]
-                Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-                x => Err(MechError::new(
-                    UnhandledFunctionArgumentKind2 {
-                        arg: (arguments[0].kind(), arguments[1].kind()),
-                        fxn_name: "convert/scalar".to_string(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()),
-            },
+            }
         }
     }
 }

@@ -6118,7 +6118,7 @@ macro_rules! impl_horzcat_arms {
         }
   }}}}
 
-fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+pub(crate) fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     // are they all the same?
     //let same = kinds.iter().all(|x| *x == target_kind);
     let kinds: Vec<ValueKind> = arguments
@@ -6256,6 +6256,199 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     .with_compiler_loc())
 }
 
+macro_rules! install_horzcat_factories {
+    ($builder:expr, $factory:ident) => {{
+        #[inline(never)]
+        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+            mech_core::install_typed_runtime_factories!(
+                builder,
+                $factory;
+                ("bool", bool, "bool"),
+                ("string", String, "string"),
+                ("u8", u8, "u8"),
+                ("u16", u16, "u16"),
+                ("u32", u32, "u32"),
+                ("u64", u64, "u64"),
+                ("u128", u128, "u128"),
+                ("i8", i8, "i8"),
+                ("i16", i16, "i16"),
+                ("i32", i32, "i32"),
+                ("i64", i64, "i64"),
+                ("i128", i128, "i128"),
+                ("f32", f32, "f32"),
+                ("f64", f64, "f64"),
+                ("c64", C64, "c64"),
+                ("r64", R64, "r64"),
+            )?;
+            Ok(())
+        }
+        install($builder)?;
+    }};
+}
+
+/// Installs every enabled legacy runtime factory emitted by this module.
+pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrixd")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateTwoArgs);
+        install_horzcat_factories!(builder, HorizontalConcatenateThreeArgs);
+        install_horzcat_factories!(builder, HorizontalConcatenateS1D);
+        install_horzcat_factories!(builder, HorizontalConcatenateMD);
+    }
+    #[cfg(feature = "row_vectord")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateRD);
+        install_horzcat_factories!(builder, HorizontalConcatenateRDN);
+        install_horzcat_factories!(builder, HorizontalConcatenateSD);
+    }
+    #[cfg(feature = "vectord")]
+    install_horzcat_factories!(builder, HorizontalConcatenateVD);
+
+    #[cfg(feature = "matrix1")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1);
+    }
+    #[cfg(feature = "matrix2")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM2);
+    #[cfg(feature = "matrix3")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM3);
+    #[cfg(feature = "matrix4")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM4);
+    #[cfg(feature = "matrix2x3")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM2x3);
+    #[cfg(feature = "matrix3x2")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM3x2);
+    #[cfg(feature = "vector2")]
+    install_horzcat_factories!(builder, HorizontalConcatenateV2);
+    #[cfg(feature = "vector3")]
+    install_horzcat_factories!(builder, HorizontalConcatenateV3);
+    #[cfg(feature = "vector4")]
+    install_horzcat_factories!(builder, HorizontalConcatenateV4);
+    #[cfg(feature = "row_vector2")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS2);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2);
+    }
+    #[cfg(feature = "row_vector3")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS3);
+        install_horzcat_factories!(builder, HorizontalConcatenateR3);
+    }
+    #[cfg(feature = "row_vector4")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS4);
+        install_horzcat_factories!(builder, HorizontalConcatenateR4);
+    }
+
+    #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSR2);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2S);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSSSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSSM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SSS);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSSM1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1M1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SM1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1M1M1);
+    }
+    #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSR3);
+        install_horzcat_factories!(builder, HorizontalConcatenateR3S);
+    }
+    #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSSR2);
+        install_horzcat_factories!(builder, HorizontalConcatenateSR2S);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2R2);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R3);
+        install_horzcat_factories!(builder, HorizontalConcatenateR3M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1R2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SR2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R2S);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSR2M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1R2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R2M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2M1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R2);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2M1);
+    }
+
+    #[cfg(all(feature = "vector2", feature = "matrix2"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV2V2);
+    #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV3V3);
+    #[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateV2M2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM2V2);
+    }
+    #[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateM3x2V3);
+        install_horzcat_factories!(builder, HorizontalConcatenateV3M3x2);
+    }
+    #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateV4MD);
+        install_horzcat_factories!(builder, HorizontalConcatenateMDV4);
+        install_horzcat_factories!(builder, HorizontalConcatenateV4V4MD);
+        install_horzcat_factories!(builder, HorizontalConcatenateV4MDV4);
+        install_horzcat_factories!(builder, HorizontalConcatenateMDV4V4);
+    }
+    #[cfg(all(feature = "matrixd", feature = "matrix4"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateMDMD);
+    #[cfg(all(feature = "vector2", feature = "matrix2x3"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV2V2V2);
+    #[cfg(all(feature = "vector3", feature = "matrix3"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV3V3V3);
+    #[cfg(all(feature = "matrix4", feature = "vector4"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV4V4V4V4);
+
+    Ok(())
+}
+
 pub struct MatrixHorzCat {}
 impl NativeFunctionCompiler for MatrixHorzCat {
     fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -6280,5 +6473,52 @@ impl MechErrorKind for HorizontalConcatenateDimensionMismatchError {
         format!(
             "Cannot horizontally concatenate matrices/vectors with dimensions that do not align."
         )
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod runtime_catalog_tests {
+    use super::*;
+    use mech_core::{FunctionDescriptor, RuntimeFunctionId};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    #[test]
+    fn explicit_runtime_catalog_matches_legacy_inventory() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let explicit = catalog
+            .runtime_entries()
+            .map(|entry| (entry.name.clone(), entry.factory as usize))
+            .collect::<BTreeMap<_, _>>();
+        let mut legacy = BTreeMap::new();
+        for descriptor in inventory::iter::<FunctionDescriptor>
+            .into_iter()
+            .filter(|descriptor| descriptor.name.starts_with("HorizontalConcatenate"))
+        {
+            if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
+                assert_eq!(existing, descriptor.ptr as usize, "{0}", descriptor.name);
+            }
+        }
+
+        assert_eq!(
+            explicit.keys().cloned().collect::<BTreeSet<_>>(),
+            legacy
+                .keys()
+                .map(ToString::to_string)
+                .collect::<BTreeSet<_>>()
+        );
+        for (name, pointer) in legacy {
+            let id = RuntimeFunctionId::from_name(name);
+            let entry = catalog
+                .runtime_entry(id)
+                .unwrap_or_else(|| panic!("missing explicit horzcat factory {name}"));
+            assert_eq!(entry.id, id, "runtime ID mismatch for {name}");
+            assert_eq!(entry.name, name);
+            assert_eq!(
+                entry.factory as usize, pointer,
+                "factory mismatch for {name}"
+            );
+        }
     }
 }
