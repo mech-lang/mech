@@ -1,17 +1,17 @@
-#[cfg(feature = "math")]
-use super::variable_assign::assignment_registration_operand;
-#[cfg(feature = "math")]
-use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
-#[cfg(all(
-    any(
-        feature = "math_add_assign",
-        feature = "math_sub_assign",
-        feature = "math_div_assign",
-        feature = "math_mul_assign"
-    ),
-    any(feature = "subscript_formula", feature = "subscript_range")
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
 ))]
-use crate::FunctionSpecializer;
+use super::variable_assign::assignment_registration_operand;
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
+use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
 #[cfg(any(
     feature = "math_add_assign",
     feature = "math_sub_assign",
@@ -29,10 +29,6 @@ use crate::Subscript;
     feature = "subscript_range"
 ))]
 use crate::subscript_range;
-#[cfg(feature = "math_add_assign")]
-use crate::{AddAssignRange, AddAssignRangeAll, AddAssignValue};
-#[cfg(feature = "math_div_assign")]
-use crate::{DivAssignRange, DivAssignRangeAll, DivAssignValue};
 use crate::{Environment, InterpreterExecution, MResult, Value};
 #[cfg(all(
     any(
@@ -44,7 +40,12 @@ use crate::{Environment, InterpreterExecution, MResult, Value};
     feature = "subscript_formula"
 ))]
 use crate::{MatrixAssignScalar, MatrixAssignScalarAll, subscript_formula_ix};
-#[cfg(feature = "math")]
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 use crate::{
     MechError, OpAssign, OpAssignOp, execute_catalog_operation_with_registration_arguments,
     expression,
@@ -59,10 +60,6 @@ use crate::{
     any(feature = "subscript_formula", feature = "subscript_range")
 ))]
 use crate::{MechFunction, OperationId};
-#[cfg(feature = "math_mul_assign")]
-use crate::{MulAssignRange, MulAssignRangeAll, MulAssignValue};
-#[cfg(feature = "math_sub_assign")]
-use crate::{SubAssignRange, SubAssignRangeAll, SubAssignValue};
 #[cfg(any(
     feature = "math_add_assign",
     feature = "math_sub_assign",
@@ -71,7 +68,12 @@ use crate::{SubAssignRange, SubAssignRangeAll, SubAssignValue};
 ))]
 use paste::paste;
 
-#[cfg(feature = "math")]
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 pub fn op_assign(
     op_assgn: &OpAssign,
     env: Option<&Environment>,
@@ -131,7 +133,7 @@ pub fn op_assign(
                 OpAssignOp::Add => execute_catalog_operation_with_registration_arguments(
                     p,
                     &plan,
-                    "assign/add",
+                    add_assignment_operation(&compile_arguments[0]),
                     compile_arguments,
                     registration_arguments,
                 ),
@@ -164,6 +166,25 @@ pub fn op_assign(
         }
     }
     unreachable!(); // subscript should have thrown an error if we can't access an element
+}
+
+#[cfg(feature = "math_add_assign")]
+fn add_assignment_operation(sink: &Value) -> &'static str {
+    #[cfg(feature = "table")]
+    if engine_add_assignment_sink(sink) {
+        return "assign/add";
+    }
+
+    "math/add-assign"
+}
+
+#[cfg(all(feature = "math_add_assign", feature = "table"))]
+fn engine_add_assignment_sink(sink: &Value) -> bool {
+    match sink {
+        Value::Table(_) => true,
+        Value::MutableReference(value) => engine_add_assignment_sink(&value.borrow()),
+        _ => false,
+    }
 }
 
 #[cfg(all(

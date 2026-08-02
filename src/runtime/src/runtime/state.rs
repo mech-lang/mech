@@ -10,14 +10,12 @@ use crate::{
     RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeId, RuntimeResourceRegistry, Scheduler,
     SchedulerPolicy, SourceResolver, TransactionId,
 };
-#[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog};
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
-#[cfg(feature = "functions")]
 use std::sync::Arc;
 
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
@@ -43,7 +41,6 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
-    #[cfg(feature = "functions")]
     pub(super) function_catalog: Arc<FunctionCatalog>,
     pub(super) program: MechProgram,
     pub(super) id_generator: Box<dyn IdGenerator>,
@@ -137,14 +134,7 @@ impl MechRuntime {
     }
 
     pub(in crate::runtime) fn new_program(&self, config: MechProgramConfig) -> MechProgram {
-        #[cfg(feature = "functions")]
-        {
-            MechProgram::with_function_catalog(config, Arc::clone(&self.function_catalog))
-        }
-        #[cfg(not(feature = "functions"))]
-        {
-            MechProgram::new(config)
-        }
+        MechProgram::with_function_catalog(config, Arc::clone(&self.function_catalog))
     }
 
     pub(crate) fn health(&self) -> &RuntimeHealth {

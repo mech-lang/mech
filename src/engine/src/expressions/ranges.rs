@@ -1,7 +1,6 @@
 use super::{Environment, factor};
 use crate::{InterpreterExecution, MResult, OperationId, RangeExpression, RangeOp, Value};
 
-#[cfg(feature = "range")]
 pub fn range(
     rng: &RangeExpression,
     env: Option<&Environment>,

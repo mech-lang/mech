@@ -1,4 +1,4 @@
-use crate::stdlib::define::VarDefine;
+use crate::intrinsics::define::VarDefine;
 use crate::{FunctionSpecializer, Plan, ReactiveCellId, Ref, Value};
 
 #[test]

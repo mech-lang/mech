@@ -1,5 +1,5 @@
 #[macro_use]
-use crate::stdlib::*;
+use crate::intrinsics::*;
 use self::assign::*;
 use na::{
     DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, Matrix6, Rotation3,

@@ -59,6 +59,7 @@ fn source_index_for_module_record_source(
 ) -> MResult<Option<SourceIndex>> {
     match source {
         mech_core::MechSourceCode::Tree(tree) => Ok(Some(SourceIndex::from_program(tree))),
+        #[cfg(feature = "source")]
         mech_core::MechSourceCode::String(source) => {
             let tree = mech_syntax::parser::parse(source.trim())?;
             Ok(Some(SourceIndex::from_program(&tree)))

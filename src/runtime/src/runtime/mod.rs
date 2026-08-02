@@ -29,6 +29,7 @@ mod id;
 mod lifecycle;
 mod limits;
 mod live_state;
+#[cfg(feature = "source")]
 mod module;
 mod object;
 mod operation_context;

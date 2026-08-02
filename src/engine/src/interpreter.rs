@@ -1343,7 +1343,7 @@ impl Interpreter {
     pub fn new(id: u64, max_steps: usize) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_catalog(id, max_steps, default_function_catalog())
+            Self::with_function_catalog(id, max_steps, empty_function_catalog())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -1834,13 +1834,13 @@ impl Interpreter {
         Ok(fxn.out().clone())
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "source", feature = "functions"))]
     pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
         let mut services = NoMechExecutionServices;
         self.interpret_with_services(tree, &mut services)
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "source", feature = "functions"))]
     pub fn interpret_with_services(
         &mut self,
         tree: &Program,

@@ -24,12 +24,10 @@ no_std = [
   "mech-combinatorics?/no_std",
 ]
 
-# These layer edges are finalized as the machine and engine layers land in the
-# next two commits. The public composition API is intentionally stable from
-# this first commit onward.
-runtime = ["mech-engine/default"]
+runtime = ["mech-engine/runtime"]
 source = [
   "runtime",
+  "mech-engine/source",
   "mech-math?/source",
   "mech-compare?/source",
   "mech-logic?/source",
@@ -65,7 +63,7 @@ mech-stats = ["dep:mech-stats"]
 mech-combinatorics = ["dep:mech-combinatorics"]
 
 standard_runtime = ["runtime", "standard_values", "standard_operations"]
-standard_source = ["standard_runtime", "source"]
+standard_source = ["standard_runtime", "source", "variables"]
 standard_compiler = ["standard_source", "compiler"]
 
 standard_values = [
@@ -91,6 +89,7 @@ access = ["mech-engine/access"]
 assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
 variable_define = ["mech-engine/variable_define"]
+variables = ["mech-engine/variables"]
 matrix_horzcat = ["mech-engine/matrix_horzcat"]
 matrix_vertcat = ["mech-engine/matrix_vertcat"]
 matrix_comprehensions = ["mech-engine/matrix_comprehensions"]

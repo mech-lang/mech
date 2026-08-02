@@ -6,6 +6,7 @@ use mech_core::{
     MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
     Ref, Value, hash_str,
 };
+#[cfg(feature = "compiler")]
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
@@ -7528,6 +7529,7 @@ result := pick("secret") == "matched"
     );
 }
 
+#[cfg(feature = "compiler")]
 #[test]
 fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
     let mut compiler_program = MechProgram::new(MechProgramConfig::default());
@@ -7566,6 +7568,7 @@ fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
     assert_f64(runtime.root_symbol_value("y").unwrap(), 1.0, "preserved y");
 }
 
+#[cfg(feature = "compiler")]
 #[test]
 fn run_bytecode_error_restores_previous_program_state() {
     let mut compiler_program = MechProgram::new(MechProgramConfig::default());
@@ -7596,6 +7599,7 @@ fn run_bytecode_error_restores_previous_program_state() {
     assert!(runtime.root_symbol_value("x").is_err());
 }
 
+#[cfg(feature = "compiler")]
 #[test]
 fn run_source_with_context_bytecode_emits_completion_and_profile_events() {
     let mut compiler_program = MechProgram::new(MechProgramConfig::default());

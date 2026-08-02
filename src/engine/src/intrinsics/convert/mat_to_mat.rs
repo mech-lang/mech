@@ -1,5 +1,5 @@
 #[macro_use]
-use crate::stdlib::*;
+use crate::intrinsics::*;
 
 use nalgebra::{ArrayStorage, Const, DVector, Matrix3, Matrix4, Scalar};
 use std::fmt::Debug;

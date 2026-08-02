@@ -5,9 +5,10 @@ use crate::{
     CapabilityId, MechRuntime, PlannedPureHostFunction, PlannedStagedHostFunction,
     PreparedRuntimeEffect, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
+#[cfg(feature = "compiler")]
+use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    BytecodeCompilerContext, MResult, MechExecutionServices, MechFunctionCompiler,
-    MechFunctionImpl, ReactiveSolveStatus, Ref, Register, Value,
+    MResult, MechExecutionServices, MechFunctionImpl, ReactiveSolveStatus, Ref, Value,
 };
 use mech_engine::ExecutionServicesBorrowConflict;
 use std::sync::{Arc, Mutex};
