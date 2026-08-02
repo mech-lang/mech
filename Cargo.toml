@@ -263,6 +263,7 @@ members = [
   "src/core",
   "src/syntax",
   "src/engine",
+  "src/stdlib",
   "src/runtime",
   "src/wasm",
   "hosts/browser",
@@ -286,6 +287,7 @@ mech-bytecode = { path = 'src/bytecode' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-engine = { path = 'src/engine'}
+mech-stdlib = { path = 'src/stdlib'}
 mech-runtime = { path = 'src/runtime'}
 mech-wasm = { path = 'src/wasm'}
 mech-host-browser = { path = 'hosts/browser'}

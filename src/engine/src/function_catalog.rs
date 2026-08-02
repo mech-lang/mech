@@ -1,6 +1,19 @@
 use mech_core::{FunctionCatalog, FunctionCatalogBuilder};
 use std::sync::{Arc, OnceLock};
 
+/// Installs the concrete factories owned by the engine's intrinsic fragment.
+///
+/// Standard distribution composition lives outside the engine; this narrow
+/// installer exists so composition crates can include engine-owned operations.
+pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> mech_core::MResult<()> {
+    crate::stdlib::catalog::install_runtime(builder)
+}
+
+/// Installs the source specializers owned by the engine's intrinsic fragment.
+pub fn install_intrinsic_source(builder: &mut FunctionCatalogBuilder) -> mech_core::MResult<()> {
+    crate::stdlib::catalog::install_source(builder)
+}
+
 fn build_default_function_catalog() -> Arc<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
 
