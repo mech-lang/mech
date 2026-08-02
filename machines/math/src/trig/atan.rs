@@ -69,8 +69,8 @@ fn impl_atan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathAtan {}
 
-impl NativeFunctionCompiler for MathAtan {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathAtan {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() == 1 {
             let input = arguments[0].clone();
             match impl_atan_fxn(input.clone()) {
@@ -123,18 +123,4 @@ impl NativeFunctionCompiler for MathAtan {
             .with_compiler_loc());
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/atan",
-    ptr: &MathAtan{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "atan",
-  }
 }

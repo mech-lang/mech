@@ -1,4 +1,4 @@
-use mech::program::{MechProgram, MechProgramConfig};
+use mech::{MechProgram, MechProgramConfig};
 
 fn run(source: &str) -> bool {
     let mut program = MechProgram::new(MechProgramConfig::default());
@@ -63,13 +63,13 @@ fn repeated_module_and_item_imports_remain_idempotent() {
 
 #[cfg(feature = "linked_stdlib")]
 #[test]
-fn linked_loader_discovers_machine_declared_math_items() {
+fn catalog_exports_include_machine_declared_math_items() {
     assert!(run("+> math/copysign\nx := copysign(1.0, -2.0)"));
 }
 
 #[cfg(feature = "linked_stdlib")]
 #[test]
-fn linked_loader_glob_uses_machine_manifest() {
+fn catalog_glob_uses_exact_machine_exports() {
     assert!(run("+> math/*\nx := round(1.23)"));
 }
 
@@ -103,6 +103,15 @@ fn grouped_item_import_enables_each_grouped_item() {
 #[test]
 fn grouped_item_import_does_not_import_other_items() {
     assert!(!run("+> math/{sin, cos, tan}\nx := round(1.23)"));
+}
+
+#[cfg(feature = "linked_stdlib")]
+#[test]
+fn failed_grouped_item_import_rolls_back_earlier_items() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
+
+    assert!(program.run_string("+> math/{sin, missing}").is_err());
+    assert!(program.run_string("x := sin(1.23)").is_err());
 }
 
 #[cfg(feature = "linked_stdlib")]

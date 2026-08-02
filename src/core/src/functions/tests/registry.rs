@@ -1,44 +1,38 @@
 use super::super::{
-    FunctionArgs, FunctionCompilerDescriptor, FunctionDescriptor, GuardFunctionSafety,
-    MechFunction, ModuleItemDescriptor, NativeFunctionCompiler, StaticNativeFunctionCompiler,
+    FunctionArgs, FunctionDefinition, FunctionSpecializer, GuardFunctionSafety, MechFunction,
+    UserFunctionTable,
 };
-use super::support::PureStaticTestCompiler;
 #[cfg(feature = "f64")]
 use super::support::scalar;
-use crate::{MResult, Value};
+use crate::{FunctionDefine, MResult, Value, hash_str, internal_pattern_value_identifier};
 
-fn assert_send_sync<T: Send + Sync>() {}
+fn user_definition(name: &str) -> FunctionDefinition {
+    FunctionDefinition::new(
+        hash_str(name),
+        name.to_string(),
+        FunctionDefine {
+            name: internal_pattern_value_identifier(name),
+            input: Vec::new(),
+            output: Vec::new(),
+            statements: Vec::new(),
+            match_arms: Vec::new(),
+        },
+    )
+}
 
-struct DefaultTestCompiler;
+struct DefaultTestSpecializer;
 
-impl NativeFunctionCompiler for DefaultTestCompiler {
-    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        unreachable!("safety metadata test must not compile the function")
+impl FunctionSpecializer for DefaultTestSpecializer {
+    fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        unreachable!("safety metadata test must not specialize the function")
     }
 }
 
-static PURE_STATIC_TEST_COMPILER: PureStaticTestCompiler = PureStaticTestCompiler;
-
 #[test]
-fn native_compiler_descriptors_are_send_and_sync_without_manual_promises() {
-    assert_send_sync::<FunctionDescriptor>();
-    assert_send_sync::<FunctionCompilerDescriptor>();
-    assert_send_sync::<ModuleItemDescriptor>();
-    assert_send_sync::<StaticNativeFunctionCompiler>();
-}
+fn function_specializer_guard_safety_defaults_to_unsupported() {
+    let specializer = DefaultTestSpecializer;
 
-#[test]
-fn native_compiler_guard_safety_defaults_to_unsupported() {
-    let compiler = DefaultTestCompiler;
-
-    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::Unsupported);
-}
-
-#[test]
-fn static_native_compiler_preserves_guard_safety_metadata() {
-    let compiler = StaticNativeFunctionCompiler::new(&PURE_STATIC_TEST_COMPILER);
-
-    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::PureStatic);
+    assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
 }
 
 #[cfg(feature = "f64")]
@@ -76,4 +70,53 @@ fn function_args_returns_only_inputs() {
             .input_values(),
         vec![a, b, c, d],
     );
+}
+
+#[test]
+fn user_function_table_replaces_only_the_exact_same_name() {
+    let mut definitions = UserFunctionTable::default();
+    let first = user_definition("local/read");
+    let first_out = first.out.clone();
+    definitions.insert_or_replace(first).unwrap();
+
+    let replacement = user_definition("local/read");
+    let replacement_out = replacement.out.clone();
+    let replaced = definitions.insert_or_replace(replacement).unwrap().unwrap();
+
+    assert_eq!(replaced.out.addr(), first_out.addr());
+    assert_eq!(
+        definitions.resolve_name("local/read").unwrap().out.addr(),
+        replacement_out.addr(),
+    );
+    assert_eq!(definitions.definitions().len(), 1);
+}
+
+#[test]
+fn user_function_table_rejects_a_distinct_name_at_one_forced_id() {
+    let incoming = user_definition("second");
+    let id = incoming.id;
+    let mut existing = user_definition("first");
+    existing.id = id;
+    let mut definitions = UserFunctionTable::default();
+    definitions.definitions.insert(id, existing);
+
+    let error = definitions.insert_or_replace(incoming).unwrap_err();
+
+    assert_eq!(error.kind_name(), "UserFunctionIdCollision");
+    assert_eq!(definitions.definitions.get(&id).unwrap().name, "first");
+}
+
+#[test]
+fn user_function_table_name_resolution_is_exact() {
+    let mut definitions = UserFunctionTable::default();
+    definitions
+        .insert_or_replace(user_definition("module/item"))
+        .unwrap();
+
+    assert!(definitions.resolve_name("module/item").is_some());
+    assert!(definitions.resolve_name("item").is_none());
+    assert_eq!(definitions.len(), 1);
+    assert!(!definitions.is_empty());
+    definitions.clear();
+    assert!(definitions.is_empty());
 }

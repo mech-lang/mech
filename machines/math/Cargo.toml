@@ -189,7 +189,7 @@ variable_assign = ["statements", "mech-core/variable_assign"]
 kind_define = ["kind_annotation", "statements", "mech-core/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation"]
 formulas = ["mech-core/formulas"]
-functions = ["symbol_table", "mech-core/functions", "dep:inventory", "dep:paste"]
+functions = ["symbol_table", "mech-core/functions", "dep:paste"]
 symbol_table = ["mech-core/symbol_table"]
 
 bool = ["mech-core/bool"]
@@ -264,7 +264,6 @@ mech-abi = { path = "../../src/abi", optional = true }
 libm = {version = "0.2.15", optional = true}
 simba = {version = "0.9.0", optional = true}
 paste = { version = "1.0.15", optional = true }
-inventory = { version = "0.3.22", optional = true }
 nalgebra = {version="0.34.1", optional = true}
 
 [dependencies.num-traits]

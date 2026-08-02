@@ -1,6 +1,6 @@
 use crate::MechProgram;
+use crate::{Interpreter, InterpreterRef};
 use mech_core::*;
-use mech_interpreter::{Interpreter, InterpreterRef};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IntegrityConstraintFailureReason {
@@ -706,11 +706,11 @@ mod tests {
         let root_id = program.interpreter().id;
         let child_id = root_id.wrapping_add(101);
         let grandchild_id = root_id.wrapping_add(202);
-        let mut child = Interpreter::new_with_full_stdlib(child_id);
+        let mut child = Interpreter::new(child_id, 10_000);
         child
             .interpret(&parser::parse("shared! := false").unwrap())
             .unwrap();
-        let mut grandchild = Interpreter::new_with_full_stdlib(grandchild_id);
+        let mut grandchild = Interpreter::new(grandchild_id, 10_000);
         grandchild
             .interpret(&parser::parse("nested! := false").unwrap())
             .unwrap();
@@ -751,7 +751,7 @@ mod tests {
     fn repeated_interpreter_handle_is_an_infrastructure_error() {
         let mut program = MechProgram::new(MechProgramConfig::default());
         let child_id = program.interpreter().id.wrapping_add(1);
-        let child = Ref::new(Box::new(Interpreter::new_with_full_stdlib(child_id)));
+        let child = Ref::new(Box::new(Interpreter::new(child_id, 10_000)));
         program
             .interpreter_mut()
             .sub_interpreters

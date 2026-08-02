@@ -1,6 +1,6 @@
 #![cfg(feature = "dynamic-modules")]
 
-use mech::program::{MechProgram, MechProgramConfig};
+use mech::{MechProgram, MechProgramConfig};
 
 fn run_ok(source: &str) {
     let mut program = MechProgram::new(MechProgramConfig::default());

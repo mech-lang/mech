@@ -8,7 +8,7 @@ use simba::scalar::ClosedNeg;
 // Negate ---------------------------------------------------------------------
 
 #[derive(Debug)]
-struct NegateV<O> {
+pub(crate) struct NegateV<O> {
     arg: Ref<O>,
     out: Ref<O>,
     _marker: PhantomData<O>,
@@ -91,13 +91,8 @@ where
     }
 }
 
-register_fxn_descriptor!(
-    NegateV, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64",
-    R64, "r64", C64, "c64"
-);
-
 #[derive(Debug)]
-struct NegateS<O> {
+pub(crate) struct NegateS<O> {
     arg: Ref<O>,
     out: Ref<O>,
     _marker: PhantomData<O>,
@@ -180,11 +175,6 @@ where
         );
     }
 }
-
-register_fxn_descriptor!(
-    NegateS, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64",
-    R64, "r64", C64, "c64"
-);
 
 fn impl_neg_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms!(

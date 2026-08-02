@@ -157,7 +157,6 @@ macro_rules! impl_solve {
             solve_op,
             FeatureFlag::Builtin(FeatureKind::Solve)
         );
-        register_fxn_descriptor!($name, f64, "f64");
     };
 }
 

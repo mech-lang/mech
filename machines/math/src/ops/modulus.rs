@@ -10,7 +10,7 @@ use num_traits::*;
 macro_rules! impl_binop2 {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name<T> {
+        pub(crate) struct $struct_name<T> {
             lhs: Ref<$arg1_type>,
             rhs: Ref<$arg2_type>,
             out: Ref<$out_type>,
@@ -237,7 +237,6 @@ impl_math_fxns2!(Mod);
 fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Mod,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       I8,   i8,   "i8";
       I16,  i16,  "i16";

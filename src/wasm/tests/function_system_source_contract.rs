@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use mech_core::{MechSourceCode, OperationId, RuntimeFunctionId, Value};
-use mech_interpreter::default_function_system;
+use mech_engine::default_function_catalog;
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot};
 use mech_wasm as _;
 use serde::Deserialize;
@@ -136,22 +136,34 @@ fn cross_target_source_contract() {
 }
 
 #[wasm_bindgen_test]
-fn standard_function_system_contains_the_complete_profile() {
-    let system = default_function_system();
-    let catalog = system.catalog();
+fn enabled_standard_profile_is_fully_catalog_owned() {
+    let catalog = default_function_catalog();
 
-    assert_eq!(catalog.specializer_count(), 1);
-    assert_eq!(catalog.runtime_factory_count(), 56);
+    assert!(catalog.specializer_count() > 1);
+    assert!(catalog.intrinsic_specializer_count() > 0);
+    assert!(catalog.runtime_factory_count() > 56);
     assert!(catalog.module_export("math", "add").is_none());
+    for canonical_name in [
+        "math/add",
+        "compare/eq",
+        "logic/and",
+        "range/inclusive",
+        "matrix/transpose",
+        "set/union",
+        "string/concat",
+    ] {
+        assert_eq!(
+            catalog
+                .specializer(OperationId::from_name(canonical_name))
+                .unwrap()
+                .canonical_name,
+            canonical_name,
+        );
+    }
     assert!(
-        system
-            .legacy_boundary()
-            .owns_operation(OperationId::from_name("math/add"))
-    );
-    assert!(
-        system
-            .legacy_boundary()
-            .owns_runtime_function(RuntimeFunctionId::from_name("AddSS<f64>"))
+        catalog
+            .runtime_factory(RuntimeFunctionId::from_name("AddSS<f64>"))
+            .is_some()
     );
 }
 

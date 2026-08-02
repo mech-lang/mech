@@ -1,19 +1,7 @@
 #[cfg(feature = "no_std")]
-use alloc::{
-    boxed::Box,
-    collections::{BTreeMap, BTreeSet},
-    string::String,
-    sync::Arc,
-    vec::Vec,
-};
+use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{
-    boxed::Box,
-    collections::{BTreeMap, BTreeSet},
-    string::String,
-    sync::Arc,
-    vec::Vec,
-};
+use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
     FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction, Value,
@@ -80,7 +68,7 @@ pub struct FunctionSpecializerEntry {
     pub specializer: Arc<dyn FunctionSpecializer>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FunctionExposure {
     Internal,
     Prelude,
@@ -99,8 +87,11 @@ pub struct FunctionExport {
 pub struct FunctionCatalog {
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
+    intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
+    exports_by_module: BTreeMap<String, Vec<FunctionExport>>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
+    all_exports: Vec<FunctionExport>,
 }
 
 impl FunctionCatalog {
@@ -120,10 +111,42 @@ impl FunctionCatalog {
         self.specializers.get(&operation)
     }
 
+    /// Resolves a parser-only language intrinsic. Intrinsics are deliberately
+    /// absent from named source lookup and the frozen named-specializer count.
+    pub fn intrinsic_specializer(
+        &self,
+        operation: OperationId,
+    ) -> Option<&FunctionSpecializerEntry> {
+        self.intrinsic_specializers.get(&operation)
+    }
+
+    /// Resolves either a named static specializer or a parser-only intrinsic.
+    pub fn operation_specializer(
+        &self,
+        operation: OperationId,
+    ) -> Option<&FunctionSpecializerEntry> {
+        self.specializer(operation)
+            .or_else(|| self.intrinsic_specializer(operation))
+    }
+
     pub fn specializer_entries(
         &self,
     ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
         self.specializers.values()
+    }
+
+    /// Returns every named specializer in ascending [`OperationId`] order.
+    /// Parser-only intrinsics are intentionally excluded.
+    pub fn all_specializers(
+        &self,
+    ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
+        self.specializers.values()
+    }
+
+    pub fn intrinsic_specializer_entries(
+        &self,
+    ) -> impl ExactSizeIterator<Item = &FunctionSpecializerEntry> + '_ {
+        self.intrinsic_specializers.values()
     }
 
     pub fn exports_for_operation(&self, operation: OperationId) -> &[FunctionExport] {
@@ -138,12 +161,38 @@ impl FunctionCatalog {
             .get(&(String::from(module), String::from(item)))
     }
 
+    /// Returns the exports for one exact module in ascending module/item order.
+    pub fn module_exports(
+        &self,
+        module: &str,
+    ) -> impl ExactSizeIterator<Item = &FunctionExport> + '_ {
+        self.exports_by_module
+            .get(module)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+            .iter()
+    }
+
+    pub fn has_module(&self, module: &str) -> bool {
+        self.module_exports(module).next().is_some()
+    }
+
+    /// Returns every export exactly once in deterministic order: first by
+    /// [`OperationId`], then by module, item, exposure, and canonical name.
+    pub fn all_exports(&self) -> impl ExactSizeIterator<Item = &FunctionExport> + '_ {
+        self.all_exports.iter()
+    }
+
     pub fn runtime_factory_count(&self) -> usize {
         self.runtime_factories.len()
     }
 
     pub fn specializer_count(&self) -> usize {
         self.specializers.len()
+    }
+
+    pub fn intrinsic_specializer_count(&self) -> usize {
+        self.intrinsic_specializers.len()
     }
 }
 
@@ -347,27 +396,10 @@ impl MechErrorKind for FunctionOperationUnavailable {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeFunctionUnavailable {
-    pub id: RuntimeFunctionId,
-}
-
-impl MechErrorKind for RuntimeFunctionUnavailable {
-    fn name(&self) -> &str {
-        "RuntimeFunctionUnavailable"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "runtime function 0x{:016x} is unavailable in the catalog",
-            self.id.raw(),
-        )
-    }
-}
-
 pub struct FunctionCatalogBuilder {
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
+    intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
 }
@@ -383,6 +415,7 @@ impl FunctionCatalogBuilder {
         Self {
             runtime_factories: BTreeMap::new(),
             specializers: BTreeMap::new(),
+            intrinsic_specializers: BTreeMap::new(),
             exports_by_module_item: BTreeMap::new(),
             exports_by_operation: BTreeMap::new(),
         }
@@ -406,6 +439,20 @@ impl FunctionCatalogBuilder {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
         self.insert_specializer_entry(FunctionSpecializerEntry {
+            operation,
+            canonical_name,
+            specializer,
+        })
+    }
+
+    pub fn insert_intrinsic_specializer(
+        &mut self,
+        canonical_name: impl Into<String>,
+        specializer: Arc<dyn FunctionSpecializer>,
+    ) -> MResult<OperationId> {
+        let canonical_name = canonical_name.into();
+        let operation = OperationId::from_name(&canonical_name);
+        self.insert_intrinsic_specializer_entry(FunctionSpecializerEntry {
             operation,
             canonical_name,
             specializer,
@@ -471,7 +518,7 @@ impl FunctionCatalogBuilder {
         Ok(())
     }
 
-    pub fn build(self) -> MResult<FunctionCatalog> {
+    pub fn build(mut self) -> MResult<FunctionCatalog> {
         for (operation, exports) in &self.exports_by_operation {
             let Some(specializer) = self.specializers.get(operation) else {
                 let export = &exports[0];
@@ -501,14 +548,40 @@ impl FunctionCatalogBuilder {
             }
         }
 
+        for exports in self.exports_by_operation.values_mut() {
+            exports.sort_by(|left, right| {
+                left.module
+                    .cmp(&right.module)
+                    .then_with(|| left.item.cmp(&right.item))
+                    .then_with(|| left.exposure.cmp(&right.exposure))
+                    .then_with(|| left.canonical_name.cmp(&right.canonical_name))
+            });
+        }
+
+        let mut exports_by_module = BTreeMap::<String, Vec<FunctionExport>>::new();
+        for ((module, _), export) in &self.exports_by_module_item {
+            exports_by_module
+                .entry(module.clone())
+                .or_default()
+                .push(export.clone());
+        }
+        let all_exports = self
+            .exports_by_operation
+            .values()
+            .flatten()
+            .cloned()
+            .collect();
+
         let catalog = FunctionCatalog {
             runtime_factories: self.runtime_factories,
             specializers: self.specializers,
+            intrinsic_specializers: self.intrinsic_specializers,
             exports_by_module_item: self.exports_by_module_item,
+            exports_by_module,
             exports_by_operation: self.exports_by_operation,
+            all_exports,
         };
 
-        FunctionEnvironment::from_catalog_prelude(&catalog)?;
         Ok(catalog)
     }
 
@@ -567,7 +640,11 @@ impl FunctionCatalogBuilder {
             .with_compiler_loc());
         }
 
-        if let Some(existing) = self.specializers.get(&entry.operation) {
+        if let Some(existing) = self
+            .specializers
+            .get(&entry.operation)
+            .or_else(|| self.intrinsic_specializers.get(&entry.operation))
+        {
             let kind = if existing.canonical_name == entry.canonical_name {
                 MechError::new(
                     FunctionCatalogDuplicateSpecializer {
@@ -591,6 +668,53 @@ impl FunctionCatalogBuilder {
 
         let operation = entry.operation;
         self.specializers.insert(operation, entry);
+        Ok(operation)
+    }
+
+    fn insert_intrinsic_specializer_entry(
+        &mut self,
+        entry: FunctionSpecializerEntry,
+    ) -> MResult<OperationId> {
+        if entry.canonical_name.is_empty() {
+            return Err(MechError::new(
+                FunctionCatalogInvalidName {
+                    category: "function intrinsic",
+                    name: entry.canonical_name,
+                    id: entry.operation.raw(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        if let Some(existing) = self
+            .intrinsic_specializers
+            .get(&entry.operation)
+            .or_else(|| self.specializers.get(&entry.operation))
+        {
+            let kind = if existing.canonical_name == entry.canonical_name {
+                MechError::new(
+                    FunctionCatalogDuplicateSpecializer {
+                        operation: entry.operation,
+                        canonical_name: entry.canonical_name,
+                    },
+                    None,
+                )
+            } else {
+                MechError::new(
+                    FunctionCatalogOperationIdCollision {
+                        operation: entry.operation,
+                        existing_name: existing.canonical_name.clone(),
+                        incoming_name: entry.canonical_name,
+                    },
+                    None,
+                )
+            };
+            return Err(kind.with_compiler_loc());
+        }
+
+        let operation = entry.operation;
+        self.intrinsic_specializers.insert(operation, entry);
         Ok(operation)
     }
 }
@@ -629,116 +753,32 @@ fn validate_export(export: &FunctionExport) -> MResult<()> {
         ));
     }
 
-    match (&export.module, &export.item) {
-        (Some(module), Some(item)) if module.is_empty() => Err(invalid_export_error(
-            export,
-            String::from("module name must not be empty"),
-        )),
-        (Some(_), Some(item)) if item.is_empty() => Err(invalid_export_error(
-            export,
-            String::from("item name must not be empty"),
-        )),
-        (Some(_), Some(_)) | (None, None) => Ok(()),
-        _ => Err(invalid_export_error(
-            export,
-            String::from("module and item must either both be present or both be absent"),
-        )),
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct FunctionEnvironment {
-    visible_operations: BTreeSet<OperationId>,
-    bindings: BTreeMap<u64, OperationId>,
-    dictionary: BTreeMap<u64, String>,
-}
-
-impl FunctionEnvironment {
-    pub fn from_catalog_prelude(catalog: &FunctionCatalog) -> MResult<Self> {
-        let mut environment = Self::default();
-        for exports in catalog.exports_by_operation.values() {
-            for export in exports {
-                if export.exposure == FunctionExposure::Prelude {
-                    environment.bind_export(export, &export.canonical_name)?;
-                }
+    match export.exposure {
+        FunctionExposure::Internal | FunctionExposure::Prelude => {
+            if export.module.is_none() && export.item.is_none() {
+                Ok(())
+            } else {
+                Err(invalid_export_error(
+                    export,
+                    String::from("internal and prelude exports cannot declare a module or item"),
+                ))
             }
         }
-        Ok(environment)
-    }
-
-    pub fn is_visible(&self, operation: OperationId) -> bool {
-        self.visible_operations.contains(&operation)
-    }
-
-    pub fn require_visible(&self, operation: OperationId) -> MResult<()> {
-        self.require_visible_named(operation, None)
-    }
-
-    pub fn require_visible_named(
-        &self,
-        operation: OperationId,
-        canonical_name: Option<&str>,
-    ) -> MResult<()> {
-        if self.is_visible(operation) {
-            Ok(())
-        } else {
-            Err(MechError::new(
-                FunctionOperationNotVisible {
-                    operation,
-                    canonical_name: canonical_name.map(String::from),
-                },
-                None,
-            )
-            .with_compiler_loc())
-        }
-    }
-
-    pub fn resolve_name(&self, name: &str) -> Option<OperationId> {
-        let name_id = hash_str(name);
-        match (self.dictionary.get(&name_id), self.bindings.get(&name_id)) {
-            (Some(stored_name), Some(operation)) if stored_name == name => Some(*operation),
-            _ => None,
-        }
-    }
-
-    pub fn bind_export(&mut self, export: &FunctionExport, visible_name: &str) -> MResult<()> {
-        validate_export(export)?;
-        if visible_name.is_empty() {
-            return Err(invalid_export_error(
+        FunctionExposure::ModuleOnly => match (&export.module, &export.item) {
+            (Some(module), Some(_)) if module.is_empty() => Err(invalid_export_error(
                 export,
-                String::from("visible name must not be empty"),
-            ));
-        }
-
-        let name_id = hash_str(visible_name);
-        if let Some(existing_name) = self.dictionary.get(&name_id)
-            && existing_name != visible_name
-        {
-            return Err(invalid_export_error(
+                String::from("module name must not be empty"),
+            )),
+            (Some(_), Some(item)) if item.is_empty() => Err(invalid_export_error(
                 export,
-                format!(
-                    "visible name {:?} collides with {:?} at ID 0x{:016x}",
-                    visible_name, existing_name, name_id,
-                ),
-            ));
-        }
-        if let Some(existing_operation) = self.bindings.get(&name_id)
-            && *existing_operation != export.operation
-        {
-            return Err(invalid_export_error(
+                String::from("item name must not be empty"),
+            )),
+            (Some(_), Some(_)) => Ok(()),
+            _ => Err(invalid_export_error(
                 export,
-                format!(
-                    "visible name {:?} is already bound to operation 0x{:016x}",
-                    visible_name,
-                    existing_operation.raw(),
-                ),
-            ));
-        }
-
-        self.visible_operations.insert(export.operation);
-        self.bindings.insert(name_id, export.operation);
-        self.dictionary.insert(name_id, String::from(visible_name));
-        Ok(())
+                String::from("module-only exports must declare both a module and an item"),
+            )),
+        },
     }
 }
 
@@ -868,6 +908,51 @@ mod tests {
     }
 
     #[test]
+    fn parser_intrinsics_are_separate_from_named_specializers() {
+        let mut builder = FunctionCatalogBuilder::new();
+        let intrinsic = builder
+            .insert_intrinsic_specializer("assign", test_specializer())
+            .unwrap();
+        builder
+            .insert_specializer("math/add", test_specializer())
+            .unwrap();
+
+        let catalog = builder.build().unwrap();
+
+        assert_eq!(catalog.specializer_count(), 1);
+        assert_eq!(catalog.intrinsic_specializer_count(), 1);
+        assert!(catalog.specializer(intrinsic).is_none());
+        assert_eq!(
+            catalog
+                .intrinsic_specializer(intrinsic)
+                .unwrap()
+                .canonical_name,
+            "assign",
+        );
+        assert_eq!(
+            catalog
+                .operation_specializer(intrinsic)
+                .unwrap()
+                .canonical_name,
+            "assign",
+        );
+    }
+
+    #[test]
+    fn named_and_intrinsic_specializers_cannot_claim_the_same_operation() {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_intrinsic_specializer("assign", test_specializer())
+            .unwrap();
+
+        let error = builder
+            .insert_specializer("assign", test_specializer())
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateSpecializer");
+    }
+
+    #[test]
     fn exports_require_a_registered_specializer_at_build_time() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
@@ -894,6 +979,19 @@ mod tests {
                 Some("math"),
                 Some(""),
                 FunctionExposure::ModuleOnly,
+            ),
+            export("math/add", None, None, FunctionExposure::ModuleOnly),
+            export(
+                "math/add",
+                Some("math"),
+                Some("add"),
+                FunctionExposure::Internal,
+            ),
+            export(
+                "math/add",
+                Some("math"),
+                Some("add"),
+                FunctionExposure::Prelude,
             ),
         ] {
             let mut builder = FunctionCatalogBuilder::new();
@@ -969,23 +1067,6 @@ mod tests {
     }
 
     #[test]
-    fn prelude_exports_are_visible_by_canonical_name() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let operation = builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export("math/add", None, None, FunctionExposure::Prelude))
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let environment = FunctionEnvironment::from_catalog_prelude(&catalog).unwrap();
-
-        assert!(environment.is_visible(operation));
-        assert_eq!(environment.resolve_name("math/add"), Some(operation));
-        environment.require_visible(operation).unwrap();
-    }
-
-    #[test]
     fn operation_diagnostics_include_names_when_available() {
         let operation = OperationId::from_name("math/add");
         assert_eq!(
@@ -1012,85 +1093,6 @@ mod tests {
             .message(),
             "function operation 0x00cc529041cb60c3 is not visible in this program",
         );
-    }
-
-    #[test]
-    fn module_only_exports_are_not_prelude_visible() {
-        let mut builder = FunctionCatalogBuilder::new();
-        let operation = builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export(
-                "math/add",
-                Some("math"),
-                Some("add"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let environment = FunctionEnvironment::from_catalog_prelude(&catalog).unwrap();
-
-        assert!(!environment.is_visible(operation));
-        assert_eq!(environment.resolve_name("math/add"), None);
-        let error = environment.require_visible(operation).unwrap_err();
-        assert_eq!(error.kind_name(), "FunctionOperationNotVisible");
-    }
-
-    #[test]
-    fn environment_clones_preserve_exact_program_local_state() {
-        let mut builder = FunctionCatalogBuilder::new();
-        builder
-            .insert_specializer("math/add", test_specializer())
-            .unwrap();
-        let subtract = builder
-            .insert_specializer("math/subtract", test_specializer())
-            .unwrap();
-        builder
-            .insert_export(export("math/add", None, None, FunctionExposure::Prelude))
-            .unwrap();
-        builder
-            .insert_export(export(
-                "math/subtract",
-                Some("math"),
-                Some("subtract"),
-                FunctionExposure::ModuleOnly,
-            ))
-            .unwrap();
-        let catalog = builder.build().unwrap();
-        let environment = FunctionEnvironment::from_catalog_prelude(&catalog).unwrap();
-
-        assert_eq!(environment.clone(), environment);
-
-        let mut imported_environment = environment.clone();
-        imported_environment
-            .bind_export(
-                catalog.module_export("math", "subtract").unwrap(),
-                "subtract",
-            )
-            .unwrap();
-
-        assert!(imported_environment.is_visible(subtract));
-        assert_eq!(
-            imported_environment.resolve_name("subtract"),
-            Some(subtract)
-        );
-        assert!(!environment.is_visible(subtract));
-        assert_eq!(environment.resolve_name("subtract"), None);
-    }
-
-    #[test]
-    fn name_resolution_checks_the_collision_dictionary() {
-        let requested = "math/add";
-        let name_id = hash_str(requested);
-        let operation = OperationId::from_name(requested);
-        let mut environment = FunctionEnvironment::default();
-        environment.bindings.insert(name_id, operation);
-        environment
-            .dictionary
-            .insert(name_id, String::from("a different colliding name"));
-
-        assert_eq!(environment.resolve_name(requested), None);
     }
 
     #[test]
@@ -1129,6 +1131,153 @@ mod tests {
         assert_eq!(
             catalog.module_export("math", "add").unwrap().canonical_name,
             "math/add"
+        );
+    }
+
+    #[test]
+    fn module_queries_are_exact_and_sorted_by_item() {
+        let mut builder = FunctionCatalogBuilder::new();
+        for name in ["math/zeta", "math/alpha", "math-extra/only"] {
+            builder
+                .insert_specializer(name, test_specializer())
+                .unwrap();
+        }
+        for (name, module, item) in [
+            ("math/zeta", "math", "zeta"),
+            ("math-extra/only", "math-extra", "only"),
+            ("math/alpha", "math", "alpha"),
+        ] {
+            builder
+                .insert_export(export(
+                    name,
+                    Some(module),
+                    Some(item),
+                    FunctionExposure::ModuleOnly,
+                ))
+                .unwrap();
+        }
+
+        let catalog = builder.build().unwrap();
+        let items = catalog
+            .module_exports("math")
+            .map(|export| export.item.as_deref().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(items, ["alpha", "zeta"]);
+        assert!(catalog.has_module("math"));
+        assert!(catalog.has_module("math-extra"));
+        assert!(!catalog.has_module("mat"));
+        assert!(!catalog.has_module("missing"));
+    }
+
+    #[test]
+    fn all_specializers_are_named_only_and_sorted_by_operation_id() {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_specializer("stats/mean", test_specializer())
+            .unwrap();
+        builder
+            .insert_specializer("math/add", test_specializer())
+            .unwrap();
+        builder
+            .insert_specializer("logic/and", test_specializer())
+            .unwrap();
+        builder
+            .insert_intrinsic_specializer("assign", test_specializer())
+            .unwrap();
+
+        let catalog = builder.build().unwrap();
+        let specializers = catalog.all_specializers().collect::<Vec<_>>();
+        let operation_ids = specializers
+            .iter()
+            .map(|entry| entry.operation)
+            .collect::<Vec<_>>();
+
+        assert_eq!(specializers.len(), 3);
+        assert!(operation_ids.is_sorted());
+        assert!(
+            specializers
+                .iter()
+                .all(|entry| entry.canonical_name != "assign")
+        );
+    }
+
+    #[test]
+    fn all_exports_are_complete_unique_and_independent_of_insertion_order() {
+        fn build_catalog(reverse_exports: bool) -> FunctionCatalog {
+            let mut builder = FunctionCatalogBuilder::new();
+            for name in ["stats/mean", "math/add"] {
+                builder
+                    .insert_specializer(name, test_specializer())
+                    .unwrap();
+            }
+
+            let mut exports = vec![
+                export("math/add", None, None, FunctionExposure::Prelude),
+                export(
+                    "stats/mean",
+                    Some("stats"),
+                    Some("mean"),
+                    FunctionExposure::ModuleOnly,
+                ),
+                export("math/add", None, None, FunctionExposure::Internal),
+                export(
+                    "math/add",
+                    Some("math"),
+                    Some("add"),
+                    FunctionExposure::ModuleOnly,
+                ),
+            ];
+            if reverse_exports {
+                exports.reverse();
+            }
+            for export in exports {
+                builder.insert_export(export).unwrap();
+            }
+            builder.build().unwrap()
+        }
+
+        fn signatures(
+            catalog: &FunctionCatalog,
+        ) -> Vec<(
+            OperationId,
+            Option<String>,
+            Option<String>,
+            FunctionExposure,
+            String,
+        )> {
+            catalog
+                .all_exports()
+                .map(|export| {
+                    (
+                        export.operation,
+                        export.module.clone(),
+                        export.item.clone(),
+                        export.exposure,
+                        export.canonical_name.clone(),
+                    )
+                })
+                .collect()
+        }
+
+        let forward = build_catalog(false);
+        let reverse = build_catalog(true);
+        let forward_signatures = signatures(&forward);
+
+        assert_eq!(forward_signatures, signatures(&reverse));
+        assert_eq!(forward_signatures.len(), 4);
+        assert!(forward_signatures.windows(2).all(|pair| pair[0] != pair[1]));
+        assert_eq!(
+            forward
+                .exports_for_operation(OperationId::from_name("math/add"))
+                .iter()
+                .map(|export| export.exposure)
+                .collect::<Vec<_>>(),
+            [
+                FunctionExposure::Internal,
+                FunctionExposure::Prelude,
+                FunctionExposure::ModuleOnly,
+            ],
         );
     }
 }

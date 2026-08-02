@@ -1,13 +1,13 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use crate::runtime::host::RuntimeHostNativeFunctionCompiler;
+use crate::runtime::host::RuntimeHostFunctionSpecializer;
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
     CapabilityId, MechRuntime, ObjectRecord, PlannedPureHostFunction,
     PlannedRuntimeManagedHostFunction, RuntimeCallContext, RuntimeValueSnapshot,
 };
-use mech_core::{NativeFunctionCompiler, Ref, Value};
+use mech_core::{FunctionSpecializer, Ref, Value};
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
@@ -105,7 +105,7 @@ fn host_planning_panics_are_converted_without_invocation() {
     let invoke_count = invoke_calls.clone();
     let runtime = MechRuntime::builder().build().unwrap();
     let context = RuntimeCallContext::capture(&runtime.runtime_context().unwrap());
-    let compiler = RuntimeHostNativeFunctionCompiler::new(
+    let specializer = RuntimeHostFunctionSpecializer::new(
         "sealed/plan-panic",
         "sealed/plan-panic",
         context,
@@ -123,7 +123,7 @@ fn host_planning_panics_are_converted_without_invocation() {
         .into(),
     );
 
-    let error = match compiler.compile(&Vec::new()) {
+    let error = match specializer.specialize(&[]) {
         Ok(_) => panic!("planning panic should be converted to an error"),
         Err(error) => error,
     };

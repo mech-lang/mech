@@ -43,7 +43,7 @@ cp "${source_path}" "${staged_path}"
 }
 
 echo "checking interpreter with dynamic modules enabled"
-cargo check -p mech-interpreter --no-default-features --features "base dynamic-modules f64"
+cargo check -p mech-engine --no-default-features --features "base dynamic-modules f64"
 
 echo "testing math dynamic provider"
 cargo test --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module"

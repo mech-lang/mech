@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Symmetric Difference ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetSymDifferenceFxn {
+pub(crate) struct SetSymDifferenceFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<MechSet>,
@@ -89,13 +89,6 @@ impl MechFunctionCompiler for SetSymDifferenceFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetSymDifferenceFxn",
-    ptr: SetSymDifferenceFxn::new,
-  }
-}
-
 fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetSymDifferenceFxn {
@@ -118,8 +111,8 @@ fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunctio
 }
 
 pub struct SetSymmetricDifference {}
-impl NativeFunctionCompiler for SetSymmetricDifference {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetSymmetricDifference {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -155,11 +148,4 @@ impl NativeFunctionCompiler for SetSymmetricDifference {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/symmetric-difference",
-    ptr: &SetSymmetricDifference{},
-  }
 }

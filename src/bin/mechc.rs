@@ -1365,7 +1365,7 @@ edition = "2021"
 anyhow = "1.0"
 zip = "5.1"
 
-mech-interpreter = {{version = "{version}", default-features = false, features = [{feature_list}] }}
+mech-engine = {{version = "{version}", default-features = false, features = [{feature_list}] }}
 "#,
         name = shim_name,
         version = VERSION,
@@ -1379,10 +1379,10 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Cursor};
 use zip::read::ZipArchive;
 
-use mech_interpreter::*;
-use mech_interpreter::error::{MechError, MechErrorKind};
-use mech_interpreter::value::Value;
-use mech_interpreter::types::MResult;
+use mech_engine::*;
+use mech_engine::error::{MechError, MechErrorKind};
+use mech_engine::value::Value;
+use mech_engine::types::MResult;
 
 fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
   let mut intrp = Interpreter::new(0);

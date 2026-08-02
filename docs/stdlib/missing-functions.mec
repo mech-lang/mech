@@ -3,7 +3,7 @@ Stdlib Gap Analysis (Candidate Missing Functions)
 
 This page lists candidate functions that are common in a "typical" standard
 library but are not currently exposed by the machine crates in `/machines`
-or the interpreter stdlib shims in `src/interpreter/src/stdlib`.
+or the interpreter stdlib shims in `src/engine/src/stdlib`.
 
 Notes:
 - This is an inferred gap list, not a strict language spec.

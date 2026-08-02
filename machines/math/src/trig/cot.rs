@@ -64,8 +64,8 @@ fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathCot {}
 
-impl NativeFunctionCompiler for MathCot {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathCot {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -92,18 +92,4 @@ impl NativeFunctionCompiler for MathCot {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/cot",
-    ptr: &MathCot{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "cot",
-  }
 }

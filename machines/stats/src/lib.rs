@@ -44,6 +44,11 @@ use paste::paste;
 use std::fmt::Debug;
 use std::ops::*;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "sum")]
 pub mod sum_column;
 #[cfg(feature = "sum")]
@@ -58,7 +63,7 @@ pub use self::sum_row::*;
 macro_rules! impl_stats_unop {
     ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
-        struct $struct_name<T> {
+        pub(crate) struct $struct_name<T> {
             arg: Ref<$arg_type>,
             out: Ref<$out_type>,
         }
@@ -155,10 +160,5 @@ macro_rules! impl_stats_unop {
 macro_rules! impls_stas {
     ($name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
         impl_stats_unop!($name, $arg_type, $out_type, $op);
-        register_fxn_descriptor!(
-            $name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16,
-            "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64", C64, "complex",
-            R64, "rational"
-        );
     };
 }

@@ -218,8 +218,8 @@ fn impl_hypot_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechF
 
 pub struct MathHypot {}
 
-impl NativeFunctionCompiler for MathHypot {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathHypot {
+  fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
@@ -240,19 +240,5 @@ impl NativeFunctionCompiler for MathHypot {
         }
       }
     }
-  }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/hypot",
-    ptr: &MathHypot{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "hypot",
   }
 }

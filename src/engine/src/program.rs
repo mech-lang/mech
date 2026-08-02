@@ -11,7 +11,7 @@ use std::time::Instant;
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
-    MResult, MechError, MechErrorKind, MechFunction, MechSourceCode, NativeFunctionCompiler,
+    FunctionSpecializer, MResult, MechError, MechErrorKind, MechFunction, MechSourceCode,
     ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome, ValRef, Value,
     ValueKind, hash_str, val_ref_reactive_cell_ids, with_reactive_journal_participant,
 };
@@ -19,12 +19,10 @@ use mech_core::{
 #[cfg(feature = "compiler")]
 use mech_bytecode::CompileCtx;
 
-#[cfg(feature = "functions")]
-use mech_interpreter::FunctionSystem;
-use mech_interpreter::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
+use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 use mech_syntax::parser;
 
-use crate::ClosureNativeFunctionCompiler;
+use crate::ClosureFunctionSpecializer;
 
 #[cfg(feature = "compiler")]
 pub struct BytecodeCompilation {
@@ -207,8 +205,7 @@ pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<d
         validate_stable_value_update(&current, &source)?;
     }
 
-    let compiler = mech_interpreter::AssignValue {};
-    compiler.compile(&vec![Value::MutableReference(sink), source])
+    crate::AssignValue {}.specialize(&[Value::MutableReference(sink), source])
 }
 
 pub fn apply_stable_value_update(sink: ValRef, source: Value) -> MResult<Value> {
@@ -507,7 +504,7 @@ impl MechProgram {
     pub fn new(config: MechProgramConfig) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_system(config, mech_interpreter::default_function_system())
+            Self::with_function_catalog(config, crate::default_function_catalog())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -524,16 +521,10 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn with_function_system(
-        config: MechProgramConfig,
-        function_system: FunctionSystem,
-    ) -> Self {
+    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
         let id = hash_str(&format!("program/{}", config.name));
-        let mut interpreter = Interpreter::with_function_system(
-            id,
-            config.environment.rounds_per_step,
-            function_system,
-        );
+        let mut interpreter =
+            Interpreter::with_function_catalog(id, config.environment.rounds_per_step, catalog);
 
         interpreter.set_trace_enabled(config.environment.trace_enabled);
 
@@ -544,18 +535,8 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
-        Self::with_function_system(config, FunctionSystem::from_catalog(catalog))
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn function_system(&self) -> &FunctionSystem {
-        self.interpreter.function_system()
-    }
-
-    #[cfg(feature = "functions")]
     pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
-        self.function_system().catalog()
+        self.interpreter.function_catalog()
     }
 
     /// Captures the complete structural and value state of this program.
@@ -578,23 +559,14 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn load_full_stdlib(&mut self) {
-        mech_interpreter::load_stdlib(&mut self.interpreter.functions().borrow_mut());
-    }
-
-    #[cfg(feature = "functions")]
     pub fn load_function_module(&mut self, module: &str) -> MResult<()> {
-        mech_interpreter::load_module(&mut self.interpreter.functions().borrow_mut(), module)?;
+        crate::load_module(&self.interpreter, module)?;
         Ok(())
     }
 
     #[cfg(feature = "functions")]
     pub fn import_function_module_item(&mut self, module: &str, item: &str) -> MResult<()> {
-        mech_interpreter::import_module_item(
-            &mut self.interpreter.functions().borrow_mut(),
-            module,
-            item,
-        )
+        crate::import_module_item(&self.interpreter, module, item)
     }
 
     #[cfg(feature = "functions")]
@@ -604,41 +576,46 @@ impl MechProgram {
         item: &str,
         alias: &str,
     ) -> MResult<()> {
-        mech_interpreter::import_module_item_as(
-            &mut self.interpreter.functions().borrow_mut(),
-            module,
-            item,
-            alias,
-        )
+        crate::import_module_item_as(&self.interpreter, module, item, alias)
     }
 
     #[cfg(feature = "functions")]
     pub fn import_function_module_glob(&mut self, module: &str) -> MResult<()> {
-        mech_interpreter::import_module_glob(&mut self.interpreter.functions().borrow_mut(), module)
+        crate::import_module_glob(&self.interpreter, module)
     }
 
-    pub fn register_native_function_compiler(
+    pub fn register_function_extension(
         &mut self,
         name: impl Into<String>,
-        compiler: Arc<dyn NativeFunctionCompiler>,
-    ) {
-        self.interpreter
-            .functions()
-            .borrow_mut()
-            .insert_function_compiler(name, compiler);
+        specializer: Arc<dyn FunctionSpecializer>,
+    ) -> MResult<()> {
+        let canonical_name = name.into();
+        let entry = FunctionExtensionEntry::new(canonical_name.clone(), specializer);
+        let extension = entry.id;
+
+        // Registration spans two checkpointed stores. Validate and apply it to
+        // clones first so a collision cannot leave either store half-mutated.
+        let mut state = self.interpreter.state.borrow_mut();
+        let mut extensions = state.function_extensions.clone();
+        let mut environment = state.function_environment.clone();
+        extensions.insert_or_replace(entry)?;
+        environment.bind_extension(&canonical_name, &canonical_name, extension)?;
+        state.function_extensions = extensions;
+        state.function_environment = environment;
+        Ok(())
     }
 
     pub fn register_native_closure(
         &mut self,
         name: impl Into<String>,
         function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
-    ) {
+    ) -> MResult<()> {
         let name = name.into();
 
-        self.register_native_function_compiler(
+        self.register_function_extension(
             name.clone(),
-            Arc::new(ClosureNativeFunctionCompiler::new(name, function)),
-        );
+            Arc::new(ClosureFunctionSpecializer::new(name, function)),
+        )
     }
 
     pub fn from_environment(name: impl Into<String>, environment: MechProgramEnvironment) -> Self {
@@ -1589,26 +1566,16 @@ mod tests {
 
     #[cfg(feature = "functions")]
     #[test]
-    fn program_uses_and_retains_an_explicit_function_system() {
+    fn program_uses_and_retains_an_explicit_function_catalog() {
         let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
-        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
         let mut program =
-            MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            program.function_system().legacy_boundary(),
-            &legacy_boundary,
-        ));
 
         program.interpreter_mut().clear();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            program.function_system().legacy_boundary(),
-            &legacy_boundary,
-        ));
     }
 
     #[cfg(feature = "functions")]
@@ -1628,10 +1595,8 @@ mod tests {
             })
             .unwrap();
         let catalog = Arc::new(builder.build().unwrap());
-        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
-        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
         let mut program =
-            MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
         let environment_before = program
             .interpreter()
             .state
@@ -1646,7 +1611,7 @@ mod tests {
             .state
             .borrow_mut()
             .function_environment
-            .bind_export(&export, "marker")
+            .bind_catalog_export(&export, "marker")
             .unwrap();
         assert_eq!(
             program
@@ -1655,16 +1620,14 @@ mod tests {
                 .borrow()
                 .function_environment
                 .resolve_name("marker"),
-            Some(OperationId::from_name("test/marker")),
+            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
+                "test/marker",
+            ))),
         );
 
         program.restore(checkpoint).unwrap();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            program.function_system().legacy_boundary(),
-            &legacy_boundary,
-        ));
         assert_eq!(
             program.interpreter().state.borrow().function_environment,
             environment_before,
@@ -1677,6 +1640,130 @@ mod tests {
                 .function_environment
                 .resolve_name("marker"),
             None,
+        );
+    }
+
+    #[cfg(all(feature = "functions", feature = "f64"))]
+    fn extension_f64_value(value: &Value) -> f64 {
+        match value {
+            Value::F64(value) => *value.borrow(),
+            Value::MutableReference(value) => extension_f64_value(&value.borrow()),
+            other => panic!("expected f64 value, got {other:?}"),
+        }
+    }
+
+    #[cfg(all(feature = "functions", feature = "f64"))]
+    #[test]
+    fn native_closure_registration_replaces_exact_names_and_checkpoint_restores_the_original() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let catalog = Arc::clone(program.function_catalog());
+
+        program
+            .register_native_closure("host/checkpoint", |_| Ok(Value::F64(Ref::new(1.0))))
+            .unwrap();
+        program.run_string("before := host/checkpoint()").unwrap();
+        assert_eq!(
+            extension_f64_value(&program.root_symbol_value("before").unwrap()),
+            1.0,
+        );
+
+        let checkpoint = program.checkpoint().unwrap();
+        program
+            .register_native_closure("host/checkpoint", |_| Ok(Value::F64(Ref::new(2.0))))
+            .unwrap();
+        program
+            .run_string("replacement := host/checkpoint()")
+            .unwrap();
+        assert_eq!(
+            extension_f64_value(&program.root_symbol_value("replacement").unwrap()),
+            2.0,
+        );
+
+        program.restore(checkpoint).unwrap();
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
+        assert!(program.root_symbol_value("replacement").is_err());
+        program.run_string("restored := host/checkpoint()").unwrap();
+        assert_eq!(
+            extension_f64_value(&program.root_symbol_value("restored").unwrap()),
+            1.0,
+        );
+    }
+
+    #[cfg(feature = "functions")]
+    #[test]
+    fn native_closure_registration_is_fallible_atomic_and_checkpointed() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let extension_count = program
+            .interpreter()
+            .state
+            .borrow()
+            .function_extensions
+            .len();
+
+        let error = program
+            .register_native_closure("", |_| Ok(Value::Empty))
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionExtensionInvalidEntry");
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_extensions
+                .len(),
+            extension_count,
+        );
+
+        let checkpoint = program.checkpoint().unwrap();
+        program
+            .register_native_closure("host/temporary", |_| Ok(Value::Index(Ref::new(3))))
+            .unwrap();
+        assert!(matches!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("host/temporary"),
+            Some(FunctionBinding::Extension(_)),
+        ));
+
+        program.restore(checkpoint).unwrap();
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_environment
+                .resolve_name("host/temporary"),
+            None,
+        );
+        assert_eq!(
+            program
+                .interpreter()
+                .state
+                .borrow()
+                .function_extensions
+                .len(),
+            extension_count,
+        );
+    }
+
+    #[cfg(all(feature = "functions", feature = "compiler", feature = "f64"))]
+    #[test]
+    fn native_closure_bytecode_rejection_remains_structured() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        program
+            .register_native_closure("host/source-only", |_| Ok(Value::F64(Ref::new(4.0))))
+            .unwrap();
+        program
+            .run_string("source-only := host/source-only()")
+            .unwrap();
+
+        let error = program.compile_bytecode().unwrap_err();
+        assert_eq!(
+            error.kind_name(),
+            "ClosureNativeFunctionNotBytecodeCompilable",
         );
     }
 
@@ -2897,8 +2984,8 @@ mod program_reactive_turn_tests {
     #[test]
     fn program_reactive_turn_orders_nested_interpreters_deterministically() {
         let mut p = MechProgram::new(MechProgramConfig::default());
-        let mut c1 = Interpreter::new_with_full_stdlib(101);
-        let mut c2 = Interpreter::new_with_full_stdlib(202);
+        let mut c1 = Interpreter::new(101, 10_000);
+        let mut c2 = Interpreter::new(202, 10_000);
         for (i, src) in [
             (
                 &mut c1,
@@ -2982,11 +3069,9 @@ mod program_reactive_turn_tests {
     #[test]
     fn program_reactive_turn_decoded_plan_reuses_identity() {
         let mut source = MechProgram::new(MechProgramConfig::default());
-        source.load_full_stdlib();
         source.run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\noutput").unwrap();
         let bytes = source.compile_bytecode().unwrap();
         let mut p = MechProgram::new(MechProgramConfig::default());
-        p.load_full_stdlib();
         p.run_bytecode(&bytes).unwrap();
         let id = p.interpreter().id;
         let x = p
@@ -4107,8 +4192,8 @@ mod retained_checkpoint_tests {
         });
         program.run_string("x := 1.0\ny := x + 1.0").unwrap();
 
+        let catalog = Arc::clone(program.function_catalog());
         let symbols_addr = program.interpreter().symbols().addr();
-        let functions_addr = program.interpreter().functions().addr();
         let original_plan = program.interpreter().plan();
         let plan_addr = original_plan.0.addr();
         let original_plan_len = original_plan.borrow().len();
@@ -4127,8 +4212,8 @@ mod retained_checkpoint_tests {
 
         assert_eq!(program.config.name, "retained");
         assert_eq!(program.config.environment.rounds_per_step, 10_000);
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
         assert_eq!(program.interpreter().symbols().addr(), symbols_addr);
-        assert_eq!(program.interpreter().functions().addr(), functions_addr);
         assert_eq!(program.interpreter().plan().0.addr(), plan_addr);
         assert_eq!(program.interpreter().plan_len(), original_plan_len);
         assert!(

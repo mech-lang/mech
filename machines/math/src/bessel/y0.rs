@@ -59,8 +59,8 @@ fn impl_y0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathY0 {}
 
-impl NativeFunctionCompiler for MathY0 {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathY0 {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -87,18 +87,4 @@ impl NativeFunctionCompiler for MathY0 {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/bessel/y0",
-    ptr: &MathY0{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "bessel/y0",
-  }
 }

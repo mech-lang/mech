@@ -2,17 +2,19 @@ use std::sync::Arc;
 
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechError, MechFunctionCompiler, Register};
-use mech_core::{MResult, MechErrorKind, MechFunctionImpl, NativeFunctionCompiler, Value};
+use mech_core::{
+    FunctionSpecializer, GuardFunctionSafety, MResult, MechErrorKind, MechFunctionImpl, Value,
+};
 
 pub type NativeClosure = dyn Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static;
 
 #[derive(Clone)]
-pub struct ClosureNativeFunctionCompiler {
+pub struct ClosureFunctionSpecializer {
     name: String,
     function: Arc<NativeClosure>,
 }
 
-impl ClosureNativeFunctionCompiler {
+impl ClosureFunctionSpecializer {
     pub fn new(
         name: impl Into<String>,
         function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
@@ -24,14 +26,18 @@ impl ClosureNativeFunctionCompiler {
     }
 }
 
-impl NativeFunctionCompiler for ClosureNativeFunctionCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn mech_core::MechFunction>> {
-        let value = (self.function)(arguments.clone())?;
+impl FunctionSpecializer for ClosureFunctionSpecializer {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
+        let value = (self.function)(arguments.to_vec())?;
 
         Ok(Box::new(ClosureNativeFunction {
             name: self.name.clone(),
             value,
         }))
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+        GuardFunctionSafety::Unsupported
     }
 }
 

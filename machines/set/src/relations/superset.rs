@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Superset ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetSupersetFxn {
+pub(crate) struct SetSupersetFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,
@@ -70,12 +70,6 @@ impl MechFunctionCompiler for SetSupersetFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetSupersetFxn",
-    ptr: SetSupersetFxn::new,
-  }
-}
 
 fn set_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -96,8 +90,8 @@ fn set_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetSuperset {}
-impl NativeFunctionCompiler for SetSuperset {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetSuperset {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -133,11 +127,4 @@ impl NativeFunctionCompiler for SetSuperset {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/superset",
-    ptr: &SetSuperset{},
-  }
 }

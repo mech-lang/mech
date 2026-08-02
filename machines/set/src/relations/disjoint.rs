@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Disjoint ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetDisjointFxn {
+pub(crate) struct SetDisjointFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,
@@ -70,12 +70,6 @@ impl MechFunctionCompiler for SetDisjointFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetDisjointFxn",
-    ptr: SetDisjointFxn::new,
-  }
-}
 
 fn set_disjoint_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -96,8 +90,8 @@ fn set_disjoint_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetDisjoint {}
-impl NativeFunctionCompiler for SetDisjoint {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetDisjoint {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -133,11 +127,4 @@ impl NativeFunctionCompiler for SetDisjoint {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/disjoint",
-    ptr: &SetDisjoint{},
-  }
 }

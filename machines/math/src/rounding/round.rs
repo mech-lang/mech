@@ -69,8 +69,8 @@ fn impl_round_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathRound {}
 
-impl NativeFunctionCompiler for MathRound {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathRound {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathRound {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/round",
-    ptr: &MathRound{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "round",
-  }
 }

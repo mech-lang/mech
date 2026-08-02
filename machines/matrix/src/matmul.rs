@@ -31,10 +31,6 @@ macro_rules! impl_matmul {
             matmul_op,
             FeatureFlag::Builtin(FeatureKind::MatMul)
         );
-        register_fxn_descriptor!(
-            $name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16,
-            "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64"
-        );
     };
 }
 
@@ -46,34 +42,6 @@ impl_binop!(
     mul_op,
     FeatureFlag::Builtin(FeatureKind::MatMul)
 );
-register_fxn_descriptor!(
-    MatMulScalar,
-    u8,
-    "u8",
-    u16,
-    "u16",
-    u32,
-    "u32",
-    u64,
-    "u64",
-    u128,
-    "u128",
-    i8,
-    "i8",
-    i16,
-    "i16",
-    i32,
-    "i32",
-    i64,
-    "i64",
-    i128,
-    "i128",
-    f32,
-    "f32",
-    f64,
-    "f64"
-);
-
 #[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))]
 impl_matmul!(MatMulR4V4, RowVector4<T>, Vector4<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector4", feature = "matrix4"))]

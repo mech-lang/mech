@@ -68,8 +68,8 @@ fn impl_cosh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathCosh {}
 
-impl NativeFunctionCompiler for MathCosh {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathCosh {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -96,18 +96,4 @@ impl NativeFunctionCompiler for MathCosh {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/cosh",
-    ptr: &MathCosh{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "cosh",
-  }
 }

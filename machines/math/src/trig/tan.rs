@@ -64,8 +64,8 @@ fn impl_tan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathTan {}
 
-impl NativeFunctionCompiler for MathTan {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathTan {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -92,18 +92,4 @@ impl NativeFunctionCompiler for MathTan {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/tan",
-    ptr: &MathTan{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "tan",
-  }
 }
