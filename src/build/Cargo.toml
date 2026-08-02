@@ -1,0 +1,25 @@
+[package]
+name = "mech-build"
+version = "0.3.5"
+edition = "2024"
+rust-version = "1.92"
+license = "Apache-2.0"
+description = "Deterministic native application planning and generation for Mech."
+publish = true
+
+[features]
+default = []
+standard-hosts = ["dep:mech-host-cli"]
+
+[dependencies]
+mech-core = { version = "0.3.5", default-features = false, features = ["native-plan", "program", "serde"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "serde", "string"] }
+mech-host-cli = { version = "0.3.5", default-features = false, features = ["provider"], optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+
+[dev-dependencies]
+mech-engine = { version = "0.3.5", default-features = false, features = ["native-plan", "bool", "f64", "string", "variable_define", "matrix_horzcat", "matrixd"] }
+mech-math = { version = "0.3.5", default-features = false, features = ["native-plan", "add", "f64", "matrix2", "matrixd"] }
+tempfile = "3"

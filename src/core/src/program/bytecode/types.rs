@@ -14,6 +14,7 @@ use super::{
     ByteReader, MAX_TYPE_RECURSION, checked_usize, invalid, write_string, write_u32, write_u64,
 };
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RuntimeType {
     U8,
@@ -148,6 +149,7 @@ impl RuntimeTypeTag {
 }
 
 #[repr(u8)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MatrixStorage {
     Matrix1 = 1,

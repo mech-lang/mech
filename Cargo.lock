@@ -2017,6 +2017,21 @@ name = "mech-abi"
 version = "0.3.5"
 
 [[package]]
+name = "mech-build"
+version = "0.3.5"
+dependencies = [
+ "mech-core",
+ "mech-engine",
+ "mech-host-cli",
+ "mech-math",
+ "mech-runtime",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "mech-bytecode"
 version = "0.3.5"
 dependencies = [

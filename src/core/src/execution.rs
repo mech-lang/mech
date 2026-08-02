@@ -7,6 +7,7 @@ use alloc::{format, string::String};
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum ResourceIntent {
@@ -26,6 +27,7 @@ impl ResourceIntent {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum ResourceDelivery {

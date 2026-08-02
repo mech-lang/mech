@@ -370,6 +370,7 @@ indicatif = { version = "0.18.4"}
 members = [
   "src/abi",
   "src/bytecode",
+  "src/build",
   "src/core",
   "src/syntax",
   "src/engine",
@@ -394,6 +395,7 @@ LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
 mech-bytecode = { path = 'src/bytecode' }
+mech-build = { path = 'src/build' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-engine = { path = 'src/engine'}
