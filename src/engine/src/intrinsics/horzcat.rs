@@ -1,0 +1,6342 @@
+#[macro_use]
+use crate::intrinsics::*;
+
+// Horizontal Concatenate -----------------------------------------------------
+
+macro_rules! horizontal_concatenate {
+  ($name:ident, $vec_size:expr) => {
+    paste!{
+      #[derive(Debug)]
+      struct $name<T> {
+        out: Ref<[<RowVector $vec_size>]<T>>,
+      }
+      impl<T> MechFunctionFactory for $name<T>
+      where
+        T: Debug + Clone + Sync + Send + PartialEq + 'static +
+        ConstElem + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst,
+        Ref<[<RowVector $vec_size>]<T>>: ToValue
+      {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+          match args {
+            FunctionArgs::Unary(out, _arg0) => {
+              let out: Ref<[<RowVector $vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
+              Ok(Box::new(Self { out }))
+            },
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments { expected: 1, found: args.len() },
+                None
+              ).with_compiler_loc()
+            ),
+          }
+        }
+      }
+      impl<T> MechFunctionImpl for $name<T>
+      where
+        T: Debug + Clone + Sync + Send + PartialEq + 'static,
+        Ref<[<RowVector $vec_size>]<T>>: ToValue
+      {
+        fn solve(&self) {}
+        fn out(&self) -> Value { self.out.to_value() }
+        fn to_string(&self) -> String { format!("{:#?}", self) }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+          Ok(self.reactive_output_values())
+        }
+      }
+
+      #[cfg(feature = "compiler")]
+      impl<T> MechFunctionCompiler for $name<T>
+      where
+        T: ConstElem + CompileConst + AsValueKind
+      {
+        fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+          let name = format!("{}<{}{}>", stringify!($name), T::as_value_kind(), stringify!([<RowVector $vec_size>]));
+          compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        }
+      }
+    }
+  };
+}
+
+macro_rules! horzcat_two_args {
+    ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
+        #[derive(Debug)]
+        struct $fxn<T> {
+            e0: Ref<$e0<T>>,
+            e1: Ref<$e1<T>>,
+            out: Ref<$out<T>>,
+        }
+        impl<T> MechFunctionFactory for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            #[cfg(feature = "compiler")]
+            T: CompileConst,
+            Ref<$out<T>>: ToValue,
+        {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Binary(out, arg0, arg1) => {
+                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        Ok(Box::new(Self { e0, e1, out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+        impl<T> MechFunctionImpl for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$out<T>>: ToValue,
+        {
+            fn solve(&self) {
+                unsafe {
+                    let e0_ptr = (*(self.e0.as_ptr())).clone();
+                    let e1_ptr = (*(self.e1.as_ptr())).clone();
+                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    $opt!(out_ptr, e0_ptr, e1_ptr);
+                }
+            }
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $fxn<T>
+        where
+            T: ConstElem + CompileConst + AsValueKind,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!(
+                    "{}<{}{}{}{}>",
+                    stringify!($fxn),
+                    T::as_value_kind(),
+                    stringify!($out),
+                    stringify!($e0),
+                    stringify!($e1)
+                );
+                compile_binop!(
+                    name,
+                    self.out,
+                    self.e0,
+                    self.e1,
+                    ctx,
+                    FeatureFlag::Builtin(FeatureKind::HorzCat)
+                );
+            }
+        }
+    };
+}
+
+macro_rules! horzcat_three_args {
+    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
+        #[derive(Debug)]
+        struct $fxn<T> {
+            e0: Ref<$e0<T>>,
+            e1: Ref<$e1<T>>,
+            e2: Ref<$e2<T>>,
+            out: Ref<$out<T>>,
+        }
+        impl<T> MechFunctionFactory for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            #[cfg(feature = "compiler")]
+            T: CompileConst,
+            Ref<$out<T>>: ToValue,
+        {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
+                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        Ok(Box::new(Self { e0, e1, e2, out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 3,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+        impl<T> MechFunctionImpl for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$out<T>>: ToValue,
+        {
+            fn solve(&self) {
+                unsafe {
+                    let e0_ptr = (*(self.e0.as_ptr())).clone();
+                    let e1_ptr = (*(self.e1.as_ptr())).clone();
+                    let e2_ptr = (*(self.e2.as_ptr())).clone();
+                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
+                }
+            }
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $fxn<T>
+        where
+            T: ConstElem + CompileConst + AsValueKind,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!(
+                    "{}<{}{}{}{}{}>",
+                    stringify!($fxn),
+                    T::as_value_kind(),
+                    stringify!($out),
+                    stringify!($e0),
+                    stringify!($e1),
+                    stringify!($e2)
+                );
+                compile_ternop!(
+                    name,
+                    self.out,
+                    self.e0,
+                    self.e1,
+                    self.e2,
+                    ctx,
+                    FeatureFlag::Builtin(FeatureKind::HorzCat)
+                );
+            }
+        }
+    };
+}
+
+macro_rules! horzcat_four_args {
+    ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident, $opt:ident) => {
+        #[derive(Debug)]
+        struct $fxn<T> {
+            e0: Ref<$e0<T>>,
+            e1: Ref<$e1<T>>,
+            e2: Ref<$e2<T>>,
+            e3: Ref<$e3<T>>,
+            out: Ref<$out<T>>,
+        }
+        impl<T> MechFunctionFactory for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            #[cfg(feature = "compiler")]
+            T: CompileConst,
+            Ref<$out<T>>: ToValue,
+        {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
+                        let e3: Ref<$e3<T>> = unsafe { arg3.as_unchecked() }.clone();
+                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        Ok(Box::new(Self {
+                            e0,
+                            e1,
+                            e2,
+                            e3,
+                            out,
+                        }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 4,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+        impl<T> MechFunctionImpl for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$out<T>>: ToValue,
+        {
+            fn solve(&self) {
+                unsafe {
+                    let e0_ptr = (*(self.e0.as_ptr())).clone();
+                    let e1_ptr = (*(self.e1.as_ptr())).clone();
+                    let e2_ptr = (*(self.e2.as_ptr())).clone();
+                    let e3_ptr = (*(self.e3.as_ptr())).clone();
+                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
+                }
+            }
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $fxn<T>
+        where
+            T: ConstElem + CompileConst + AsValueKind,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!(
+                    "{}<{}{}{}{}{}{}>",
+                    stringify!($fxn),
+                    T::as_value_kind(),
+                    stringify!($out),
+                    stringify!($e0),
+                    stringify!($e1),
+                    stringify!($e2),
+                    stringify!($e3)
+                );
+                compile_quadop!(
+                    name,
+                    self.out,
+                    self.e0,
+                    self.e1,
+                    self.e2,
+                    self.e3,
+                    ctx,
+                    FeatureFlag::Builtin(FeatureKind::HorzCat)
+                );
+            }
+        }
+    };
+}
+
+// HorizontalConcatenateTwoArgs -----------------------------------------------
+
+#[cfg(feature = "matrixd")]
+struct HorizontalConcatenateTwoArgs<T> {
+    e0: Box<dyn CopyMat<T>>,
+    e1: Box<dyn CopyMat<T>>,
+    out: Ref<DMatrix<T>>,
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionFactory for HorizontalConcatenateTwoArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn solve(&self) {
+        let offset = self.e0.copy_into(&self.out, 0);
+        self.e1.copy_into(&self.out, offset);
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "matrixd")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let mut registers = [0, 0, 0];
+
+        registers[0] = compile_register!(self.out, ctx);
+        registers[1] = compile_register_mat!(self.e0, ctx);
+        registers[2] = compile_register_mat!(self.e1, ctx);
+
+        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+        ctx.emit_binop(
+            hash_str(&format!(
+                "HorizontalConcatenateTwoArgs<{}>",
+                T::as_value_kind()
+            )),
+            registers[0],
+            registers[1],
+            registers[2],
+        );
+
+        Ok(registers[0])
+    }
+}
+
+// HorizontalConcatenateThreeArgs ---------------------------------------------
+
+#[cfg(feature = "matrixd")]
+struct HorizontalConcatenateThreeArgs<T> {
+    e0: Box<dyn CopyMat<T>>,
+    e1: Box<dyn CopyMat<T>>,
+    e2: Box<dyn CopyMat<T>>,
+    out: Ref<DMatrix<T>>,
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionFactory for HorizontalConcatenateThreeArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
+                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionImpl for HorizontalConcatenateThreeArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn solve(&self) {
+        let mut offset = self.e0.copy_into(&self.out, 0);
+        offset += self.e1.copy_into(&self.out, offset);
+        self.e2.copy_into(&self.out, offset);
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "matrixd")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let mut registers = [0, 0, 0, 0];
+
+        registers[0] = compile_register!(self.out, ctx);
+        registers[1] = compile_register_mat!(self.e0, ctx);
+        registers[2] = compile_register_mat!(self.e1, ctx);
+        registers[3] = compile_register_mat!(self.e2, ctx);
+
+        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+        ctx.emit_ternop(
+            hash_str(&format!(
+                "HorizontalConcatenateThreeArgs<{}>",
+                T::as_value_kind()
+            )),
+            registers[0],
+            registers[1],
+            registers[2],
+            registers[3],
+        );
+        Ok(registers[0])
+    }
+}
+
+// HorizontalConcatenateFourArgs ----------------------------------------------
+
+#[cfg(feature = "matrixd")]
+struct HorizontalConcatenateFourArgs<T> {
+    e0: Box<dyn CopyMat<T>>,
+    e1: Box<dyn CopyMat<T>>,
+    e2: Box<dyn CopyMat<T>>,
+    e3: Box<dyn CopyMat<T>>,
+    out: Ref<DMatrix<T>>,
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionFactory for HorizontalConcatenateFourArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
+                let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
+                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionImpl for HorizontalConcatenateFourArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn solve(&self) {
+        let mut offset = self.e0.copy_into(&self.out, 0);
+        offset += self.e1.copy_into(&self.out, offset);
+        offset += self.e2.copy_into(&self.out, offset);
+        self.e3.copy_into(&self.out, offset);
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("HorizontalConcatenateFourArgs\n{:#?}", self.out)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "matrixd")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let registers = [
+            compile_register!(self.out, ctx),
+            compile_register_mat!(self.e0, ctx),
+            compile_register_mat!(self.e1, ctx),
+            compile_register_mat!(self.e2, ctx),
+            compile_register_mat!(self.e3, ctx),
+        ];
+
+        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+        ctx.emit_quadop(
+            hash_str(&format!(
+                "HorizontalConcatenateFourArgs<{}>",
+                T::as_value_kind()
+            )),
+            registers[0],
+            registers[1],
+            registers[2],
+            registers[3],
+            registers[4],
+        );
+        Ok(registers[0])
+    }
+}
+
+// HorizontalConcatenateNArgs -------------------------------------------------
+
+#[cfg(feature = "matrixd")]
+struct HorizontalConcatenateNArgs<T> {
+    e0: Vec<Box<dyn CopyMat<T>>>,
+    out: Ref<DMatrix<T>>,
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionFactory for HorizontalConcatenateNArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Variadic(out, vargs) => {
+                let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
+                for arg in vargs {
+                    let mat: Box<dyn CopyMat<T>> =
+                        unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                    e0.push(mat);
+                }
+                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 0,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn solve(&self) {
+        let mut offset = 0;
+        for e in &self.e0 {
+            offset += e.copy_into(&self.out, offset);
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("HorizontalConcatenateNArgs\n{:#?}", self.out)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "matrixd")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let mut registers = [0, 0];
+        registers[0] = compile_register!(self.out, ctx);
+
+        let mut mat_regs = Vec::new();
+        for e in &self.e0 {
+            mat_regs.push(compile_register_mat!(e, ctx));
+        }
+        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
+        ctx.emit_varop(
+            hash_str("HorizontalConcatenateNArgs"),
+            registers[0],
+            mat_regs,
+        );
+        Ok(registers[0])
+    }
+}
+
+// HorizontalConcatenateRD ----------------------------------------------------
+
+#[cfg(feature = "row_vectord")]
+#[derive(Debug)]
+struct HorizontalConcatenateRD<T> {
+    out: Ref<RowDVector<T>>,
+}
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionFactory for HorizontalConcatenateRD<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowDVector<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, _arg0) => {
+                let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionImpl for HorizontalConcatenateRD<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowDVector<T>>: ToValue,
+{
+    fn solve(&self) {}
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "row_vectord")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateRD<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateRD<{}>", T::as_value_kind());
+        compile_nullop!(
+            name,
+            self.out,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateRDN ---------------------------------------------------
+
+#[cfg(feature = "row_vectord")]
+struct HorizontalConcatenateRDN<T> {
+    scalar: Vec<(Ref<T>, usize)>,
+    matrix: Vec<(Box<dyn CopyMat<T>>, usize)>,
+    out: Ref<RowDVector<T>>,
+}
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionFactory for HorizontalConcatenateRDN<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowDVector<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Variadic(out, vargs) => {
+                let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
+                let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
+                for (i, arg) in vargs.into_iter().enumerate() {
+                    let kind = arg.kind();
+                    if arg.is_scalar() {
+                        let scalar_ref = unsafe { arg.as_unchecked::<T>() };
+                        scalar.push((scalar_ref.clone(), i));
+                    } else {
+                        let mat_ref: Box<dyn CopyMat<T>> =
+                            unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        matrix.push((mat_ref, i));
+                    }
+                }
+                let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    scalar,
+                    matrix,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionImpl for HorizontalConcatenateRDN<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowDVector<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            for (e, i) in &self.matrix {
+                let _ = e.copy_into_r(&self.out, *i);
+            }
+            for (e, i) in &self.scalar {
+                out_ptr[*i] = e.borrow().clone();
+            }
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("HorizontalConcatenateRDN\n{:#?}", self.out)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "row_vectord")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
+where
+    T: CompileConst + ConstElem + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let mut registers = [0, 0];
+
+        registers[0] = compile_register!(self.out, ctx);
+
+        let mut mat_regs = Vec::new();
+        for (e, _) in &self.matrix {
+            mat_regs.push(compile_register_mat!(e, ctx));
+        }
+        let mut scalar_regs = Vec::new();
+        for (e, _) in &self.scalar {
+            let e_reg = compile_register_brrw!(e, ctx);
+            scalar_regs.push(e_reg);
+        }
+        let mut all_regs = vec![];
+        all_regs.push(registers[0]);
+        all_regs.extend(mat_regs);
+        all_regs.extend(scalar_regs);
+
+        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+        ctx.emit_varop(
+            hash_str(&format!("HorizontalConcatenateRDN<{}>", T::as_value_kind())),
+            registers[0],
+            all_regs[1..].to_vec(),
+        );
+
+        Ok(registers[0])
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "compiler",
+    feature = "matrixd",
+    feature = "row_vectord",
+    feature = "i64",
+))]
+mod compiler_tests {
+    use super::*;
+    use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
+
+    fn matrix() -> Ref<DMatrix<i64>> {
+        Ref::new(DMatrix::from_vec(1, 1, vec![7i64]))
+    }
+
+    fn assert_single_matrix_load(
+        context: &RecordingBytecodeCompilerContext,
+        matrix: &Ref<DMatrix<i64>>,
+    ) -> Register {
+        let matrix_register = context.reg_map[&matrix.addr()];
+        assert_eq!(
+            context
+                .instructions
+                .iter()
+                .filter(|instruction| {
+                    matches!(
+                      instruction,
+                      EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+                    )
+                })
+                .count(),
+            1,
+        );
+        matrix_register
+    }
+
+    fn assert_horzcat_requirement(context: &RecordingBytecodeCompilerContext) {
+        assert!(
+            context
+                .requirements
+                .contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
+        );
+        assert!(
+            !context
+                .requirements
+                .contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
+        );
+    }
+
+    #[test]
+    fn pointer_register_matrix_initializes_once() {
+        let mut context = RecordingBytecodeCompilerContext::default();
+        let context = &mut context;
+        let matrix_a = matrix();
+        let matrix_b = matrix();
+
+        let register_a = compile_register_mat!(matrix_a, context);
+        let register_a_again = compile_register_mat!(matrix_a, context);
+        let register_b = compile_register_mat!(matrix_b, context);
+
+        assert_eq!(register_a_again, register_a);
+        assert_ne!(register_b, register_a);
+        assert_eq!(context.const_count, 2);
+        assert_eq!(
+            context
+                .instructions
+                .iter()
+                .filter(|instruction| {
+                    matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_a)
+                })
+                .count(),
+            1,
+        );
+        assert_eq!(
+            context
+                .instructions
+                .iter()
+                .filter(|instruction| {
+                    matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_b)
+                })
+                .count(),
+            1,
+        );
+    }
+
+    #[test]
+    fn horizontal_concatenate_four_args_reuses_repeated_matrix_register() {
+        let matrix = matrix();
+        let function = HorizontalConcatenateFourArgs {
+            e0: Box::new(matrix.clone()),
+            e1: Box::new(matrix.clone()),
+            e2: Box::new(matrix.clone()),
+            e3: Box::new(matrix.clone()),
+            out: Ref::new(DMatrix::from_element(1, 4, 0i64)),
+        };
+        let mut context = RecordingBytecodeCompilerContext::default();
+        function.compile(&mut context).unwrap();
+
+        let matrix_register = assert_single_matrix_load(&context, &matrix);
+        assert!(matches!(
+          context.instructions.last(),
+          Some(EncodedInstr::QuadOp { a, b, c, d, .. })
+            if [*a, *b, *c, *d] == [matrix_register; 4]
+        ));
+        assert_horzcat_requirement(&context);
+    }
+
+    #[test]
+    fn horizontal_concatenate_n_args_reuses_repeated_matrix_register() {
+        let matrix = matrix();
+        let function = HorizontalConcatenateNArgs {
+            e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+            out: Ref::new(DMatrix::from_element(1, 2, 0i64)),
+        };
+        let mut context = RecordingBytecodeCompilerContext::default();
+        function.compile(&mut context).unwrap();
+
+        let matrix_register = assert_single_matrix_load(&context, &matrix);
+        assert!(matches!(
+          context.instructions.last(),
+          Some(EncodedInstr::VarArg { args, .. })
+            if args == &vec![matrix_register, matrix_register]
+        ));
+        assert_horzcat_requirement(&context);
+    }
+
+    #[test]
+    fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
+        let matrix = matrix();
+        let scalar = Ref::new(9i64);
+        let scalar_address = scalar.addr();
+        let function = HorizontalConcatenateRDN {
+            matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
+            scalar: vec![(scalar, 2)],
+            out: Ref::new(RowDVector::from_element(3, 0i64)),
+        };
+        let mut context = RecordingBytecodeCompilerContext::default();
+        function.compile(&mut context).unwrap();
+
+        let matrix_register = assert_single_matrix_load(&context, &matrix);
+        let scalar_register = context.reg_map[&scalar_address];
+        assert!(matches!(
+          context.instructions.last(),
+          Some(EncodedInstr::VarArg { args, .. })
+            if args == &vec![matrix_register, matrix_register, scalar_register]
+        ));
+        assert_horzcat_requirement(&context);
+    }
+}
+
+// HorizontalConcatenateS1D ---------------------------------------------------
+
+#[cfg(feature = "matrixd")]
+#[derive(Debug)]
+struct HorizontalConcatenateS1D<T> {
+    arg: Ref<T>,
+    out: Ref<DMatrix<T>>,
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionFactory for HorizontalConcatenateS1D<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, arg0) => {
+                let arg: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { arg, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "matrixd")]
+impl<T> MechFunctionImpl for HorizontalConcatenateS1D<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<DMatrix<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = self.arg.borrow().clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "matrixd")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS1D<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateS1D<{}>", T::as_value_kind());
+        compile_unop!(
+            name,
+            self.out,
+            self.arg,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateS1 ----------------------------------------------------
+
+#[cfg(feature = "matrix1")]
+#[derive(Debug)]
+struct HorizontalConcatenateS1<T> {
+    arg: Ref<T>,
+    out: Ref<Matrix1<T>>,
+}
+#[cfg(feature = "matrix1")]
+impl<T> MechFunctionFactory for HorizontalConcatenateS1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<Matrix1<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, arg0) => {
+                let arg: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let out: Ref<Matrix1<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { arg, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "matrix1")]
+impl<T> MechFunctionImpl for HorizontalConcatenateS1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<Matrix1<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = self.arg.borrow().clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "matrix1")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateS1<{}>", T::as_value_kind());
+        compile_unop!(
+            name,
+            self.out,
+            self.arg,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateS2 --------------------------------------------------
+
+#[cfg(feature = "row_vector2")]
+#[derive(Debug)]
+struct HorizontalConcatenateS2<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    out: Ref<RowVector2<T>>,
+}
+#[cfg(feature = "row_vector2")]
+impl<T> MechFunctionFactory for HorizontalConcatenateS2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector2<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "row_vector2")]
+impl<T> MechFunctionImpl for HorizontalConcatenateS2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector2<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = self.e0.borrow().clone();
+            out_ptr[1] = self.e1.borrow().clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "row_vector2")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateS2<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateS3 --------------------------------------------------
+
+#[cfg(feature = "row_vector3")]
+#[derive(Debug)]
+struct HorizontalConcatenateS3<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    e2: Ref<T>,
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(feature = "row_vector3")]
+impl<T> MechFunctionFactory for HorizontalConcatenateS3<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "row_vector3")]
+impl<T> MechFunctionImpl for HorizontalConcatenateS3<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = self.e0.borrow().clone();
+            out_ptr[1] = self.e1.borrow().clone();
+            out_ptr[2] = self.e2.borrow().clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "row_vector3")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateS3<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateS4 --------------------------------------------------
+
+#[cfg(feature = "row_vector4")]
+#[derive(Debug)]
+struct HorizontalConcatenateS4<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    e2: Ref<T>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(feature = "row_vector4")]
+impl<T> MechFunctionFactory for HorizontalConcatenateS4<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "row_vector4")]
+impl<T> MechFunctionImpl for HorizontalConcatenateS4<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = self.e0.borrow().clone();
+            out_ptr[1] = self.e1.borrow().clone();
+            out_ptr[2] = self.e2.borrow().clone();
+            out_ptr[3] = self.e3.borrow().clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "row_vector4")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateS4<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR2 ----------------------------------------------------
+
+#[cfg(feature = "row_vector2")]
+horizontal_concatenate!(HorizontalConcatenateR2, 2);
+
+// HorizontalConcatenateR3 ----------------------------------------------------
+
+#[cfg(feature = "row_vector3")]
+horizontal_concatenate!(HorizontalConcatenateR3, 3);
+
+// HorizontalConcatenateR4 ----------------------------------------------------
+
+#[cfg(feature = "row_vector4")]
+horizontal_concatenate!(HorizontalConcatenateR4, 4);
+
+// HorizontalConcatenateSD ----------------------------------------------------
+
+#[cfg(feature = "row_vectord")]
+#[derive(Debug)]
+struct HorizontalConcatenateSD<T> {
+    out: Ref<RowDVector<T>>,
+}
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionFactory for HorizontalConcatenateSD<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowDVector<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, _arg0) => {
+                let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionImpl for HorizontalConcatenateSD<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowDVector<T>>: ToValue,
+{
+    fn solve(&self) {}
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(feature = "row_vectord")]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSD<{}>", T::as_value_kind());
+        compile_nullop!(
+            name,
+            self.out,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenate for single argument types ----------------------------
+
+macro_rules! horzcat_single {
+    ($name:ident,$shape:ident) => {
+        #[derive(Debug)]
+        struct $name<T> {
+            out: Ref<$shape<T>>,
+        }
+        impl<T> MechFunctionFactory for $name<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            #[cfg(feature = "compiler")]
+            T: CompileConst,
+            Ref<$shape<T>>: ToValue,
+        {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Unary(out, _arg0) => {
+                        let out: Ref<$shape<T>> = unsafe { out.as_unchecked() }.clone();
+                        Ok(Box::new(Self { out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 1,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+        impl<T> MechFunctionImpl for $name<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$shape<T>>: ToValue,
+        {
+            fn solve(&self) {}
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $name<T>
+        where
+            T: ConstElem + CompileConst + AsValueKind,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
+                compile_nullop!(
+                    name,
+                    self.out,
+                    ctx,
+                    FeatureFlag::Builtin(FeatureKind::HorzCat)
+                );
+            }
+        }
+    };
+}
+
+#[cfg(feature = "matrix1")]
+horzcat_single!(HorizontalConcatenateM1, Matrix1);
+#[cfg(feature = "matrix2")]
+horzcat_single!(HorizontalConcatenateM2, Matrix2);
+#[cfg(feature = "matrix3")]
+horzcat_single!(HorizontalConcatenateM3, Matrix3);
+#[cfg(feature = "matrix4")]
+horzcat_single!(HorizontalConcatenateM4, Matrix4);
+#[cfg(feature = "matrix2x3")]
+horzcat_single!(HorizontalConcatenateM2x3, Matrix2x3);
+#[cfg(feature = "matrix3x2")]
+horzcat_single!(HorizontalConcatenateM3x2, Matrix3x2);
+#[cfg(feature = "matrixd")]
+horzcat_single!(HorizontalConcatenateMD, DMatrix);
+#[cfg(feature = "vector2")]
+horzcat_single!(HorizontalConcatenateV2, Vector2);
+#[cfg(feature = "vector3")]
+horzcat_single!(HorizontalConcatenateV3, Vector3);
+#[cfg(feature = "vector4")]
+horzcat_single!(HorizontalConcatenateV4, Vector4);
+#[cfg(feature = "vectord")]
+horzcat_single!(HorizontalConcatenateVD, DVector);
+
+// HorizontalConcatenateSR2 --------------------------------------------------
+
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSR2<T> {
+    e0: Ref<T>,
+    e1: Ref<RowVector2<T>>,
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSR2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSR2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr.clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e1_ptr[1].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSR2<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR2S --------------------------------------------------
+
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateR2S<T> {
+    e0: Ref<RowVector2<T>>,
+    e1: Ref<T>,
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateR2S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateR2S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e0_ptr[1].clone();
+            out_ptr[2] = self.e1.borrow().clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateR2S<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+// HorizontalConcatenateSM1 ---------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    out: Ref<RowVector2<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector2<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector2<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1S ---------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1S<T> {
+    e0: Ref<Matrix1<T>>, // Matrix1
+    e1: Ref<T>,          // scalar
+    out: Ref<RowVector2<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector2<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector2<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1S<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSSSM1 -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSSSM1<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    e2: Ref<T>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSSSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSSSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSSSM1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSSM1S -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSSM1S<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSSM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSSM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSSM1S<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSM1SS -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1SS<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<T>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1SS<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1SSS -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SSS<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<T>,
+    e2: Ref<T>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SSS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SSS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SSS<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSR3 -------------------------------------------------
+
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSR3<T> {
+    e0: Ref<T>,
+    e1: Ref<RowVector3<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSR3<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<RowVector3<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSR3<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr.clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e1_ptr[1].clone();
+            out_ptr[3] = e1_ptr[2].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSR3<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR3S -------------------------------------------------
+
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateR3S<T> {
+    e0: Ref<RowVector3<T>>,
+    e1: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateR3S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, arg0, arg1) => {
+                let e0: Ref<RowVector3<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateR3S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = self.e1.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e0_ptr[1].clone();
+            out_ptr[2] = e0_ptr[2].clone();
+            out_ptr[3] = e1_ptr.clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateR3S<{}>", T::as_value_kind());
+        compile_binop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSSM1 -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSSM1<T> {
+    e0: Ref<T>,          // scalar
+    e1: Ref<T>,          // scalar
+    e2: Ref<Matrix1<T>>, // Matrix1
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSSM1<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSM1S -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1S<T> {
+    e0: Ref<T>,          // scalar
+    e1: Ref<Matrix1<T>>, // Matrix1
+    e2: Ref<T>,          // scalar
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1S<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1SS -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SS<T> {
+    e0: Ref<Matrix1<T>>, // Matrix1
+    e1: Ref<T>,          // scalar
+    e2: Ref<T>,          // scalar
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SS<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSSR2 -------------------------------------------------
+
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSSR2<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    e2: Ref<RowVector2<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSSR2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<RowVector2<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSSR2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e2_ptr[1].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSSR2<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSR2S -------------------------------------------------
+
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSR2S<T> {
+    e0: Ref<T>,
+    e1: Ref<RowVector2<T>>,
+    e2: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSR2S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSR2S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e1_ptr[1].clone();
+            out_ptr[3] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSR2S<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR2SS -------------------------------------------------
+
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateR2SS<T> {
+    e0: Ref<RowVector2<T>>,
+    e1: Ref<T>,
+    e2: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateR2SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateR2SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e0_ptr[1].clone();
+            out_ptr[2] = e1_val;
+            out_ptr[3] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateR2SS<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1M1S -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1S<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<T>,
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1M1S<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1M1 -------------------------------------------------
+
+macro_rules! horzcat_m1m1 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e1[0].clone();
+    };
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+horzcat_two_args!(
+    HorizontalConcatenateM1M1,
+    Matrix1,
+    Matrix1,
+    RowVector2,
+    horzcat_m1m1
+);
+
+// HorizontalConcatenateM1SM1 -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SM1<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<T>,
+    e2: Ref<Matrix1<T>>,
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SM1<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSM1M1 -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1M1<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<Matrix1<T>>,
+    out: Ref<RowVector3<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector3<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1M1<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR2R2 -------------------------------------------------
+
+macro_rules! horzcat_r2r2 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e1[0].clone();
+        $out[3] = $e1[1].clone();
+    };
+}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+horzcat_two_args!(
+    HorizontalConcatenateR2R2,
+    RowVector2,
+    RowVector2,
+    RowVector4,
+    horzcat_r2r2
+);
+
+// HorizontalConcatenateM1R3 -------------------------------------------------
+
+macro_rules! horzcat_m1r3 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e1[0].clone();
+        $out[2] = $e1[1].clone();
+        $out[3] = $e1[2].clone();
+    };
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
+horzcat_two_args!(
+    HorizontalConcatenateM1R3,
+    Matrix1,
+    RowVector3,
+    RowVector4,
+    horzcat_m1r3
+);
+
+// HorizontalConcatenateR3M1 -------------------------------------------------
+
+macro_rules! horzcat_r3m1 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e0[2].clone();
+        $out[3] = $e1[0].clone();
+    };
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
+horzcat_two_args!(
+    HorizontalConcatenateR3M1,
+    RowVector3,
+    Matrix1,
+    RowVector4,
+    horzcat_r3m1
+);
+
+// HorizontalConcatenateSM1R2 -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1R2<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<RowVector2<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1R2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<RowVector2<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1R2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e2_ptr[1].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1R2<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1SR2 -------------------------------------------------
+
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SR2<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<T>,
+    e2: Ref<RowVector2<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SR2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<RowVector2<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SR2<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e2_ptr[1].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SR2<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSM1SM1 -------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1SM1<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<T>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1SM1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1R2S -------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1R2S<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<RowVector2<T>>,
+    e2: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1R2S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1R2S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e1_ptr[1].clone();
+            out_ptr[3] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1R2S<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR2M1S -------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateR2M1S<T> {
+    e0: Ref<RowVector2<T>>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateR2M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateR2M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e0_ptr[1].clone();
+            out_ptr[2] = e1_ptr[0].clone();
+            out_ptr[3] = e2_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateR2M1S<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateR2SM1 -------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateR2SM1<T> {
+    e0: Ref<RowVector2<T>>,
+    e1: Ref<T>,
+    e2: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateR2SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateR2SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e0_ptr[1].clone();
+            out_ptr[2] = e1_val;
+            out_ptr[3] = e2_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateR2SM1<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSR2M1 -------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSR2M1<T> {
+    e0: Ref<T>,
+    e1: Ref<RowVector2<T>>,
+    e2: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSR2M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self { e0, e1, e2, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSR2M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e1_ptr[1].clone();
+            out_ptr[3] = e2_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSR2M1<{}>", T::as_value_kind());
+        compile_ternop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSSM1M1 ------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSSM1M1<T> {
+    e0: Ref<T>,
+    e1: Ref<T>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSSM1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSSM1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSSM1M1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1M1SS ------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1SS<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<T>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SS<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1M1SS<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateSM1M1S ------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1M1S<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1M1S<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1SSM1 ------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SSM1<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<T>,
+    e2: Ref<T>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SSM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SSM1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1SM1S ------------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SM1S<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<T>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SM1S<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1R2 --------------------------------------------------
+
+macro_rules! horzcat_m1r2 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e1[0].clone();
+        $out[2] = $e1[1].clone();
+    };
+}
+#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
+horzcat_two_args!(
+    HorizontalConcatenateM1R2,
+    Matrix1,
+    RowVector2,
+    RowVector3,
+    horzcat_m1r2
+);
+
+// HorizontalConcatenateR2M1 --------------------------------------------------
+
+macro_rules! horzcat_r2m1 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e1[0].clone();
+    };
+}
+#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
+horzcat_two_args!(
+    HorizontalConcatenateR2M1,
+    RowVector2,
+    Matrix1,
+    RowVector3,
+    horzcat_r2m1
+);
+
+// HorizontalConcatenateM1M1M1 ------------------------------------------------
+
+macro_rules! horzcat_m1m1m1 {
+    ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e1[0].clone();
+        $out[2] = $e2[0].clone();
+    };
+}
+#[cfg(all(feature = "row_vector3", feature = "matrix1"))]
+horzcat_three_args!(
+    HorizontalConcatenateM1M1M1,
+    Matrix1,
+    Matrix1,
+    Matrix1,
+    RowVector3,
+    horzcat_m1m1m1
+);
+
+// HorizontalConcatenateM1M1R2 ------------------------------------------------
+
+macro_rules! horzcat_m1m1r2 {
+    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e1[0].clone();
+        $out[2] = $e2[0].clone();
+        $out[3] = $e2[1].clone();
+    };
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
+horzcat_three_args!(
+    HorizontalConcatenateM1M1R2,
+    Matrix1,
+    Matrix1,
+    RowVector2,
+    RowVector4,
+    horzcat_m1m1r2
+);
+
+// HorizontalConcatenateM1R2M1 ------------------------------------------------
+
+macro_rules! horzcat_m1r2m1 {
+    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e1[0].clone();
+        $out[2] = $e1[1].clone();
+        $out[3] = $e2[0].clone();
+    };
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
+horzcat_three_args!(
+    HorizontalConcatenateM1R2M1,
+    Matrix1,
+    RowVector2,
+    Matrix1,
+    RowVector4,
+    horzcat_m1r2m1
+);
+
+macro_rules! horzcat_r2m1m1 {
+    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e1[0].clone();
+        $out[3] = $e2[0].clone();
+    };
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
+horzcat_three_args!(
+    HorizontalConcatenateR2M1M1,
+    RowVector2,
+    Matrix1,
+    Matrix1,
+    RowVector4,
+    horzcat_r2m1m1
+);
+
+// HorizontalConcatenateSM1M1M1 -----------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateSM1M1M1<T> {
+    e0: Ref<T>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_val = self.e0.borrow().clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_val;
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateSM1M1M1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1SM1M1 -----------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1SM1M1<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<T>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_val = self.e1.borrow().clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_val;
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1SM1M1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1M1SM1 -----------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1SM1<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<T>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 4,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SM1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_val = self.e2.borrow().clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_val;
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1M1SM1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1M1M1S -----------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1M1S<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<T>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1S<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_val = self.e3.borrow().clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_val;
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1M1M1S<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateM1M1M1S -----------------------------------------------
+
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1M1M1<T> {
+    e0: Ref<Matrix1<T>>,
+    e1: Ref<Matrix1<T>>,
+    e2: Ref<Matrix1<T>>,
+    e3: Ref<Matrix1<T>>,
+    out: Ref<RowVector4<T>>,
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                Ok(Box::new(Self {
+                    e0,
+                    e1,
+                    e2,
+                    e3,
+                    out,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1M1<T>
+where
+    T: Debug + Clone + Sync + Send + PartialEq + 'static,
+    Ref<RowVector4<T>>: ToValue,
+{
+    fn solve(&self) {
+        unsafe {
+            let e0_ptr = (*(self.e0.as_ptr())).clone();
+            let e1_ptr = (*(self.e1.as_ptr())).clone();
+            let e2_ptr = (*(self.e2.as_ptr())).clone();
+            let e3_ptr = (*(self.e3.as_ptr())).clone();
+            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            out_ptr[0] = e0_ptr[0].clone();
+            out_ptr[1] = e1_ptr[0].clone();
+            out_ptr[2] = e2_ptr[0].clone();
+            out_ptr[3] = e3_ptr[0].clone();
+        }
+    }
+    fn out(&self) -> Value {
+        self.out.to_value()
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let name = format!("HorizontalConcatenateM1M1M1M1<{}>", T::as_value_kind());
+        compile_quadop!(
+            name,
+            self.out,
+            self.e0,
+            self.e1,
+            self.e2,
+            self.e3,
+            ctx,
+            FeatureFlag::Builtin(FeatureKind::HorzCat)
+        );
+    }
+}
+
+// HorizontalConcatenateV2V2 -------------------------------------------------
+
+macro_rules! horzcat_v2v2 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e1[0].clone();
+        $out[3] = $e1[1].clone();
+    };
+}
+#[cfg(all(feature = "vector2", feature = "matrix2"))]
+horzcat_two_args!(
+    HorizontalConcatenateV2V2,
+    Vector2,
+    Vector2,
+    Matrix2,
+    horzcat_v2v2
+);
+
+macro_rules! horzcat_v3v3 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e0[2].clone();
+        $out[3] = $e1[0].clone();
+        $out[4] = $e1[1].clone();
+        $out[5] = $e1[2].clone();
+    };
+}
+#[cfg(all(feature = "vector3", feature = "matrix3x2"))]
+horzcat_two_args!(
+    HorizontalConcatenateV3V3,
+    Vector3,
+    Vector3,
+    Matrix3x2,
+    horzcat_v3v3
+);
+
+// HorizontalConcatenateV2M2 --------------------------------------------------
+
+macro_rules! horzcat_v2m2 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e1[0].clone();
+        $out[3] = $e1[1].clone();
+        $out[4] = $e1[2].clone();
+        $out[5] = $e1[3].clone();
+    };
+}
+#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
+horzcat_two_args!(
+    HorizontalConcatenateV2M2,
+    Vector2,
+    Matrix2,
+    Matrix2x3,
+    horzcat_v2m2
+);
+
+// HorizontalConcatenateM2V2 --------------------------------------------------
+
+macro_rules! horzcat_m2v2 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e0[2].clone();
+        $out[3] = $e0[3].clone();
+        $out[4] = $e1[0].clone();
+        $out[5] = $e1[1].clone();
+    };
+}
+#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
+horzcat_two_args!(
+    HorizontalConcatenateM2V2,
+    Matrix2,
+    Vector2,
+    Matrix2x3,
+    horzcat_m2v2
+);
+
+// HorizontalConcatenateM3x2V3 ------------------------------------------------
+
+macro_rules! horzcat_m3x2v3 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e0[2].clone();
+        $out[3] = $e0[3].clone();
+        $out[4] = $e0[4].clone();
+        $out[5] = $e0[5].clone();
+        $out[6] = $e1[0].clone();
+        $out[7] = $e1[1].clone();
+        $out[8] = $e1[2].clone();
+    };
+}
+#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
+horzcat_two_args!(
+    HorizontalConcatenateM3x2V3,
+    Matrix3x2,
+    Vector3,
+    Matrix3,
+    horzcat_m3x2v3
+);
+
+// HorizontalConcatenateV3M3x2 ------------------------------------------------
+
+macro_rules! horzcat_v3m3x2 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e0[2].clone();
+        $out[3] = $e1[0].clone();
+        $out[4] = $e1[1].clone();
+        $out[5] = $e1[2].clone();
+        $out[6] = $e1[3].clone();
+        $out[7] = $e1[4].clone();
+        $out[8] = $e1[5].clone();
+    };
+}
+#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
+horzcat_two_args!(
+    HorizontalConcatenateV3M3x2,
+    Vector3,
+    Matrix3x2,
+    Matrix3,
+    horzcat_v3m3x2
+);
+
+// HorizontalConcatenateV4V4 --------------------------------------------------
+
+macro_rules! horzcat_v4md {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        $out[0] = $e0[0].clone();
+        $out[1] = $e0[1].clone();
+        $out[2] = $e0[2].clone();
+        $out[3] = $e0[3].clone();
+        let offset = 4;
+        for i in 0..$e1.len() {
+            $out[i + offset] = $e1[i].clone();
+        }
+    };
+}
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
+horzcat_two_args!(
+    HorizontalConcatenateV4MD,
+    Vector4,
+    DMatrix,
+    Matrix4,
+    horzcat_v4md
+);
+
+// HorizontalConcatenateMDV4 --------------------------------------------------
+
+macro_rules! horzcat_mdv4 {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        let e0_len = $e0.len();
+        for i in 0..e0_len {
+            $out[i] = $e0[i].clone();
+        }
+        let offset = e0_len;
+        $out[offset] = $e1[0].clone();
+        $out[offset + 1] = $e1[1].clone();
+        $out[offset + 2] = $e1[2].clone();
+        $out[offset + 3] = $e1[3].clone();
+    };
+}
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
+horzcat_two_args!(
+    HorizontalConcatenateMDV4,
+    DMatrix,
+    Vector4,
+    Matrix4,
+    horzcat_mdv4
+);
+
+// HorizontalConcatenateMDV4 --------------------------------------------------
+
+macro_rules! horzcat_mdmd {
+    ($out:expr, $e0:expr, $e1:expr) => {
+        let e0_len = $e0.len();
+        for i in 0..e0_len {
+            $out[i] = $e0[i].clone();
+        }
+        let offset = e0_len;
+        for i in 0..$e1.len() {
+            $out[i + offset] = $e1[i].clone();
+        }
+    };
+}
+#[cfg(all(feature = "matrixd", feature = "matrix4"))]
+horzcat_two_args!(
+    HorizontalConcatenateMDMD,
+    DMatrix,
+    DMatrix,
+    Matrix4,
+    horzcat_mdmd
+);
+
+// HorizontalConcatenateMDMDMD ------------------------------------------------
+
+macro_rules! horzcat_mdmdmd {
+    ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
+        let e0_len = $e0.len();
+        for i in 0..e0_len {
+            $out[i] = $e0[i].clone();
+        }
+        let offset = e0_len;
+        for i in 0..$e1.len() {
+            $out[i + offset] = $e1[i].clone();
+        }
+        let offset = offset + $e1.len();
+        for i in 0..$e2.len() {
+            $out[i + offset] = $e2[i].clone();
+        }
+    };
+}
+
+// HorizontalConcatenateV2V2V2 ------------------------------------------------
+
+#[cfg(all(feature = "vector2", feature = "matrix2x3"))]
+horzcat_three_args!(
+    HorizontalConcatenateV2V2V2,
+    Vector2,
+    Vector2,
+    Vector2,
+    Matrix2x3,
+    horzcat_mdmdmd
+);
+
+// HorizontalConcatenateV3V3V3 ------------------------------------------------
+
+#[cfg(all(feature = "vector3", feature = "matrix3"))]
+horzcat_three_args!(
+    HorizontalConcatenateV3V3V3,
+    Vector3,
+    Vector3,
+    Vector3,
+    Matrix3,
+    horzcat_mdmdmd
+);
+
+// HorizontalConcatenateV2V2MD ------------------------------------------------
+
+#[cfg(all(feature = "matrixd", feature = "vector4", feature = "matrix4"))]
+horzcat_three_args!(
+    HorizontalConcatenateV4V4MD,
+    Vector4,
+    Vector4,
+    DMatrix,
+    Matrix4,
+    horzcat_mdmdmd
+);
+
+// HorizontalConcatenateV2MDV2 ------------------------------------------------
+
+#[cfg(all(feature = "matrixd", feature = "vector4", feature = "matrix4"))]
+horzcat_three_args!(
+    HorizontalConcatenateV4MDV4,
+    Vector4,
+    DMatrix,
+    Vector4,
+    Matrix4,
+    horzcat_mdmdmd
+);
+
+// HorizontalConcatenateMDV2V2 ------------------------------------------------
+
+#[cfg(all(feature = "matrixd", feature = "vector4", feature = "matrix4"))]
+horzcat_three_args!(
+    HorizontalConcatenateMDV4V4,
+    DMatrix,
+    Vector4,
+    Vector4,
+    Matrix4,
+    horzcat_mdmdmd
+);
+
+// HorizontalConcatenateV4V4V4V4 ------------------------------------------------
+
+macro_rules! horzcat_mdmdmdmd {
+    ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
+        let e0_len = $e0.len();
+        for i in 0..e0_len {
+            $out[i] = $e0[i].clone();
+        }
+        let offset = e0_len;
+        for i in 0..$e1.len() {
+            $out[i + offset] = $e1[i].clone();
+        }
+        let offset = offset + $e1.len();
+        for i in 0..$e2.len() {
+            $out[i + offset] = $e2[i].clone();
+        }
+        let offset = offset + $e2.len();
+        for i in 0..$e3.len() {
+            $out[i + offset] = $e3[i].clone();
+        }
+    };
+}
+
+#[cfg(all(feature = "matrix4", feature = "vector4"))]
+horzcat_four_args!(
+    HorizontalConcatenateV4V4V4V4,
+    Vector4,
+    Vector4,
+    Vector4,
+    Vector4,
+    Matrix4,
+    horzcat_mdmdmdmd
+);
+
+macro_rules! impl_horzcat_arms {
+  ($kind:ident, $args:expr, $default:expr) => {
+    paste!{
+    {
+
+      #[cfg(feature = "matrix")]
+      fn extract_matrix(arg: &Value) -> MResult<Box<dyn CopyMat<$kind>>> {
+        match arg {
+          Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
+          Value::MutableReference(inner) => match &*inner.borrow() {
+            Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
+            _ => Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
+          },
+          _ => Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
+        }
+      }
+      #[cfg(feature = "row_vector2")] // get_r2
+      fn get_r2(value: &Value) -> Option<Ref<RowVector2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vector2"))]
+      fn get_r2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "row_vector3")] // get_r3
+      fn get_r3(value: &Value) -> Option<Ref<RowVector3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vector3"))]
+      fn get_r3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "row_vector4")] // get_r4
+      fn get_r4(value: &Value) -> Option<Ref<RowVector4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vector4"))]
+      fn get_r4(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vector2")] // get_v2
+      fn get_v2(value: &Value) -> Option<Ref<Vector2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vector2"))]
+      fn get_v2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vector3")] // get_v3
+      fn get_v3(value: &Value) -> Option<Ref<Vector3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vector3"))]
+      fn get_v3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vector4")] // get_v4
+      fn get_v4(value: &Value) -> Option<Ref<Vector4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vector4"))]
+      fn get_v4(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrixd")] // get_md
+      fn get_md(value: &Value) -> Option<Ref<DMatrix<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrixd"))]
+      fn get_md(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vectord")] // get_vd
+      fn get_vd(value: &Value) -> Option<Ref<DVector<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vectord"))]
+      fn get_vd(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "row_vectord")] // get_rd
+      fn get_rd(value: &Value) -> Option<Ref<RowDVector<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vectord"))]
+      fn get_rd(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix3x2")] // get_m3x2
+      fn get_m3x2(value: &Value) -> Option<Ref<Matrix3x2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix3x2"))]
+      fn get_m3x2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix2x3")] // get_m2x3
+      fn get_m2x3(value: &Value) -> Option<Ref<Matrix2x3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix2x3"))]
+      fn get_m2x3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix1")] // get_m1
+      fn get_m1(value: &Value) -> Option<Ref<Matrix1<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix1"))]
+      fn get_m1(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix2")] // get_m2
+      fn get_m2(value: &Value) -> Option<Ref<Matrix2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix2"))]
+      fn get_m2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix3")] // get_m3
+      fn get_m3(value: &Value) -> Option<Ref<Matrix3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix3"))]
+      fn get_m3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix4")] // get_m4
+      fn get_m4(value: &Value) -> Option<Ref<Matrix4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix4"))]
+      fn get_m4(_value: &Value) -> Option<()> { None }
+
+      fn get_s(value: &Value) -> Option<Ref<$kind>> {
+        match value {
+          Value::[<$kind:camel>](v) => Some(v.clone()),
+          Value::Empty | Value::EmptyKind(_) => Some(Ref::new($kind::default())),
+          Value::Typed(inner, kind) => match (&**inner, kind) {
+            (Value::Empty, ValueKind::Option(option_kind))
+              if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
+            {
+              Some(Ref::new($kind::default()))
+            }
+            _ => None,
+          },
+          Value::MutableReference(inner) => get_s(&inner.borrow()),
+          _ => None,
+        }
+      }
+
+      let arguments = $args;
+      let rows = arguments[0].shape()[0];
+      let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
+      let rows:usize = arguments[0].shape()[0];
+      let nargs = arguments.len();
+      let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
+      let no_refs = !kinds.iter().any(|x| {
+        match x {
+          ValueKind::Reference(_) => true,
+          _ => false,
+      }});
+        match (nargs,rows,columns) {
+          #[cfg(feature = "matrix1")]
+          (1,1,1) => {
+            let a_m1 = get_m1(&arguments[0]);
+            let a_sc = get_s(&arguments[0]);
+            match (a_m1, a_sc) {
+              (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateM1{out: e0.clone()})),
+              (None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateS1{arg: e0.clone(), out: Ref::new(Matrix1::from_element($default))})),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+          (1,1,1) => {
+            let a_m1 = get_md(&arguments[0]);
+            let a_sc = get_s(&arguments[0]);
+            match (a_m1, a_sc) {
+              (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
+              (None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateS1D{arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector2")]
+          (1, 1, 2) => {
+            let er2 = get_r2(&arguments[0]);
+            match &er2 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateR2 {out: e0.clone() })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector3")]
+          (1, 1, 3) => {
+            let er3 = get_r3(&arguments[0]);
+            match &er3 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateR3 { out: e0.clone() })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector4")]
+          (1, 1, 4) => {
+            let er4 = get_r4(&arguments[0]);
+            match &er4 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateR4{out: e0.clone()})),
+                _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vectord")]
+          (1, 1, n) => {
+            let erd = get_rd(&arguments[0]);
+            let emd = get_md(&arguments[0]);
+            let es = get_s(&arguments[0]);
+            match (emd, erd, es) {
+              #[cfg(feature = "matrixd")]
+              (Some(e0), None, None) => return Ok(Box::new(HorizontalConcatenateMD { out: e0.clone() })),
+              (None, Some(e0), None) => return Ok(Box::new(HorizontalConcatenateRD { out: e0.clone() })),
+              #[cfg(feature = "matrixd")]
+              (None, None, Some(e0)) => return Ok(Box::new(HorizontalConcatenateS1D {arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector2")]
+          (2,1,2) => {
+            let mut out = RowVector2::from_element($default);
+            let am1 = get_m1(&arguments[0]);
+            let bm1 = get_m1(&arguments[1]);
+            let asc = get_s(&arguments[0]);
+            let bsc = get_s(&arguments[1]);
+            match (am1, bm1, asc, bsc) {
+              #[cfg(feature = "matrix1")]
+              (Some(e0), Some(e1), None, None) => return Ok(Box::new(HorizontalConcatenateM1M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), None, None, Some(e1)) => return Ok(Box::new(HorizontalConcatenateM1S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (None, Some(e1), Some(e0), None) => return Ok(Box::new(HorizontalConcatenateSM1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              (None, None, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateS2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector3")]
+          (2,1,3) => {
+            let mut out = RowVector3::from_element($default);
+            let a_r2 = get_r2(&arguments[0]);
+            let b_r2 = get_r2(&arguments[1]);
+            let a_sc = get_s(&arguments[0]);
+            let b_sc = get_s(&arguments[1]);
+            let a_m1 = get_m1(&arguments[0]);
+            let b_m1 = get_m1(&arguments[1]);
+            match (a_r2, b_r2, a_sc, b_sc, a_m1, b_m1) {
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, _, _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateR2M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector2")]
+              (Some(e0), _, _, Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateR2S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, Some(e1), _, _, Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM1R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector2")]
+              (_, Some(e1), Some(e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2 or matrix1".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector4")]
+          (2,1,4) => {
+            let mut out = RowVector4::from_element($default);
+            let a_r3 = get_r3(&arguments[0]);
+            let b_r3 = get_r3(&arguments[1]);
+            let a_sc = get_s(&arguments[0]);
+            let b_sc = get_s(&arguments[1]);
+            let a_m1 = get_m1(&arguments[0]);
+            let b_m1 = get_m1(&arguments[1]);
+            let a_r2 = get_r2(&arguments[0]);
+            let b_r2 = get_r2(&arguments[1]);
+            match (a_r3, b_r3, a_sc, b_sc, a_m1, b_m1, a_r2, b_r2) {
+              #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+              (Some(e0), _, _, _, _, Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateR3M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector3")]
+              (Some(e0), _, _, Some(e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateR3S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+              (_, Some(e1), _, _, Some(e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1R3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector3")]
+              (_, Some(e1), Some(e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector2")]
+              (_, _, _, _, _, _, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateR2R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1, row_vector2, row_vector3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector3")]
+          (3,1,3) => {
+            let mut out = RowVector3::from_element($default);
+            let a_m1 = get_m1(&arguments[0]);
+            let b_m1 = get_m1(&arguments[1]);
+            let c_m1 = get_m1(&arguments[2]);
+            let a_sc = get_s(&arguments[0]);
+            let b_sc = get_s(&arguments[1]);
+            let c_sc = get_s(&arguments[2]);
+            match (a_m1, b_m1, c_m1, a_sc, b_sc, c_sc) {
+              #[cfg(feature = "matrix1")]
+              (_, _, _, Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateS3 {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), Some(e1), _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, Some(e1), Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, Some(e1), _, Some(e0), _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateSM1S {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "matrix1")]
+              (_, _, Some(e2), Some(e0), Some(e1), _) => return Ok(Box::new(HorizontalConcatenateSSM1 {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, _, _, Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateM1SS {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+             #[cfg(feature = "matrix1")]
+              (Some(e0), Some(e1), Some(e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector4")]
+          (3,1,4) => {
+            let mut out = RowVector4::from_element($default);
+            let a_sc = get_s(&arguments[0]);
+            let b_sc = get_s(&arguments[1]);
+            let c_sc = get_s(&arguments[2]);
+            let a_r2 = get_r2(&arguments[0]);
+            let b_r2 = get_r2(&arguments[1]);
+            let c_r2 = get_r2(&arguments[2]);
+            let a_m1 = get_m1(&arguments[0]);
+            let b_m1 = get_m1(&arguments[1]);
+            let c_m1 = get_m1(&arguments[2]);
+            match (a_sc, b_sc, c_sc, a_r2, b_r2, c_r2, a_m1, b_m1, c_m1) {
+              #[cfg(feature = "row_vector2")]
+              (Some(e0), Some(e1), _, _, _, Some(e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateSSR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "row_vector2")]
+              (Some(e0), _, Some(e2), _, Some(e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "row_vector2")]
+              (_, Some(e1), Some(e2), Some(e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateR2SS{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, _, _, _, _, Some(e2), Some(e0), Some(e1), _) => return Ok(Box::new(HorizontalConcatenateM1M1R2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, _, _, _, Some(e1), _, Some(e0), _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateM1R2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, _, _, Some(e0), _, _, _, Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateR2M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (Some(e0), _, _, _, _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateSM1R2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (Some(e0), _, _, _, Some(e1), _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateSR2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, Some(e1), _, _, _, Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1SR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, Some(e1), _, Some(e0), _, _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateR2SM1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, _, Some(e2), _, Some(e1), _, Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1R2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+              (_, _, Some(e2), Some(e0), _, _, _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateR2M1S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("row_vector2 or matrix1".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vector4")]
+          (4,1,4) => {
+            let mut out = RowVector4::from_element($default);
+            let a_s = get_s(&arguments[0]);
+            let b_s = get_s(&arguments[1]);
+            let c_s = get_s(&arguments[2]);
+            let d_s = get_s(&arguments[3]);
+            let a_m1 = get_m1(&arguments[0]);
+            let b_m1 = get_m1(&arguments[1]);
+            let c_m1 = get_m1(&arguments[2]);
+            let d_m1 = get_m1(&arguments[3]);
+            match (a_s, b_s, c_s, d_s, a_m1, b_m1, c_m1, d_m1) {
+              (Some(e0), Some(e1), Some(e2), Some(e3), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateS4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), Some(e1), Some(e2), _, _, _, _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateSSSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), Some(e1), _, Some(e3), _, _, Some(e2), _) => return Ok(Box::new(HorizontalConcatenateSSM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, Some(e2), Some(e3), _, Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateSM1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, Some(e1), Some(e2), Some(e3), Some(e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1SSS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), Some(e1), _, _, _, Some(e2), _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateSSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, Some(e2), _, _, Some(e1), _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateSM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, _, Some(e2), Some(e3), Some(e0), Some(e1), _, _) => return Ok(Box::new(HorizontalConcatenateM1M1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, _, Some(e3), _, Some(e1), Some(e2), _) => return Ok(Box::new(HorizontalConcatenateSM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, Some(e1), Some(e2), _, Some(e0), _, _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1SSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, Some(e1), _, Some(e3), Some(e0), _, Some(e2), _) => return Ok(Box::new(HorizontalConcatenateM1SM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (Some(e0), _, _, _, _, Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateSM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, Some(e1), _, _, Some(e0), _, Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1SM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, _, Some(e2), _, Some(e0), Some(e1), _, Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1M1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, _, _, Some(e3), Some(e0), Some(e1), Some(e2), _) => return Ok(Box::new(HorizontalConcatenateM1M1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
+              (_, _, _, _, Some(e0), Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateM1M1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              _ => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix1".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "row_vectord")]
+          (m,1,n) => {
+            let mut out = RowDVector::from_element(n,$default);
+            let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
+            let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
+            let mut i = 0;
+            for arg in arguments.iter() {
+              match &arg {
+                Value::[<$kind:camel>](e0) => {
+                  scalar_args.push((e0.clone(),i));
+                  i += 1;
+                }
+                Value::Empty | Value::EmptyKind(_) => {
+                  scalar_args.push((Ref::new($kind::default()), i));
+                  i += 1;
+                }
+                Value::Typed(inner, kind) => {
+                  match (&**inner, kind) {
+                    (Value::Empty, ValueKind::Option(option_kind))
+                      if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
+                    {
+                      scalar_args.push((Ref::new($kind::default()), i));
+                      i += 1;
+                    }
+                    x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+                  }
+                }
+                Value::[<Matrix $kind:camel>](e0) => {
+                  matrix_args.push((e0.get_copyable_matrix(),i));
+                  i += e0.shape()[1];
+                }
+                Value::MutableReference(e0) => {
+                  match e0.borrow().clone() {
+                    Value::[<Matrix $kind:camel>](e0) => {
+                      matrix_args.push((e0.get_copyable_matrix(),i));
+                      i += e0.shape()[1];
+                    }
+                    Value::[<$kind:camel>](e0) => {
+                      scalar_args.push((e0.clone(),i));
+                      i += 1;
+                    }
+                    x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+                  }
+                }
+                x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: x.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
+              }
+            }
+            return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: Ref::new(out)}));
+          }
+          #[cfg(feature = "vector2")]
+          (1, 2, 1) => {
+            let ev2 = get_v2(&arguments[0]);
+            match &ev2 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateV2 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix2")]
+          (1, 2, 2) => {
+            let em2 = get_m2(&arguments[0]);
+            match &em2 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateM2 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix2x3")]
+          (1, 2, 3) => {
+            let em2x3 = get_m2x3(&arguments[0]);
+            match &em2x3 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateM2x3 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix2x3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "vector3")]
+          (1, 3, 1) => {
+            let ev3 = get_v3(&arguments[0]);
+            match &ev3 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateV3 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix3x2")]
+          (1, 3, 2) => {
+            let am3x2 = get_m3x2(&arguments[0]);
+            match &am3x2 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateM3x2{out: e0.clone()})),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3x2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix3")]
+          (1, 3, 3) => {
+            let em3 = get_m3(&arguments[0]);
+            match &em3 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateM3 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "vector4")]
+          (1, 4, 1) => {
+            let ev4 = get_v4(&arguments[0]);
+            match &ev4 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateV4 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix4")]
+          (1, 4, 4) => {
+            let em4 = get_m4(&arguments[0]);
+            match &em4 {
+              Some(e0) => return Ok(Box::new(HorizontalConcatenateM4 { out: e0.clone() })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrix4".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrixd")]
+          (1, m, n) => {
+            let emd = get_md(&arguments[0]);
+            let evd = get_vd(&arguments[0]);
+            match (emd, evd) {
+              (Some(e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
+              #[cfg(feature = "vectord")]
+              (NOne, Some(e0)) => return Ok(Box::new(HorizontalConcatenateVD{out: e0.clone()})),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("matrixd or vectord".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(all(feature = "matrix2", feature ="vector2"))]
+          (2, 2, 2) => {
+            let mut out = Matrix2::from_element($default);
+            let av2 = get_v2(&arguments[0]);
+            let bv2 = get_v2(&arguments[1]);
+            match (av2, bv2) {
+              #[cfg(feature = "vector2")]
+              (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix3x2")]
+          (2, 3, 2) => {
+            let mut out = Matrix3x2::from_element($default);
+            let av3 = get_v3(&arguments[0]);
+            let bv3 = get_v3(&arguments[1]);
+            match (av3, bv3) {
+              #[cfg(feature = "vector3")]
+              (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix2x3")]
+          (2,2,3) => {
+            let mut out = Matrix2x3::from_element($default);
+            let av2 = get_v2(&arguments[0]);
+            let am2 = get_m2(&arguments[0]);
+            let bv2 = get_v2(&arguments[1]);
+            let bm2 = get_m2(&arguments[1]);
+            match (av2, bv2, am2, bm2) {
+              #[cfg(all(feature = "vector2", feature = "matrix2"))]
+              (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2M2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector2", feature = "matrix2"))]
+              (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2 or matrix2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix3")]
+          (2, 3, 3) => {
+            let mut out = Matrix3::from_element($default);
+            let av3 = get_v3(&arguments[0]);
+            let am3x2 = get_m3x2(&arguments[0]);
+            let bv3 = get_v3(&arguments[1]);
+            let bm3x2 = get_m3x2(&arguments[1]);
+            match (av3, bv3, am3x2, bm3x2) {
+              #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
+              (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3M3x2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
+              (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateM3x2V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3 or matrix3x2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix4")]
+          (2, 4, 4) => {
+            let mut out = Matrix4::from_element($default);
+            let av4 = get_v4(&arguments[0]);
+            let bv4 = get_v4(&arguments[1]);
+            let amd = get_md(&arguments[0]);
+            let bmd = get_md(&arguments[1]);
+            match (av4, bv4, amd, bmd) {
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
+              (Some(e0), _, _, Some(e1)) => return Ok(Box::new(HorizontalConcatenateV4MD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
+              (_, Some(e1), Some(e0), _) => return Ok(Box::new(HorizontalConcatenateMDV4 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrixd")]
+              (_, _, Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateMDMD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrixd")]
+          (2,m,n) => {
+            let mut out = DMatrix::from_element(m,n,$default);
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            Ok(Box::new(HorizontalConcatenateTwoArgs{e0,e1,out:Ref::new(out)}))
+          }
+          #[cfg(feature = "matrix2x3")]
+          (3, 2, 3) => {
+            let mut out = Matrix2x3::from_element($default);
+            let av2 = get_v2(&arguments[0]);
+            let bv2 = get_v2(&arguments[1]);
+            let cv2 = get_v2(&arguments[2]);
+            match (av2, bv2, cv2) {
+              #[cfg(feature = "vector2")]
+              (Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateV2V2V2 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector2".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix3")]
+          (3, 3, 3) => {
+            let mut out = Matrix3::from_element($default);
+            let av3 = get_v3(&arguments[0]);
+            let bv3 = get_v3(&arguments[1]);
+            let cv3 = get_v3(&arguments[2]);
+            match (&av3, &bv3, &cv3) {
+              #[cfg(feature = "vector3")]
+              (Some(e0), Some(e1), Some(e2)) => return Ok(Box::new(HorizontalConcatenateV3V3V3 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector3".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrix4")]
+          (3, 4, 4) => {
+            let mut out = Matrix4::from_element($default);
+            let av4 = get_v4(&arguments[0]);
+            let bv4 = get_v4(&arguments[1]);
+            let cv4 = get_v4(&arguments[2]);
+            let amd = get_md(&arguments[0]);
+            let bmd = get_md(&arguments[1]);
+            let cmd = get_md(&arguments[2]);
+            match (av4, bv4, cv4, amd, bmd, cmd) {
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
+              (Some(e0), Some(e1), _, _, _, Some(e2)) => return Ok(Box::new(HorizontalConcatenateV4V4MD { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
+              (Some(e0), _, Some(e2), _, Some(e1), _) => return Ok(Box::new(HorizontalConcatenateV4MDV4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "matrixd", feature = "vector4"))]
+              (_, Some(e1), Some(e2), Some(e0), _, _) => return Ok(Box::new(HorizontalConcatenateMDV4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4 or matrixd".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrixd")]
+          (3,m,n) => {
+            let mut out = DMatrix::from_element(m, n, $default);
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            let e2 = extract_matrix(&arguments[2])?;
+            return Ok(Box::new(HorizontalConcatenateThreeArgs {e0,e1,e2,out: Ref::new(out)}));
+          }
+          #[cfg(feature = "matrix4")]
+          (4, 4, 4) => {
+            let mut out = Matrix4::from_element($default);
+            let av4 = get_v4(&arguments[0]);
+            let bv4 = get_v4(&arguments[1]);
+            let cv4 = get_v4(&arguments[2]);
+            let dv4 = get_v4(&arguments[3]);
+            match (&av4, &bv4, &cv4, &dv4) {
+              #[cfg(feature = "vector4")]
+              (Some(e0), Some(e1), Some(e2), Some(e3)) => return Ok(Box::new(HorizontalConcatenateV4V4V4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              x => return Err(MechError::new(HorizontalConcatenateDimensionMismatchError{}, Some("vector4".to_string())).with_compiler_loc()),
+            }
+          }
+          #[cfg(feature = "matrixd")]
+          (4,m,n) => {
+            let mut out = DMatrix::from_element(m,n,$default);
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            let e2 = extract_matrix(&arguments[2])?;
+            let e3 = extract_matrix(&arguments[3])?;
+            return Ok(Box::new(HorizontalConcatenateFourArgs {e0,e1,e2,e3,out: Ref::new(out)}));
+          }
+          #[cfg(feature = "matrixd")]
+          (l,m,n) => {
+            let mut out = DMatrix::from_element(m,n,$default);
+            let mut args = vec![];
+            for arg in arguments {
+              let e0 = extract_matrix(&arg)?;
+              args.push(e0);
+            }
+            Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:Ref::new(out.clone())}))
+          }
+          x => return Err(MechError::new(
+              UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/horzcat".to_string() },
+              None
+          ).with_compiler_loc()),
+        }
+  }}}}
+
+pub(crate) fn impl_horzcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    // are they all the same?
+    //let same = kinds.iter().all(|x| *x == target_kind);
+    let kinds: Vec<ValueKind> = arguments
+        .iter()
+        .map(|x| x.kind())
+        .collect::<Vec<ValueKind>>();
+    let target_kind = kinds
+        .iter()
+        .find_map(|kind| match kind {
+            ValueKind::Empty => None,
+            ValueKind::Option(inner_kind) => Some((**inner_kind).clone()),
+            other => Some(other.clone()),
+        })
+        .unwrap_or_else(|| kinds[0].clone());
+
+    #[cfg(feature = "f64")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) {
+            return impl_horzcat_arms!(f64, arguments, f64::default());
+        }
+    }
+
+    #[cfg(feature = "f32")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) {
+            return impl_horzcat_arms!(f32, arguments, f32::default());
+        }
+    }
+
+    #[cfg(feature = "u8")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8) {
+            return impl_horzcat_arms!(u8, arguments, u8::default());
+        }
+    }
+
+    #[cfg(feature = "u16")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16) {
+            return impl_horzcat_arms!(u16, arguments, u16::default());
+        }
+    }
+
+    #[cfg(feature = "u32")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32) {
+            return impl_horzcat_arms!(u32, arguments, u32::default());
+        }
+    }
+
+    #[cfg(feature = "u64")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64) {
+            return impl_horzcat_arms!(u64, arguments, u64::default());
+        }
+    }
+
+    #[cfg(feature = "u128")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128) {
+            return impl_horzcat_arms!(u128, arguments, u128::default());
+        }
+    }
+
+    #[cfg(feature = "i8")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8) {
+            return impl_horzcat_arms!(i8, arguments, i8::default());
+        }
+    }
+
+    #[cfg(feature = "i16")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16) {
+            return impl_horzcat_arms!(i16, arguments, i16::default());
+        }
+    }
+
+    #[cfg(feature = "i32")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32) {
+            return impl_horzcat_arms!(i32, arguments, i32::default());
+        }
+    }
+
+    #[cfg(feature = "i64")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64) {
+            return impl_horzcat_arms!(i64, arguments, i64::default());
+        }
+    }
+
+    #[cfg(feature = "i128")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128) {
+            return impl_horzcat_arms!(i128, arguments, i128::default());
+        }
+    }
+
+    #[cfg(feature = "bool")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) {
+            return impl_horzcat_arms!(bool, arguments, bool::default());
+        }
+    }
+
+    #[cfg(feature = "string")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) {
+            return impl_horzcat_arms!(String, arguments, String::default());
+        }
+    }
+
+    #[cfg(feature = "rational")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::R64) {
+            return impl_horzcat_arms!(R64, arguments, R64::default());
+        }
+    }
+
+    #[cfg(feature = "complex")]
+    {
+        if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) {
+            return impl_horzcat_arms!(C64, arguments, C64::default());
+        }
+    }
+
+    Err(MechError::new(
+        UnhandledFunctionArgumentKindVarg {
+            arg: arguments.iter().map(|x| x.kind()).collect(),
+            fxn_name: "matrix/horzcat".to_string(),
+        },
+        None,
+    )
+    .with_compiler_loc())
+}
+
+macro_rules! install_horzcat_factories {
+    ($builder:expr, $factory:ident) => {{
+        #[inline(never)]
+        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+            mech_core::install_typed_runtime_factories!(
+                builder,
+                $factory;
+                ("bool", bool, "bool"),
+                ("string", String, "string"),
+                ("u8", u8, "u8"),
+                ("u16", u16, "u16"),
+                ("u32", u32, "u32"),
+                ("u64", u64, "u64"),
+                ("u128", u128, "u128"),
+                ("i8", i8, "i8"),
+                ("i16", i16, "i16"),
+                ("i32", i32, "i32"),
+                ("i64", i64, "i64"),
+                ("i128", i128, "i128"),
+                ("f32", f32, "f32"),
+                ("f64", f64, "f64"),
+                ("c64", C64, "c64"),
+                ("r64", R64, "r64"),
+            )?;
+            Ok(())
+        }
+        install($builder)?;
+    }};
+}
+
+/// Installs every enabled legacy runtime factory emitted by this module.
+pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrixd")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateTwoArgs);
+        install_horzcat_factories!(builder, HorizontalConcatenateThreeArgs);
+        install_horzcat_factories!(builder, HorizontalConcatenateS1D);
+        install_horzcat_factories!(builder, HorizontalConcatenateMD);
+    }
+    #[cfg(feature = "row_vectord")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateRD);
+        install_horzcat_factories!(builder, HorizontalConcatenateRDN);
+        install_horzcat_factories!(builder, HorizontalConcatenateSD);
+    }
+    #[cfg(feature = "vectord")]
+    install_horzcat_factories!(builder, HorizontalConcatenateVD);
+
+    #[cfg(feature = "matrix1")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1);
+    }
+    #[cfg(feature = "matrix2")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM2);
+    #[cfg(feature = "matrix3")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM3);
+    #[cfg(feature = "matrix4")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM4);
+    #[cfg(feature = "matrix2x3")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM2x3);
+    #[cfg(feature = "matrix3x2")]
+    install_horzcat_factories!(builder, HorizontalConcatenateM3x2);
+    #[cfg(feature = "vector2")]
+    install_horzcat_factories!(builder, HorizontalConcatenateV2);
+    #[cfg(feature = "vector3")]
+    install_horzcat_factories!(builder, HorizontalConcatenateV3);
+    #[cfg(feature = "vector4")]
+    install_horzcat_factories!(builder, HorizontalConcatenateV4);
+    #[cfg(feature = "row_vector2")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS2);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2);
+    }
+    #[cfg(feature = "row_vector3")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS3);
+        install_horzcat_factories!(builder, HorizontalConcatenateR3);
+    }
+    #[cfg(feature = "row_vector4")]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateS4);
+        install_horzcat_factories!(builder, HorizontalConcatenateR4);
+    }
+
+    #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSR2);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2S);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSSSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSSM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SSS);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSSM1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SSM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SM1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1M1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SM1M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1M1M1);
+    }
+    #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSR3);
+        install_horzcat_factories!(builder, HorizontalConcatenateR3S);
+    }
+    #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSSR2);
+        install_horzcat_factories!(builder, HorizontalConcatenateSR2S);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2SS);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2R2);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R3);
+        install_horzcat_factories!(builder, HorizontalConcatenateR3M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateSM1R2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1SR2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R2S);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2M1S);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2SM1);
+        install_horzcat_factories!(builder, HorizontalConcatenateSR2M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1M1R2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R2M1);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2M1M1);
+    }
+    #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateM1R2);
+        install_horzcat_factories!(builder, HorizontalConcatenateR2M1);
+    }
+
+    #[cfg(all(feature = "vector2", feature = "matrix2"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV2V2);
+    #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV3V3);
+    #[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateV2M2);
+        install_horzcat_factories!(builder, HorizontalConcatenateM2V2);
+    }
+    #[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateM3x2V3);
+        install_horzcat_factories!(builder, HorizontalConcatenateV3M3x2);
+    }
+    #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
+    {
+        install_horzcat_factories!(builder, HorizontalConcatenateV4MD);
+        install_horzcat_factories!(builder, HorizontalConcatenateMDV4);
+        install_horzcat_factories!(builder, HorizontalConcatenateV4V4MD);
+        install_horzcat_factories!(builder, HorizontalConcatenateV4MDV4);
+        install_horzcat_factories!(builder, HorizontalConcatenateMDV4V4);
+    }
+    #[cfg(all(feature = "matrixd", feature = "matrix4"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateMDMD);
+    #[cfg(all(feature = "vector2", feature = "matrix2x3"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV2V2V2);
+    #[cfg(all(feature = "vector3", feature = "matrix3"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV3V3V3);
+    #[cfg(all(feature = "matrix4", feature = "vector4"))]
+    install_horzcat_factories!(builder, HorizontalConcatenateV4V4V4V4);
+
+    Ok(())
+}
+
+pub struct MatrixHorzCat {}
+impl FunctionSpecializer for MatrixHorzCat {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        impl_horzcat_fxn(arguments)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HorizontalConcatenateDimensionMismatchError {}
+impl MechErrorKind for HorizontalConcatenateDimensionMismatchError {
+    fn name(&self) -> &str {
+        "HorizontalConcatenateDimensionMismatch"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Cannot horizontally concatenate matrices/vectors with dimensions that do not align."
+        )
+    }
+}

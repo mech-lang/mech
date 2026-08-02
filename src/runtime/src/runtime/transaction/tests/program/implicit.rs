@@ -1,8 +1,9 @@
-use crate::{MechRuntime, RuntimeEventKind};
+use crate::RuntimeEventKind;
+use crate::runtime::test_support::providers::test_runtime_builder;
 
 #[test]
 fn program_transaction_implicit_success_commits_program_store_and_events() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
 
     runtime

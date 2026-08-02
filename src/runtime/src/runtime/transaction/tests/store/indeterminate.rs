@@ -1,11 +1,12 @@
-use crate::{InMemoryStore, MechRuntime};
+use crate::InMemoryStore;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use mech_core::Value;
 
 #[test]
 fn store_commit_panic_is_indeterminate_and_never_rolled_back() {
     let mut store = InMemoryStore::new();
     store.panic_on_commit_runtime_for_test();
-    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
+    let mut runtime = test_runtime_builder().store(store).build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime

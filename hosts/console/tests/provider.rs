@@ -1,4 +1,6 @@
-use mech_core::Value;
+use std::sync::Arc;
+
+use mech_core::{FunctionCatalog, FunctionCatalogBuilder, Value};
 use mech_host_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, PreparedRuntimeEffect, RunResourceGrantConfig,
@@ -104,6 +106,7 @@ fn runtime_with_console_instance(
     grant: RunResourceGrantConfig,
 ) -> MechRuntime {
     RuntimeBuilder::new()
+        .function_catalog(intrinsic_source_catalog())
         .host_factory(Box::new(ConsoleHostFactory::with_backend(backend).unwrap()))
         .unwrap()
         .host_instance(HostInstanceConfig {
@@ -114,6 +117,13 @@ fn runtime_with_console_instance(
         .run_resource_grant(grant)
         .build()
         .unwrap()
+}
+
+fn intrinsic_source_catalog() -> Arc<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    Arc::new(builder.build().unwrap())
 }
 
 #[test]

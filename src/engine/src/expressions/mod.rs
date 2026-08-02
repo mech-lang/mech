@@ -11,12 +11,17 @@ use std::collections::HashMap;
 mod comprehensions;
 mod environment;
 mod errors;
-#[cfg(feature = "formulas")]
 mod formulas;
 #[cfg(feature = "functions")]
 mod functions;
 mod matches;
-#[cfg(feature = "range")]
+#[cfg(any(
+    feature = "range_inclusive",
+    feature = "range_exclusive",
+    feature = "range_inclusive_increment",
+    feature = "range_exclusive_increment",
+    feature = "subscript_range"
+))]
 mod ranges;
 #[cfg(feature = "functions")]
 mod registration;
@@ -36,20 +41,24 @@ pub use comprehensions::{
 #[cfg(feature = "set_comprehensions")]
 pub use comprehensions::{SetComprehensionDefine, ValueSetComprehension, set_comprehension};
 pub(crate) use environment::DeferredExpressionSolveScope;
-pub(crate) use errors::SetComprehensionOutputKindMismatchError;
 pub use errors::{
     ArityMismatchError, ComprehensionGeneratorError, InvalidGuardExpressionError,
     InvalidIndexKindError, MatchArmKindMismatchError, MatchNoArmMatchedError,
     MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, PatternExpectedTupleError,
     PatternMatchError, UndefinedVariableError, UnhandledFormulaOperatorError,
 };
-#[cfg(feature = "formulas")]
 pub use formulas::{factor, term};
 #[cfg(feature = "functions")]
 pub use functions::function_call;
 pub use matches::match_expression;
 pub(crate) use matches::validate_guard_expression_result;
-#[cfg(feature = "range")]
+#[cfg(any(
+    feature = "range_inclusive",
+    feature = "range_exclusive",
+    feature = "range_inclusive_increment",
+    feature = "range_exclusive_increment",
+    feature = "subscript_range"
+))]
 pub use ranges::range;
 #[cfg(feature = "functions")]
 use registration::{register_expression_function_batch, register_initialized_expression_function};
@@ -87,11 +96,15 @@ pub fn expression(
     match &expr {
         #[cfg(feature = "variables")]
         Expression::Var(v) => var(v, env, p),
-        #[cfg(feature = "range")]
+        #[cfg(any(
+            feature = "range_inclusive",
+            feature = "range_exclusive",
+            feature = "range_inclusive_increment",
+            feature = "range_exclusive_increment"
+        ))]
         Expression::Range(rng) => range(&rng, env, p),
         #[cfg(all(feature = "subscript_slice", feature = "access"))]
         Expression::Slice(slc) => slice(&slc, env, p),
-        #[cfg(feature = "formulas")]
         Expression::Formula(fctr) => factor(fctr, env, p),
         Expression::Structure(strct) => structure(strct, env, p),
         Expression::Literal(ltrl) => literal(&ltrl, p),

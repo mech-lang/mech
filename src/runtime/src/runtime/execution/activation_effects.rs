@@ -1,10 +1,13 @@
-use super::snapshot_runtime_value;
 use crate::runtime::RuntimeActivationEffectBarrierInvariantError;
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
     FunctionSpecializer, GuardFunctionSafety, MResult, MechError, MechFunctionImpl, Value,
 };
+
+pub(in crate::runtime) fn snapshot_runtime_value(value: &Value) -> MResult<Value> {
+    value.try_deep_snapshot()
+}
 
 // This name deliberately starts with a NUL byte.  It is an identifier we can
 // construct in the lowered tree, but it cannot be produced by the Mech lexer.

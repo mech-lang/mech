@@ -9,7 +9,9 @@
 //! behavior execution mediated by context, capabilities, budgets, events, and
 //! transactions.
 
-use mech_core::{MResult, Ref, Value};
+#[cfg(feature = "string")]
+use mech_core::Ref;
+use mech_core::{MResult, Value};
 
 use crate::actor::ActorTurn;
 use crate::context::RuntimeContext;
@@ -114,6 +116,7 @@ impl HostCallActorBehaviorDriver {
     }
 }
 
+#[cfg(feature = "string")]
 impl ActorBehaviorDriver for HostCallActorBehaviorDriver {
     fn run_actor_turn(
         &mut self,

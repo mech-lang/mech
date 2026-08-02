@@ -1,5 +1,6 @@
 use super::{event_count, new_runtime};
 use crate::runtime::test_support::effects::{EffectLifecycleLog, TransactionalEffectProbe};
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::runtime::test_support::stores::AppendEventFailureProbe;
 use crate::{MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, RuntimeEventKind};
 
@@ -90,7 +91,8 @@ fn explicit_abort_reports_transaction_aborted_publication_failure() {
 
 #[test]
 fn failed_abort_marker_still_clears_transaction_ownership() {
-    let (mut runtime, probe) = runtime_with_append_failure_probe();
+    let (store, probe) = AppendEventFailureProbe::new();
+    let mut runtime = test_runtime_builder().store(store).build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime

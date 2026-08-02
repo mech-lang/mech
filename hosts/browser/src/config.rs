@@ -4,11 +4,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 use crate::browser_host_manifest;
-use mech_core::{
+use crate::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserNetworkScope, BrowserOperation, BrowserResource,
-    BrowserStorageBackend, BrowserStorageScope, MResult, MechError, MechErrorKind,
+    BrowserStorageBackend, BrowserStorageScope,
 };
+use mech_core::{MResult, MechError, MechErrorKind};
 
 use mech_runtime::{
     ConfigValue, DiagnosticsConfig, HostInstanceConfig, HostManifestConfig, LogLevel,
@@ -884,7 +885,8 @@ fn config_string_list(value: Option<&ConfigValue>, field: &'static str) -> MResu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{BrowserResourceKind, Value};
+    use crate::BrowserResourceKind;
+    use mech_core::Value;
     use mech_runtime::{
         ConfigProfileOptions, RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
         RuntimeResourceReadRequest, RuntimeResourceWriteIntent,

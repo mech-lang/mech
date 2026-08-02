@@ -82,6 +82,7 @@ impl MechFunctionCompiler for SetIntersectionFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_intersection_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetIntersectionFxn {
@@ -103,7 +104,9 @@ fn set_intersection_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetIntersection {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetIntersection {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

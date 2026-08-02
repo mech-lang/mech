@@ -58,6 +58,7 @@ impl_math_unop!(
     FeatureFlag::Custom(hash_str("math/exp10"))
 );
 
+#[cfg(feature = "source")]
 fn impl_exp10_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathExp10,
@@ -67,8 +68,10 @@ fn impl_exp10_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathExp10 {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathExp10 {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

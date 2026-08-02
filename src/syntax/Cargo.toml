@@ -12,6 +12,7 @@ license = "Apache-2.0"
 readme = "README.md"
 edition = "2024"
 rust-version = "1.92"
+autobenches = false
 
 [badges]
 gitlab = { repository = "mech-lang/syntax", branch = "main" }

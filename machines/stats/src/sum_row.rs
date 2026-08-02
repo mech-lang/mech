@@ -59,6 +59,7 @@ impls_stas!(StatsSumRowR4, RowVector4<T>, RowVector4<T>, sum_row_op);
 #[cfg(all(feature = "row_vectord", feature = "row_vectord"))]
 impls_stas!(StatsSumRowRD, RowDVector<T>, RowDVector<T>, sum_row_op);
 
+#[cfg(feature = "source")]
 macro_rules! impl_stats_sum_row_match_arms {
   ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
     paste!{
@@ -109,6 +110,7 @@ macro_rules! impl_stats_sum_row_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_stats_sum_row_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_stats_sum_row_match_arms!(
       lhs_value,
@@ -129,4 +131,5 @@ fn impl_stats_sum_row_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_urnop_fxn!(StatsSumRow, impl_stats_sum_row_fxn, "stats/sum/row");

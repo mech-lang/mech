@@ -14,21 +14,55 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
-no_std = ["mech-core/no_std", "mech-engine/no_std"]
+no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
-      "u8", "u16", "u32", "u64", "u128", 
-      "i8", "i16", "i32", "i64", "i128", 
-      "f32", "f64", "c64", "r64",
-      "statements_default", "subscript_default", "state_machines",
-      "watcher",
-      "mech-core/default", "mech-engine/default"
-      ]
-base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
-      "statements_default", "subscript_default", "state_machines",
-      "watcher",
-      "mech-core/base", "mech-engine/base"
-      ]
+runtime = ["mech-engine/runtime"]
+source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
+compiler = ["source", "mech-engine/compiler"]
+
+runtime_default = [
+  "runtime",
+  "async",
+  "bool", "string",
+  "u8", "u16", "u32", "u64", "u128",
+  "i8", "i16", "i32", "i64", "i128",
+  "f32", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
+source_default = [
+  "runtime_default",
+  "source",
+  "pretty_print",
+  "serde",
+  "mika",
+  "statements_default",
+  "subscript_default",
+  "state_machines",
+  "variables",
+  "access",
+  "assign",
+  "convert",
+  # Operation features in mech-engine are distribution-neutral syntax markers.
+  # Concrete implementations still come only from an injected catalog.
+  "mech-engine/matrix_comprehensions",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/set_comprehensions",
+  "mech-engine/math_default",
+  "mech-engine/compare_default",
+  "mech-engine/logic_default",
+  "mech-engine/range_default",
+  "mech-engine/matrix_default",
+  "mech-engine/set_default",
+  "mech-engine/string_default",
+  "mech-engine/stats_default",
+  "mech-engine/combinatorics_default",
+  "watcher",
+]
+compiler_default = ["source_default", "compiler"]
+default = ["source_default"]
+base = ["compiler_default", "mech-core/base", "mech-engine/base"]
 
 async = ["mech-engine/async"]
 watcher = ["ignore", "notify"]
@@ -66,12 +100,10 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["mech-engine/compiler"]
 program = ["mech-engine/program"]
 pretty_print = ["mech-engine/pretty_print"]
 serde = ["dep:serde", "dep:serde_derive", "mech-engine/serde"]
 mika = ["mech-engine/mika"]
-linked_stdlib = ["mech-engine/linked_stdlib"]
 
 statements = ["mech-core/statements", "mech-engine/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-engine/variables"]
@@ -84,6 +116,10 @@ formulas = ["mech-core/formulas", "mech-engine/formulas"]
 functions = ["symbol_table", "mech-core/functions", "mech-engine/functions"]
 state_machines = ["functions", "mech-engine/state_machines"]
 symbol_table = ["mech-core/symbol_table", "mech-engine/symbol_table"]
+
+access = ["functions", "mech-engine/access"]
+assign = ["functions", "mech-engine/assign"]
+convert = ["functions", "mech-engine/convert"]
 
 bool = ["mech-core/bool", "mech-engine/bool"]
 string = ["mech-core/string", "mech-engine/string"]
@@ -163,7 +199,7 @@ trybuild = "1.0.118"
 blake3 = "1.8.5"
 mech-engine = { version = "0.3.5", default-features = false }
 mech-core = { version = "0.3.5", default-features = false }
-mech-syntax = { version = "0.3.5", default-features = false }
+mech-syntax = { version = "0.3.5", default-features = false, optional = true }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
 tracing = { version = "0.1.41", optional = true }
@@ -180,109 +216,104 @@ web-time = "1.1.0"
 [[bin]]
 name = "address_target_diagnostics"
 path = "src/bin/address_target_diagnostics.rs"
-required-features = ["program", "bool"]
+required-features = ["source_default"]
 
 [[bin]]
 name = "module_smoke"
 path = "src/bin/module_smoke.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "actor_context_host"
 path = "examples/actor_context_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "actor_state_host"
 path = "examples/actor_state_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "arbitrary_rust_host_function"
 path = "examples/arbitrary_rust_host_function.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "arbitrary_rust_host_functions2"
 path = "examples/arbitrary_rust_host_functions2.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "basic_runtime"
 path = "examples/basic_runtime.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "dep_cycle"
 path = "examples/dep_cycle.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "dep_diamond"
 path = "examples/dep_diamond.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "host_value_roundtrip"
 path = "examples/host_value_roundtrip.rs"
-required-features = ["program"]
-
-[[example]]
-name = "matrix_multiply"
-path = "examples/matrix_multiply.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "runtime_dep_src"
 path = "examples/runtime_dep_src.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "runtime_services_host"
 path = "examples/runtime_services_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "scheduled_actor_native_functions"
 path = "examples/scheduled_actor_native_functions.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "scheduled_actor_state_host"
 path = "examples/scheduled_actor_state_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "scheduled_runtime"
 path = "examples/scheduled_runtime.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "source_import_dependency"
 path = "examples/source_import_dependency.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "transactional_runtime"
 path = "examples/transactional_runtime.rs"
-required-features = ["program"]
+required-features = ["runtime_default"]
 
 [[test]]
 name = "config_profile"
 path = "tests/config_profile.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[test]]
 name = "module_smoke"
 path = "tests/module_smoke.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[bench]]
 name = "program_transaction"
 harness = false
-required-features = ["baselib"]
+required-features = ["source_default"]
 
 [[bench]]
 name = "reactive_transaction"
 harness = false
-required-features = ["baselib"]
+required-features = ["source_default"]

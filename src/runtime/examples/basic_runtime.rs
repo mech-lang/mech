@@ -4,9 +4,10 @@ use mech_core::{MResult, Value};
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
     CapabilityId, DeterministicHostFunction, HostCall, InMemoryHostRegistry,
-    InMemorySourceResolver, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig, SourceRequest,
-    TaskRecord,
+    InMemorySourceResolver, ModuleBuildOptions, RuntimeConfig, SourceRequest, TaskRecord,
 };
+
+mod support;
 
 fn main() -> MResult<()> {
     let mut source_resolver = InMemorySourceResolver::new();
@@ -19,7 +20,7 @@ fn main() -> MResult<()> {
         |_context, _args| Ok(Value::Empty),
     ))?;
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .config(RuntimeConfig::default())
         .source_resolver(source_resolver)
         .host_registry(host_registry)

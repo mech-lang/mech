@@ -3,9 +3,10 @@ use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use mech_core::{
+use mech_core::Value;
+use mech_host_browser::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
-    BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, Value,
+    BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
 };
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_runtime::{
@@ -85,6 +86,7 @@ impl BrowserDomBackend for FakeDomHost {
 
 fn runtime_with_browser_provider(authority: BrowserAuthority, host: FakeDomHost) -> MechRuntime {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .resource_provider(Box::new(BrowserResourceProvider::new(authority, host)))
         .build()
         .unwrap()

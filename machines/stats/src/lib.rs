@@ -44,9 +44,9 @@ use paste::paste;
 use std::fmt::Debug;
 use std::ops::*;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "sum")]
@@ -77,14 +77,13 @@ macro_rules! impl_stats_unop {
                 + 'static
                 + Add<Output = T>
                 + AddAssign
-                + ConstElem
                 + AsValueKind
                 + Zero
                 + One
                 + PartialEq
                 + PartialOrd,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
+            T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

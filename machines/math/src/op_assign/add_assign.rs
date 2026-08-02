@@ -7,6 +7,7 @@ use num_traits::*;
 
 // Add Assign -----------------------------------------------------------------
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! impl_add_assign_match_arms {
     ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
@@ -53,6 +54,7 @@ impl_assign_scalar_scalar!(Add, +=);
 impl_assign_vector_vector!(Add, +=);
 impl_assign_vector_scalar!(Add, +=);
 
+#[cfg(feature = "source")]
 pub fn add_assign_math_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
       Add,
@@ -74,7 +76,9 @@ pub fn add_assign_math_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFu
     )
 }
 
+#[cfg(feature = "source")]
 pub struct AddAssignMath {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for AddAssignMath {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -169,9 +173,12 @@ impl_add_assign_range_fxn_v!(AddAssign1DRV, add_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_v!(AddAssign1DRVB, add_assign_1d_range_vec_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_fxn!(add_assign_range_fxn, AddAssign1DR);
 
+#[cfg(feature = "source")]
 pub struct AddAssignRange {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for AddAssignRange {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -283,9 +290,12 @@ impl_add_assign_range_fxn_v!(AddAssign2DRAV, add_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_v!(AddAssign2DRAVB, add_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_all_fxn!(add_assign_range_all_fxn, AddAssign2DRA);
 
+#[cfg(feature = "source")]
 pub struct AddAssignRangeAll {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for AddAssignRangeAll {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {

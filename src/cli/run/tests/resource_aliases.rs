@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use mech_core::{MResult, Value};
 #[cfg(feature = "web_host")]
-use mech_core::{
+use mech_host_browser::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
 };
-use mech_core::{MResult, Value};
 #[cfg(feature = "web_host")]
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_host_cli::{CliBackend, CliResourceProvider};
@@ -85,6 +85,7 @@ fn runtime_with_cli_instance(
     grant: RunResourceGrantConfig,
 ) -> MechRuntime {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .host_factory(Box::new(RecordingCliFactory {
             manifest: mech_host_cli::cli_host_manifest().unwrap(),
             state,
@@ -265,6 +266,7 @@ fn run_resource_grant_authorizes_browser_dom_legacy_alias() {
     let backend = RecordingBrowserBackend::default();
     let observed = backend.clone();
     let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .host_factory(Box::new(RecordingBrowserFactory {
             manifest: mech_host_browser::browser_host_manifest().unwrap(),
             authority: browser_authority(),

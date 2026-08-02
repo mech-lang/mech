@@ -240,6 +240,7 @@ impl SourceResolver for FileSourceResolver {
         let canonical_uri = path_to_file_uri(&path)?;
         let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
 
+        #[cfg(feature = "source")]
         if resolved.kind == SourceKind::Mech {
             if let MechSourceCode::String(source_text) = &resolved.source {
                 let tree = mech_syntax::parser::parse(source_text.trim())?;

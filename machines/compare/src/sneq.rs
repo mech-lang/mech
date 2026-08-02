@@ -46,6 +46,7 @@ impl MechFunctionCompiler for StrictNotEqValue {
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_sneq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     Ok(Box::new(StrictNotEqValue {
         lhs: lhs_value,
@@ -54,4 +55,5 @@ fn impl_sneq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunc
     }))
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareStrictNotEqual, impl_sneq_fxn, "compare/sneq");

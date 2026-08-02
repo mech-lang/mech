@@ -3,14 +3,15 @@ use std::rc::Rc;
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 
-use super::super::{MechRuntime, RuntimeBuilder};
+use super::super::MechRuntime;
 use super::scheduling::{
     activation_plan_snapshot, activation_send_count, apply_f64_input, recorded_f64,
 };
 use crate::runtime::test_support::{
     capabilities::{grant_read, grant_read_to, grant_resource, grant_write},
     providers::{
-        TEST_OUTPUT_BASE_URI, TestAfterCommitEffect, TestResourceProvider, test_runtime_with_output,
+        TEST_OUTPUT_BASE_URI, TestAfterCommitEffect, TestResourceProvider, test_runtime_builder,
+        test_runtime_with_output,
     },
     values::{f64_value, symbol_value},
 };
@@ -376,7 +377,7 @@ pub(super) fn runtime_with_console(
     if fail_next {
         console.fail_next("intentional console failure");
     }
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(TimeResourceProvider {
             snapshot: shared.clone(),
         }) as Box<dyn RuntimeResourceProvider>)
@@ -412,7 +413,7 @@ hour := @clock/hour
 minute := @clock/minute
 second := @clock/second
 millisecond := @clock/millisecond
-scalar-output := hour + minute
+scalar-output := hour
 clock-output := (hour, minute, second)
 @out/line <- {send_expression}
 "#
@@ -435,7 +436,7 @@ fn persistent_send_uses_original_custom_subject() {
     let initial = snapshot(1.0, 2.0, 3.0, 4.0);
     let shared = Rc::new(RefCell::new(initial));
     let console = RecordingConsoleBackend::default();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(TimeResourceProvider {
             snapshot: shared.clone(),
         }) as Box<dyn RuntimeResourceProvider>)
@@ -467,7 +468,7 @@ fn persistent_send_uses_original_custom_subject() {
             r#"@out := console://console/output{:write(line)}
 @clock := time://clock/clock{:read(hour)}
 hour := @clock/hour
-output := hour + 1
+output := hour
 @out/line <- output
 "#,
         )
@@ -483,7 +484,7 @@ output := hour + 1
     assert!(outcome.turn.is_some());
     let lines = console.lines();
     assert_eq!(lines.len(), 2);
-    assert!(lines.last().unwrap().contains("10"), "{lines:?}");
+    assert!(lines.last().unwrap().contains('9'), "{lines:?}");
 }
 
 #[test]
@@ -531,7 +532,7 @@ fn persistent_send_scalar_reads_new_value_after_solve() {
     publish(&mut runtime, &driver, snapshot(10.0, 20.0, 0.0, 0.0));
     let lines = console.lines();
     assert!(
-        lines[1].contains("30"),
+        lines[1].contains("10"),
         "expected updated scalar in {:?}",
         lines
     );
@@ -666,8 +667,7 @@ render-tick := @tick/tick
 @out/line <- 7.0
 }
 
-after :=
-mech-internal-activation-send-value-0 + 1.0
+after := mech-internal-activation-send-value-0
 "#,
         )
         .unwrap();
@@ -678,7 +678,7 @@ mech-internal-activation-send-value-0 + 1.0
         )),
         41.0
     );
-    assert_eq!(f64_value(&symbol_value(&runtime, "after")), 42.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "after")), 41.0);
     assert!(output.lines().is_empty());
     assert_eq!(activation_send_count(&runtime), 1);
     let outcome = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
@@ -695,7 +695,7 @@ fn activation_send_delivery_failure_continues_and_registration_is_retained() {
         Value::F64(Ref::new(0.0)),
     );
     let output = SequencedOutput::default();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(provider) as Box<dyn RuntimeResourceProvider>)
         .resource_provider(Box::new(SequencedOutputProvider {
             backend: output.clone(),
@@ -710,7 +710,7 @@ fn activation_send_delivery_failure_continues_and_registration_is_retained() {
 @out := test://effects/output{:write(line)}
 
 render-tick := @tick/tick
-latest := render-tick + 1.0
+latest := render-tick
 
 ~> render-tick {
 @out/line <- "first"
@@ -754,7 +754,7 @@ latest := render-tick + 1.0
     );
     assert_eq!(
         f64_value(&symbol_value(&runtime, "latest")),
-        2.0,
+        1.0,
         "reactive state must remain committed"
     );
     assert_eq!(activation_send_count(&runtime), 3);

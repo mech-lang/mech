@@ -70,6 +70,7 @@ impl MechFunctionCompiler for SetSizeFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     match input {
         Value::Set(s) => Ok(Box::new(SetSizeFxn {
@@ -87,7 +88,9 @@ fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetSize {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetSize {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

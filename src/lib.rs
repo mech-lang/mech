@@ -8,6 +8,7 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_engine as engine;
+pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_core::*;

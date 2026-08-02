@@ -5,8 +5,10 @@ use mech_core::MResult;
 use mech_runtime::{
     ActorTurn, BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
     CapabilityId, HostCall, InMemoryHostRegistry, InMemorySourceResolver, ModuleBuildOptions,
-    ObjectRecord, RuntimeBuilder, SourceRequest, register_actor_context_host_functions,
+    ObjectRecord, SourceRequest, register_actor_context_host_functions,
 };
+
+mod support;
 
 fn main() -> MResult<()> {
     let mut host_registry = InMemoryHostRegistry::new();
@@ -17,7 +19,7 @@ fn main() -> MResult<()> {
 
     source_resolver.insert_string("actor.behavior", "y := 2")?;
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .source_resolver(source_resolver)
         .host_registry(host_registry)
         .capability_kernel(BasicCapabilityKernel::new())

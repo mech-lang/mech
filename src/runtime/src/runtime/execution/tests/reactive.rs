@@ -1,7 +1,6 @@
-use super::super::{
-    BytecodeCompilerContext, CapabilityId, MResult, MechFunctionCompiler, MechFunctionImpl,
-    MechRuntime, Register, RuntimeConfig, Value,
-};
+#[cfg(feature = "compiler")]
+use super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
+use super::super::{CapabilityId, MResult, MechFunctionImpl, MechRuntime, RuntimeConfig, Value};
 use crate::runtime::host::RuntimeHostNativeFunction;
 use crate::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, PlannedPureHostFunction,

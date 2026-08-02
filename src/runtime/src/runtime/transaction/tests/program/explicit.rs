@@ -1,16 +1,17 @@
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     ActorId, MechRuntime, MessageId, MessageRecord, ObjectId, ObjectRecord, RuntimeContext, TaskId,
 };
 
 #[test]
 fn explicit_program_commit_keeps_program_and_commits_access_delta() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     context.record_read(ObjectId(70));
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "explicit-committed-symbol := 41 + 1")
+        .run_string_with_context(&mut context, "explicit-committed-symbol := 42")
         .unwrap();
     context.record_read(ObjectId(71));
     context.record_write(ObjectId(72));
@@ -33,7 +34,7 @@ fn explicit_program_commit_keeps_program_and_commits_access_delta() {
 
 #[test]
 fn explicit_commit_failure_keeps_program_provisional_until_abort() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
@@ -73,7 +74,7 @@ fn explicit_commit_failure_keeps_program_provisional_until_abort() {
 
 #[test]
 fn one_transaction_owns_program_while_other_store_work_remains_allowed() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context_a = runtime.runtime_context().unwrap();
     let transaction_a = runtime.begin_transaction(&mut context_a).unwrap();
     runtime
@@ -131,7 +132,7 @@ fn one_transaction_owns_program_while_other_store_work_remains_allowed() {
 
 #[test]
 fn failed_first_explicit_operation_releases_program_ownership() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context_a = runtime.runtime_context().unwrap();
     let transaction_a = runtime.begin_transaction(&mut context_a).unwrap();
 

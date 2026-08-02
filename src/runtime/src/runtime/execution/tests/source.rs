@@ -7,11 +7,14 @@ use super::super::{
 fn run_string_with_context_emits_profile_event_when_enabled() {
     let mut config = RuntimeConfig::default();
     config.diagnostics.profile_enabled = true;
-    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .config(config)
+        .build()
+        .unwrap();
     let mut context = runtime.runtime_context().unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "1 + 1")
+        .run_string_with_context(&mut context, "profiled := 1")
         .unwrap();
 
     assert!(context.events.iter().any(|event| {
@@ -166,9 +169,12 @@ fn max_memory_bytes_rejects_large_source_buffer() {
 fn tree_source_without_known_size_is_not_rejected_by_source_byte_limit() {
     let mut config = RuntimeConfig::default();
     config.limits.max_source_bytes = Some(1);
-    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .config(config)
+        .build()
+        .unwrap();
     let mut context = runtime.runtime_context().unwrap();
-    let tree = mech_syntax::parser::parse("1 + 1").unwrap();
+    let tree = mech_syntax::parser::parse("tree-value := 1").unwrap();
     let source = MechSourceCode::Tree(tree);
 
     runtime

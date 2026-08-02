@@ -105,6 +105,7 @@ macro_rules! concat_row_mat_op {
 
 impl_string_fxns!(Concat);
 
+#[cfg(feature = "source")]
 fn impl_concat_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Concat,
@@ -113,4 +114,5 @@ fn impl_concat_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFu
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(StringConcat, impl_concat_fxn, "string/concat");

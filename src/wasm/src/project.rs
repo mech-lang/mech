@@ -747,10 +747,14 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
     }
     Ok(paths)
 }
+fn browser_runtime_builder() -> RuntimeBuilder {
+    RuntimeBuilder::new().function_catalog(mech_stdlib::source_catalog())
+}
+
 fn runtime_builder_with_factories(
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<RuntimeBuilder, JsValue> {
-    let mut builder = RuntimeBuilder::new();
+    let mut builder = browser_runtime_builder();
     #[cfg(feature = "browser_host_dom")]
     {
         builder = builder
@@ -1435,7 +1439,7 @@ mod tests {
         let mut sources = HashMap::new();
         sources.insert("a.mec".to_string(), "x := 1".to_string());
         sources.insert("b.mec".to_string(), "y := 2".to_string());
-        let mut runtime = RuntimeBuilder::new()
+        let mut runtime = browser_runtime_builder()
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
@@ -1466,7 +1470,7 @@ mod tests {
             r#"greeting := "Hello, " + "Ada""#.to_string(),
         );
 
-        let mut runtime = RuntimeBuilder::new()
+        let mut runtime = browser_runtime_builder()
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
@@ -1478,7 +1482,7 @@ mod tests {
     fn encoded_document_runs_on_runtime_and_exposes_root_output() {
         let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        let mut runtime = browser_runtime_builder().build().unwrap();
 
         let decoded: mech_core::nodes::Program =
             mech_core::nodes::decode_and_decompress(&encoded).unwrap();
@@ -1511,7 +1515,7 @@ mod tests {
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let decoded: mech_core::nodes::Program =
             mech_core::nodes::decode_and_decompress(&encoded).unwrap();
-        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        let mut runtime = browser_runtime_builder().build().unwrap();
 
         assert_eq!(
             output_id, 29_884_140_763_677_669,
@@ -1560,7 +1564,7 @@ mod tests {
                 "value := 41\n<+ value\n".to_string(),
             ),
         ]);
-        let mut runtime = RuntimeBuilder::new()
+        let mut runtime = browser_runtime_builder()
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
@@ -1661,7 +1665,7 @@ mod tests {
             "main.mec".to_string(),
             "+> ./missing.mec\nanswer := 1\n".to_string(),
         )]);
-        let mut runtime = RuntimeBuilder::new()
+        let mut runtime = browser_runtime_builder()
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
@@ -1688,7 +1692,7 @@ mod tests {
                 "this is not valid Mech\n".to_string(),
             ),
         ]);
-        let mut runtime = RuntimeBuilder::new()
+        let mut runtime = browser_runtime_builder()
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
@@ -1859,7 +1863,7 @@ rows := |id<string> x<f64>|
   | "row-b" 2 + delta |"#
                 .to_string(),
         );
-        let mut runtime = RuntimeBuilder::new()
+        let mut runtime = browser_runtime_builder()
             .source_resolver(project_source_resolver(&sources).unwrap())
             .build()
             .unwrap();
@@ -1972,7 +1976,7 @@ rows := |id<string> x<f64>|
         assert_eq!(source_paths, vec!["table-scene.mec".to_string()]);
 
         let scene_backend = mech_host_scene::RecordingSceneBackend::new();
-        let mut builder = RuntimeBuilder::new()
+        let mut builder = browser_runtime_builder()
             .source_resolver(project_source_resolver(&generic_fixture_sources()).unwrap())
             .host_input_capacity(16)
             .host_factory(Box::new(TestManualTimerHostFactory::new()))
@@ -2029,7 +2033,7 @@ rows := |id<string> x<f64>|
 
     #[test]
     fn from_sources_rejects_missing_source() {
-        let mut runtime = RuntimeBuilder::new().build().unwrap();
+        let mut runtime = browser_runtime_builder().build().unwrap();
         let document =
             parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
         assert!(run_project_sources(&mut runtime, &document).is_err());
@@ -2314,7 +2318,7 @@ mod browser_tests {
     fn document_with_manual_input_driver() -> (WasmDocument, Rc<RefCell<DocumentInputDriverState>>)
     {
         let state = Rc::new(RefCell::new(DocumentInputDriverState::default()));
-        let runtime = RuntimeBuilder::new()
+        let runtime = browser_runtime_builder()
             .host_factory(Box::new(DocumentInputHostFactory::new(state.clone())))
             .unwrap()
             .host_instance(mech_runtime::HostInstanceConfig {

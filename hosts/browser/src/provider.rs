@@ -1,8 +1,8 @@
-use crate::{BrowserHostConfig, BrowserHostRuntimeConfig};
-use mech_core::{
+use crate::{
     BROWSER_DOM_PROVIDER_URI, BrowserAuthority, BrowserDomManifestEntry, BrowserDomPath,
-    BrowserOperation, MResult, MechError, MechErrorKind, Ref, Value, browser_capability_error,
+    BrowserHostConfig, BrowserHostRuntimeConfig, BrowserOperation, browser_capability_error,
 };
+use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use mech_runtime::{

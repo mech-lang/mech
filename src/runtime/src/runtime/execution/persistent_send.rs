@@ -1,8 +1,14 @@
-use super::resolve_runtime_value;
 use crate::runtime::MechRuntime;
 use crate::runtime::live_state::RuntimePersistentSendSchedule;
 use crate::{RuntimeContext, RuntimeResourceWriteIntent};
 use mech_core::MResult;
+
+fn resolve_runtime_value(value: mech_core::Value) -> mech_core::Value {
+    match value {
+        mech_core::Value::MutableReference(value) => value.borrow().clone(),
+        other => other,
+    }
+}
 
 impl MechRuntime {
     pub fn persistent_send_count(&self) -> usize {

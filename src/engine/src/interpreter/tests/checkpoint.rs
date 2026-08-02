@@ -67,7 +67,9 @@ mod checkpoint_tests {
     #[test]
     fn catalog_identity_and_function_environment_survive_children_clear_and_restore() {
         let mut builder = FunctionCatalogBuilder::new();
-        mech_math::install_math_add_catalog(&mut builder).unwrap();
+        builder
+            .insert_specializer("math/add", Arc::new(CheckpointSpecializer(1)))
+            .unwrap();
         let operation = OperationId::from_name("math/add");
         builder
             .insert_export(FunctionExport {
@@ -83,7 +85,7 @@ mod checkpoint_tests {
 
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
         assert!(
-            interpreter
+            !interpreter
                 .state
                 .borrow()
                 .function_environment
@@ -118,7 +120,7 @@ mod checkpoint_tests {
         let child = interpreter.new_child_interpreter(42, 100);
         assert!(Arc::ptr_eq(child.function_catalog(), &catalog));
         assert!(
-            child
+            !child
                 .state
                 .borrow()
                 .function_environment
@@ -158,6 +160,13 @@ mod checkpoint_tests {
             .function_environment
             .bind_catalog_export(&module_only_export, "plus")
             .unwrap();
+        assert!(
+            interpreter
+                .state
+                .borrow()
+                .function_environment
+                .operation_is_enabled(operation)
+        );
         assert_eq!(
             interpreter
                 .state
@@ -189,7 +198,7 @@ mod checkpoint_tests {
         interpreter.clear();
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
         assert!(
-            interpreter
+            !interpreter
                 .state
                 .borrow()
                 .function_environment

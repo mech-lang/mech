@@ -103,6 +103,7 @@ impl MechFunctionCompiler for SetInsertFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
         (Value::Set(arg1), arg2) => Ok(Box::new(SetInsertFxn {
@@ -124,7 +125,9 @@ fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetInsert {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetInsert {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

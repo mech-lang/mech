@@ -20,18 +20,9 @@ pub(crate) struct NotS<T> {
 }
 impl<T> MechFunctionFactory for NotS<T>
 where
-    T: Copy
-        + Debug
-        + Clone
-        + Sync
-        + Send
-        + PartialEq
-        + 'static
-        + ConstElem
-        + AsValueKind
-        + Not<Output = T>,
+    T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + AsValueKind + Not<Output = T>,
     #[cfg(feature = "compiler")]
-    T: CompileConst,
+    T: CompileConst + ConstElem,
     Ref<T>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -105,14 +96,14 @@ pub struct NotV<T, MatA> {
 }
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
-    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind + Not<Output = T>,
+    T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
     #[cfg(feature = "compiler")]
-    T: CompileConst,
+    T: CompileConst + ConstElem,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-    MatA: Debug + ConstElem + AsValueKind + 'static,
+    MatA: Debug + AsValueKind + 'static,
     #[cfg(feature = "compiler")]
-    MatA: CompileConst,
+    MatA: CompileConst + ConstElem,
     Ref<MatA>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -140,7 +131,7 @@ where
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
     Ref<MatA>: ToValue,
-    T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind + Not<Output = T>,
+    T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug,
@@ -185,6 +176,7 @@ where
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_not_fxn(arg_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms!(
       Not,
@@ -193,4 +185,5 @@ fn impl_not_fxn(arg_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_urnop_fxn!(LogicNot, impl_not_fxn, "logic/not");

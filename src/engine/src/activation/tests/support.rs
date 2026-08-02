@@ -7,14 +7,15 @@ pub(super) use super::super::{
     create_capture_slot_for_kind, detached,
 };
 pub(super) use crate::patterns::PatternBindingSink;
+#[cfg(feature = "compiler")]
+pub(super) use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 pub(super) use crate::{
-    BytecodeCompilerContext, C64, CompiledPattern, Dictionary, FunctionExtensionEntry,
-    FunctionSpecializer, GenericError, Interpreter, MResult, Matrix, MechAtom, MechEnum, MechError,
-    MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionImpl, MechMap, MechRecord,
-    MechSet, MechTable, MechTuple, Pattern, PatternActivationRegistration, PatternBinding,
-    PatternMatch, R64, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
-    ReactiveRegisterCommit, ReactiveTurnOutcome, Ref, Register, SymbolTableSnapshot, ValRef, Value,
-    ValueKind, hash_str,
+    C64, CompiledPattern, Dictionary, FunctionExtensionEntry, FunctionSpecializer, GenericError,
+    Interpreter, MResult, Matrix, MechAtom, MechEnum, MechError, MechErrorKind, MechFunction,
+    MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
+    PatternActivationRegistration, PatternBinding, PatternMatch, R64, ReactiveCellId,
+    ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveRegisterCommit,
+    ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValRef, Value, ValueKind, hash_str,
 };
 pub(super) use std::collections::HashMap;
 pub(super) use std::sync::{
@@ -183,7 +184,11 @@ pub(super) type PlanSnapshot = (
 
 pub(super) fn interpret(source: &str) -> Interpreter {
     let tree = mech_syntax::parser::parse(source.trim_start()).unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     interpreter.interpret(&tree).unwrap();
     interpreter
 }

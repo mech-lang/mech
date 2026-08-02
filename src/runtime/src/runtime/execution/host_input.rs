@@ -70,7 +70,10 @@ impl MechRuntime {
             },
             move |runtime, context, turn| {
                 runtime.enforce_turn_duration(turn_started)?;
+                #[cfg(feature = "source")]
                 runtime.execute_persistent_sends(context, turn)?;
+                #[cfg(not(feature = "source"))]
+                let _ = (context, turn);
                 Ok(())
             },
         )?;

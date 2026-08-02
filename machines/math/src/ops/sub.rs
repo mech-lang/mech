@@ -104,6 +104,7 @@ macro_rules! sub_row_mat_op {
 
 impl_math_fxns!(Sub);
 
+#[cfg(feature = "source")]
 fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Sub,
@@ -125,4 +126,5 @@ fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MathSub, impl_sub_fxn, "math/sub");

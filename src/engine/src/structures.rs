@@ -1,3 +1,5 @@
+#[cfg(feature = "set")]
+pub use crate::intrinsics::constructors::ValueSet;
 use crate::*;
 use std::collections::{HashMap, HashSet};
 
@@ -270,13 +272,15 @@ pub fn record(
         }
         #[cfg(not(feature = "convert"))]
         if knd != val.kind() {
-            return Err(MechError {
-                file: file!().to_string(),
-                tokens: vec![],
-                msg: "".to_string(),
-                id: line!(),
-                kind: MechErrorKind::KindMismatch(val.kind(), knd),
-            });
+            return Err(MechError::new(
+                TableColumnKindMismatchError {
+                    column_id: name_hash,
+                    expected_kind: knd,
+                    actual_kind: val.kind(),
+                },
+                None,
+            )
+            .with_compiler_loc());
         } else {
             data.insert(name_hash, val);
         }
@@ -293,65 +297,6 @@ pub fn record(
 // Set
 // ----------------------------------------------------------------------------
 
-// Define a MechFunction that creaates a Set from a list of Values
-#[cfg(feature = "set")]
-#[derive(Debug)]
-pub struct ValueSet {
-    pub out: Ref<MechSet>,
-}
-#[cfg(feature = "set")]
-#[cfg(feature = "functions")]
-impl MechFunctionImpl for ValueSet {
-    fn solve(&self) {}
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
-    }
-    fn reactive_dependency_scopes(
-        &self,
-        argument_count: usize,
-    ) -> Option<Vec<ReactiveDependencyScope>> {
-        Some(vec![ReactiveDependencyScope::None; argument_count])
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(self.reactive_output_values())
-    }
-}
-#[cfg(feature = "set")]
-#[cfg(feature = "functions")]
-impl MechFunctionFactory for ValueSet {
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => {
-                let out: Ref<MechSet> = unsafe { out.as_unchecked().clone() };
-                Ok(Box::new(ValueSet { out }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
-    }
-}
-#[cfg(feature = "set")]
-#[cfg(feature = "compiler")]
-impl MechFunctionCompiler for ValueSet {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "set/define",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Set)
-        );
-    }
-}
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
 #[cfg(feature = "set")]
@@ -945,7 +890,11 @@ mod matrix_dependency_tests {
     #[test]
     fn indexed_matrix_literal_builds_dependency_chain() {
         let tree = mech_syntax::parser::parse("[1.0 2.0; 3.0 4.0]").unwrap();
-        let mut interpreter = Interpreter::new(0, 10_000);
+        let mut interpreter = Interpreter::with_function_catalog(
+            0,
+            10_000,
+            crate::test_support::catalog::function_catalog(),
+        );
         let output = interpreter.interpret(&tree).unwrap();
 
         assert_eq!(
@@ -1038,7 +987,11 @@ mod set_dependency_tests {
     #[test]
     fn source_set_literal_registers_structural_node() {
         let tree = mech_syntax::parser::parse("{1.0, 2.0}").unwrap();
-        let mut interpreter = Interpreter::new(0, 10_000);
+        let mut interpreter = Interpreter::with_function_catalog(
+            0,
+            10_000,
+            crate::test_support::catalog::function_catalog(),
+        );
         let output = interpreter.interpret(&tree).unwrap();
         assert_eq!(output.to_string(), "{\n  1,\n  2\n}");
         assert_structural_set_node(&interpreter.plan(), &output);

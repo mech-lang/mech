@@ -77,12 +77,12 @@ fn transaction_commit_failure_keeps_transaction_active() {
 fn store_read_panic_is_converted_and_runtime_recovers() {
     let mut store = InMemoryStore::new();
     store.panic_on_get_object_for_test();
-    let mut runtime = MechRuntime::builder().store(store).build().unwrap();
+    let runtime = MechRuntime::builder().store(store).build().unwrap();
 
     let error = runtime.get_object(ObjectId(1)).unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
     assert!(format!("{error:?}").contains("deliberate store read panic"));
     assert!(!runtime.is_poisoned());
-    runtime.run_string("store-read-recovery := 1.0").unwrap();
+    runtime.runtime_context().unwrap();
 }

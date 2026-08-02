@@ -317,7 +317,7 @@ mod build_input_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
-    #[cfg(feature = "linked_stdlib")]
+    #[cfg(feature = "standard_compiler")]
     #[test]
     fn build_materializes_linked_function_module_imports_before_compiling() {
         let root = temp_root("linked-function-module");

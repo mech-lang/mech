@@ -3,7 +3,9 @@ use super::{
 };
 use crate::event::RuntimeEventKind;
 use crate::resolver::SourceScope;
-use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, RuntimeProgramBusy};
+#[cfg(feature = "compiler")]
+use crate::runtime::RuntimeProgramBusy;
+use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
 use mech_core::{MResult, MechError, MechSourceCode, ValRef, Value, hash_str};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]

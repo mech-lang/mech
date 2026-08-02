@@ -36,6 +36,7 @@ impl_math_unop!(MathSincos, f32, sincosf, FeatureFlag::Custom(hash_str("math/sin
 #[cfg(feature = "f64")]
 impl_math_unop!(MathSincos, f64, sincos, FeatureFlag::Custom(hash_str("math/sincos")));
 
+#[cfg(feature = "source")]
 fn impl_sincos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   impl_urnop_match_arms2!(
     MathSincos,
@@ -45,8 +46,10 @@ fn impl_sincos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
   )
 }
 
+#[cfg(feature = "source")]
 pub struct MathSincos {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathSincos {
   fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {

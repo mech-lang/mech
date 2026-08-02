@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+pub mod authority;
 pub mod config;
 #[cfg(feature = "provider")]
 pub mod provider;
@@ -7,6 +8,7 @@ pub mod provider;
 #[cfg(feature = "delegation")]
 pub mod delegation;
 
+pub use self::authority::*;
 pub use self::config::*;
 #[cfg(feature = "provider")]
 pub use self::provider::*;

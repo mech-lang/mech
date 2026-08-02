@@ -1,6 +1,8 @@
 use mech_core::MResult;
 
-use mech_runtime::{InMemorySourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceRequest};
+use mech_runtime::{InMemorySourceResolver, ModuleBuildOptions, SourceRequest};
+
+mod support;
 
 fn main() -> MResult<()> {
     let mut source_resolver = InMemorySourceResolver::new();
@@ -9,7 +11,7 @@ fn main() -> MResult<()> {
 
     source_resolver.insert_string("actor.behavior", "y := 2")?;
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .source_resolver(source_resolver)
         .build()?;
 

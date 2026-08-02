@@ -23,10 +23,9 @@ where
         + ClosedNeg
         + PartialEq
         + 'static
-        + ConstElem
         + AsValueKind,
     #[cfg(feature = "compiler")]
-    O: CompileConst,
+    O: CompileConst + ConstElem,
     Ref<O>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -108,10 +107,9 @@ where
         + ClosedNeg
         + PartialEq
         + 'static
-        + ConstElem
         + AsValueKind,
     #[cfg(feature = "compiler")]
-    O: CompileConst,
+    O: CompileConst + ConstElem,
     Ref<O>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -176,6 +174,7 @@ where
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_neg_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms!(
       Negate,
@@ -192,4 +191,5 @@ fn impl_neg_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_urnop_fxn!(MathNegate, impl_neg_fxn, "math/neg");

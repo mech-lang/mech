@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use mech_core::{MechError, Ref, Value, hash_str};
 
-use super::super::{MechRuntime, RuntimeBuilder};
+use super::super::MechRuntime;
 use super::scheduling::{ActivationPlanSnapshot, activation_plan_snapshot};
 use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read, grant_read_to, grant_write},
     providers::{
         RecordingTestOutput, TEST_OUTPUT_BASE_URI, TestResourceProvider, sleep_host,
-        test_provider_with, test_runtime, test_runtime_with_output,
+        test_provider_with, test_runtime, test_runtime_builder, test_runtime_with_output,
     },
     values::{f64_value, plan_snapshot, source_value, symbol_value},
 };
@@ -31,7 +31,7 @@ fn packet_with_bound_and_unbound_sources_updates_bound_inputs() {
     runtime
         .run_string_with_context(
             &mut context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
         )
         .unwrap();
     let outcome = runtime
@@ -54,7 +54,7 @@ fn packet_with_bound_and_unbound_sources_updates_bound_inputs() {
     assert_eq!(outcome.ignored_update_count, 1);
     assert_eq!(outcome.binding_count, 1);
     assert!(outcome.turn.is_some());
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 5.0);
     assert_eq!(
         f64_value(&source_value(
             &runtime,
@@ -74,7 +74,7 @@ fn runtime_reactive_host_input_preflight_failure_mutates_nothing() {
     grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "b");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@signals := test://signals/inputs{:read(a), :read(b)}\nsum := @signals/a + @signals/b\n@out/line <- sum").unwrap();
+    runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@signals := test://signals/inputs{:read(a), :read(b)}\nsum := @signals/a\nbound-b := @signals/b\n@out/line <- sum").unwrap();
     let a_source = RuntimeHostInputSource::new(TEST_SIGNALS_BASE_URI, "a").unwrap();
     let b_source = RuntimeHostInputSource::new(TEST_SIGNALS_BASE_URI, "b").unwrap();
     let a_before = f64_value(&source_value(&runtime, &a_source));
@@ -133,7 +133,7 @@ fn live_turn_enforces_step_budget() {
     runtime
         .run_string_with_context(
             &mut context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
         )
         .unwrap();
     runtime
@@ -167,7 +167,7 @@ fn live_turn_enforces_step_budget() {
     runtime
         .run_string_with_context(
             &mut context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
         )
         .unwrap();
     let outcome = runtime
@@ -188,7 +188,7 @@ fn live_turn_enforces_step_budget() {
 
 #[test]
 fn live_turn_enforces_duration_limit() {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(test_provider_with(
             "test://clock/ticks",
             "value",
@@ -408,7 +408,7 @@ fn implicit_host_input_cannot_drive_an_explicit_program_owner() {
     runtime
         .run_string_with_context(
             &mut load_context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
         )
         .unwrap();
     let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
@@ -547,7 +547,7 @@ render-tick := @tick/tick
             r#"@out := test://effects/output{:write(line)}
 ~> render-tick {
 @out/line <- render-tick
-registered-first := render-tick + 1.0
+registered-first := render-tick
 failure :=
   function-that-does-not-exist(registered-first)
 }

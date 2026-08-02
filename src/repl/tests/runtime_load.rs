@@ -74,6 +74,7 @@ impl SourceResolver for RecordingResolver {
 
 fn runtime_with_resolver(resolver: impl SourceResolver + 'static) -> MechRuntime {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .source_resolver(resolver)
         .build()
         .unwrap()
