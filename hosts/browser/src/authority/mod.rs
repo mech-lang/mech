@@ -1,14 +1,7 @@
-#[cfg(feature = "no_std")]
-use alloc::{
-    collections::BTreeSet,
-    string::{String, ToString},
-    vec::Vec,
-};
-use core::fmt;
-#[cfg(not(feature = "no_std"))]
 use std::collections::BTreeSet;
+use std::fmt;
 
-use crate::{MResult, MechError, MechErrorKind};
+use mech_core::{MResult, MechError, MechErrorKind};
 
 pub const BROWSER_HOST_IDENTITY: &str = "host://browser";
 pub const BROWSER_DOM_PROVIDER_URI: &str = "browser://dom";
@@ -851,7 +844,6 @@ impl fmt::Display for BrowserCapabilityError {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
 impl std::error::Error for BrowserCapabilityError {}
 
 impl MechErrorKind for BrowserCapabilityError {

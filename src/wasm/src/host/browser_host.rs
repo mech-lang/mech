@@ -80,13 +80,15 @@ impl Default for WasmBrowserDomBackend {
 impl mech_host_browser::BrowserDomBackend for WasmBrowserDomBackend {
     fn read_dom_string(
         &self,
-        entry: &mech_core::BrowserDomManifestEntry,
-        requested_path: &mech_core::BrowserDomPath,
+        entry: &mech_host_browser::BrowserDomManifestEntry,
+        requested_path: &mech_host_browser::BrowserDomPath,
     ) -> mech_core::MResult<String> {
         let (element, property) = resolve_dom_element(entry, requested_path)?;
         match property {
-            mech_core::BrowserDomProperty::Text => Ok(element.text_content().unwrap_or_default()),
-            mech_core::BrowserDomProperty::Value => {
+            mech_host_browser::BrowserDomProperty::Text => {
+                Ok(element.text_content().unwrap_or_default())
+            }
+            mech_host_browser::BrowserDomProperty::Value => {
                 let Some(input) =
                     wasm_bindgen::JsCast::dyn_ref::<web_sys::HtmlInputElement>(&element)
                 else {
@@ -97,8 +99,8 @@ impl mech_host_browser::BrowserDomBackend for WasmBrowserDomBackend {
                 };
                 Ok(input.value())
             }
-            mech_core::BrowserDomProperty::InnerHtml => Ok(element.inner_html()),
-            mech_core::BrowserDomProperty::Attribute(attribute) => {
+            mech_host_browser::BrowserDomProperty::InnerHtml => Ok(element.inner_html()),
+            mech_host_browser::BrowserDomProperty::Attribute(attribute) => {
                 Ok(element.get_attribute(&attribute).unwrap_or_default())
             }
         }
@@ -106,14 +108,14 @@ impl mech_host_browser::BrowserDomBackend for WasmBrowserDomBackend {
 
     fn write_dom_string(
         &mut self,
-        entry: &mech_core::BrowserDomManifestEntry,
-        requested_path: &mech_core::BrowserDomPath,
+        entry: &mech_host_browser::BrowserDomManifestEntry,
+        requested_path: &mech_host_browser::BrowserDomPath,
         value: &str,
     ) -> mech_core::MResult<()> {
         let (element, property) = resolve_dom_element(entry, requested_path)?;
         match property {
-            mech_core::BrowserDomProperty::Text => element.set_text_content(Some(value)),
-            mech_core::BrowserDomProperty::Value => {
+            mech_host_browser::BrowserDomProperty::Text => element.set_text_content(Some(value)),
+            mech_host_browser::BrowserDomProperty::Value => {
                 let Some(input) =
                     wasm_bindgen::JsCast::dyn_ref::<web_sys::HtmlInputElement>(&element)
                 else {
@@ -124,8 +126,8 @@ impl mech_host_browser::BrowserDomBackend for WasmBrowserDomBackend {
                 };
                 input.set_value(value);
             }
-            mech_core::BrowserDomProperty::InnerHtml => element.set_inner_html(value),
-            mech_core::BrowserDomProperty::Attribute(attribute) => {
+            mech_host_browser::BrowserDomProperty::InnerHtml => element.set_inner_html(value),
+            mech_host_browser::BrowserDomProperty::Attribute(attribute) => {
                 element.set_attribute(&attribute, value).map_err(|_| {
                     browser_dom_error(requested_path.as_str(), "failed to set DOM attribute")
                 })?
@@ -155,9 +157,9 @@ fn browser_document() -> mech_core::MResult<web_sys::Document> {
 }
 
 fn resolve_dom_element(
-    entry: &mech_core::BrowserDomManifestEntry,
-    requested_path: &mech_core::BrowserDomPath,
-) -> mech_core::MResult<(web_sys::Element, mech_core::BrowserDomProperty)> {
+    entry: &mech_host_browser::BrowserDomManifestEntry,
+    requested_path: &mech_host_browser::BrowserDomPath,
+) -> mech_core::MResult<(web_sys::Element, mech_host_browser::BrowserDomProperty)> {
     let document = browser_document()?;
     let root = document
         .query_selector(entry.selector.selector.as_str())
@@ -193,7 +195,7 @@ fn resolve_dom_element(
                 "requested path is outside wildcard DOM root",
             )
         })?;
-    let requested_relative = mech_core::BrowserDomPath::new(relative.to_string())
+    let requested_relative = mech_host_browser::BrowserDomPath::new(relative.to_string())
         .map_err(mech_core::browser_capability_error)?;
     let property = requested_relative.dom_property();
     let node_path = requested_relative.without_property_suffix();

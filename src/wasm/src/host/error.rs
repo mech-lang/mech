@@ -1,6 +1,6 @@
 use std::fmt;
 
-use mech_core::BrowserCapabilityError;
+use mech_host_browser::BrowserCapabilityError;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BrowserHostError {

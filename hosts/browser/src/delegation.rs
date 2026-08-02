@@ -1,4 +1,5 @@
-use mech_core::{BrowserAuthority, MResult};
+use crate::BrowserAuthority;
+use mech_core::MResult;
 use mech_runtime::{
     ConfigValue, HostDelegationEnvelope, HostDelegationPayload, VerifiedHostDelegation,
     encode_bool, encode_option_string, encode_option_u64, encode_string, encode_u64,
@@ -278,11 +279,11 @@ fn push_resource(out: &mut Vec<u8>, resource: &BrowserHostResourceConfig) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::BrowserOperation;
     use crate::{
         BrowserHostBrowserConfig, BrowserHostBrowserGrant, BrowserHostDiagnosticsConfig,
         BrowserHostDomManifestEntry, BrowserHostRuntimeConfig, BrowserHostRuntimeLimits,
     };
-    use mech_core::BrowserOperation;
     use mech_runtime::{
         ConfigValue, HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore,
         HostDelegationPublicKey, HostInstanceConfig, RunResourceGrantConfig,

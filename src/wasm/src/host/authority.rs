@@ -1,1 +1,1 @@
-pub use mech_core::{BrowserAuthority, BrowserCapabilityError};
+pub use mech_host_browser::{BrowserAuthority, BrowserCapabilityError};
