@@ -104,6 +104,17 @@ pub use self::trig::*;
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
 pub use self::catalog::*;
 
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(all(feature = "add", feature = "f64", feature = "matrix2"))]
+    pub use crate::ops::add::install_add_m2m2_f64;
+    #[cfg(all(feature = "add", feature = "f64", feature = "matrixd"))]
+    pub use crate::ops::add::install_add_mdmd_f64;
+    #[cfg(all(feature = "add", feature = "f64"))]
+    pub use crate::ops::add::install_add_ss_f64;
+}
+
 // ----------------------------------------------------------------------------
 // Math Library
 // ----------------------------------------------------------------------------

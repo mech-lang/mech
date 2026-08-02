@@ -92,6 +92,71 @@ macro_rules! add_scalar_rhs_op {
 
 impl_math_fxns!(Add);
 
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "add", feature = "f64"),
+
+    registration: register_add_ss_f64,
+    installer: install_add_ss_f64,
+
+    name: "AddSS<f64>",
+    factory: <AddSS<f64> as MechFunctionFactory>::new,
+
+    package: "mech-math",
+    crate_name: "mech_math",
+    installer_path: "mech_math::__mech_native::install_add_ss_f64",
+
+    cargo_features: [
+        "add",
+        "f64",
+        "native-link",
+        "runtime",
+    ],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "add", feature = "f64", feature = "matrix2"),
+
+    registration: register_add_m2m2_f64,
+    installer: install_add_m2m2_f64,
+
+    name: "AddM2M2<f64>",
+    factory: <AddM2M2<f64> as MechFunctionFactory>::new,
+
+    package: "mech-math",
+    crate_name: "mech_math",
+    installer_path: "mech_math::__mech_native::install_add_m2m2_f64",
+
+    cargo_features: [
+        "add",
+        "f64",
+        "matrix2",
+        "native-link",
+        "runtime",
+    ],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "add", feature = "f64", feature = "matrixd"),
+
+    registration: register_add_mdmd_f64,
+    installer: install_add_mdmd_f64,
+
+    name: "AddMDMD<f64>",
+    factory: <AddMDMD<f64> as MechFunctionFactory>::new,
+
+    package: "mech-math",
+    crate_name: "mech_math",
+    installer_path: "mech_math::__mech_native::install_add_mdmd_f64",
+
+    cargo_features: [
+        "add",
+        "f64",
+        "matrixd",
+        "native-link",
+        "runtime",
+    ],
+}
+
 #[cfg(feature = "source")]
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     #[cfg(feature = "c64")]
@@ -196,6 +261,35 @@ impl FunctionSpecializer for MathAdd {
     }
 }
 
+#[cfg(feature = "f64")]
+struct AddF64RuntimeRegistrar<'a> {
+    builder: &'a mut FunctionCatalogBuilder,
+}
+
+#[cfg(feature = "f64")]
+impl AddF64RuntimeRegistrar<'_> {
+    fn insert_runtime_factory(
+        &mut self,
+        name: &'static str,
+        factory: mech_core::RuntimeFunctionFactory,
+    ) -> MResult<()> {
+        match name {
+            "AddSS<f64>" => register_add_ss_f64(self.builder),
+            #[cfg(feature = "matrix2")]
+            "AddM2M2<f64>" => register_add_m2m2_f64(self.builder),
+            #[cfg(feature = "matrixd")]
+            "AddMDMD<f64>" => register_add_mdmd_f64(self.builder),
+            _ => self.builder.insert_runtime_factory(name, factory),
+        }
+    }
+}
+
+#[cfg(feature = "f64")]
+fn install_add_f64_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    let mut registrar = AddF64RuntimeRegistrar { builder };
+    mech_core::__mech_install_binop_runtime_factories_for_type!(registrar, Add, f64, "f64")
+}
+
 pub fn install_math_add_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_binop_runtime_factories!(
         builder,
@@ -211,10 +305,12 @@ pub fn install_math_add_runtime(builder: &mut FunctionCatalogBuilder) -> MResult
         ("u64", u64, "u64"),
         ("u128", u128, "u128"),
         ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
         ("rational", R64, "r64"),
         ("complex", C64, "c64"),
-    )
+    )?;
+    #[cfg(feature = "f64")]
+    install_add_f64_runtime(builder)?;
+    Ok(())
 }
 
 #[cfg(feature = "source")]
@@ -498,6 +594,141 @@ mod tests {
         assert_catalog_name_and_id(&catalog, "AddSMD<f64>", 0x0000_6564_dae2_2a47);
         assert_catalog_name_and_id(&catalog, "AddMDS<f64>", 0x003a_baf2_6ed7_4f43);
         assert_catalog_name_and_id(&catalog, "AddMDMD<f64>", 0x008f_a755_537d_c395);
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix2"))]
+    #[test]
+    fn representative_fixed_matrix_add_name_and_id_are_unchanged() {
+        let catalog = explicit_runtime_catalog();
+        assert_catalog_name_and_id(&catalog, "AddM2M2<f64>", 0x00eb_049b_7b90_a0d9);
+    }
+
+    #[cfg(all(
+        feature = "native-link",
+        feature = "f64",
+        feature = "matrix2",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn exact_native_installers_each_insert_one_factory_and_reject_duplicates() {
+        fn assert_installer(
+            installer: fn(&mut FunctionCatalogBuilder) -> MResult<()>,
+            name: &str,
+            raw_id: u64,
+        ) {
+            let mut builder = FunctionCatalogBuilder::new();
+            installer(&mut builder).unwrap();
+            let duplicate = installer(&mut builder).unwrap_err();
+            assert_eq!(
+                duplicate.kind_name(),
+                "FunctionCatalogDuplicateRuntimeFactory"
+            );
+
+            let catalog = builder.build().unwrap();
+            assert_eq!(catalog.runtime_factory_count(), 1);
+            assert_catalog_name_and_id(&catalog, name, raw_id);
+        }
+
+        assert_installer(
+            crate::__mech_native::install_add_ss_f64,
+            "AddSS<f64>",
+            0x000a_2c77_6884_86f3,
+        );
+        assert_installer(
+            crate::__mech_native::install_add_m2m2_f64,
+            "AddM2M2<f64>",
+            0x00eb_049b_7b90_a0d9,
+        );
+        assert_installer(
+            crate::__mech_native::install_add_mdmd_f64,
+            "AddMDMD<f64>",
+            0x008f_a755_537d_c395,
+        );
+    }
+
+    #[cfg(all(
+        feature = "native-plan",
+        feature = "f64",
+        feature = "matrix2",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn aggregate_catalog_links_exactly_the_three_math_representatives() {
+        let catalog = explicit_runtime_catalog();
+        let mut linked = catalog
+            .runtime_entries()
+            .filter_map(|entry| {
+                entry
+                    .native_linkage
+                    .as_ref()
+                    .map(|linkage| (entry.name.as_str(), entry.id, linkage))
+            })
+            .collect::<Vec<_>>();
+        linked.sort_by_key(|(name, _, _)| *name);
+
+        let expected = [
+            (
+                "AddM2M2<f64>",
+                0x00eb_049b_7b90_a0d9,
+                "mech_math::__mech_native::install_add_m2m2_f64",
+                &["add", "f64", "matrix2", "native-link", "runtime"][..],
+            ),
+            (
+                "AddMDMD<f64>",
+                0x008f_a755_537d_c395,
+                "mech_math::__mech_native::install_add_mdmd_f64",
+                &["add", "f64", "matrixd", "native-link", "runtime"][..],
+            ),
+            (
+                "AddSS<f64>",
+                0x000a_2c77_6884_86f3,
+                "mech_math::__mech_native::install_add_ss_f64",
+                &["add", "f64", "native-link", "runtime"][..],
+            ),
+        ];
+        assert_eq!(linked.len(), expected.len());
+
+        let mut installer_paths = std::collections::BTreeSet::new();
+        for ((name, id, linkage), (expected_name, raw_id, path, features)) in
+            linked.into_iter().zip(expected)
+        {
+            assert_eq!(name, expected_name);
+            assert_eq!(id.raw(), raw_id);
+            assert_eq!(linkage.package, "mech-math");
+            assert_eq!(linkage.crate_name, "mech_math");
+            assert_eq!(linkage.installer_path, path);
+            assert_eq!(linkage.cargo_features, features);
+            assert!(installer_paths.insert(linkage.installer_path));
+            assert!(
+                linkage
+                    .cargo_features
+                    .windows(2)
+                    .all(|pair| pair[0] < pair[1]),
+                "feature list is not sorted and unique for {name}",
+            );
+            assert!(linkage.cargo_features.iter().all(|feature| {
+                let mut chars = feature.chars();
+                chars
+                    .next()
+                    .is_some_and(|first| first.is_ascii_alphabetic() || first == '_')
+                    && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-')
+            }));
+        }
+    }
+
+    #[test]
+    fn native_layers_have_exact_runtime_only_feature_edges() {
+        let manifest = include_str!("../../Cargo.toml");
+        assert!(
+            manifest
+                .lines()
+                .any(|line| line == "native-plan = [\"runtime\", \"mech-core/native-plan\"]")
+        );
+        assert!(
+            manifest
+                .lines()
+                .any(|line| line == "native-link = [\"runtime\"]")
+        );
     }
 
     #[cfg(all(feature = "f64", feature = "vector2"))]

@@ -145,6 +145,30 @@ macro_rules! impl_variable_define_fxn {
 
 #[cfg(feature = "f64")]
 impl_variable_define_fxn!(f64);
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "f64", feature = "variable_define"),
+
+    registration: register_variable_define_f64,
+    installer: install_variable_define_f64,
+
+    name: "VariableDefineF64",
+    factory: <VariableDefineF64 as MechFunctionFactory>::new,
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_variable_define_f64",
+
+    cargo_features: [
+        "bool",
+        "f64",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define",
+    ],
+}
+
 #[cfg(feature = "f32")]
 impl_variable_define_fxn!(f32);
 #[cfg(feature = "u8")]
@@ -581,7 +605,12 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_kind!("i64", i64, i64, "i64");
     install_kind!("i128", i128, i128, "i128");
     install_kind!("f32", f32, f32, "f32");
-    install_kind!("f64", f64, f64, "f64");
+    #[cfg(feature = "f64")]
+    {
+        register_variable_define_f64(builder)?;
+        #[cfg(feature = "matrix")]
+        install_variable_define_matrix_runtime!(builder, f64, "f64");
+    }
     #[cfg(feature = "r64")]
     install_variable_define_scalar_runtime!(builder, R64);
     #[cfg(all(feature = "matrix", feature = "rational"))]

@@ -51,6 +51,20 @@ compiler = [
   "mech-stats?/compiler",
   "mech-combinatorics?/compiler",
 ]
+native-plan = [
+  "runtime",
+  "mech-core/native-plan",
+  "mech-engine/native-plan",
+  "mech-math?/native-plan",
+  "mech-compare?/native-plan",
+  "mech-logic?/native-plan",
+  "mech-range?/native-plan",
+  "mech-matrix?/native-plan",
+  "mech-set?/native-plan",
+  "mech-string?/native-plan",
+  "mech-stats?/native-plan",
+  "mech-combinatorics?/native-plan",
+]
 
 mech-math = ["dep:mech-math"]
 mech-compare = ["dep:mech-compare"]

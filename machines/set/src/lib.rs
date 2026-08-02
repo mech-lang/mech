@@ -1,6 +1,10 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {}
+
 use indexmap::set::IndexSet;
 
 use mech_core::*;

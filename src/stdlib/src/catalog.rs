@@ -63,6 +63,17 @@ pub fn build_runtime_catalog() -> MResult<FunctionCatalog> {
     builder.build()
 }
 
+/// Builds the selected runtime catalog with native-linkage metadata enabled.
+///
+/// The executable ID/name surface is identical to [`build_runtime_catalog`];
+/// only the feature-gated metadata on each entry may differ.
+#[cfg(feature = "native-plan")]
+pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    install_runtime(&mut builder)?;
+    builder.build()
+}
+
 #[cfg(feature = "source")]
 pub fn build_source_catalog() -> MResult<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
@@ -82,6 +93,25 @@ pub fn runtime_catalog() -> Arc<FunctionCatalog> {
     #[cfg(feature = "no_std")]
     {
         Arc::new(build_runtime_catalog().expect("runtime catalog must be valid"))
+    }
+}
+
+/// Returns the selected runtime catalog with trusted native linkage metadata.
+///
+/// Phase 1 intentionally permits entries without linkage metadata; native
+/// planning rejects only an actually referenced entry whose metadata is absent.
+#[cfg(feature = "native-plan")]
+pub fn native_plan_catalog() -> Arc<FunctionCatalog> {
+    #[cfg(not(feature = "no_std"))]
+    {
+        static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
+        Arc::clone(CATALOG.get_or_init(|| {
+            Arc::new(build_native_plan_catalog().expect("native-plan catalog must be valid"))
+        }))
+    }
+    #[cfg(feature = "no_std")]
+    {
+        Arc::new(build_native_plan_catalog().expect("native-plan catalog must be valid"))
     }
 }
 
@@ -123,6 +153,57 @@ mod tests {
                 }
             })
             .expect("catalog cache test thread must spawn");
+
+        if let Err(payload) = test.join() {
+            std::panic::resume_unwind(payload);
+        }
+    }
+
+    #[cfg(all(feature = "native-plan", feature = "standard_runtime"))]
+    #[test]
+    fn runtime_and_native_plan_catalogs_have_identical_executable_surfaces() {
+        use mech_core::RuntimeFunctionId;
+
+        let test = std::thread::Builder::new()
+            .name("stdlib-native-plan-catalog-test".to_string())
+            .stack_size(1024 * 1024)
+            .spawn(|| {
+                let runtime = runtime_catalog();
+                assert_eq!(runtime.runtime_factory_count(), 9_019);
+                let runtime_entries = runtime
+                    .runtime_entries()
+                    .map(|entry| (entry.id, entry.name.clone()))
+                    .collect::<Vec<_>>();
+                assert!(
+                    runtime
+                        .runtime_entry(RuntimeFunctionId::from_name(
+                            "HorizontalConcatenateRDN<f64>"
+                        ))
+                        .is_some()
+                );
+
+                let native_plan = native_plan_catalog();
+                assert_eq!(native_plan.runtime_factory_count(), 9_019);
+                assert!(!Arc::ptr_eq(&runtime, &native_plan));
+                let native_plan_entries = native_plan
+                    .runtime_entries()
+                    .map(|entry| (entry.id, entry.name.clone()))
+                    .collect::<Vec<_>>();
+                assert_eq!(runtime_entries, native_plan_entries);
+                let entry = native_plan
+                    .runtime_entry(RuntimeFunctionId::from_name(
+                        "HorizontalConcatenateRDN<f64>",
+                    ))
+                    .expect("native-plan catalog must include compiler-emitted variadic horzcat");
+                assert!(entry.native_linkage.is_some());
+                let entry = native_plan
+                    .runtime_entry(RuntimeFunctionId::from_name(
+                        "VerticalConcatenateNArgs<f64>",
+                    ))
+                    .expect("native-plan catalog must include dynamic matrix construction");
+                assert!(entry.native_linkage.is_some());
+            })
+            .expect("native-plan catalog test thread must spawn");
 
         if let Err(payload) = test.join() {
             std::panic::resume_unwind(payload);

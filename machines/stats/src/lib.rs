@@ -1,6 +1,11 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {}
+
 #[macro_use]
 extern crate mech_core;
 extern crate paste;

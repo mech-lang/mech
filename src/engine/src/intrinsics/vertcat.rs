@@ -591,6 +591,35 @@ where
     }
 }
 
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "f64",
+        feature = "matrix_vertcat",
+        feature = "matrixd"
+    ),
+
+    registration: register_vertical_concatenate_n_args_f64,
+    installer: install_vertical_concatenate_n_args_f64,
+
+    name: "VerticalConcatenateNArgs<f64>",
+    factory: <VerticalConcatenateNArgs<f64> as MechFunctionFactory>::new,
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_vertical_concatenate_n_args_f64",
+
+    cargo_features: [
+        "bool",
+        "f64",
+        "matrix_vertcat",
+        "matrixd",
+        "native-link",
+        "row_vectord",
+        "runtime",
+        "vectord",
+    ],
+}
+
 #[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "f64"))]
 mod compiler_tests {
     use super::*;
@@ -1527,6 +1556,36 @@ vertcat_two_args!(
     vertcat_r2r2
 );
 
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "f64",
+        feature = "matrix2",
+        feature = "matrix_vertcat",
+        feature = "row_vector2"
+    ),
+
+    registration: register_vertical_concatenate_r2_r2_f64,
+    installer: install_vertical_concatenate_r2_r2_f64,
+
+    name: "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
+    factory: <VerticalConcatenateR2R2<f64> as MechFunctionFactory>::new,
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_vertical_concatenate_r2_r2_f64",
+
+    cargo_features: [
+        "bool",
+        "f64",
+        "matrix2",
+        "matrix_vertcat",
+        "native-link",
+        "row_vector2",
+        "runtime",
+        "vector2",
+    ],
+}
+
 // VerticalConcatenateR3R3 ----------------------------------------------------
 
 macro_rules! vertcat_r3r3 {
@@ -2421,6 +2480,30 @@ macro_rules! install_vertcat_factories {
     }};
 }
 
+macro_rules! install_vertcat_factories_except_f64 {
+    ($builder:expr, $factory:ident) => {{
+        mech_core::install_typed_runtime_factories!(
+            $builder,
+            $factory;
+            ("bool", bool, "bool"),
+            ("string", String, "string"),
+            ("u8", u8, "u8"),
+            ("u16", u16, "u16"),
+            ("u32", u32, "u32"),
+            ("u64", u64, "u64"),
+            ("u128", u128, "u128"),
+            ("i8", i8, "i8"),
+            ("i16", i16, "i16"),
+            ("i32", i32, "i32"),
+            ("i64", i64, "i64"),
+            ("i128", i128, "i128"),
+            ("f32", f32, "f32"),
+            ("c64", C64, "c64"),
+            ("r64", R64, "r64"),
+        )?;
+    }};
+}
+
 macro_rules! install_vertcat_binary_factory {
     ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $e0:ident, $e1:ident, $out:ident) => {
         $builder.insert_runtime_factory(
@@ -2480,6 +2563,41 @@ macro_rules! install_vertcat_binary_factories {
     }};
 }
 
+macro_rules! install_vertcat_binary_factories_except_f64 {
+    ($builder:expr, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {{
+        #[cfg(feature = "bool")]
+        install_vertcat_binary_factory!($builder, $factory, bool, "bool", $e0, $e1, $out);
+        #[cfg(feature = "string")]
+        install_vertcat_binary_factory!($builder, $factory, String, "string", $e0, $e1, $out);
+        #[cfg(feature = "u8")]
+        install_vertcat_binary_factory!($builder, $factory, u8, "u8", $e0, $e1, $out);
+        #[cfg(feature = "u16")]
+        install_vertcat_binary_factory!($builder, $factory, u16, "u16", $e0, $e1, $out);
+        #[cfg(feature = "u32")]
+        install_vertcat_binary_factory!($builder, $factory, u32, "u32", $e0, $e1, $out);
+        #[cfg(feature = "u64")]
+        install_vertcat_binary_factory!($builder, $factory, u64, "u64", $e0, $e1, $out);
+        #[cfg(feature = "u128")]
+        install_vertcat_binary_factory!($builder, $factory, u128, "u128", $e0, $e1, $out);
+        #[cfg(feature = "i8")]
+        install_vertcat_binary_factory!($builder, $factory, i8, "i8", $e0, $e1, $out);
+        #[cfg(feature = "i16")]
+        install_vertcat_binary_factory!($builder, $factory, i16, "i16", $e0, $e1, $out);
+        #[cfg(feature = "i32")]
+        install_vertcat_binary_factory!($builder, $factory, i32, "i32", $e0, $e1, $out);
+        #[cfg(feature = "i64")]
+        install_vertcat_binary_factory!($builder, $factory, i64, "i64", $e0, $e1, $out);
+        #[cfg(feature = "i128")]
+        install_vertcat_binary_factory!($builder, $factory, i128, "i128", $e0, $e1, $out);
+        #[cfg(feature = "f32")]
+        install_vertcat_binary_factory!($builder, $factory, f32, "f32", $e0, $e1, $out);
+        #[cfg(feature = "c64")]
+        install_vertcat_binary_factory!($builder, $factory, C64, "c64", $e0, $e1, $out);
+        #[cfg(feature = "r64")]
+        install_vertcat_binary_factory!($builder, $factory, R64, "r64", $e0, $e1, $out);
+    }};
+}
+
 /// Installs every enabled legacy runtime factory emitted by this module.
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrixd")]
@@ -2488,7 +2606,9 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
         install_vertcat_factories!(builder, VerticalConcatenateTwoArgs);
         install_vertcat_factories!(builder, VerticalConcatenateThreeArgs);
         install_vertcat_factories!(builder, VerticalConcatenateFourArgs);
-        install_vertcat_factories!(builder, VerticalConcatenateNArgs);
+        #[cfg(feature = "f64")]
+        register_vertical_concatenate_n_args_f64(builder)?;
+        install_vertcat_factories_except_f64!(builder, VerticalConcatenateNArgs);
     }
     #[cfg(feature = "vectord")]
     {
@@ -2515,13 +2635,17 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
     install_vertcat_binary_factories!(builder, VerticalConcatenateV2M1, Vector2, Matrix1, Vector3);
     #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR2R2,
-        RowVector2,
-        RowVector2,
-        Matrix2
-    );
+    {
+        #[cfg(feature = "f64")]
+        register_vertical_concatenate_r2_r2_f64(builder)?;
+        install_vertcat_binary_factories_except_f64!(
+            builder,
+            VerticalConcatenateR2R2,
+            RowVector2,
+            RowVector2,
+            Matrix2
+        );
+    }
     #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
     install_vertcat_binary_factories!(
         builder,
