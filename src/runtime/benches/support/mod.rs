@@ -6,6 +6,9 @@ use mech_core::{
 };
 use mech_runtime::RuntimeBuilder;
 
+#[cfg(feature = "compiler")]
+use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
+
 #[allow(dead_code)]
 pub fn intrinsic_source_catalog() -> Arc<FunctionCatalog> {
     static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
@@ -46,6 +49,13 @@ impl MechFunctionImpl for BenchmarkAddFunction {
 
     fn to_string(&self) -> String {
         "BenchmarkAddFunction".to_string()
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for BenchmarkAddFunction {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
     }
 }
 

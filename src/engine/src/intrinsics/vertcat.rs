@@ -625,7 +625,7 @@ where
 #[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
 mod compiler_tests {
     use super::*;
-    use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+    use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
     #[test]
     fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {

@@ -2,14 +2,8 @@
 #![forbid(unsafe_code)]
 
 pub mod config;
-pub mod config_profile;
 pub mod effect;
 mod extension;
-#[cfg(feature = "host_delegation")]
-pub mod host_delegation;
-#[cfg(feature = "host_delegation_signing")]
-pub mod host_delegation_crypto;
-pub mod host_interface;
 pub mod id;
 #[cfg(feature = "runtime")]
 pub mod input;
@@ -24,8 +18,6 @@ pub mod actor;
 pub mod actor_behavior;
 #[cfg(feature = "runtime")]
 pub mod capability;
-#[cfg(feature = "runtime")]
-mod config_spec;
 #[cfg(feature = "runtime")]
 pub mod context;
 #[cfg(feature = "runtime")]
@@ -50,14 +42,8 @@ pub mod transaction;
 mod workspace;
 
 pub use self::config::*;
-pub use self::config_profile::*;
 pub use self::effect::*;
 pub use self::extension::{RuntimeExtensionPanicked, RuntimeStoreCommitIndeterminate};
-#[cfg(feature = "host_delegation")]
-pub use self::host_delegation::*;
-#[cfg(feature = "host_delegation_signing")]
-pub use self::host_delegation_crypto::*;
-pub use self::host_interface::*;
 pub use self::id::*;
 #[cfg(feature = "runtime")]
 pub use self::input::*;
@@ -72,8 +58,6 @@ pub use self::actor::*;
 pub use self::actor_behavior::*;
 #[cfg(feature = "runtime")]
 pub use self::capability::*;
-#[cfg(feature = "runtime")]
-pub use self::config_spec::*;
 #[cfg(feature = "runtime")]
 pub use self::context::*;
 #[cfg(feature = "runtime")]

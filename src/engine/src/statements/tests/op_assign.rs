@@ -10,8 +10,11 @@ use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnS
 fn whole_add_assignment_registers_state_node() {
     let source = "~x := 1.0; y := 2.0; x += y; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter =
-        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
     assert_eq!(
@@ -25,8 +28,11 @@ fn whole_add_assignment_registers_state_node() {
 fn whole_add_assignment_alias_is_sampled_once() {
     let source = "~x := 2.0; x += x; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter =
-        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 4.0);
     let x_cell = root_cell(&symbol(&interpreter, "x"));

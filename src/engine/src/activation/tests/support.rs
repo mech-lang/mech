@@ -184,8 +184,11 @@ pub(super) type PlanSnapshot = (
 
 pub(super) fn interpret(source: &str) -> Interpreter {
     let tree = mech_syntax::parser::parse(source.trim_start()).unwrap();
-    let mut interpreter =
-        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     interpreter.interpret(&tree).unwrap();
     interpreter
 }

@@ -422,7 +422,7 @@ mod tests {
         outputs: Vec<ReactiveCellId>,
     }
 
-    impl crate::functions::reactive_register_sealed::Sealed for JournalRegisterCommit {}
+    impl crate::function::reactive_register_sealed::Sealed for JournalRegisterCommit {}
 
     impl ReactiveRegisterCommit for JournalRegisterCommit {
         fn output_cells(&self) -> &[ReactiveCellId] {
