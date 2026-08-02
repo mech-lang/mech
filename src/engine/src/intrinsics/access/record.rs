@@ -29,8 +29,6 @@ impl MechFunctionCompiler for RecordAccessField {
 
         registers[0] = compile_register!(self.source, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
-
         ctx.emit_nullop(hash_str("RecordAccessField"), registers[0]);
 
         return Ok(registers[0]);
@@ -124,8 +122,6 @@ impl MechFunctionCompiler for RecordAccessSwizzle {
         let mut registers = [0];
 
         registers[0] = compile_register!(self.source, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Swizzle));
 
         ctx.emit_nullop(hash_str("RecordAccessSwizzle"), registers[0]);
 

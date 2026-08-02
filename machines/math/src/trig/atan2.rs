@@ -104,8 +104,6 @@ macro_rules! impl_two_arg_fxn {
                 registers[1] = compile_register_brrw!(self.arg1, ctx);
                 registers[2] = compile_register_brrw!(self.arg2, ctx);
 
-                ctx.require(FeatureFlag::Custom(hash_str("math/atan2")));
-
                 ctx.emit_binop(
                     hash_str(stringify!($struct_name)),
                     registers[0],

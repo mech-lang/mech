@@ -1,7 +1,7 @@
 Build and Deployment
 ===============================================================================
 
-Mech programs can run from the command line, be served for browser use, be bundled into static web assets, or be packaged into executable artifacts.
+Mech programs can run from the command line, be served for browser use, or be bundled into static web assets.
 
 1. Pages
 -------------------------------------------------------------------------------
@@ -9,5 +9,4 @@ Mech programs can run from the command line, be served for browser use, be bundl
 - [Command Line](command-line.html)
 - [Web Server](web-server.html)
 - [Static Web Bundles](static-web-bundles.html)
-- [Executables](executables.html)
 - [WASM](wasm.html)

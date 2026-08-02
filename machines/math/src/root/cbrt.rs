@@ -44,19 +44,9 @@ macro_rules! cbrtf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathCbrt,
-    f32,
-    cbrtf,
-    FeatureFlag::Custom(hash_str("math/cbrt"))
-);
+impl_math_unop!(MathCbrt, f32, cbrtf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathCbrt,
-    f64,
-    cbrt,
-    FeatureFlag::Custom(hash_str("math/cbrt"))
-);
+impl_math_unop!(MathCbrt, f64, cbrt);
 
 #[cfg(feature = "source")]
 fn impl_cbrt_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

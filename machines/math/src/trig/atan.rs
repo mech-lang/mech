@@ -44,19 +44,9 @@ macro_rules! atanf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathAtan,
-    f32,
-    atanf,
-    FeatureFlag::Custom(hash_str("math/atan"))
-);
+impl_math_unop!(MathAtan, f32, atanf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathAtan,
-    f64,
-    atan,
-    FeatureFlag::Custom(hash_str("math/atan"))
-);
+impl_math_unop!(MathAtan, f64, atan);
 
 #[cfg(feature = "source")]
 fn impl_atan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

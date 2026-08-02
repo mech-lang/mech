@@ -160,14 +160,7 @@ macro_rules! impl_op_assign_range_fxn_s {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::OpAssign)
-                );
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
@@ -328,14 +321,7 @@ macro_rules! impl_op_assign_range_fxn_v {
                     naMatrix::<T, R2, C2, S2>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::OpAssign)
-                );
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
@@ -466,7 +452,7 @@ macro_rules! impl_assign_scalar_scalar {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignSS<{}>", stringify!($op_name), T::as_value_kind());
-          compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+          compile_unop!(name, self.sink, self.source, ctx );
         }
       }
     }
@@ -559,7 +545,7 @@ macro_rules! impl_assign_vector_vector {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVV<{}>", stringify!($op_name), MatA::as_value_kind());
-          compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
+          compile_unop!(name, self.sink, self.source, ctx );
         }
       }
     }
@@ -647,7 +633,7 @@ macro_rules! impl_assign_vector_scalar {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}AssignVS<{}>", stringify!($op_name), MatA::as_value_kind());
-          compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
+          compile_unop!(name, self.sink, self.source, ctx );
         }
       }
     }

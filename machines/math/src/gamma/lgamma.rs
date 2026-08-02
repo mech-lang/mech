@@ -44,19 +44,9 @@ macro_rules! lgammaf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathLgamma,
-    f32,
-    lgammaf,
-    FeatureFlag::Custom(hash_str("math/lgamma"))
-);
+impl_math_unop!(MathLgamma, f32, lgammaf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathLgamma,
-    f64,
-    lgamma,
-    FeatureFlag::Custom(hash_str("math/lgamma"))
-);
+impl_math_unop!(MathLgamma, f64, lgamma);
 
 #[cfg(feature = "source")]
 fn impl_lgamma_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

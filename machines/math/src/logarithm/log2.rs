@@ -44,19 +44,9 @@ macro_rules! log2f_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathLog2,
-    f32,
-    log2f,
-    FeatureFlag::Custom(hash_str("math/log2"))
-);
+impl_math_unop!(MathLog2, f32, log2f);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathLog2,
-    f64,
-    log2,
-    FeatureFlag::Custom(hash_str("math/log2"))
-);
+impl_math_unop!(MathLog2, f64, log2);
 
 #[cfg(feature = "source")]
 fn impl_log2_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

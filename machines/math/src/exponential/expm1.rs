@@ -44,19 +44,9 @@ macro_rules! expm1f_vec_op {
 }
 
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathExpm1,
-    f64,
-    expm1,
-    FeatureFlag::Custom(hash_str("math/expm1"))
-);
+impl_math_unop!(MathExpm1, f64, expm1);
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathExpm1,
-    f32,
-    expm1f,
-    FeatureFlag::Custom(hash_str("math/expm1"))
-);
+impl_math_unop!(MathExpm1, f32, expm1f);
 
 #[cfg(feature = "source")]
 fn impl_expm1_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -18,6 +18,39 @@ producer_manifest="$repository_root/tests/fixtures/bytecode-compiler-producer/Ca
 consumer_manifest="$repository_root/tests/fixtures/bytecode-runtime-consumer/Cargo.toml"
 core_patch="patch.crates-io.mech-core.path=\"$repository_root/src/core\""
 
+require_source_entry() {
+  source_file=$1
+  entry=$2
+  description=$3
+  if ! grep -F -q "$entry" "$source_file"; then
+    echo "bytecode compiler boundary failed: missing $description" >&2
+    exit 1
+  fi
+}
+
+# Bytecode compatibility is a language/runtime ABI choice, not an incidental
+# property of whichever package happens to compile the writer or reader.
+abi_authority=MECH_LANGUAGE_RUNTIME_ABI_VERSION
+require_source_entry \
+  "$repository_root/src/core/src/program/bytecode/header.rs" \
+  "pub const $abi_authority" \
+  "explicit bytecode ABI authority"
+require_source_entry \
+  "$repository_root/src/core/src/program/bytecode/writer.rs" \
+  "$abi_authority" \
+  "bytecode writer use of the ABI authority"
+require_source_entry \
+  "$repository_root/src/core/src/program/bytecode/reader.rs" \
+  "$abi_authority" \
+  "bytecode reader use of the ABI authority"
+if grep -R -n 'CARGO_PKG_VERSION' \
+  "$repository_root/src/core/src/program/bytecode" \
+  "$repository_root/src/bytecode/src"
+then
+  echo "bytecode compiler boundary failed: package version used as bytecode ABI" >&2
+  exit 1
+fi
+
 require_tree_entry() {
   tree=$1
   entry=$2

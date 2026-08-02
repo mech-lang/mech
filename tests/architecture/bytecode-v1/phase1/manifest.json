@@ -1,0 +1,935 @@
+{
+  "fixtures": [
+    {
+      "application_requirements": [],
+      "expected_result": 42.0,
+      "file": "literal-f64.mecb",
+      "header": {
+        "checksum_offset": 344,
+        "file_len": 348,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 2,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 1,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 1,
+          "kind": "ConstantTable",
+          "length": 24,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 8,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 328,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 2,
+          "kind": "Instructions",
+          "length": 14,
+          "offset": 328,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 344,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 344,
+          "reserved": 0
+        }
+      ],
+      "sha256": "dd9596d0a47e87de8b0a6455bbf0058583649c7db16dab4336a5a91694bcac92",
+      "source": "42.0"
+    },
+    {
+      "application_requirements": [],
+      "expected_result": 3.0,
+      "file": "scalar-add-f64.mecb",
+      "header": {
+        "checksum_offset": 448,
+        "file_len": 452,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [
+        {
+          "id": 2863641133352691,
+          "id_hex": "000a2c77688486f3",
+          "name": "AddSS<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 24,
+          "offset": 368,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 53,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        }
+      ],
+      "sha256": "732def592c0ba921b7dd8e782163a2803a0ac21adfa5469c133bbeca5fe0f4f2",
+      "source": "1.0 + 2.0"
+    },
+    {
+      "application_requirements": [],
+      "expected_result": [
+        [
+          6.0,
+          8.0
+        ],
+        [
+          10.0,
+          12.0
+        ]
+      ],
+      "file": "fixed-matrix-add-f64.mecb",
+      "header": {
+        "checksum_offset": 568,
+        "file_len": 572,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [
+        {
+          "id": 66151685366522073,
+          "id_hex": "00eb049b7b90a0d9",
+          "name": "AddM2M2<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 2,
+            "storage": "Matrix2",
+            "storage_id": 2
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 29,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 120,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 512,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 53,
+          "offset": 512,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 568,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 568,
+          "reserved": 0
+        }
+      ],
+      "sha256": "e5d7e0f37648141ade51ab12e321262cb732933308f0502f2e28883468d7d935",
+      "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]"
+    },
+    {
+      "application_requirements": [],
+      "expected_result": [
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ]
+      ],
+      "file": "dynamic-matrix-add-f64.mecb",
+      "header": {
+        "checksum_offset": 1072,
+        "file_len": 1076,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [
+        {
+          "id": 40434906584433557,
+          "id_hex": "008fa755537dc395",
+          "name": "AddMDMD<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 5,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 29,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 624,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 1016,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 53,
+          "offset": 1016,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 1072,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 1072,
+          "reserved": 0
+        }
+      ],
+      "sha256": "4c30844a44f1026feb63cd2d485c2a2413102399b6ff8067726ca24a953548bf",
+      "source": "left := [1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0]\nright := [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]\nleft + right"
+    },
+    {
+      "application_requirements": [],
+      "expected_result": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      ],
+      "file": "variadic-horzcat-f64.mecb",
+      "header": {
+        "checksum_offset": 648,
+        "file_len": 652,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 8,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 6,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [
+        {
+          "id": 14612335857006074,
+          "id_hex": "0033e9d7901875fa",
+          "name": "HorizontalConcatenateNArgs"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 29,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 6,
+          "kind": "ConstantTable",
+          "length": 144,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 88,
+          "offset": 464,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 552,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 8,
+          "kind": "Instructions",
+          "length": 96,
+          "offset": 552,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 648,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 648,
+          "reserved": 0
+        }
+      ],
+      "sha256": "fab96de089b19430a5efeaf368dff4e1a989444fa40aead9423f1608e994d428",
+      "source": "[1.0 2.0 3.0 4.0 5.0]"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "cli://cli/stdout",
+          "context_name": "out",
+          "delivery": "Snapshot",
+          "delivery_id": 0,
+          "intent": "Send",
+          "intent_id": 3,
+          "kind": "resource",
+          "operation": "write",
+          "path": "line"
+        }
+      ],
+      "expected_result": "done",
+      "file": "cli-stdout.mecb",
+      "header": {
+        "checksum_offset": 492,
+        "file_len": 496,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "empty"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 16,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 304,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 20,
+          "offset": 376,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 45,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 44,
+          "offset": 448,
+          "reserved": 0
+        }
+      ],
+      "sha256": "6c6cdc43181c3e89e70899dd6a65f68ea9348c4eb47f5191b3d43b43879ec6ee",
+      "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\""
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "test-live://clock/clock",
+          "context_name": "clock",
+          "delivery": "Live",
+          "delivery_id": 1,
+          "intent": "Read",
+          "intent_id": 1,
+          "kind": "resource",
+          "operation": "read",
+          "path": "value"
+        }
+      ],
+      "expected_result": 0.0,
+      "file": "synthetic-live-read.mecb",
+      "header": {
+        "checksum_offset": 469,
+        "file_len": 473,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 2,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "runtime_function_ids": [
+        {
+          "id": 2863641133352691,
+          "id_hex": "000a2c77688486f3",
+          "name": "AddSS<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 2,
+          "kind": "ConstantTable",
+          "length": 48,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 16,
+          "offset": 344,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 360,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 53,
+          "offset": 360,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 416,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 53,
+          "offset": 416,
+          "reserved": 0
+        }
+      ],
+      "sha256": "f696eca38bbcd03d12872db2d5cb66dc038bacb42a4a4343d1a13a77d1e0f8a2",
+      "source": "+> @clock := test-live/clock\n\nvalue := @clock/value\ndoubled := value + value\n\ndoubled"
+    }
+  ],
+  "format": "mech-bytecode-v1",
+  "phase": 1
+}

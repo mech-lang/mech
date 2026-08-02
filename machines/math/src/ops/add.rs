@@ -344,7 +344,7 @@ mod tests {
             (register, false)
         }
 
-        fn compile_const(&mut self, _bytes: &[u8], _kind: ValueKind) -> MResult<u32> {
+        fn intern_constant(&mut self, _constant: EncodedConstant) -> MResult<u32> {
             unreachable!("runtime selection does not initialize constants")
         }
 
@@ -354,11 +354,13 @@ mod tests {
             _register: Register,
             _name: &str,
             _mutable: bool,
-        ) {
+        ) -> MResult<()> {
             unreachable!("binary function compilation does not define symbols")
         }
 
-        fn require(&mut self, _requirement: FeatureFlag) {}
+        fn intern_requirement(&mut self, _requirement: ApplicationRequirement) -> MResult<u32> {
+            unreachable!("binary function compilation does not require external services")
+        }
 
         fn emit_const_load(&mut self, _destination: Register, _constant: u32) {
             unreachable!("runtime selection does not initialize constants")
@@ -414,8 +416,35 @@ mod tests {
             unreachable!("expected binary function compilation")
         }
 
-        fn emit_ret(&mut self, _source: Register) {
-            unreachable!("binary function compilation does not emit returns")
+        fn emit_host_call(
+            &mut self,
+            _requirement: u32,
+            _destination: Register,
+            _arguments: Vec<Register>,
+        ) {
+            unreachable!("expected binary function compilation")
+        }
+
+        fn emit_resource_read(&mut self, _requirement: u32, _destination: Register) {
+            unreachable!("expected binary function compilation")
+        }
+
+        fn emit_resource_write(
+            &mut self,
+            _requirement: u32,
+            _destination: Register,
+            _source: Register,
+        ) {
+            unreachable!("expected binary function compilation")
+        }
+
+        fn emit_resource_send(
+            &mut self,
+            _requirement: u32,
+            _destination: Register,
+            _source: Register,
+        ) {
+            unreachable!("expected binary function compilation")
         }
     }
 

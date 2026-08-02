@@ -43,19 +43,9 @@ macro_rules! asinhf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathAsinh,
-    f32,
-    asinhf,
-    FeatureFlag::Custom(hash_str("math/asinh"))
-);
+impl_math_unop!(MathAsinh, f32, asinhf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathAsinh,
-    f64,
-    asinh,
-    FeatureFlag::Custom(hash_str("math/asinh"))
-);
+impl_math_unop!(MathAsinh, f64, asinh);
 
 #[cfg(feature = "source")]
 fn impl_asinh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -1,254 +1,264 @@
-use crate::{BufferPositionMismatchError, FinalBufferLengthMismatchError};
-use byteorder::{LittleEndian, WriteBytesExt};
-use mech_core::*;
-use std::collections::{HashMap, HashSet};
-use std::io::{Cursor, Write};
+use core::cmp::Ordering;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-#[derive(Debug)]
+use mech_core::{
+    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
+    BytecodeValidationError, CompileConst, EncodedConstant, MResult, MechError, ParsedProgram,
+    Register, Value, compare_application_requirements, hash_str, write_bytecode,
+};
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CanonicalRequirement(ApplicationRequirement);
+
+impl Ord for CanonicalRequirement {
+    fn cmp(&self, other: &Self) -> Ordering {
+        compare_application_requirements(&self.0, &other.0)
+    }
+}
+
+impl PartialOrd for CanonicalRequirement {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct CompileCtx {
     reg_map: HashMap<usize, Register>,
     initialized_ptrs: HashSet<usize>,
-    symbols: HashMap<u64, Register>,
-    symbol_ptrs: HashMap<u64, usize>,
-    dictionary: HashMap<u64, String>,
-    mutable_symbols: HashSet<u64>,
-    types: TypeSection,
-    features: HashSet<FeatureFlag>,
-    const_entries: Vec<ConstEntry>,
-    const_blob: Vec<u8>,
-    instrs: Vec<EncodedInstr>,
-    next_reg: Register,
+    symbols: BTreeMap<u64, Register>,
+    symbol_ptrs: BTreeMap<u64, usize>,
+    dictionary: BTreeMap<u64, String>,
+    mutable_symbols: BTreeSet<u64>,
+    pending_constants: Vec<EncodedConstant>,
+    requirements: BTreeSet<CanonicalRequirement>,
+    pending_requirements: Vec<ApplicationRequirement>,
+    instructions: Vec<BytecodeInstruction>,
+    next_register: Register,
 }
 
 impl CompileCtx {
     pub fn new() -> Self {
-        Self {
-            reg_map: HashMap::new(),
-            initialized_ptrs: HashSet::new(),
-            symbols: HashMap::new(),
-            mutable_symbols: HashSet::new(),
-            dictionary: HashMap::new(),
-            types: TypeSection::new(),
-            symbol_ptrs: HashMap::new(),
-            features: HashSet::new(),
-            const_entries: Vec::new(),
-            const_blob: Vec::new(),
-            instrs: Vec::new(),
-            next_reg: 0,
-        }
+        Self::default()
     }
 
     pub fn clear(&mut self) {
-        self.reg_map.clear();
-        self.initialized_ptrs.clear();
-        self.symbols.clear();
-        self.dictionary.clear();
-        self.mutable_symbols.clear();
-        self.types = TypeSection::new();
-        self.features.clear();
-        self.const_entries.clear();
-        self.const_blob.clear();
-        self.instrs.clear();
-        self.next_reg = 0;
+        *self = Self::default();
     }
 
-    pub fn compile(&mut self) -> MResult<Vec<u8>> {
-        let header_size = ByteCodeHeader::HEADER_SIZE as u64;
-        let feat_bytes_len = 4 + (self.features.len() as u64) * 8;
-        let types_bytes_len = self.types.byte_len();
-        let const_tbl_len = (self.const_entries.len() as u64) * ConstEntry::byte_len();
-        let const_blob_len = self.const_blob.len() as u64;
-        let symbols_len = (self.symbols.len() as u64) * 13;
-        let instr_bytes_len = self
-            .instrs
+    /// Resolve an interpreted value to the register that carries its identity.
+    ///
+    /// Planned outputs reuse their producer register. A final value that was
+    /// not part of the plan (for example, a trailing literal) is materialized
+    /// exactly once so `Return` still represents the source block's result.
+    pub fn resolve_value_register(&mut self, value: &Value) -> MResult<Register> {
+        let fallback = std::ptr::from_ref(value).addr();
+        let pointer = value_pointer(value, fallback);
+        let (register, initialize) = self.register_for_ptr_with_initialization_status(pointer);
+        if initialize {
+            let constant = compile_value_constant(value, self)?;
+            self.emit_const_load(register, constant);
+        }
+        Ok(register)
+    }
+
+    pub fn finish(&mut self, return_register: Register) -> MResult<Vec<u8>> {
+        if return_register >= self.next_register {
+            return invalid(format!(
+                "return register {return_register} is outside register count {}",
+                self.next_register,
+            ));
+        }
+
+        let requirements = self
+            .requirements
             .iter()
-            .map(|instruction| instruction.byte_len())
-            .sum();
-        let dict_len = self
-            .dictionary
-            .values()
-            .map(|name| name.len() as u64 + 12)
-            .sum();
+            .map(|requirement| requirement.0.clone())
+            .collect::<Vec<_>>();
+        let requirement_remap = self
+            .pending_requirements
+            .iter()
+            .map(|requirement| {
+                requirements
+                    .binary_search_by(|candidate| {
+                        compare_application_requirements(candidate, requirement)
+                    })
+                    .map(|index| index as u32)
+                    .map_err(|_| {
+                        invalid::<()>("pending application requirement was not finalized")
+                            .unwrap_err()
+                    })
+            })
+            .collect::<MResult<Vec<_>>>()?;
 
-        let mut offset = header_size;
-        let feature_off = offset;
-        offset += feat_bytes_len;
-        let types_off = offset;
-        offset += types_bytes_len;
-        let const_tbl_off = offset;
-        offset += const_tbl_len;
-        let const_blob_off = offset;
-        offset += const_blob_len;
-        let symbols_off = offset;
-        offset += symbols_len;
-        let instr_off = offset;
-        offset += instr_bytes_len;
-        let dict_off = offset;
-        offset += dict_len;
+        let mut instructions = self.instructions.clone();
+        for instruction in &mut instructions {
+            remap_instruction_requirement(instruction, &requirement_remap)?;
+        }
+        instructions.push(BytecodeInstruction::Return {
+            src: return_register,
+        });
 
-        let file_len_before_trailer = offset;
-        let full_file_len = file_len_before_trailer + 4;
-        let header = ByteCodeHeader {
-            magic: *b"MECH",
-            version: 1,
-            mech_ver: parse_version_to_u16(env!("CARGO_PKG_VERSION")).unwrap(),
-            flags: 0,
-            reg_count: self.next_reg,
-            instr_count: self.instrs.len() as u32,
-            feature_count: self.features.len() as u32,
-            feature_off,
-            types_count: self.types.entries.len() as u32,
-            types_off,
-            const_count: self.const_entries.len() as u32,
-            const_tbl_off,
-            const_tbl_len,
-            const_blob_off,
-            const_blob_len,
-            symbols_len,
-            symbols_off,
-            instr_off,
-            instr_len: instr_bytes_len,
-            dict_len,
-            dict_off,
-            reserved: 0,
+        let program = BytecodeProgram {
+            register_count: self.next_register,
+            constants: self.pending_constants.clone(),
+            symbols: self.symbols.clone(),
+            mutable_symbols: self.mutable_symbols.clone(),
+            instructions,
+            dictionary: self.dictionary.clone(),
+            requirements,
         };
-
-        let mut buffer = Cursor::new(Vec::with_capacity(full_file_len as usize));
-        header.write_to(&mut buffer)?;
-
-        buffer.write_u32::<LittleEndian>(self.features.len() as u32)?;
-        for feature in &self.features {
-            buffer.write_u64::<LittleEndian>(feature.as_u64())?;
-        }
-
-        self.types.write_to(&mut buffer)?;
-
-        for entry in &self.const_entries {
-            entry.write_to(&mut buffer)?;
-        }
-        if !self.const_blob.is_empty() {
-            buffer.write_all(&self.const_blob)?;
-        }
-
-        for (id, register) in &self.symbols {
-            SymbolEntry::new(*id, self.mutable_symbols.contains(id), *register)
-                .write_to(&mut buffer)?;
-        }
-
-        for instruction in &self.instrs {
-            instruction.write_to(&mut buffer)?;
-        }
-
-        for (id, name) in &self.dictionary {
-            DictEntry::new(*id, name).write_to(&mut buffer)?;
-        }
-
-        validate_buffer_position(buffer.position(), file_len_before_trailer)?;
-
-        let checksum = crc32fast::hash(buffer.get_ref().as_slice());
-        buffer.write_u32::<LittleEndian>(checksum)?;
-
-        validate_final_buffer_length(buffer.position(), full_file_len)?;
-
-        Ok(buffer.into_inner())
+        let bytes = write_bytecode(&program)?;
+        ParsedProgram::from_bytes(&bytes)?;
+        Ok(bytes)
     }
 
-    pub fn requirements(&self) -> &HashSet<FeatureFlag> {
-        &self.features
-    }
-
-    fn alloc_register_for_ptr(&mut self, pointer: usize) -> Register {
+    fn allocate_register_for_pointer(&mut self, pointer: usize) -> Register {
         if let Some(&register) = self.reg_map.get(&pointer) {
             return register;
         }
-        let register = self.next_reg;
-        self.next_reg += 1;
+        let register = self.next_register;
+        self.next_register = self
+            .next_register
+            .checked_add(1)
+            .expect("bytecode register space exhausted");
         self.reg_map.insert(pointer, register);
         register
     }
+}
 
-    fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
-        let register = self.alloc_register_for_ptr(pointer);
-        let needs_initialization = self.initialized_ptrs.insert(pointer);
-        (register, needs_initialization)
+fn value_pointer(value: &Value, fallback: usize) -> usize {
+    match value {
+        // Mutable references and typed wrappers are transparent in bytecode.
+        // Following them preserves the producer identity of a trailing symbol.
+        Value::MutableReference(reference) => value_pointer(&reference.borrow(), reference.addr()),
+        Value::Typed(value, _) => value_pointer(value, fallback),
+        _ => value
+            .reactive_root_cell_ids()
+            .first()
+            .map(|cell| cell.get() as usize)
+            .unwrap_or(fallback),
     }
+}
 
-    fn compile_const(&mut self, bytes: &[u8], value_kind: ValueKind) -> MResult<u32> {
-        let type_id = self.types.get_or_intern(&value_kind);
-        let align = value_kind.align();
-        let next_blob_len = self.const_blob.len() as u64;
-        let padded_offset = align_up(next_blob_len, align as u64);
-        if padded_offset > next_blob_len {
-            self.const_blob.resize(padded_offset as usize, 0);
-        }
-        self.features
-            .insert(FeatureFlag::Builtin(value_kind.to_feature_kind()));
-        let offset = self.const_blob.len() as u64;
-        self.const_blob.extend_from_slice(bytes);
-        let length = (self.const_blob.len() as u64) - offset;
-        let entry = ConstEntry {
-            type_id,
-            enc: ConstEncoding::Inline,
-            align: align as u8,
-            flags: 0,
-            reserved: 0,
-            offset,
-            length,
-        };
-        let const_id = self.const_entries.len() as u32;
-        self.const_entries.push(entry);
-        Ok(const_id)
+fn compile_value_constant(
+    value: &Value,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<u32> {
+    match value {
+        Value::MutableReference(reference) => compile_value_constant(&reference.borrow(), context),
+        _ => value.compile_const(context),
     }
 }
 
 impl BytecodeCompilerContext for CompileCtx {
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
-        CompileCtx::register_for_ptr_with_initialization_status(self, pointer)
+        let register = self.allocate_register_for_pointer(pointer);
+        let needs_initialization = self.initialized_ptrs.insert(pointer);
+        (register, needs_initialization)
     }
 
-    fn compile_const(&mut self, bytes: &[u8], kind: ValueKind) -> MResult<u32> {
-        CompileCtx::compile_const(self, bytes, kind)
+    fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
+        if let Some(index) = self
+            .pending_constants
+            .iter()
+            .position(|candidate| candidate == &constant)
+        {
+            return u32::try_from(index)
+                .map_err(|_| invalid::<()>("constant index exceeds u32").unwrap_err());
+        }
+        let index = u32::try_from(self.pending_constants.len())
+            .map_err(|_| invalid::<()>("constant index exceeds u32").unwrap_err())?;
+        self.pending_constants.push(constant);
+        Ok(index)
     }
 
-    fn define_symbol(&mut self, pointer: usize, register: Register, name: &str, mutable: bool) {
+    fn define_symbol(
+        &mut self,
+        pointer: usize,
+        register: Register,
+        name: &str,
+        mutable: bool,
+    ) -> MResult<()> {
+        if name.is_empty() {
+            return invalid("bytecode symbol name must not be empty");
+        }
+        if register >= self.next_register {
+            return invalid(format!(
+                "symbol register {register} is outside register count {}",
+                self.next_register,
+            ));
+        }
+
         let symbol_id = hash_str(name);
+        if let Some(existing_name) = self.dictionary.get(&symbol_id) {
+            if existing_name != name {
+                return invalid(format!(
+                    "bytecode symbol hash collision between {existing_name:?} and {name:?}",
+                ));
+            }
+            if self.symbols.get(&symbol_id) != Some(&register)
+                || self.symbol_ptrs.get(&symbol_id) != Some(&pointer)
+                || self.mutable_symbols.contains(&symbol_id) != mutable
+            {
+                return invalid(format!(
+                    "conflicting bytecode symbol definition for {name:?}",
+                ));
+            }
+            return Ok(());
+        }
+
         self.symbols.insert(symbol_id, register);
         self.symbol_ptrs.insert(symbol_id, pointer);
-        self.dictionary.insert(symbol_id, name.to_string());
+        self.dictionary.insert(symbol_id, name.to_owned());
         if mutable {
             self.mutable_symbols.insert(symbol_id);
         }
+        Ok(())
     }
 
-    fn require(&mut self, requirement: FeatureFlag) {
-        self.features.insert(requirement);
+    fn intern_requirement(&mut self, requirement: ApplicationRequirement) -> MResult<u32> {
+        if let Some(index) = self
+            .pending_requirements
+            .iter()
+            .position(|candidate| candidate == &requirement)
+        {
+            return u32::try_from(index)
+                .map_err(|_| invalid::<()>("requirement index exceeds u32").unwrap_err());
+        }
+        let index = u32::try_from(self.pending_requirements.len())
+            .map_err(|_| invalid::<()>("requirement index exceeds u32").unwrap_err())?;
+        self.requirements
+            .insert(CanonicalRequirement(requirement.clone()));
+        self.pending_requirements.push(requirement);
+        Ok(index)
     }
 
     fn emit_const_load(&mut self, destination: Register, constant: u32) {
-        self.instrs.push(EncodedInstr::ConstLoad {
+        self.instructions.push(BytecodeInstruction::ConstLoad {
             dst: destination,
-            const_id: constant,
+            constant,
         });
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {
-        self.instrs.push(EncodedInstr::NullOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeNullary {
+            function,
             dst: destination,
         });
     }
 
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register) {
-        self.instrs.push(EncodedInstr::UnOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeUnary {
+            function,
             dst: destination,
             src: source,
         });
     }
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register) {
-        self.instrs.push(EncodedInstr::BinOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeBinary {
+            function,
             dst: destination,
             lhs,
             rhs,
@@ -263,8 +273,8 @@ impl BytecodeCompilerContext for CompileCtx {
         b: Register,
         c: Register,
     ) {
-        self.instrs.push(EncodedInstr::TernOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeTernary {
+            function,
             dst: destination,
             a,
             b,
@@ -281,59 +291,84 @@ impl BytecodeCompilerContext for CompileCtx {
         c: Register,
         d: Register,
     ) {
-        self.instrs.push(EncodedInstr::QuadOp {
-            fxn_id: function,
-            dst: destination,
-            a,
-            b,
-            c,
-            d,
-        });
+        self.instructions
+            .push(BytecodeInstruction::RuntimeQuaternary {
+                function,
+                dst: destination,
+                a,
+                b,
+                c,
+                d,
+            });
     }
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>) {
-        self.instrs.push(EncodedInstr::VarArg {
-            fxn_id: function,
+        self.instructions
+            .push(BytecodeInstruction::RuntimeVariadic {
+                function,
+                dst: destination,
+                arguments,
+            });
+    }
+
+    fn emit_host_call(
+        &mut self,
+        requirement: u32,
+        destination: Register,
+        arguments: Vec<Register>,
+    ) {
+        self.instructions.push(BytecodeInstruction::HostCall {
+            requirement,
             dst: destination,
-            args: arguments,
+            arguments,
         });
     }
 
-    fn emit_ret(&mut self, source: Register) {
-        self.instrs.push(EncodedInstr::Ret { src: source });
+    fn emit_resource_read(&mut self, requirement: u32, destination: Register) {
+        self.instructions.push(BytecodeInstruction::ResourceRead {
+            requirement,
+            dst: destination,
+        });
+    }
+
+    fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register) {
+        self.instructions.push(BytecodeInstruction::ResourceWrite {
+            requirement,
+            dst: destination,
+            src: source,
+        });
+    }
+
+    fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register) {
+        self.instructions.push(BytecodeInstruction::ResourceSend {
+            requirement,
+            dst: destination,
+            src: source,
+        });
     }
 }
 
-#[inline]
-fn align_up(offset: u64, align: u64) -> u64 {
-    if align == 0 {
-        return offset;
-    }
-    ((offset + align - 1) / align) * align
+fn remap_instruction_requirement(
+    instruction: &mut BytecodeInstruction,
+    remap: &[u32],
+) -> MResult<()> {
+    let requirement = match instruction {
+        BytecodeInstruction::HostCall { requirement, .. }
+        | BytecodeInstruction::ResourceRead { requirement, .. }
+        | BytecodeInstruction::ResourceWrite { requirement, .. }
+        | BytecodeInstruction::ResourceSend { requirement, .. } => requirement,
+        _ => return Ok(()),
+    };
+    *requirement = remap.get(*requirement as usize).copied().ok_or_else(|| {
+        invalid::<()>("instruction requirement index is out of range").unwrap_err()
+    })?;
+    Ok(())
 }
 
-fn validate_buffer_position(position: u64, expected: u64) -> MResult<()> {
-    if position == expected {
-        return Ok(());
-    }
+fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
     Err(MechError::new(
-        BufferPositionMismatchError {
-            expected,
-            got: position,
-        },
-        None,
-    )
-    .with_compiler_loc())
-}
-
-fn validate_final_buffer_length(length: u64, expected: u64) -> MResult<()> {
-    if length == expected {
-        return Ok(());
-    }
-    Err(MechError::new(
-        FinalBufferLengthMismatchError {
-            expected,
-            got: length,
+        BytecodeValidationError {
+            reason: reason.into(),
         },
         None,
     )
@@ -343,225 +378,220 @@ fn validate_final_buffer_length(length: u64, expected: u64) -> MResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::{
+        ExecutionHostFunctionRequest, ExecutionResourceRequest, ResourceDelivery, ResourceIntent,
+        RuntimeType,
+    };
+
+    fn f64_constant(value: f64) -> EncodedConstant {
+        EncodedConstant {
+            runtime_type: RuntimeType::F64,
+            alignment: 8,
+            bytes: value.to_bits().to_le_bytes().to_vec(),
+        }
+    }
+
+    fn allocate_registers(context: &mut CompileCtx, count: usize) -> Vec<Register> {
+        (0..count)
+            .map(|pointer| {
+                context
+                    .register_for_ptr_with_initialization_status(pointer)
+                    .0
+            })
+            .collect()
+    }
+
+    fn host_requirement(name: &str) -> ApplicationRequirement {
+        ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+            name: name.to_owned(),
+        })
+    }
+
+    fn resource_requirement(base_uri: &str) -> ApplicationRequirement {
+        ApplicationRequirement::Resource(ExecutionResourceRequest {
+            base_uri: base_uri.to_owned(),
+            path: "value".to_owned(),
+            context_name: "ctx".to_owned(),
+            operation: "read".to_owned(),
+            intent: ResourceIntent::Read,
+            delivery: ResourceDelivery::Snapshot,
+        })
+    }
 
     #[test]
-    fn compile_context_initializes_pointer_register_once() {
+    fn pointer_registers_are_initialized_once() {
         let mut context = CompileCtx::new();
-        let pointer_a = 100usize;
-        let pointer_b = 200usize;
+        let (first, initializes_first) = context.register_for_ptr_with_initialization_status(100);
+        let (same, initializes_same) = context.register_for_ptr_with_initialization_status(100);
+        let (second, initializes_second) = context.register_for_ptr_with_initialization_status(200);
 
-        let (register_a, initializes_a) =
-            context.register_for_ptr_with_initialization_status(pointer_a);
-        assert!(initializes_a);
-
-        let (register_a_again, initializes_a_again) =
-            context.register_for_ptr_with_initialization_status(pointer_a);
-        assert_eq!(register_a_again, register_a);
-        assert!(!initializes_a_again);
-
-        let (register_b, initializes_b) =
-            context.register_for_ptr_with_initialization_status(pointer_b);
-        assert_ne!(register_b, register_a);
-        assert!(initializes_b);
+        assert_eq!(first, same);
+        assert_ne!(first, second);
+        assert!(initializes_first);
+        assert!(!initializes_same);
+        assert!(initializes_second);
 
         context.clear();
-
-        let (register_a_after_clear, initializes_a_after_clear) =
-            context.register_for_ptr_with_initialization_status(pointer_a);
-        assert_eq!(register_a_after_clear, 0);
-        assert!(initializes_a_after_clear);
-    }
-
-    #[test]
-    fn pointer_register_scalar_initializes_once() {
-        let mut context = CompileCtx::new();
-        let context = &mut context;
-        let scalar_a = Ref::new(42usize);
-        let scalar_b = Ref::new(42usize);
-
-        let register_a = compile_register_brrw!(scalar_a, context);
-        let register_a_again = compile_register_brrw!(scalar_a, context);
-        let register_b = compile_register_brrw!(scalar_b, context);
-
-        assert_eq!(register_a_again, register_a);
-        assert_ne!(register_b, register_a);
-        assert_eq!(context.const_entries.len(), 2);
-        let const_loads = context
-            .instrs
-            .iter()
-            .filter_map(|instruction| match instruction {
-                EncodedInstr::ConstLoad { dst, const_id } => Some((*dst, *const_id)),
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(const_loads, vec![(register_a, 0), (register_b, 1)]);
-    }
-
-    #[test]
-    fn distinct_pointers_with_equal_values_receive_distinct_registers() {
-        let value_a = 42u64;
-        let value_b = 42u64;
-        let mut context = CompileCtx::new();
-
-        let value_a_address = std::ptr::from_ref(&value_a).addr();
-        let value_b_address = std::ptr::from_ref(&value_b).addr();
-        let (register_a, _) = context.register_for_ptr_with_initialization_status(value_a_address);
-        let (register_b, _) = context.register_for_ptr_with_initialization_status(value_b_address);
-
-        assert_ne!(value_a_address, value_b_address);
-        assert_ne!(register_a, register_b);
-    }
-
-    #[test]
-    fn symbol_and_mutability_metadata_survive_emission() {
-        let mut context = CompileCtx::new();
-        let pointer = 0x1234usize;
-        let (register, _) = context.register_for_ptr_with_initialization_status(pointer);
-        context.define_symbol(pointer, register, "answer", true);
-
-        let symbol_id = hash_str("answer");
-        assert_eq!(context.symbol_ptrs.get(&symbol_id), Some(&pointer));
-
-        let bytes = context.compile().unwrap();
-        let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
-        assert_eq!(parsed.symbols.get(&symbol_id), Some(&register));
-        assert!(parsed.mutable_symbols.contains(&symbol_id));
         assert_eq!(
-            parsed.dictionary.get(&symbol_id).map(String::as_str),
-            Some("answer")
+            context.register_for_ptr_with_initialization_status(100),
+            (0, true),
         );
     }
 
     #[test]
-    fn constants_keep_their_alignment() {
+    fn constants_are_interned_and_self_validated() {
         let mut context = CompileCtx::new();
-        context.compile_const(&[1], ValueKind::Index).unwrap();
-        context.compile_const(&[2; 8], ValueKind::Index).unwrap();
+        let register = allocate_registers(&mut context, 1)[0];
+        let first = context.intern_constant(f64_constant(3.0)).unwrap();
+        let duplicate = context.intern_constant(f64_constant(3.0)).unwrap();
+        assert_eq!(first, duplicate);
+        context.emit_const_load(register, first);
 
-        assert_eq!(context.const_entries[0].offset, 0);
-        assert_eq!(context.const_entries[0].align, 8);
-        assert_eq!(context.const_entries[1].offset, 8);
-        assert_eq!(context.const_entries[1].align, 8);
-
-        let parsed = ParsedProgram::from_bytes(&context.compile().unwrap()).unwrap();
-        assert_eq!(parsed.const_entries[1].offset, 8);
-    }
-
-    #[test]
-    fn instruction_emission_round_trips_unchanged() {
-        let mut context = CompileCtx::new();
-        context.emit_nullop(10, 0);
-        context.emit_unop(11, 1, 0);
-        context.emit_binop(12, 2, 0, 1);
-        context.emit_ternop(13, 3, 0, 1, 2);
-        context.emit_quadop(14, 4, 0, 1, 2, 3);
-        context.emit_ret(5);
-        context.emit_varop(15, 5, vec![0, 1, 2, 3, 4]);
-
-        let parsed = ParsedProgram::from_bytes(&context.compile().unwrap()).unwrap();
+        let parsed = ParsedProgram::from_bytes(&context.finish(register).unwrap()).unwrap();
+        assert_eq!(parsed.constants.len(), 1);
+        assert_eq!(parsed.decode_constants().unwrap().len(), 1);
         assert_eq!(
-            parsed.instrs,
+            parsed.instructions,
             vec![
-                DecodedInstr::NullOp { fxn_id: 10, dst: 0 },
-                DecodedInstr::UnOp {
-                    fxn_id: 11,
-                    dst: 1,
-                    src: 0
+                BytecodeInstruction::ConstLoad {
+                    dst: register,
+                    constant: first,
                 },
-                DecodedInstr::BinOp {
-                    fxn_id: 12,
-                    dst: 2,
-                    lhs: 0,
-                    rhs: 1
-                },
-                DecodedInstr::TernOp {
-                    fxn_id: 13,
-                    dst: 3,
-                    a: 0,
-                    b: 1,
-                    c: 2
-                },
-                DecodedInstr::QuadOp {
-                    fxn_id: 14,
-                    dst: 4,
-                    a: 0,
-                    b: 1,
-                    c: 2,
-                    d: 3
-                },
-                DecodedInstr::Ret { src: 5 },
-                DecodedInstr::VarArg {
-                    fxn_id: 15,
-                    dst: 5,
-                    args: vec![0, 1, 2, 3, 4]
-                },
+                BytecodeInstruction::Return { src: register },
             ],
         );
     }
 
     #[test]
-    fn emitted_sections_retain_version_one_layout_and_checksum() {
-        let mut context = CompileCtx::new();
-        context.require(FeatureFlag::Builtin(FeatureKind::Index));
-        context.compile_const(&[1; 8], ValueKind::Index).unwrap();
-        let (register, _) = context.register_for_ptr_with_initialization_status(1);
-        context.define_symbol(1, register, "index", false);
-        context.emit_const_load(register, 0);
+    fn symbol_and_dictionary_order_is_deterministic() {
+        fn compile(reverse: bool) -> Vec<u8> {
+            let mut context = CompileCtx::new();
+            let registers = allocate_registers(&mut context, 2);
+            let definitions = [
+                (10usize, registers[0], "alpha", false),
+                (20usize, registers[1], "omega", true),
+            ];
+            for index in if reverse { [1, 0] } else { [0, 1] } {
+                let (pointer, register, name, mutable) = definitions[index];
+                context
+                    .define_symbol(pointer, register, name, mutable)
+                    .unwrap();
+            }
+            context.finish(registers[0]).unwrap()
+        }
 
-        let bytes = context.compile().unwrap();
-        let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
-        let header = &parsed.header;
-        assert_eq!(header.version, 1);
-        assert_eq!(header.feature_off, ByteCodeHeader::HEADER_SIZE as u64);
-        assert_eq!(
-            header.types_off,
-            header.feature_off + 4 + (header.feature_count as u64 * 8),
-        );
-        assert_eq!(
-            header.const_tbl_off,
-            header.types_off + parsed.types.byte_len()
-        );
-        assert_eq!(
-            header.const_blob_off,
-            header.const_tbl_off + header.const_tbl_len
-        );
-        assert_eq!(
-            header.symbols_off,
-            header.const_blob_off + header.const_blob_len
-        );
-        assert_eq!(header.instr_off, header.symbols_off + header.symbols_len);
-        assert_eq!(header.dict_off, header.instr_off + header.instr_len);
-        assert_eq!(bytes.len() as u64, header.dict_off + header.dict_len + 4);
-
-        let mut corrupted = bytes;
-        corrupted[ByteCodeHeader::HEADER_SIZE] ^= 1;
-        assert!(ParsedProgram::from_bytes(&corrupted).is_err());
+        assert_eq!(compile(false), compile(true));
     }
 
     #[test]
-    fn requirements_are_deduplicated() {
+    fn conflicting_and_empty_symbols_are_rejected() {
         let mut context = CompileCtx::new();
-        let requirement = FeatureFlag::Builtin(FeatureKind::Add);
-        context.require(requirement.clone());
-        context.require(requirement.clone());
-        assert_eq!(context.requirements().len(), 1);
-        assert!(context.requirements().contains(&requirement));
+        let registers = allocate_registers(&mut context, 2);
+        assert!(context.define_symbol(1, registers[0], "", false).is_err());
+        context
+            .define_symbol(1, registers[0], "answer", false)
+            .unwrap();
+        assert!(
+            context
+                .define_symbol(2, registers[1], "answer", false)
+                .is_err()
+        );
     }
 
     #[test]
-    fn malformed_writer_positions_return_structured_errors() {
-        let position_error = validate_buffer_position(4, 5).unwrap_err();
-        let position = position_error
-            .kind_as::<BufferPositionMismatchError>()
-            .unwrap();
-        assert_eq!(position.expected, 5);
-        assert_eq!(position.got, 4);
+    fn requirements_are_canonicalized_and_instruction_indexes_are_remapped() {
+        fn compile(resource_first: bool) -> Vec<u8> {
+            let mut context = CompileCtx::new();
+            let registers = allocate_registers(&mut context, 2);
+            let host = host_requirement("cli/stdout");
+            let resource = resource_requirement("context://input");
+            let (host_id, resource_id) = if resource_first {
+                let resource_id = context.intern_requirement(resource).unwrap();
+                let host_id = context.intern_requirement(host).unwrap();
+                (host_id, resource_id)
+            } else {
+                let host_id = context.intern_requirement(host).unwrap();
+                let resource_id = context.intern_requirement(resource).unwrap();
+                (host_id, resource_id)
+            };
+            context.emit_host_call(host_id, registers[0], Vec::new());
+            context.emit_resource_read(resource_id, registers[1]);
+            context.finish(registers[1]).unwrap()
+        }
 
-        let length_error = validate_final_buffer_length(8, 9).unwrap_err();
-        let length = length_error
-            .kind_as::<FinalBufferLengthMismatchError>()
+        let resource_first = compile(true);
+        assert_eq!(resource_first, compile(false));
+        let parsed = ParsedProgram::from_bytes(&resource_first).unwrap();
+        assert!(matches!(
+            parsed.requirements[0],
+            ApplicationRequirement::HostFunction(_)
+        ));
+        assert!(matches!(
+            parsed.instructions[0],
+            BytecodeInstruction::HostCall { requirement: 0, .. }
+        ));
+        assert!(matches!(
+            parsed.instructions[1],
+            BytecodeInstruction::ResourceRead { requirement: 1, .. }
+        ));
+    }
+
+    #[test]
+    fn finish_appends_one_final_return_and_is_repeatable() {
+        let mut context = CompileCtx::new();
+        let register = allocate_registers(&mut context, 1)[0];
+        let first = context.finish(register).unwrap();
+        let second = context.finish(register).unwrap();
+        assert_eq!(first, second);
+
+        let parsed = ParsedProgram::from_bytes(&first).unwrap();
+        assert_eq!(
+            parsed.instructions,
+            vec![BytecodeInstruction::Return { src: register }],
+        );
+    }
+
+    #[test]
+    fn all_instruction_shapes_round_trip() {
+        let mut context = CompileCtx::new();
+        let registers = allocate_registers(&mut context, 7);
+        let constant = context.intern_constant(f64_constant(1.0)).unwrap();
+        let host = context
+            .intern_requirement(host_requirement("cli/stdout"))
             .unwrap();
-        assert_eq!(length.expected, 9);
-        assert_eq!(length.got, 8);
+        let resource = context
+            .intern_requirement(resource_requirement("context://input"))
+            .unwrap();
+
+        context.emit_const_load(registers[0], constant);
+        context.emit_nullop(1, registers[0]);
+        context.emit_unop(2, registers[1], registers[0]);
+        context.emit_binop(3, registers[2], registers[0], registers[1]);
+        context.emit_ternop(4, registers[3], registers[0], registers[1], registers[2]);
+        context.emit_quadop(
+            5,
+            registers[4],
+            registers[0],
+            registers[1],
+            registers[2],
+            registers[3],
+        );
+        context.emit_varop(6, registers[5], registers[..5].to_vec());
+        context.emit_host_call(host, registers[5], registers[..2].to_vec());
+        context.emit_resource_read(resource, registers[5]);
+        context.emit_resource_write(resource, registers[5], registers[0]);
+        context.emit_resource_send(resource, registers[6], registers[5]);
+
+        let parsed = ParsedProgram::from_bytes(&context.finish(registers[6]).unwrap()).unwrap();
+        assert_eq!(parsed.instructions.len(), 12);
+        assert_eq!(
+            parsed.instructions.last(),
+            Some(&BytecodeInstruction::Return { src: registers[6] }),
+        );
+    }
+
+    #[test]
+    fn finish_rejects_out_of_range_return_register() {
+        assert!(CompileCtx::new().finish(0).is_err());
     }
 }

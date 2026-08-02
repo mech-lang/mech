@@ -275,25 +275,17 @@ fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
 }
 
 #[test]
-fn decoded_structural_alias_access_matches_source() -> MResult<()> {
+fn phase1_tuple_constant_reports_the_frozen_unsupported_error() -> MResult<()> {
     let code = "tuple := (1, 2); tuple.2";
     let mut source = source_program();
     let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(decoded_output, source_output);
     assert_alias_node(
         &source.interpreter().plan(),
         "TupleAccessElement",
         &source_output,
     );
-    assert_alias_node(
-        &decoded.interpreter().plan(),
-        "TupleAccessElement",
-        &decoded_output,
-    );
+    let error = source.compile_bytecode().unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
     Ok(())
 }
 
@@ -471,16 +463,12 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
 }
 
 #[test]
-fn decoded_set_literal_registers_structural_node() -> MResult<()> {
+fn phase1_set_constant_reports_the_frozen_unsupported_error() -> MResult<()> {
     let code = "{1.0, 2.0}";
     let mut source = source_program();
     let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(decoded_output, source_output);
     assert_structural_set_node(&source.interpreter().plan(), &source_output);
-    assert_structural_set_node(&decoded.interpreter().plan(), &decoded_output);
+    let error = source.compile_bytecode().unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
     Ok(())
 }

@@ -183,15 +183,7 @@ macro_rules! impl_range_range_fxn_v {
                     IxVec1::as_na_kind(),
                     IxVec2::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -324,14 +316,7 @@ macro_rules! impl_all_fxn_v {
                     naMatrix::<T, R2, C2, S2>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::OpAssign)
-                );
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };

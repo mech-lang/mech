@@ -81,72 +81,37 @@ macro_rules! fabsf_vec_op {
 }
 
 #[cfg(feature = "u8")]
-impl_math_unop!(MathAbs, u8, uabs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, u8, uabs);
 #[cfg(feature = "u16")]
-impl_math_unop!(
-    MathAbs,
-    u16,
-    uabs,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, u16, uabs);
 #[cfg(feature = "u32")]
-impl_math_unop!(
-    MathAbs,
-    u32,
-    uabs,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, u32, uabs);
 #[cfg(feature = "u64")]
-impl_math_unop!(
-    MathAbs,
-    u64,
-    uabs,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, u64, uabs);
 #[cfg(feature = "u128")]
-impl_math_unop!(
-    MathAbs,
-    u128,
-    uabs,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, u128, uabs);
 
 #[cfg(feature = "i8")]
-impl_math_unop!(MathAbs, i8, abs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, i8, abs);
 #[cfg(feature = "i16")]
-impl_math_unop!(MathAbs, i16, abs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, i16, abs);
 #[cfg(feature = "i32")]
-impl_math_unop!(MathAbs, i32, abs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, i32, abs);
 #[cfg(feature = "i64")]
-impl_math_unop!(MathAbs, i64, abs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, i64, abs);
 #[cfg(feature = "i128")]
-impl_math_unop!(
-    MathAbs,
-    i128,
-    abs,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, i128, abs);
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathAbs,
-    f32,
-    fabsf,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, f32, fabsf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathAbs,
-    f64,
-    fabs,
-    FeatureFlag::Custom(hash_str("math/abs"))
-);
+impl_math_unop!(MathAbs, f64, fabs);
 
 #[cfg(feature = "c64")]
-impl_math_unop!(MathAbs, C64, abs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, C64, abs);
 
 #[cfg(feature = "r64")]
-impl_math_unop!(MathAbs, R64, abs, FeatureFlag::Custom(hash_str("math/abs")));
+impl_math_unop!(MathAbs, R64, abs);
 
 #[cfg(feature = "source")]
 fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

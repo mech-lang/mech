@@ -16,7 +16,7 @@ macro_rules! compile_register_brrw {
         let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
         if needs_initialization {
             let borrow = $reg.borrow();
-            let const_id = borrow.compile_const($ctx).unwrap();
+            let const_id = borrow.compile_const($ctx)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -30,7 +30,7 @@ macro_rules! compile_register {
         let addr = $reg.addr();
         let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
         if needs_initialization {
-            let const_id = $reg.compile_const($ctx).unwrap();
+            let const_id = $reg.compile_const($ctx)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -44,7 +44,7 @@ macro_rules! compile_register_mat {
         let addr = $reg.addr();
         let (reg, needs_initialization) = $ctx.register_for_ptr_with_initialization_status(addr);
         if needs_initialization {
-            let const_id = $reg.compile_const_mat($ctx).unwrap();
+            let const_id = $reg.compile_const_mat($ctx)?;
             $ctx.emit_const_load(reg, const_id);
         }
         reg
@@ -54,14 +54,12 @@ macro_rules! compile_register_mat {
 #[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_nullop {
-    ($name:tt, $out:expr, $ctx:ident, $feature_flag:expr) => {
+    ($name:tt, $out:expr, $ctx:ident) => {
         // allocate one register as an array
         let mut registers = [0];
 
         // Compile out
         registers[0] = compile_register_brrw!($out, $ctx);
-
-        $ctx.require($feature_flag);
 
         // Emit the operation
         $ctx.emit_nullop(hash_str(&$name), registers[0]);
@@ -73,15 +71,13 @@ macro_rules! compile_nullop {
 #[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_unop {
-    ($name:tt, $out:expr, $arg:expr, $ctx:ident, $feature_flag:expr) => {
+    ($name:tt, $out:expr, $arg:expr, $ctx:ident) => {
         // Allocate three registers as an array
         let mut registers = [0, 0];
 
         // Allocate registers
         registers[0] = compile_register_brrw!($out, $ctx);
         registers[1] = compile_register_brrw!($arg, $ctx);
-
-        $ctx.require($feature_flag);
 
         // Emit the operation
         $ctx.emit_unop(hash_str(&$name), registers[0], registers[1]);
@@ -93,14 +89,12 @@ macro_rules! compile_unop {
 #[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_binop {
-    ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr) => {
+    ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $ctx:ident) => {
         let mut registers = [0, 0, 0];
 
         registers[0] = compile_register_brrw!($out, $ctx);
         registers[1] = compile_register_brrw!($arg1, $ctx);
         registers[2] = compile_register_brrw!($arg2, $ctx);
-
-        $ctx.require($feature_flag);
 
         $ctx.emit_binop(hash_str(&$name), registers[0], registers[1], registers[2]);
 
@@ -111,15 +105,13 @@ macro_rules! compile_binop {
 #[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_ternop {
-    ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident, $feature_flag:expr) => {
+    ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident) => {
         let mut registers = [0, 0, 0, 0];
 
         registers[0] = compile_register_brrw!($out, $ctx);
         registers[1] = compile_register_brrw!($arg1, $ctx);
         registers[2] = compile_register_brrw!($arg2, $ctx);
         registers[3] = compile_register_brrw!($arg3, $ctx);
-
-        $ctx.require($feature_flag);
 
         $ctx.emit_ternop(
             hash_str(&$name),
@@ -136,7 +128,7 @@ macro_rules! compile_ternop {
 #[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_quadop {
-    ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident, $feature_flag:expr) => {
+    ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident) => {
         let mut registers = [0, 0, 0, 0, 0];
 
         registers[0] = compile_register_brrw!($out, $ctx);
@@ -144,8 +136,6 @@ macro_rules! compile_quadop {
         registers[2] = compile_register_brrw!($arg2, $ctx);
         registers[3] = compile_register_brrw!($arg3, $ctx);
         registers[4] = compile_register_brrw!($arg4, $ctx);
-
-        $ctx.require($feature_flag);
 
         $ctx.emit_quadop(
             hash_str(&$name),
@@ -162,14 +152,13 @@ macro_rules! compile_quadop {
 #[cfg(feature = "compiler")]
 #[macro_export]
 macro_rules! compile_varop {
-    ($name:tt, $out:expr, $args:expr, $ctx:ident, $feature_flag:expr) => {
+    ($name:tt, $out:expr, $args:expr, $ctx:ident) => {
         let arg_count = $args.len();
         let mut registers = vec![0; arg_count + 1];
         registers[0] = compile_register_brrw!($out, $ctx);
         for i in 0..arg_count {
             registers[i + 1] = compile_register_brrw!($args[i], $ctx);
         }
-        $ctx.require($feature_flag);
         $ctx.emit_varop(hash_str(&$name), registers[0], (&registers[1..]).to_vec());
         return Ok(registers[0])
     };
@@ -177,7 +166,7 @@ macro_rules! compile_varop {
 
 #[macro_export]
 macro_rules! impl_binop {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
             pub lhs: Ref<$arg1_type>,
@@ -298,7 +287,7 @@ macro_rules! impl_binop {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
     };
@@ -306,7 +295,7 @@ macro_rules! impl_binop {
 
 #[macro_export]
 macro_rules! impl_unop {
-    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
             arg: Ref<$arg_type>,
@@ -352,7 +341,7 @@ macro_rules! impl_unop {
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}", stringify!($struct_name));
-                compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
+                compile_unop!(name, self.out, self.arg, ctx);
             }
         }
     };
@@ -688,183 +677,183 @@ macro_rules! impl_fxns {
   ($lib:ident, $in:ident, $out:ident, $op:ident) => {
     paste!{
       // Scalar
-      $op!([<$lib SS>], $in, $in, $out, [<$lib:lower _op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SS>], $in, $in, $out, [<$lib:lower _op>]);
       // Scalar Matrix
       #[cfg(feature = "matrix1")]
-      $op!([<$lib SM1>], $in, Matrix1<$in>, Matrix1<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SM1>], $in, Matrix1<$in>, Matrix1<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "matrix2")]
-      $op!([<$lib SM2>], $in, Matrix2<$in>, Matrix2<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SM2>], $in, Matrix2<$in>, Matrix2<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "matrix3")]
-      $op!([<$lib SM3>], $in, Matrix3<$in>, Matrix3<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SM3>], $in, Matrix3<$in>, Matrix3<$out>,[<$lib:lower _scalar_rhs_op>]);
 
       #[cfg(feature = "matrix4")]
-      $op!([<$lib SM4>], $in, Matrix4<$in>, Matrix4<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SM4>], $in, Matrix4<$in>, Matrix4<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "matrix2x3")]
-      $op!([<$lib SM2x3>], $in, Matrix2x3<$in>, Matrix2x3<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SM2x3>], $in, Matrix2x3<$in>, Matrix2x3<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "matrix3x2")]
-      $op!([<$lib SM3x2>], $in, Matrix3x2<$in>, Matrix3x2<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SM3x2>], $in, Matrix3x2<$in>, Matrix3x2<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "matrixd")]
-      $op!([<$lib SMD>], $in, DMatrix<$in>, DMatrix<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SMD>], $in, DMatrix<$in>, DMatrix<$out>,[<$lib:lower _scalar_rhs_op>]);
       // Scalar Row
       #[cfg(feature = "row_vector2")]
-      $op!([<$lib SR2>], $in, RowVector2<$in>, RowVector2<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SR2>], $in, RowVector2<$in>, RowVector2<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "row_vector3")]
-      $op!([<$lib SR3>], $in, RowVector3<$in>, RowVector3<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SR3>], $in, RowVector3<$in>, RowVector3<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "row_vector4")]
-      $op!([<$lib SR4>], $in, RowVector4<$in>, RowVector4<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SR4>], $in, RowVector4<$in>, RowVector4<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "row_vectord")]
-      $op!([<$lib SRD>], $in, RowDVector<$in>, RowDVector<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SRD>], $in, RowDVector<$in>, RowDVector<$out>,[<$lib:lower _scalar_rhs_op>]);
       // Scalar Vector
       #[cfg(feature = "vector2")]
-      $op!([<$lib SV2>], $in, Vector2<$in>, Vector2<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SV2>], $in, Vector2<$in>, Vector2<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "vector3")]
-      $op!([<$lib SV3>], $in, Vector3<$in>, Vector3<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SV3>], $in, Vector3<$in>, Vector3<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "vector4")]
-      $op!([<$lib SV4>], $in, Vector4<$in>, Vector4<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SV4>], $in, Vector4<$in>, Vector4<$out>,[<$lib:lower _scalar_rhs_op>]);
       #[cfg(feature = "vectord")]
-      $op!([<$lib SVD>], $in, DVector<$in>, DVector<$out>,[<$lib:lower _scalar_rhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib SVD>], $in, DVector<$in>, DVector<$out>,[<$lib:lower _scalar_rhs_op>]);
       // Matrix Scalar
       #[cfg(feature = "matrix1")]
-      $op!([<$lib M1S>], Matrix1<$in>, $in, Matrix1<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M1S>], Matrix1<$in>, $in, Matrix1<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "matrix2")]
-      $op!([<$lib M2S>], Matrix2<$in>, $in, Matrix2<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2S>], Matrix2<$in>, $in, Matrix2<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "matrix3")]
-      $op!([<$lib M3S>], Matrix3<$in>, $in, Matrix3<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3S>], Matrix3<$in>, $in, Matrix3<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "matrix4")]
-      $op!([<$lib M4S>], Matrix4<$in>, $in, Matrix4<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M4S>], Matrix4<$in>, $in, Matrix4<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "matrix2x3")]
-      $op!([<$lib M2x3S>], Matrix2x3<$in>, $in, Matrix2x3<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2x3S>], Matrix2x3<$in>, $in, Matrix2x3<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "matrix3x2")]
-      $op!([<$lib M3x2S>], Matrix3x2<$in>, $in, Matrix3x2<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3x2S>], Matrix3x2<$in>, $in, Matrix3x2<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "matrixd")]
-      $op!([<$lib MDS>], DMatrix<$in>, $in, DMatrix<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDS>], DMatrix<$in>, $in, DMatrix<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Row Scalar
       #[cfg(feature = "row_vector2")]
-      $op!([<$lib R2S>], RowVector2<$in>, $in, RowVector2<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R2S>], RowVector2<$in>, $in, RowVector2<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "row_vector3")]
-      $op!([<$lib R3S>], RowVector3<$in>, $in, RowVector3<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R3S>], RowVector3<$in>, $in, RowVector3<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "row_vector4")]
-      $op!([<$lib R4S>], RowVector4<$in>, $in, RowVector4<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R4S>], RowVector4<$in>, $in, RowVector4<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "row_vectord")]
-      $op!([<$lib RDS>], RowDVector<$in>, $in, RowDVector<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib RDS>], RowDVector<$in>, $in, RowDVector<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Vector Scalar
       #[cfg(feature = "vector2")]
-      $op!([<$lib V2S>], Vector2<$in>, $in, Vector2<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V2S>], Vector2<$in>, $in, Vector2<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "vector3")]
-      $op!([<$lib V3S>], Vector3<$in>, $in, Vector3<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V3S>], Vector3<$in>, $in, Vector3<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "vector4")]
-      $op!([<$lib V4S>], Vector4<$in>, $in, Vector4<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V4S>], Vector4<$in>, $in, Vector4<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "vectord")]
-      $op!([<$lib VDS>], DVector<$in>, $in, DVector<$out>,[<$lib:lower _scalar_lhs_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib VDS>], DVector<$in>, $in, DVector<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Matrix Matrix
       #[cfg(feature = "matrix1")]
-      $op!([<$lib M1M1>], Matrix1<$in>, Matrix1<$in>, Matrix1<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M1M1>], Matrix1<$in>, Matrix1<$in>, Matrix1<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "matrix2")]
-      $op!([<$lib M2M2>], Matrix2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2M2>], Matrix2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "matrix3")]
-      $op!([<$lib M3M3>], Matrix3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3M3>], Matrix3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "matrix4")]
-      $op!([<$lib M4M4>], Matrix4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M4M4>], Matrix4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "matrix2x3")]
-      $op!([<$lib M2x3M2x3>], Matrix2x3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2x3M2x3>], Matrix2x3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "matrix3x2")]
-      $op!([<$lib M3x2M3x2>], Matrix3x2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3x2M3x2>], Matrix3x2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "matrixd")]
-      $op!([<$lib MDMD>], DMatrix<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDMD>], DMatrix<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_op>]);
       // Matrix Vector
       #[cfg(all(feature = "matrix2", feature = "vector2"))]
-      $op!([<$lib M2V2>], Matrix2<$in>, Vector2<$in>, Matrix2<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2V2>], Matrix2<$in>, Vector2<$in>, Matrix2<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrix3", feature = "vector3"))]
-      $op!([<$lib M3V3>], Matrix3<$in>, Vector3<$in>, Matrix3<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3V3>], Matrix3<$in>, Vector3<$in>, Matrix3<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrix4", feature = "vector4"))]
-      $op!([<$lib M4V4>], Matrix4<$in>, Vector4<$in>, Matrix4<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M4V4>], Matrix4<$in>, Vector4<$in>, Matrix4<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
-      $op!([<$lib M2x3V2>], Matrix2x3<$in>, Vector2<$in>, Matrix2x3<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2x3V2>], Matrix2x3<$in>, Vector2<$in>, Matrix2x3<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
-      $op!([<$lib M3x2V3>], Matrix3x2<$in>, Vector3<$in>, Matrix3x2<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3x2V3>], Matrix3x2<$in>, Vector3<$in>, Matrix3x2<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrixd", feature = "vectord"))]
-      $op!([<$lib MDVD>], DMatrix<$in>, DVector<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDVD>], DMatrix<$in>, DVector<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrixd", feature = "vector2"))]
-      $op!([<$lib MDV2>], DMatrix<$in>, Vector2<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDV2>], DMatrix<$in>, Vector2<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrixd", feature = "vector3"))]
-      $op!([<$lib MDV3>], DMatrix<$in>, Vector3<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDV3>], DMatrix<$in>, Vector3<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>]);
       #[cfg(all(feature = "matrixd", feature = "vector4"))]
-      $op!([<$lib MDV4>], DMatrix<$in>, Vector4<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDV4>], DMatrix<$in>, Vector4<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>]);
       // Vector Matrix
       #[cfg(all(feature = "vector2", feature = "matrix2"))]
-      $op!([<$lib V2M2>], Vector2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V2M2>], Vector2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector3", feature = "matrix3"))]
-      $op!([<$lib V3M3>], Vector3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V3M3>], Vector3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector4", feature = "matrix4"))]
-      $op!([<$lib V4M4>], Vector4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V4M4>], Vector4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector2", feature = "matrix2x3"))]
-      $op!([<$lib V2M2x3>], Vector2<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V2M2x3>], Vector2<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
-      $op!([<$lib V3M3x2>], Vector3<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V3M3x2>], Vector3<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vectord", feature = "matrixd"))]
-      $op!([<$lib VDMD>], DVector<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib VDMD>], DVector<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector2", feature = "matrixd"))]
-      $op!([<$lib V2MD>], Vector2<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V2MD>], Vector2<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector3", feature = "matrixd"))]
-      $op!([<$lib V3MD>], Vector3<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V3MD>], Vector3<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>]);
       #[cfg(all(feature = "vector4", feature = "matrixd"))]
-      $op!([<$lib V4MD>], Vector4<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V4MD>], Vector4<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>]);
       // Matrix Row
       #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
-      $op!([<$lib M2R2>], Matrix2<$in>, RowVector2<$in>, Matrix2<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2R2>], Matrix2<$in>, RowVector2<$in>, Matrix2<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
-      $op!([<$lib M3R3>], Matrix3<$in>, RowVector3<$in>, Matrix3<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3R3>], Matrix3<$in>, RowVector3<$in>, Matrix3<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-      $op!([<$lib M4R4>], Matrix4<$in>, RowVector4<$in>, Matrix4<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M4R4>], Matrix4<$in>, RowVector4<$in>, Matrix4<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
-      $op!([<$lib M2x3R3>], Matrix2x3<$in>, RowVector3<$in>, Matrix2x3<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M2x3R3>], Matrix2x3<$in>, RowVector3<$in>, Matrix2x3<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
-      $op!([<$lib M3x2R2>], Matrix3x2<$in>, RowVector2<$in>, Matrix3x2<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib M3x2R2>], Matrix3x2<$in>, RowVector2<$in>, Matrix3x2<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
-      $op!([<$lib MDRD>], DMatrix<$in>, RowDVector<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDRD>], DMatrix<$in>, RowDVector<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrixd", feature = "row_vector2"))]
-      $op!([<$lib MDR2>], DMatrix<$in>, RowVector2<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDR2>], DMatrix<$in>, RowVector2<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrixd", feature = "row_vector3"))]
-      $op!([<$lib MDR3>], DMatrix<$in>, RowVector3<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDR3>], DMatrix<$in>, RowVector3<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>]);
       #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
-      $op!([<$lib MDR4>], DMatrix<$in>, RowVector4<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib MDR4>], DMatrix<$in>, RowVector4<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>]);
       // Row Matrix
       #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-      $op!([<$lib R2M2>], RowVector2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R2M2>], RowVector2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
-      $op!([<$lib R3M3>], RowVector3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R3M3>], RowVector3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector4", feature = "matrix4"))]
-      $op!([<$lib R4M4>], RowVector4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R4M4>], RowVector4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-      $op!([<$lib R3M2x3>], RowVector3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R3M2x3>], RowVector3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
-      $op!([<$lib R2M3x2>], RowVector2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R2M3x2>], RowVector2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
-      $op!([<$lib RDMD>], RowDVector<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib RDMD>], RowDVector<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector2", feature = "matrixd"))]
-      $op!([<$lib R2MD>], RowVector2<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R2MD>], RowVector2<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector3", feature = "matrixd"))]
-      $op!([<$lib R3MD>], RowVector3<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R3MD>], RowVector3<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>]);
       #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-      $op!([<$lib R4MD>], RowVector4<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R4MD>], RowVector4<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>]);
       // Row Row
       #[cfg(feature = "row_vector2")]
-      $op!([<$lib R2R2>], RowVector2<$in>, RowVector2<$in>, RowVector2<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R2R2>], RowVector2<$in>, RowVector2<$in>, RowVector2<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "row_vector3")]
-      $op!([<$lib R3R3>], RowVector3<$in>, RowVector3<$in>, RowVector3<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R3R3>], RowVector3<$in>, RowVector3<$in>, RowVector3<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "row_vector4")]
-      $op!([<$lib R4R4>], RowVector4<$in>, RowVector4<$in>, RowVector4<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib R4R4>], RowVector4<$in>, RowVector4<$in>, RowVector4<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "row_vectord")]
-      $op!([<$lib RDRD>], RowDVector<$in>, RowDVector<$in>, RowDVector<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib RDRD>], RowDVector<$in>, RowDVector<$in>, RowDVector<$out>, [<$lib:lower _vec_op>]);
       // Vector Vector
       #[cfg(feature = "vector2")]
-      $op!([<$lib V2V2>], Vector2<$in>, Vector2<$in>, Vector2<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V2V2>], Vector2<$in>, Vector2<$in>, Vector2<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "vector3")]
-      $op!([<$lib V3V3>], Vector3<$in>, Vector3<$in>, Vector3<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V3V3>], Vector3<$in>, Vector3<$in>, Vector3<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "vector4")]
-      $op!([<$lib V4V4>], Vector4<$in>, Vector4<$in>, Vector4<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib V4V4>], Vector4<$in>, Vector4<$in>, Vector4<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "vectord")]
-      $op!([<$lib VDVD>], DVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _vec_op>], FeatureFlag::Builtin(FeatureKind::$lib));
+      $op!([<$lib VDVD>], DVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _vec_op>]);
     }
   }}
 

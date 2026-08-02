@@ -26,12 +26,6 @@ use mech_syntax::parser;
 #[cfg(all(feature = "source", feature = "native"))]
 use crate::ClosureFunctionSpecializer;
 
-#[cfg(feature = "compiler")]
-pub struct BytecodeCompilation {
-    pub bytecode: Vec<u8>,
-    pub requirements: Vec<FeatureFlag>,
-}
-
 #[derive(Debug, Clone)]
 pub struct StableValueUpdateKindMismatch {
     pub expected: ValueKind,
@@ -702,12 +696,31 @@ impl MechProgram {
     }
 
     pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<Value> {
-        let parsed = ParsedProgram::from_bytes(&bytecode.to_vec())?;
-        self.run_bytecode_program(&parsed)
+        let mut services = NoMechExecutionServices;
+        self.run_bytecode_with_services(bytecode, &mut services)
+    }
+
+    pub fn run_bytecode_with_services(
+        &mut self,
+        bytecode: &[u8],
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
+        let parsed = ParsedProgram::from_bytes(bytecode)?;
+        self.run_bytecode_program_with_services(&parsed, services)
     }
 
     pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
-        self.interpreter.run_program(program)
+        let mut services = NoMechExecutionServices;
+        self.run_bytecode_program_with_services(program, &mut services)
+    }
+
+    pub fn run_bytecode_program_with_services(
+        &mut self,
+        program: &ParsedProgram,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
+        self.interpreter
+            .run_program_with_services(program, services)
     }
 
     #[cfg(feature = "source")]
@@ -1314,7 +1327,9 @@ impl MechProgram {
             MechSourceCode::String(source) => self.run_string_with_services(source, services),
             #[cfg(feature = "source")]
             MechSourceCode::Tree(tree) => self.run_tree_with_services(tree, services),
-            MechSourceCode::ByteCode(bytecode) => self.run_bytecode(bytecode),
+            MechSourceCode::ByteCode(bytecode) => {
+                self.run_bytecode_with_services(bytecode, services)
+            }
             MechSourceCode::Program(sources) => self.run_sources_with_services(sources, services),
             unsupported => Err(MechError::new(
                 UnsupportedProgramSourceError {
@@ -1345,7 +1360,7 @@ impl MechProgram {
     }
 
     #[cfg(feature = "compiler")]
-    pub fn compile_bytecode_artifact(&mut self) -> MResult<BytecodeCompilation> {
+    pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
         let state = self.interpreter.state.borrow();
         let plan = state.plan.borrow();
         let mut context = CompileCtx::new();
@@ -1354,19 +1369,8 @@ impl MechProgram {
             step.compile(&mut context)?;
         }
 
-        let requirements = context.requirements().iter().cloned().collect::<Vec<_>>();
-        let bytecode = context.compile()?;
-
-        Ok(BytecodeCompilation {
-            bytecode,
-            requirements,
-        })
-    }
-
-    #[cfg(feature = "compiler")]
-    pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-        self.compile_bytecode_artifact()
-            .map(|artifact| artifact.bytecode)
+        let return_register = context.resolve_value_register(&self.interpreter.out)?;
+        context.finish(return_register)
     }
 }
 

@@ -77,13 +77,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NotS<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Not)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 // NotV -----------------------------------------------------------------------
@@ -166,13 +160,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Not)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

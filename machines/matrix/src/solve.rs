@@ -9,7 +9,7 @@ use num_traits::{One, Zero};
 
 #[macro_export]
 macro_rules! impl_binop_solve {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
             pub lhs: Ref<$arg1_type>,
@@ -134,7 +134,7 @@ macro_rules! impl_binop_solve {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
     };
@@ -150,14 +150,7 @@ macro_rules! solve_op {
 
 macro_rules! impl_solve {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_binop_solve!(
-            $name,
-            $type1,
-            $type2,
-            $out_type,
-            solve_op,
-            FeatureFlag::Builtin(FeatureKind::Solve)
-        );
+        impl_binop_solve!($name, $type1, $type2, $out_type, solve_op);
     };
 }
 

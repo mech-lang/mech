@@ -15,16 +15,6 @@ cargo +nightly-2026-03-03 run \
   --write tests/architecture/function-system
 ```
 
-Create the pre-rewrite bytecode corpus only as an intentional compatibility
-fixture update:
-
-```bash
-cargo +nightly-2026-03-03 run \
-  --manifest-path tests/fixtures/function-system-baseline/Cargo.toml \
-  -- \
-  --write-bytecode tests/architecture/legacy-bytecode
-```
-
 Validate the committed JSON without modifying it:
 
 ```bash
@@ -58,7 +48,7 @@ function-pointer equality between every explicit catalog fragment and the
 composed standard catalog.
 
 Run the complete native compatibility contract, including all standalone
-standard machines and the compiler-free bytecode consumer, with:
+standard machines and distribution boundaries, with:
 
 ```bash
 bash scripts/check-function-system-contracts.sh
@@ -81,5 +71,4 @@ wasm-pack test \
 The shipped `browser_project` feature remains unchanged; the two set-operation
 features above are part of this test configuration only.
 
-CI invokes only validation commands. It never invokes `--write` or
-`--write-bytecode`.
+CI invokes only validation commands. It never invokes `--write`.

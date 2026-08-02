@@ -45,13 +45,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TupleAssign<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 

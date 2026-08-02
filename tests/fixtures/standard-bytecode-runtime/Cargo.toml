@@ -1,36 +1,20 @@
 [package]
-name = "function-system-bytecode-consumer"
+name = "standard-bytecode-runtime"
 version = "0.0.0"
 edition = "2024"
 publish = false
 
 [dependencies]
-mech-core = {
-  path = "../../../src/core",
-  default-features = false,
-}
 mech-engine = {
   path = "../../../src/engine",
   default-features = false,
-  features = [
-    "runtime",
-    "bool", "string",
-    "u8", "u16", "u32", "u64", "u128",
-    "i8", "i16", "i32", "i64", "i128",
-    "f32", "f64", "c64", "r64",
-    "set", "map", "table", "tuple", "record", "atom", "enum",
-    # The frozen PR2 runtime surface is the dynamic-shape profile. Fixed
-    # shapes are validated separately by the specialization fixture.
-    "row_vectord", "vectord", "matrixd",
-  ],
+  features = ["runtime"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",
   default-features = false,
   features = ["standard_runtime"],
 }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 
 [patch.crates-io]
 mech-core = { path = "../../../src/core" }

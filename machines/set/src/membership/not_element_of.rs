@@ -68,14 +68,7 @@ impl MechFunctionCompiler for SetNotElementOfFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetNotElementOfFxn".to_string();
         // Builtin operator ∉
-        compile_binop!(
-            name,
-            self.out,
-            self.elem,
-            self.set,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::NotElementOf)
-        );
+        compile_binop!(name, self.out, self.elem, self.set, ctx);
     }
 }
 

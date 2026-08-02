@@ -134,8 +134,6 @@ impl MechFunctionCompiler for StringAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         match self.compile_mode {
       StringAccessCompileMode::Constant => {
-        ctx.require(FeatureFlag::Builtin(FeatureKind::String));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         let reg = compile_register!(Value::String(self.out.clone()), ctx);
         Ok(reg)
       }

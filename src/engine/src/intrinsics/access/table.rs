@@ -35,7 +35,6 @@ macro_rules! impl_col_access_fxn {
         let mut registers = [0, 0];
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.source, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_unop(
           hash_str(stringify!($fxn_name)),
           registers[0],
@@ -219,7 +218,6 @@ impl MechFunctionCompiler for TableAccessSwizzle {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0];
         registers[0] = compile_register!(self.out, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Swizzle));
         ctx.emit_nullop(hash_str("TableAccessSwizzle"), registers[0]);
         Ok(registers[0])
     }
@@ -263,9 +261,6 @@ impl MechFunctionCompiler for TableAccessScalarF {
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register_brrw!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
 
         ctx.emit_binop(
             hash_str(stringify!("TableAccessScalarF")),
@@ -405,9 +400,6 @@ impl MechFunctionCompiler for TableAccessRangeIndex {
         registers[1] = compile_register_brrw!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::SubscriptRange));
-
         ctx.emit_binop(
             hash_str(stringify!("TableAccessRangeIndex")),
             registers[0],
@@ -471,9 +463,6 @@ impl MechFunctionCompiler for TableAccessRangeBool {
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register_brrw!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::LogicalIndexing));
 
         ctx.emit_binop(
             hash_str(stringify!("TableAccessRangeBool")),

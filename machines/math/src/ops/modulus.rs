@@ -8,7 +8,7 @@ use num_traits::*;
 
 #[macro_export]
 macro_rules! impl_binop2 {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
             lhs: Ref<$arg1_type>,
@@ -109,7 +109,7 @@ macro_rules! impl_binop2 {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
     };

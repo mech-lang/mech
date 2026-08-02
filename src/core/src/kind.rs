@@ -2,7 +2,7 @@ use crate::*;
 
 // Kind -----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Kind {
     Any,
     None,

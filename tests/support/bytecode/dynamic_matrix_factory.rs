@@ -1,5 +1,5 @@
 use mech_core::structures::Matrix as ValueMatrix;
-use mech_core::{DecodedInstr, MResult, ParsedProgram, RuntimeFunctionId, Value, hash_str};
+use mech_core::{BytecodeInstruction, MResult, ParsedProgram, RuntimeFunctionId, Value, hash_str};
 use mech_engine::{MechProgram, MechProgramConfig};
 
 #[test]
@@ -20,10 +20,10 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
     let bytecode = source.compile_bytecode()?;
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let operation_ids = parsed
-        .instrs
+        .instructions
         .iter()
         .filter_map(|instruction| match instruction {
-            DecodedInstr::BinOp { fxn_id, .. } => Some(*fxn_id),
+            BytecodeInstruction::RuntimeBinary { function, .. } => Some(*function),
             _ => None,
         })
         .collect::<Vec<_>>();

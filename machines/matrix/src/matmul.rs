@@ -23,25 +23,11 @@ macro_rules! matmul_op {
 
 macro_rules! impl_matmul {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_binop!(
-            $name,
-            $type1,
-            $type2,
-            $out_type,
-            matmul_op,
-            FeatureFlag::Builtin(FeatureKind::MatMul)
-        );
+        impl_binop!($name, $type1, $type2, $out_type, matmul_op);
     };
 }
 
-impl_binop!(
-    MatMulScalar,
-    T,
-    T,
-    T,
-    mul_op,
-    FeatureFlag::Builtin(FeatureKind::MatMul)
-);
+impl_binop!(MatMulScalar, T, T, T, mul_op);
 #[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))]
 impl_matmul!(MatMulR4V4, RowVector4<T>, Vector4<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector4", feature = "matrix4"))]

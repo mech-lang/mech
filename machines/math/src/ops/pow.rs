@@ -106,7 +106,7 @@ macro_rules! pow_row_mat_op {
 
 #[macro_export]
 macro_rules! impl_powop {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
             lhs: Ref<$arg1_type>,
@@ -205,7 +205,7 @@ macro_rules! impl_powop {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
     };
@@ -273,14 +273,7 @@ impl MechFunctionImpl for PowRational {
 impl MechFunctionCompiler for PowRational {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("PowRational<{}>", R64::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Pow)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

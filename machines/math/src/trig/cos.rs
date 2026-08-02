@@ -44,14 +44,9 @@ macro_rules! cosf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathCos,
-    f32,
-    cosf,
-    FeatureFlag::Custom(hash_str("math/cos"))
-);
+impl_math_unop!(MathCos, f32, cosf);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCos, f64, cos, FeatureFlag::Custom(hash_str("math/cos")));
+impl_math_unop!(MathCos, f64, cos);
 
 #[cfg(feature = "source")]
 fn impl_cos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

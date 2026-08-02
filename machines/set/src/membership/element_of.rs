@@ -68,14 +68,7 @@ impl MechFunctionCompiler for SetElementOfFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetElementOfFxn".to_string();
         // Builtin operator ∈
-        compile_binop!(
-            name,
-            self.out,
-            self.elem,
-            self.set,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::ElementOf)
-        );
+        compile_binop!(name, self.out, self.elem, self.set, ctx);
     }
 }
 

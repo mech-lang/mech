@@ -44,12 +44,7 @@ mod passthrough_transaction_state_tests {
 impl MechFunctionCompiler for ConvertMatPassthrough {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertMatPassthrough");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -107,13 +102,7 @@ where
             FromMat::as_value_kind(),
             ToMat::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

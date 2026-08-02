@@ -7,7 +7,6 @@ This section documents the command-line tools and subcommands.
 -------------------------------------------------------------------------------
 
 - [`mech`](mech.html) - runtime, REPL, test, serve, format, build, and bundle command.
-- [`mechc`](mechc.html) - compiler and executable packaging command.
 
 2. `mech` subcommands
 -------------------------------------------------------------------------------

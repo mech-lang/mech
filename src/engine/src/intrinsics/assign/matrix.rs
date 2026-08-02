@@ -134,14 +134,7 @@ macro_rules! impl_set_all_fxn_s {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.ixes,
-                    self.source,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
             }
         }
     };
@@ -266,14 +259,7 @@ macro_rules! impl_assign_fxn_s {
                     T::as_value_kind(),
                     naMatrix::<T, R, C, S>::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.ixes,
-                    self.source,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
             }
         }
     };
@@ -614,13 +600,7 @@ where
             T::as_value_kind(),
             naMatrix::<T, R, C, S>::as_na_kind()
         );
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 
@@ -788,15 +768,7 @@ where
             T::as_value_kind(),
             naMatrix::<T, R1, C1, S1>::as_na_kind()
         );
-        compile_ternop!(
-            name,
-            self.sink,
-            self.source,
-            self.ixes.0,
-            self.ixes.1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
     }
 }
 
@@ -1058,14 +1030,7 @@ macro_rules! impl_assign_scalar_fxn_v {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     naMatrix::<T, R2, C2, S2>::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
@@ -1397,15 +1362,7 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                     naMatrix::<T, R, C, S>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -1540,15 +1497,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                     naMatrix::<T, R2, C2, S2>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -1874,15 +1823,7 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                     naMatrix::<T, R, C, S>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -2017,15 +1958,7 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                     naMatrix::<T, R2, C2, S2>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -2435,15 +2368,7 @@ macro_rules! impl_assign_range_range_fxn_s {
                     IxVec1::as_na_kind(),
                     IxVec2::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };

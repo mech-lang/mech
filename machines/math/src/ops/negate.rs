@@ -80,13 +80,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NegateV<{}>", O::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Neg)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -164,13 +158,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NegateS<{}>", O::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Neg)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
