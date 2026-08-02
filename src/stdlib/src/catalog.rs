@@ -100,22 +100,32 @@ pub fn source_catalog() -> Arc<FunctionCatalog> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "no_std")))]
 mod tests {
     use super::*;
 
     #[test]
     fn runtime_and_source_catalogs_use_separate_caches() {
-        let runtime = runtime_catalog();
-        let runtime_again = runtime_catalog();
-        assert!(Arc::ptr_eq(&runtime, &runtime_again));
+        let test = std::thread::Builder::new()
+            .name("stdlib-catalog-cache-test".to_string())
+            .stack_size(64 * 1024 * 1024)
+            .spawn(|| {
+                let runtime = runtime_catalog();
+                let runtime_again = runtime_catalog();
+                assert!(Arc::ptr_eq(&runtime, &runtime_again));
 
-        #[cfg(feature = "source")]
-        {
-            let source = source_catalog();
-            let source_again = source_catalog();
-            assert!(Arc::ptr_eq(&source, &source_again));
-            assert!(!Arc::ptr_eq(&runtime, &source));
+                #[cfg(feature = "source")]
+                {
+                    let source = source_catalog();
+                    let source_again = source_catalog();
+                    assert!(Arc::ptr_eq(&source, &source_again));
+                    assert!(!Arc::ptr_eq(&runtime, &source));
+                }
+            })
+            .expect("catalog cache test thread must spawn");
+
+        if let Err(payload) = test.join() {
+            std::panic::resume_unwind(payload);
         }
     }
 }

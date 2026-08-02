@@ -21,6 +21,455 @@ pub fn empty_function_catalog() -> Arc<FunctionCatalog> {
     Arc::new(FunctionCatalog::empty())
 }
 
+/// Builds the explicitly injected catalog used by source-behavior unit tests.
+///
+/// This deliberately contains no standard-machine implementations. The small
+/// arithmetic and comparison specializers below are test doubles: they prove
+/// engine behavior against caller-supplied operations without restoring a
+/// distribution dependency or fallback.
+#[cfg(test)]
+pub(crate) fn test_function_catalog() -> Arc<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    install_intrinsic_runtime(&mut builder)
+        .expect("engine intrinsic runtime catalog must be valid");
+    #[cfg(feature = "source")]
+    install_intrinsic_source(&mut builder).expect("engine intrinsic source catalog must be valid");
+    test_operations::install(&mut builder).expect("engine test catalog must be valid");
+    Arc::new(
+        builder
+            .build()
+            .expect("engine intrinsic catalog must be valid"),
+    )
+}
+
+#[cfg(test)]
+mod test_operations {
+    use mech_core::*;
+    use std::sync::Arc;
+
+    #[derive(Clone, Copy, Debug)]
+    enum BinaryArithmetic {
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+    }
+
+    #[derive(Debug)]
+    struct BinaryArithmeticFunction {
+        operation: BinaryArithmetic,
+        lhs: Ref<f64>,
+        rhs: Ref<f64>,
+        out: Ref<f64>,
+    }
+
+    impl MechFunctionImpl for BinaryArithmeticFunction {
+        fn solve(&self) {
+            let lhs = *self.lhs.borrow();
+            let rhs = *self.rhs.borrow();
+            *self.out.borrow_mut() = match self.operation {
+                BinaryArithmetic::Add => lhs + rhs,
+                BinaryArithmetic::Subtract => lhs - rhs,
+                BinaryArithmetic::Multiply => lhs * rhs,
+                BinaryArithmetic::Divide => lhs / rhs,
+            };
+        }
+
+        fn out(&self) -> Value {
+            Value::F64(self.out.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            format!("Test{:?}", self.operation)
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for BinaryArithmeticFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    struct BinaryArithmeticSpecializer(BinaryArithmetic);
+
+    impl FunctionSpecializer for BinaryArithmeticSpecializer {
+        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            let [lhs, rhs] = arguments else {
+                return Err(test_operation_error(
+                    "binary arithmetic expects two arguments",
+                ));
+            };
+            Ok(Box::new(BinaryArithmeticFunction {
+                operation: self.0,
+                lhs: lhs.as_f64()?,
+                rhs: rhs.as_f64()?,
+                out: Ref::new(0.0),
+            }))
+        }
+    }
+
+    #[derive(Debug)]
+    struct NegateFunction {
+        input: Ref<f64>,
+        out: Ref<f64>,
+    }
+
+    impl MechFunctionImpl for NegateFunction {
+        fn solve(&self) {
+            *self.out.borrow_mut() = -*self.input.borrow();
+        }
+
+        fn out(&self) -> Value {
+            Value::F64(self.out.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "TestNegate".to_string()
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for NegateFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    struct NegateSpecializer;
+
+    impl FunctionSpecializer for NegateSpecializer {
+        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            let [input] = arguments else {
+                return Err(test_operation_error("negation expects one argument"));
+            };
+            Ok(Box::new(NegateFunction {
+                input: input.as_f64()?,
+                out: Ref::new(0.0),
+            }))
+        }
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    enum Comparison {
+        Equal,
+        NotEqual,
+        Less,
+        Greater,
+        LessEqual,
+        GreaterEqual,
+    }
+
+    #[derive(Debug)]
+    struct ComparisonFunction {
+        operation: Comparison,
+        lhs: Value,
+        rhs: Value,
+        out: Ref<bool>,
+    }
+
+    impl MechFunctionImpl for ComparisonFunction {
+        fn solve(&self) {
+            *self.out.borrow_mut() = match self.operation {
+                Comparison::Equal => values_equal(&self.lhs, &self.rhs),
+                Comparison::NotEqual => !values_equal(&self.lhs, &self.rhs),
+                Comparison::Less => numeric_pair(&self.lhs, &self.rhs, |a, b| a < b),
+                Comparison::Greater => numeric_pair(&self.lhs, &self.rhs, |a, b| a > b),
+                Comparison::LessEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a <= b),
+                Comparison::GreaterEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a >= b),
+            };
+        }
+
+        fn out(&self) -> Value {
+            Value::Bool(self.out.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            format!("Test{:?}", self.operation)
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for ComparisonFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    struct ComparisonSpecializer(Comparison);
+
+    impl FunctionSpecializer for ComparisonSpecializer {
+        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            let [lhs, rhs] = arguments else {
+                return Err(test_operation_error("comparison expects two arguments"));
+            };
+            Ok(Box::new(ComparisonFunction {
+                operation: self.0,
+                lhs: lhs.clone(),
+                rhs: rhs.clone(),
+                out: Ref::new(false),
+            }))
+        }
+
+        fn guard_safety(&self) -> GuardFunctionSafety {
+            GuardFunctionSafety::PureStatic
+        }
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    enum BooleanOperation {
+        And,
+        Or,
+        Xor,
+    }
+
+    #[derive(Debug)]
+    struct BooleanFunction {
+        operation: BooleanOperation,
+        lhs: Ref<bool>,
+        rhs: Ref<bool>,
+        out: Ref<bool>,
+    }
+
+    impl MechFunctionImpl for BooleanFunction {
+        fn solve(&self) {
+            let lhs = *self.lhs.borrow();
+            let rhs = *self.rhs.borrow();
+            *self.out.borrow_mut() = match self.operation {
+                BooleanOperation::And => lhs && rhs,
+                BooleanOperation::Or => lhs || rhs,
+                BooleanOperation::Xor => lhs ^ rhs,
+            };
+        }
+
+        fn out(&self) -> Value {
+            Value::Bool(self.out.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            format!("Test{:?}", self.operation)
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for BooleanFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    struct BooleanSpecializer(BooleanOperation);
+
+    impl FunctionSpecializer for BooleanSpecializer {
+        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            let [lhs, rhs] = arguments else {
+                return Err(test_operation_error(
+                    "boolean operation expects two arguments",
+                ));
+            };
+            Ok(Box::new(BooleanFunction {
+                operation: self.0,
+                lhs: lhs.as_bool()?,
+                rhs: rhs.as_bool()?,
+                out: Ref::new(false),
+            }))
+        }
+
+        fn guard_safety(&self) -> GuardFunctionSafety {
+            GuardFunctionSafety::PureStatic
+        }
+    }
+
+    #[derive(Debug)]
+    struct NotFunction {
+        input: Ref<bool>,
+        out: Ref<bool>,
+    }
+
+    impl MechFunctionImpl for NotFunction {
+        fn solve(&self) {
+            *self.out.borrow_mut() = !*self.input.borrow();
+        }
+
+        fn out(&self) -> Value {
+            Value::Bool(self.out.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "TestNot".to_string()
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for NotFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    struct NotSpecializer;
+
+    impl FunctionSpecializer for NotSpecializer {
+        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            let [input] = arguments else {
+                return Err(test_operation_error("boolean not expects one argument"));
+            };
+            Ok(Box::new(NotFunction {
+                input: input.as_bool()?,
+                out: Ref::new(false),
+            }))
+        }
+
+        fn guard_safety(&self) -> GuardFunctionSafety {
+            GuardFunctionSafety::PureStatic
+        }
+    }
+
+    #[derive(Debug)]
+    struct AddAssignFunction {
+        sink: Ref<f64>,
+        source: Ref<f64>,
+    }
+
+    impl MechFunctionImpl for AddAssignFunction {
+        fn solve(&self) {
+            let source = *self.source.borrow();
+            *self.sink.borrow_mut() += source;
+        }
+
+        fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+            let next = *self.sink.borrow() + *self.source.borrow();
+            Ok(Box::new(ReactiveRegisterWrite::new(
+                self.sink.clone(),
+                next,
+                self.reactive_output_cell_ids(),
+            )))
+        }
+
+        fn out(&self) -> Value {
+            Value::F64(self.sink.clone())
+        }
+
+        fn reactive_node_kind(&self) -> ReactiveNodeKind {
+            ReactiveNodeKind::Register
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "TestAddAssign".to_string()
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for AddAssignFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    struct AddAssignSpecializer;
+
+    impl FunctionSpecializer for AddAssignSpecializer {
+        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            let [sink, source] = arguments else {
+                return Err(test_operation_error("add assignment expects two arguments"));
+            };
+            Ok(Box::new(AddAssignFunction {
+                sink: sink.as_f64()?,
+                source: source.as_f64()?,
+            }))
+        }
+    }
+
+    fn values_equal(lhs: &Value, rhs: &Value) -> bool {
+        match (lhs, rhs) {
+            (Value::MutableReference(lhs), rhs) => values_equal(&lhs.borrow(), rhs),
+            (lhs, Value::MutableReference(rhs)) => values_equal(lhs, &rhs.borrow()),
+            (Value::Typed(lhs, _), rhs) => values_equal(lhs, rhs),
+            (lhs, Value::Typed(rhs, _)) => values_equal(lhs, rhs),
+            _ => lhs == rhs,
+        }
+    }
+
+    fn numeric_pair(lhs: &Value, rhs: &Value, compare: impl FnOnce(f64, f64) -> bool) -> bool {
+        match (lhs.as_f64(), rhs.as_f64()) {
+            (Ok(lhs), Ok(rhs)) => compare(*lhs.borrow(), *rhs.borrow()),
+            _ => false,
+        }
+    }
+
+    fn test_operation_error(message: &str) -> MechError {
+        MechError::new(
+            GenericError {
+                msg: message.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    }
+
+    pub(super) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+        for (name, operation) in [
+            ("math/add", BinaryArithmetic::Add),
+            ("math/sub", BinaryArithmetic::Subtract),
+            ("math/mul", BinaryArithmetic::Multiply),
+            ("math/div", BinaryArithmetic::Divide),
+        ] {
+            builder.insert_intrinsic_specializer(
+                name,
+                Arc::new(BinaryArithmeticSpecializer(operation)),
+            )?;
+        }
+        builder.insert_intrinsic_specializer("math/neg", Arc::new(NegateSpecializer))?;
+
+        for (name, operation) in [
+            ("compare/eq", Comparison::Equal),
+            ("compare/neq", Comparison::NotEqual),
+            ("compare/lt", Comparison::Less),
+            ("compare/gt", Comparison::Greater),
+            ("compare/lte", Comparison::LessEqual),
+            ("compare/gte", Comparison::GreaterEqual),
+        ] {
+            builder
+                .insert_intrinsic_specializer(name, Arc::new(ComparisonSpecializer(operation)))?;
+        }
+
+        for (name, operation) in [
+            ("logic/and", BooleanOperation::And),
+            ("logic/or", BooleanOperation::Or),
+            ("logic/xor", BooleanOperation::Xor),
+        ] {
+            builder.insert_intrinsic_specializer(name, Arc::new(BooleanSpecializer(operation)))?;
+        }
+        builder.insert_intrinsic_specializer("logic/not", Arc::new(NotSpecializer))?;
+        builder.insert_intrinsic_specializer("math/add-assign", Arc::new(AddAssignSpecializer))?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,6 +675,17 @@ mod tests {
 
         assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
         assert!(error.kind_message().contains("math/add"));
+    }
+
+    #[cfg(all(feature = "program", feature = "source"))]
+    #[test]
+    fn bare_program_does_not_know_standard_modules() {
+        let mut program = MechProgram::new(MechProgramConfig::default());
+
+        assert!(!program.function_catalog().has_module("math"));
+        let error = program.run_string("+> math").unwrap_err();
+
+        assert_eq!(error.kind_name(), "MissingFunction");
     }
 
     #[cfg(all(

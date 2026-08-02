@@ -7835,11 +7835,16 @@ result := pick("secret") == "matched"
 #[cfg(feature = "compiler")]
 #[test]
 fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
-    let mut compiler_program = MechProgram::new(MechProgramConfig::default());
+    let catalog = module_test_function_catalog();
+    let mut compiler_program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
     compiler_program.run_string("x := 2.0\nx").unwrap();
     let bytecode = compiler_program.compile_bytecode().unwrap();
 
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
     let mut context = runtime.runtime_context().unwrap();
     runtime
         .run_source_with_context(
@@ -7874,12 +7879,17 @@ fn run_bytecode_does_not_leave_symbol_state_for_next_source() {
 #[cfg(feature = "compiler")]
 #[test]
 fn run_bytecode_error_restores_previous_program_state() {
-    let mut compiler_program = MechProgram::new(MechProgramConfig::default());
+    let catalog = module_test_function_catalog();
+    let mut compiler_program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
     compiler_program.run_string("x := 2").unwrap();
     let mut bytecode = compiler_program.compile_bytecode().unwrap();
     bytecode.truncate(bytecode.len().saturating_sub(1));
 
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
     let mut context = runtime.runtime_context().unwrap();
     runtime
         .run_source_with_context(&mut context, &MechSourceCode::String("y := 1".to_string()))
@@ -7905,13 +7915,19 @@ fn run_bytecode_error_restores_previous_program_state() {
 #[cfg(feature = "compiler")]
 #[test]
 fn run_source_with_context_bytecode_emits_completion_and_profile_events() {
-    let mut compiler_program = MechProgram::new(MechProgramConfig::default());
-    compiler_program.run_string("x := 1 + 2").unwrap();
+    let catalog = module_test_function_catalog();
+    let mut compiler_program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
+    compiler_program.run_string("x := 3").unwrap();
     let bytecode = compiler_program.compile_bytecode().unwrap();
 
     let mut config = RuntimeConfig::default();
     config.diagnostics.profile_enabled = true;
-    let mut runtime = RuntimeBuilder::new().config(config).build().unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let result = runtime
         .run_source_with_context(&mut context, &MechSourceCode::ByteCode(bytecode))

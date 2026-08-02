@@ -1,9 +1,5 @@
-use mech_core::{DecodedInstr, ParsedProgram, RuntimeFunctionId, Value, hash_str};
-use mech_engine as _;
+use mech_core::{DecodedInstr, FunctionCatalog, ParsedProgram, RuntimeFunctionId, Value, hash_str};
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_math as _;
-use mech_range as _;
-use mech_string as _;
 use serde::Deserialize;
 use std::collections::BTreeSet;
 use std::fs;
@@ -13,6 +9,11 @@ use std::process;
 const MANIFEST_SCHEMA: u64 = 1;
 const BYTECODE_VERSION: u64 = 1;
 const BASE_COMMIT: &str = "f7768e0c6bbde69d27410be6d1ecacbd08c238c5";
+const FROZEN_RUNTIME_FACTORY_COUNT: usize = 9_019;
+const RUNTIME_SURFACE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../architecture/function-system/runtime-factory-surface.json"
+));
 
 #[derive(Deserialize)]
 struct Manifest {
@@ -28,6 +29,11 @@ struct Case {
     file: String,
     expected: Expected,
     runtime_factory_ids: Vec<RuntimeFactory>,
+}
+
+#[derive(Deserialize)]
+struct FrozenRuntimeSurface {
+    runtime_factories: Vec<RuntimeFactory>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
@@ -94,13 +100,18 @@ fn run() -> Result<(), String> {
     }
 
     validate_corpus_files(&corpus_dir, &manifest.cases)?;
+    let catalog = mech_stdlib::runtime_catalog();
+    validate_frozen_runtime_surface(&catalog)?;
     for case in manifest.cases {
         let bytecode_path = corpus_dir.join(&case.file);
         let bytecode = fs::read(&bytecode_path)
             .map_err(|error| format!("{}: could not read {}: {error}", case.name, case.file))?;
         let parsed = ParsedProgram::from_bytes(&bytecode)
             .map_err(|error| format!("{}: invalid bytecode: {error:?}", case.name))?;
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = MechProgram::with_function_catalog(
+            MechProgramConfig::default(),
+            catalog.clone(),
+        );
         validate_runtime_factories(&case, &parsed, &program)?;
         enforce_dispatch_boundary(&case, &program)?;
 
@@ -109,6 +120,46 @@ fn run() -> Result<(), String> {
             .map_err(|error| format!("{}: bytecode execution failed: {error:?}", case.name))?;
 
         compare_result(&case.name, &actual, &case.expected)?;
+    }
+
+    Ok(())
+}
+
+fn validate_frozen_runtime_surface(catalog: &FunctionCatalog) -> Result<(), String> {
+    let frozen: FrozenRuntimeSurface = serde_json::from_slice(RUNTIME_SURFACE)
+        .map_err(|error| format!("could not parse frozen runtime surface: {error}"))?;
+    if frozen.runtime_factories.len() != FROZEN_RUNTIME_FACTORY_COUNT
+        || catalog.runtime_factory_count() != FROZEN_RUNTIME_FACTORY_COUNT
+    {
+        return Err(format!(
+            "frozen runtime surface requires {FROZEN_RUNTIME_FACTORY_COUNT} factories; JSON has {}, catalog has {}",
+            frozen.runtime_factories.len(),
+            catalog.runtime_factory_count(),
+        ));
+    }
+
+    for expected in frozen.runtime_factories {
+        let raw = u64::from_str_radix(&expected.id_hex, 16).map_err(|error| {
+            format!(
+                "frozen runtime factory {:?} has invalid ID {}: {error}",
+                expected.name, expected.id_hex,
+            )
+        })?;
+        let runtime_id = RuntimeFunctionId::from_raw(raw);
+        let entry = catalog
+            .runtime_entry(runtime_id)
+            .ok_or_else(|| {
+                format!(
+                    "frozen runtime factory {:?} ({}) is absent from the catalog",
+                    expected.name, expected.id_hex,
+                )
+            })?;
+        if entry.name != expected.name {
+            return Err(format!(
+                "frozen runtime factory ID {} names {:?}, expected {:?}",
+                expected.id_hex, entry.name, expected.name,
+            ));
+        }
     }
 
     Ok(())
@@ -170,15 +221,13 @@ fn validate_runtime_factories(
             }
         };
         let runtime_id = RuntimeFunctionId::from_raw(id);
-        let entry = catalog
-            .runtime_entry(runtime_id)
-            .ok_or_else(|| {
-                format!(
-                    "{}: bytecode references runtime factory ID {} that is absent from the catalog",
-                    case.name,
-                    format_id(id),
-                )
-            })?;
+        let entry = catalog.runtime_entry(runtime_id).ok_or_else(|| {
+            format!(
+                "{}: bytecode references runtime factory ID {} that is absent from the catalog",
+                case.name,
+                format_id(id),
+            )
+        })?;
         if hash_str(&entry.name) != id {
             return Err(format!(
                 "{}: runtime factory name {:?} does not hash to ID {}",

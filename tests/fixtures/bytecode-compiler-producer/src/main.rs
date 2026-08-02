@@ -1,4 +1,3 @@
-use mech_engine as _;
 use mech_engine::{MechProgram, MechProgramConfig};
 use std::env;
 use std::fs;
@@ -7,7 +6,10 @@ fn main() {
     let output = env::args_os()
         .nth(1)
         .expect("usage: bytecode-compiler-producer <output.mecb>");
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_catalog(),
+    );
     program
         .run_string("1.0 + 2.0")
         .expect("source execution failed");

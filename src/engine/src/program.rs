@@ -1541,6 +1541,11 @@ fn symbol_rows(symbol_table: &mech_core::SymbolTable, names: &[String]) -> Vec<(
     rows
 }
 
+#[cfg(test)]
+fn test_mech_program(config: MechProgramConfig) -> MechProgram {
+    MechProgram::with_function_catalog(config, crate::test_function_catalog())
+}
+
 #[derive(Debug, Clone)]
 pub struct UnsupportedProgramSourceError {
     pub source_kind: String,
@@ -1666,7 +1671,7 @@ mod tests {
     #[cfg(all(feature = "functions", feature = "native", feature = "f64"))]
     #[test]
     fn native_closure_registration_replaces_exact_names_and_checkpoint_restores_the_original() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let catalog = Arc::clone(program.function_catalog());
 
         program
@@ -1703,7 +1708,7 @@ mod tests {
     #[cfg(all(feature = "functions", feature = "native"))]
     #[test]
     fn native_closure_registration_is_fallible_atomic_and_checkpointed() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let extension_count = program
             .interpreter()
             .state
@@ -1768,7 +1773,7 @@ mod tests {
     ))]
     #[test]
     fn native_closure_bytecode_rejection_remains_structured() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program
             .register_native_closure("host/source-only", |_| Ok(Value::F64(Ref::new(4.0))))
             .unwrap();
@@ -1803,7 +1808,7 @@ mod tests {
             ("false!", "2.0 <= 1.0"),
             ("number!", "42.0"),
         ] {
-            let mut program = MechProgram::new(MechProgramConfig::default());
+            let mut program = test_mech_program(MechProgramConfig::default());
             program
                 .run_string(&format!("{name} := {expression}"))
                 .unwrap();
@@ -1827,7 +1832,7 @@ mod tests {
     #[cfg(feature = "invariant_define")]
     #[test]
     fn integrity_constraint_direct_operands_remain_live() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program
             .run_string("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum")
             .unwrap();
@@ -1858,13 +1863,13 @@ mod tests {
     fn integrity_constraint_diagnostics_do_not_recompile_complex_operands() {
         let source = "target := 1.0\nmaximum := 3.0";
         let expression = "target + 1.0 <= maximum";
-        let mut ordinary = MechProgram::new(MechProgramConfig::default());
+        let mut ordinary = test_mech_program(MechProgramConfig::default());
         ordinary
             .run_string(&format!("{source}\ncandidate := {expression}"))
             .unwrap();
         let ordinary_plan_len = ordinary.interpreter().plan_len();
 
-        let mut constrained = MechProgram::new(MechProgramConfig::default());
+        let mut constrained = test_mech_program(MechProgramConfig::default());
         constrained
             .run_string(&format!("{source}\nsafe! := {expression}"))
             .unwrap();
@@ -1877,7 +1882,7 @@ mod tests {
     }
 
     fn program_with_nested_interpreter(nested_id: u64, child_id: u64) -> MechProgram {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let mut child = program.interpreter().clone();
         child.clear();
         child.id = child_id;
@@ -1939,7 +1944,7 @@ mod tests {
 
     #[test]
     fn program_bind_ans_for_interpreter_binds_ans() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let value = Value::U64(mech_core::Ref::new(42));
         assert!(program.bind_ans_for_interpreter(0, &value));
         let ans_id = hash_str("ans");
@@ -2365,7 +2370,7 @@ mod live_input_tests {
 
     #[test]
     fn existing_input_cell_is_mutated_without_replacing_valref() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let input_id = hash_str("input");
         let output_id = hash_str("output");
         program
@@ -2439,7 +2444,7 @@ mod live_input_tests {
 
     #[test]
     fn ensure_input_refreshes_existing_cell_without_replacing_valref() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let input_id = hash_str("live-x");
         let interpreter_id = program.interpreter().id;
         program
@@ -2479,7 +2484,7 @@ mod live_input_tests {
 
     #[test]
     fn incompatible_input_type_is_rejected_without_mutation() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let input_id = hash_str("input");
         program
             .ensure_input(
@@ -2520,7 +2525,7 @@ mod live_input_tests {
 
     #[test]
     fn update_inputs_preflight_rejects_before_mutating_any_input() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let a_id = hash_str("a");
         let b_id = hash_str("b");
         let interpreter_id = program.interpreter().id;
@@ -2550,7 +2555,7 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn program_input_dirty_cells_include_outer_valref() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let input_id = hash_str("input");
         let interpreter_id = program.interpreter().id;
         let input = program
@@ -2589,7 +2594,7 @@ mod live_input_tests {
 
     #[test]
     fn missing_input_returns_error() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let missing = ProgramInputId {
             interpreter_id: program.interpreter().id,
             symbol_id: hash_str("missing"),
@@ -2616,7 +2621,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_value_returns_value() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("answer := 42.0").unwrap();
         assert_eq!(
             f64_value(&program.root_symbol_value("answer").unwrap()),
@@ -2626,7 +2631,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_values_preserve_order() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("a := 1.0\nb := 2.0\nc := 3.0").unwrap();
         let rows = program.root_symbol_values(&["c", "a", "b"]).unwrap();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
@@ -2635,7 +2640,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_values_snapshot_multiple_values() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("a := 1.0\nb := 2.0").unwrap();
         let rows = program.root_symbol_values(&["a", "b"]).unwrap();
         assert_eq!(f64_value(&rows[0].1), 1.0);
@@ -2644,7 +2649,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_values_all_are_sorted_by_name() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("c := 3.0\na := 1.0\nb := 2.0").unwrap();
         let rows = program.root_symbol_values_all();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
@@ -2653,14 +2658,14 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn missing_root_symbol_returns_structured_error() {
-        let program = MechProgram::new(MechProgramConfig::default());
+        let program = test_mech_program(MechProgramConfig::default());
         let err = program.root_symbol_value("missing").unwrap_err();
         assert!(format!("{:?}", err).contains("ProgramOutputNotFound"));
     }
 
     #[test]
     fn snapshot_does_not_hold_symbol_table_borrow() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("answer := 42.0").unwrap();
         let _snapshot = program.root_symbol_value("answer").unwrap();
         let symbols = program.interpreter().symbols();
@@ -2770,7 +2775,7 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_updates_only_reachable_branch() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let (l, r) = (input(&mut p, "left", 1.), input(&mut p, "right", 2.));
         p.run_string("left-output := left + 1.0\nright-output := right + 1.0")
             .unwrap();
@@ -2811,7 +2816,7 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_batches_inputs_into_one_turn() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let (a, b) = (input(&mut p, "a", 1.), input(&mut p, "b", 2.));
         p.run_string("~total := 0.0\nsum := a + b\ntotal = sum\noutput := total + 1.0")
             .unwrap();
@@ -2867,7 +2872,7 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_preserves_deferred_registers_between_calls() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let x = input(&mut p, "input", 1.);
         p.run_string(
             "~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0",
@@ -2912,7 +2917,7 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_legacy_update_api_does_not_execute_plan() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let x = input(&mut p, "input", 1.);
         p.run_string("output := input * 2.0").unwrap();
         let id = p.interpreter().id;
@@ -2932,7 +2937,7 @@ mod program_reactive_turn_tests {
     #[cfg(feature = "string")]
     #[test]
     fn program_reactive_turn_preflight_failure_mutates_nothing() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let (a, b) = (input(&mut p, "a", 1.), input(&mut p, "b", 2.));
         p.run_string("output := a + b").unwrap();
         let id = p.interpreter().id;
@@ -2963,7 +2968,7 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_rejects_root_alias_duplicate() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let x = input(&mut p, "input", 1.);
         let id = p.interpreter().id;
         let e = p
@@ -2987,7 +2992,7 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_empty_batch_is_noop() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         let id = p.interpreter().id;
         let s = snapshot(&p, id);
         assert_eq!(
@@ -2999,9 +3004,10 @@ mod program_reactive_turn_tests {
     }
     #[test]
     fn program_reactive_turn_orders_nested_interpreters_deterministically() {
-        let mut p = MechProgram::new(MechProgramConfig::default());
-        let mut c1 = Interpreter::new(101, 10_000);
-        let mut c2 = Interpreter::new(202, 10_000);
+        let mut p = test_mech_program(MechProgramConfig::default());
+        let catalog = crate::test_function_catalog();
+        let mut c1 = Interpreter::with_function_catalog(101, 10_000, Arc::clone(&catalog));
+        let mut c2 = Interpreter::with_function_catalog(202, 10_000, catalog);
         for (i, src) in [
             (
                 &mut c1,
@@ -3084,10 +3090,12 @@ mod program_reactive_turn_tests {
     #[cfg(feature = "compiler")]
     #[test]
     fn program_reactive_turn_decoded_plan_reuses_identity() {
-        let mut source = MechProgram::new(MechProgramConfig::default());
-        source.run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\noutput").unwrap();
+        let mut source = test_mech_program(MechProgramConfig::default());
+        source
+            .run_string("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nb = a\nb")
+            .unwrap();
         let bytes = source.compile_bytecode().unwrap();
-        let mut p = MechProgram::new(MechProgramConfig::default());
+        let mut p = test_mech_program(MechProgramConfig::default());
         p.run_bytecode(&bytes).unwrap();
         let id = p.interpreter().id;
         let x = p
@@ -3117,7 +3125,7 @@ mod program_reactive_turn_tests {
         );
         let o = p.advance_reactive_turn(id, &[]).unwrap();
         assert_eq!(o.register_commit.committed_nodes, vec![b]);
-        assert_eq!(value(&p, id, "output"), 12.);
+        assert_eq!(value(&p, id, "b"), 10.);
         assert!(!pending(&p, id));
         assert_eq!(snapshot(&p, id), s);
     }
@@ -3225,7 +3233,7 @@ mod compact_program_reactive_turn_tests {
         Vec<Rc<RefCell<usize>>>,
         Vec<Rc<RefCell<usize>>>,
     ) {
-        let program = MechProgram::new(MechProgramConfig::default());
+        let program = test_mech_program(MechProgramConfig::default());
         let interpreter_id = program.interpreter().id;
         let order = Rc::new(RefCell::new(Vec::new()));
         let mut outputs = Vec::new();
@@ -3311,7 +3319,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn later_combinational_failure_restores_input_and_earlier_output() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, outer, inner) = index_input(&mut program, id, "input", 1);
         let outer_address = outer.addr();
@@ -3379,7 +3387,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn post_register_failure_restores_commit_and_pending_state() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, source) = index_input(&mut program, id, "input", 1);
         let sink = Ref::new(2usize);
@@ -3420,7 +3428,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn all_prior_interpreters_restore_and_later_interpreters_do_not_execute() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         for id in [10, 20, 30, 40] {
             add_child(&mut program, id);
         }
@@ -3456,7 +3464,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn successful_interpreter_order_is_ascending_actual_id() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         for id in [30, 10, 20] {
             add_child(&mut program, id);
         }
@@ -3484,7 +3492,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn shared_cells_restore_once_and_retain_identity() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         for id in [10, 20] {
             add_child(&mut program, id);
         }
@@ -3513,7 +3521,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn hidden_function_owned_state_is_restored() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let hidden = Ref::new(40usize);
@@ -3532,7 +3540,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn fsm_transition_like_retained_state_is_restored() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "event", 0);
         let transition_state = Ref::new(3usize);
@@ -3549,7 +3557,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn pattern_matcher_guard_selector_gate_and_capture_state_restore() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "pattern", 0);
         let states = (0..5).map(Ref::new).collect::<Vec<_>>();
@@ -3575,7 +3583,7 @@ mod compact_program_reactive_turn_tests {
     #[cfg(any())]
     #[test]
     fn rollback_removes_trace_suffixes_from_every_affected_interpreter() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         for id in [10, 20] {
             add_child(&mut program, id);
         }
@@ -3612,7 +3620,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn single_interpreter_advance_is_atomic() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let input = Ref::new(1usize);
         let output = Ref::new(7usize);
@@ -3628,7 +3636,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn input_turn_api_is_atomic() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let order = Rc::new(RefCell::new(Vec::new()));
@@ -3747,7 +3755,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn journal_aware_failure_leaves_changes_until_explicit_rollback() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let output = Ref::new(3usize);
@@ -3772,7 +3780,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn rollback_after_journal_aware_success_restores_operation() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let output = Ref::new(3usize);
@@ -3793,7 +3801,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn unfinalized_journal_is_automatically_rolled_back() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let error = program
@@ -3811,7 +3819,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn journal_reuse_fails_before_second_mutation() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         program
@@ -3836,7 +3844,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn rollback_preflight_failure_uses_automatic_value_restore() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let error = program
@@ -3862,7 +3870,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn program_rollback_failure_preserves_original_and_rollback_errors() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         let output = Ref::new(0usize);
@@ -3889,7 +3897,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn compact_operations_preserve_plan_identity_without_program_checkpoint() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let plan_address = program.interpreter().plan().0.addr();
         let (input, _, _) = index_input(&mut program, id, "input", 1);
@@ -3901,7 +3909,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn one_of_one_thousand_independent_nodes_has_compact_structural_count() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let order = Rc::new(RefCell::new(Vec::new()));
         let mut selected = None;
@@ -3942,7 +3950,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn reactive_turn_journal_reports_empty_and_operation_counts() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, _) = index_input(&mut program, id, "input", 1);
         program
@@ -3963,7 +3971,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn journal_aware_single_turn_can_be_rolled_back_after_success() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let input = Ref::new(1usize);
         let output = Ref::new(5usize);
@@ -3986,7 +3994,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn journal_aware_step_leaves_state_until_rollback() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let output = Ref::new(5usize);
         let order = Rc::new(RefCell::new(Vec::new()));
@@ -4007,7 +4015,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn rollback_missing_interpreter_uses_automatic_value_restore() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         add_child(&mut program, 77);
         let (input, _, inner) = index_input(&mut program, 77, "input", 1);
         let error = program
@@ -4031,7 +4039,7 @@ mod compact_program_reactive_turn_tests {
 
     #[test]
     fn duplicate_input_rejection_happens_before_any_journal_capture() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
         let (input, _, inner) = index_input(&mut program, id, "input", 1);
         program
@@ -4202,7 +4210,7 @@ mod retained_checkpoint_tests {
 
     #[test]
     fn program_checkpoint_restores_config_structure_values_and_identity() {
-        let mut program = MechProgram::new(MechProgramConfig {
+        let mut program = test_mech_program(MechProgramConfig {
             name: "retained".into(),
             environment: MechProgramEnvironment::default(),
         });
@@ -4254,7 +4262,7 @@ mod retained_checkpoint_tests {
     ))]
     #[test]
     fn bytecode_compilation_preserves_checkpointability_and_execution_state() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("x := 1.0\ny := x + 2.0").unwrap();
 
         let checkpoint_before_compilation = program.checkpoint().unwrap();
@@ -4288,7 +4296,7 @@ mod retained_checkpoint_tests {
 
     #[test]
     fn program_checkpoint_restores_activation_capture_identity_and_payload() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program
             .run_string(
                 r#"
@@ -4343,7 +4351,7 @@ event := (1.0, 2.0)
 
     #[test]
     fn program_checkpoint_restore_preflights_everything_before_mutation() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         program.run_string("x := 1.0").unwrap();
         let (x_outer, x_inner) = scalar_cell(&program, "x");
         let checkpoint = program.checkpoint().unwrap();
@@ -4383,7 +4391,7 @@ event := (1.0, 2.0)
 
     #[test]
     fn program_checkpoint_restores_removed_recursive_interpreters_with_identity() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let child_id = 101;
         let grandchild_id = 202;
 
@@ -4477,7 +4485,7 @@ event := (1.0, 2.0)
 
     #[test]
     fn program_restore_does_not_execute_functions_and_preserves_output_identity() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let output = Ref::new(1.0);
         let solve_count = Rc::new(RefCell::new(0));
         program
@@ -4498,7 +4506,7 @@ event := (1.0, 2.0)
 
     #[test]
     fn unsupported_function_state_fails_checkpoint_creation_without_changes() {
-        let program = MechProgram::new(MechProgramConfig::default());
+        let program = test_mech_program(MechProgramConfig::default());
         let plan = program.interpreter().plan();
         plan.add_function(Box::new(UnsupportedCheckpointFunction));
         let plan_len = plan.len();
@@ -4514,7 +4522,7 @@ event := (1.0, 2.0)
 
     #[test]
     fn program_checkpoint_restores_nested_container_and_matrix_topology() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = test_mech_program(MechProgramConfig::default());
         let shared = Ref::new(1.0);
         let matrix = <f64 as ToMatrix>::to_matrixd(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
         let record = Ref::new(MechRecord::new(vec![
@@ -4552,12 +4560,12 @@ event := (1.0, 2.0)
 
     #[test]
     fn program_checkpoint_rejects_cross_program_restore_before_mutation() {
-        let source = MechProgram::new(MechProgramConfig {
+        let source = test_mech_program(MechProgramConfig {
             name: "source".into(),
             environment: MechProgramEnvironment::default(),
         });
         let checkpoint = source.checkpoint().unwrap();
-        let mut target = MechProgram::new(MechProgramConfig {
+        let mut target = test_mech_program(MechProgramConfig {
             name: "target".into(),
             environment: MechProgramEnvironment::default(),
         });

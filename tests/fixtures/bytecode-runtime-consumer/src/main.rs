@@ -1,4 +1,3 @@
-use mech_engine as _;
 use mech_engine::{MechProgram, MechProgramConfig};
 use std::env;
 use std::fs;
@@ -8,7 +7,10 @@ fn main() {
         .nth(1)
         .expect("usage: bytecode-runtime-consumer <input.mecb>");
     let bytecode = fs::read(input).expect("failed to read bytecode");
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::runtime_catalog(),
+    );
     let result = program
         .run_bytecode(&bytecode)
         .expect("bytecode execution failed");

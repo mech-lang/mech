@@ -85,7 +85,7 @@ mod checkpoint_tests {
 
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
         assert!(
-            interpreter
+            !interpreter
                 .state
                 .borrow()
                 .function_environment
@@ -120,7 +120,7 @@ mod checkpoint_tests {
         let child = interpreter.new_child_interpreter(42, 100);
         assert!(Arc::ptr_eq(child.function_catalog(), &catalog));
         assert!(
-            child
+            !child
                 .state
                 .borrow()
                 .function_environment
@@ -160,6 +160,13 @@ mod checkpoint_tests {
             .function_environment
             .bind_catalog_export(&module_only_export, "plus")
             .unwrap();
+        assert!(
+            interpreter
+                .state
+                .borrow()
+                .function_environment
+                .operation_is_enabled(operation)
+        );
         assert_eq!(
             interpreter
                 .state
@@ -191,7 +198,7 @@ mod checkpoint_tests {
         interpreter.clear();
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
         assert!(
-            interpreter
+            !interpreter
                 .state
                 .borrow()
                 .function_environment

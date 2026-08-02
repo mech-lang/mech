@@ -1,12 +1,10 @@
 use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
-    DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionExposure, MechSet,
-    OperationId, ParsedProgram, Ref, RuntimeFunctionId, Value, ValueKind, hash_str,
+    DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionExposure, MechSet, OperationId,
+    ParsedProgram, Ref, RuntimeFunctionId, Value, ValueKind, hash_str,
 };
 use mech_engine as _;
-use mech_engine::{
-    FunctionBinding, FunctionEnvironment, MechProgram, MechProgramConfig, default_function_catalog,
-};
+use mech_engine::{FunctionBinding, FunctionEnvironment, MechProgram, MechProgramConfig};
 use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "fixed-specialization-cases")]
 use nalgebra::{Matrix2, Vector2};
@@ -131,14 +129,12 @@ struct LegacyManifest {
 
 fn runtime_factory(catalog: &FunctionCatalog, id: u64) -> AppResult<RuntimeFactory> {
     let runtime_id = RuntimeFunctionId::from_raw(id);
-    let entry = catalog
-        .runtime_entry(runtime_id)
-        .ok_or_else(|| {
-            format!(
-                "bytecode references unknown catalog runtime factory ID {}",
-                format_id(id)
-            )
-        })?;
+    let entry = catalog.runtime_entry(runtime_id).ok_or_else(|| {
+        format!(
+            "bytecode references unknown catalog runtime factory ID {}",
+            format_id(id)
+        )
+    })?;
     Ok(RuntimeFactory {
         name: entry.name.clone(),
         id_hex: format_id(id),
@@ -172,7 +168,7 @@ fn run() -> AppResult<()> {
 
     let command = arguments[0].as_str();
     let output = PathBuf::from(&arguments[1]);
-    let catalog = default_function_catalog();
+    let catalog = mech_stdlib::source_catalog();
 
     match command {
         "--write" => {
@@ -250,7 +246,7 @@ fn generate_runtime_factory_surface() -> AppResult<RuntimeFactorySurface> {
     let fragments: [(&str, RuntimeInstaller); 10] = [
         (
             "mech-engine::stdlib",
-            mech_engine::stdlib::catalog::install_runtime,
+            mech_engine::install_intrinsic_runtime,
         ),
         ("mech-math", mech_math::install_runtime),
         ("mech-compare", mech_compare::install_runtime),
@@ -331,7 +327,7 @@ fn runtime_fragment(owner: &str, installer: RuntimeInstaller) -> AppResult<Funct
 fn validate_composed_runtime_catalog(
     explicit: &BTreeMap<RuntimeFunctionId, OwnedRuntimeFactory>,
 ) -> AppResult<()> {
-    let composed = mech_engine::default_function_catalog();
+    let composed = mech_stdlib::runtime_catalog();
     if composed.runtime_factory_count() != explicit.len() {
         return Err(format!(
             "the composed standard catalog has {} runtime factories, but its explicit fragments have {}",
@@ -363,7 +359,8 @@ fn validate_composed_runtime_catalog(
 fn generate_json_baselines(
     catalog: &Arc<FunctionCatalog>,
 ) -> AppResult<(FunctionSurface, SpecializationCases)> {
-    let program = MechProgram::new(MechProgramConfig::default());
+    let program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(catalog));
     if !Arc::ptr_eq(catalog, program.function_catalog()) {
         return Err("fresh standard program did not retain the composed standard catalog".into());
     }
@@ -681,16 +678,14 @@ fn compile_specialization_case(
 ) -> AppResult<SpecializationCase> {
     let raw_operation_id = hash_str(input.operation);
     let operation_id = OperationId::from_raw(raw_operation_id);
-    let specializer = catalog
-        .specializer(operation_id)
-        .ok_or_else(|| {
-            format!(
-                "specialization case {} cannot find source operation {} ({})",
-                input.name,
-                input.operation,
-                format_id(raw_operation_id),
-            )
-        })?;
+    let specializer = catalog.specializer(operation_id).ok_or_else(|| {
+        format!(
+            "specialization case {} cannot find source operation {} ({})",
+            input.name,
+            input.operation,
+            format_id(raw_operation_id),
+        )
+    })?;
     let argument_specs = input
         .arguments
         .iter()
@@ -837,7 +832,7 @@ fn value_spec(value: &Value) -> AppResult<ValueSpec> {
     }
 }
 
-fn write_legacy_bytecode(output: &Path, catalog: &FunctionCatalog) -> AppResult<()> {
+fn write_legacy_bytecode(output: &Path, catalog: &Arc<FunctionCatalog>) -> AppResult<()> {
     let mut inputs = vec![
         LegacyInput {
             name: "scalar-add",
@@ -869,7 +864,8 @@ fn write_legacy_bytecode(output: &Path, catalog: &FunctionCatalog) -> AppResult<
 
     let mut generated = Vec::<(LegacyCase, Vec<u8>)>::with_capacity(inputs.len());
     for input in inputs {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program =
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(catalog));
         if let Some(module) = input.module {
             program.load_function_module(module).map_err(|error| {
                 format!(

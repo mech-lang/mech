@@ -128,6 +128,8 @@ fi
 # source contracts and the full runtime-factory contract. Other CI jobs own
 # machine-profile, bytecode-consumer, native, WASM, and full package suites, so
 # this boundary does not replay them.
+bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
+bash "$repository_root/scripts/check-static-distribution-profiles.sh" engine
 bash "$repository_root/scripts/check-function-system-contracts.sh" surface
 
 echo "complete function-system migration boundary passed"
