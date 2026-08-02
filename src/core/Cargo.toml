@@ -63,6 +63,7 @@ baselib = ["bool", "string",
 
 compiler = ["program"]
 program = ["crc32fast", "byteorder"]
+native-plan = ["functions"]
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
 mika = []

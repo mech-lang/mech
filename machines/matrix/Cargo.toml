@@ -25,6 +25,8 @@ default = ["compiler_default"]
 runtime = ["mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
 standard_values = [
   "bool", "string",
   "u8", "u16", "u32", "u64", "u128",

@@ -839,6 +839,35 @@ where
     }
 }
 
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "f64",
+        feature = "matrix_horzcat",
+        feature = "row_vectord"
+    ),
+
+    registration: register_horizontal_concatenate_rdn_f64,
+    installer: install_horizontal_concatenate_rdn_f64,
+
+    name: "HorizontalConcatenateRDN<f64>",
+    factory: <HorizontalConcatenateRDN<f64> as MechFunctionFactory>::new,
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_horizontal_concatenate_rdn_f64",
+
+    cargo_features: [
+        "bool",
+        "f64",
+        "matrix_horzcat",
+        "matrixd",
+        "native-link",
+        "row_vectord",
+        "runtime",
+        "vectord",
+    ],
+}
+
 #[cfg(all(
     test,
     feature = "compiler",
@@ -1182,6 +1211,34 @@ where
         let name = format!("HorizontalConcatenateS2<{}>", T::as_value_kind());
         compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "f64",
+        feature = "matrix_horzcat",
+        feature = "row_vector2"
+    ),
+
+    registration: register_horizontal_concatenate_s2_f64,
+    installer: install_horizontal_concatenate_s2_f64,
+
+    name: "HorizontalConcatenateS2<f64>",
+    factory: <HorizontalConcatenateS2<f64> as MechFunctionFactory>::new,
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_horizontal_concatenate_s2_f64",
+
+    cargo_features: [
+        "bool",
+        "f64",
+        "matrix_horzcat",
+        "native-link",
+        "row_vector2",
+        "runtime",
+        "vector2",
+    ],
 }
 
 // HorizontalConcatenateS3 --------------------------------------------------
@@ -5762,6 +5819,30 @@ macro_rules! install_horzcat_factories {
     }};
 }
 
+macro_rules! install_horzcat_factories_except_f64 {
+    ($builder:expr, $factory:ident) => {{
+        mech_core::install_typed_runtime_factories!(
+            $builder,
+            $factory;
+            ("bool", bool, "bool"),
+            ("string", String, "string"),
+            ("u8", u8, "u8"),
+            ("u16", u16, "u16"),
+            ("u32", u32, "u32"),
+            ("u64", u64, "u64"),
+            ("u128", u128, "u128"),
+            ("i8", i8, "i8"),
+            ("i16", i16, "i16"),
+            ("i32", i32, "i32"),
+            ("i64", i64, "i64"),
+            ("i128", i128, "i128"),
+            ("f32", f32, "f32"),
+            ("c64", C64, "c64"),
+            ("r64", R64, "r64"),
+        )?;
+    }};
+}
+
 /// Installs every enabled legacy runtime factory emitted by this module.
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrixd")]
@@ -5774,7 +5855,9 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     #[cfg(feature = "row_vectord")]
     {
         install_horzcat_factories!(builder, HorizontalConcatenateRD);
-        install_horzcat_factories!(builder, HorizontalConcatenateRDN);
+        #[cfg(feature = "f64")]
+        register_horizontal_concatenate_rdn_f64(builder)?;
+        install_horzcat_factories_except_f64!(builder, HorizontalConcatenateRDN);
         install_horzcat_factories!(builder, HorizontalConcatenateSD);
     }
     #[cfg(feature = "vectord")]
@@ -5803,7 +5886,9 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_horzcat_factories!(builder, HorizontalConcatenateV4);
     #[cfg(feature = "row_vector2")]
     {
-        install_horzcat_factories!(builder, HorizontalConcatenateS2);
+        #[cfg(feature = "f64")]
+        register_horizontal_concatenate_s2_f64(builder)?;
+        install_horzcat_factories_except_f64!(builder, HorizontalConcatenateS2);
         install_horzcat_factories!(builder, HorizontalConcatenateR2);
     }
     #[cfg(feature = "row_vector3")]

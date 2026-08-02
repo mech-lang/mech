@@ -2,6 +2,10 @@
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
 
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {}
+
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 

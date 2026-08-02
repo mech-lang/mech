@@ -46,6 +46,15 @@ impl RuntimeFunctionId {
 
 pub type RuntimeFunctionFactory = fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 
+#[cfg(feature = "native-plan")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeFunctionLinkage {
+    pub package: &'static str,
+    pub crate_name: &'static str,
+    pub installer_path: &'static str,
+    pub cargo_features: &'static [&'static str],
+}
+
 pub trait FunctionSpecializer: Send + Sync {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>>;
 
@@ -59,6 +68,9 @@ pub struct RuntimeFunctionEntry {
     pub id: RuntimeFunctionId,
     pub name: String,
     pub factory: RuntimeFunctionFactory,
+
+    #[cfg(feature = "native-plan")]
+    pub native_linkage: Option<NativeFunctionLinkage>,
 }
 
 #[derive(Clone)]
@@ -352,6 +364,31 @@ pub struct FunctionCatalogInvalidName {
     pub id: u64,
 }
 
+#[cfg(feature = "native-plan")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionCatalogInvalidNativeLinkage {
+    pub id: RuntimeFunctionId,
+    pub name: String,
+    pub linkage: NativeFunctionLinkage,
+    pub reason: String,
+}
+
+#[cfg(feature = "native-plan")]
+impl MechErrorKind for FunctionCatalogInvalidNativeLinkage {
+    fn name(&self) -> &str {
+        "FunctionCatalogInvalidNativeLinkage"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "invalid native linkage for runtime factory {:?} at ID 0x{:016x}: {}",
+            self.name,
+            self.id.raw(),
+            self.reason,
+        )
+    }
+}
+
 impl MechErrorKind for FunctionCatalogInvalidName {
     fn name(&self) -> &str {
         "FunctionCatalogInvalidName"
@@ -447,7 +484,30 @@ impl FunctionCatalogBuilder {
     ) -> MResult<()> {
         let name = name.into();
         let id = RuntimeFunctionId::from_name(&name);
-        self.insert_runtime_entry(RuntimeFunctionEntry { id, name, factory })
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            factory,
+            #[cfg(feature = "native-plan")]
+            native_linkage: None,
+        })
+    }
+
+    #[cfg(feature = "native-plan")]
+    pub fn insert_runtime_factory_with_linkage(
+        &mut self,
+        name: impl Into<String>,
+        factory: RuntimeFunctionFactory,
+        linkage: NativeFunctionLinkage,
+    ) -> MResult<()> {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            factory,
+            native_linkage: Some(linkage),
+        })
     }
 
     pub fn insert_specializer(
@@ -617,6 +677,11 @@ impl FunctionCatalogBuilder {
             .with_compiler_loc());
         }
 
+        #[cfg(feature = "native-plan")]
+        if let Some(linkage) = &entry.native_linkage {
+            validate_native_linkage(entry.id, &entry.name, linkage)?;
+        }
+
         if let Some(existing) = self.runtime_factories.get(&entry.id) {
             let kind = if existing.name == entry.name {
                 MechError::new(
@@ -738,6 +803,198 @@ impl FunctionCatalogBuilder {
     }
 }
 
+#[cfg(feature = "native-plan")]
+fn validate_native_linkage(
+    id: RuntimeFunctionId,
+    name: &str,
+    linkage: &NativeFunctionLinkage,
+) -> MResult<()> {
+    if !is_cargo_package_name(linkage.package) {
+        return Err(invalid_native_linkage_error(
+            id,
+            name,
+            linkage,
+            format!("package {:?} must match [a-z][a-z0-9-]*", linkage.package,),
+        ));
+    }
+
+    if !is_rust_identifier(linkage.crate_name) {
+        return Err(invalid_native_linkage_error(
+            id,
+            name,
+            linkage,
+            format!(
+                "crate name {:?} must match [A-Za-z_][A-Za-z0-9_]*",
+                linkage.crate_name,
+            ),
+        ));
+    }
+
+    let installer_components = linkage.installer_path.split("::").collect::<Vec<_>>();
+    if installer_components.len() < 2
+        || installer_components
+            .iter()
+            .any(|component| !is_rust_identifier(component))
+    {
+        return Err(invalid_native_linkage_error(
+            id,
+            name,
+            linkage,
+            format!(
+                "installer path {:?} must contain at least two `::`-separated identifiers",
+                linkage.installer_path,
+            ),
+        ));
+    }
+
+    if linkage.cargo_features.is_empty() {
+        return Err(invalid_native_linkage_error(
+            id,
+            name,
+            linkage,
+            String::from("Cargo features must not be empty"),
+        ));
+    }
+
+    for feature in linkage.cargo_features {
+        if !is_cargo_feature_name(feature) {
+            return Err(invalid_native_linkage_error(
+                id,
+                name,
+                linkage,
+                format!(
+                    "Cargo feature {:?} must match [A-Za-z_][A-Za-z0-9_-]*",
+                    feature,
+                ),
+            ));
+        }
+    }
+
+    for features in linkage.cargo_features.windows(2) {
+        if features[0] == features[1] {
+            return Err(invalid_native_linkage_error(
+                id,
+                name,
+                linkage,
+                format!("Cargo feature {:?} is duplicated", features[0]),
+            ));
+        }
+        if features[0] > features[1] {
+            return Err(invalid_native_linkage_error(
+                id,
+                name,
+                linkage,
+                String::from("Cargo features must be sorted"),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+fn invalid_native_linkage_error(
+    id: RuntimeFunctionId,
+    name: &str,
+    linkage: &NativeFunctionLinkage,
+    reason: String,
+) -> MechError {
+    MechError::new(
+        FunctionCatalogInvalidNativeLinkage {
+            id,
+            name: String::from(name),
+            linkage: linkage.clone(),
+            reason,
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(feature = "native-plan")]
+fn is_cargo_package_name(name: &str) -> bool {
+    let mut bytes = name.bytes();
+    bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
+        && bytes.all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+}
+
+#[cfg(feature = "native-plan")]
+fn is_rust_identifier(name: &str) -> bool {
+    let mut bytes = name.bytes();
+    bytes
+        .next()
+        .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_')
+        && bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+}
+
+#[cfg(feature = "native-plan")]
+fn is_cargo_feature_name(name: &str) -> bool {
+    let mut bytes = name.bytes();
+    bytes
+        .next()
+        .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_')
+        && bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+}
+
+/// Declares one runtime factory together with its exact native-build linkage.
+///
+/// The private registration function is intended for the owner's aggregate
+/// runtime installer. The public, documentation-hidden installer is the only
+/// entry point generated native applications call.
+#[macro_export]
+macro_rules! declare_native_runtime_factory {
+    (
+        cfg: $cfg:meta,
+
+        registration: $registration:ident,
+        installer: $installer:ident,
+
+        name: $name:literal,
+        factory: $factory:expr,
+
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        installer_path: $installer_path:literal,
+
+        cargo_features: [
+            $($cargo_feature:literal),+ $(,)?
+        ],
+    ) => {
+        #[cfg($cfg)]
+        fn $registration(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            #[cfg(feature = "native-plan")]
+            {
+                return builder.insert_runtime_factory_with_linkage(
+                    $name,
+                    $factory,
+                    $crate::NativeFunctionLinkage {
+                        package: $package,
+                        crate_name: $crate_name,
+                        installer_path: $installer_path,
+                        cargo_features: &[$($cargo_feature),+],
+                    },
+                );
+            }
+
+            #[cfg(not(feature = "native-plan"))]
+            {
+                builder.insert_runtime_factory($name, $factory)
+            }
+        }
+
+        #[doc(hidden)]
+        #[cfg(feature = "native-link")]
+        #[cfg($cfg)]
+        pub fn $installer(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            builder.insert_runtime_factory($name, $factory)
+        }
+    };
+}
+
 fn invalid_export_error(export: &FunctionExport, reason: String) -> MechError {
     MechError::new(
         FunctionCatalogInvalidExport {
@@ -809,6 +1066,34 @@ mod tests {
         unreachable!("catalog tests do not instantiate runtime functions")
     }
 
+    struct MacroFactory;
+
+    impl crate::MechFunctionFactory for MacroFactory {
+        fn new(_: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            unreachable!("catalog tests do not instantiate runtime functions")
+        }
+    }
+
+    crate::declare_native_runtime_factory! {
+        cfg: test,
+
+        registration: register_macro_factory,
+        installer: install_macro_factory,
+
+        name: "MacroFactory<f64>",
+        factory: <MacroFactory as crate::MechFunctionFactory>::new,
+
+        package: "mech-core",
+        crate_name: "mech_core",
+        installer_path: "mech_core::__mech_native::install_macro_factory",
+
+        cargo_features: [
+            "f64",
+            "native-link",
+            "runtime",
+        ],
+    }
+
     struct TestSpecializer;
 
     impl FunctionSpecializer for TestSpecializer {
@@ -871,6 +1156,8 @@ mod tests {
                 id,
                 name: String::from("first"),
                 factory: test_factory,
+                #[cfg(feature = "native-plan")]
+                native_linkage: None,
             })
             .unwrap();
 
@@ -879,6 +1166,8 @@ mod tests {
                 id,
                 name: String::from("second"),
                 factory: test_factory,
+                #[cfg(feature = "native-plan")]
+                native_linkage: None,
             })
             .unwrap_err();
 
@@ -922,6 +1211,238 @@ mod tests {
             .insert_runtime_factory("AddSS<f64>", test_factory)
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
+    }
+
+    #[test]
+    fn declaration_macro_registers_exactly_one_factory_and_rejects_duplicates() {
+        let mut builder = FunctionCatalogBuilder::new();
+        register_macro_factory(&mut builder).unwrap();
+
+        let error = register_macro_factory(&mut builder).unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
+
+        let catalog = builder.build().unwrap();
+        assert_eq!(catalog.runtime_factory_count(), 1);
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name("MacroFactory<f64>"))
+            .unwrap();
+        assert_eq!(entry.name, "MacroFactory<f64>");
+
+        #[cfg(feature = "native-plan")]
+        assert_eq!(
+            entry.native_linkage,
+            Some(NativeFunctionLinkage {
+                package: "mech-core",
+                crate_name: "mech_core",
+                installer_path: "mech_core::__mech_native::install_macro_factory",
+                cargo_features: &["f64", "native-link", "runtime"],
+            }),
+        );
+    }
+
+    #[cfg(feature = "native-plan")]
+    #[test]
+    fn plain_runtime_registration_keeps_native_linkage_absent() {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory("PlainFactory", test_factory)
+            .unwrap();
+
+        let catalog = builder.build().unwrap();
+        assert_eq!(
+            catalog
+                .runtime_entry(RuntimeFunctionId::from_name("PlainFactory"))
+                .unwrap()
+                .native_linkage,
+            None,
+        );
+    }
+
+    #[cfg(feature = "native-plan")]
+    #[test]
+    fn linked_runtime_registration_preserves_trusted_metadata_exactly() {
+        let linkage = NativeFunctionLinkage {
+            package: "mech-math",
+            crate_name: "Mech_Math",
+            installer_path: "Mech_Math::__mech_native::install_Add_2",
+            cargo_features: &["F64", "add-2", "native_link", "runtime"],
+        };
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory_with_linkage("AddSS<f64>", test_factory, linkage.clone())
+            .unwrap();
+
+        let catalog = builder.build().unwrap();
+        assert_eq!(
+            catalog
+                .runtime_entry(RuntimeFunctionId::from_name("AddSS<f64>"))
+                .unwrap()
+                .native_linkage
+                .as_ref(),
+            Some(&linkage),
+        );
+    }
+
+    #[cfg(feature = "native-plan")]
+    #[test]
+    fn native_linkage_validation_accepts_each_frozen_name_grammar() {
+        for linkage in [
+            NativeFunctionLinkage {
+                package: "m",
+                crate_name: "_",
+                installer_path: "_::i",
+                cargo_features: &["_"],
+            },
+            NativeFunctionLinkage {
+                package: "mech-2-native-",
+                crate_name: "Mech_2",
+                installer_path: "Mech_2::__mech_native::install_2",
+                cargo_features: &["A-1", "_f64", "native-link"],
+            },
+        ] {
+            let mut builder = FunctionCatalogBuilder::new();
+            builder
+                .insert_runtime_factory_with_linkage("ValidFactory", test_factory, linkage)
+                .unwrap();
+        }
+    }
+
+    #[cfg(feature = "native-plan")]
+    #[test]
+    fn native_linkage_validation_rejects_every_malformed_field() {
+        let invalid = [
+            (
+                NativeFunctionLinkage {
+                    package: "",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime"],
+                },
+                "package",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "Mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime"],
+                },
+                "package",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech_core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime"],
+                },
+                "package",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "2mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime"],
+                },
+                "crate name",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech-core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime"],
+                },
+                "crate name",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "install",
+                    cargo_features: &["runtime"],
+                },
+                "installer path",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::::install",
+                    cargo_features: &["runtime"],
+                },
+                "installer path",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::2install",
+                    cargo_features: &["runtime"],
+                },
+                "installer path",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &[],
+                },
+                "must not be empty",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["2runtime"],
+                },
+                "Cargo feature",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["native/link"],
+                },
+                "Cargo feature",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime", "f64"],
+                },
+                "sorted",
+            ),
+            (
+                NativeFunctionLinkage {
+                    package: "mech-core",
+                    crate_name: "mech_core",
+                    installer_path: "mech_core::install",
+                    cargo_features: &["runtime", "runtime"],
+                },
+                "duplicated",
+            ),
+        ];
+
+        for (linkage, expected_reason) in invalid {
+            let mut builder = FunctionCatalogBuilder::new();
+            let error = builder
+                .insert_runtime_factory_with_linkage("InvalidFactory", test_factory, linkage)
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "FunctionCatalogInvalidNativeLinkage");
+            assert!(
+                error.kind_message().contains(expected_reason),
+                "expected {:?} in {:?}",
+                expected_reason,
+                error.kind_message(),
+            );
+        }
     }
 
     #[test]
