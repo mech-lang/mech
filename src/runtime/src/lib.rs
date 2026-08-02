@@ -22,7 +22,6 @@ pub mod capability;
 pub mod context;
 #[cfg(feature = "runtime")]
 pub mod event;
-#[cfg(feature = "runtime")]
 pub mod host;
 #[cfg(feature = "runtime")]
 pub mod module;
@@ -62,7 +61,6 @@ pub use self::capability::*;
 pub use self::context::*;
 #[cfg(feature = "runtime")]
 pub use self::event::*;
-#[cfg(feature = "runtime")]
 pub use self::host::*;
 #[cfg(feature = "runtime")]
 pub use self::module::*;

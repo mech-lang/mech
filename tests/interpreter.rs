@@ -1,5 +1,5 @@
 #![allow(warnings)]
-#[path = "interpreter/catalog.rs"]
+#[path = "support/interpreter/catalog.rs"]
 mod catalog;
 extern crate mech;
 extern crate mech_core;
@@ -14,7 +14,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Root interpreter tests exercise the standard source distribution. Catalog
-/// behavior for a deliberately bare engine is covered by `interpreter/catalog`.
+/// behavior for a deliberately bare engine is covered by `support/interpreter/catalog`.
 struct MechProgram;
 
 impl MechProgram {

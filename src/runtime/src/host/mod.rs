@@ -16,44 +16,52 @@
 //!
 //! Host functions should be capability-checked before invocation.
 
-use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::sync::Arc;
-
-use mech_core::{MResult, MechError, MechErrorKind, Value};
-
-use crate::capability::{CapabilityRequest, Operation, Resource};
-
-use crate::context::RuntimeCallContext;
-#[cfg(test)]
-use crate::context::RuntimeContext;
-use crate::service::RuntimeManagedServices;
-use crate::{PreparedRuntimeEffect, RuntimeValueSnapshot, TryIntoRuntimeValueSnapshot};
-
-#[cfg(feature = "string")]
+#[cfg(all(feature = "runtime", feature = "string"))]
 pub mod actor;
+#[cfg(feature = "runtime")]
 pub mod arg;
 #[cfg(feature = "host_delegation")]
 pub mod delegation;
 pub mod interface;
 
-#[cfg(feature = "string")]
+#[cfg(all(feature = "runtime", feature = "string"))]
 pub use self::actor::*;
+#[cfg(feature = "runtime")]
 pub use self::arg::*;
 #[cfg(feature = "host_delegation")]
 pub use self::delegation::*;
 pub use self::interface::*;
 
+#[cfg(feature = "runtime")]
+use std::{collections::HashMap, marker::PhantomData, sync::Arc};
+
+#[cfg(feature = "runtime")]
+use mech_core::{MResult, MechError, MechErrorKind, Value};
+
+#[cfg(feature = "runtime")]
+use crate::capability::{CapabilityRequest, Operation, Resource};
+
+#[cfg(feature = "runtime")]
+use crate::context::RuntimeCallContext;
+#[cfg(all(test, feature = "runtime"))]
+use crate::context::RuntimeContext;
+#[cfg(feature = "runtime")]
+use crate::service::RuntimeManagedServices;
+#[cfg(feature = "runtime")]
+use crate::{PreparedRuntimeEffect, RuntimeValueSnapshot, TryIntoRuntimeValueSnapshot};
+
 // -----------------------------------------------------------------------------
 // Host Function Planning and Invocation
 // -----------------------------------------------------------------------------
 
+#[cfg(feature = "runtime")]
 #[derive(Debug)]
 pub struct RuntimePreparedHostCall {
     pub value: RuntimeValueSnapshot,
     pub effect: PreparedRuntimeEffect,
 }
 
+#[cfg(feature = "runtime")]
 pub trait HostFunctionPlan: std::fmt::Debug + Send + Sync {
     fn name(&self) -> &str;
 
@@ -78,6 +86,7 @@ pub trait HostFunctionPlan: std::fmt::Debug + Send + Sync {
     }
 }
 
+#[cfg(feature = "runtime")]
 pub trait PureHostFunction: HostFunctionPlan {
     fn invoke(
         &self,
@@ -86,6 +95,7 @@ pub trait PureHostFunction: HostFunctionPlan {
     ) -> MResult<RuntimeValueSnapshot>;
 }
 
+#[cfg(feature = "runtime")]
 pub trait RuntimeManagedHostFunction: HostFunctionPlan {
     fn invoke(
         &self,
@@ -95,6 +105,7 @@ pub trait RuntimeManagedHostFunction: HostFunctionPlan {
     ) -> MResult<RuntimeValueSnapshot>;
 }
 
+#[cfg(feature = "runtime")]
 pub trait StagedHostFunction: HostFunctionPlan {
     fn prepare(
         &self,
@@ -103,6 +114,7 @@ pub trait StagedHostFunction: HostFunctionPlan {
     ) -> MResult<RuntimePreparedHostCall>;
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Clone)]
 pub enum RegisteredHostFunction {
     Pure(Arc<dyn PureHostFunction>),
@@ -110,6 +122,7 @@ pub enum RegisteredHostFunction {
     Staged(Arc<dyn StagedHostFunction>),
 }
 
+#[cfg(feature = "runtime")]
 impl std::fmt::Debug for RegisteredHostFunction {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -123,6 +136,7 @@ impl std::fmt::Debug for RegisteredHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl RegisteredHostFunction {
     pub fn name(&self) -> &str {
         match self {
@@ -169,6 +183,7 @@ impl RegisteredHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 pub struct DeterministicHostFunction<P, F, R>
 where
     P: for<'context, 'arguments> Fn(
@@ -193,6 +208,7 @@ where
     result: PhantomData<fn() -> R>,
 }
 
+#[cfg(feature = "runtime")]
 impl<P, F, R> DeterministicHostFunction<P, F, R>
 where
     P: for<'context, 'arguments> Fn(
@@ -226,6 +242,7 @@ where
     }
 }
 
+#[cfg(feature = "runtime")]
 impl<P, F, R> std::fmt::Debug for DeterministicHostFunction<P, F, R>
 where
     P: for<'context, 'arguments> Fn(
@@ -252,6 +269,7 @@ where
     }
 }
 
+#[cfg(feature = "runtime")]
 impl<P, F, R> HostFunctionPlan for DeterministicHostFunction<P, F, R>
 where
     P: for<'context, 'arguments> Fn(
@@ -288,6 +306,7 @@ where
     }
 }
 
+#[cfg(feature = "runtime")]
 impl<P, F, R> PureHostFunction for DeterministicHostFunction<P, F, R>
 where
     P: for<'context, 'arguments> Fn(
@@ -316,6 +335,7 @@ where
     }
 }
 
+#[cfg(feature = "runtime")]
 impl<P, F, R> From<DeterministicHostFunction<P, F, R>> for RegisteredHostFunction
 where
     P: for<'context, 'arguments> Fn(
@@ -339,14 +359,17 @@ where
     }
 }
 
+#[cfg(feature = "runtime")]
 type HostPlanCallback = dyn Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<RuntimeValueSnapshot>
     + Send
     + Sync;
 
+#[cfg(feature = "runtime")]
 type PureHostInvocationCallback = dyn Fn(&RuntimeCallContext, Vec<RuntimeValueSnapshot>) -> MResult<RuntimeValueSnapshot>
     + Send
     + Sync;
 
+#[cfg(feature = "runtime")]
 type RuntimeManagedHostInvocationCallback = dyn Fn(
         &mut dyn RuntimeManagedServices,
         &RuntimeCallContext,
@@ -355,10 +378,12 @@ type RuntimeManagedHostInvocationCallback = dyn Fn(
     + Send
     + Sync;
 
+#[cfg(feature = "runtime")]
 type StagedHostPreparationCallback = dyn Fn(&RuntimeCallContext, Vec<RuntimeValueSnapshot>) -> MResult<RuntimePreparedHostCall>
     + Send
     + Sync;
 
+#[cfg(feature = "runtime")]
 pub struct PlannedPureHostFunction {
     name: String,
     capability: Option<CapabilityRequest>,
@@ -366,6 +391,7 @@ pub struct PlannedPureHostFunction {
     invoke: Arc<PureHostInvocationCallback>,
 }
 
+#[cfg(feature = "runtime")]
 impl PlannedPureHostFunction {
     pub fn new<P, I>(name: impl Into<String>, plan: P, invoke: I) -> Self
     where
@@ -392,6 +418,7 @@ impl PlannedPureHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl std::fmt::Debug for PlannedPureHostFunction {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -402,6 +429,7 @@ impl std::fmt::Debug for PlannedPureHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl HostFunctionPlan for PlannedPureHostFunction {
     fn name(&self) -> &str {
         &self.name
@@ -420,6 +448,7 @@ impl HostFunctionPlan for PlannedPureHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl PureHostFunction for PlannedPureHostFunction {
     fn invoke(
         &self,
@@ -430,12 +459,14 @@ impl PureHostFunction for PlannedPureHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl From<PlannedPureHostFunction> for RegisteredHostFunction {
     fn from(function: PlannedPureHostFunction) -> Self {
         Self::Pure(Arc::new(function))
     }
 }
 
+#[cfg(feature = "runtime")]
 pub struct PlannedRuntimeManagedHostFunction {
     name: String,
     capability: Option<CapabilityRequest>,
@@ -443,6 +474,7 @@ pub struct PlannedRuntimeManagedHostFunction {
     invoke: Arc<RuntimeManagedHostInvocationCallback>,
 }
 
+#[cfg(feature = "runtime")]
 impl PlannedRuntimeManagedHostFunction {
     pub fn new<P, I>(name: impl Into<String>, plan: P, invoke: I) -> Self
     where
@@ -473,6 +505,7 @@ impl PlannedRuntimeManagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl std::fmt::Debug for PlannedRuntimeManagedHostFunction {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -483,6 +516,7 @@ impl std::fmt::Debug for PlannedRuntimeManagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl HostFunctionPlan for PlannedRuntimeManagedHostFunction {
     fn name(&self) -> &str {
         &self.name
@@ -501,6 +535,7 @@ impl HostFunctionPlan for PlannedRuntimeManagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl RuntimeManagedHostFunction for PlannedRuntimeManagedHostFunction {
     fn invoke(
         &self,
@@ -512,12 +547,14 @@ impl RuntimeManagedHostFunction for PlannedRuntimeManagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl From<PlannedRuntimeManagedHostFunction> for RegisteredHostFunction {
     fn from(function: PlannedRuntimeManagedHostFunction) -> Self {
         Self::RuntimeManaged(Arc::new(function))
     }
 }
 
+#[cfg(feature = "runtime")]
 pub struct PlannedStagedHostFunction {
     name: String,
     capability: Option<CapabilityRequest>,
@@ -525,6 +562,7 @@ pub struct PlannedStagedHostFunction {
     prepare: Arc<StagedHostPreparationCallback>,
 }
 
+#[cfg(feature = "runtime")]
 impl PlannedStagedHostFunction {
     pub fn new<P, F>(name: impl Into<String>, plan: P, prepare: F) -> Self
     where
@@ -551,6 +589,7 @@ impl PlannedStagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl std::fmt::Debug for PlannedStagedHostFunction {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -561,6 +600,7 @@ impl std::fmt::Debug for PlannedStagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl HostFunctionPlan for PlannedStagedHostFunction {
     fn name(&self) -> &str {
         &self.name
@@ -579,6 +619,7 @@ impl HostFunctionPlan for PlannedStagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl StagedHostFunction for PlannedStagedHostFunction {
     fn prepare(
         &self,
@@ -589,6 +630,7 @@ impl StagedHostFunction for PlannedStagedHostFunction {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl From<PlannedStagedHostFunction> for RegisteredHostFunction {
     fn from(function: PlannedStagedHostFunction) -> Self {
         Self::Staged(Arc::new(function))
@@ -600,6 +642,7 @@ impl From<PlannedStagedHostFunction> for RegisteredHostFunction {
 // -----------------------------------------------------------------------------
 
 /// Registry of host functions.
+#[cfg(feature = "runtime")]
 pub trait HostRegistry: std::fmt::Debug + Send {
     fn register_function(&mut self, function: RegisteredHostFunction) -> MResult<()>;
 
@@ -611,11 +654,13 @@ pub trait HostRegistry: std::fmt::Debug + Send {
 }
 
 /// Default in-memory host registry.
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, Default)]
 pub struct InMemoryHostRegistry {
     functions: HashMap<String, RegisteredHostFunction>,
 }
 
+#[cfg(feature = "runtime")]
 impl InMemoryHostRegistry {
     pub fn new() -> Self {
         Self::default()
@@ -638,6 +683,7 @@ impl InMemoryHostRegistry {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl HostRegistry for InMemoryHostRegistry {
     fn register_function(&mut self, function: RegisteredHostFunction) -> MResult<()> {
         let name = function.name().to_string();
@@ -711,6 +757,7 @@ impl HostRegistry for InMemoryHostRegistry {
 /// - block host calls during deterministic replay
 /// - restrict host calls on remote nodes
 /// - audit or rate limit host calls
+#[cfg(feature = "runtime")]
 pub trait HostCallPolicy: std::fmt::Debug + Send + Sync {
     fn validate_call(
         &self,
@@ -725,9 +772,11 @@ pub trait HostCallPolicy: std::fmt::Debug + Send + Sync {
 /// It validates the context and charges the function's estimated costs. It does
 /// not itself check capabilities; that is the runtime's job because it owns the
 /// CapabilityKernel.
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, Default)]
 pub struct DefaultHostCallPolicy;
 
+#[cfg(feature = "runtime")]
 impl HostCallPolicy for DefaultHostCallPolicy {
     fn validate_call(
         &self,
@@ -752,12 +801,14 @@ impl HostCallPolicy for DefaultHostCallPolicy {
 }
 
 /// Utility functions for performing a host call.
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HostCall {
     pub name: String,
     pub args: Vec<Value>,
 }
 
+#[cfg(feature = "runtime")]
 impl HostCall {
     pub fn new(name: impl Into<String>, args: Vec<Value>) -> Self {
         Self {
@@ -785,11 +836,13 @@ impl HostCall {
 // Default Resource / Operation Keys
 // -----------------------------------------------------------------------------
 
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct HostResource {
     key: String,
 }
 
+#[cfg(feature = "runtime")]
 impl HostResource {
     pub fn new(key: impl Into<String>) -> Self {
         Self { key: key.into() }
@@ -800,17 +853,20 @@ impl HostResource {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl Resource for HostResource {
     fn key(&self) -> &str {
         &self.key
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct HostOperation {
     key: String,
 }
 
+#[cfg(feature = "runtime")]
 impl HostOperation {
     pub fn new(key: impl Into<String>) -> Self {
         Self { key: key.into() }
@@ -821,12 +877,14 @@ impl HostOperation {
     }
 }
 
+#[cfg(feature = "runtime")]
 impl Operation for HostOperation {
     fn key(&self) -> &str {
         &self.key
     }
 }
 
+#[cfg(feature = "runtime")]
 pub fn default_host_capability_request(
     context: &RuntimeCallContext,
     function_name: &str,
@@ -847,7 +905,7 @@ pub fn default_host_capability_request(
     }
 }
 
-#[cfg(feature = "string")]
+#[cfg(all(feature = "runtime", feature = "string"))]
 pub fn register_actor_context_host_functions(registry: &mut dyn HostRegistry) -> MResult<()> {
     registry.register_function(RegisteredHostFunction::Pure(Arc::new(
         ActorMessageKindHostFunction::new(),
@@ -872,12 +930,14 @@ pub fn register_actor_context_host_functions(registry: &mut dyn HostRegistry) ->
 // Errors
 // -----------------------------------------------------------------------------
 
+#[cfg(feature = "runtime")]
 #[derive(Debug, Clone)]
 pub struct HostInvalidContextError {
     pub function: String,
     pub reason: String,
 }
 
+#[cfg(feature = "runtime")]
 impl MechErrorKind for HostInvalidContextError {
     fn name(&self) -> &str {
         "HostInvalidContext"
@@ -891,12 +951,14 @@ impl MechErrorKind for HostInvalidContextError {
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Debug, Clone)]
 pub struct InvalidHostFunctionError {
     pub field: &'static str,
     pub reason: &'static str,
 }
 
+#[cfg(feature = "runtime")]
 impl MechErrorKind for InvalidHostFunctionError {
     fn name(&self) -> &str {
         "InvalidHostFunction"
@@ -910,12 +972,14 @@ impl MechErrorKind for InvalidHostFunctionError {
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Debug, Clone)]
 pub struct InvalidHostCallError {
     pub function: String,
     pub reason: String,
 }
 
+#[cfg(feature = "runtime")]
 impl MechErrorKind for InvalidHostCallError {
     fn name(&self) -> &str {
         "InvalidHostCall"
@@ -926,12 +990,14 @@ impl MechErrorKind for InvalidHostCallError {
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Debug, Clone)]
 pub struct InvalidHostCallFieldError {
     pub field: &'static str,
     pub reason: &'static str,
 }
 
+#[cfg(feature = "runtime")]
 impl MechErrorKind for InvalidHostCallFieldError {
     fn name(&self) -> &str {
         "InvalidHostCall"
@@ -942,11 +1008,13 @@ impl MechErrorKind for InvalidHostCallFieldError {
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Debug, Clone)]
 pub struct HostFunctionAlreadyExistsError {
     pub name: String,
 }
 
+#[cfg(feature = "runtime")]
 impl MechErrorKind for HostFunctionAlreadyExistsError {
     fn name(&self) -> &str {
         "HostFunctionAlreadyExists"
@@ -957,11 +1025,13 @@ impl MechErrorKind for HostFunctionAlreadyExistsError {
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Debug, Clone)]
 pub struct HostFunctionNotFoundError {
     pub name: String,
 }
 
+#[cfg(feature = "runtime")]
 impl MechErrorKind for HostFunctionNotFoundError {
     fn name(&self) -> &str {
         "HostFunctionNotFound"
@@ -976,7 +1046,7 @@ impl MechErrorKind for HostFunctionNotFoundError {
 // Tests
 // -----------------------------------------------------------------------------
 
-#[cfg(test)]
+#[cfg(all(test, feature = "runtime"))]
 mod tests {
     use super::*;
     use crate::id::RuntimeId;

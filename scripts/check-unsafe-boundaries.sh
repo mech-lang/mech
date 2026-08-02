@@ -39,6 +39,7 @@ code_matches() {
     grep -Ev '^[0-9]+:[[:space:]]*(let[[:space:]]+[[:alnum:]_]+[[:space:]]*=[[:space:]]*)?(OperationId|RuntimeFunctionId)::from_raw\((\*?[[:alnum:]_]+|0x[[:xdigit:]_]+|[[:digit:]_]+)\)[,;][[:space:]]*$' || true)
 
   case "$2" in
+    src/core/src/function/catalog.rs|*/src/core/src/function/catalog.rs|\
     src/core/src/function_catalog.rs|*/src/core/src/function_catalog.rs)
       matches=$(printf '%s\n' "$matches" |
         grep -Ev '^[0-9]+:[[:space:]]*pub[[:space:]]+const[[:space:]]+fn[[:space:]]+from_raw\(raw:[[:space:]]*u64\)[[:space:]]*->[[:space:]]*Self[[:space:]]*\{[[:space:]]*$' || true)

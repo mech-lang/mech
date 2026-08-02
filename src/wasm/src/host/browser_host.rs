@@ -196,7 +196,7 @@ fn resolve_dom_element(
             )
         })?;
     let requested_relative = mech_host_browser::BrowserDomPath::new(relative.to_string())
-        .map_err(mech_core::browser_capability_error)?;
+        .map_err(mech_host_browser::browser_capability_error)?;
     let property = requested_relative.dom_property();
     let node_path = requested_relative.without_property_suffix();
     let mut element = root;

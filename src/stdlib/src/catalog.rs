@@ -108,7 +108,7 @@ mod tests {
     fn runtime_and_source_catalogs_use_separate_caches() {
         let test = std::thread::Builder::new()
             .name("stdlib-catalog-cache-test".to_string())
-            .stack_size(64 * 1024 * 1024)
+            .stack_size(1024 * 1024)
             .spawn(|| {
                 let runtime = runtime_catalog();
                 let runtime_again = runtime_catalog();

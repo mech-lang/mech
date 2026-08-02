@@ -159,9 +159,19 @@ jobs:
       - name: Check source-only browser distribution
         run: bash scripts/check-static-distribution-profiles.sh wasm-source
 
-  distribution-sizes:
-    name: Distribution size report
+  distribution-size-shards:
+    name: Distribution size (${{ matrix.profile }})
     runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - selected-bytecode-runtime
+          - standard-bytecode-runtime
+          - standard-source-runtime
+          - standard-compiler-tooling
+          - wasm-browser-project
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -175,12 +185,63 @@ jobs:
           rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
-          rustup target add wasm32-unknown-unknown
 
-      - name: Build and report release distributions
-        run: bash scripts/report-distribution-sizes.sh target/distribution-sizes.tsv
+      - name: Install WASM target
+        if: ${{ matrix.profile == 'wasm-browser-project' }}
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Build and report release distribution
+        run: |
+          bash scripts/report-distribution-sizes.sh \
+            "target/distribution-sizes-${{ matrix.profile }}.tsv" \
+            "${{ matrix.profile }}"
+
+      - name: Upload distribution size row
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-size-${{ matrix.profile }}
+          path: target/distribution-sizes-${{ matrix.profile }}.tsv
+
+  distribution-sizes:
+    name: Distribution size report
+    if: ${{ always() }}
+    needs: distribution-size-shards
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Download distribution size rows
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: distribution-size-*
+          path: target/distribution-size-rows
+          merge-multiple: true
+
+      - name: Combine distribution size report
+        run: |
+          mkdir -p target
+          printf 'profile\tartifact_path\tartifact_size_bytes\tresolved_package_count\truntime_factory_count\tsource_specializer_count\n' \
+            > target/distribution-sizes.tsv
+          for profile in \
+            selected-bytecode-runtime \
+            standard-bytecode-runtime \
+            standard-source-runtime \
+            standard-compiler-tooling \
+            wasm-browser-project
+          do
+            row="target/distribution-size-rows/distribution-sizes-${profile}.tsv"
+            if test -f "$row"
+            then
+              sed -n '2p' "$row" >> target/distribution-sizes.tsv
+            else
+              echo "distribution size row missing: $profile" >&2
+            fi
+          done
+          cat target/distribution-sizes.tsv
 
       - name: Upload distribution size report
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: distribution-sizes
@@ -211,15 +272,45 @@ jobs:
       - name: Check complete function-system migration contracts
         run: bash scripts/check-complete-function-system-migration.sh
 
+  runtime-source-targets:
+    name: Runtime source targets (${{ matrix.slice }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        slice:
+          - basic
+          - hosts
+          - actors
+          - modules
+          - diagnostics
+          - standard
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Run ${{ matrix.slice }} source targets
+        run: bash scripts/run-runtime-source-targets.sh "${{ matrix.slice }}"
+
   cargo:
     name: cargo
     if: ${{ always() }}
     needs:
       - cargo-features
       - distribution-contracts
-      - distribution-sizes
       - engine-catalog
       - function-system-contracts
+      - runtime-source-targets
       - wasm-source-profile
     runs-on: ubuntu-latest
     steps:
@@ -228,15 +319,15 @@ jobs:
           ENGINE_CATALOG_RESULT: ${{ needs.engine-catalog.result }}
           FEATURE_RESULT: ${{ needs.cargo-features.result }}
           DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
-          DISTRIBUTION_SIZES_RESULT: ${{ needs.distribution-sizes.result }}
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
+          RUNTIME_SOURCE_TARGETS_RESULT: ${{ needs.runtime-source-targets.result }}
           WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
         run: |
           test "$DISTRIBUTION_RESULT" = success
-          test "$DISTRIBUTION_SIZES_RESULT" = success
           test "$ENGINE_CATALOG_RESULT" = success
           test "$FEATURE_RESULT" = success
           test "$FUNCTION_SYSTEM_RESULT" = success
+          test "$RUNTIME_SOURCE_TARGETS_RESULT" = success
           test "$WASM_SOURCE_RESULT" = success
 
   cargo-language:
@@ -367,6 +458,9 @@ jobs:
           cargo test -p mech-host-cli --features provider --test provider
           cargo test -p mech-host-console
           cargo test -p mech-host-browser
+          cargo test -p mech-host-browser --features provider
+          cargo test -p mech-host-browser --features delegation
+          cargo test -p mech-host-browser --features delegation_signing
           cargo test --features "run repl pretty_print" --test mech_cli_host
           cargo test --features "run repl pretty_print" cli::run::tests
           cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
