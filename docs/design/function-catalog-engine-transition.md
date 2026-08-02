@@ -1,5 +1,10 @@
 # Function catalog execution architecture
 
+Status: the PR3 static-composition transition is complete. Standard catalog
+composition now belongs to `mech-stdlib`; see
+[Static standard-library composition](static-stdlib-composition.md) for the
+resulting package and feature boundaries.
+
 The function system has one execution model on native and WASM. The obsolete
 program and interpreter packages are gone; retained programs,
 source elaboration, bytecode reconstruction, checkpoints, and reactive turns
@@ -10,30 +15,39 @@ live in `mech-engine`.
 ```text
 mech-core
   FunctionCatalog interfaces and stable IDs
-  MechFunction traits and function-definition data
+  MechFunction traits, value representations, and bytecode model
 
 machine crates
   concrete runtime factories
-  source specializers
-  explicit catalog installers
+  optional source specializers
+  optional bytecode lowerers
+  runtime and source installers
 
 mech-engine
-  temporary standard catalog composition
+  bare execution and optional source elaboration
+  engine-owned intrinsic installers
   FunctionEnvironment and FunctionResolver
   FunctionExtensions and user functions
   MechProgram and Interpreter
+  no standard machines or standard catalog
+
+mech-stdlib
+  feature-selected static distribution composition
+  intrinsic and standard-machine installation
+  runtime and source catalog construction
 
 mech-runtime
-  hosts, effects, scheduling, modules, and external transactions
+  distribution-neutral hosts, effects, scheduling, modules, and transactions
 ```
 
 `FunctionCatalog` is immutable linked functionality shared as an
 `Arc<FunctionCatalog>`. It owns concrete runtime factories, static source
 specializers, and exact export metadata. Builders validate stable IDs,
 canonical names, duplicate entries, and export relationships before producing
-the read-only catalog. Custom program and runtime constructors retain exactly
-the catalog supplied by their caller; they do not initialize or derive state
-from the standard catalog.
+the read-only catalog. `FunctionCatalog::empty()` is the engine default.
+`MechProgram::new`, `Interpreter::new`, and `RuntimeBuilder::new` are bare;
+distribution entry points inject a catalog explicitly and retain exactly the
+catalog supplied by their caller.
 
 `FunctionEnvironment` is mutable per-program visibility. It records enabled
 catalog operations plus exact visible-name bindings to either a catalog
@@ -81,7 +95,20 @@ Bytecode remains version 1. Canonical operation names, concrete runtime factory
 names and IDs, the frozen source surface, specialization selections, and the
 checked-in pre-rewrite bytecode artifacts remain unchanged.
 
-Until the next architecture step, `mech-engine` explicitly composes the
-standard machine installers. Moving that composition to `mech-stdlib` and
-separating machine runtime/source/compiler feature profiles belongs to PR3;
-`.mecb`-driven minimal native application generation belongs to PR4.
+PR3 completed the composition transition. `mech-engine` has no dependency on a
+standard machine and no standard-catalog constructor or fallback.
+`mech-stdlib::runtime_catalog()` composes the exact runtime factories selected
+by its feature closure. `mech-stdlib::source_catalog()` composes the same
+runtime factories followed by source specializers and exports. Compiler builds
+use that source catalog and enable lowering through Cargo features; they do not
+create a third catalog kind.
+
+Machine crates now separate concrete runtime support, source specialization,
+and bytecode lowering behind `runtime`, `source`, and `compiler`. A machine's
+`compiler` layer does not imply `source`, while a complete
+`mech-stdlib/compiler` distribution includes both. Engine syntax may still map
+operators such as `+` to the canonical name `math/add`, but only a selected
+machine implementation can provide that operation.
+
+`.mecb`-driven derivation of a minimal native application's exact
+`mech-stdlib` feature closure belongs to PR4.
